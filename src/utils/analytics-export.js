@@ -1,5 +1,5 @@
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
+// xlsx (~800 KB) et jspdf (~400 KB) sont chargés dynamiquement dans les
+// fonctions d'export pour rester hors du chunk de la page analytiques.
 
 // --- Helpers ---
 
@@ -240,7 +240,8 @@ export function exportAnalyticsCSV(data, tab, period) {
 
 // --- Excel Export ---
 
-export function exportAnalyticsExcel(data, tab, period) {
+export async function exportAnalyticsExcel(data, tab, period) {
+  const XLSX = await import("xlsx");
   const sheets = getSheets(data, tab);
   const wb = XLSX.utils.book_new();
 
@@ -258,7 +259,8 @@ export function exportAnalyticsExcel(data, tab, period) {
 
 // --- PDF Export ---
 
-export function exportAnalyticsPDF(data, tab, period) {
+export async function exportAnalyticsPDF(data, tab, period) {
+  const { default: jsPDF } = await import("jspdf");
   const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const sheets = getSheets(data, tab);
 

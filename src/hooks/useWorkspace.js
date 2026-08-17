@@ -6,6 +6,11 @@ import {
   resetOrganizationIdForApollo,
   apolloClient,
 } from "@/src/lib/apolloClient";
+import {
+  getFullOrganizationCached,
+  peekFullOrganization,
+  invalidateFullOrganizationCache,
+} from "@/src/lib/full-organization-cache";
 
 /**
  * Hook pour obtenir les informations du workspace actuel
@@ -45,6 +50,7 @@ export const useWorkspace = () => {
       // L'utilisateur a changé → reset tout pour éviter les fuites cross-compte
       resetOrganizationIdForApollo();
       apolloClient.clearStore(); // Vider le cache Apollo pour éviter les données stale
+      invalidateFullOrganizationCache();
       localStorage.removeItem("active_organization_id");
       localStorage.removeItem("user_role");
       setFullOrganization(null);
@@ -55,8 +61,10 @@ export const useWorkspace = () => {
 
   const loading = sessionLoading || orgsLoading || activeLoading || loadingFull;
 
-  // Charger l'organisation complète si elle n'a pas de membres
-  // OPTIMISÉ: Utiliser une ref pour éviter les appels multiples
+  // Charger l'organisation complète si elle n'a pas de membres.
+  // L'appel passe par le cache partagé (full-organization-cache) : les ~255
+  // instances de useWorkspace montées partagent une seule promesse réseau au
+  // lieu de lancer chacune leur propre getFullOrganization.
   useEffect(() => {
     const orgId = activeOrganization?.id;
 
@@ -72,20 +80,21 @@ export const useWorkspace = () => {
       return;
     }
 
+    // Cache partagé encore frais : pas d'état de chargement, pas de réseau
+    const cached = peekFullOrganization(orgId);
+    if (cached?.isFresh) {
+      setFullOrganization(cached.org);
+      lastFetchedOrgId.current = orgId;
+      return;
+    }
+
     isFetching.current = true;
     setLoadingFull(true);
 
-    authClient.organization
-      .getFullOrganization({
-        organizationId: orgId,
-      })
-      .then(({ data }) => {
-        setFullOrganization(data);
-        lastFetchedOrgId.current = orgId;
-      })
-      .catch((error) => {
-        console.error("Error loading full organization:", error);
-        // Marquer comme fetché même en cas d'erreur pour éviter une boucle de retry
+    getFullOrganizationCached(orgId)
+      .then((data) => {
+        if (data) setFullOrganization(data);
+        // Marquer comme fetché même sans données pour éviter une boucle de retry
         lastFetchedOrgId.current = orgId;
       })
       .finally(() => {
@@ -93,6 +102,32 @@ export const useWorkspace = () => {
         isFetching.current = false;
       });
   }, [activeOrganization?.id, activeOrganization?.members]);
+
+  // Répercuter les enregistrements de paramètres (modales entreprise, légale,
+  // bancaire) sur l'organisation servie ici. Le fetch n'est relancé ni par
+  // l'effet ci-dessus (garde lastFetchedOrgId) ni par le mémo ci-dessous
+  // (déps sur l'id et le nombre de membres) : sans cette fusion, tout ce qui
+  // lit useWorkspace() servait l'organisation d'avant l'enregistrement jusqu'au
+  // rechargement de la page. Le rendu des documents s'en sert en repli pour le
+  // régime de TVA, la franchise en base, la forme juridique et le logo.
+  // Fusion locale du payload déjà persisté : aucun appel réseau.
+  const [orgUpdateVersion, setOrgUpdateVersion] = useState(0);
+  useEffect(() => {
+    const handleOrganizationUpdated = (event) => {
+      const { organizationId, ...fields } = event.detail || {};
+      if (!Object.keys(fields).length) return;
+      setFullOrganization((prev) => (prev ? { ...prev, ...fields } : prev));
+      setOrgUpdateVersion((version) => version + 1);
+    };
+
+    window.addEventListener("organizationUpdated", handleOrganizationUpdated);
+    return () => {
+      window.removeEventListener(
+        "organizationUpdated",
+        handleOrganizationUpdated,
+      );
+    };
+  }, []);
 
   // Utiliser l'organisation complète si disponible, sinon l'organisation active
   // Stabilisé avec des deps primitives pour éviter les cascades de re-render
@@ -104,6 +139,10 @@ export const useWorkspace = () => {
       fullOrganization?.members?.length,
       activeOrganization?.id,
       activeOrganization?.members?.length,
+      // Un enregistrement de paramètres change le contenu sans changer l'id ni
+      // le nombre de membres : sans ce compteur, le mémo renverrait l'ancien
+      // objet et l'aperçu resterait sur les valeurs précédentes.
+      orgUpdateVersion,
     ],
   );
 

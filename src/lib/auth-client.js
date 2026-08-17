@@ -107,6 +107,7 @@ export const authClient = createAuthClient({
             purchaseOrderFooterNotes: { type: "string" },
             purchaseOrderTermsAndConditions: { type: "string" },
             showBankDetails: { type: "boolean" },
+            beneficiaryNameType: { type: "string" },
             // Client position in PDF
             invoiceClientPositionRight: { type: "boolean" },
             quoteClientPositionRight: { type: "boolean" },

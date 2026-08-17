@@ -24,10 +24,12 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 import LinkedInvoicesList from "./linked-invoices-list";
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -74,14 +76,17 @@ export default function QuoteMobileFullscreen({
     return date.toLocaleDateString("fr-FR", options);
   };
 
+  // La mutation changeQuoteStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
+  // décalée d'autant).
   const handleSendQuote = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.PENDING);
-      toast.success("Devis envoyé avec succès");
+      toast.success("Devis créé");
       if (onRefetch) onRefetch();
       onClose();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de l'envoi du devis");
+      toast.error(error?.message || "Erreur lors de la création du devis");
     }
   };
 
@@ -120,6 +125,7 @@ export default function QuoteMobileFullscreen({
         customFields: quote.customFields,
         shipping: quote.shipping,
         isReverseCharge: quote.isReverseCharge,
+        isVatExempt: quote.isVatExempt,
         retenueGarantie: quote.retenueGarantie,
         escompte: quote.escompte,
       }),
@@ -142,6 +148,7 @@ export default function QuoteMobileFullscreen({
           customFields: quote.customFields,
           shipping: quote.shipping,
           isReverseCharge: quote.isReverseCharge,
+          isVatExempt: quote.isVatExempt,
           retenueGarantie: quote.retenueGarantie,
           escompte: quote.escompte,
         }),
@@ -307,7 +314,7 @@ export default function QuoteMobileFullscreen({
                     Client
                   </h3>
                   {quote.client ? (
-                    <div className="space-y-1.5">
+                    <div className="space-y-0.5">
                       <div>
                         <p className="font-medium">{quote.client.name}</p>
                         {quote.client.email && (
@@ -426,31 +433,73 @@ export default function QuoteMobileFullscreen({
                     Dates
                   </h3>
                   <div className="space-y-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Date d'émission
-                      </span>
-                      <span>{formatDate(quote.issueDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Valide jusqu'au
-                      </span>
-                      <span
-                        className={
-                          isValidUntilExpired()
-                            ? "text-red-600 font-medium"
-                            : ""
-                        }
-                      >
-                        {formatDate(quote.validUntil)}
-                        {isValidUntilExpired() && (
-                          <span className="text-xs block text-red-500">
-                            Expiré
-                          </span>
-                        )}
-                      </span>
-                    </div>
+                    {/* Pour un brouillon repris plus tard, afficher les dates
+                        recalées (jour J / validité) et l'ancienne date entre
+                        parenthèses, car elles seront mises à jour à la
+                        finalisation — même logique que la sidebar desktop. */}
+                    {(() => {
+                      const draftDates =
+                        quote.status === "DRAFT"
+                          ? getDraftEffectiveDates(
+                              quote.issueDate,
+                              quote.validUntil,
+                            )
+                          : null;
+                      const refreshed = draftDates?.changed;
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Date d'émission
+                            </span>
+                            <span className="flex flex-col items-end">
+                              <span>
+                                {formatDate(
+                                  refreshed
+                                    ? draftDates.issue.effective
+                                    : quote.issueDate,
+                                )}
+                              </span>
+                              {refreshed && draftDates.issue.original && (
+                                <span className="text-xs text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.issue.original)})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Valide jusqu'au
+                            </span>
+                            <span
+                              className={
+                                !refreshed && isValidUntilExpired()
+                                  ? "text-red-600 font-medium"
+                                  : ""
+                              }
+                            >
+                              {formatDate(
+                                refreshed
+                                  ? draftDates.second.effective
+                                  : quote.validUntil,
+                              )}
+                              {refreshed && draftDates.second.original && (
+                                <span className="text-xs block text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.second.original)})
+                                </span>
+                              )}
+                              {!refreshed && isValidUntilExpired() && (
+                                <span className="text-xs block text-red-500">
+                                  Expiré
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -553,11 +602,34 @@ export default function QuoteMobileFullscreen({
                   <ArrowRight className="h-4 w-4" />
                 </Button>
 
+                {/* Bons de commande liés (créés à partir de ce devis) */}
+                {quote.linkedPurchaseOrders &&
+                  quote.linkedPurchaseOrders.length > 0 && (
+                    <div className="space-y-2.5">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Bons de commande liés
+                      </h3>
+                      <div className="space-y-1">
+                        {quote.linkedPurchaseOrders.map((po) => (
+                          <LinkedDocumentRow
+                            key={po.id}
+                            type="purchaseOrder"
+                            document={po}
+                            onClick={() => {
+                              router.push(
+                                `/dashboard/outils/bons-commande?id=${po.id}`,
+                              );
+                              onClose();
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 {/* Factures liées */}
                 {quote.status === QUOTE_STATUS.COMPLETED && (
-                  <div className="space-y-3">
-                    <LinkedInvoicesList quote={quote} />
-                  </div>
+                  <LinkedInvoicesList quote={quote} />
                 )}
               </div>
             )}
@@ -598,36 +670,28 @@ export default function QuoteMobileFullscreen({
                 ) : (
                   <Send className="mr-2 h-4 w-4" />
                 )}
-                Envoyer le devis
+                Créer le devis
               </Button>
             )}
 
             {(quote.status === QUOTE_STATUS.PENDING ||
               quote.status === QUOTE_STATUS.IMPORTED) && (
-              <div
-                className={
-                  quote.status === QUOTE_STATUS.IMPORTED
-                    ? "grid grid-cols-2 gap-1.5"
-                    : ""
-                }
-              >
-                {/* Accepter : uniquement les devis importés. Les devis natifs sont
-                    acceptés via la signature électronique. */}
-                {quote.status === QUOTE_STATUS.IMPORTED && (
-                  <Button
-                    onClick={handleAccept}
-                    disabled={isLoading}
-                    size="sm"
-                    className="font-normal"
-                  >
-                    {changingStatus ? (
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                    )}
-                    Accepter
-                  </Button>
-                )}
+              <div className="grid grid-cols-2 gap-1.5">
+                {/* Accepter : acceptation manuelle possible, la signature
+                    électronique accepte aussi le devis automatiquement. */}
+                <Button
+                  onClick={handleAccept}
+                  disabled={isLoading}
+                  size="sm"
+                  className="font-normal"
+                >
+                  {changingStatus ? (
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                  )}
+                  Accepter
+                </Button>
                 <Button
                   onClick={handleReject}
                   variant="destructive"
@@ -650,47 +714,15 @@ export default function QuoteMobileFullscreen({
                   </p>
                 )}
 
-                {!quote.hasPurchaseOrderInvoices &&
-                  (!quote.linkedInvoices ||
-                    quote.linkedInvoices.length < 2) && (
-                    <CreateLinkedInvoicePopover
-                      quote={quote}
-                      onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                      isLoading={isLoading}
-                    />
-                  )}
-
-                {!quote.hasPurchaseOrderInvoices &&
-                  quote.linkedInvoices &&
-                  quote.linkedInvoices.length === 2 &&
-                  (() => {
-                    const totalInvoiced = quote.linkedInvoices.reduce(
-                      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-                      0,
-                    );
-                    const remainingAmount =
-                      (quote.finalTotalTTC || 0) - totalInvoiced;
-                    return (
-                      remainingAmount > 0 && (
-                        <Button
-                          onClick={() =>
-                            handleCreateLinkedInvoice({
-                              quoteId: quote.id,
-                              amount: remainingAmount,
-                              isDeposit: false,
-                            })
-                          }
-                          disabled={isLoading}
-                          size="sm"
-                          className="w-full font-normal"
-                        >
-                          <FileCheck className="mr-2 h-4 w-4" />
-                          Créer la facture finale (
-                          {formatCurrency(remainingAmount)})
-                        </Button>
-                      )
-                    );
-                  })()}
+                {/* Aucune limite de nombre de factures liées : le popover
+                    s'affiche tant qu'il reste du montant à facturer. */}
+                {!quote.hasPurchaseOrderInvoices && (
+                  <CreateLinkedInvoicePopover
+                    quote={quote}
+                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                    isLoading={isLoading}
+                  />
+                )}
 
                 {!quote.hasPurchaseOrderInvoices &&
                   (!quote.linkedInvoices ||

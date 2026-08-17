@@ -169,6 +169,17 @@ const ERROR_PATTERNS = {
   NETWORK_TIMEOUT: /timeout|timed out/i,
   NETWORK_CONNECTION: /connection refused|connection failed|network error/i,
   NETWORK_UNAVAILABLE: /service unavailable|server unavailable/i,
+
+  // Numérotation des documents : l'API renvoie déjà un message rédigé pour
+  // l'utilisateur (dernier numéro utilisé, trou dans la séquence, numéro
+  // attendu). Sans ce pattern il retombait sur "Impossible de créer la
+  // facture", qui masquait la vraie raison du refus.
+  // Le numéro peut être intercalé dans la phrase (« Le numéro de bon de
+  // commande "0007" est déjà utilisé », « Le numéro de facture F-082026 0001
+  // existe déjà ») : sans le segment souple, ces messages retombaient sur
+  // « Impossible de créer le document », qui masque la vraie raison.
+  DOCUMENT_NUMBERING:
+    /dans la séquence|prochain numéro doit être|numérotation automatique|numéro de (facture|devis|bon de commande|avoir)[^.!?]*?(est déjà utilisé|existe déjà)/i,
 };
 
 /**
@@ -182,6 +193,14 @@ export function getErrorMessage(error, context = "generic") {
 
   const errorMessage = typeof error === "string" ? error : error.message || "";
   const errorCode = typeof error === "object" ? error.code : null;
+
+  // Erreurs de numérotation : le message de l'API est déjà explicite et
+  // actionnable, on le laisse passer tel quel plutôt que de le remplacer par
+  // un message générique. À traiter avant le code VALIDATION_ERROR, qui
+  // l'écraserait.
+  if (errorMessage && ERROR_PATTERNS.DOCUMENT_NUMBERING.test(errorMessage)) {
+    return errorMessage;
+  }
 
   // Vérifier d'abord les codes d'erreur spécifiques
   if (errorCode) {

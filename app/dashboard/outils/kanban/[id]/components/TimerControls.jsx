@@ -5,7 +5,11 @@ import { Clock, Euro, RotateCcw, Pencil, Play, Square } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -14,7 +18,13 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { useMutation } from "@apollo/client";
-import { START_TIMER, STOP_TIMER, RESET_TIMER, UPDATE_TIMER_SETTINGS, ADD_MANUAL_TIME } from "@/src/graphql/kanbanQueries";
+import {
+  START_TIMER,
+  STOP_TIMER,
+  RESET_TIMER,
+  UPDATE_TIMER_SETTINGS,
+  ADD_MANUAL_TIME,
+} from "@/src/graphql/kanbanQueries";
 import { toast } from "@/src/utils/debouncedToast";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -33,7 +43,11 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
     if (!data?.[field]) return;
     cache.modify({
       id: cache.identify({ __typename: "Task", id: data[field].id }),
-      fields: { timeTracking() { return data[field].timeTracking; } },
+      fields: {
+        timeTracking() {
+          return data[field].timeTracking;
+        },
+      },
     });
     onTimerUpdate?.(data[field].timeTracking);
   };
@@ -51,12 +65,16 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
     onError: (e) => toast.error(e.message || "Erreur reset timer"),
   });
   const [updateSettings] = useMutation(UPDATE_TIMER_SETTINGS, {
-    update: (cache, { data }) => updateCache(cache, data, "updateTimerSettings"),
+    update: (cache, { data }) =>
+      updateCache(cache, data, "updateTimerSettings"),
   });
-  const [addManualTime, { loading: addingManual }] = useMutation(ADD_MANUAL_TIME, {
-    update: (cache, { data }) => updateCache(cache, data, "addManualTime"),
-    onError: (e) => toast.error(e.message || "Erreur ajout temps"),
-  });
+  const [addManualTime, { loading: addingManual }] = useMutation(
+    ADD_MANUAL_TIME,
+    {
+      update: (cache, { data }) => updateCache(cache, data, "addManualTime"),
+      onError: (e) => toast.error(e.message || "Erreur ajout temps"),
+    },
+  );
 
   useEffect(() => {
     if (timeTracking) {
@@ -66,11 +84,19 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
   }, [timeTracking?.hourlyRate, timeTracking?.roundingOption]);
 
   useEffect(() => {
-    if (!timeTracking) { setCurrentTime(0); return; }
+    if (!timeTracking) {
+      setCurrentTime(0);
+      return;
+    }
     const update = () => {
       let total = timeTracking.totalSeconds || 0;
       if (timeTracking.isRunning && timeTracking.currentStartTime) {
-        total += Math.max(0, Math.floor((new Date() - new Date(timeTracking.currentStartTime)) / 1000));
+        total += Math.max(
+          0,
+          Math.floor(
+            (new Date() - new Date(timeTracking.currentStartTime)) / 1000,
+          ),
+        );
       }
       setCurrentTime(Math.max(0, total));
     };
@@ -79,14 +105,19 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
       const iv = setInterval(update, 1000);
       return () => clearInterval(iv);
     }
-  }, [timeTracking, timeTracking?.isRunning, timeTracking?.currentStartTime, timeTracking?.totalSeconds]);
+  }, [
+    timeTracking,
+    timeTracking?.isRunning,
+    timeTracking?.currentStartTime,
+    timeTracking?.totalSeconds,
+  ]);
 
   const formatTime = (s) => {
     const safe = Math.max(0, s);
     const h = Math.floor(safe / 3600);
     const m = Math.floor((safe % 3600) / 60);
     const sec = safe % 60;
-    return `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    return `${h}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
   const formatShort = (s) => {
@@ -97,49 +128,81 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
 
   const handleStartStop = async () => {
     try {
-      if (timeTracking?.isRunning) await stopTimer({ variables: { taskId, workspaceId } });
+      if (timeTracking?.isRunning)
+        await stopTimer({ variables: { taskId, workspaceId } });
       else await startTimer({ variables: { taskId, workspaceId } });
-    } catch (e) { console.error("Timer error:", e); }
+    } catch (e) {
+      console.error("Timer error:", e);
+    }
   };
 
   const handleReset = async () => {
-    try { await resetTimer({ variables: { taskId, workspaceId } }); } catch (e) { console.error(e); }
+    try {
+      await resetTimer({ variables: { taskId, workspaceId } });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleManualAdd = async () => {
     const match = manualInput.match(/^(\d+)h?\s*(\d*)m?$/i);
-    if (!match) { toast.error("Format: 1h 30m ou 45m"); return; }
+    if (!match) {
+      toast.error("Format: 1h 30m ou 45m");
+      return;
+    }
     const h = parseInt(match[1]) || 0;
     const m = parseInt(match[2]) || 0;
     const totalSec = h * 3600 + m * 60;
     if (totalSec <= 0) return;
     try {
-      await addManualTime({ variables: { taskId, seconds: totalSec, workspaceId } });
+      // onError étant fourni, un échec GraphQL ne throw pas : vérifier result.data
+      // avant de vider/fermer le formulaire.
+      const result = await addManualTime({
+        variables: { taskId, seconds: totalSec, workspaceId },
+      });
+      if (!result?.data?.addManualTime) return;
       setManualInput("");
       setShowManual(false);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleSaveSettings = useCallback(async () => {
     await updateSettings({
-      variables: { taskId, hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null, roundingOption, workspaceId },
+      variables: {
+        taskId,
+        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+        roundingOption,
+        workspaceId,
+      },
     });
   }, [taskId, hourlyRate, roundingOption, workspaceId, updateSettings]);
 
   const isRunning = timeTracking?.isRunning;
   const hasTime = currentTime > 0;
-  const price = hourlyRate && currentTime > 0 ? (() => {
-    const hours = currentTime / 3600;
-    const billable = roundingOption === 'up' ? Math.ceil(hours) : roundingOption === 'down' ? Math.floor(hours) : hours;
-    return (billable * parseFloat(hourlyRate)).toFixed(2);
-  })() : null;
+  const price =
+    hourlyRate && currentTime > 0
+      ? (() => {
+          const hours = currentTime / 3600;
+          const billable =
+            roundingOption === "up"
+              ? Math.ceil(hours)
+              : roundingOption === "down"
+                ? Math.floor(hours)
+                : hours;
+          return (billable * parseFloat(hourlyRate)).toFixed(2);
+        })()
+      : null;
 
   return (
     <div className="w-full">
       {/* Header — temps total */}
       <div className="px-4 pt-3 pb-2 flex items-center justify-between">
         <span className="text-sm font-medium text-foreground">Temps suivi</span>
-        <span className="text-sm font-mono tabular-nums text-foreground font-semibold">{formatShort(currentTime)}</span>
+        <span className="text-sm font-mono tabular-nums text-foreground font-semibold">
+          {formatShort(currentTime)}
+        </span>
       </div>
 
       {/* Timer principal */}
@@ -152,7 +215,9 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
             onClick={handleStartStop}
             disabled={starting || stopping}
             className={`h-7 w-7 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
-              isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-[#5A50FF] hover:bg-[#4a42d4]'
+              isRunning
+                ? "bg-red-500 hover:bg-red-600"
+                : "bg-[#5A50FF] hover:bg-[#4a42d4]"
             }`}
             title={isRunning ? "Arrêter" : "Démarrer"}
           >
@@ -171,12 +236,17 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
           <Clock className="h-3 w-3" />
           <span>Lancé par</span>
           <Avatar className="h-4 w-4">
-            <AvatarImage src={timeTracking.startedBy.userImage} className="object-cover" />
+            <AvatarImage
+              src={timeTracking.startedBy.userImage}
+              className="object-cover"
+            />
             <AvatarFallback className="text-[7px]">
               {timeTracking.startedBy.userName?.[0]?.toUpperCase() || "?"}
             </AvatarFallback>
           </Avatar>
-          <span className="font-medium text-foreground">{timeTracking.startedBy.userName}</span>
+          <span className="font-medium text-foreground">
+            {timeTracking.startedBy.userName}
+          </span>
         </div>
       )}
 
@@ -203,13 +273,26 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
                 placeholder="Ex: 1h 30m"
                 className="flex-1 h-8 rounded-md border border-input bg-background px-2.5 text-sm outline-none focus:ring-1 focus:ring-[#5A50FF]/30 focus:border-ring placeholder:text-muted-foreground/40"
                 autoFocus
-                onKeyDown={(e) => { if (e.key === 'Enter') handleManualAdd(); if (e.key === 'Escape') setShowManual(false); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleManualAdd();
+                  if (e.key === "Escape") setShowManual(false);
+                }}
               />
-              <Button size="sm" className="h-8 px-3 text-xs bg-[#5A50FF] hover:bg-[#4a42d4] text-white" onClick={handleManualAdd} disabled={addingManual || !manualInput.trim()}>
+              <Button
+                size="sm"
+                className="h-8 px-3 text-xs bg-[#5A50FF] hover:bg-[#4a42d4] text-white"
+                onClick={handleManualAdd}
+                disabled={addingManual || !manualInput.trim()}
+              >
                 Ajouter
               </Button>
             </div>
-            <button onClick={() => setShowManual(false)} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">Annuler</button>
+            <button
+              onClick={() => setShowManual(false)}
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              Annuler
+            </button>
           </div>
         )}
       </div>
@@ -221,7 +304,9 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
       <div className="px-4 py-2.5 space-y-2.5">
         <div className="flex items-center gap-2">
           <div className="flex-1">
-            <Label className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">Taux horaire</Label>
+            <Label className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">
+              Taux horaire
+            </Label>
             <div className="relative mt-0.5">
               <Input
                 type="number"
@@ -230,19 +315,35 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
                 value={hourlyRate}
                 onChange={(e) => setHourlyRate(e.target.value)}
                 onBlur={handleSaveSettings}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveSettings(); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveSettings();
+                }}
                 placeholder="0.00"
                 className="h-8 pr-8 text-sm"
               />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground/50 pointer-events-none">€/h</span>
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground/50 pointer-events-none">
+                €/h
+              </span>
             </div>
           </div>
           <div className="flex-1">
-            <Label className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">Arrondi</Label>
-            <Select value={roundingOption} onValueChange={(v) => {
-              setRoundingOption(v);
-              updateSettings({ variables: { taskId, hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null, roundingOption: v, workspaceId } });
-            }}>
+            <Label className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">
+              Arrondi
+            </Label>
+            <Select
+              value={roundingOption}
+              onValueChange={(v) => {
+                setRoundingOption(v);
+                updateSettings({
+                  variables: {
+                    taskId,
+                    hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+                    roundingOption: v,
+                    workspaceId,
+                  },
+                });
+              }}
+            >
               <SelectTrigger className="h-8 text-sm mt-0.5">
                 <SelectValue />
               </SelectTrigger>

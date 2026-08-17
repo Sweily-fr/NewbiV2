@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -9,19 +9,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/src/components/ui/dialog"
-import { Button } from "@/src/components/ui/button"
-import { InputWithError } from "@/src/components/ui/input-with-error"
-import { Label } from "@/src/components/ui/label"
-import { Textarea } from "@/src/components/ui/textarea"
-import { useUpdateClient } from "@/src/graphql/clientQueries"
-import { toast } from "@/src/components/ui/sonner"
+} from "@/src/components/ui/dialog";
+import { Button } from "@/src/components/ui/button";
+import { InputWithError } from "@/src/components/ui/input-with-error";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import { useUpdateClient } from "@/src/graphql/clientQueries";
+import { toast } from "@/src/components/ui/sonner";
 
 interface QuickEditClientModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  client: any
-  onClientUpdated?: (updatedClient: any) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  client: any;
+  onClientUpdated?: (updatedClient: any) => void;
 }
 
 export function QuickEditClientModal({
@@ -30,9 +30,9 @@ export function QuickEditClientModal({
   client,
   onClientUpdated,
 }: QuickEditClientModalProps) {
-  const [saving, setSaving] = useState(false)
-  const [hasNotified, setHasNotified] = useState(false)
-  const { updateClient } = useUpdateClient(undefined, { showToast: false })
+  const [saving, setSaving] = useState(false);
+  const [hasNotified, setHasNotified] = useState(false);
+  const { updateClient } = useUpdateClient(undefined, { showToast: false });
 
   const {
     register,
@@ -52,15 +52,16 @@ export function QuickEditClientModal({
       addressPostalCode: client?.address?.postalCode || "",
       addressCountry: client?.address?.country || "",
     },
-  })
+  });
 
-  // Client hors France : SIREN/TVA (notions FR) masqués et non stockés
+  // Client hors France : labels neutres (numéro fiscal / TVA locale) au lieu de SIREN/N° TVA
   const isForeignClient = (() => {
+    if (client?.isInternational === true) return true;
     const c = String(watch("addressCountry") || "")
       .trim()
-      .toLowerCase()
-    return c !== "" && c !== "france" && c !== "fr"
-  })()
+      .toLowerCase();
+    return c !== "" && c !== "france" && c !== "fr";
+  })();
 
   // Mettre à jour le formulaire quand le client change
   useEffect(() => {
@@ -75,51 +76,50 @@ export function QuickEditClientModal({
         addressCity: client.address?.city || "",
         addressPostalCode: client.address?.postalCode || "",
         addressCountry: client.address?.country || "",
-      })
+      });
     }
-  }, [client, reset])
+  }, [client, reset]);
 
   const onSubmit = async (data: any) => {
     try {
-      setSaving(true)
+      setSaving(true);
 
       const input = {
         type: client.type, // Garder le type du client
         name: data.name,
         email: data.email,
-        // Client hors France : pas de SIREN/TVA (notions FR) → rien en base
-        siret: isForeignClient ? undefined : data.siret,
-        vatNumber: isForeignClient ? undefined : data.vatNumber,
+        siret: data.siret,
+        vatNumber: data.vatNumber,
         address: {
           street: data.addressStreet,
           city: data.addressCity,
           postalCode: data.addressPostalCode,
           country: data.addressCountry,
         },
-      }
+      };
 
-      const result = await updateClient(client.id, input)
+      const result = await updateClient(client.id, input);
 
       if (result) {
         // Notification unique avec flag
         if (!hasNotified) {
-          setHasNotified(true)
-          toast.success("Client mis à jour avec succès")
+          setHasNotified(true);
+          toast.success("Client mis à jour avec succès");
         }
         // Fermer le modal et mettre à jour
-        onClientUpdated?.(result)
-        onOpenChange(false)
-        reset()
+        onClientUpdated?.(result);
+        onOpenChange(false);
+        reset();
         // Reset du flag après fermeture
-        setTimeout(() => setHasNotified(false), 1000)
+        setTimeout(() => setHasNotified(false), 1000);
       }
     } catch (error: any) {
-      console.error("Erreur lors de la mise à jour du client:", error)
-      toast.error(error.message || "Erreur lors de la mise à jour du client")
+      console.error("Erreur lors de la mise à jour du client:", error);
+      toast.error(error.message || "Erreur lors de la mise à jour du client");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,26 +158,26 @@ export function QuickEditClientModal({
               error={errors.phone?.message as string}
             />
 
-            {!isForeignClient && (
-              <>
-                <InputWithError
-                  label="SIRET"
-                  {...register("siret")}
-                  error={errors.siret?.message as string}
-                />
+            <InputWithError
+              label={isForeignClient ? "Numéro fiscal (optionnel)" : "SIRET"}
+              placeholder={isForeignClient ? "123456789" : undefined}
+              {...register("siret")}
+              error={errors.siret?.message as string}
+            />
 
-                <InputWithError
-                  label="Numéro de TVA"
-                  {...register("vatNumber")}
-                  error={errors.vatNumber?.message as string}
-                />
-              </>
-            )}
+            <InputWithError
+              label={
+                isForeignClient ? "Numéro de TVA (optionnel)" : "Numéro de TVA"
+              }
+              placeholder={isForeignClient ? "SE123456789012" : undefined}
+              {...register("vatNumber")}
+              error={errors.vatNumber?.message as string}
+            />
           </div>
 
           <div className="space-y-4">
             <h3 className="text-sm font-medium">Adresse</h3>
-            
+
             <InputWithError
               label="Rue"
               {...register("addressStreet")}
@@ -221,5 +221,5 @@ export function QuickEditClientModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

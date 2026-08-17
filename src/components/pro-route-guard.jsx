@@ -18,21 +18,33 @@ import { Loader2 } from "lucide-react";
 
 const WRITE_PATH_PATTERNS = ["/new", "/nouveau", "/edit", "/editer", "/avoir/"];
 
+// Une fois le contexte d'abonnement initialisé une première fois dans la
+// session, les montages suivants du guard rendent directement les enfants :
+// sans ce flag, chaque navigation repartait de isReady=false et affichait un
+// flash de spinner plein écran alors que les données étaient déjà en mémoire.
+let subscriptionEverInitialized = false;
+
 export function ProRouteGuard({
   children,
   pageName,
   requirePaidSubscription = false,
+  // Skeleton de la page à afficher pendant l'init de l'abonnement : évite un
+  // spinner plein écran entre le loading.jsx de la route et le contenu réel.
+  fallback = null,
 }) {
   const { isActive, loading, hasInitialized } = useSubscription();
   const pathname = usePathname();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(
+    () => subscriptionEverInitialized || (!loading && hasInitialized),
+  );
   const hasRedirectedRef = useRef(false);
 
   const isWritePage = WRITE_PATH_PATTERNS.some((p) => pathname?.includes(p));
 
   useEffect(() => {
     if (!loading && hasInitialized) {
+      subscriptionEverInitialized = true;
       setIsReady(true);
     }
   }, [loading, hasInitialized]);
@@ -52,18 +64,22 @@ export function ProRouteGuard({
   // Loader pendant le chargement
   if (!isReady) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
+      fallback ?? (
+        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      )
     );
   }
 
   // Si page write + abonnement inactif → loader pendant la redirection
   if (!isActive(requirePaidSubscription) && isWritePage) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
+      fallback ?? (
+        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      )
     );
   }
 

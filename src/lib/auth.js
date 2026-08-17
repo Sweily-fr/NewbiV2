@@ -10,6 +10,7 @@ import {
   stripePlugin,
   organizationPlugin,
   multiSessionPlugin,
+  emailOTPPlugin,
 } from "./auth-plugins";
 import { beforeSignInHook, afterHook } from "./auth-hooks";
 import {
@@ -73,7 +74,9 @@ export const auth = betterAuth({
     updateAge: 60 * 60, // 1 heure - Renouvellement automatique si utilisateur actif
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes — révocation de session effective rapidement
+      // 1 minute : fenêtre max pendant laquelle une session révoquée en base
+      // reste utilisable (get-session et /api/auth/token lisent ce cache).
+      maxAge: 60,
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {
@@ -115,6 +118,48 @@ export const auth = betterAuth({
                 `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`,
               );
 
+              // L'invitation dispense de l'étape SIRET, mais seulement parce
+              // que l'organisation qui invite est, elle, déjà qualifiée : le
+              // rattachement professionnel est alors transitif. Si elle ne
+              // l'est pas, la dispense créerait un chemin d'accès sans la
+              // moindre donnée d'entreprise — le contournement le plus simple
+              // de tout le dispositif.
+              const invitingOrg = await mongoDb
+                .collection("organization")
+                .findOne(
+                  { _id: pendingInvitation.organizationId },
+                  { projection: { siret: 1, siretVerifiedAt: 1 } },
+                );
+
+              const invitingOrgQualified = Boolean(invitingOrg?.siret);
+
+              if (!invitingOrgQualified) {
+                console.warn(
+                  `⚠️ [USER CREATE] ${user.email} invité par une org sans SIRET (${pendingInvitation.organizationId}) — onboarding requis`,
+                );
+                await mongoDb.collection("user").updateOne(
+                  { _id: new ObjectId(user.id) },
+                  {
+                    $set: {
+                      hasSeenOnboarding: false,
+                      isInvitedUser: true,
+                      pendingInvitationId: pendingInvitation._id.toString(),
+                      onboardingStep: "workspace",
+                    },
+                  },
+                );
+                return user;
+              }
+
+              if (!invitingOrg.siretVerifiedAt) {
+                // Organisation antérieure à la vérification au registre : on
+                // laisse passer (son SIRET a été saisi avant la mise en place
+                // du contrôle) mais on le trace pour le rattrapage.
+                console.warn(
+                  `⚠️ [USER CREATE] Org ${pendingInvitation.organizationId} a un SIRET non vérifié au registre (compte antérieur au contrôle)`,
+                );
+              }
+
               // Marquer l'utilisateur comme invité — skip onboarding complet
               await mongoDb.collection("user").updateOne(
                 { _id: new ObjectId(user.id) },
@@ -124,12 +169,21 @@ export const auth = betterAuth({
                     isInvitedUser: true,
                     pendingInvitationId: pendingInvitation._id.toString(),
                     onboardingStep: "completed",
+                    // Rattachement professionnel hérité de l'organisation
+                    // invitante, tracé pour être auditable au même titre
+                    // qu'une déclaration signée.
+                    professionalUseBasis: {
+                      type: "invitation",
+                      organizationId: pendingInvitation.organizationId,
+                      organizationSiret: invitingOrg.siret,
+                      recordedAt: new Date(),
+                    },
                   },
                 },
               );
 
               console.log(
-                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed)`,
+                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité (onboardingStep: completed, org SIRET ${invitingOrg.siret})`,
               );
               return user;
             }
@@ -175,11 +229,16 @@ export const auth = betterAuth({
                     orgName: user.name || "Mon entreprise",
                     orgType: "business",
                   },
-                  appTrialDays: 30,
+                  // Pas d'essai ici : il est accordé par
+                  // PATCH /api/onboarding/step une fois le SIRET vérifié au
+                  // registre et la déclaration d'usage professionnel signée.
+                  // Le démarrer au signup donnait 30 jours d'accès à un compte
+                  // dont rien n'établissait le caractère professionnel.
+                  appTrialDays: null,
                   markOnboardingComplete: false, // workspace step still pending
                 });
                 console.log(
-                  `✅ [USER CREATE] Org placeholder + trial app 30j créés pour ${user.email}`,
+                  `✅ [USER CREATE] Org placeholder créée pour ${user.email} (essai accordé après vérification SIRET)`,
                 );
               } catch (trialError) {
                 // Non-fatal: better-auth ne bloque pas le signup si la création
@@ -237,6 +296,32 @@ export const auth = betterAuth({
             return { data: session };
           }
         },
+        after: async (session) => {
+          // Limite de sessions simultanées (réglage org, défaut 1) appliquée à
+          // CHAQUE création de session, quel que soit le flux (email, OAuth,
+          // mobile). Au-delà de la limite, les sessions les moins récemment
+          // actives sont révoquées ; la session qui vient d'être créée est
+          // toujours conservée.
+          try {
+            const { enforceSessionLimitForUser } =
+              await import("./enforce-session-limit.js");
+            await enforceSessionLimitForUser({
+              userId: session.userId,
+              orgId: session.activeOrganizationId || null,
+              currentSessionToken: session.token,
+              trigger: "login_session_create",
+              // UA/IP de la session qui vient d'être créée : identifie QUI a
+              // déclenché la révocation des autres sessions (journal).
+              meta: {
+                newSessionUserAgent: session.userAgent || null,
+                newSessionIp: session.ipAddress || null,
+              },
+            });
+          } catch (error) {
+            // Non bloquant : ne jamais faire échouer un login pour ça
+            console.error("❌ [SESSION CREATE] enforceSessionLimit:", error);
+          }
+        },
       },
     },
   },
@@ -253,6 +338,7 @@ export const auth = betterAuth({
     stripePlugin,
     organizationPlugin,
     multiSessionPlugin,
+    emailOTPPlugin,
     expo(),
   ],
 
@@ -288,7 +374,19 @@ export const auth = betterAuth({
   },
 
   emailVerification: {
-    sendVerificationEmail: async ({ user, url }) => {
+    sendVerificationEmail: async ({ user, url }, request) => {
+      // Le flux MOBILE (app-newbi) vérifie l'email par CODE OTP (plugin emailOTP),
+      // pas par lien. Pour éviter un DOUBLE email sur mobile, on n'envoie pas le
+      // lien quand la requête vient de l'app (origin "newbi://" posé par
+      // l'auth-client mobile) → l'app enverra elle-même le code. Le DESKTOP
+      // (origin https://…) reçoit le lien comme avant, inchangé.
+      const origin = request?.headers?.get?.("origin") || "";
+      if (origin.startsWith("newbi://")) {
+        console.log(
+          "[EMAIL VERIFICATION] Origine mobile → pas de lien (vérif par code OTP côté app)",
+        );
+        return;
+      }
       await sendVerificationEmail(user, url);
     },
     sendOnSignUp: true,
@@ -494,20 +592,34 @@ export const auth = betterAuth({
     },
   },
 
+  // `disableImplicitSignUp` : une connexion sociale ne CRÉE plus de compte par
+  // défaut ; il faut le demander explicitement avec `requestSignUp: true`.
+  //
+  // Sans ça, l'app iOS gardait une porte d'inscription dérobée : « Se connecter
+  // avec Apple » créait le compte d'un inconnu sans jamais afficher de
+  // formulaire. Or l'app ne doit plus acquérir d'utilisateur — c'est le fond du
+  // rejet App Store 3.1.1 / 3.1.3(c) (cf. app-newbi, welcome.jsx).
+  //
+  // Le web conserve son inscription sociale en passant `requestSignUp: true`
+  // sur ses écrans d'inscription ; le mobile ne le passe jamais, donc il ne
+  // peut que connecter des comptes existants.
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      disableImplicitSignUp: true,
     },
     github: {
       clientId: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      disableImplicitSignUp: true,
     },
     apple: {
       clientId: process.env.APPLE_CLIENT_ID,
       clientSecret: process.env.APPLE_CLIENT_SECRET || "placeholder",
       appBundleIdentifier:
         process.env.APPLE_APP_BUNDLE_IDENTIFIER || "fr.newbi.app",
+      disableImplicitSignUp: true,
     },
   },
 

@@ -27,6 +27,8 @@ export const useActivityNotifications = (options = {}) => {
     variables: { workspaceId, limit, offset, unreadOnly },
     skip: !workspaceId,
     pollInterval: fallbackPollInterval,
+    // Suspendre le polling quand l'onglet est en arrière-plan
+    skipPollAttempt: () => typeof document !== "undefined" && document.hidden,
   });
 
   const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery(
@@ -35,6 +37,8 @@ export const useActivityNotifications = (options = {}) => {
       variables: { workspaceId },
       skip: !workspaceId,
       pollInterval: fallbackPollInterval,
+      // Suspendre le polling quand l'onglet est en arrière-plan
+      skipPollAttempt: () => typeof document !== "undefined" && document.hidden,
     },
   );
 

@@ -3,6 +3,10 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
+import {
+  KanbanListPageSkeleton,
+  KanbanTableSkeleton,
+} from "./components/kanban-list-skeleton";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import {
   Plus,
@@ -81,7 +85,6 @@ import {
   PaginationContent,
   PaginationItem,
 } from "@/src/components/ui/pagination";
-import { Skeleton } from "@/src/components/ui/skeleton";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 import {
   DropdownMenu,
@@ -97,7 +100,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import * as XLSX from "xlsx";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMutation } from "@apollo/client";
@@ -232,7 +234,9 @@ function KanbanPageContent() {
   }, [boards]);
 
   // Export Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    // xlsx (~800 KB) chargé au clic uniquement
+    const XLSX = await import("xlsx");
     const rows = (boards || []).map((b) => ({
       Nom: b.title || "",
       Description: b.description || "",
@@ -1619,64 +1623,10 @@ export default function KanbanPage() {
     <RoleRouteGuard
       roles={["owner", "admin", "member", "viewer"]}
       fallbackUrl="/dashboard"
+      loadingComponent={<KanbanListPageSkeleton />}
       toastMessage="Vous n'avez pas accès aux listes de tâches. Cette fonctionnalité est réservée aux membres de l'équipe."
     >
       <KanbanPageContent />
     </RoleRouteGuard>
-  );
-}
-
-function KanbanTableSkeleton() {
-  return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-4 sm:px-6">
-      {/* Table Header Skeleton */}
-      <div className="flex-shrink-0 border-b border-border py-3">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-4 w-4" />
-          <Skeleton className="h-4 w-[200px]" />
-          <Skeleton className="h-4 w-[120px]" />
-          <Skeleton className="h-4 w-[120px]" />
-          <Skeleton className="h-4 w-[100px]" />
-        </div>
-      </div>
-
-      {/* Table Body Skeleton */}
-      <div className="flex-1 overflow-auto">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 py-4 border-b border-gray-100 dark:border-gray-800"
-          >
-            <Skeleton className="h-4 w-4" />
-            <div className="flex-1">
-              <Skeleton className="h-4 w-[250px] mb-2" />
-              <Skeleton className="h-3 w-[180px]" />
-            </div>
-            <Skeleton className="h-4 w-[100px]" />
-            <Skeleton className="h-4 w-[100px]" />
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-8 rounded" />
-              <Skeleton className="h-8 w-8 rounded" />
-              <Skeleton className="h-8 w-8 rounded" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Pagination Skeleton */}
-      <div className="flex items-center justify-between py-3 border-t border-border flex-shrink-0">
-        <Skeleton className="h-4 w-[150px]" />
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-7 w-[100px]" />
-          <Skeleton className="h-4 w-[80px]" />
-          <div className="flex gap-1">
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

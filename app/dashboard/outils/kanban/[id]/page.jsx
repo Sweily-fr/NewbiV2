@@ -731,6 +731,7 @@ function KanbanBoardPageContent({ params }) {
     getTasksByColumn,
     workspaceId,
     markReorderAction,
+    hasSwitchedWorkspace,
   } = useKanbanBoard(id, isRedirecting);
   useWorkspace(); // Nécessaire pour initialiser le workspace, mais loading n'est plus bloquant ici
 
@@ -1394,25 +1395,15 @@ function KanbanBoardPageContent({ params }) {
     enabled: true,
   });
 
-  // Solution de secours : Rediriger si le workspaceId change
-  const previousWorkspaceIdRef = React.useRef(workspaceId);
+  // Solution de secours : rediriger si le workspace a changé sous nos pieds
+  // (2e onglet, refresh de session…). `hasSwitchedWorkspace` vient du hook, qui
+  // a déjà coupé la query et les subscriptions : ici on ne fait que sortir de
+  // la page de détail, dont l'id n'appartient plus à l'organisation active.
   useEffect(() => {
-    if (
-      previousWorkspaceIdRef.current &&
-      workspaceId &&
-      previousWorkspaceIdRef.current !== workspaceId
-    ) {
-      console.log(
-        "[Kanban] 🔄 Changement de workspace détecté, redirection...",
-        {
-          from: previousWorkspaceIdRef.current,
-          to: workspaceId,
-        },
-      );
-      router.push("/dashboard/outils/kanban");
+    if (hasSwitchedWorkspace) {
+      router.replace("/dashboard/outils/kanban");
     }
-    previousWorkspaceIdRef.current = workspaceId;
-  }, [workspaceId, router]);
+  }, [hasSwitchedWorkspace, router]);
 
   // Rediriger si le board n'existe pas
   useEffect(() => {
@@ -1422,6 +1413,13 @@ function KanbanBoardPageContent({ params }) {
     }
   }, [error, workspaceId, router, id, isRedirecting]);
 
+  // Changement d'organisation en cours (annoncé par un switcher ou déjà
+  // effectif) : on gèle le rendu, la redirection vers la liste est en route.
+  // Avant le skeleton, sinon le tableau clignote pendant la bascule.
+  if (hasChangedOrganization || hasSwitchedWorkspace) {
+    return null;
+  }
+
   // Pendant le chargement, afficher le skeleton adapté à la vue active
   // Note: workspaceLoading retiré car !board couvre déjà le cas où workspaceId n'est pas dispo
   // (la query est skip si !workspaceId → board reste undefined → !board = true)
@@ -1430,10 +1428,6 @@ function KanbanBoardPageContent({ params }) {
     if (isList) return <KanbanListSkeleton />;
     if (isGantt) return <KanbanGanttSkeleton />;
     return <KanbanPageSkeleton />;
-  }
-
-  if (hasChangedOrganization) {
-    return null;
   }
 
   if (isRedirecting) {

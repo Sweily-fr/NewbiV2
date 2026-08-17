@@ -3,6 +3,10 @@
 import { authClient } from "@/src/lib/auth-client";
 import { useUser } from "@/src/lib/auth/hooks";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  getFullOrganizationCached,
+  peekFullOrganization,
+} from "@/src/lib/full-organization-cache";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 /**
@@ -26,8 +30,15 @@ export function usePermissions() {
   // ✅ FIX: useWorkspace exporte "loading" et "organization" (pas isLoading et activeOrganization)
   const { organization: activeOrganization, loading: isOrgLoading } =
     useWorkspace();
-  const [orgWithMembers, setOrgWithMembers] = useState(null);
-  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+  // Cache partagé (full-organization-cache) : les ~25 sites qui montent
+  // usePermissions partagent la même entrée et la même promesse réseau que
+  // useWorkspace. Sans lui, chaque montage repartait de null (spinner plein
+  // écran des gardes) et relançait getFullOrganization.
+  const cachedEntry = peekFullOrganization(activeOrganization?.id);
+  const [orgWithMembers, setOrgWithMembers] = useState(
+    cachedEntry?.org || null,
+  );
+  const [isLoadingMembers, setIsLoadingMembers] = useState(!cachedEntry);
   const hasLoadedRef = useRef(false);
   const permissionCacheRef = useRef(new Map()); // Cache des permissions
 
@@ -37,8 +48,9 @@ export function usePermissions() {
   // Réinitialiser le flag quand l'organisation change
   useEffect(() => {
     hasLoadedRef.current = false;
-    setOrgWithMembers(null);
-    setIsLoadingMembers(true); // ✅ FIX: Réinitialiser l'état de chargement
+    const cached = peekFullOrganization(activeOrganization?.id);
+    setOrgWithMembers(cached?.org || null);
+    setIsLoadingMembers(!cached);
   }, [activeOrganization?.id]);
 
   // Charger l'organisation complète avec les membres
@@ -47,25 +59,31 @@ export function usePermissions() {
 
     hasLoadedRef.current = true;
 
+    const cached = peekFullOrganization(activeOrganization.id);
+    if (cached) {
+      setOrgWithMembers(cached.org);
+      setIsLoadingMembers(false);
+      // Entrée encore fraîche : pas d'appel réseau
+      if (cached.isFresh) return;
+    }
+
     // Si l'organisation a déjà les membres, l'utiliser directement
-    if (activeOrganization.members) {
+    if (!cached && activeOrganization.members) {
       setOrgWithMembers(activeOrganization);
       setIsLoadingMembers(false); // ✅ FIX: Marquer comme chargé
       return;
     }
 
-    // Sinon, charger l'organisation complète
-    setIsLoadingMembers(true);
-    authClient.organization
-      .getFullOrganization({
-        organizationId: activeOrganization.id,
-      })
-      .then(({ data }) => {
-        setOrgWithMembers(data);
-      })
-      .catch((error) => {
-        console.error("Error loading organization members:", error);
-        setOrgWithMembers({ ...activeOrganization, members: [] });
+    // Sinon, charger l'organisation complète via le cache partagé (dédupliqué,
+    // en arrière-plan si un cache périmé est déjà affiché)
+    if (!cached) setIsLoadingMembers(true);
+    getFullOrganizationCached(activeOrganization.id)
+      .then((data) => {
+        if (data) {
+          setOrgWithMembers(data);
+        } else if (!cached) {
+          setOrgWithMembers({ ...activeOrganization, members: [] });
+        }
       })
       .finally(() => {
         setIsLoadingMembers(false); // ✅ FIX: Toujours marquer comme terminé

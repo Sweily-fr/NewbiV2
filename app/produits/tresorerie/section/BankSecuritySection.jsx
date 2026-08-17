@@ -1,7 +1,18 @@
 "use client";
+
+import dynamic from "next/dynamic";
 import React from "react";
-import { Shield, LockOpen, Lock as LockIcon, Eye, ServerCrash } from "lucide-react";
-import DataFilterAnimation from "./DataFilterAnimation";
+import {
+  Shield,
+  LockOpen,
+  Lock as LockIcon,
+  Eye,
+  ServerCrash,
+} from "lucide-react";
+// Animation gsap chargée dans son propre chunk (hors chemin critique SEO)
+const DataFilterAnimation = dynamic(() => import("./DataFilterAnimation"), {
+  ssr: false,
+});
 
 export default function BankSecuritySection() {
   return (
@@ -64,7 +75,6 @@ export default function BankSecuritySection() {
           {/* Card 1 */}
           <div className="md:border-r border-b border-neutral-200">
             <div className="p-4 md:p-8">
-
               <h2 className="text-lg font-medium text-neutral-800">
                 Connexion sécurisée
               </h2>
@@ -79,43 +89,91 @@ export default function BankSecuritySection() {
                 {/* Newbi */}
                 <div className="flex flex-col items-center gap-2.5 shrink-0">
                   <div className="w-20 h-20 rounded-2xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center overflow-hidden">
-                    <img src="/newbi-icon.svg" alt="Newbi" className="w-full h-full object-cover" />
+                    <img
+                      src="/newbi-icon.svg"
+                      alt="Newbi"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  <span className="text-sm font-medium text-neutral-800">Newbi</span>
+                  <span className="text-sm font-medium text-neutral-800">
+                    Newbi
+                  </span>
                 </div>
 
                 {/* Line 1 */}
                 <div className="flex-1 flex items-center justify-center -mt-6 relative">
-                  <div className="w-full border-t border-dashed border-neutral-300" style={{ animation: "revealLine1 3s ease-out forwards" }} />
+                  <div
+                    className="w-full border-t border-dashed border-neutral-300"
+                    style={{ animation: "revealLine1 3s ease-out forwards" }}
+                  />
                   <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-                    <LockOpen className="w-3.5 h-3.5 text-neutral-300 absolute" style={{ opacity: 0, animation: "lockOpen1 3s ease-out forwards" }} />
-                    <LockIcon className="w-3.5 h-3.5 text-neutral-300 absolute" style={{ opacity: 0, animation: "lockClosed1 3s ease-out forwards" }} />
+                    <LockOpen
+                      className="w-3.5 h-3.5 text-neutral-300 absolute"
+                      style={{
+                        opacity: 0,
+                        animation: "lockOpen1 3s ease-out forwards",
+                      }}
+                    />
+                    <LockIcon
+                      className="w-3.5 h-3.5 text-neutral-300 absolute"
+                      style={{
+                        opacity: 0,
+                        animation: "lockClosed1 3s ease-out forwards",
+                      }}
+                    />
                   </div>
                 </div>
 
                 {/* Bridge API */}
                 <div className="flex flex-col items-center gap-2.5 shrink-0">
                   <div className="w-20 h-20 rounded-2xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center overflow-hidden">
-                    <img src="https://cdn.brandfetch.io/idnA3rbFGH/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1690558247926" alt="Bridge API" className="w-full h-full object-cover rounded-xl translate-y-1" />
+                    <img
+                      src="https://cdn.brandfetch.io/idnA3rbFGH/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1690558247926"
+                      alt="Bridge API"
+                      className="w-full h-full object-cover rounded-xl translate-y-1"
+                    />
                   </div>
-                  <span className="text-sm font-medium text-neutral-800">Bridge API</span>
+                  <span className="text-sm font-medium text-neutral-800">
+                    Bridge API
+                  </span>
                 </div>
 
                 {/* Line 2 */}
                 <div className="flex-1 flex items-center justify-center -mt-6 relative">
-                  <div className="w-full border-t border-dashed border-neutral-300" style={{ animation: "revealLine2 3s ease-out forwards" }} />
+                  <div
+                    className="w-full border-t border-dashed border-neutral-300"
+                    style={{ animation: "revealLine2 3s ease-out forwards" }}
+                  />
                   <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-                    <LockOpen className="w-3.5 h-3.5 text-neutral-300 absolute" style={{ opacity: 0, animation: "lockOpen2 3s ease-out forwards" }} />
-                    <LockIcon className="w-3.5 h-3.5 text-neutral-300 absolute" style={{ opacity: 0, animation: "lockClosed2 3s ease-out forwards" }} />
+                    <LockOpen
+                      className="w-3.5 h-3.5 text-neutral-300 absolute"
+                      style={{
+                        opacity: 0,
+                        animation: "lockOpen2 3s ease-out forwards",
+                      }}
+                    />
+                    <LockIcon
+                      className="w-3.5 h-3.5 text-neutral-300 absolute"
+                      style={{
+                        opacity: 0,
+                        animation: "lockClosed2 3s ease-out forwards",
+                      }}
+                    />
                   </div>
                 </div>
 
                 {/* Banque */}
                 <div className="flex flex-col items-center gap-2.5 shrink-0">
                   <div className="w-20 h-20 rounded-2xl bg-white border border-neutral-200 shadow-sm flex items-center justify-center overflow-hidden">
-                    <img src="https://cdn.brandfetch.io/iddTHt7H9X/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1667628466273" alt="Banque" className="w-full h-full object-cover rounded-xl" />
+                    <img
+                      src="https://cdn.brandfetch.io/iddTHt7H9X/w/400/h/400/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1667628466273"
+                      alt="Banque"
+                      className="w-full h-full object-cover rounded-xl"
+                    />
                   </div>
-                  <span className="text-sm font-medium text-neutral-800">Votre banque</span>
+                  <span className="text-sm font-medium text-neutral-800">
+                    Votre banque
+                  </span>
                 </div>
               </div>
             </div>
@@ -172,10 +230,14 @@ export default function BankSecuritySection() {
                       {notif.icon}
                     </div>
                     <div className="flex-1 min-w-0 space-y-1">
-                      <p className="text-sm font-semibold text-neutral-800">{notif.title}</p>
+                      <p className="text-sm font-semibold text-neutral-800">
+                        {notif.title}
+                      </p>
                       <p className="text-xs text-neutral-400">{notif.desc}</p>
                     </div>
-                    <span className={`text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 ${notif.badgeColor}`}>
+                    <span
+                      className={`text-[9px] font-medium px-2 py-1 rounded-md border shrink-0 ${notif.badgeColor}`}
+                    >
                       {notif.badge}
                     </span>
                   </div>
@@ -218,20 +280,27 @@ export default function BankSecuritySection() {
                       <div>
                         <div className="w-12 h-1.5 rounded bg-neutral-200 mb-1.5" />
                         <div className="w-full h-7 rounded-md border border-neutral-200 bg-neutral-50 px-2 flex items-center">
-                          <span className="text-[8px] text-neutral-400">FR76 •••• •••• •••• •••• ••••</span>
+                          <span className="text-[8px] text-neutral-400">
+                            FR76 •••• •••• •••• •••• ••••
+                          </span>
                         </div>
                       </div>
                       <div>
                         <div className="w-10 h-1.5 rounded bg-neutral-200 mb-1.5" />
                         <div className="w-full h-7 rounded-md border border-neutral-200 bg-neutral-50 px-2 flex items-center">
-                          <span className="text-[8px] text-neutral-400">1 500,00 €</span>
+                          <span className="text-[8px] text-neutral-400">
+                            1 500,00 €
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Disabled button with lock */}
                     <div className="relative">
-                      <button className="w-full py-2.5 rounded-lg bg-neutral-200 text-neutral-400 text-xs font-medium cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                      <button
+                        className="w-full py-2.5 rounded-lg bg-neutral-200 text-neutral-400 text-xs font-medium cursor-not-allowed flex items-center justify-center gap-2"
+                        disabled
+                      >
                         <LockIcon className="w-3 h-3" />
                         Effectuer un virement
                       </button>

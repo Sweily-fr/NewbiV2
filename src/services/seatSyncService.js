@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { getPlanLimits as getCentralizedPlanLimits, getSeatPrice, SEAT_PRICE } from "../lib/plan-limits.js";
+import { getPlanLimits as getCentralizedPlanLimits } from "../lib/plan-limits.js";
 import { isAppTrialEnabled } from "../lib/feature-flags.js";
 import { isTrialAppActive } from "../lib/trial-app.js";
 
@@ -25,7 +25,7 @@ export class SeatSyncService {
 
     // Adapter le format pour la compatibilité avec le code existant
     return {
-      users: centralLimits.invitableUsers,  // Nombre d'utilisateurs invitables
+      users: centralLimits.invitableUsers, // Nombre d'utilisateurs invitables
       accountants: centralLimits.accountants,
       canAddPaidUsers: centralLimits.canAddPaidUsers,
       maxPaidSeats: centralLimits.maxPaidSeats ?? -1,
@@ -63,10 +63,12 @@ export class SeatSyncService {
       if (!subscription) {
         let trialActive = false;
         if (isAppTrialEnabled() && ObjectId.isValid(organizationId)) {
-          const orgDoc = await mongoDb.collection("organization").findOne(
-            { _id: new ObjectId(organizationId) },
-            { projection: { isTrialActive: 1, trialEndDate: 1 } },
-          );
+          const orgDoc = await mongoDb
+            .collection("organization")
+            .findOne(
+              { _id: new ObjectId(organizationId) },
+              { projection: { isTrialActive: 1, trialEndDate: 1 } },
+            );
           trialActive = isTrialAppActive(orgDoc);
         }
 
@@ -92,10 +94,10 @@ export class SeatSyncService {
         .toArray();
 
       const currentUsers = members.filter(
-        (m) => m.role !== "accountant" && m.role !== "owner"
+        (m) => m.role !== "accountant" && m.role !== "owner",
       ).length;
       const currentAccountants = members.filter(
-        (m) => m.role === "accountant"
+        (m) => m.role === "accountant",
       ).length;
 
       // 4. Compter les invitations pending par type
@@ -108,10 +110,10 @@ export class SeatSyncService {
         .toArray();
 
       const pendingUsers = pendingInvitations.filter(
-        (i) => i.role !== "accountant"
+        (i) => i.role !== "accountant",
       ).length;
       const pendingAccountants = pendingInvitations.filter(
-        (i) => i.role === "accountant"
+        (i) => i.role === "accountant",
       ).length;
 
       // 5. Totaux (membres + invitations pending)
@@ -237,7 +239,7 @@ export class SeatSyncService {
   /**
    * @deprecated Utiliser canInviteMember() à la place
    */
-  async canAddMember(organizationId, adapter) {
+  async canAddMember(organizationId) {
     // Redirige vers la nouvelle méthode pour compatibilité
     return this.canInviteMember(organizationId, "member");
   }
@@ -281,7 +283,7 @@ export class SeatSyncService {
    * @param {Object} adapter - Adapter Better Auth pour accéder à la DB
    * @returns {Promise<number>} Nombre de sièges additionnels à facturer
    */
-  async getAdditionalSeatsCount(organizationId, adapter) {
+  async getAdditionalSeatsCount(organizationId) {
     try {
       // Import MongoDB directement
       const { mongoDb } = await import("../lib/mongodb.js");
@@ -311,13 +313,13 @@ export class SeatSyncService {
 
       // 4. Exclure les comptables ET l'owner (owner n'est pas facturé, comptables sont gratuits)
       const billableMembers = members.filter(
-        (m) => m.role !== "accountant" && m.role !== "owner"
+        (m) => m.role !== "accountant" && m.role !== "owner",
       );
 
       // 5. Calculer les sièges additionnels = membres facturables - limite incluse
       const additionalSeats = Math.max(
         0,
-        billableMembers.length - includedUsers
+        billableMembers.length - includedUsers,
       );
 
       console.log(`📊 [SEAT CALC] Organisation ${organizationId}:`, {
@@ -326,7 +328,8 @@ export class SeatSyncService {
         totalMembers: members.length,
         billableMembers: billableMembers.length,
         ownersExcluded: members.filter((m) => m.role === "owner").length,
-        accountantsExcluded: members.filter((m) => m.role === "accountant").length,
+        accountantsExcluded: members.filter((m) => m.role === "accountant")
+          .length,
         additionalSeats,
       });
 
@@ -349,7 +352,7 @@ export class SeatSyncService {
   async syncSeatsAfterInvitationAccepted(organizationId, adapter) {
     try {
       console.log(
-        `🔄 [SEAT SYNC] Début synchronisation sièges pour organisation ${organizationId}`
+        `🔄 [SEAT SYNC] Début synchronisation sièges pour organisation ${organizationId}`,
       );
 
       // Import MongoDB
@@ -362,23 +365,23 @@ export class SeatSyncService {
 
       if (!subscription || !subscription.stripeSubscriptionId) {
         console.warn(
-          "⚠️ [SEAT SYNC] Aucun abonnement Stripe trouvé pour cette organisation"
+          "⚠️ [SEAT SYNC] Aucun abonnement Stripe trouvé pour cette organisation",
         );
         throw new Error("Aucun abonnement Stripe trouvé");
       }
 
       console.log(
-        `📋 [SEAT SYNC] Abonnement trouvé: ${subscription.stripeSubscriptionId}`
+        `📋 [SEAT SYNC] Abonnement trouvé: ${subscription.stripeSubscriptionId}`,
       );
 
       // 2. Calculer le nombre de sièges additionnels (avec notre nouvelle logique)
       const additionalSeats = await this.getAdditionalSeatsCount(
         organizationId,
-        adapter
+        adapter,
       );
 
       console.log(
-        `📊 [SEAT SYNC] Sièges additionnels à facturer: ${additionalSeats}`
+        `📊 [SEAT SYNC] Sièges additionnels à facturer: ${additionalSeats}`,
       );
 
       // 2.5. Récupérer les infos pour les emails
@@ -392,37 +395,36 @@ export class SeatSyncService {
 
       // Membres facturables = tous sauf owner, accountant et pending
       const billableMembers = members.filter(
-        (m) => m.role !== "owner" && m.role !== "accountant" && m.role !== "pending"
+        (m) =>
+          m.role !== "owner" && m.role !== "accountant" && m.role !== "pending",
       );
       const currentMembers = billableMembers.length;
       const availableSeats = Math.max(0, includedSeats - currentMembers);
 
-      // Récupérer l'organisation et l'owner pour l'email
-      const organization = await adapter.findOne({
-        model: "organization",
-        where: { id: organizationId },
-      });
-
+      // Récupérer l'owner pour l'email — via mongoDb : les appelants passent
+      // `auth.options.database` comme `adapter`, qui n'expose PAS findOne (d'où
+      // le TypeError d'origine). On suit la convention mongoDb du fichier.
+      const { ObjectId } = await import("mongodb");
       const ownerMember = members.find((m) => m.role === "owner");
-      const owner = ownerMember
-        ? await adapter.findOne({
-            model: "user",
-            where: { id: ownerMember.userId },
-          })
-        : null;
+      const owner =
+        ownerMember && ObjectId.isValid(ownerMember.userId)
+          ? await mongoDb
+              .collection("user")
+              .findOne({ _id: new ObjectId(ownerMember.userId) })
+          : null;
 
       // 3. Récupérer l'abonnement Stripe complet
       const stripeSubscription = await stripe.subscriptions.retrieve(
-        subscription.stripeSubscriptionId
+        subscription.stripeSubscriptionId,
       );
 
       console.log(
-        `💳 [SEAT SYNC] Abonnement Stripe récupéré, items actuels: ${stripeSubscription.items.data.length}`
+        `💳 [SEAT SYNC] Abonnement Stripe récupéré, items actuels: ${stripeSubscription.items.data.length}`,
       );
 
       // 4. Trouver le subscription_item pour les sièges additionnels
       let seatItem = stripeSubscription.items.data.find(
-        (item) => item.price.id === SEAT_PRICE_ID
+        (item) => item.price.id === SEAT_PRICE_ID,
       );
 
       // 5. Mettre à jour selon le nombre de sièges
@@ -433,7 +435,7 @@ export class SeatSyncService {
 
           // Créer un nouvel item pour les sièges additionnels
           console.log(
-            `➕ [SEAT SYNC] Création item sièges: ${additionalSeats} siège(s) à ${prices.seatCost}€/mois`
+            `➕ [SEAT SYNC] Création item sièges: ${additionalSeats} siège(s) à ${prices.seatCost}€/mois`,
           );
 
           await stripe.subscriptionItems.create(
@@ -445,19 +447,18 @@ export class SeatSyncService {
             },
             {
               idempotencyKey: `seat-add-${organizationId}-${Date.now()}`,
-            }
+            },
           );
 
           console.log(
-            `✅ [SEAT SYNC] Item sièges créé avec succès (${additionalSeats} sièges)`
+            `✅ [SEAT SYNC] Item sièges créé avec succès (${additionalSeats} sièges)`,
           );
 
           // Envoyer email d'ajout de siège additionnel
           if (owner?.email) {
             try {
-              const { sendAdditionalSeatAddedEmail } = await import(
-                "../lib/auth-utils.js"
-              );
+              const { sendAdditionalSeatAddedEmail } =
+                await import("../lib/auth-utils.js");
               const monthlyCost = `${(additionalSeats * 7.49).toFixed(2)}€/mois`;
 
               await sendAdditionalSeatAddedEmail({
@@ -471,19 +472,19 @@ export class SeatSyncService {
               });
 
               console.log(
-                `📧 [SEAT SYNC] Email d'ajout de siège envoyé à ${owner.email}`
+                `📧 [SEAT SYNC] Email d'ajout de siège envoyé à ${owner.email}`,
               );
             } catch (emailError) {
               console.error(
                 `⚠️ [SEAT SYNC] Erreur envoi email ajout siège:`,
-                emailError
+                emailError,
               );
             }
           }
         } else if (seatItem.quantity !== additionalSeats) {
           // Mettre à jour la quantité si elle a changé
           console.log(
-            `🔄 [SEAT SYNC] Mise à jour sièges: ${seatItem.quantity} → ${additionalSeats}`
+            `🔄 [SEAT SYNC] Mise à jour sièges: ${seatItem.quantity} → ${additionalSeats}`,
           );
 
           await stripe.subscriptionItems.update(seatItem.id, {
@@ -492,11 +493,11 @@ export class SeatSyncService {
           });
 
           console.log(
-            `✅ [SEAT SYNC] Quantité mise à jour avec succès (${additionalSeats} sièges)`
+            `✅ [SEAT SYNC] Quantité mise à jour avec succès (${additionalSeats} sièges)`,
           );
         } else {
           console.log(
-            `ℹ️ [SEAT SYNC] Quantité déjà correcte (${additionalSeats} sièges)`
+            `ℹ️ [SEAT SYNC] Quantité déjà correcte (${additionalSeats} sièges)`,
           );
         }
       } else {
@@ -504,7 +505,7 @@ export class SeatSyncService {
         if (seatItem) {
           // Supprimer l'item si tous les sièges additionnels ont été retirés
           console.log(
-            `🗑️ [SEAT SYNC] Suppression item sièges (plus de sièges additionnels)`
+            `🗑️ [SEAT SYNC] Suppression item sièges (plus de sièges additionnels)`,
           );
 
           await stripe.subscriptionItems.del(seatItem.id, {
@@ -525,9 +526,8 @@ export class SeatSyncService {
         owner?.email
       ) {
         try {
-          const { sendSeatLimitWarningEmail } = await import(
-            "../lib/auth-utils.js"
-          );
+          const { sendSeatLimitWarningEmail } =
+            await import("../lib/auth-utils.js");
 
           await sendSeatLimitWarningEmail({
             to: owner.email,
@@ -539,12 +539,12 @@ export class SeatSyncService {
           });
 
           console.log(
-            `📧 [SEAT SYNC] Email d'alerte limite envoyé à ${owner.email} (${availableSeats} sièges restants)`
+            `📧 [SEAT SYNC] Email d'alerte limite envoyé à ${owner.email} (${availableSeats} sièges restants)`,
           );
         } catch (emailError) {
           console.error(
             `⚠️ [SEAT SYNC] Erreur envoi email alerte limite:`,
-            emailError
+            emailError,
           );
         }
       }
@@ -567,7 +567,7 @@ export class SeatSyncService {
   async syncSeatsAfterInvitationAcceptedOLD(organizationId, adapter) {
     try {
       console.log(
-        `🔄 Début synchronisation sièges pour organisation ${organizationId}`
+        `🔄 Début synchronisation sièges pour organisation ${organizationId}`,
       );
 
       // Import MongoDB
@@ -580,7 +580,7 @@ export class SeatSyncService {
 
       if (!subscription || !subscription.stripeSubscriptionId) {
         console.warn(
-          "⚠️ Aucun abonnement Stripe trouvé pour cette organisation"
+          "⚠️ Aucun abonnement Stripe trouvé pour cette organisation",
         );
         throw new Error("Aucun abonnement Stripe trouvé");
       }
@@ -590,21 +590,21 @@ export class SeatSyncService {
       // 2. Calculer le nombre de sièges additionnels
       const additionalSeats = await this.getAdditionalSeatsCount(
         organizationId,
-        adapter
+        adapter,
       );
 
       // 3. Récupérer l'abonnement Stripe complet
       const stripeSubscription = await stripe.subscriptions.retrieve(
-        subscription.stripeSubscriptionId
+        subscription.stripeSubscriptionId,
       );
 
       console.log(
-        `💳 Abonnement Stripe récupéré, items actuels: ${stripeSubscription.items.data.length}`
+        `💳 Abonnement Stripe récupéré, items actuels: ${stripeSubscription.items.data.length}`,
       );
 
       // 4. Trouver le subscription_item pour les sièges additionnels
       let seatItem = stripeSubscription.items.data.find(
-        (item) => item.price.id === SEAT_PRICE_ID
+        (item) => item.price.id === SEAT_PRICE_ID,
       );
 
       // 5. Mettre à jour selon le nombre de sièges
@@ -615,7 +615,7 @@ export class SeatSyncService {
 
           // Créer un nouvel item pour les sièges additionnels
           console.log(
-            `➕ Création item sièges: ${additionalSeats} siège(s) à ${prices.seatCost}€/mois`
+            `➕ Création item sièges: ${additionalSeats} siège(s) à ${prices.seatCost}€/mois`,
           );
 
           await stripe.subscriptionItems.create(
@@ -627,7 +627,7 @@ export class SeatSyncService {
             },
             {
               idempotencyKey: `seat-add-${organizationId}-${Date.now()}`,
-            }
+            },
           );
 
           console.log(`✅ Item sièges créé avec succès`);
@@ -637,7 +637,7 @@ export class SeatSyncService {
 
           if (oldQuantity !== additionalSeats) {
             console.log(
-              `🔄 Mise à jour item sièges: ${oldQuantity} → ${additionalSeats} siège(s)`
+              `🔄 Mise à jour item sièges: ${oldQuantity} → ${additionalSeats} siège(s)`,
             );
 
             await stripe.subscriptionItems.update(
@@ -648,7 +648,7 @@ export class SeatSyncService {
               },
               {
                 idempotencyKey: `seat-update-${organizationId}-${Date.now()}`,
-              }
+              },
             );
 
             const difference = additionalSeats - oldQuantity;
@@ -659,14 +659,14 @@ export class SeatSyncService {
             }
           } else {
             console.log(
-              `✅ Quantity inchangée (${oldQuantity} siège(s)), pas de mise à jour nécessaire`
+              `✅ Quantity inchangée (${oldQuantity} siège(s)), pas de mise à jour nécessaire`,
             );
           }
         }
       } else if (seatItem && additionalSeats === 0) {
         // Supprimer l'item si plus de sièges additionnels
         console.log(
-          `➖ Suppression item sièges (aucun collaborateur additionnel)`
+          `➖ Suppression item sièges (aucun collaborateur additionnel)`,
         );
 
         await stripe.subscriptionItems.del(seatItem.id, {
@@ -685,7 +685,7 @@ export class SeatSyncService {
               seatQuantity: additionalSeats,
               updatedAt: new Date(),
             },
-          }
+          },
         );
         console.log(`📝 BDD mise à jour: seatQuantity = ${additionalSeats}`);
       } else {
@@ -697,10 +697,10 @@ export class SeatSyncService {
       const totalCost = prices.baseCost + additionalSeats * prices.seatCost;
 
       console.log(
-        `✅ Synchronisation terminée: ${additionalSeats} siège(s) additionnel(s)`
+        `✅ Synchronisation terminée: ${additionalSeats} siège(s) additionnel(s)`,
       );
       console.log(
-        `💰 Facturation mensuelle: ${prices.baseCost}€ (Pro) + ${additionalSeats} × ${prices.seatCost}€ = ${totalCost}€`
+        `💰 Facturation mensuelle: ${prices.baseCost}€ (Pro) + ${additionalSeats} × ${prices.seatCost}€ = ${totalCost}€`,
       );
 
       return {
@@ -726,17 +726,20 @@ export class SeatSyncService {
    */
   async syncSeatsAfterMemberRemoved(organizationId, adapter) {
     console.log(
-      `🔄 [SEAT SYNC] Synchronisation après suppression de membre pour organisation ${organizationId}`
+      `🔄 [SEAT SYNC] Synchronisation après suppression de membre pour organisation ${organizationId}`,
     );
 
     try {
       // Réutiliser la même logique que pour l'acceptation d'invitation
       // Cela va recalculer le nombre de sièges et mettre à jour Stripe si nécessaire
-      return await this.syncSeatsAfterInvitationAccepted(organizationId, adapter);
+      return await this.syncSeatsAfterInvitationAccepted(
+        organizationId,
+        adapter,
+      );
     } catch (error) {
       console.error(
         `❌ [SEAT SYNC] Erreur synchronisation après suppression:`,
-        error
+        error,
       );
       // Ne pas propager l'erreur pour ne pas bloquer la suppression du membre
       return {
@@ -775,7 +778,7 @@ export class SeatSyncService {
 
       const additionalSeats = await this.getAdditionalSeatsCount(
         organizationId,
-        adapter
+        adapter,
       );
 
       // Récupérer les prix depuis Stripe

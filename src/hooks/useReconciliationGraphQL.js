@@ -5,11 +5,14 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
   GET_RECONCILIATION_SUGGESTIONS,
   GET_TRANSACTIONS_FOR_INVOICE,
+  GET_INVOICES_FOR_TRANSACTION,
   LINK_TRANSACTION_TO_INVOICE,
   UNLINK_TRANSACTION_FROM_INVOICE,
   IGNORE_TRANSACTION,
+  UNIGNORE_TRANSACTION,
 } from "@/src/graphql/queries/reconciliation";
 import { GET_INVOICES } from "@/src/graphql/invoiceQueries";
+import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking";
 import { reproposeReconciliation } from "@/src/lib/reconciliationIgnored";
 
 /**
@@ -25,6 +28,8 @@ export const useReconciliationSuggestions = () => {
       variables: { workspaceId },
       skip: !workspaceId || workspaceLoading,
       pollInterval: 60000, // Rafraîchir toutes les 60 secondes (au lieu de 30)
+      // Suspendre le polling quand l'onglet est en arrière-plan
+      skipPollAttempt: () => typeof document !== "undefined" && document.hidden,
       errorPolicy: "all",
     },
   );
@@ -71,12 +76,18 @@ export const useTransactionsForInvoice = (invoiceId) => {
  */
 export const useLinkTransactionToInvoice = () => {
   const [linkMutation, { loading }] = useMutation(LINK_TRANSACTION_TO_INVOICE, {
-    // La mutation renvoie le Transaction complet (linkedInvoice + reconciliationStatus) :
-    // Apollo normalise l'entité par id → l'icône "facture liée" de la page Transaction
-    // se met à jour sans refetch. On ne refetch que les agrégats non normalisables :
-    // GET_RECONCILIATION_SUGGESTIONS (compteur serveur) et GET_INVOICES (statut facture,
-    // type ReconciliationInvoice ≠ Invoice donc pas de normalisation auto).
-    refetchQueries: [GET_RECONCILIATION_SUGGESTIONS, GET_INVOICES],
+    // La mutation renvoie le Transaction complet : Apollo normalise l'entité
+    // par id, mais les agrégats de la page Transactions (tabCounts, totalCount,
+    // appartenance à l'onglet "À rapprocher") sont calculés serveur sur un type
+    // non normalisable → refetch de GetTransactionsPage/GetTransactions requis
+    // pour que l'icône et les compteurs se mettent à jour sans recharger la
+    // page. GET_RECONCILIATION_SUGGESTIONS (compteur serveur) et GET_INVOICES
+    // (statut facture) sont aussi des agrégats non normalisables.
+    refetchQueries: [
+      GET_RECONCILIATION_SUGGESTIONS,
+      GET_INVOICES,
+      ...TRANSACTION_LIST_REFETCH_QUERIES,
+    ],
     awaitRefetchQueries: true,
     onCompleted: (data) => {
       if (data.linkTransactionToInvoice.success) {
@@ -120,9 +131,13 @@ export const useUnlinkTransactionFromInvoice = () => {
   const [unlinkMutation, { loading }] = useMutation(
     UNLINK_TRANSACTION_FROM_INVOICE,
     {
-      // Idem au link : la mutation renvoie le Transaction complet (linkedInvoice null,
-      // statut unmatched) → normalisation Apollo, l'icône disparaît sans refetch liste.
-      refetchQueries: [GET_RECONCILIATION_SUGGESTIONS, GET_INVOICES],
+      // Idem au link : entité normalisée par Apollo, mais agrégats de la page
+      // Transactions (tabCounts, onglets) recalculés serveur → refetch requis.
+      refetchQueries: [
+        GET_RECONCILIATION_SUGGESTIONS,
+        GET_INVOICES,
+        ...TRANSACTION_LIST_REFETCH_QUERIES,
+      ],
       awaitRefetchQueries: true,
       onCompleted: (data) => {
         if (data.unlinkTransactionFromInvoice.success) {
@@ -201,6 +216,54 @@ export const useIgnoreTransaction = () => {
 };
 
 /**
+ * Hook pour réintégrer au rapprochement une transaction ignorée
+ * (inverse de useIgnoreTransaction : ignored → unmatched)
+ */
+export const useUnignoreTransaction = () => {
+  const [unignoreMutation, { loading }] = useMutation(UNIGNORE_TRANSACTION, {
+    // Le statut serveur change (ignored → unmatched) : la transaction
+    // réintègre l'onglet "À rapprocher" et les suggestions → refetch des
+    // agrégats non normalisables.
+    refetchQueries: [
+      GET_RECONCILIATION_SUGGESTIONS,
+      ...TRANSACTION_LIST_REFETCH_QUERIES,
+    ],
+    onCompleted: (data) => {
+      if (data.unignoreTransaction.success) {
+        toast.success("Transaction réintégrée au rapprochement");
+      } else {
+        toast.error(data.unignoreTransaction.message || "Erreur");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur");
+    },
+  });
+
+  const unignoreTransaction = async (transactionId) => {
+    try {
+      const result = await unignoreMutation({
+        variables: {
+          input: { transactionId },
+        },
+      });
+      // La carte du toast avait pu être masquée localement au moment de
+      // l'ignore : on la retire de la liste locale pour qu'elle soit reproposée.
+      if (result.data?.unignoreTransaction?.success) {
+        reproposeReconciliation(transactionId);
+      }
+      return {
+        success: result.data?.unignoreTransaction?.success || false,
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  return { unignoreTransaction, loading };
+};
+
+/**
  * Hook combiné pour toutes les opérations de rapprochement
  * Remplace useReconciliation (REST)
  */
@@ -221,16 +284,18 @@ export const useReconciliationGraphQL = () => {
   const { unlinkTransaction, loading: unlinkLoading } =
     useUnlinkTransactionFromInvoice();
   const { ignoreTransaction, loading: ignoreLoading } = useIgnoreTransaction();
+  const { unignoreTransaction, loading: unignoreLoading } =
+    useUnignoreTransaction();
 
   // Fonction pour récupérer les transactions pour une facture spécifique
   // (utilisée par le drawer de facture)
   // OPTIMISÉ: Utiliser useCallback pour éviter les re-renders inutiles
   const fetchTransactionsForInvoice = useCallback(
-    async (invoiceId) => {
+    async (invoiceId, search) => {
       try {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
-          variables: { invoiceId },
+          variables: { invoiceId, search: search || null },
           fetchPolicy: "network-only",
         });
 
@@ -250,6 +315,34 @@ export const useReconciliationGraphQL = () => {
     [client],
   );
 
+  // Factures rattachables à une transaction : PENDING, ou COMPLETED sans
+  // transaction liée (rattachement manuel depuis le drawer transaction,
+  // avec recherche serveur)
+  const fetchInvoicesForTransaction = useCallback(
+    async (transactionId, search) => {
+      try {
+        const { data } = await client.query({
+          query: GET_INVOICES_FOR_TRANSACTION,
+          variables: { transactionId, search: search || null },
+          fetchPolicy: "network-only",
+        });
+
+        const result = data?.invoicesForTransaction;
+        return {
+          invoices: result?.invoices || [],
+          transactionAmount: result?.transactionAmount || 0,
+        };
+      } catch (error) {
+        console.error(
+          "[RECONCILIATION] Erreur fetchInvoicesForTransaction:",
+          error,
+        );
+        return { invoices: [], transactionAmount: 0 };
+      }
+    },
+    [client],
+  );
+
   return {
     // Données
     suggestions,
@@ -262,13 +355,16 @@ export const useReconciliationGraphQL = () => {
     isLinking: linkLoading,
     isUnlinking: unlinkLoading,
     isIgnoring: ignoreLoading,
+    isUnignoring: unignoreLoading,
 
     // Actions
     refetch: refetchSuggestions,
     linkTransaction,
     unlinkTransaction,
     ignoreTransaction,
+    unignoreTransaction,
     fetchTransactionsForInvoice,
+    fetchInvoicesForTransaction,
   };
 };
 
@@ -310,11 +406,11 @@ export const useReconciliationForSidebar = () => {
   // Fonction pour récupérer les transactions pour une facture spécifique
   // OPTIMISÉ: Utiliser useCallback pour éviter les re-renders inutiles
   const fetchTransactionsForInvoice = useCallback(
-    async (invoiceId) => {
+    async (invoiceId, search) => {
       try {
         const { data } = await client.query({
           query: GET_TRANSACTIONS_FOR_INVOICE,
-          variables: { invoiceId },
+          variables: { invoiceId, search: search || null },
           fetchPolicy: "network-only",
         });
 

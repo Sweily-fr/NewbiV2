@@ -12,6 +12,8 @@ export const INVOICE_FRAGMENT = gql`
     invoiceType
     situationNumber
     situationReference
+    progressMode
+    globalProgressPercentage
     status
     issueDate
     dueDate
@@ -34,10 +36,20 @@ export const INVOICE_FRAGMENT = gql`
     discountAmount
     stripeInvoiceId
     paymentLink
-    linkedTransactionId
+    linkedTransactionIds
+    # Transactions bancaires rapprochées (résolveur backend Invoice.linkedTransactions).
+    linkedTransactions {
+      id
+      description
+      fromAccount
+      amount
+      currency
+      date
+    }
     showBankDetails
     clientPositionRight
     isReverseCharge
+    isVatExempt
     operationType
     createdAt
     updatedAt
@@ -50,6 +62,7 @@ export const INVOICE_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street
@@ -67,6 +80,12 @@ export const INVOICE_FRAGMENT = gql`
     }
     companyInfo {
       name
+      commercialName
+      professionalTitle
+      regulatoryBody
+      professionalNumber
+      decennialInsurance
+      professionalLiabilityInsurance
       email
       phone
       website
@@ -76,6 +95,7 @@ export const INVOICE_FRAGMENT = gql`
       vatNumber
       transactionCategory
       vatPaymentCondition
+      vatFranchise
       companyStatus
       capitalSocial
       rcs
@@ -148,6 +168,18 @@ export const INVOICE_FRAGMENT = gql`
     archivedPdfKey
     archivedPdfStoredAt
     archivedPdfSource
+    sourceQuote {
+      id
+      prefix
+      number
+      status
+    }
+    sourcePurchaseOrder {
+      id
+      prefix
+      number
+      status
+    }
   }
 `;
 
@@ -160,6 +192,9 @@ export const INVOICE_LIST_FRAGMENT = gql`
     isDeposit
     invoiceType
     situationNumber
+    situationReference
+    progressMode
+    globalProgressPercentage
     status
     eInvoiceStatus
     eInvoiceLastCode
@@ -183,6 +218,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
     stripeInvoiceId
     paymentLink
     isReverseCharge
+    isVatExempt
     items {
       description
       quantity
@@ -200,6 +236,7 @@ export const INVOICE_LIST_FRAGMENT = gql`
       type
       siret
       vatNumber
+      isInternational
       address {
         street
         city
@@ -374,6 +411,7 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
         email
         type
         vatNumber
+        isInternational
         siret
         address {
           fullName
@@ -386,6 +424,7 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
       escompte
       retenueGarantie
       isReverseCharge
+      isVatExempt
       discount
       discountType
       headerNotes
@@ -535,6 +574,7 @@ export const CREATE_LINKED_INVOICE = gql`
         id
         linkedInvoices {
           id
+          prefix
           number
           status
           finalTotalTTC
@@ -582,7 +622,7 @@ import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
 
 // Hook optimisé pour récupérer la liste des factures
-export const useInvoices = () => {
+export const useInvoices = ({ skip = false } = {}) => {
   // Récupérer le workspace actuel
   const {
     workspaceId,
@@ -625,7 +665,7 @@ export const useInvoices = () => {
     errorPolicy: "all",
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
-    skip: !workspaceId, // Ne pas exécuter la query sans workspaceId
+    skip: skip || !workspaceId, // Ne pas exécuter la query sans workspaceId
   });
 
   // Fonction pour charger plus de données
@@ -1356,6 +1396,7 @@ export const GET_INVOICE_TEMPLATES = gql`
       }
       clientPositionRight
       isReverseCharge
+      isVatExempt
       showBankDetails
       bankDetails {
         iban

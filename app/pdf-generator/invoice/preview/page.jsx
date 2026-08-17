@@ -35,8 +35,17 @@ export default function PDFPreviewPage() {
         setInvoiceData(data);
         setStatus("ready");
 
-        // Visual mode: just render, no PDF generation
-        const isVisualMode = window.__PREVIEW_MODE === "visual";
+        // Visual mode : détecté via l'URL (?mode=visual) OU l'injection JS.
+        // L'URL est FIABLE (dispo immédiatement), contrairement à
+        // window.__PREVIEW_MODE injecté par la WebView mobile qui, sur iOS
+        // WKWebView, n'est parfois pas prêt quand ce code s'exécute → la page
+        // basculait alors en mode PDF (A4 + wrapper blanc plein écran).
+        const urlMode =
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("mode")
+            : null;
+        const isVisualMode =
+          urlMode === "visual" || window.__PREVIEW_MODE === "visual";
         if (isVisualMode) {
           console.log("👁️ Visual mode — skipping PDF generation");
           setIsVisual(true);
@@ -82,8 +91,11 @@ export default function PDFPreviewPage() {
         backgroundColor: "#ffffff",
         width: 794,
         scale: 2,
+        // `cache: "reload"` : sans lui, la réponse sans en-tête CORS mise en
+        // cache par l'<img> du logo resservirait ce fetch et le logo serait
+        // absent du PDF (cf. src/utils/generatePDF.js).
         fetch: {
-          requestInit: { mode: "cors", credentials: "omit" },
+          requestInit: { mode: "cors", credentials: "omit", cache: "reload" },
         },
       });
 
@@ -312,7 +324,13 @@ export default function PDFPreviewPage() {
   return (
     <div
       className={
-        isVisual ? "bg-white min-h-screen" : "bg-white min-h-screen p-4"
+        // Mode visuel (preview mobile WebView) : fond NOIR opaque plein écran.
+        // La WebView de l'app (app-newbi) force parfois `body{background:#fff}`
+        // (bundle non rechargé), ce qui laissait une bande blanche sous le footer.
+        // Un wrapper bg-black min-h-screen RECOUVRE ce body blanc → le rendu ne
+        // dépend plus de l'app : noir sous la facture, comme le PDF R2.
+        // Seule la facture (UniversalPreviewPDF) reste blanche.
+        isVisual ? "bg-black min-h-screen" : "bg-white min-h-screen p-4"
       }
     >
       <div
@@ -320,9 +338,12 @@ export default function PDFPreviewPage() {
         style={
           isVisual
             ? {
+                // PAS de fond blanc ici : le wrapper peut être un peu plus haut
+                // que le document (hauteur calculée), et son blanc dépassait sous
+                // le footer. Transparent → cette zone montre le fond noir du modal
+                // (comme le PDF). Seule la facture (UniversalPreviewPDF) reste blanche.
                 width: "100%",
                 maxWidth: "794px",
-                backgroundColor: "#ffffff",
                 margin: "0 auto",
               }
             : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }

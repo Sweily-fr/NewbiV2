@@ -98,6 +98,7 @@ import { useInvoiceReminderSettings } from "@/src/graphql/invoiceReminderQueries
 import { useInvoiceTable } from "../hooks/use-invoice-table";
 import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { InvoiceTableSkeleton } from "./invoice-page-skeleton";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
 import { AnimatePresence } from "framer-motion";
@@ -168,9 +169,12 @@ export default function InvoiceTable({
     refetch: refetchImported,
   } = useImportedInvoices(workspaceId);
 
-  // Hook pour les avoirs (count pour le badge du tab)
-  const { creditNotes } = useCreditNotes();
-  const creditNotesCount = creditNotes?.length || 0;
+  // Hook pour les avoirs (count pour le badge du tab) : seul le total sert,
+  // limit 1 évite de rapatrier toute la liste d'avoirs.
+  const { totalCount: creditNotesCount } = useCreditNotes({
+    page: 1,
+    limit: 1,
+  });
 
   // Récupérer les paramètres de relance automatique
   const { data: reminderSettingsData } = useInvoiceReminderSettings();
@@ -469,7 +473,9 @@ export default function InvoiceTable({
     }
   }, [invoiceIdToOpen, invoices]);
 
-  if (loading) {
+  // Skeleton uniquement au premier chargement : si le cache Apollo a déjà des
+  // factures (retour sur la page), on les affiche pendant le refetch silencieux
+  if (loading && (!invoices || invoices.length === 0)) {
     return <InvoiceTableSkeleton />;
   }
 
@@ -482,7 +488,7 @@ export default function InvoiceTable({
           <p className="text-muted-foreground mb-4">
             Impossible de charger les factures
           </p>
-          <Button onClick={refetch}>Réessayer</Button>
+          <Button onClick={() => refetch()}>Réessayer</Button>
         </div>
       </div>
     );
@@ -691,7 +697,7 @@ export default function InvoiceTable({
       >
         <table className="w-full table-fixed">
           <tbody>
-            {loading ? (
+            {loading && !invoices?.length ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={`skeleton-${i}`} className="border-b">
                   <td className="p-2 pl-4 sm:pl-6">
@@ -1365,98 +1371,6 @@ export default function InvoiceTable({
           }}
         />
       )}
-    </div>
-  );
-}
-
-function InvoiceTableSkeleton() {
-  return (
-    <div className="space-y-4">
-      {/* Filters skeleton */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-9 w-60" />
-          <Skeleton className="h-9 w-20" />
-        </div>
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-9 w-32" />
-        </div>
-      </div>
-
-      {/* Table skeleton */}
-      <div className="bg-background overflow-hidden rounded-md border">
-        <Table className="table-fixed">
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="h-11 w-7">
-                <Skeleton className="h-4 w-4 rounded" />
-              </TableHead>
-              <TableHead className="h-11 w-[150px]">
-                <Skeleton className="h-4 w-16" />
-              </TableHead>
-              <TableHead className="h-11 w-[200px]">
-                <Skeleton className="h-4 w-20" />
-              </TableHead>
-              <TableHead className="h-11 w-[100px]">
-                <Skeleton className="h-4 w-12" />
-              </TableHead>
-              <TableHead className="h-11 w-[80px]">
-                <Skeleton className="h-4 w-14" />
-              </TableHead>
-              <TableHead className="h-11 w-[120px]">
-                <Skeleton className="h-4 w-16" />
-              </TableHead>
-              <TableHead className="h-11 w-[60px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 10 }).map((_, index) => (
-              <TableRow key={`skeleton-${index}`}>
-                <TableCell>
-                  <Skeleton className="h-4 w-4 rounded" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-32" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-40" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-20 rounded-full" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-16" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-24" />
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end">
-                    <Skeleton className="h-8 w-8 rounded" />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Pagination skeleton */}
-      <div className="flex items-center justify-between gap-8">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-9 w-16" />
-        </div>
-        <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
-          <Skeleton className="h-4 w-32" />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Skeleton className="h-9 w-9" />
-          <Skeleton className="h-9 w-9" />
-          <Skeleton className="h-9 w-9" />
-          <Skeleton className="h-9 w-9" />
-        </div>
-      </div>
     </div>
   );
 }

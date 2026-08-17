@@ -34,6 +34,10 @@ import {
 } from "@/src/components/ui/tabs";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
+  ClaudeWorkingIndicator,
+  ClaudeCodingIndicator,
+} from "@/src/components/ui/claude-working-indicator";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -199,10 +203,7 @@ const TaskActivityComponent = ({
 
     const imageFiles = [];
     for (const item of items) {
-      if (
-        item.type.startsWith("image/") ||
-        item.type.startsWith("video/")
-      ) {
+      if (item.type.startsWith("image/") || item.type.startsWith("video/")) {
         const file = item.getAsFile();
         if (file) {
           imageFiles.push({
@@ -320,6 +321,10 @@ const TaskActivityComponent = ({
             ...prev,
             comments: data.addComment.comments,
             activity: data.addComment.activity,
+            // Propager le marqueur pour que le loader « Claude répond »
+            // apparaisse immédiatement, sans attendre la subscription
+            claudeWorkingSince: data.addComment.claudeWorkingSince ?? null,
+            claudeCodingSince: data.addComment.claudeCodingSince ?? null,
           }));
         }
       }
@@ -447,6 +452,8 @@ const TaskActivityComponent = ({
               ...prev,
               comments: finalComments,
               activity: taskData.activity,
+              claudeWorkingSince: taskData.claudeWorkingSince ?? null,
+              claudeCodingSince: taskData.claudeCodingSince ?? null,
             }));
           }
         }
@@ -887,6 +894,24 @@ const TaskActivityComponent = ({
     ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }, [comments, activities]);
 
+  // Avatar du profil invité Claude : repris de son dernier commentaire 🤖
+  // (le préfixe est le marqueur fiable du bot), pour le loader « Claude
+  // est en train de répondre »
+  const claudeAvatar = React.useMemo(() => {
+    for (let i = comments.length - 1; i >= 0; i--) {
+      const c = comments[i];
+      if (
+        c?.userImage &&
+        String(c.content || "")
+          .trimStart()
+          .startsWith("🤖")
+      ) {
+        return c.userImage;
+      }
+    }
+    return null;
+  }, [comments]);
+
   // Auto-scroll vers le bas pour voir les dernières activités
   React.useEffect(() => {
     requestAnimationFrame(() => {
@@ -1255,6 +1280,16 @@ const TaskActivityComponent = ({
                 })}
               </>
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-2.5 mt-3">
@@ -1406,6 +1441,16 @@ const TaskActivityComponent = ({
                 </div>
               ))
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-2.5 mt-3">
@@ -1725,6 +1770,9 @@ export const TaskActivity = React.memo(
       prevProps.task?.id === nextProps.task?.id &&
       prevProps.task?.comments === nextProps.task?.comments &&
       prevProps.task?.activity === nextProps.task?.activity &&
+      prevProps.task?.claudeWorkingSince ===
+        nextProps.task?.claudeWorkingSince &&
+      prevProps.task?.claudeCodingSince === nextProps.task?.claudeCodingSince &&
       prevProps.boardMembers === nextProps.boardMembers &&
       prevProps.columns === nextProps.columns
     );

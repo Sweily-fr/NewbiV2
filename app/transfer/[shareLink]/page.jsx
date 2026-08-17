@@ -24,7 +24,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 import Image from "next/image";
-import JSZip from "jszip";
 
 // Composants séparés
 import {
@@ -33,7 +32,120 @@ import {
   PaymentModal,
   PdfPreview,
 } from "./components";
-import CircularProgress from "@/src/components/ui/circular-progress";
+
+// Déclenche un téléchargement natif : la réponse étant une pièce jointe
+// (Content-Disposition: attachment), le navigateur garde la page affichée
+// et lance son propre téléchargement. Ne PAS utiliser d'iframe caché :
+// iOS Safari ignore silencieusement les téléchargements qui en proviennent.
+const triggerMobileDownload = (url) => {
+  window.location.href = url;
+};
+
+// Remet au navigateur un fichier téléchargé par la page. Sur iOS, la
+// confirmation d'enregistrement apparaît à ce moment-là (mécanisme du
+// système, elle ne peut pas être affichée avant).
+const saveBlobAsFile = (blob, fileName) => {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName || "fichier";
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  // Ne pas révoquer tout de suite : iOS a besoin de l'URL le temps
+  // d'enregistrer le fichier
+  setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+};
+
+// Au-delà de cette taille, garder le fichier en mémoire dans la page peut
+// faire planter le navigateur sur certains téléphones : on délègue au
+// téléchargement natif (progression affichée par le navigateur)
+const IN_PAGE_SINGLE_FILE_LIMIT = 400 * 1024 * 1024;
+
+// Nombre de fichiers téléchargés simultanément par « Tout télécharger »
+const BULK_CONCURRENCY = 3;
+
+// --- Écriture ZIP « store » (sans compression) par référence de Blobs ---
+// Permet d'assembler l'archive finale sans jamais recopier les données :
+// les Blobs téléchargés (stockés sur disque par le navigateur) sont
+// référencés tels quels entre les en-têtes ZIP.
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c;
+  }
+  return t;
+})();
+
+const crc32Append = (crc, bytes) => {
+  let c = crc ^ 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) {
+    c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  }
+  return (c ^ 0xffffffff) >>> 0;
+};
+
+// entries: [{ name, size, crc, blob }] → Blob ZIP (limites zip32 vérifiées
+// par l'appelant : < 4 Go par fichier et au total, < 65535 entrées)
+const buildStoreZip = (entries) => {
+  const encoder = new TextEncoder();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+
+  for (const entry of entries) {
+    const nameBytes = encoder.encode(entry.name);
+    const header = new DataView(new ArrayBuffer(30));
+    header.setUint32(0, 0x04034b50, true); // signature
+    header.setUint16(4, 20, true); // version requise
+    header.setUint16(6, 0x0800, true); // flags: noms UTF-8
+    header.setUint16(8, 0, true); // méthode: store
+    header.setUint16(10, 0, true); // heure DOS
+    header.setUint16(12, 0x21, true); // date DOS (1980-01-01)
+    header.setUint32(14, entry.crc, true);
+    header.setUint32(18, entry.size, true); // taille compressée
+    header.setUint32(22, entry.size, true); // taille originale
+    header.setUint16(26, nameBytes.length, true);
+    header.setUint16(28, 0, true); // extra
+
+    parts.push(header.buffer, nameBytes, entry.blob);
+    central.push({ entry, nameBytes, offset });
+    offset += 30 + nameBytes.length + entry.size;
+  }
+
+  const centralStart = offset;
+  let centralSize = 0;
+  for (const { entry, nameBytes, offset: localOffset } of central) {
+    const rec = new DataView(new ArrayBuffer(46));
+    rec.setUint32(0, 0x02014b50, true);
+    rec.setUint16(4, 20, true); // version créateur
+    rec.setUint16(6, 20, true); // version requise
+    rec.setUint16(8, 0x0800, true);
+    rec.setUint16(10, 0, true);
+    rec.setUint16(12, 0, true);
+    rec.setUint16(14, 0x21, true);
+    rec.setUint32(16, entry.crc, true);
+    rec.setUint32(20, entry.size, true);
+    rec.setUint32(24, entry.size, true);
+    rec.setUint16(28, nameBytes.length, true);
+    rec.setUint32(42, localOffset, true);
+    parts.push(rec.buffer, nameBytes);
+    centralSize += 46 + nameBytes.length;
+  }
+
+  const eocd = new DataView(new ArrayBuffer(22));
+  eocd.setUint32(0, 0x06054b50, true);
+  eocd.setUint16(8, central.length, true);
+  eocd.setUint16(10, central.length, true);
+  eocd.setUint32(12, centralSize, true);
+  eocd.setUint32(16, centralStart, true);
+  parts.push(eocd.buffer);
+
+  return new Blob(parts, { type: "application/zip" });
+};
 
 export default function TransferPage() {
   const params = useParams();
@@ -42,16 +154,70 @@ export default function TransferPage() {
   const accessKey = searchParams.get("key");
   const paymentStatus = searchParams.get("payment_status");
 
+  // 🔐 Query d'autorisation pour les routes /api/files (secret de partage +
+  // mot de passe éventuel) — remplace le simple transferId devinable.
+  // `session` identifie le téléchargement en cours : un même clic traverse
+  // plusieurs endpoints (un appel proxy par fichier, puis le marquage de fin),
+  // et le backend s'en sert pour ne compter et ne notifier qu'une seule fois.
+  const buildFileAuthQuery = (downloadSessionId) => {
+    const p = new URLSearchParams();
+    if (shareLink) p.set("link", shareLink);
+    if (accessKey) p.set("key", accessKey);
+    if (verifiedPassword) p.set("password", verifiedPassword);
+    if (downloadSessionId) p.set("session", downloadSessionId);
+    const qs = p.toString();
+    return qs ? `?${qs}` : "";
+  };
+
+  // Un identifiant par clic de téléchargement : deux téléchargements
+  // successifs doivent bien compter pour deux
+  const newDownloadSessionId = () =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `dl-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
   const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [downloadingFileId, setDownloadingFileId] = useState(null);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
+  // Progression par fichier : { [fileId]: pourcentage } — chaque bouton de
+  // ligne affiche la sienne, plusieurs téléchargements peuvent coexister
+  const [downloadProgressMap, setDownloadProgressMap] = useState({});
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  // Mot de passe vérifié, conservé pour autoriser les téléchargements côté API
+  // (le backend exige désormais link + key + mot de passe éventuel).
+  const [verifiedPassword, setVerifiedPassword] = useState("");
   const [previewFile, setPreviewFile] = useState(null);
   const [previewFileIndex, setPreviewFileIndex] = useState(0);
   const [thumbnailError, setThumbnailError] = useState(false);
 
   // Ref pour annuler le téléchargement
   const downloadAbortRef = useRef(null);
+  // Nombre de téléchargements actifs (pour isDownloading global)
+  const activeDownloadsRef = useRef(0);
+
+  const setFileProgress = (fileId, pct) =>
+    setDownloadProgressMap((m) => ({ ...m, [fileId]: pct }));
+  const clearFileProgress = (fileId) =>
+    setDownloadProgressMap((m) => {
+      const next = { ...m };
+      delete next[fileId];
+      return next;
+    });
+
+  const beginDownloadActivity = () => {
+    activeDownloadsRef.current++;
+    setIsDownloading(true);
+    if (!downloadAbortRef.current) {
+      downloadAbortRef.current = new AbortController();
+    }
+    return downloadAbortRef.current;
+  };
+  const endDownloadActivity = () => {
+    activeDownloadsRef.current = Math.max(0, activeDownloadsRef.current - 1);
+    if (activeDownloadsRef.current === 0) {
+      setIsDownloading(false);
+      downloadAbortRef.current = null;
+    }
+  };
 
   // Hook pour gérer les paiements Stripe
   const { initiatePayment, isProcessing } = useStripePayment();
@@ -105,7 +271,7 @@ export default function TransferPage() {
     const apiUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
-    return `${apiUrl}/api/files/preview/${transfer.fileTransfer.id}/${zipContainer.fileId || zipContainer.id}`;
+    return `${apiUrl}/api/files/preview/${transfer.fileTransfer.id}/${zipContainer.fileId || zipContainer.id}${buildFileAuthQuery()}`;
   }, [zipContainer, transfer?.fileTransfer?.id]);
 
   const {
@@ -141,15 +307,104 @@ export default function TransferPage() {
     }
   };
 
+  // Streame un fichier via l'endpoint backend stable en mettant à jour la
+  // progression de sa ligne. Retourne { blob, size, crc } (CRC calculé au
+  // fil de l'eau pour l'assemblage ZIP éventuel).
+  const streamFileWithProgress = async (
+    fileId,
+    fileSize,
+    signal,
+    downloadSessionId,
+  ) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    const response = await fetch(
+      `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId)}`,
+      { signal },
+    );
+
+    if (!response.ok || !response.body) {
+      throw new Error("Erreur lors du téléchargement");
+    }
+
+    const contentLength = response.headers.get("content-length");
+    const totalSize = contentLength ? parseInt(contentLength, 10) : fileSize;
+
+    const reader = response.body.getReader();
+    // Consolider les chunks en Blobs intermédiaires (~32 Mo) : le navigateur
+    // stocke les gros Blobs sur disque, la mémoire JS reste bornée
+    const FLUSH_THRESHOLD = 32 * 1024 * 1024;
+    const parts = [];
+    let pendingChunks = [];
+    let pendingBytes = 0;
+    let receivedLength = 0;
+    let crc = 0;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      pendingChunks.push(value);
+      pendingBytes += value.length;
+      receivedLength += value.length;
+      crc = crc32Append(crc, value);
+      if (pendingBytes >= FLUSH_THRESHOLD) {
+        parts.push(new Blob(pendingChunks));
+        pendingChunks = [];
+        pendingBytes = 0;
+      }
+
+      if (totalSize) {
+        setFileProgress(
+          fileId,
+          Math.min(Math.round((receivedLength / totalSize) * 100), 100),
+        );
+      }
+    }
+    if (pendingChunks.length > 0) {
+      parts.push(new Blob(pendingChunks));
+    }
+
+    setFileProgress(fileId, 100);
+    return { blob: new Blob(parts), size: receivedLength, crc };
+  };
+
+  // Marque un événement de téléchargement comme terminé (fire and forget)
+  const completeDownloadEvent = (
+    downloadEventId,
+    startTime,
+    isLastFile,
+    downloadSessionId,
+  ) => {
+    if (!downloadEventId) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    fetch(`${apiUrl}api/transfers/download-event/${downloadEventId}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        duration: Date.now() - startTime,
+        isLastFile,
+        link: shareLink,
+        key: accessKey,
+        downloadSessionId,
+      }),
+    }).catch(() => {});
+  };
+
   // Fonction pour télécharger un fichier avec progression
   const downloadFile = async (fileId, fileName, fileSize = 0) => {
-    // Créer un nouvel AbortController
-    downloadAbortRef.current = new AbortController();
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    // Téléchargement natif (très gros fichier sur mobile) : aucun loader
+    // dans la page, le navigateur affiche déjà sa propre progression
+    const willUseNativeDownload =
+      isMobile && (fileSize || 0) > IN_PAGE_SINGLE_FILE_LIMIT;
 
-    setIsDownloading(true);
-    setDownloadingFileId(fileId);
-    setDownloadProgress(0);
+    const abortController = beginDownloadActivity();
+    if (!willUseNativeDownload) {
+      setFileProgress(fileId, 0);
+    }
     const startTime = Date.now();
+    const downloadSessionId = newDownloadSessionId();
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -165,8 +420,10 @@ export default function TransferPage() {
           body: JSON.stringify({
             fileId,
             email: `guest-${Date.now()}@newbi.fr`,
+            link: shareLink,
+            key: accessKey,
           }),
-          signal: downloadAbortRef.current.signal,
+          signal: abortController.signal,
         },
       );
 
@@ -189,98 +446,49 @@ export default function TransferPage() {
         throw new Error("URL de téléchargement non trouvée");
       }
 
-      // Détecter si on est sur mobile
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-      if (isMobile) {
+      if (willUseNativeDownload) {
         // Marquer le téléchargement comme terminé AVANT la redirection :
-        // la navigation annule les fetch en cours sur mobile (keepalive pour
-        // que la requête survive au changement de page)
-        if (downloadInfo.downloadEventId) {
-          fetch(
-            `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              keepalive: true,
-              body: JSON.stringify({
-                duration: Date.now() - startTime,
-                isLastFile: true,
-              }),
-            },
-          ).catch(() => {}); // Fire and forget
-        }
+        // la navigation annule les fetch en cours sur mobile
+        completeDownloadEvent(
+          downloadInfo.downloadEventId,
+          startTime,
+          true,
+          downloadSessionId,
+        );
 
-        // Laisser le navigateur mobile gérer le téléchargement nativement
-        window.location.href = downloadInfo.downloadUrl;
-        toast.info("Téléchargement en cours...");
+        // Laisser le navigateur mobile gérer le téléchargement nativement,
+        // sans quitter la page de transfert
+        triggerMobileDownload(
+          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId)}`,
+        );
+        toast.info(
+          "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
+        );
         return;
       }
 
-      // Téléchargement avec streaming et progression
-      const response = await fetch(downloadInfo.downloadUrl, {
-        signal: downloadAbortRef.current.signal,
-      });
+      const { blob } = await streamFileWithProgress(
+        fileId,
+        fileSize,
+        abortController.signal,
+        downloadSessionId,
+      );
+      saveBlobAsFile(blob, fileName);
 
-      if (!response.ok) {
-        throw new Error("Erreur lors du téléchargement");
-      }
+      completeDownloadEvent(
+        downloadInfo.downloadEventId,
+        startTime,
+        true,
+        downloadSessionId,
+      );
 
-      const contentLength = response.headers.get("content-length");
-      const totalSize = contentLength ? parseInt(contentLength, 10) : fileSize;
-
-      // Si on peut streamer avec progression
-      if (totalSize && response.body) {
-        const reader = response.body.getReader();
-        const chunks = [];
-        let receivedLength = 0;
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) break;
-
-          chunks.push(value);
-          receivedLength += value.length;
-
-          // Mettre à jour la progression
-          const progress = Math.round((receivedLength / totalSize) * 100);
-          setDownloadProgress(progress);
-        }
-
-        // Assembler les chunks en blob
-        const blob = new Blob(chunks);
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        // Fallback: rediriger vers l'URL de téléchargement
-        window.location.href = downloadInfo.downloadUrl;
-      }
-
-      // Marquer le téléchargement comme terminé
-      if (downloadInfo.downloadEventId) {
-        fetch(
-          `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            keepalive: true,
-            body: JSON.stringify({
-              duration: Date.now() - startTime,
-              isLastFile: true,
-            }),
-          },
-        ).catch(() => {}); // Fire and forget
-      }
-
-      toast.success("Fichier téléchargé avec succès");
+      // Notification de fin (sur iOS, la fenêtre d'enregistrement apparaît
+      // au même moment : le contenu est déjà téléchargé)
+      toast.success(
+        /iPhone|iPad|iPod/i.test(navigator.userAgent)
+          ? "Téléchargement terminé — appuyez sur « Télécharger » pour enregistrer"
+          : "Téléchargement terminé !",
+      );
     } catch (error) {
       // Si c'est une annulation, ne pas afficher d'erreur
       if (error.name === "AbortError") {
@@ -290,26 +498,37 @@ export default function TransferPage() {
       console.error("Erreur lors du téléchargement:", error);
       toast.error(error.message || "Erreur lors du téléchargement du fichier");
     } finally {
-      setIsDownloading(false);
-      setDownloadingFileId(null);
-      setDownloadProgress(0);
-      downloadAbortRef.current = null;
+      clearFileProgress(fileId);
+      endDownloadActivity();
     }
   };
 
   // Fonction pour télécharger tous les fichiers
   const downloadAllFiles = async () => {
-    // Créer un nouvel AbortController
-    downloadAbortRef.current = new AbortController();
+    const transferFilesList = transfer?.fileTransfer?.files || [];
 
-    setIsDownloading(true);
-    setDownloadingFileId("all");
-    setDownloadProgress(0);
+    // Transfert à un seul fichier : même logique que le téléchargement
+    // individuel (streaming avec progression, natif au-delà du seuil)
+    if (transferFilesList.length === 1) {
+      const single = transferFilesList[0];
+      return downloadFile(
+        single.id || single.fileId,
+        single.originalName,
+        single.size,
+      );
+    }
+
+    const abortController = beginDownloadActivity();
+    setIsBulkDownloading(true);
     const startTime = Date.now();
+    // Une seule session pour tous les fichiers de ce clic : le propriétaire
+    // reçoit une notification, pas une par fichier
+    const downloadSessionId = newDownloadSessionId();
+    // Les IDs dont on a affiché la progression (à nettoyer à la fin)
+    const startedFileIds = [];
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       // Demander l'autorisation de téléchargement pour tous les fichiers
       const authResponse = await fetch(
@@ -321,13 +540,14 @@ export default function TransferPage() {
           },
           body: JSON.stringify({
             email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
+            link: shareLink,
+            key: accessKey,
           }),
-          signal: downloadAbortRef.current.signal,
+          signal: abortController.signal,
         },
       );
 
       if (!authResponse.ok) {
-        const errorText = await authResponse.text();
         throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
 
@@ -341,29 +561,16 @@ export default function TransferPage() {
         throw new Error(authData.error || "Autorisation refusée");
       }
 
-      // Calculer la taille totale et récupérer les fichiers
-      const allFiles = transfer?.fileTransfer?.files || [];
       const hasWatermark = transfer?.fileTransfer?.hasWatermark;
-
-      // Bloquer tous les fichiers si filigrane actif
       if (hasWatermark) {
         toast.error(
           "Les fichiers de ce transfert sont protégés par un filigrane et ne peuvent pas être téléchargés.",
         );
         return;
       }
-      const files = allFiles;
 
-      // Si aucun fichier téléchargeable
-      if (files.length === 0) {
-        toast.error("Aucun fichier téléchargeable disponible.");
-        return;
-      }
-
-      const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
-
-      // Filtrer les téléchargements autorisés pour exclure les images si filigrane
-      const downloadableFileIds = files.map((f) => f.id);
+      // Filtrer les téléchargements autorisés
+      const downloadableFileIds = transferFilesList.map((f) => f.id);
       const filteredDownloads = authData.downloads.filter((d) =>
         downloadableFileIds.includes(d.fileId),
       );
@@ -373,147 +580,102 @@ export default function TransferPage() {
         return;
       }
 
-      // Sur mobile, rediriger vers l'URL de téléchargement
-      if (isMobile) {
-        let downloadUrl;
-
-        if (filteredDownloads.length === 1) {
-          downloadUrl = filteredDownloads[0].downloadUrl;
-        } else {
-          const fileIds = filteredDownloads.map((d) => d.fileId).join(",");
-          downloadUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
-        }
-
-        // Marquer les téléchargements comme terminés AVANT la redirection :
-        // la navigation annule les fetch en cours sur mobile (keepalive pour
-        // que les requêtes survivent au changement de page)
-        const mobileDuration = Date.now() - startTime;
-        filteredDownloads.forEach((downloadInfo, i) => {
-          if (downloadInfo.downloadEventId) {
-            fetch(
-              `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                keepalive: true,
-                body: JSON.stringify({
-                  duration: mobileDuration,
-                  isLastFile: i === filteredDownloads.length - 1,
-                }),
-              },
-            ).catch(() => {}); // Fire and forget
-          }
-        });
-
-        // Rediriger vers l'URL - le navigateur mobile va télécharger le fichier
-        window.location.href = downloadUrl;
-
-        // Sur mobile, le téléchargement est géré par le navigateur
-        toast.info("Téléchargement en cours...");
-        setIsDownloading(false);
-        setDownloadProgress(0);
+      // Limites du format zip32 : au-delà, ZIP natif streamé par le backend
+      const estimatedTotal = transferFilesList.reduce(
+        (acc, f) => acc + (f.size || 0),
+        0,
+      );
+      const ZIP32_LIMIT = 0xf0000000; // ~3,75 Go, marge sous les 4 Go
+      if (
+        estimatedTotal > ZIP32_LIMIT ||
+        filteredDownloads.length > 65000 ||
+        transferFilesList.some((f) => (f.size || 0) > ZIP32_LIMIT)
+      ) {
+        triggerMobileDownload(
+          `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}&session=${downloadSessionId}`,
+        );
+        toast.info(
+          "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
+        );
         return;
-      } else {
-        // Desktop : télécharger tous les fichiers et créer un ZIP
-        const zip = new JSZip();
-        let totalDownloaded = 0;
+      }
 
-        for (let i = 0; i < filteredDownloads.length; i++) {
+      // Télécharger les fichiers en parallèle (BULK_CONCURRENCY à la fois) :
+      // le pourcentage monte sur le bouton de téléchargement de chaque ligne.
+      // Chaque fichier devient un Blob (stocké sur disque par le navigateur),
+      // puis TOUT est assemblé en un seul ZIP remis en une fois : une seule
+      // confirmation d'enregistrement, une seule notification de fin.
+      const zipEntries = new Array(filteredDownloads.length);
+      let nextIndex = 0;
+
+      const worker = async () => {
+        while (true) {
+          const i = nextIndex++;
+          if (i >= filteredDownloads.length) return;
           const downloadInfo = filteredDownloads[i];
-          const file = files.find((f) => f.id === downloadInfo.fileId);
-          const fileSize = file?.size || 0;
+          const file = transferFilesList.find(
+            (f) => f.id === downloadInfo.fileId,
+          );
 
-          const response = await fetch(downloadInfo.downloadUrl, {
-            signal: downloadAbortRef.current.signal,
-          });
+          startedFileIds.push(downloadInfo.fileId);
+          setFileProgress(downloadInfo.fileId, 0);
 
-          if (!response.ok) {
-            console.error(`Erreur téléchargement ${downloadInfo.fileName}`);
-            continue;
-          }
-
-          const contentLength = response.headers.get("content-length");
-          const actualFileSize = contentLength
-            ? parseInt(contentLength, 10)
-            : fileSize;
-
-          if (actualFileSize && response.body) {
-            const reader = response.body.getReader();
-            const chunks = [];
-            let receivedLength = 0;
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              chunks.push(value);
-              receivedLength += value.length;
-
-              // Progression globale : (déjà téléchargé + en cours) / total
-              // Réserver les derniers 5% pour la génération du ZIP
-              const globalProgress = Math.round(
-                ((totalDownloaded + receivedLength) / totalSize) * 95,
-              );
-              setDownloadProgress(Math.min(globalProgress, 95));
-            }
-
-            totalDownloaded += actualFileSize;
-
-            const blob = new Blob(chunks);
-            const arrayBuffer = await blob.arrayBuffer();
-            zip.file(downloadInfo.fileName, arrayBuffer);
-          } else {
-            // Fallback : télécharger sans streaming
-            const response2 = await fetch(downloadInfo.downloadUrl, {
-              signal: downloadAbortRef.current.signal,
-            });
-            const blob = await response2.blob();
-            const arrayBuffer = await blob.arrayBuffer();
-            zip.file(downloadInfo.fileName, arrayBuffer);
-            totalDownloaded += fileSize;
-            setDownloadProgress(
-              Math.min(Math.round((totalDownloaded / totalSize) * 95), 95),
+          try {
+            const { blob, size, crc } = await streamFileWithProgress(
+              downloadInfo.fileId,
+              file?.size || 0,
+              abortController.signal,
+              downloadSessionId,
             );
+            zipEntries[i] = {
+              name:
+                downloadInfo.fileName || file?.originalName || `fichier-${i}`,
+              size,
+              crc,
+              blob,
+            };
+            completeDownloadEvent(
+              downloadInfo.downloadEventId,
+              startTime,
+              i === filteredDownloads.length - 1,
+              downloadSessionId,
+            );
+          } catch (fileError) {
+            if (fileError.name === "AbortError") throw fileError;
+            console.error(
+              `Erreur téléchargement ${downloadInfo.fileName}:`,
+              fileError,
+            );
+            clearFileProgress(downloadInfo.fileId);
           }
         }
+      };
 
-        // Générer le ZIP
-        setDownloadProgress(96);
-        const zipBlob = await zip.generateAsync({ type: "blob" });
-        setDownloadProgress(100);
+      await Promise.all(
+        Array.from(
+          { length: Math.min(BULK_CONCURRENCY, filteredDownloads.length) },
+          worker,
+        ),
+      );
 
-        // Télécharger le ZIP
-        const url = window.URL.createObjectURL(zipBlob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${transfer?.fileTransfer?.title || "transfert"}.zip`;
-        a.style.display = "none";
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+      const completedEntries = zipEntries.filter(Boolean);
+      if (completedEntries.length === 0) {
+        throw new Error("Aucun fichier n'a pu être téléchargé");
       }
 
-      // Marquer les téléchargements comme terminés
-      const duration = Date.now() - startTime;
-      const totalFiles = filteredDownloads.length;
-      for (let i = 0; i < totalFiles; i++) {
-        const downloadInfo = filteredDownloads[i];
-        if (downloadInfo.downloadEventId) {
-          const isLastFile = i === totalFiles - 1;
-          fetch(
-            `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ duration, isLastFile }),
-            },
-          ).catch(() => {}); // Fire and forget
-        }
-      }
+      // Assembler et remettre le ZIP (une seule confirmation iOS)
+      const zipBlob = buildStoreZip(completedEntries);
+      saveBlobAsFile(
+        zipBlob,
+        `${transfer?.fileTransfer?.title || "transfert"}.zip`,
+      );
 
-      toast.success("Fichiers téléchargés avec succès !");
+      // Notification quand TOUT est téléchargé
+      toast.success(
+        completedEntries.length === filteredDownloads.length
+          ? "Tous les fichiers sont téléchargés !"
+          : `${completedEntries.length} fichier(s) sur ${filteredDownloads.length} téléchargé(s)`,
+      );
     } catch (error) {
       // Si c'est une annulation, ne pas afficher d'erreur
       if (error.name === "AbortError") {
@@ -525,10 +687,9 @@ export default function TransferPage() {
         error.message || "Erreur lors du téléchargement des fichiers",
       );
     } finally {
-      setIsDownloading(false);
-      setDownloadingFileId(null);
-      setDownloadProgress(0);
-      downloadAbortRef.current = null;
+      startedFileIds.forEach(clearFileProgress);
+      setIsBulkDownloading(false);
+      endDownloadActivity();
     }
   };
 
@@ -549,7 +710,7 @@ export default function TransferPage() {
     const apiUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
-    const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}`;
+    const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}${buildFileAuthQuery()}`;
     setPreviewFile({
       ...file,
       previewUrl,
@@ -596,9 +757,11 @@ export default function TransferPage() {
     }
 
     const fileId = file.id || file.fileId || file._id;
-    // Utiliser la fonction principale avec progression
-    await downloadFile(fileId, file.originalName, file.size);
+    // Fermer la preview AVANT de lancer le téléchargement : l'utilisateur
+    // retrouve la page principale où la progression s'affiche dans le
+    // bouton en bas
     setPreviewFile(null);
+    await downloadFile(fileId, file.originalName, file.size);
   };
 
   // Vérifier si le transfert nécessite un mot de passe et s'il n'est pas encore vérifié
@@ -753,7 +916,10 @@ export default function TransferPage() {
       {needsPasswordVerification && (
         <PasswordModal
           transferId={transfer?.fileTransfer?.id}
-          onPasswordVerified={() => setIsPasswordVerified(true)}
+          onPasswordVerified={(pwd) => {
+            setIsPasswordVerified(true);
+            setVerifiedPassword(pwd || "");
+          }}
         />
       )}
 
@@ -766,6 +932,12 @@ export default function TransferPage() {
         onDownload={downloadSingleFile}
         onNavigate={handlePreviewNavigate}
         hasWatermark={transfer?.fileTransfer?.hasWatermark}
+        isDownloading={
+          isBulkDownloading ||
+          downloadProgressMap[
+            previewFile?.id || previewFile?.fileId || previewFile?.path
+          ] !== undefined
+        }
       />
 
       {/* Modal de paiement */}
@@ -801,7 +973,12 @@ export default function TransferPage() {
       </div>
 
       {/* Panneau droit - Card */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 py-8 lg:px-8 lg:py-10">
+      <div className="w-full lg:w-1/2 relative overflow-hidden flex flex-col items-center justify-center px-4 py-8 lg:px-8 lg:py-10">
+        {/* Fond style Newbi */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#f4f3ff] via-white to-[#f4f3ff] pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-[#5a50ff]/10 blur-3xl -z-10 pointer-events-none" />
+        <div className="absolute -bottom-24 -left-16 w-80 h-80 rounded-full bg-[#5a50ff]/10 blur-3xl -z-10 pointer-events-none" />
+
         {/* Logo mobile - centré au-dessus de la card */}
         <div className="lg:hidden mb-10">
           <Image
@@ -836,7 +1013,7 @@ export default function TransferPage() {
             <>
               {/* Carte "Prévisualisation désactivée" quand le transfert
                   a explicitement allowPreview=false (non-ZIP) */}
-              {displayFiles?.[0] && previewDisabled && !isDownloading && (
+              {displayFiles?.[0] && previewDisabled && (
                 <div className="mx-4 mt-4 border border-gray-200 rounded-xl overflow-hidden bg-white">
                   <p className="px-4 py-3 text-xs text-gray-500 border-b border-gray-200">
                     Prévisualiser
@@ -850,40 +1027,11 @@ export default function TransferPage() {
                 </div>
               )}
 
-              {/* Preview de la première image OU Progress pendant téléchargement.
-                  Quand previewDisabled=true, ce bloc ne s'affiche qu'en cours
-                  de téléchargement (pour afficher la progress bar). */}
-              {displayFiles?.[0] && (!previewDisabled || isDownloading) && (
-                <div
-                  className={`mx-4 mt-4 ${isDownloading ? "h-auto" : "h-32"} bg-gray-100 rounded-xl overflow-hidden relative`}
-                >
-                  {isDownloading ? (
-                    /* Afficher la progression pendant le téléchargement */
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-white py-4">
-                      <CircularProgress
-                        value={downloadProgress}
-                        size={120}
-                        strokeWidth={10}
-                        showLabel
-                        labelClassName="text-sm font-bold"
-                        renderLabel={(progress) => `${Math.round(progress)}%`}
-                        className="stroke-[#5a50ff]/25"
-                        progressClassName="stroke-[#5a50ff]"
-                      />
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[10px] text-[#5a50ff]">
-                          Téléchargement...
-                        </p>
-                        <span className="text-[10px] text-gray-300">•</span>
-                        <button
-                          onClick={cancelDownload}
-                          className="text-[10px] text-red-500 hover:underline"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
+              {/* Preview de la première image (reste affichée pendant un
+                  téléchargement : la progression vit dans le bouton en bas) */}
+              {displayFiles?.[0] && !previewDisabled && (
+                <div className="mx-4 mt-4 h-32 bg-gray-100 rounded-xl overflow-hidden relative">
+                  {
                     <>
                       {(() => {
                         const PREVIEWABLE_EXTS = [
@@ -929,7 +1077,7 @@ export default function TransferPage() {
                         if (thumbFile?.isZipEntry) {
                           previewSrc = zipBlobUrls[thumbFile.path] || null;
                         } else if (thumbFile) {
-                          previewSrc = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${thumbFile?.fileId || thumbFile?.id}`;
+                          previewSrc = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${thumbFile?.fileId || thumbFile?.id}${buildFileAuthQuery()}`;
                         }
 
                         const ext = thumbFile?.originalName
@@ -1062,7 +1210,7 @@ export default function TransferPage() {
                         </div>
                       </button>
                     </>
-                  )}
+                  }
                 </div>
               )}
 
@@ -1134,29 +1282,43 @@ export default function TransferPage() {
                               <Eye className="w-4 h-4" />
                             </button>
                           )}
-                          {!isDownloadBlocked(file) && (
-                            <button
-                              onClick={() => {
-                                if (file.isZipEntry) {
-                                  downloadSingleFile(file);
-                                } else {
-                                  downloadFile(
-                                    file.id || file.fileId,
-                                    file.originalName,
-                                    file.size,
-                                  );
-                                }
-                              }}
-                              disabled={isDownloading}
-                              className={`p-2 transition-colors cursor-pointer ${
-                                isDownloading
-                                  ? "text-gray-300 cursor-not-allowed"
-                                  : "text-gray-400 hover:text-[#5a50ff]"
-                              }`}
-                            >
-                              <Download className="w-4 h-4" />
-                            </button>
-                          )}
+                          {!isDownloadBlocked(file) &&
+                            (() => {
+                              const rowFileId =
+                                file.id || file.fileId || file.path;
+                              const rowProgress =
+                                downloadProgressMap[rowFileId];
+                              const rowDownloading = rowProgress !== undefined;
+                              return (
+                                <button
+                                  onClick={() => {
+                                    if (file.isZipEntry) {
+                                      downloadSingleFile(file);
+                                    } else {
+                                      downloadFile(
+                                        file.id || file.fileId,
+                                        file.originalName,
+                                        file.size,
+                                      );
+                                    }
+                                  }}
+                                  disabled={rowDownloading || isBulkDownloading}
+                                  className={`p-2 transition-colors cursor-pointer ${
+                                    rowDownloading || isBulkDownloading
+                                      ? "text-gray-300 cursor-not-allowed"
+                                      : "text-gray-400 hover:text-[#5a50ff]"
+                                  }`}
+                                >
+                                  {rowDownloading ? (
+                                    <span className="text-[10px] font-semibold text-[#5a50ff] tabular-nums">
+                                      {Math.round(rowProgress)}%
+                                    </span>
+                                  ) : (
+                                    <Download className="w-4 h-4" />
+                                  )}
+                                </button>
+                              );
+                            })()}
                         </div>
                       </div>
                     </li>
@@ -1178,19 +1340,25 @@ export default function TransferPage() {
               {/* Bouton télécharger - masqué si filigrane actif */}
               {!transfer?.fileTransfer?.hasWatermark && (
                 <div className="w-full px-5 py-5 text-center">
+                  {/* Le seul loader est le % sur la ligne du fichier : le
+                      bouton global garde son libellé */}
                   <Button
                     onClick={downloadAllFiles}
-                    disabled={isDownloading}
+                    disabled={isBulkDownloading}
                     className="text-white px-10 w-full rounded-xl"
                   >
-                    {isDownloading ? (
-                      <LoaderCircle className="w-5 h-5 animate-spin" />
-                    ) : (transfer?.fileTransfer?.files?.length || 0) > 1 ? (
-                      "Tout télécharger"
-                    ) : (
-                      "Télécharger"
-                    )}
+                    {(transfer?.fileTransfer?.files?.length || 0) > 1
+                      ? "Tout télécharger"
+                      : "Télécharger"}
                   </Button>
+                  {isDownloading && (
+                    <button
+                      onClick={cancelDownload}
+                      className="mt-2 text-[11px] text-gray-400 hover:text-red-500 transition-colors cursor-pointer block mx-auto"
+                    >
+                      Annuler
+                    </button>
+                  )}
                 </div>
               )}
             </>

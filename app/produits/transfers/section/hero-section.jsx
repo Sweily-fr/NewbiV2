@@ -1,9 +1,19 @@
 "use client";
+
+import dynamic from "next/dynamic";
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
-import { DragDropAnimation } from "./DragDropAnimation";
-import { MobileDragDropAnimation } from "./MobileDragDropAnimation";
+// Animations gsap chargées dans leur propre chunk (hors chemin critique SEO)
+const DragDropAnimation = dynamic(
+  () => import("./DragDropAnimation").then((m) => m.DragDropAnimation),
+  { ssr: false },
+);
+const MobileDragDropAnimation = dynamic(
+  () =>
+    import("./MobileDragDropAnimation").then((m) => m.MobileDragDropAnimation),
+  { ssr: false },
+);
 
 export function HeroSection() {
   return (
@@ -36,7 +46,8 @@ export function HeroSection() {
                   </Link>
                 </div>
                 <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
-                  Plusieurs entreprises nous font déjà confiance · Jusqu&apos;à 5 Go par fichier
+                  Plusieurs entreprises nous font déjà confiance · Jusqu&apos;à
+                  5 Go par fichier
                 </p>
               </div>
 
@@ -54,7 +65,8 @@ export function HeroSection() {
                 <div
                   className="absolute bottom-0 left-0 right-0 h-36 pointer-events-none z-10"
                   style={{
-                    background: "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
+                    background:
+                      "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
                   }}
                 />
               </div>
@@ -62,20 +74,42 @@ export function HeroSection() {
               {/* Desktop: image + animation */}
               <div className="hidden lg:flex relative items-end justify-end overflow-visible pt-4">
                 <div className="relative w-[1600px] xl:w-[1700px] -mr-96 xl:-mr-[28rem]">
-                  <img src="/lp/transfers/transfers-hero.png" alt="Transfert de fichiers Newbi" className="w-full h-auto relative z-10" />
+                  <img
+                    src="/lp/transfers/transfers-hero.png"
+                    alt="Transfert de fichiers Newbi"
+                    className="w-full h-auto relative z-10"
+                  />
 
                   {/* Zone upload overlay */}
                   <div className="absolute top-[6%] left-[9%] w-[44%] h-[48%] flex items-center justify-center z-20">
                     <div className="upload-zone-inner w-[80%] h-[70%] border border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center gap-2.5 bg-white/50 relative">
                       <div className="upload-zone-content flex flex-col items-center justify-center gap-2.5">
                         <div className="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a3a3a3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#a3a3a3"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                           </svg>
                         </div>
-                        <p className="text-[10px] font-medium text-neutral-700 text-center">Glissez-déposez vos fichiers<br />ou cliquez pour sélectionner</p>
-                        <p className="text-[7px] text-neutral-400 text-center">Taille maximale : 5GB par fichier · Tous formats acceptés</p>
-                        <p className="text-[6px] text-neutral-400">Tous les fichiers · Max 10 fichiers · Up to 5 GB</p>
+                        <p className="text-[10px] font-medium text-neutral-700 text-center">
+                          Glissez-déposez vos fichiers
+                          <br />
+                          ou cliquez pour sélectionner
+                        </p>
+                        <p className="text-[7px] text-neutral-400 text-center">
+                          Taille maximale : 5GB par fichier · Tous formats
+                          acceptés
+                        </p>
+                        <p className="text-[6px] text-neutral-400">
+                          Tous les fichiers · Max 10 fichiers · Up to 5 GB
+                        </p>
                       </div>
                     </div>
                   </div>

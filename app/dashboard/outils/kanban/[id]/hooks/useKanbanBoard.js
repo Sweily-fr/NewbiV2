@@ -7,7 +7,8 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/utils/debouncedToast";
-import { useRef, useCallback } from "react";
+import { forceWsReconnect } from "@/src/lib/apolloClient";
+import { useRef, useCallback, useState, useEffect } from "react";
 
 // Logs de debug gated par localStorage('kanban-debug' === '1'). Désactivés
 // par défaut pour ne pas alourdir le 'message handler' en prod.
@@ -31,13 +32,62 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Vérifier directement si la session est prête (sans état intermédiaire)
   const isSessionReady = !sessionLoading && !!session?.user;
 
+  // ── Verrou d'organisation ──────────────────────────────────────────────
+  // Le boardId de l'URL appartient à l'organisation active au moment du mount.
+  // Quand l'utilisateur change d'espace depuis le tableau, le store Better Auth
+  // est réactif : `workspaceId` change dès le render suivant, alors que la
+  // redirection vers la liste passe par un effet, donc APRÈS. Sans ce verrou,
+  // Apollo relance GET_BOARD pendant ce render avec l'ancien id et la nouvelle
+  // org : le serveur ne trouve rien, répond "Board not found", et l'erreur part
+  // dans l'alerting alors que c'est un simple changement d'espace.
+  const mountedWorkspaceIdRef = useRef(null);
+  if (workspaceId && !mountedWorkspaceIdRef.current) {
+    mountedWorkspaceIdRef.current = workspaceId;
+  }
+  const hasSwitchedWorkspace =
+    !!workspaceId &&
+    !!mountedWorkspaceIdRef.current &&
+    workspaceId !== mountedWorkspaceIdRef.current;
+
+  // ── Redémarrage des subscriptions après erreur ─────────────────────────
+  // Une erreur reçue par useSubscription TERMINE l'observable Apollo : même
+  // si le WebSocket est réparé ensuite (forceWsReconnect), le transport
+  // rejoue l'opération et les trames ARRIVENT au navigateur… mais tombent
+  // dans un observable mort et sont jetées — plus aucun événement traité
+  // jusqu'au refresh de la page. On force donc un vrai ré-abonnement en
+  // basculant `skip` (démonte puis remonte les subscriptions), avec backoff
+  // exponentiel pour ne pas marteler le serveur si l'erreur persiste.
+  const [wsRestartPause, setWsRestartPause] = useState(false);
+  const wsRestartAttemptsRef = useRef(0);
+  const wsRestartTimerRef = useRef(null);
+  const restartSubscriptions = useCallback(() => {
+    forceWsReconnect();
+    if (wsRestartTimerRef.current) return;
+    const delay = Math.min(30000, 1500 * 2 ** wsRestartAttemptsRef.current);
+    console.warn(
+      `[WebSocket] Ré-abonnement des subscriptions kanban dans ${delay}ms`,
+    );
+    wsRestartAttemptsRef.current += 1;
+    setWsRestartPause(true);
+    wsRestartTimerRef.current = setTimeout(() => {
+      wsRestartTimerRef.current = null;
+      setWsRestartPause(false);
+    }, delay);
+  }, []);
+  useEffect(
+    () => () => {
+      if (wsRestartTimerRef.current) clearTimeout(wsRestartTimerRef.current);
+    },
+    [],
+  );
+
   const { data, loading, error, refetch } = useQuery(GET_BOARD, {
     variables: {
       id,
       workspaceId,
     },
     errorPolicy: "all",
-    skip: !workspaceId || isRedirecting,
+    skip: !workspaceId || isRedirecting || hasSwitchedWorkspace,
     // 1er mount : cache + refresh réseau en background.
     // Re-mount / navigation : cache only (les subscriptions gardent le cache
     // frais en temps réel, pas besoin de re-fetch tout le board).
@@ -227,10 +277,18 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Subscription pour les mises à jour temps réel des tâches
   useSubscription(TASK_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
+    skip:
+      !workspaceId ||
+      !id ||
+      !isSessionReady ||
+      isRedirecting ||
+      wsRestartPause ||
+      hasSwitchedWorkspace,
     onData: ({ data: subscriptionData }) => {
       const event = subscriptionData?.data?.taskUpdated;
       if (!event) return;
+      // Événement reçu = subscription saine → réarmer le backoff
+      wsRestartAttemptsRef.current = 0;
       const { type, task, taskId, visitor } = event;
       __klog("📡 [Subscription] Données reçues:", type);
 
@@ -258,15 +316,25 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       scheduleFlush();
     },
     onError: (error) => {
-      if (error.message?.includes("connecté")) return;
-      console.error("❌ [Kanban] Erreur subscription tâches:", error);
+      if (!error.message?.includes("connecté")) {
+        console.error("❌ [Kanban] Erreur subscription tâches:", error);
+      }
+      // Toute erreur TERMINE l'observable : reconnexion du transport ET
+      // ré-abonnement Apollo, sinon la subscription reste sourde à vie.
+      restartSubscriptions();
     },
   });
 
   // Subscription pour les mises à jour temps réel des colonnes
   useSubscription(COLUMN_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
+    skip:
+      !workspaceId ||
+      !id ||
+      !isSessionReady ||
+      isRedirecting ||
+      wsRestartPause ||
+      hasSwitchedWorkspace,
     onData: ({ data: subscriptionData }) => {
       const event = subscriptionData?.data?.columnUpdated;
       if (!event) return;
@@ -301,8 +369,10 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       scheduleFlush();
     },
     onError: (error) => {
-      if (error.message?.includes("connecté")) return;
-      console.error("❌ [Kanban] Erreur subscription colonnes:", error);
+      if (!error.message?.includes("connecté")) {
+        console.error("❌ [Kanban] Erreur subscription colonnes:", error);
+      }
+      restartSubscriptions();
     },
   });
 
@@ -329,5 +399,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     getTasksByColumn,
     workspaceId,
     markReorderAction,
+    hasSwitchedWorkspace,
   };
 };

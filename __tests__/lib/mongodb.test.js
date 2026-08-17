@@ -40,7 +40,7 @@ describe("lib/mongodb", () => {
     const [uri, opts] = MongoClientCtor.mock.calls[0];
     expect(uri).toBe("mongodb://test/27017");
     expect(opts).toMatchObject({
-      maxPoolSize: 1,
+      maxPoolSize: 10,
       minPoolSize: 0,
       retryWrites: true,
       retryReads: true,

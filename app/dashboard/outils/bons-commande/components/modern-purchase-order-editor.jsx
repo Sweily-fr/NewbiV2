@@ -52,6 +52,7 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -81,6 +83,9 @@ export default function ModernPurchaseOrderEditor({
   const [createdPurchaseOrderData, setCreatedPurchaseOrderData] =
     useState(null);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showManageTemplates, setShowManageTemplates] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("none");
@@ -331,6 +336,7 @@ export default function ModernPurchaseOrderEditor({
     return {
       client: v.client,
       companyInfo: {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || "",
         address: {
           street: organization?.addressStreet || "",
@@ -346,6 +352,7 @@ export default function ModernPurchaseOrderEditor({
         legalForm: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
         fiscalRegime: organization?.fiscalRegime || "",
+        vatFranchise: organization?.vatFranchise || false,
         website: organization?.website || "",
         logo: organization?.logo || "",
         bankDetails: {
@@ -401,6 +408,7 @@ export default function ModernPurchaseOrderEditor({
     clientPositionRight:
       organization?.purchaseOrderClientPositionRight || false,
     isReverseCharge: false,
+    isVatExempt: false,
     showBankDetails: organization?.showBankDetails || false,
     shipping: {
       billShipping: false,
@@ -463,6 +471,7 @@ export default function ModernPurchaseOrderEditor({
         },
         clientPositionRight: template.clientPositionRight ?? false,
         isReverseCharge: template.isReverseCharge ?? false,
+        isVatExempt: template.isVatExempt ?? false,
         showBankDetails: template.showBankDetails ?? false,
         shipping: template.shipping ?? {
           billShipping: false,
@@ -646,10 +655,11 @@ export default function ModernPurchaseOrderEditor({
                       onCancel={() => setShowSettings(false)}
                       onCloseAttempt={setCloseSettingsHandler}
                       onSave={() => {
+                        // Ne reste ici que ce qui est propre au bon de commande.
+                        // Les informations de l'entreprise et les coordonnées
+                        // bancaires sont enregistrées par leurs modales.
                         setShowSettings(false);
-                        toast.success(
-                          "Paramètres appliqués à ce bon de commande",
-                        );
+                        toast.success("Paramètres appliqués");
                       }}
                       canEdit={!isReadOnly}
                       saveLabel="Appliquer à ce bon de commande"

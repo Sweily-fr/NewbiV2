@@ -262,8 +262,8 @@ describe("exportAnalyticsCSV", () => {
 // ─── Excel export ────────────────────────────────────────────────────────────
 
 describe("exportAnalyticsExcel", () => {
-  it("creates a workbook and writes one sheet per section", () => {
-    exportAnalyticsExcel(sampleData, "all", "p");
+  it("creates a workbook and writes one sheet per section", async () => {
+    await exportAnalyticsExcel(sampleData, "all", "p");
     expect(xlsxState.bookNew).toHaveBeenCalledTimes(1);
     expect(xlsxState.appendSheet).toHaveBeenCalled();
     expect(xlsxState.writeFile).toHaveBeenCalledWith(
@@ -272,18 +272,18 @@ describe("exportAnalyticsExcel", () => {
     );
   });
 
-  it("truncates sheet names to 31 chars (Excel limit)", () => {
+  it("truncates sheet names to 31 chars (Excel limit)", async () => {
     // None of the canonical sheet names exceed 31 chars in the current code,
     // so we verify the helper is called with reasonable names.
-    exportAnalyticsExcel(sampleData, "all", "p");
+    await exportAnalyticsExcel(sampleData, "all", "p");
     const sheetNames = xlsxState.appendSheet.mock.calls.map((c) => c[2]);
     sheetNames.forEach((n) => expect(n.length).toBeLessThanOrEqual(31));
   });
 
-  it("writes a placeholder sheet when a section has no rows", () => {
+  it("writes a placeholder sheet when a section has no rows", async () => {
     const empty = { ...sampleData, revenueByClient: [] };
     xlsxState.jsonToSheet.mockClear();
-    exportAnalyticsExcel(empty, "commercial", "p");
+    await exportAnalyticsExcel(empty, "commercial", "p");
     // The Clients sheet is empty → the helper must be called with the placeholder row
     const calls = xlsxState.jsonToSheet.mock.calls;
     const placeholderCalls = calls.filter(
@@ -296,13 +296,13 @@ describe("exportAnalyticsExcel", () => {
 // ─── PDF export ──────────────────────────────────────────────────────────────
 
 describe("exportAnalyticsPDF", () => {
-  it("builds a landscape PDF and saves with the right filename", () => {
-    exportAnalyticsPDF(sampleData, "synthese", "2026-Q1");
+  it("builds a landscape PDF and saves with the right filename", async () => {
+    await exportAnalyticsPDF(sampleData, "synthese", "2026-Q1");
     expect(jspdfInstance.save).toHaveBeenCalledWith("analytiques_2026-Q1.pdf");
   });
 
-  it("emits the page title and the period", () => {
-    exportAnalyticsPDF(sampleData, "synthese", "2026_Q1");
+  it("emits the page title and the period", async () => {
+    await exportAnalyticsPDF(sampleData, "synthese", "2026_Q1");
     const textCalls = jspdfInstance.text.mock.calls.map((c) => c[0]);
     expect(textCalls).toContain("Analytiques financieres");
     // Period is normalized: underscores → spaces
@@ -311,16 +311,16 @@ describe("exportAnalyticsPDF", () => {
     ).toBe(true);
   });
 
-  it("starts a new page between sheets", () => {
+  it("starts a new page between sheets", async () => {
     jspdfInstance.addPage.mockClear();
-    exportAnalyticsPDF(sampleData, "all", "p");
+    await exportAnalyticsPDF(sampleData, "all", "p");
     // 'all' produces multiple sheets → at least one addPage call
     expect(jspdfInstance.addPage).toHaveBeenCalled();
   });
 
-  it("falls back to 'Aucune donnee' when a section is empty", () => {
+  it("falls back to 'Aucune donnee' when a section is empty", async () => {
     jspdfInstance.text.mockClear();
-    exportAnalyticsPDF(
+    await exportAnalyticsPDF(
       { ...sampleData, revenueByClient: [] },
       "commercial",
       "p",

@@ -50,6 +50,7 @@ export const QUOTE_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street
@@ -67,6 +68,12 @@ export const QUOTE_FRAGMENT = gql`
     }
     companyInfo {
       name
+      commercialName
+      professionalTitle
+      regulatoryBody
+      professionalNumber
+      decennialInsurance
+      professionalLiabilityInsurance
       email
       phone
       website
@@ -76,6 +83,7 @@ export const QUOTE_FRAGMENT = gql`
       vatNumber
       transactionCategory
       vatPaymentCondition
+      vatFranchise
       companyStatus
       capitalSocial
       rcs
@@ -127,6 +135,7 @@ export const QUOTE_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    isVatExempt
     operationType
     createdBy {
       id
@@ -142,10 +151,18 @@ export const QUOTE_FRAGMENT = gql`
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC
       isDeposit
+    }
+    linkedPurchaseOrders {
+      id
+      prefix
+      number
+      status
+      finalTotalTTC
     }
     hasPurchaseOrderInvoices
     emailTracking {
@@ -196,6 +213,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     isReverseCharge
+    isVatExempt
     items {
       description
       quantity
@@ -213,6 +231,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
       type
       siret
       vatNumber
+      isInternational
       address {
         street
         city
@@ -253,6 +272,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC
@@ -396,6 +416,7 @@ export const GET_QUOTE_BY_NUMBER = gql`
         email
         type
         vatNumber
+        isInternational
         siret
         address {
           fullName
@@ -1021,6 +1042,7 @@ export const GET_QUOTE_TEMPLATES = gql`
       }
       clientPositionRight
       isReverseCharge
+      isVatExempt
       showBankDetails
       shipping {
         billShipping

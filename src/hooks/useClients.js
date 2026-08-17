@@ -288,33 +288,12 @@ export const useDeleteClient = () => {
         id: cache.identify({ __typename: "Client", id }),
       });
 
-      // Supprimer le client de la liste GET_CLIENTS
-      try {
-        const existingClients = cache.readQuery({
-          query: GET_CLIENTS,
-          variables: { workspaceId, page: 1, limit: 10, search: "" },
-        });
-
-        if (existingClients) {
-          const filteredItems = existingClients.clients.items.filter(
-            (client) => client.id !== id,
-          );
-
-          cache.writeQuery({
-            query: GET_CLIENTS,
-            variables: { workspaceId, page: 1, limit: 10, search: "" },
-            data: {
-              clients: {
-                ...existingClients.clients,
-                items: filteredItems,
-                totalItems: existingClients.clients.totalItems - 1,
-              },
-            },
-          });
-        }
-      } catch {
-        // Si la query n'existe pas dans le cache, on l'ignore
-      }
+      // Le cache stocke une entrée GET_CLIENTS par combinaison page/limit/search :
+      // réécrire uniquement la page 1 laisse toutes les autres pages périmées
+      // (clients supprimés encore affichés, totalPages jamais recalculé).
+      // On invalide donc le champ entier : la requête active refait un appel
+      // réseau et le serveur renvoie la pagination recompactée.
+      cache.evict({ id: "ROOT_QUERY", fieldName: "clients" });
 
       // Nettoyer le cache
       cache.gc();

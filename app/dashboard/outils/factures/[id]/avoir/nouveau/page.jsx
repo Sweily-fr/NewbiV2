@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ModernCreditNoteEditor from "../../../components/modern-credit-note-editor";
+import { InvoiceEditorSkeleton } from "../../../components/invoice-editor-skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
@@ -18,7 +19,7 @@ function NewCreditNoteContent() {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const checkPermission = async () => {
       const allowed = await canCreate("creditNotes");
       if (isMounted) {
@@ -33,13 +34,10 @@ function NewCreditNoteContent() {
     };
   }, [canCreate]);
 
-  // Chargement
+  // Chargement : même skeleton que l'éditeur pour éviter un flash de spinner
+  // (l'ancien spinner border-gray-900 était invisible en dark mode)
   if (hasPermission === null) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
+    return <InvoiceEditorSkeleton />;
   }
 
   // Pas de permission - Afficher un message sans redirection automatique
@@ -54,7 +52,10 @@ function NewCreditNoteContent() {
           <p className="text-muted-foreground mb-6">
             Vous n'avez pas la permission de créer des avoirs.
           </p>
-          <Button onClick={() => router.push("/dashboard/outils/factures")} variant="default">
+          <Button
+            onClick={() => router.push("/dashboard/outils/factures")}
+            variant="default"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour aux factures
           </Button>
@@ -68,7 +69,7 @@ function NewCreditNoteContent() {
 
 export default function NewCreditNotePage() {
   return (
-    <ProRouteGuard pageName="Nouvel avoir">
+    <ProRouteGuard pageName="Nouvel avoir" fallback={<InvoiceEditorSkeleton />}>
       <NewCreditNoteContent />
     </ProRouteGuard>
   );

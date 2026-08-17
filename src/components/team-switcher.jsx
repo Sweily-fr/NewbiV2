@@ -94,7 +94,14 @@ import {
 } from "@/src/components/ui/dialog";
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
-import { SettingsModal } from "./settings-modal";
+import dynamic from "next/dynamic";
+import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
+
+// Chunk chargé à la première ouverture seulement (~11 000 lignes de sections)
+const SettingsModal = dynamic(
+  () => import("./settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import {
   PeopleIcon as Users,
   SettingIcon as Settings,
@@ -102,7 +109,10 @@ import {
 } from "@/src/components/icons";
 
 import { RenameOrganizationModal } from "./rename-organization-modal";
-import { apolloClient } from "@/src/lib/apolloClient";
+import {
+  apolloClient,
+  setOrganizationIdForApollo,
+} from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
 import { stripIdFromPathname } from "@/src/utils/orgRedirect";
@@ -154,39 +164,43 @@ export function TeamSwitcher() {
     refetch: refetchActiveOrg,
   } = authClient.useActiveOrganization();
 
-  // Fonction pour charger les organisations avec leur ordre
-  const loadOrganizations = React.useCallback(async () => {
-    try {
-      setOrganizationsLoading(true);
-      const response = await fetch("/api/organization/list-with-order");
+  // Fonction pour charger les organisations avec leur ordre (fetch partagé
+  // et mis en cache : le header monte le même appel).
+  const loadOrganizations = React.useCallback(
+    async ({ force = false } = {}) => {
+      try {
+        setOrganizationsLoading(true);
+        const result = await fetchOrganizationsWithOrder({ force });
 
-      // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
-      if (response.status === 401) {
-        console.warn("Session expirée ou non authentifié");
-        setSortedOrganizations([]);
-        return;
+        // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
+        if (result.status === 401) {
+          console.warn("Session expirée ou non authentifié");
+          setSortedOrganizations([]);
+          return;
+        }
+
+        if (!result.ok) {
+          console.error("Erreur API:", result.status);
+          setSortedOrganizations([]);
+          return;
+        }
+
+        setSortedOrganizations(result.organizations);
+      } catch (error) {
+        console.error("Erreur chargement organisations:", error);
+        // Ne pas vider les organisations en cas d'erreur réseau temporaire
+        // pour éviter le clignotement
+      } finally {
+        setOrganizationsLoading(false);
       }
-
-      if (!response.ok) {
-        console.error("Erreur API:", response.status, response.statusText);
-        setSortedOrganizations([]);
-        return;
-      }
-
-      const data = await response.json();
-      setSortedOrganizations(data.organizations || []);
-    } catch (error) {
-      console.error("Erreur chargement organisations:", error);
-      // Ne pas vider les organisations en cas d'erreur réseau temporaire
-      // pour éviter le clignotement
-    } finally {
-      setOrganizationsLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Charger les organisations au montage et après certaines actions
   React.useEffect(() => {
-    loadOrganizations();
+    // forceUpdate > 0 = action utilisateur (réordonnancement...) : bypass cache
+    loadOrganizations({ force: forceUpdate > 0 });
   }, [loadOrganizations, forceUpdate]);
 
   // Sensors pour le drag & drop
@@ -259,36 +273,59 @@ export function TeamSwitcher() {
 
     try {
       setIsChangingOrg(true);
+      const previousOrgId = activeOrganization?.id;
 
-      // 1. Changer d'organisation côté serveur avec Better Auth
+      // 1. Prévenir les pages de détail AVANT setActive() : le store Better
+      //    Auth est réactif, donc dès qu'il bascule, une page encore montée
+      //    relance ses queries avec l'ancien id de ressource et la nouvelle
+      //    organisation — le serveur répond "ressource introuvable" et
+      //    l'erreur part dans l'alerting. Prévenues, elles gèlent leur rendu
+      //    et leurs requêtes ; la sortie vers la liste se fait plus bas, une
+      //    fois le cache vidé.
+      window.dispatchEvent(
+        new CustomEvent("organizationChanged", {
+          detail: { previousOrgId, newOrgId: organizationId },
+        }),
+      );
+
+      // 2. Changer d'organisation côté serveur avec Better Auth
       await authClient.organization.setActive({
         organizationId,
       });
 
-      // 2. Vider TOUT le cache Apollo (toutes les données sont liées à l'ancienne org)
+      // 3. Aligner immédiatement l'en-tête x-organization-id d'Apollo, sans
+      //    attendre l'effet de useWorkspace : les requêtes qui ne passent pas
+      //    de workspaceId explicite retomberaient sinon sur l'ancienne org.
+      setOrganizationIdForApollo(organizationId);
+      localStorage.setItem("active_organization_id", organizationId);
+
+      // 4. Vider TOUT le cache Apollo (toutes les données sont liées à l'ancienne org)
       await apolloClient.clearStore();
 
-      // 3. Refetch l'organisation active pour mettre à jour l'UI
+      // 5. Refetch l'organisation active pour mettre à jour l'UI
       if (refetchActiveOrg) {
         await refetchActiveOrg();
       }
 
-      // 4. Notification de succès
+      // 6. Notification de succès
       const newOrg = sortedOrganizations.find(
         (org) => org.id === organizationId,
       );
       const orgName = newOrg?.name || "l'organisation";
       toast.success(`Vous êtes sur l'espace ${orgName}`);
 
-      // 5. Si on est sur une page de détail (URL avec un ID de ressource),
+      // 7. Si on est sur une page de détail (URL avec un ID de ressource),
       //    rediriger vers la page liste : l'ID n'existe pas dans la nouvelle org.
       const safePath = stripIdFromPathname(pathname);
       if (safePath !== pathname) {
-        router.push(safePath);
+        router.replace(safePath);
       }
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
+      // Le changement a échoué : dégeler les pages de détail prévenues à
+      // l'étape 1, sinon elles resteraient bloquées sur un écran vide.
+      window.dispatchEvent(new CustomEvent("organizationChangeAborted"));
     } finally {
       setIsChangingOrg(false);
     }
@@ -467,21 +504,23 @@ export function TeamSwitcher() {
         onOpenChange={setInviteDialogOpen}
         onSuccess={() => {
           // Rafraîchir les organisations
-          loadOrganizations();
+          loadOrganizations({ force: true });
         }}
       />
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-        initialTab={settingsInitialTab}
-      />
+      {settingsModalOpen && (
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
+      )}
       <RenameOrganizationModal
         open={renameModalOpen}
         onOpenChange={setRenameModalOpen}
         organization={selectedOrganization}
         onSuccess={() => {
           // Rafraîchir les organisations
-          loadOrganizations();
+          loadOrganizations({ force: true });
           if (refetchActiveOrg) {
             refetchActiveOrg();
           }

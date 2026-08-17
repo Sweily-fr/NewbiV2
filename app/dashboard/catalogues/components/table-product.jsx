@@ -98,6 +98,7 @@ import ProductImportDialog from "./product-import-dialog";
 import ProductFilters from "./product-filters";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { MenuBoardIcon } from "@/src/components/icons";
+import { CataloguesTableSkeleton } from "./catalogues-page-skeleton";
 
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -481,9 +482,10 @@ export default function TableProduct({
   // Get selected categories
   const selectedCategories = categoryColumn?.getFilterValue() ?? [];
 
-  // Affichage du skeleton pendant le chargement
-  if (loading) {
-    return <CatalogSkeleton />;
+  // Skeleton uniquement au premier chargement : si le cache Apollo a déjà des
+  // produits (retour sur la page), on les affiche pendant le refetch silencieux
+  if (loading && (!allProducts || allProducts.length === 0)) {
+    return <CataloguesTableSkeleton />;
   }
 
   // Affichage d'erreur
@@ -646,7 +648,7 @@ export default function TableProduct({
               ))}
             </thead>
             <tbody>
-              {loading ? (
+              {loading && !allProducts?.length ? (
                 Array.from({ length: pagination.pageSize }).map((_, index) => (
                   <tr key={`skeleton-${index}`} className="border-b">
                     {columns.map((col, colIndex, arr) => (
@@ -1082,143 +1084,5 @@ function RowActions({ row, onEdit, onDelete }) {
         </AlertDialogContent>
       </AlertDialog>
     </DropdownMenu>
-  );
-}
-
-// Composant skeleton adaptatif pour le catalogue
-function CatalogSkeleton() {
-  return (
-    <>
-      {/* Desktop Skeleton */}
-      <div className="hidden md:block space-y-4">
-        {/* Filters skeleton */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {/* Search input skeleton */}
-            <Skeleton className="h-10 w-60" />
-            {/* Category filter skeleton */}
-            <Skeleton className="h-10 w-24" />
-            {/* Column filter skeleton */}
-            <Skeleton className="h-10 w-20 sm:w-24" />
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Add product button skeleton */}
-            <Skeleton className="h-10 w-32 sm:w-40" />
-          </div>
-        </div>
-
-        {/* Table skeleton */}
-        <div className="bg-background overflow-hidden rounded-md border">
-          <div className="table-fixed w-full">
-            {/* Header skeleton */}
-            <div className="border-b">
-              <div className="flex items-center h-11 px-4">
-                <Skeleton className="h-4 w-4 mr-4" />
-                <div className="flex-1 flex gap-4">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-4 w-20" />
-                  <div className="hidden sm:block">
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                  <div className="hidden md:block">
-                    <Skeleton className="h-4 w-24" />
-                  </div>
-                  <div className="hidden lg:block">
-                    <Skeleton className="h-4 w-40" />
-                  </div>
-                  <Skeleton className="h-4 w-8 ml-auto" />
-                </div>
-              </div>
-            </div>
-
-            {/* Rows skeleton - Responsive */}
-            <div className="divide-y">
-              {Array.from({ length: 10 }).map((_, index) => (
-                <div key={index} className="flex items-center h-14 px-4">
-                  <Skeleton className="h-4 w-4 mr-4" />
-                  <div className="flex-1 flex gap-4 items-center">
-                    {/* Nom du produit */}
-                    <Skeleton className="h-4 w-32" />
-                    {/* Référence */}
-                    <Skeleton className="h-4 w-24" />
-                    {/* Prix */}
-                    <Skeleton className="h-4 w-20" />
-                    {/* TVA */}
-                    <Skeleton className="h-5 w-12 rounded-full" />
-                    {/* Unité - Hidden on mobile */}
-                    <div className="hidden sm:block">
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                    {/* Catégorie - Hidden on mobile */}
-                    <div className="hidden md:block">
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                    </div>
-                    {/* Description - Hidden on mobile and tablet */}
-                    <div className="hidden lg:block">
-                      <Skeleton className="h-4 w-40" />
-                    </div>
-                    {/* Actions */}
-                    <div className="ml-auto">
-                      <Skeleton className="h-8 w-8 rounded" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pagination Skeleton - Style identique à Transactions */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
-        <Skeleton className="h-4 w-[150px]" />
-        <div className="flex items-center space-x-4 lg:space-x-6">
-          <div className="flex items-center gap-1.5">
-            <Skeleton className="h-4 w-[80px]" />
-            <Skeleton className="h-7 w-[70px]" />
-          </div>
-          <Skeleton className="h-4 w-[80px]" />
-          <div className="flex gap-1">
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-            <Skeleton className="h-7 w-7" />
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Skeleton */}
-      <div className="md:hidden space-y-4">
-        {/* Toolbar */}
-        <div className="px-4 py-3 space-y-3">
-          <Skeleton className="h-10 w-full" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 flex-1" />
-            <Skeleton className="h-9 w-20" />
-          </div>
-        </div>
-
-        {/* Product Cards */}
-        <div className="px-4 space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="border rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <Skeleton className="h-12 w-12 rounded" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-48" />
-                  <div className="flex gap-2 mt-2">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-20" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
   );
 }

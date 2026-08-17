@@ -103,6 +103,7 @@ export async function PUT(req) {
           userObjectId,
           currentSessionToken: session.session?.token || null,
           maxSessions: update.maxSessions,
+          trigger: "settings_update_max_sessions",
         });
         revokedCount = result.revokedCount;
       } catch (err) {

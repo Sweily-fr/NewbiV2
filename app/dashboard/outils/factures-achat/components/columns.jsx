@@ -10,13 +10,18 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Wallet as WalletIcon,
+  CheckCircle2,
+  Archive,
+  Tag,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
@@ -119,11 +124,15 @@ function SortableHeader({ column, children }) {
   );
 }
 
-function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
+function RowActions({
+  invoice,
+  onViewInvoice,
+  onDeleteInvoice,
+  onMarkStatus,
+  onCategorize,
+  categoryLabels = {},
+}) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  // Les lignes "dépense" (transactions) se gèrent dans le drawer transaction :
-  // pas de suppression "facture d'achat" ici.
-  const isTransaction = invoice.sourceKind === "TRANSACTION";
   return (
     <div data-no-row-click>
       <DropdownMenu>
@@ -134,32 +143,59 @@ function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => onViewInvoice?.(invoice)}>
-            <Eye className="h-4 w-4 mr-2" />
+            <Eye className="h-4 w-4" />
             Voir
           </DropdownMenuItem>
           {invoice.files?.[0]?.url && (
             <DropdownMenuItem
               onClick={() => window.open(invoice.files[0].url, "_blank")}
             >
-              <Paperclip className="h-4 w-4 mr-2" />
+              <Paperclip className="h-4 w-4" />
               Voir le justificatif
             </DropdownMenuItem>
           )}
-          {!isTransaction && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  setConfirmOpen(true);
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </DropdownMenuItem>
-            </>
+          <DropdownMenuSeparator />
+          {invoice.status !== "PAID" && (
+            <DropdownMenuItem
+              onClick={() => onMarkStatus?.(invoice.id, "PAID")}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Marquer payée
+            </DropdownMenuItem>
           )}
+          <DropdownMenuItem
+            onClick={() => onMarkStatus?.(invoice.id, "ARCHIVED")}
+          >
+            <Archive className="h-4 w-4" />
+            Archiver
+          </DropdownMenuItem>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="gap-2">
+              <Tag className="h-4 w-4" />
+              Catégoriser
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="w-52">
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <DropdownMenuItem
+                  key={key}
+                  onClick={() => onCategorize?.(invoice.id, key)}
+                >
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={(e) => {
+              e.preventDefault();
+              setConfirmOpen(true);
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+            Supprimer
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -186,7 +222,13 @@ function RowActions({ invoice, onViewInvoice, onDeleteInvoice }) {
   );
 }
 
-export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
+export const getColumns = ({
+  onViewInvoice,
+  onDeleteInvoice,
+  onMarkStatus,
+  onCategorize,
+  categoryLabels = {},
+} = {}) => [
   {
     id: "select",
     size: 50,
@@ -202,18 +244,15 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
         />
       </div>
     ),
-    cell: ({ row }) =>
-      // Les lignes "dépense" (transactions) ne sont pas sélectionnables : les
-      // actions groupées s'appliquent aux factures d'achat uniquement.
-      row.original.sourceKind === "TRANSACTION" ? null : (
-        <div data-no-row-click>
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner"
-          />
-        </div>
-      ),
+    cell: ({ row }) => (
+      <div data-no-row-click>
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Sélectionner"
+        />
+      </div>
+    ),
     enableSorting: false,
     enableHiding: false,
   },
@@ -226,23 +265,11 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
     cell: ({ row }) => {
       const name = row.getValue("supplierName");
       const merchant = findMerchant(name || "");
-      const isTransaction = row.original.sourceKind === "TRANSACTION";
       return (
         <div className="flex items-center gap-3">
           <MerchantLogo merchant={merchant} fallbackText={name} size="sm" />
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="font-normal truncate max-w-[200px]" title={name}>
-              {merchant?.name || name || "Fournisseur"}
-            </div>
-            {isTransaction && (
-              <span
-                className="inline-flex items-center gap-1 rounded-md border border-violet-200 dark:border-violet-800 px-1.5 py-0.5 text-[11px] font-medium bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 shrink-0"
-                title="Dépense saisie dans la page Transactions"
-              >
-                <WalletIcon className="h-3 w-3" />
-                Dépense
-              </span>
-            )}
+          <div className="font-normal truncate max-w-[200px]" title={name}>
+            {merchant?.name || name || "Fournisseur"}
           </div>
         </div>
       );
@@ -397,7 +424,7 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
       return (
         <div className="flex flex-col items-start gap-1">
           <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${config.className}`}
+            className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap ${config.className}`}
           >
             {config.label}
           </span>
@@ -412,8 +439,9 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
   },
   {
     id: "files",
-    size: 60,
-    header: "",
+    size: 100,
+    meta: { label: "Justificatif" },
+    header: "Justificatif",
     cell: ({ row }) => {
       const files = row.original.files || [];
       if (files.length === 0) return null;
@@ -434,6 +462,9 @@ export const getColumns = ({ onViewInvoice, onDeleteInvoice } = {}) => [
         invoice={row.original}
         onViewInvoice={onViewInvoice}
         onDeleteInvoice={onDeleteInvoice}
+        onMarkStatus={onMarkStatus}
+        onCategorize={onCategorize}
+        categoryLabels={categoryLabels}
       />
     ),
     enableSorting: false,

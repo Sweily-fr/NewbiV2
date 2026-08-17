@@ -1,326 +1,117 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import { Label } from "@/src/components/ui/label";
-import { Input } from "@/src/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
+import { Button } from "@/src/components/ui/button";
+import { Settings } from "lucide-react";
 import { useFormContext } from "react-hook-form";
-import {
-  VALIDATION_PATTERNS,
-  detectInjectionAttempt,
-} from "@/src/lib/validation";
+import { CompanyInfoDialog } from "@/src/components/company-info-dialog";
 
-const COUNTRIES = [
-  { value: "France", label: "France", flag: "🇫🇷" },
-  { value: "Belgique", label: "Belgique", flag: "🇧🇪" },
-  { value: "Suisse", label: "Suisse", flag: "🇨🇭" },
-  { value: "Canada", label: "Canada", flag: "🇨🇦" },
-  { value: "Luxembourg", label: "Luxembourg", flag: "🇱🇺" },
+// Champs du document alimentés par la modale, pour que l'aperçu suive sans
+// recharger l'organisation.
+const SYNCED_FIELDS = [
+  "logo",
+  "companyName",
+  "companyEmail",
+  "companyPhone",
+  "website",
+  "addressStreet",
+  "addressCity",
+  "addressZipCode",
+  "addressCountry",
+  "showCommercialName",
+  "commercialName",
+  "isRegulatedActivity",
+  "professionalTitle",
+  "regulatoryBody",
+  "professionalNumber",
+  "decennialInsurance",
+  "professionalLiabilityInsurance",
 ];
 
-export default function CompanyInfoSettingsSection() {
-  const {
-    register,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useFormContext();
+/**
+ * Les informations de l'entreprise appartiennent à l'organisation et non au
+ * document : elles sont éditées dans une modale qui les enregistre
+ * immédiatement, comme les coordonnées bancaires.
+ */
+export default function CompanyInfoSettingsSection({ organization }) {
+  const { setValue } = useFormContext();
+  const [showDialog, setShowDialog] = useState(false);
+  // L'organisation reçue en prop est chargée une fois par l'éditeur : on garde
+  // localement ce qui vient d'être enregistré pour ne pas rouvrir la modale
+  // avec des valeurs périmées.
+  const [orgOverride, setOrgOverride] = useState({});
 
-  const country = watch("addressCountry");
+  // Mémoïsé impérativement : la modale se réinitialise sur l'identité de cet
+  // objet. Recréé à chaque rendu, il effacerait la saisie en cours.
+  const currentOrganization = useMemo(
+    () => ({ ...(organization || {}), ...orgOverride }),
+    [organization, orgOverride],
+  );
+
+  // Répercuter dans le formulaire du document ce que la modale vient
+  // d'enregistrer. L'événement est aussi émis par BankDetailsDialog, d'où le
+  // test sur la présence d'un champ entreprise.
+  useEffect(() => {
+    const handleOrganizationUpdated = (event) => {
+      const detail = event.detail || {};
+      if (detail.companyName === undefined) return;
+
+      setOrgOverride((prev) => ({ ...prev, ...detail }));
+
+      SYNCED_FIELDS.forEach((field) => {
+        if (detail[field] !== undefined) {
+          // shouldDirty: false — c'est déjà enregistré côté organisation, le
+          // panneau ne doit pas réclamer un "Appliquer" pour autant.
+          setValue(field, detail[field], { shouldDirty: false });
+        }
+      });
+    };
+
+    window.addEventListener("organizationUpdated", handleOrganizationUpdated);
+    return () => {
+      window.removeEventListener(
+        "organizationUpdated",
+        handleOrganizationUpdated,
+      );
+    };
+  }, [setValue]);
 
   return (
-    <Card className="shadow-none border-none bg-transparent p-0">
+    <Card className="shadow-none border-none bg-transparent p-0 py-0!">
       <CardHeader className="p-0">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-medium text-lg">
-            Informations de l'entreprise
-          </CardTitle>
-        </div>
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+          Informations de l&apos;entreprise
+        </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="space-y-4">
-          {/* Nom de l'entreprise */}
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="company-name"
-              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-            >
-              Nom de l'entreprise
-            </Label>
-            <Input
-              id="company-name"
-              {...register("companyName", {
-                required: "Le nom est requis",
-                pattern: {
-                  value: VALIDATION_PATTERNS.companyName.pattern,
-                  message: VALIDATION_PATTERNS.companyName.message,
-                },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
-              })}
-              placeholder="Nom de votre entreprise"
-              className={errors.companyName ? "border-destructive" : ""}
-            />
-            {errors.companyName && (
-              <p className="text-xs text-destructive">
-                {errors.companyName.message}
-              </p>
-            )}
-          </div>
-
-          {/* Email & Téléphone */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="company-email"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
-                Email professionnel
-              </Label>
-              <Input
-                id="company-email"
-                type="email"
-                {...register("companyEmail", {
-                  pattern: {
-                    value: VALIDATION_PATTERNS.email.pattern,
-                    message: VALIDATION_PATTERNS.email.message,
-                  },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
-                })}
-                placeholder="contact@entreprise.fr"
-                className={errors.companyEmail ? "border-destructive" : ""}
-              />
-              {errors.companyEmail && (
-                <p className="text-xs text-destructive">
-                  {errors.companyEmail.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="company-phone"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
-                Téléphone
-              </Label>
-              <Input
-                id="company-phone"
-                {...register("companyPhone", {
-                  pattern: {
-                    value: VALIDATION_PATTERNS.phone.pattern,
-                    message: VALIDATION_PATTERNS.phone.message,
-                  },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
-                })}
-                placeholder="+33 6 12 34 56 78"
-                className={errors.companyPhone ? "border-destructive" : ""}
-              />
-              {errors.companyPhone && (
-                <p className="text-xs text-destructive">
-                  {errors.companyPhone.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Site web */}
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="company-website"
-              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-            >
-              Site web
-            </Label>
-            <Input
-              id="company-website"
-              {...register("website", {
-                pattern: {
-                  value: VALIDATION_PATTERNS.website.pattern,
-                  message: VALIDATION_PATTERNS.website.message,
-                },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
-              })}
-              placeholder="https://www.entreprise.com"
-              className={errors.website ? "border-destructive" : ""}
-            />
-            {errors.website && (
-              <p className="text-xs text-destructive">
-                {errors.website.message}
-              </p>
-            )}
-          </div>
-
-          {/* Adresse */}
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="company-street"
-              className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-            >
-              Adresse
-            </Label>
-            <Input
-              id="company-street"
-              {...register("addressStreet", {
-                pattern: {
-                  value: VALIDATION_PATTERNS.street.pattern,
-                  message: VALIDATION_PATTERNS.street.message,
-                },
-                validate: (value) => {
-                  if (value && detectInjectionAttempt(value)) {
-                    return "Caractères non autorisés détectés";
-                  }
-                  return true;
-                },
-              })}
-              placeholder="123 Rue de la République"
-              className={errors.addressStreet ? "border-destructive" : ""}
-            />
-            {errors.addressStreet && (
-              <p className="text-xs text-destructive">
-                {errors.addressStreet.message}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="company-city"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
-                Ville
-              </Label>
-              <Input
-                id="company-city"
-                {...register("addressCity", {
-                  pattern: {
-                    value: VALIDATION_PATTERNS.city.pattern,
-                    message: VALIDATION_PATTERNS.city.message,
-                  },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
-                })}
-                placeholder="Paris"
-                className={errors.addressCity ? "border-destructive" : ""}
-              />
-              {errors.addressCity && (
-                <p className="text-xs text-destructive">
-                  {errors.addressCity.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="company-postalCode"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
-                Code postal
-              </Label>
-              <Input
-                id="company-postalCode"
-                {...register("addressZipCode", {
-                  pattern: {
-                    value: VALIDATION_PATTERNS.postalCode.pattern,
-                    message: VALIDATION_PATTERNS.postalCode.message,
-                  },
-                  validate: (value) => {
-                    if (value && detectInjectionAttempt(value)) {
-                      return "Caractères non autorisés détectés";
-                    }
-                    return true;
-                  },
-                })}
-                placeholder="75001"
-                className={errors.addressZipCode ? "border-destructive" : ""}
-              />
-              {errors.addressZipCode && (
-                <p className="text-xs text-destructive">
-                  {errors.addressZipCode.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="company-country"
-                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-              >
-                Pays
-              </Label>
-              <Select
-                value={country || "France"}
-                onValueChange={(value) =>
-                  setValue("addressCountry", value, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  })
-                }
-              >
-                <SelectTrigger id="company-country">
-                  <SelectValue placeholder="Sélectionner">
-                    {(() => {
-                      const selected = COUNTRIES.find(
-                        (c) => c.value === (country || "France"),
-                      );
-                      return selected ? (
-                        <span className="inline-flex items-center gap-2">
-                          <span className="text-base leading-none">
-                            {selected.flag}
-                          </span>
-                          {selected.label}
-                        </span>
-                      ) : null;
-                    })()}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      <span className="inline-flex items-center gap-2">
-                        <span className="text-base leading-none">{c.flag}</span>
-                        {c.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <CardContent className="space-y-4 p-0">
+        <div className="text-sm text-muted-foreground p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+          <p className="mb-2">
+            Votre logo, votre dénomination, votre adresse, votre nom commercial
+            et votre activité réglementée sont communs à tous vos documents.
+          </p>
+          <Button
+            type="button"
+            variant="link"
+            className="p-0 h-auto font-medium flex items-center gap-1 underline"
+            onClick={() => setShowDialog(true)}
+          >
+            <Settings className="h-4 w-4" />
+            Modifier vos informations entreprise
+          </Button>
         </div>
       </CardContent>
+
+      <CompanyInfoDialog
+        open={showDialog}
+        onOpenChange={setShowDialog}
+        organization={currentOrganization}
+      />
     </Card>
   );
 }

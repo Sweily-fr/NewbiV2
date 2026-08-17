@@ -125,7 +125,7 @@ export function AnalyticsRevenuePieChart({
     );
 
     const incomeTransactions = (bankTransactions || []).filter(
-      (t) => t.amount > 0 && !t.linkedInvoiceId,
+      (t) => t.amount > 0 && (t.linkedInvoiceIds?.length || 0) === 0,
     );
 
     // Catégorie manuelle (sous-catégorie fine) prioritaire, sinon

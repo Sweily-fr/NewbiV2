@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
+import { ForceDesktopViewport } from "@/src/components/force-desktop-viewport";
+import { AppInstallBanner } from "@/src/components/app-install-banner";
 import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
@@ -79,6 +81,12 @@ export const metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
+  },
+  // Smart App Banner natif iOS (Safari). Déclaré ici plutôt qu'en dur dans
+  // <head> pour que les segments enfants puissent le neutraliser
+  // (cf. app/pdf-generator/layout.jsx).
+  other: {
+    "apple-itunes-app": "app-id=6772126520",
   },
   icons: {
     icon: [
@@ -162,6 +170,8 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="font-sans antialiased">
+        <ForceDesktopViewport />
+        <AppInstallBanner />
         <ApolloWrapper>
           <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             {children}

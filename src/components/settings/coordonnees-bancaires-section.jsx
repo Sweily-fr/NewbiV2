@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
+import { Switch } from "@/src/components/ui/switch";
 import { Info } from "lucide-react";
 import {
   Tooltip,
@@ -66,6 +67,24 @@ export function CoordonneesBancairesSection({
   const hasBic = bicValue.trim() !== "";
   const hasBankName = bankNameValue.trim() !== "";
   const hasAnyBankField = hasIban || hasBic || hasBankName;
+
+  // Le nom du bénéficiaire ne concerne que les entrepreneurs individuels, dont
+  // le compte est souvent au nom propre plutôt qu'au nom de l'entreprise.
+  // La forme juridique vient du même formulaire (onglet Informations légales).
+  const selectedLegalForm =
+    watchedValues.legal?.legalForm || organization?.legalForm || "";
+  const showBeneficiaryChoice = ["EI", "Auto-entrepreneur"].includes(
+    selectedLegalForm,
+  );
+  const beneficiaryNameType =
+    watch("bankDetails.beneficiaryNameType") || "companyName";
+
+  // Nom réellement imprimé sur les documents, affiché entre parenthèses pour
+  // que le choix soit explicite. Même résolution que UniversalPreviewPDF.
+  const beneficiaryPreview =
+    beneficiaryNameType === "fullName"
+      ? session?.user?.name || ""
+      : watchedValues.name || organization?.companyName || "";
 
   // Synchroniser l'affichage avec la valeur du formulaire au chargement
   useEffect(() => {
@@ -325,6 +344,46 @@ export function CoordonneesBancairesSection({
               </p>
             )}
           </div>
+
+          {/* Nom du bénéficiaire — entrepreneurs individuels uniquement */}
+          {showBeneficiaryChoice && (
+            <div className="flex items-center justify-between gap-4 p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+              <div className="grid gap-1.5 leading-none">
+                <label
+                  htmlFor="beneficiary-name-type"
+                  className="text-sm font-medium"
+                >
+                  Nom du bénéficiaire
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  {beneficiaryNameType === "fullName"
+                    ? "Nom complet affiché sur vos documents"
+                    : "Nom d'entreprise affiché sur vos documents"}
+                  {beneficiaryPreview ? ` (${beneficiaryPreview})` : ""}
+                </p>
+                {!beneficiaryPreview && (
+                  <p className="text-xs text-destructive">
+                    {beneficiaryNameType === "fullName"
+                      ? "Aucun nom sur votre compte : la ligne sera vide sur vos documents."
+                      : "Aucune dénomination sociale : la ligne sera vide sur vos documents."}
+                  </p>
+                )}
+              </div>
+              <Switch
+                id="beneficiary-name-type"
+                checked={beneficiaryNameType === "fullName"}
+                disabled={!canManageOrgSettings}
+                onCheckedChange={(checked) =>
+                  setValue(
+                    "bankDetails.beneficiaryNameType",
+                    checked ? "fullName" : "companyName",
+                    { shouldDirty: true },
+                  )
+                }
+                className="shrink-0 data-[state=checked]:bg-[#5b4fff]"
+              />
+            </div>
+          )}
 
           <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
 

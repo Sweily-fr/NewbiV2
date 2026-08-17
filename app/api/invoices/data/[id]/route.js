@@ -8,6 +8,10 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import {
+  resolveCompanyInfo,
+  resolveBeneficiary,
+} from "@/src/lib/document-company-info";
 
 /**
  * GET /api/invoices/data/[id]
@@ -62,6 +66,11 @@ async function handler(request, { params }) {
     }
   }
 
+  // Nom du bénéficiaire du virement : réglage d'organisation, jamais
+  // recopié dans le document. Sans lui, le PDF headless (pas de session,
+  // pas d'organisation active) retombait sur la dénomination sociale.
+  const { beneficiaryNameType, userName } = await resolveBeneficiary(invoice);
+
   // Format response data
   const formattedData = {
     id: invoice._id.toString(),
@@ -95,6 +104,15 @@ async function handler(request, { params }) {
     isDeposit: invoice.isDeposit,
     depositAmount: invoice.depositAmount,
 
+    // Type de facture + champs des factures de situation. Sans invoiceType,
+    // UniversalPreviewPDF retombe sur le rendu "standard" (colonnes classiques,
+    // pas de récapitulatif d'avancement) → le PDF archivé ne correspondait plus
+    // à l'aperçu d'une facture de situation.
+    invoiceType: invoice.invoiceType,
+    situationReference: invoice.situationReference,
+    situationNumber: invoice.situationNumber,
+    contractTotal: invoice.contractTotal,
+
     showBankDetails: invoice.showBankDetails,
     isReverseCharge: invoice.isReverseCharge,
     clientPositionRight: invoice.clientPositionRight,
@@ -115,11 +133,19 @@ async function handler(request, { params }) {
           email: client_data.email,
           phone: client_data.phone,
           address: client_data.address,
+          type: client_data.type,
+          firstName: client_data.firstName,
+          lastName: client_data.lastName,
+          siret: client_data.siret,
+          vatNumber: client_data.vatNumber,
+          isInternational: client_data.isInternational,
         }
       : invoice.client || invoice.clientInfo,
 
     items: invoice.items,
-    companyInfo: invoice.companyInfo,
+    companyInfo: await resolveCompanyInfo(invoice),
+    beneficiaryNameType,
+    userName,
     customFields: invoice.customFields,
   };
 

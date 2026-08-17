@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/src/lib/utils";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion } from "framer-motion";
 import React, {
   ComponentPropsWithoutRef,
   useEffect,
@@ -34,7 +34,7 @@ export const AnimatedList = React.memo(
     const [index, setIndex] = useState(0);
     const childrenArray = useMemo(
       () => React.Children.toArray(children),
-      [children]
+      [children],
     );
 
     useEffect(() => {
@@ -66,7 +66,7 @@ export const AnimatedList = React.memo(
         </AnimatePresence>
       </div>
     );
-  }
+  },
 );
 
 AnimatedList.displayName = "AnimatedList";

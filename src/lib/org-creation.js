@@ -1,6 +1,95 @@
 import { ObjectId } from "mongodb";
 import { toObjectId } from "@/src/lib/security/to-object-id";
 
+const DEFAULT_APP_TRIAL_DAYS = 30;
+
+/**
+ * Accorde l'essai app-managed sur une organisation, si l'utilisateur y a
+ * droit.
+ *
+ * Extrait de `createOrganizationWithSubscription` pour être appelable depuis
+ * la fin d'onboarding : l'essai ne démarre plus à la création du compte mais
+ * une fois le SIRET vérifié et la déclaration d'usage professionnel signée.
+ * Sans cela, n'importe quel compte obtenait 30 jours d'accès avant toute
+ * qualification.
+ *
+ * Decision #16 : seule la PREMIÈRE organisation de l'utilisateur reçoit un
+ * essai. Les organisations créées ensuite n'en re-accordent pas.
+ *
+ * @returns {Promise<boolean>} true si l'essai a été accordé
+ */
+export async function grantAppTrialIfEligible({
+  mongoDb,
+  userId,
+  organizationId,
+  appTrialDays = DEFAULT_APP_TRIAL_DAYS,
+}) {
+  const orgObjectId =
+    organizationId instanceof ObjectId
+      ? organizationId
+      : new ObjectId(organizationId.toString());
+
+  // Idempotence : ne pas ré-accorder ni prolonger un essai déjà posé sur
+  // cette org (l'endpoint d'onboarding peut être rejoué).
+  const currentOrg = await mongoDb
+    .collection("organization")
+    .findOne({ _id: orgObjectId }, { projection: { hasUsedTrial: 1 } });
+
+  if (currentOrg?.hasUsedTrial) {
+    console.log(
+      `♻️ [ORG-CREATION] Essai déjà consommé sur l'org ${orgObjectId}, aucun nouvel essai`,
+    );
+    return false;
+  }
+
+  let anotherTrialUsedOrg = null;
+  try {
+    const otherMember = await mongoDb.collection("member").findOne({
+      userId: new ObjectId(userId),
+      organizationId: { $ne: orgObjectId },
+    });
+    if (otherMember) {
+      anotherTrialUsedOrg = await mongoDb
+        .collection("organization")
+        .findOne(
+          { _id: otherMember.organizationId, hasUsedTrial: true },
+          { projection: { _id: 1 } },
+        );
+    }
+  } catch (err) {
+    console.warn(`⚠️ [ORG-CREATION] Decision-16 check failed:`, err.message);
+  }
+
+  if (anotherTrialUsedOrg) {
+    console.log(
+      `🚫 [ORG-CREATION] Decision #16 — user already used a trial on another org, no app-trial granted`,
+    );
+    return false;
+  }
+
+  const now = new Date();
+  const end = new Date(now.getTime() + appTrialDays * 24 * 60 * 60 * 1000);
+
+  await mongoDb.collection("organization").updateOne(
+    { _id: orgObjectId },
+    {
+      $set: {
+        isTrialActive: true,
+        trialStartDate: now.toISOString(),
+        trialEndDate: end.toISOString(),
+        hasUsedTrial: true,
+        stripeTrialActive: false,
+        updatedAt: now,
+      },
+    },
+  );
+
+  console.log(
+    `✅ [ORG-CREATION] App-managed trial granted (${appTrialDays} days) on org ${orgObjectId}`,
+  );
+  return true;
+}
+
 /**
  * Shared idempotent utility for organization + member + (optional) subscription
  * + invitations creation. Called from:
@@ -270,51 +359,12 @@ export async function createOrganizationWithSubscription({
   // subscription. stripeTrialActive: false discriminates this from a Stripe
   // trial (set elsewhere when subscriptionInfo.status === "trialing").
   if (appTrialDays && !subscriptionInfo) {
-    // Decision #16: only the user's FIRST org gets the trial. Additional orgs
-    // created later must NOT re-grant a trial — detect by checking whether
-    // the user already had any other org marked hasUsedTrial.
-    let anotherTrialUsedOrg = null;
-    try {
-      const otherMember = await mongoDb.collection("member").findOne({
-        userId: new ObjectId(userId),
-        organizationId: { $ne: organizationObjectId },
-      });
-      if (otherMember) {
-        anotherTrialUsedOrg = await mongoDb
-          .collection("organization")
-          .findOne(
-            { _id: otherMember.organizationId, hasUsedTrial: true },
-            { projection: { _id: 1 } },
-          );
-      }
-    } catch (err) {
-      console.warn(`⚠️ [ORG-CREATION] Decision-16 check failed:`, err.message);
-    }
-
-    if (anotherTrialUsedOrg) {
-      console.log(
-        `🚫 [ORG-CREATION] Decision #16 — user already used a trial on another org, no app-trial granted`,
-      );
-    } else {
-      const now = new Date();
-      const end = new Date(now.getTime() + appTrialDays * 24 * 60 * 60 * 1000);
-      await mongoDb.collection("organization").updateOne(
-        { _id: organizationObjectId },
-        {
-          $set: {
-            isTrialActive: true,
-            trialStartDate: now.toISOString(),
-            trialEndDate: end.toISOString(),
-            hasUsedTrial: true,
-            stripeTrialActive: false,
-            updatedAt: now,
-          },
-        },
-      );
-      console.log(
-        `✅ [ORG-CREATION] App-managed trial granted (${appTrialDays} days) on org ${result.organizationId}`,
-      );
-    }
+    await grantAppTrialIfEligible({
+      mongoDb,
+      userId,
+      organizationId: organizationObjectId,
+      appTrialDays,
+    });
   }
 
   // ──────────────────────────────────────────────
@@ -426,6 +476,12 @@ export async function createOrganizationWithSubscription({
         .findOne({ _id: organizationObjectId });
 
       if (inviterUser && org) {
+        // Résolu une seule fois avant les envois concurrents : un import()
+        // dynamique par membre invité entraînerait une résolution concurrente
+        // du même module, ce qui peut retourner des instances différentes.
+        const { sendOrganizationInvitationEmail } =
+          await import("./auth-utils.js");
+
         const invitationResults = await Promise.allSettled(
           orgInvitedMembers
             .filter((m) => m && (m.email || m).toString().trim())
@@ -468,9 +524,6 @@ export async function createOrganizationWithSubscription({
                 });
 
               const invitationId = insertResult.insertedId.toString();
-
-              const { sendOrganizationInvitationEmail } =
-                await import("./auth-utils.js");
 
               await sendOrganizationInvitationEmail({
                 id: invitationId,

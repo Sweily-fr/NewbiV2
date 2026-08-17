@@ -47,14 +47,19 @@ const calloutStyles = {
 
 /**
  * Composant Callout pour afficher des messages informatifs stylisés
- * 
+ *
  * @param {Object} props
- * @param {"info"|"warning"|"success"|"tip"|"danger"|"neutral"} props.type - Type de callout
+ * @param {"info"|"warning"|"success"|"tip"|"danger"|"neutral"} [props.type="info"] - Type de callout
  * @param {React.ReactNode} props.children - Contenu du callout
- * @param {boolean} props.noMargin - Supprimer les marges par défaut
- * @param {boolean} props.noIcon - Masquer l'icône
+ * @param {boolean} [props.noMargin=false] - Supprimer les marges par défaut
+ * @param {boolean} [props.noIcon=false] - Masquer l'icône
  */
-export function Callout({ type = "info", children, noMargin = false, noIcon = false }) {
+export function Callout({
+  type = "info",
+  children,
+  noMargin = false,
+  noIcon = false,
+}) {
   const styles = calloutStyles[type];
   const Icon = styles.Icon;
 

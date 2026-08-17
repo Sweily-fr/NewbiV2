@@ -8,6 +8,7 @@ import {
   apiError,
   withErrorHandler,
 } from "@/src/lib/security";
+import { resolveCompanyInfo } from "@/src/lib/document-company-info";
 
 /**
  * GET /api/credit-notes/data/[id]
@@ -84,12 +85,15 @@ async function handler(request, { params }) {
     prefix: creditNote.prefix,
     issueDate: creditNote.issueDate || creditNote.date,
     status: creditNote.status,
+    reason: creditNote.reason,
+    creditType: creditNote.creditType,
 
     originalInvoice: originalInvoiceData
       ? {
           id: originalInvoiceData._id.toString(),
           number: originalInvoiceData.number,
           prefix: originalInvoiceData.prefix,
+          issueDate: originalInvoiceData.issueDate || originalInvoiceData.date,
         }
       : null,
     originalInvoiceNumber:
@@ -133,11 +137,17 @@ async function handler(request, { params }) {
           email: client_data.email,
           phone: client_data.phone,
           address: client_data.address,
+          type: client_data.type,
+          firstName: client_data.firstName,
+          lastName: client_data.lastName,
+          siret: client_data.siret,
+          vatNumber: client_data.vatNumber,
+          isInternational: client_data.isInternational,
         }
       : creditNote.client || creditNote.clientInfo,
 
     items: creditNote.items,
-    companyInfo: creditNote.companyInfo,
+    companyInfo: await resolveCompanyInfo(creditNote),
     customFields: creditNote.customFields,
   };
 

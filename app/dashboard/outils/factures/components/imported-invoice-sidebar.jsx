@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+// Rendu canvas (pdfjs) du PDF importé : pas de visualiseur natif (fond sombre
+// autour de la page), même aperçu que les documents non importés.
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -82,7 +93,6 @@ export function ImportedInvoiceSidebar({
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [pdfHeightMM, setPdfHeightMM] = useState(297);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -92,40 +102,19 @@ export function ImportedInvoiceSidebar({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Calcule la hauteur totale du PDF (somme des pages mises à l'échelle
-  // sur la largeur de la feuille) pour éviter le scroll interne de l'iframe.
+  // L'URL publique R2 (invoice.file.url) n'est jamais chargée directement :
+  // la CSP de prod (frame-src) bloque les iframes vers des domaines externes.
+  // L'aperçu passe par le proxy same-origin, comme les documents natifs.
+  const previewUrl =
+    invoice?.id && invoice?.file?.url
+      ? `/api/document-preview/importedInvoice/${invoice.id}`
+      : null;
+
   useEffect(() => {
-    const isPDFFile = invoice?.file?.mimeType === "application/pdf";
-    if (!isPDFFile || !invoice?.file?.url) {
-      setPdfHeightMM(297);
-      return;
+    if (open && previewUrl && invoice?.file?.mimeType === "application/pdf") {
+      prefetchPdf(previewUrl);
     }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const { PDFDocument } = await import("pdf-lib");
-        const res = await fetch(invoice.file.url);
-        if (!res.ok) throw new Error("fetch failed");
-        const buffer = await res.arrayBuffer();
-        const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
-        const total = pdf.getPages().reduce((sum, page) => {
-          const { width, height } = page.getSize();
-          // FitH scale chaque page à la largeur de la feuille (210mm)
-          return sum + 210 * (height / width);
-        }, 0);
-        // Le viewer PDF natif ajoute un peu de chrome interne même avec toolbar=0,
-        // on ajuste pour éviter une marge noire en bas
-        if (!cancelled && total > 0) setPdfHeightMM(total * 0.95);
-      } catch {
-        if (!cancelled) setPdfHeightMM(297);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [invoice?.file?.url, invoice?.file?.mimeType]);
+  }, [open, previewUrl, invoice?.file?.mimeType]);
 
   const { updateImportedInvoice, loading: updateLoading } =
     useUpdateImportedInvoice();
@@ -265,17 +254,28 @@ export function ImportedInvoiceSidebar({
       >
         <div className="absolute inset-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-            {invoice.file?.url ? (
+            {previewUrl ? (
               isPDF ? (
-                <iframe
-                  src={`${invoice.file.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                  title={invoice.file.originalFileName || "Facture importée"}
-                  style={{ height: `${pdfHeightMM}mm` }}
-                  className="w-full border-0 block"
+                <PdfPreview
+                  src={previewUrl}
+                  placeholder={<PdfPageSkeleton />}
+                  fallback={
+                    <div className="flex flex-col items-center justify-center text-muted-foreground p-12 min-h-[calc(100vh-6rem)]">
+                      <FileText className="h-16 w-16 mb-4 opacity-50" />
+                      <p className="text-sm mb-4">Aperçu non disponible</p>
+                      <Button
+                        variant="outline"
+                        onClick={handleDownloadOriginal}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Ouvrir le fichier
+                      </Button>
+                    </div>
+                  }
                 />
               ) : isImage ? (
                 <img
-                  src={invoice.file.url}
+                  src={previewUrl}
                   alt={invoice.file.originalFileName || "Facture importée"}
                   className="w-full h-auto object-contain"
                 />

@@ -183,7 +183,17 @@ const wsLink =
 
             if (isPublicPage) return {};
 
-            const jwtToken = await getJWTToken();
+            // L'auth du WebSocket est figée au moment de la connexion : si le
+            // JWT n'est pas encore disponible (session en cours de chargement,
+            // échec transitoire de /api/auth/token), la connexion s'établirait
+            // anonyme et TOUTES les subscriptions échoueraient en silence
+            // jusqu'au refresh de la page. On attend donc le JWT (jusqu'à ~8s)
+            // avant de laisser la connexion s'ouvrir.
+            let jwtToken = await getJWTToken();
+            for (let attempt = 0; !jwtToken && attempt < 16; attempt++) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+              jwtToken = await getJWTToken();
+            }
             return {
               authorization: jwtToken ? `Bearer ${jwtToken}` : "",
             };
@@ -196,8 +206,31 @@ const wsLink =
     : null;
 
 if (wsLink && typeof window !== "undefined") {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _wsClient = wsLink.subscriptionClient;
+}
+
+// Force une reconnexion du WebSocket (avec re-souscription automatique des
+// subscriptions actives par subscriptions-transport-ws). À appeler quand une
+// subscription échoue en auth : la connexion a pu s'établir sans JWT valide,
+// la reconnexion relance connectionParams et repart avec un JWT frais.
+// Débouncé pour ne pas boucler si l'auth échoue durablement.
+let _lastWsReconnectAt = 0;
+export function forceWsReconnect() {
+  if (!_wsClient) return;
+  const now = Date.now();
+  if (now - _lastWsReconnectAt < 30000) return;
+  _lastWsReconnectAt = now;
+  try {
+    clearCachedJWT();
+    // close(isForced=false) : le client rouvre la connexion (reconnect: true)
+    // et rejoue les opérations en cours.
+    _wsClient.close(false, false);
+    console.warn(
+      "[WebSocket] Reconnexion forcée (subscription en échec d'authentification)",
+    );
+  } catch (err) {
+    console.error("[WebSocket] Échec de la reconnexion forcée:", err);
+  }
 }
 
 // ==================== AUTH LINK ====================
@@ -335,23 +368,58 @@ const errorLink = onError(
         // Retourner un Observable pour retry l'operation au lieu de propager l'erreur
         return new Observable((observer) => {
           authClient
-            .getSession()
+            .getSession({ query: { disableCookieCache: true } })
             .then(async (session) => {
-              if (!session?.data?.user) {
-                // Session reellement expiree — rediriger
+              if (session?.error) {
+                // Réponse non fiable (500, indispo, redirection) : incident
+                // transitoire — propager l'erreur SANS déconnecter. Le retry
+                // suivant repassera par ici avec une session revérifiée.
                 console.error(
-                  "[Auth Retry] getSession() n'a pas retourné de user — session expirée.",
-                  "\n  session.data:",
-                  JSON.stringify(session?.data || null),
+                  "[Auth Retry] getSession() en erreur (transitoire), pas de redirection:",
+                  session.error?.message || session.error,
                 );
-                forceSessionExpiredRedirect("inactivity");
                 observer.error(graphQLErrors[0]);
-                // Vider la file d'attente avec erreur
                 _pendingRetryQueue.forEach((pending) =>
                   pending.observer.error(graphQLErrors[0]),
                 );
                 _pendingRetryQueue = [];
                 return;
+              }
+
+              if (!session?.data?.user) {
+                // Une seule réponse 200-sans-session peut être un blip
+                // transitoire : re-vérifier une fois après 2s avant de
+                // déconnecter. Un vrai révoqué reste vide au 2e check.
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+                const secondCheck = await authClient
+                  .getSession({ query: { disableCookieCache: true } })
+                  .catch(() => null);
+
+                if (secondCheck?.data?.user) {
+                  console.warn(
+                    "[Auth Retry] Session absente au 1er check mais présente au 2e (blip transitoire), reprise sans déconnexion.",
+                  );
+                  session = secondCheck;
+                } else {
+                  // Session reellement expiree — rediriger
+                  console.error(
+                    "[Auth Retry] getSession() sans user, confirmé par 2 vérifications — session révoquée/expirée.",
+                    "\n  session.data:",
+                    JSON.stringify(secondCheck?.data || null),
+                  );
+                  // "revoked" et non "inactivity" : ici la session a disparu
+                  // côté serveur (révocation par limite de sessions, nettoyage,
+                  // logout distant). La déconnexion pour inactivité réelle passe
+                  // par useInactivityDetector, qui pose lui-même son reason.
+                  forceSessionExpiredRedirect("revoked");
+                  observer.error(graphQLErrors[0]);
+                  // Vider la file d'attente avec erreur
+                  _pendingRetryQueue.forEach((pending) =>
+                    pending.observer.error(graphQLErrors[0]),
+                  );
+                  _pendingRetryQueue = [];
+                  return;
+                }
               }
 
               // Session valide — generer un nouveau JWT et l'injecter dans l'operation.

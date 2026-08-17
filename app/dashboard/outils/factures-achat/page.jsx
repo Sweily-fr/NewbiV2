@@ -1,20 +1,10 @@
 "use client";
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import PurchaseInvoiceTable from "./components/table";
 import { PurchaseInvoiceDetailDrawer } from "./components/detail-drawer";
 import { PurchaseInvoiceCreateDrawer } from "./components/create-drawer";
-import { TransactionDetailDrawer } from "../transactions/components/transaction-detail-drawer";
-import { mapPaymentMethodToEnum } from "../transactions/components/transactions/utils/mappers";
-import {
-  GET_TRANSACTIONS,
-  UPLOAD_TRANSACTION_RECEIPT,
-} from "@/src/graphql/queries/banking";
-import {
-  useUpdateTransaction,
-  useDeleteTransaction,
-} from "@/src/hooks/useTransactions";
 import { ExportDialog } from "./components/export-dialog";
 import { GmailConnectionDialog } from "./components/gmail-connection";
 // GmailStatusBanner remplacé par un bouton inline dans la toolbar
@@ -46,7 +36,9 @@ import {
   Download,
   Info,
   Mail,
+  Check,
 } from "lucide-react";
+import { GoogleIcon } from "./components/google-icon";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +49,10 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { toast } from "@/src/components/ui/sonner";
+import {
+  PurchaseInvoicePageSkeleton,
+  PurchaseInvoiceTableSkeleton,
+} from "./components/purchase-invoice-page-skeleton";
 
 const formatAmount = (amount) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -125,147 +121,9 @@ function PurchaseInvoicesContent() {
     filters: { status: "PENDING_REVIEW" },
   });
 
-  // ── Affichage unifié : dépenses (page Transactions) ────────────────────
-  // On récupère toutes les transactions de type dépense (montant < 0, manuelles
-  // ET bancaires) et on les affiche aussi dans la liste des factures d'achat,
-  // sauf celles déjà rapprochées à une facture (présentes dans linkedTransactionIds).
-  const { updateTransaction } = useUpdateTransaction();
-  const { deleteTransaction } = useDeleteTransaction();
-  const [uploadReceiptMutation] = useMutation(UPLOAD_TRANSACTION_RECEIPT);
-  const { data: txData, refetch: refetchTransactions } = useQuery(
-    GET_TRANSACTIONS,
-    {
-      variables: { workspaceId, limit: 0 },
-      skip: !workspaceId,
-      fetchPolicy: "cache-and-network",
-    },
-  );
-
-  const expenseTransactionRows = useMemo(() => {
-    const linkedIds = new Set();
-    (invoices || []).forEach((pi) => {
-      (pi.linkedTransactionIds || []).forEach((tid) =>
-        linkedIds.add(String(tid)),
-      );
-    });
-    return (txData?.transactions || [])
-      .filter((tx) => tx.amount < 0 && !linkedIds.has(String(tx.id)))
-      .map((tx) => ({
-        id: `tx-${tx.id}`,
-        sourceKind: "TRANSACTION",
-        supplierName: tx.metadata?.vendor || tx.description || "Dépense",
-        invoiceNumber: null,
-        issueDate: tx.date || tx.createdAt,
-        dueDate: null,
-        amountHT: null,
-        amountTVA: null,
-        amountTTC: Math.abs(tx.amount || 0),
-        currency: tx.currency || "EUR",
-        status: tx.status === "completed" ? "PAID" : "PENDING",
-        category: tx.expenseCategory || null,
-        files: (tx.receiptFiles || []).map((f) => ({
-          id: f.id,
-          url: f.url,
-          originalFilename: f.filename,
-        })),
-        linkedTransactionIds: [],
-        originalTransaction: tx,
-        createdAt: tx.createdAt,
-        updatedAt: tx.updatedAt,
-      }));
-  }, [txData, invoices]);
-
-  const mergedInvoices = useMemo(
-    () => [...(invoices || []), ...expenseTransactionRows],
-    [invoices, expenseTransactionRows],
-  );
-
   const refetchAll = () => {
     refetch?.();
     refetchStats?.();
-    refetchTransactions?.();
-  };
-
-  // Mappe une transaction brute vers la shape attendue par TransactionDetailDrawer
-  const mapTransactionToDrawer = (tx) => ({
-    id: tx.id,
-    type: tx.amount > 0 ? "INCOME" : "EXPENSE",
-    source: tx.provider === "manual" ? "MANUAL" : "BANK",
-    title: tx.description,
-    description: tx.description,
-    amount: tx.amount,
-    currency: tx.currency || "EUR",
-    date: tx.processedAt || tx.date || tx.createdAt,
-    category: tx.category || tx.expenseCategory || "OTHER",
-    vendor: tx.metadata?.vendor || null,
-    hasReceipt: Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0,
-    receiptFiles: tx.receiptFiles || [],
-    files: tx.receiptFiles || [],
-    status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-    paymentMethod: tx.metadata?.paymentMethod || null,
-    provider: tx.provider,
-    originalTransaction: {
-      id: tx.id,
-      externalId: tx.externalId,
-      provider: tx.provider,
-      fromAccount: tx.fromAccount,
-    },
-    pcgAccount: tx.pcgAccount || null,
-    metadata: tx.metadata || {},
-    createdAt: tx.createdAt,
-    updatedAt: tx.updatedAt,
-  });
-
-  const handleSaveExpenseTransaction = async (updated) => {
-    const txId =
-      updated.id ||
-      selectedExpenseTx?.originalTransaction?.id ||
-      selectedExpenseTx?.id;
-    if (!txId) return;
-    const isIncome = updated.type === "INCOME";
-    const amount = isIncome
-      ? Math.abs(parseFloat(updated.amount))
-      : -Math.abs(parseFloat(updated.amount));
-    const input = {
-      description: updated.description || "Transaction modifiée",
-      amount,
-      currency: "EUR",
-      category: updated.category || "OTHER",
-      date: updated.date,
-      type: isIncome ? "CREDIT" : "DEBIT",
-      vendor: updated.vendor,
-      paymentMethod: mapPaymentMethodToEnum(updated.paymentMethod),
-      notes: updated.description,
-    };
-    if (updated.status) input.status = updated.status;
-    if (updated.pcgAccountNumero)
-      input.pcgAccountNumero = updated.pcgAccountNumero;
-    const result = await updateTransaction(txId, input);
-    if (result?.success) {
-      setIsTxDrawerOpen(false);
-      refetchAll();
-    }
-  };
-
-  const handleDeleteExpenseTransaction = async (tx) => {
-    setIsTxDrawerOpen(false);
-    const txId = tx.originalTransaction?.id || tx.id;
-    const result = await deleteTransaction(txId);
-    if (result?.success) refetchAll();
-  };
-
-  const handleAttachReceiptToTransaction = async (tx, files) => {
-    const transactionId = tx.originalTransaction?.id || tx.id;
-    const { data } = await uploadReceiptMutation({
-      variables: { transactionId, workspaceId, files },
-    });
-    if (!data?.uploadTransactionReceipt?.success) {
-      throw new Error(
-        data?.uploadTransactionReceipt?.message || "Erreur lors de l'upload",
-      );
-    }
-    toast.success("Justificatif ajouté avec succès");
-    refetchAll();
   };
 
   const handleImportedConverted = () => {
@@ -280,9 +138,6 @@ function PurchaseInvoicesContent() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isGmailDialogOpen, setIsGmailDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  // Affichage unifié : drawer transaction (dépense saisie dans Transactions)
-  const [isTxDrawerOpen, setIsTxDrawerOpen] = useState(false);
-  const [selectedExpenseTx, setSelectedExpenseTx] = useState(null);
 
   // Handle OAuth callback query params
   useEffect(() => {
@@ -308,13 +163,29 @@ function PurchaseInvoicesContent() {
     }
   }, [searchParams]);
 
-  const handleRowClick = (invoice) => {
-    // Ligne issue d'une transaction (dépense) : ouvrir le drawer transaction en place
-    if (invoice?.sourceKind === "TRANSACTION") {
-      setSelectedExpenseTx(mapTransactionToDrawer(invoice.originalTransaction));
-      setIsTxDrawerOpen(true);
+  // Deep link "Voir la facture d'achat" (?id=<invoiceId> depuis le drawer
+  // transaction) : ouvrir le drawer de détail quand les factures sont chargées.
+  // Le ref garantit une seule ouverture par valeur d'id (pas de réouverture
+  // après fermeture quand la liste est refetchée).
+  const processedInitialInvoiceIdRef = useRef(null);
+  useEffect(() => {
+    const initialInvoiceId = searchParams.get("id");
+    if (
+      !initialInvoiceId ||
+      processedInitialInvoiceIdRef.current === initialInvoiceId ||
+      !invoices?.length
+    ) {
       return;
     }
+    const invoice = invoices.find((inv) => inv.id === initialInvoiceId);
+    if (invoice) {
+      processedInitialInvoiceIdRef.current = initialInvoiceId;
+      setSelectedInvoice(invoice);
+      setIsDetailDrawerOpen(true);
+    }
+  }, [searchParams, invoices]);
+
+  const handleRowClick = (invoice) => {
     setSelectedInvoice(invoice);
     setIsDetailDrawerOpen(true);
   };
@@ -343,6 +214,21 @@ function PurchaseInvoicesContent() {
             <h1 className="text-2xl font-medium mb-2">Factures d&apos;achat</h1>
           </div>
           <div className="flex gap-2">
+            {/* Bouton Gmail (affiché si connecté) — à gauche d'Exporter */}
+            {gmailConnection && gmailConnection.status !== "disconnected" && (
+              <Button
+                variant="outline"
+                className="gap-1.5 cursor-pointer"
+                onClick={handleOpenGmailDialog}
+              >
+                <GoogleIcon className="size-3.5" />
+                <span className="text-sm">Gmail connecté</span>
+                <Check
+                  className="size-3 text-muted-foreground/60"
+                  strokeWidth={2.5}
+                />
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setIsExportOpen(true)}>
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Exporter
@@ -477,9 +363,9 @@ function PurchaseInvoicesContent() {
             </div>
 
             {/* Table */}
-            <Suspense fallback={<TableSkeleton />}>
+            <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
               <PurchaseInvoiceTable
-                invoices={mergedInvoices}
+                invoices={invoices || []}
                 loading={loading}
                 refetch={refetch}
                 refetchStats={refetchStats}
@@ -487,8 +373,6 @@ function PurchaseInvoicesContent() {
                 importedInvoices={importedInvoices}
                 importedLoading={importedLoading}
                 onImportedConverted={handleImportedConverted}
-                gmailConnection={gmailConnection}
-                onOpenGmailDialog={handleOpenGmailDialog}
               />
             </Suspense>
           </div>
@@ -560,9 +444,9 @@ function PurchaseInvoicesContent() {
         </div>
 
         {/* Table */}
-        <Suspense fallback={<TableSkeleton />}>
+        <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
           <PurchaseInvoiceTable
-            invoices={mergedInvoices}
+            invoices={invoices || []}
             loading={loading}
             refetch={refetch}
             refetchStats={refetchStats}
@@ -570,8 +454,6 @@ function PurchaseInvoicesContent() {
             importedInvoices={importedInvoices}
             importedLoading={importedLoading}
             onImportedConverted={handleImportedConverted}
-            gmailConnection={gmailConnection}
-            onOpenGmailDialog={handleOpenGmailDialog}
           />
         </Suspense>
       </div>
@@ -620,23 +502,8 @@ function PurchaseInvoicesContent() {
       <ExportDialog
         open={isExportOpen}
         onOpenChange={setIsExportOpen}
-        invoices={mergedInvoices}
+        invoices={invoices || []}
       />
-      {/* Drawer transaction (affichage unifié) — dépense saisie dans Transactions */}
-      {isTxDrawerOpen && (
-        <TransactionDetailDrawer
-          transaction={selectedExpenseTx}
-          open={isTxDrawerOpen}
-          onOpenChange={(open) => {
-            setIsTxDrawerOpen(open);
-            if (!open) setSelectedExpenseTx(null);
-          }}
-          onDelete={handleDeleteExpenseTransaction}
-          onAttachReceipt={handleAttachReceiptToTransaction}
-          onSubmit={handleSaveExpenseTransaction}
-          onRefresh={refetchAll}
-        />
-      )}
       <GmailConnectionDialog
         open={isGmailDialogOpen}
         onOpenChange={setIsGmailDialogOpen}
@@ -647,35 +514,11 @@ function PurchaseInvoicesContent() {
 
 export default function PurchaseInvoicesPage() {
   return (
-    <ProRouteGuard pageName="Factures d'achat">
+    <ProRouteGuard
+      pageName="Factures d'achat"
+      fallback={<PurchaseInvoicePageSkeleton />}
+    >
       <PurchaseInvoicesContent />
     </ProRouteGuard>
-  );
-}
-
-function TableSkeleton() {
-  return (
-    <div className="space-y-4 p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-10 w-[300px]" />
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-[100px]" />
-        </div>
-      </div>
-      <div className="rounded-md border">
-        <div className="p-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center space-x-4 py-4">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-4 w-[150px]" />
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-4 w-[100px]" />
-              <Skeleton className="h-4 w-[80px]" />
-              <Skeleton className="h-4 w-[120px]" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
   );
 }

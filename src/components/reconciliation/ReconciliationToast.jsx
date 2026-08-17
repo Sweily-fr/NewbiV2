@@ -53,6 +53,7 @@ function ReconciliationCard({
   onIgnore,
   onNavigate,
   isExiting,
+  isProcessing,
 }) {
   return (
     <div
@@ -89,7 +90,7 @@ function ReconciliationCard({
                 <span className="font-semibold text-gray-900 dark:text-zinc-100">
                   {formatCurrency(transaction.amount)}
                 </span>
-                {" — "}
+                {" - "}
                 <span className="font-semibold text-gray-900 dark:text-zinc-100">
                   Facture {invoice.number}
                 </span>
@@ -104,6 +105,7 @@ function ReconciliationCard({
             {/* Actions */}
             <div className="flex items-center gap-2 mt-2.5">
               <button
+                disabled={isProcessing}
                 onClick={(e) => {
                   e.stopPropagation();
                   onIgnore(transaction.id);
@@ -116,11 +118,13 @@ function ReconciliationCard({
                   "hover:bg-gray-50 dark:hover:bg-zinc-800",
                   "hover:border-gray-300 dark:hover:border-zinc-600",
                   "transition-colors duration-150",
+                  "disabled:opacity-50 disabled:pointer-events-none",
                 )}
               >
                 Masquer
               </button>
               <button
+                disabled={isProcessing}
                 onClick={(e) => {
                   e.stopPropagation();
                   onLink(transaction.id, invoice.id);
@@ -131,6 +135,7 @@ function ReconciliationCard({
                   "text-white dark:text-zinc-900",
                   "hover:bg-gray-800 dark:hover:bg-white",
                   "transition-colors duration-150",
+                  "disabled:opacity-50 disabled:pointer-events-none",
                 )}
               >
                 Rattacher
@@ -152,6 +157,7 @@ function ReconciliationDeck({
   onIgnore,
   onNavigate,
   exitingIds,
+  isProcessing,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hoverTimeoutRef = useRef(null);
@@ -239,6 +245,7 @@ function ReconciliationDeck({
                 onIgnore={onIgnore}
                 onNavigate={onNavigate}
                 isExiting={isExiting}
+                isProcessing={isProcessing}
               />
             </div>
           );
@@ -439,6 +446,7 @@ export function ReconciliationToastProvider({ children }) {
           onIgnore={handleIgnore}
           onNavigate={handleNavigate}
           exitingIds={exitingIds}
+          isProcessing={isProcessing}
         />
       )}
     </>

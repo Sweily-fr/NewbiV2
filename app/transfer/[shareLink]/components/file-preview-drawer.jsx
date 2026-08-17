@@ -70,6 +70,7 @@ export function FilePreviewDrawer({
   onDownload,
   onNavigate,
   hasWatermark = false,
+  isDownloading = false,
 }) {
   // Vérifier si le téléchargement est bloqué (filigrane actif)
   const isDownloadBlocked = !!hasWatermark;
@@ -305,9 +306,10 @@ export function FilePreviewDrawer({
 
           {/* Footer avec bouton Télécharger - masqué si filigrane sur image */}
           {!isDownloadBlocked && (
-            <div className="px-8 py-4 border-t border-gray-100 flex justify-end">
+            <div className="px-8 py-4 border-t border-gray-100 flex items-center justify-end gap-3">
               <Button
                 onClick={() => onDownload?.(file)}
+                disabled={isDownloading}
                 className="text-white rounded-lg px-6"
               >
                 <Download className="w-4 h-4 mr-2" />

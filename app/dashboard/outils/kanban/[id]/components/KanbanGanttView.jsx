@@ -39,6 +39,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import { Calendar as RangeCalendar } from "@/src/components/ui/calendar";
 import { cn } from "@/src/lib/utils";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { useLazyVisible } from "../hooks/useLazyVisible";
@@ -97,6 +98,17 @@ import {
 } from "date-fns";
 import { fr } from "date-fns/locale";
 
+// Périodes proposées pour l'export PDF. "displayed" = période affichée à
+// l'écran (comportement historique) ; les presets "derniers X" sont des
+// fenêtres glissantes se terminant aujourd'hui.
+const EXPORT_PERIODS = [
+  { value: "displayed", label: "Période affichée" },
+  { value: "last_week", label: "Dernière semaine" },
+  { value: "last_3_months", label: "3 derniers mois" },
+  { value: "last_12_months", label: "12 derniers mois" },
+  { value: "custom", label: "Personnalisée" },
+];
+
 /**
  * Vue Gantt pour le Kanban
  */
@@ -117,6 +129,9 @@ export function KanbanGanttView({
   // rendu, dans daysToDisplay.
   const [currentWeekStart, setCurrentWeekStart] = useState(() => new Date());
   const [viewMode, setViewMode] = useState("week"); // week, month, quarter, year
+  const [exportOpen, setExportOpen] = useState(false); // Popover d'export PDF
+  const [exportPeriod, setExportPeriod] = useState("displayed"); // cf. EXPORT_PERIODS
+  const [exportRange, setExportRange] = useState(undefined); // { from, to } pour la période personnalisée
   const [hoveredTaskId, setHoveredTaskId] = useState(null);
   const [resizingTask, setResizingTask] = useState(null); // { taskId, side: 'left' | 'right', startX, originalDates }
   const [tempTaskDates, setTempTaskDates] = useState({}); // Pour maintenir les dates temporaires pendant la mise à jour
@@ -329,18 +344,77 @@ export function KanbanGanttView({
     setViewMode(mode);
   };
 
-  // Export PDF de la période affichée (import dynamique pour ne pas charger jsPDF au montage)
+  // Intervalle de l'export PDF ; null = période affichée à l'écran
+  // (comportement historique) ou période personnalisée incomplète
+  const exportInterval = useMemo(() => {
+    const today = startOfDay(new Date());
+    switch (exportPeriod) {
+      case "last_week":
+        return { start: addDays(today, -7), end: today };
+      case "last_3_months":
+        return { start: addMonths(today, -3), end: today };
+      case "last_12_months":
+        return { start: addMonths(today, -12), end: today };
+      case "custom":
+        return exportRange?.from && exportRange?.to
+          ? {
+              start: startOfDay(exportRange.from),
+              end: startOfDay(exportRange.to),
+            }
+          : null;
+      default:
+        return null;
+    }
+  }, [exportPeriod, exportRange]);
+
+  // Tâches exportées : sur une période explicite, seules celles qui la
+  // chevauchent (les tâches sans date sont exclues) ; sur la période
+  // affichée, toutes (comme la vue, qui les liste sans barre)
+  const exportTasks = useMemo(() => {
+    if (!exportInterval) return allTasks;
+    return allTasks.filter((task) => {
+      if (!task.startDate && !task.dueDate) return false;
+      const taskStart = startOfDay(parseISO(task.startDate || task.dueDate));
+      const taskEnd = startOfDay(parseISO(task.dueDate || task.startDate));
+      return taskStart <= exportInterval.end && taskEnd >= exportInterval.start;
+    });
+  }, [allTasks, exportInterval]);
+
+  const isCustomIncomplete = exportPeriod === "custom" && !exportInterval;
+
+  // Libellé de la période exportée (pied du popover)
+  const exportPeriodLabel = isCustomIncomplete
+    ? "Sélectionnez une plage de dates"
+    : `${format(
+        exportInterval ? exportInterval.start : daysToDisplay[0],
+        "d MMM yyyy",
+        { locale: fr },
+      )} - ${format(
+        exportInterval
+          ? exportInterval.end
+          : daysToDisplay[daysToDisplay.length - 1],
+        "d MMM yyyy",
+        { locale: fr },
+      )} · ${exportTasks.length} tâche${exportTasks.length > 1 ? "s" : ""}`;
+
+  // Export PDF de la période choisie (import dynamique pour ne pas charger jsPDF au montage)
   const handleExportPDF = async () => {
     try {
       const { exportGanttPDF } = await import("@/src/utils/gantt-export");
       exportGanttPDF({
         boardTitle,
-        tasks: allTasks,
-        days: daysToDisplay,
+        tasks: exportTasks,
+        days: exportInterval
+          ? eachDayOfInterval({
+              start: exportInterval.start,
+              end: exportInterval.end,
+            })
+          : daysToDisplay,
         membersById: Object.fromEntries(
           membersInfo.map((m) => [String(m.id), m.name]),
         ),
       });
+      setExportOpen(false);
     } catch (error) {
       console.error("Erreur lors de l'export PDF du Gantt:", error);
       toast.error("Impossible de générer le PDF");
@@ -801,15 +875,72 @@ export function KanbanGanttView({
               <SelectItem value="year">Année</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportPDF}
-            className="h-7 px-3 text-xs gap-1.5"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Exporter PDF</span>
-          </Button>
+          <Popover open={exportOpen} onOpenChange={setExportOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-3 text-xs gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Exporter PDF</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              {/* Choix de la période à exporter */}
+              <div className="p-3 space-y-1.5">
+                <div className="text-xs font-medium text-muted-foreground mb-2">
+                  Période à exporter
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {EXPORT_PERIODS.map((preset) => (
+                    <Button
+                      key={preset.value}
+                      variant={
+                        exportPeriod === preset.value ? "default" : "outline"
+                      }
+                      size="sm"
+                      className="h-7 text-xs justify-start"
+                      onClick={() => setExportPeriod(preset.value)}
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Calendrier pour la période personnalisée */}
+              {exportPeriod === "custom" && (
+                <div className="border-t px-3 py-3 flex justify-center">
+                  <RangeCalendar
+                    mode="range"
+                    selected={exportRange}
+                    onSelect={setExportRange}
+                    locale={fr}
+                    numberOfMonths={1}
+                    defaultMonth={exportRange?.from}
+                    className="p-0"
+                  />
+                </div>
+              )}
+
+              {/* Période retenue + action */}
+              <div className="border-t px-3 py-3 flex items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  {exportPeriodLabel}
+                </p>
+                <Button
+                  size="sm"
+                  className="h-7 px-3 text-xs gap-1.5 flex-shrink-0"
+                  onClick={handleExportPDF}
+                  disabled={isCustomIncomplete}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Exporter
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

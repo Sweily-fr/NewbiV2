@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { authClient } from "./auth-client";
+import { invalidateFullOrganizationCache } from "./full-organization-cache";
 
 /**
  * Récupère l'organisation active de l'utilisateur
@@ -44,6 +45,12 @@ export async function updateOrganization(organizationId, data, options = {}) {
       }
       throw new Error(error.message || "Erreur lors de la mise à jour");
     }
+
+    // Le cache partagé de getFullOrganization a un TTL d'une minute : sans
+    // invalidation, useWorkspace() continuait de servir l'organisation d'avant
+    // l'enregistrement (repli du rendu PDF pour le régime de TVA, la franchise
+    // en base, la forme juridique et le logo).
+    invalidateFullOrganizationCache(organizationId);
 
     // Rafraîchir la session active pour que les hooks réactifs (useActiveOrganization)
     // reçoivent les données mises à jour

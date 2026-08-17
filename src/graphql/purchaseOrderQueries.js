@@ -39,6 +39,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street
@@ -56,6 +57,12 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
     }
     companyInfo {
       name
+      commercialName
+      professionalTitle
+      regulatoryBody
+      professionalNumber
+      decennialInsurance
+      professionalLiabilityInsurance
       email
       phone
       website
@@ -65,6 +72,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       vatNumber
       transactionCategory
       vatPaymentCondition
+      vatFranchise
       companyStatus
       capitalSocial
       rcs
@@ -116,6 +124,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    isVatExempt
     operationType
     createdBy {
       id
@@ -129,9 +138,11 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       id
       number
       prefix
+      status
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC
@@ -180,6 +191,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
     id
     number
     prefix
+    purchaseOrderNumber
     status
     issueDate
     validUntil
@@ -196,6 +208,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     isReverseCharge
+    isVatExempt
     items {
       description
       quantity
@@ -221,6 +234,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       address {
         street
         city
@@ -259,9 +273,11 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       id
       number
       prefix
+      status
     }
     linkedInvoices {
       id
+      prefix
       number
       status
       finalTotalTTC
@@ -987,6 +1003,7 @@ export const GET_PURCHASE_ORDER_TEMPLATES = gql`
       }
       clientPositionRight
       isReverseCharge
+      isVatExempt
       showBankDetails
       shipping {
         billShipping

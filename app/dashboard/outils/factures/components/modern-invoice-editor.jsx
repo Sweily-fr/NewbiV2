@@ -58,6 +58,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   Select,
   SelectContent,
@@ -80,6 +81,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -93,6 +95,9 @@ export default function ModernInvoiceEditor({
   const { client: preselectedClient } = useClient(clientIdFromUrl);
   const [showSettings, setShowSettings] = useState(false);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [showEditClient, setShowEditClient] = useState(false);
   const [showEditCompany, setShowEditCompany] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -387,6 +392,7 @@ export default function ModernInvoiceEditor({
     return {
       client: v.client,
       companyInfo: {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || "",
         address: {
           street: organization?.addressStreet || "",
@@ -402,6 +408,7 @@ export default function ModernInvoiceEditor({
         legalForm: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
         fiscalRegime: organization?.fiscalRegime || "",
+        vatFranchise: organization?.vatFranchise || false,
         website: organization?.website || "",
         logo: organization?.logo || "",
         bankDetails: {
@@ -456,6 +463,7 @@ export default function ModernInvoiceEditor({
     },
     clientPositionRight: organization?.invoiceClientPositionRight || false,
     isReverseCharge: false,
+    isVatExempt: false,
     showBankDetails: organization?.showBankDetails || false,
     bankDetails: {
       iban: organization?.bankIban || "",
@@ -526,6 +534,7 @@ export default function ModernInvoiceEditor({
         },
         clientPositionRight: template.clientPositionRight ?? false,
         isReverseCharge: template.isReverseCharge ?? false,
+        isVatExempt: template.isVatExempt ?? false,
         showBankDetails: template.showBankDetails ?? false,
         bankDetails: template.bankDetails ?? {
           iban: "",
@@ -738,8 +747,11 @@ export default function ModernInvoiceEditor({
                       setValidationErrors={setValidationErrors}
                       organization={organization}
                       onSave={() => {
+                        // Ne reste ici que ce qui est propre à la facture. Les
+                        // informations de l'entreprise et les coordonnées
+                        // bancaires sont enregistrées par leurs modales.
                         setShowSettings(false);
-                        toast.success("Paramètres appliqués à cette facture");
+                        toast.success("Paramètres appliqués");
                       }}
                       saveLabel="Appliquer à cette facture"
                     />

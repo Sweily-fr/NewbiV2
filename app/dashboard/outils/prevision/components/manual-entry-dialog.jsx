@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -146,11 +146,21 @@ const formatDateLabel = (str) => {
   });
 };
 
+// "YYYY-MM" → « juillet 2026 » (titre de l'onglet Détails ciblé sur un mois).
+const formatMonthLabel = (month) =>
+  new Date(month + "-01").toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
+
 // Onglet « Détails prévisions » : liste chronologique des occurrences de
-// prévision (saisies manuelles + récurrences détectées) sur l'horizon courant,
-// avec suppression par occurrence (un seul mois, sans toucher aux autres).
+// prévision (saisies manuelles + récurrences détectées), avec suppression par
+// occurrence (un seul mois, sans toucher aux autres). Plage = l'horizon courant,
+// ou un seul mois quand la modal a été ouverte depuis un « + » du tableau
+// (rangeStart === rangeEnd).
 function ForecastDetailsList({ rangeStart, rangeEnd }) {
   const { occurrences, loading } = useForecastOccurrences(rangeStart, rangeEnd);
+  const singleMonth = Boolean(rangeStart) && rangeStart === rangeEnd;
   const { excludeOccurrence, loading: excluding } =
     useExcludeForecastOccurrence();
   const [toDelete, setToDelete] = useState(null);
@@ -166,25 +176,29 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
     if (result.success) setToDelete(null);
   };
 
+  // La modal a une hauteur fixe : chaque état (loader, vide, liste) remplit
+  // tout l'espace disponible (flex-1) pour que rien ne bouge visuellement.
   if (loading && occurrences.length === 0) {
     return (
-      <div className="py-10 text-center text-xs text-muted-foreground">
-        Chargement des prévisions…
+      <div className="flex flex-1 items-center justify-center">
+        <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (occurrences.length === 0) {
     return (
-      <div className="py-10 text-center text-xs text-muted-foreground">
-        Aucune prévision sur la période affichée.
+      <div className="flex flex-1 items-center justify-center text-center text-xs text-muted-foreground">
+        {singleMonth
+          ? "Aucune prévision pour ce mois."
+          : "Aucune prévision sur la période affichée."}
       </div>
     );
   }
 
   return (
-    <div className="-mx-1">
-      <div className="max-h-[52vh] overflow-y-auto divide-y divide-border/40 px-1">
+    <div className="-mx-1 flex flex-1 min-h-0 flex-col">
+      <div className="flex-1 min-h-0 overflow-y-auto divide-y divide-border/40 px-1">
         {occurrences.map((occ, i) => {
           const isIncome = occ.type === "INCOME";
           return (
@@ -291,6 +305,11 @@ export function ManualEntryDialog({
 
   // Onglet actif : "EXPENSE" / "INCOME" (formulaire d'ajout) ou "DETAILS".
   const [activeTab, setActiveTab] = useState("EXPENSE");
+  // Hauteur de la carte mesurée au passage sur l'onglet Détails : la modal
+  // garde exactement la taille qu'avait le formulaire (aucun saut), alors que
+  // le formulaire, lui, garde sa hauteur naturelle (aucun scroll).
+  const bodyRef = useRef(null);
+  const [detailsHeight, setDetailsHeight] = useState(null);
   const [type, setType] = useState("EXPENSE");
   const [amount, setAmount] = useState("");
   const [name, setName] = useState("");
@@ -308,6 +327,7 @@ export function ManualEntryDialog({
     // Onglet d'ouverture : suit le type de l'entrée éditée ou le type passé par
     // le « + » du tableau (Entrées → INCOME, Sorties → EXPENSE).
     setActiveTab(entry?.type || defaults?.type || "EXPENSE");
+    setDetailsHeight(null);
     if (entry) {
       setType(entry.type || "EXPENSE");
       setAmount(entry.amount != null ? String(entry.amount) : "");
@@ -360,9 +380,16 @@ export function ManualEntryDialog({
   // Onglet « Détails prévisions » disponible seulement quand l'horizon est connu
   // (modal ouverte depuis la page, pas en édition isolée depuis la liste du bas).
   const showDetailsTab = Boolean(rangeStart && rangeEnd) && !entry;
+  // Ouverture depuis un « + » du tableau : l'onglet Détails ne montre que le
+  // mois cliqué. Sans mois sélectionné (bouton « Ajouter une prévision »),
+  // il couvre toute la période affichée.
+  const detailsMonth = !entry && defaults?.month ? defaults.month : null;
 
   const selectTab = (tab) => {
     if (tab === "DETAILS") {
+      if (bodyRef.current) {
+        setDetailsHeight(bodyRef.current.getBoundingClientRect().height);
+      }
       setActiveTab("DETAILS");
       return;
     }
@@ -407,9 +434,20 @@ export function ManualEntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* La modal suit la hauteur naturelle du formulaire (aucun scroll sur
+          Entrée/Sortie, plafond 90vh sur petit écran). L'onglet Détails fige
+          la hauteur mesurée du formulaire pour éviter tout saut. */}
       <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl max-h-[90vh] flex flex-col">
-        <div className="bg-background rounded-xl overflow-y-auto ring-1 ring-black/[0.07] dark:ring-white/[0.1] flex-1 min-h-0">
-          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+        <div
+          ref={bodyRef}
+          style={
+            activeTab === "DETAILS" && detailsHeight
+              ? { height: detailsHeight }
+              : undefined
+          }
+          className="bg-background rounded-xl ring-1 ring-black/[0.07] dark:ring-white/[0.1] min-h-0 flex flex-col"
+        >
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40 shrink-0">
             <DialogTitle className="text-sm font-medium flex items-center gap-2">
               {activeTab === "DETAILS" ? null : type === "INCOME" ? (
                 <ArrowUpRight className="size-4" />
@@ -417,15 +455,18 @@ export function ManualEntryDialog({
                 <ArrowDownRight className="size-4" />
               )}
               {activeTab === "DETAILS"
-                ? "Détails des prévisions"
+                ? detailsMonth
+                  ? `Détails des prévisions · ${formatMonthLabel(detailsMonth)}`
+                  : "Détails des prévisions"
                 : entry
                   ? "Modifier la saisie"
                   : "Nouvelle saisie"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 px-5 pt-4 pb-0">
-            {/* Onglets : Sortie / Entrée (formulaire) + Détails prévisions */}
+          {/* Onglets : Sortie / Entrée (formulaire) + Détails prévisions —
+              hors zone scrollable pour rester visibles en permanence. */}
+          <div className="px-5 pt-4 shrink-0">
             <div className="flex gap-1.5 p-1 bg-muted/50 rounded-lg w-fit">
               <button
                 type="button"
@@ -466,16 +507,20 @@ export function ManualEntryDialog({
                 </button>
               )}
             </div>
+          </div>
 
-            {activeTab === "DETAILS" ? (
-              <div className="pb-4">
-                <ForecastDetailsList
-                  rangeStart={rangeStart}
-                  rangeEnd={rangeEnd}
-                />
-              </div>
-            ) : (
-              <>
+          {activeTab === "DETAILS" ? (
+            <div className="flex flex-1 min-h-0 flex-col px-5 pt-4 pb-4">
+              <ForecastDetailsList
+                rangeStart={detailsMonth || rangeStart}
+                rangeEnd={detailsMonth || rangeEnd}
+              />
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              {/* min-h-full + footer en mt-auto : le footer reste collé en
+                  bas quand le formulaire est plus court que la modal. */}
+              <div className="flex min-h-full flex-col gap-4 px-5 pt-4 pb-0">
                 {/* Name + Amount on same row */}
                 <div className="grid grid-cols-[1fr,140px] gap-3">
                   <div className="space-y-1.5">
@@ -703,7 +748,7 @@ export function ManualEntryDialog({
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between border-t border-border/40 mt-4 px-5 py-3 -mx-5">
+                <div className="flex items-center justify-between border-t border-border/40 mt-auto px-5 py-3 -mx-5">
                   <div>
                     {entry?.id && (
                       <button
@@ -736,9 +781,9 @@ export function ManualEntryDialog({
                     )}
                   </Button>
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

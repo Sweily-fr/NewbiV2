@@ -135,10 +135,7 @@ function ReactivateAccountContent() {
         <div className="text-center">
           <p className="text-sm text-gray-600">
             Besoin d'aide ?{" "}
-            <a
-              href="mailto:support@newbi.sweily.fr"
-              className="text-[#5b4fff] hover:text-[#5b4fff]"
-            >
+            <a href="/contact" className="text-[#5b4fff] hover:text-[#5b4fff]">
               Contactez le support
             </a>
           </p>

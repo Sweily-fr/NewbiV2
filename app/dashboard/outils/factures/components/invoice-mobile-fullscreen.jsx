@@ -31,11 +31,15 @@ import { useRouter } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import {
   EInvoiceStatusBadge,
   EReportingErrorBadge,
 } from "./einvoice-status-badge";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import {
+  formatLocalDate,
+  getDraftEffectiveDates,
+} from "@/src/utils/dateFormatter";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -284,6 +288,9 @@ export default function InvoiceMobileFullscreen({
     }
   };
 
+  // La mutation changeInvoiceStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, échéance
+  // décalée d'autant).
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
@@ -538,18 +545,64 @@ export default function InvoiceMobileFullscreen({
                     Dates
                   </h3>
                   <div className="space-y-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Date d'émission
-                      </span>
-                      <span>{formatDate(invoice.issueDate)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Date d'échéance
-                      </span>
-                      <span>{formatDate(invoice.dueDate)}</span>
-                    </div>
+                    {/* Pour un brouillon repris plus tard, afficher les dates
+                        recalées (jour J / échéance) et l'ancienne date entre
+                        parenthèses, car elles seront mises à jour à la
+                        finalisation — même logique que la sidebar desktop. */}
+                    {(() => {
+                      const draftDates =
+                        invoice.status === "DRAFT"
+                          ? getDraftEffectiveDates(
+                              invoice.issueDate,
+                              invoice.dueDate,
+                            )
+                          : null;
+                      const refreshed = draftDates?.changed;
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Date d'émission
+                            </span>
+                            <span className="flex flex-col items-end">
+                              <span>
+                                {formatDate(
+                                  refreshed
+                                    ? draftDates.issue.effective
+                                    : invoice.issueDate,
+                                )}
+                              </span>
+                              {refreshed && draftDates.issue.original && (
+                                <span className="text-xs text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.issue.original)})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Date d'échéance
+                            </span>
+                            <span className="flex flex-col items-end">
+                              <span>
+                                {formatDate(
+                                  refreshed
+                                    ? draftDates.second.effective
+                                    : invoice.dueDate,
+                                )}
+                              </span>
+                              {refreshed && draftDates.second.original && (
+                                <span className="text-xs text-muted-foreground">
+                                  (ancienne&nbsp;:{" "}
+                                  {formatDate(draftDates.second.original)})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                     {invoice.paymentDate && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
@@ -806,6 +859,48 @@ export default function InvoiceMobileFullscreen({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Devis lié (devis à l'origine de cette facture) */}
+                {invoice.sourceQuote && (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Devis lié
+                    </h3>
+                    <div className="space-y-1">
+                      <LinkedDocumentRow
+                        type="quote"
+                        document={invoice.sourceQuote}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/devis?id=${invoice.sourceQuote.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Bon de commande lié (BC à l'origine de cette facture) */}
+                {invoice.sourcePurchaseOrder && (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Bon de commande lié
+                    </h3>
+                    <div className="space-y-1">
+                      <LinkedDocumentRow
+                        type="purchaseOrder"
+                        document={invoice.sourcePurchaseOrder}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/bons-commande?id=${invoice.sourcePurchaseOrder.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
                     </div>
                   </div>
                 )}

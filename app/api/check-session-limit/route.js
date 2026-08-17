@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
 import { toObjectId, withErrorHandler } from "@/src/lib/security";
 import { enforceSessionLimit } from "@/src/lib/enforce-session-limit";
+import { logSessionRevocation } from "@/src/lib/session-revocation-log";
 
 async function handler() {
   const session = await auth.api.getSession({
@@ -39,20 +40,47 @@ async function handler() {
     }
   }
 
-  // Seuil d'inactivité : supprimer les sessions sans activité depuis X heures
+  // Seuil d'inactivité : supprimer les sessions sans activité depuis X heures.
+  // IMPORTANT : Better Auth ne rafraîchit session.updatedAt qu'une fois par
+  // updateAge (1h, cf. session.updateAge dans src/lib/auth.js). Une session
+  // activement utilisée peut donc avoir un updatedAt vieux de presque 1h :
+  // sans la marge ci-dessous, tout timeout ≤ 1h supprimait des sessions
+  // actives à chaque login (déconnexions "fantômes" sur les autres
+  // appareils). Le timeout d'inactivité réel est appliqué côté client par
+  // useInactivityDetector ; ce nettoyage n'est qu'un filet de sécurité.
+  const SESSION_UPDATE_AGE_MS = 60 * 60 * 1000;
   const inactivityThreshold = new Date(
-    now.getTime() - inactivityTimeoutHours * 60 * 60 * 1000,
+    now.getTime() -
+      (inactivityTimeoutHours * 60 * 60 * 1000 + SESSION_UPDATE_AGE_MS),
   );
 
   const currentSessionToken = session.session?.token || null;
 
-  // Nettoyer les sessions inactives (updatedAt < seuil) en une seule opération
+  // Nettoyer les sessions inactives (updatedAt < seuil).
+  // Lecture préalable des victimes pour alimenter le journal des révocations.
   // MOYEN-25 fix: userId is stored as ObjectId in session collection (ADR-004)
-  await mongoDb.collection("session").deleteMany({
-    userId: userObjectId,
-    updatedAt: { $lt: inactivityThreshold },
-    token: { $ne: currentSessionToken },
-  });
+  const staleSessions = await mongoDb
+    .collection("session")
+    .find({
+      userId: userObjectId,
+      updatedAt: { $lt: inactivityThreshold },
+      token: { $ne: currentSessionToken },
+    })
+    .toArray();
+
+  if (staleSessions.length > 0) {
+    await mongoDb.collection("session").deleteMany({
+      _id: { $in: staleSessions.map((s) => s._id) },
+    });
+    await logSessionRevocation({
+      mechanism: "inactivity_cleanup",
+      trigger: "login_check_route",
+      userId: userObjectId,
+      revokedSessions: staleSessions,
+      keptToken: currentSessionToken,
+      meta: { inactivityTimeoutHours, thresholdWithUpdateAgeMargin: true },
+    });
+  }
 
   // Auto-révocation : si la limite est dépassée, supprimer les sessions
   // les plus anciennes en conservant la session courante.
@@ -60,6 +88,7 @@ async function handler() {
     userObjectId,
     currentSessionToken,
     maxSessions,
+    trigger: "login_check_route",
   });
 
   // Récupérer l'état final des sessions (après nettoyage + révocation)

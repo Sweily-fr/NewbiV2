@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { isNumberSequenceError } from "@/src/utils/numbering-errors";
 import {
   useCreateInvoice,
   useUpdateInvoice,
@@ -17,6 +18,7 @@ import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   updateOrganization,
   getActiveOrganization,
@@ -223,6 +225,7 @@ export function useInvoiceEditor({
     if (organization && !formData.companyInfo?.legalForm) {
       // Fallback sur la valeur sauvegardée (logo, etc.) si l'org active ne la fournit pas.
       const updatedCompanyInfo = {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || formData.companyInfo?.name || "",
         address: {
           street:
@@ -258,6 +261,19 @@ export function useInvoiceEditor({
         fiscalRegime:
           organization?.fiscalRegime ||
           formData.companyInfo?.fiscalRegime ||
+          "",
+        // Booléen : ?? et non || pour qu'un false explicite de l'organisation
+        // ne retombe pas sur la valeur du document.
+        vatFranchise:
+          organization?.vatFranchise ??
+          formData.companyInfo?.vatFranchise ??
+          false,
+        // Pas de repli sur le régime fiscal : il ressuscitait la mention
+        // « Paiement de la TVA » après un décochage de l'assujettissement.
+        // vatMode suffit, les réglages le vident déjà dans ce cas.
+        vatPaymentCondition:
+          organization?.vatMode ||
+          formData.companyInfo?.vatPaymentCondition ||
           "",
         website: organization?.website || formData.companyInfo?.website || "",
         logo: organization?.logo || formData.companyInfo?.logo || "",
@@ -344,42 +360,45 @@ export function useInvoiceEditor({
     return () => clearTimeout(timeoutId);
   }, [watchedClient, isFormInitialized]);
 
-  // Re-valider quand les informations de l'entreprise changent
+  // Re-valider quand les informations de l'entreprise changent.
+  // On dépend des valeurs et non de l'objet companyInfo : setValue le remplace
+  // par un clone à chaque écriture, donc son identité change en permanence.
+  const companyInfoName = formData.companyInfo?.name;
+  const companyInfoEmail = formData.companyInfo?.email;
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
 
     setValidationErrors((prevErrors) => {
-      const companyInfo = formData.companyInfo;
+      let message = null;
+      if (!companyInfoName || companyInfoName.trim() === "") {
+        message = "Le nom de l'entreprise est requis";
+      } else if (!companyInfoEmail || companyInfoEmail.trim() === "") {
+        message = "L'email de l'entreprise est requis";
+      }
 
-      if (!companyInfo?.name || companyInfo.name.trim() === "") {
-        return {
-          ...prevErrors,
-          companyInfo: {
-            message: "Le nom de l'entreprise est requis",
-            canEdit: true,
-          },
-        };
-      } else if (!companyInfo?.email || companyInfo.email.trim() === "") {
-        return {
-          ...prevErrors,
-          companyInfo: {
-            message: "L'email de l'entreprise est requis",
-            canEdit: true,
-          },
-        };
-      } else {
-        // Supprimer l'erreur si les champs sont valides
-        if (prevErrors.companyInfo) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.companyInfo;
-          return newErrors;
+      if (message) {
+        // Ne pas recréer l'objet si l'erreur est déjà la même : un nouvel objet
+        // à chaque passage relancerait un rendu, donc une boucle de mises à jour
+        if (prevErrors.companyInfo?.message === message) {
+          return prevErrors;
         }
+        return {
+          ...prevErrors,
+          companyInfo: { message, canEdit: true },
+        };
+      }
+
+      // Supprimer l'erreur si les champs sont valides
+      if (prevErrors.companyInfo) {
+        const newErrors = { ...prevErrors };
+        delete newErrors.companyInfo;
+        return newErrors;
       }
 
       return prevErrors;
     });
-  }, [formData.companyInfo, isFormInitialized]);
+  }, [companyInfoName, companyInfoEmail, isFormInitialized]);
 
   // Re-valider quand la date d'émission change
   useEffect(() => {
@@ -792,6 +811,48 @@ export function useInvoiceEditor({
     isFormInitialized,
   ]);
 
+  // Effacer les erreurs de facture de situation quand l'utilisateur corrige
+  // l'avancement ou les articles. Ces clés sont posées à la soumission
+  // (progress) ou renvoyées par le backend (situationTotal, dépassement du
+  // montant du contrat) et aucune re-validation temps réel ne les gérait :
+  // l'erreur restait affichée après correction.
+  useEffect(() => {
+    if (!isFormInitialized) return;
+
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (!prevErrors.progress && !prevErrors.situationTotal) {
+          return prevErrors;
+        }
+
+        const newErrors = { ...prevErrors };
+        const globalProgress =
+          parseFloat(formData.globalProgressPercentage) || 0;
+        if (
+          newErrors.progress &&
+          (formData.invoiceType !== "situation" || globalProgress <= 100)
+        ) {
+          delete newErrors.progress;
+        }
+        // situationTotal est un calcul backend : toute modification de
+        // l'avancement ou des articles l'invalide, il sera re-vérifié à la
+        // prochaine soumission.
+        delete newErrors.situationTotal;
+
+        return Object.keys(newErrors).length !== Object.keys(prevErrors).length
+          ? newErrors
+          : prevErrors;
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    formData.invoiceType,
+    formData.globalProgressPercentage,
+    itemsDataString,
+    isFormInitialized,
+  ]);
+
   // Re-valider quand la remise change
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
@@ -998,6 +1059,8 @@ export function useInvoiceEditor({
       currentClient.lastName !== freshClient.lastName ||
       currentClient.siret !== freshClient.siret ||
       currentClient.vatNumber !== freshClient.vatNumber ||
+      (currentClient.isInternational || false) !==
+        (freshClient.isInternational || false) ||
       JSON.stringify({
         street: currentClient.address?.street,
         city: currentClient.address?.city,
@@ -1089,19 +1152,40 @@ export function useInvoiceEditor({
         shouldValidate: false,
         shouldDirty: false,
       });
-    } else if (!currentNumber || currentNumber.startsWith("DRAFT-")) {
+    } else {
       // Numérotation manuelle → proposer le prochain numéro sans écraser une saisie.
-      // Si le préfixe est nouveau, le numéro de départ global (invoiceStartNumber)
-      // prime sur le 0001 renvoyé par le backend.
-      const startNumber = parseInt(organization?.invoiceStartNumber, 10);
-      const proposedNumber =
-        !hasDocumentsForPrefix && startNumber > 0
-          ? String(startNumber).padStart(4, "0")
-          : formattedNumber;
-      setValue("number", proposedNumber, {
-        shouldValidate: false,
-        shouldDirty: false,
-      });
+      // Brouillon rouvert : si des factures ont été finalisées entre-temps sur le
+      // même préfixe, le numéro conservé par le brouillon est déjà pris (ou en
+      // retrait de la séquence) → on le remplace par le prochain numéro.
+      const currentNum = parseInt(currentNumber, 10);
+      const isStaleDraftNumber =
+        isDraftEdit &&
+        hasDocumentsForPrefix &&
+        !Number.isNaN(currentNum) &&
+        currentNum < nextInvoiceNumber;
+
+      if (
+        !currentNumber ||
+        currentNumber.startsWith("DRAFT-") ||
+        isStaleDraftNumber
+      ) {
+        // Si le préfixe est nouveau, le numéro de départ global (invoiceStartNumber)
+        // prime sur le 0001 renvoyé par le backend.
+        const startNumber = parseInt(organization?.invoiceStartNumber, 10);
+        const proposedNumber =
+          !hasDocumentsForPrefix && startNumber > 0
+            ? String(startNumber).padStart(4, "0")
+            : formattedNumber;
+        setValue("number", proposedNumber, {
+          shouldValidate: false,
+          shouldDirty: false,
+        });
+        if (isStaleDraftNumber) {
+          toast.info(
+            `Le numéro ${currentNumber} a déjà été utilisé depuis l'enregistrement du brouillon. La facture portera le numéro ${proposedNumber}.`,
+          );
+        }
+      }
     }
   }, [
     mode,
@@ -1118,6 +1202,7 @@ export function useInvoiceEditor({
   useEffect(() => {
     if (mode === "create" && organization) {
       const autoFilledCompanyInfo = {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || "",
         address: {
           street: organization?.addressStreet || "",
@@ -1133,7 +1218,7 @@ export function useInvoiceEditor({
         rcs: organization?.rcs || "",
         companyStatus: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
-        vatPaymentCondition: organization?.fiscalRegime || "",
+        vatPaymentCondition: organization?.vatMode || "",
         transactionCategory: organization?.activityCategory || "",
         website: organization?.website || "",
         logo: organization?.logo || "",
@@ -1145,6 +1230,18 @@ export function useInvoiceEditor({
       };
 
       setValue("companyInfo", autoFilledCompanyInfo);
+      setValue(
+        "showCommercialName",
+        organization?.showCommercialName || false,
+        {
+          shouldDirty: false,
+        },
+      );
+      setValue(
+        "isRegulatedActivity",
+        organization?.isRegulatedActivity || false,
+        { shouldDirty: false },
+      );
     }
   }, [mode, organization, setValue]);
 
@@ -1195,7 +1292,7 @@ export function useInvoiceEditor({
       setValue(
         "beneficiaryNameType",
         organization.beneficiaryNameType ||
-          (organization.legalForm === "Auto-entrepreneur"
+          (["EI", "Auto-entrepreneur"].includes(organization.legalForm)
             ? "fullName"
             : "companyName"),
       );
@@ -1268,36 +1365,64 @@ export function useInvoiceEditor({
     }
   }, [organization, setValue, getValues]);
 
+  // Écriture gardée : n'appelle setValue que si la valeur change réellement.
+  // Indispensable ici car cet effet et le "sync inverse" ci-dessous se
+  // répondent mutuellement ; sans garde, chaque écriture relance l'autre effet
+  // et React finit par lever "Maximum update depth exceeded".
+  const setFlatIfChanged = useCallback(
+    (field, value) => {
+      if (getValues(field) !== value) {
+        setValue(field, value, { shouldDirty: false });
+      }
+    },
+    [getValues, setValue],
+  );
+
   // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
   useEffect(() => {
     if (isFormInitialized) {
       const companyInfo = formData.companyInfo;
       if (companyInfo) {
-        setValue("companyName", companyInfo.name || "", { shouldDirty: false });
-        setValue("companyEmail", companyInfo.email || "", {
-          shouldDirty: false,
-        });
-        setValue("companyPhone", companyInfo.phone || "", {
-          shouldDirty: false,
-        });
-        setValue("website", companyInfo.website || "", { shouldDirty: false });
+        setFlatIfChanged("companyName", companyInfo.name || "");
+        setFlatIfChanged("companyEmail", companyInfo.email || "");
+        setFlatIfChanged("companyPhone", companyInfo.phone || "");
+        setFlatIfChanged("website", companyInfo.website || "");
+        setFlatIfChanged("commercialName", companyInfo.commercialName || "");
+        setFlatIfChanged(
+          "professionalTitle",
+          companyInfo.professionalTitle || "",
+        );
+        setFlatIfChanged("regulatoryBody", companyInfo.regulatoryBody || "");
+        setFlatIfChanged(
+          "professionalNumber",
+          companyInfo.professionalNumber || "",
+        );
+        setFlatIfChanged(
+          "decennialInsurance",
+          companyInfo.decennialInsurance || "",
+        );
+        setFlatIfChanged(
+          "professionalLiabilityInsurance",
+          companyInfo.professionalLiabilityInsurance || "",
+        );
+        if (companyInfo.logo) {
+          setFlatIfChanged("logo", companyInfo.logo);
+        }
         if (typeof companyInfo.address === "object" && companyInfo.address) {
-          setValue("addressStreet", companyInfo.address.street || "", {
-            shouldDirty: false,
-          });
-          setValue("addressCity", companyInfo.address.city || "", {
-            shouldDirty: false,
-          });
-          setValue("addressZipCode", companyInfo.address.postalCode || "", {
-            shouldDirty: false,
-          });
-          setValue("addressCountry", companyInfo.address.country || "France", {
-            shouldDirty: false,
-          });
+          setFlatIfChanged("addressStreet", companyInfo.address.street || "");
+          setFlatIfChanged("addressCity", companyInfo.address.city || "");
+          setFlatIfChanged(
+            "addressZipCode",
+            companyInfo.address.postalCode || "",
+          );
+          setFlatIfChanged(
+            "addressCountry",
+            companyInfo.address.country || "France",
+          );
         }
       }
     }
-  }, [isFormInitialized, formData.companyInfo, setValue]);
+  }, [isFormInitialized, formData.companyInfo, setFlatIfChanged]);
 
   // Sync inverse : propager les champs plats édités dans la vue paramètres
   // vers companyInfo.* pour que la preview (qui lit companyInfo) se mette à jour
@@ -1317,6 +1442,48 @@ export function useInvoiceEditor({
     const nextCountry =
       formData.addressCountry ?? currentAddress.country ?? "France";
 
+    // Nom commercial, activité réglementée, logo — tri-état : la case cochée
+    // (true/false) pilote l'inclusion, undefined conserve le snapshot
+    const nextLogo = formData.logo ?? current.logo ?? "";
+    const showCommercial =
+      formData.showCommercialName ??
+      (current.commercialName ? true : undefined);
+    const nextCommercialName =
+      showCommercial === false
+        ? ""
+        : (formData.commercialName ?? current.commercialName ?? "");
+    const isRegulated =
+      formData.isRegulatedActivity ??
+      (current.professionalTitle ||
+      current.regulatoryBody ||
+      current.professionalNumber ||
+      current.decennialInsurance ||
+      current.professionalLiabilityInsurance
+        ? true
+        : undefined);
+    const regulatedValue = (flat, curr) =>
+      isRegulated === false ? "" : (flat ?? curr ?? "");
+    const nextProfessionalTitle = regulatedValue(
+      formData.professionalTitle,
+      current.professionalTitle,
+    );
+    const nextRegulatoryBody = regulatedValue(
+      formData.regulatoryBody,
+      current.regulatoryBody,
+    );
+    const nextProfessionalNumber = regulatedValue(
+      formData.professionalNumber,
+      current.professionalNumber,
+    );
+    const nextDecennialInsurance = regulatedValue(
+      formData.decennialInsurance,
+      current.decennialInsurance,
+    );
+    const nextProfessionalLiabilityInsurance = regulatedValue(
+      formData.professionalLiabilityInsurance,
+      current.professionalLiabilityInsurance,
+    );
+
     if (
       nextName !== (current.name || "") ||
       nextEmail !== (current.email || "") ||
@@ -1325,7 +1492,15 @@ export function useInvoiceEditor({
       nextStreet !== (currentAddress.street || "") ||
       nextCity !== (currentAddress.city || "") ||
       nextPostalCode !== (currentAddress.postalCode || "") ||
-      nextCountry !== (currentAddress.country || "France")
+      nextCountry !== (currentAddress.country || "France") ||
+      nextLogo !== (current.logo || "") ||
+      nextCommercialName !== (current.commercialName || "") ||
+      nextProfessionalTitle !== (current.professionalTitle || "") ||
+      nextRegulatoryBody !== (current.regulatoryBody || "") ||
+      nextProfessionalNumber !== (current.professionalNumber || "") ||
+      nextDecennialInsurance !== (current.decennialInsurance || "") ||
+      nextProfessionalLiabilityInsurance !==
+        (current.professionalLiabilityInsurance || "")
     ) {
       setValue(
         "companyInfo",
@@ -1342,6 +1517,13 @@ export function useInvoiceEditor({
             postalCode: nextPostalCode,
             country: nextCountry,
           },
+          logo: nextLogo,
+          commercialName: nextCommercialName,
+          professionalTitle: nextProfessionalTitle,
+          regulatoryBody: nextRegulatoryBody,
+          professionalNumber: nextProfessionalNumber,
+          decennialInsurance: nextDecennialInsurance,
+          professionalLiabilityInsurance: nextProfessionalLiabilityInsurance,
         },
         { shouldDirty: true },
       );
@@ -1356,6 +1538,15 @@ export function useInvoiceEditor({
     formData.addressCity,
     formData.addressZipCode,
     formData.addressCountry,
+    formData.logo,
+    formData.commercialName,
+    formData.showCommercialName,
+    formData.isRegulatedActivity,
+    formData.professionalTitle,
+    formData.regulatoryBody,
+    formData.professionalNumber,
+    formData.decennialInsurance,
+    formData.professionalLiabilityInsurance,
     getValues,
     setValue,
   ]);
@@ -1477,6 +1668,7 @@ export function useInvoiceEditor({
             setValue("purchaseOrderNumber", po.purchaseOrderNumber);
           if (po.isReverseCharge != null)
             setValue("isReverseCharge", po.isReverseCharge);
+          if (po.isVatExempt != null) setValue("isVatExempt", po.isVatExempt);
           if (po.retenueGarantie != null)
             setValue("retenueGarantie", po.retenueGarantie);
           if (po.escompte != null) setValue("escompte", po.escompte);
@@ -1531,6 +1723,7 @@ export function useInvoiceEditor({
             setValue("purchaseOrderNumber", q.purchaseOrderNumber);
           if (q.isReverseCharge != null)
             setValue("isReverseCharge", q.isReverseCharge);
+          if (q.isVatExempt != null) setValue("isVatExempt", q.isVatExempt);
           if (q.retenueGarantie != null)
             setValue("retenueGarantie", q.retenueGarantie);
           if (q.escompte != null) setValue("escompte", q.escompte);
@@ -1986,6 +2179,15 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat",
         );
+      } else if (isNumberSequenceError(errorMessage)) {
+        // Numérotation : le message de l'API dit déjà quel est le dernier
+        // numéro utilisé et lequel est attendu, on le relaie tel quel.
+        // Pas de setValidationErrors : la clé invoiceNumber n'est affichée
+        // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+        // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+        toast.error("Numéro de facture invalide", {
+          description: errorMessage,
+        });
       } else if (errorMessage.includes("erreurs de validation")) {
         // Erreur de validation Mongoose - afficher les détails
         const details =
@@ -2407,6 +2609,15 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat",
         );
+      } else if (isNumberSequenceError(errorMessage)) {
+        // Numérotation : le message de l'API dit déjà quel est le dernier
+        // numéro utilisé et lequel est attendu, on le relaie tel quel.
+        // Pas de setValidationErrors : la clé invoiceNumber n'est affichée
+        // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+        // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+        toast.error("Numéro de facture invalide", {
+          description: errorMessage,
+        });
       } else if (errorMessage.includes("erreurs de validation")) {
         // Erreur de validation Mongoose - afficher les détails des champs qui ont échoué
         const details =
@@ -2613,7 +2824,8 @@ function buildValidationReasons(errors) {
   const messages = Object.values(errors || {})
     .map((e) => (typeof e === "string" ? e : e?.message))
     .filter(Boolean);
-  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  if (messages.length === 0)
+    return "Veuillez vérifier les informations saisies.";
   return messages.map((m) => `• ${m}`).join("\n");
 }
 
@@ -2621,6 +2833,7 @@ function buildValidationReasons(errors) {
 function getInitialFormData(mode, initialData, session, organization) {
   // Auto-remplissage du companyInfo avec les données d'organisation
   const autoFilledCompanyInfo = {
+    ...getOrganizationCompanyExtras(organization),
     name: organization?.companyName || "",
     address: {
       street: organization?.addressStreet || "",
@@ -2637,6 +2850,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     legalForm: organization?.legalForm || "",
     capitalSocial: organization?.capitalSocial || "",
     fiscalRegime: organization?.fiscalRegime || "",
+    vatFranchise: organization?.vatFranchise || false,
     website: organization?.website || "",
     logo: organization?.logo || "",
     bankDetails: {
@@ -2669,12 +2883,13 @@ function getInitialFormData(mode, initialData, session, organization) {
     purchaseOrderNumber: "",
     progressMode: "uniform", // Mode d'avancement: "uniform" ou "individual"
     globalProgressPercentage: 100, // Pourcentage global pour le mode uniforme
+    isVatExempt: false,
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: organization?.showBankDetails || false,
     // Nom du bénéficiaire
     beneficiaryNameType:
       organization?.beneficiaryNameType ||
-      (organization?.legalForm === "Auto-entrepreneur"
+      (["EI", "Auto-entrepreneur"].includes(organization?.legalForm)
         ? "fullName"
         : "companyName"),
     userName: session?.user?.name || "",
@@ -2787,6 +3002,7 @@ function transformInvoiceToFormData(invoice) {
   };
 
   const transformedData = {
+    id: invoice.id,
     prefix: invoice.prefix || "",
     number: invoice.number || "",
     issueDate:
@@ -2794,9 +3010,25 @@ function transformInvoiceToFormData(invoice) {
     dueDate: transformDate(invoice.dueDate, "dueDate"),
     status: invoice.status || "DRAFT",
     client: invoice.client || null,
+    // Toggles dérivés du snapshot companyInfo (pour la vue paramètres)
+    showCommercialName: !!invoice.companyInfo?.commercialName,
+    isRegulatedActivity: !!(
+      invoice.companyInfo?.professionalTitle ||
+      invoice.companyInfo?.regulatoryBody ||
+      invoice.companyInfo?.professionalNumber ||
+      invoice.companyInfo?.decennialInsurance ||
+      invoice.companyInfo?.professionalLiabilityInsurance
+    ),
     companyInfo: invoice.companyInfo
       ? {
           name: invoice.companyInfo.name || "",
+          commercialName: invoice.companyInfo.commercialName || "",
+          professionalTitle: invoice.companyInfo.professionalTitle || "",
+          regulatoryBody: invoice.companyInfo.regulatoryBody || "",
+          professionalNumber: invoice.companyInfo.professionalNumber || "",
+          decennialInsurance: invoice.companyInfo.decennialInsurance || "",
+          professionalLiabilityInsurance:
+            invoice.companyInfo.professionalLiabilityInsurance || "",
           // Formatage cohérent de l'adresse avec les devis
           address: (() => {
             if (!invoice.companyInfo.address) return "";
@@ -2826,6 +3058,9 @@ function transformInvoiceToFormData(invoice) {
           companyStatus: invoice.companyInfo.companyStatus || "",
           capitalSocial: invoice.companyInfo.capitalSocial || "",
           vatPaymentCondition: invoice.companyInfo.vatPaymentCondition || "",
+          // Conservé tel quel (y compris undefined pour les documents
+          // antérieurs) : le pied de page retombe sinon sur l'organisation.
+          vatFranchise: invoice.companyInfo.vatFranchise,
           transactionCategory: invoice.companyInfo.transactionCategory || "",
           website: invoice.companyInfo.website || "",
           logo: invoice.companyInfo.logo || "",
@@ -2881,20 +3116,46 @@ function transformInvoiceToFormData(invoice) {
       invoice.invoiceType || (invoice.isDeposit ? "deposit" : "standard"), // Mapper invoiceType avec fallback sur isDeposit
     situationNumber: invoice.situationNumber || 1,
     situationReference: invoice.situationReference || "",
+    // Les pourcentages des articles font foi : les factures enregistrées avant
+    // la persistance de progressMode/globalProgressPercentage n'ont que ceux-là.
+    ...(() => {
+      const itemProgress = (invoice.items || []).map(
+        (item) => item.progressPercentage ?? 100,
+      );
+      const allEqual =
+        itemProgress.length > 0 &&
+        itemProgress.every((p) => p === itemProgress[0]);
+      const progressMode =
+        invoice.progressMode === "individual" ||
+        (itemProgress.length > 0 && !allEqual)
+          ? "individual"
+          : "uniform";
+      return {
+        progressMode,
+        globalProgressPercentage:
+          progressMode === "uniform" && allEqual
+            ? itemProgress[0]
+            : (invoice.globalProgressPercentage ?? 100),
+      };
+    })(),
+    isReverseCharge: invoice.isReverseCharge || false,
+    isVatExempt: invoice.isVatExempt || false,
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
     // Récupérer les données bancaires si elles existent dans la facture
+    // (priorité au champ top-level enregistré à la création, sinon le snapshot companyInfo)
     showBankDetails: invoice.showBankDetails || false,
-    bankDetails: invoice.companyInfo?.bankDetails
-      ? {
-          iban: invoice.companyInfo.bankDetails.iban || "",
-          bic: invoice.companyInfo.bankDetails.bic || "",
-          bankName: invoice.companyInfo.bankDetails.bankName || "",
-        }
-      : {
-          iban: "",
-          bic: "",
-          bankName: "",
-        },
+    bankDetails: {
+      iban:
+        invoice.bankDetails?.iban ||
+        invoice.companyInfo?.bankDetails?.iban ||
+        "",
+      bic:
+        invoice.bankDetails?.bic || invoice.companyInfo?.bankDetails?.bic || "",
+      bankName:
+        invoice.bankDetails?.bankName ||
+        invoice.companyInfo?.bankDetails?.bankName ||
+        "",
+    },
     userBankDetails: {
       iban: "",
       bic: "",
@@ -2944,6 +3205,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
         lastName: formData.client.lastName,
         siret: formData.client.siret,
         vatNumber: formData.client.vatNumber,
+        isInternational: formData.client.isInternational || false,
         hasDifferentShippingAddress:
           formData.client.hasDifferentShippingAddress,
         address: formData.client.address
@@ -3113,6 +3375,13 @@ function transformFormDataToInput(formData, previousStatus = null) {
     isDeposit: formData.isDepositInvoice || formData.invoiceType === "deposit", // Mapping correct vers le champ backend
     invoiceType: formData.invoiceType || "standard", // Type de facture (standard, deposit, situation)
     situationNumber: formData.situationNumber || 1, // Numéro de situation pour les factures de situation
+    progressMode: formData.progressMode || "uniform", // Mode d'avancement (uniform ou individual)
+    globalProgressPercentage:
+      formData.globalProgressPercentage !== undefined &&
+      formData.globalProgressPercentage !== null &&
+      formData.globalProgressPercentage !== ""
+        ? parseFloat(formData.globalProgressPercentage)
+        : 100, // Pourcentage d'avancement global (mode uniforme)
     showBankDetails: shouldShowBankDetails,
     bankDetails: bankDetailsForInvoice,
     appearance: {
@@ -3137,6 +3406,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,
+    isVatExempt: formData.isVatExempt || false,
     clientPositionRight: formData.clientPositionRight || false,
     ...(formData.operationType && { operationType: formData.operationType }),
   };

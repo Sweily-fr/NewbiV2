@@ -515,53 +515,6 @@ export async function embedFacturXInPDF(
   }
 }
 
-/**
- * Vérifie si les données de facture sont complètes pour Factur-X
- */
-export function validateFacturXData(invoiceData) {
-  const errors = [];
-
-  // Log des données reçues pour debug
-  console.log("Validation Factur-X - Données reçues:", {
-    number: invoiceData.number,
-    issueDate: invoiceData.issueDate,
-    companyName: invoiceData.companyInfo?.name,
-    companyVatNumber: invoiceData.companyInfo?.vatNumber,
-    companySiret: invoiceData.companyInfo?.siret,
-    companyPostalCode: invoiceData.companyInfo?.address?.postalCode,
-    clientName: invoiceData.client?.name,
-    clientPostalCode: invoiceData.client?.address?.postalCode,
-    itemsCount: invoiceData.items?.length || 0,
-  });
-
-  if (!invoiceData.number) errors.push("Numéro de facture manquant");
-  if (!invoiceData.issueDate) errors.push("Date d'émission manquante");
-  if (!invoiceData.companyInfo?.name)
-    errors.push("Nom de l'entreprise manquant");
-  if (!invoiceData.companyInfo?.vatNumber)
-    errors.push("Numéro de TVA manquant");
-  if (!invoiceData.companyInfo?.siret) errors.push("SIRET vendeur manquant");
-  if (!invoiceData.companyInfo?.address?.postalCode)
-    errors.push("Code postal vendeur manquant");
-  if (!invoiceData.client?.name) errors.push("Nom du client manquant");
-  if (!invoiceData.client?.address?.postalCode)
-    errors.push("Code postal acheteur manquant");
-  if (!invoiceData.items || invoiceData.items.length === 0)
-    errors.push("Aucun article dans la facture");
-
-  if (errors.length > 0) {
-    console.warn("Validation Factur-X échouée:");
-    errors.forEach((error, index) => {
-      console.warn(`  ${index + 1}. ${error}`);
-    });
-  } else {
-    console.log(
-      "Validation Factur-X réussie - Toutes les données sont présentes",
-    );
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
-  };
-}
+// Déplacé dans facturx-validation.js (module sans pdf-lib) ; ré-exporté ici
+// pour les consommateurs existants.
+export { validateFacturXData } from "./facturx-validation";

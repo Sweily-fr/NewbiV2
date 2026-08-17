@@ -3,7 +3,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { generateDynamicFooter } from "@/src/utils/document-suggestions";
+import {
+  generateDynamicFooter,
+  getVatPaymentMention,
+  resolveVatPaymentCondition,
+} from "@/src/utils/document-suggestions";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 
@@ -15,7 +19,11 @@ const calculateItemTotal = (
   discountType,
   progressPercentage = 100,
 ) => {
-  let subtotal = (quantity || 1) * (unitPrice || 0);
+  // Valeur absolue : sur un avoir la quantité (et parfois le PU) porte un
+  // signe négatif, et la remise fixe (Math.max(0, ...)) casserait sur un
+  // sous-total négatif. Le signe est appliqué par l'appelant (-Math.abs
+  // pour les avoirs).
+  let subtotal = Math.abs((quantity || 1) * (unitPrice || 0));
 
   // Appliquer le pourcentage d'avancement
   const progress = Math.min(Math.max(progressPercentage ?? 100, 0), 100);
@@ -31,6 +39,15 @@ const calculateItemTotal = (
   }
 
   return subtotal;
+};
+
+// Libellés des types d'avoir (repris de creditNoteQueries) pour afficher le
+// motif sur le PDF quand aucun motif libre n'a été saisi
+const CREDIT_TYPE_PDF_LABELS = {
+  CORRECTION: "Correction de facture",
+  COMMERCIAL_GESTURE: "Geste commercial",
+  REFUND: "Remboursement",
+  STOCK_SHORTAGE: "Rupture de stock",
 };
 
 // Fonction utilitaire pour appliquer une opacité à une couleur HSL
@@ -129,25 +146,70 @@ const UniversalPreviewPDF = ({
     const nameType =
       data.beneficiaryNameType ||
       organization?.beneficiaryNameType ||
-      (organization?.legalForm === "Auto-entrepreneur"
+      (["EI", "Auto-entrepreneur"].includes(organization?.legalForm)
         ? "fullName"
         : "companyName");
     // Déterminer le nom complet de l'utilisateur
     const fullName = data.userName || session?.user?.name || "";
-    if (nameType === "fullName" && fullName) {
-      return fullName;
+    const showsEntrepreneurName = nameType === "fullName" && !!fullName;
+    const baseName = showsEntrepreneurName
+      ? fullName
+      : data.companyInfo?.name || "";
+
+    // Mention légale « EI » sur les factures (art. R. 526-27 du Code de
+    // commerce) : uniquement devant le nom et prénom de l'entrepreneur, pas
+    // devant un nom d'entreprise ou commercial.
+    // legalForm vient du formulaire (éditeur), companyStatus du document
+    // persisté (génération PDF headless, sans session/organisation).
+    const sellerLegalForm =
+      data.companyInfo?.legalForm ||
+      data.companyInfo?.companyStatus ||
+      organization?.legalForm ||
+      "";
+    const isEntrepreneurIndividuel = [
+      "EI",
+      "Auto-entrepreneur",
+      "AUTO_ENTREPRENEUR",
+    ].includes(sellerLegalForm);
+    if (
+      type === "invoice" &&
+      showsEntrepreneurName &&
+      isEntrepreneurIndividuel &&
+      !/^EI\b/.test(baseName.trim())
+    ) {
+      return `EI ${baseName}`;
     }
-    return data.companyInfo?.name || "";
+    return baseName;
   })();
+
+  // Franchise en base de TVA (mention « art. 293 B du CGI » en pied de page).
+  // La valeur du document prime : elle est mise à jour explicitement quand on
+  // enregistre depuis les paramètres du document, alors que l'organisation de
+  // useWorkspace est mémoïsée sur l'id et reste figée après un changement de
+  // contenu. L'organisation ne sert donc que de repli pour les documents
+  // antérieurs à ce champ.
+  //
+  // Régime de TVA : même logique de repli, voir resolveVatPaymentCondition
+  // (une chaîne vide y est un choix explicite, pas une absence).
+  const resolvedCompanyInfo = {
+    ...data.companyInfo,
+    vatFranchise: data.companyInfo?.vatFranchise ?? organization?.vatFranchise,
+    vatPaymentCondition: resolveVatPaymentCondition(
+      data.companyInfo?.vatPaymentCondition,
+      organization?.vatMode,
+    ),
+  };
 
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
   const isPurchaseOrder = type === "purchaseOrder";
 
   // Client étranger : pays renseigné et différent de la France.
-  // Dans ce cas, SIREN et N° TVA (terminologie franco-française) ne sont pas
-  // affichés sur le document car ils n'ont pas d'équivalent direct à l'étranger.
+  // Dans ce cas, le terme SIREN (franco-français) est remplacé par le label
+  // neutre « N° fiscal », affiché tel quel (format libre à l'étranger).
+  // Le label « N° TVA » reste identique pour tous les pays.
   const isClientForeign = (() => {
+    if (data.client?.isInternational === true) return true;
     const country = String(data.client?.address?.country || "")
       .trim()
       .toLowerCase();
@@ -201,7 +263,19 @@ const UniversalPreviewPDF = ({
   }, [isMobile, data]);
 
   // Calcul des totaux basé sur les articles
-  const calculateTotals = (items = []) => {
+  const calculateTotals = (rawItems = []) => {
+    // Avoirs : calcul en valeur absolue (le signe est appliqué au retour via
+    // -Math.abs). Les données peuvent porter le signe négatif sur la quantité
+    // et/ou le PU selon leur provenance (formulaire ou base), et les remises
+    // fixes utilisent Math.max(0, ...) qui casserait sur des intermédiaires
+    // négatifs.
+    const items = isCreditNote
+      ? rawItems.map((item) => ({
+          ...item,
+          quantity: Math.abs(parseFloat(item.quantity) || 0),
+          unitPrice: Math.abs(parseFloat(item.unitPrice) || 0),
+        }))
+      : rawItems;
     let subtotal = 0;
     let subtotalAfterItemDiscounts = 0;
     let totalTax = 0;
@@ -431,7 +505,21 @@ const UniversalPreviewPDF = ({
         taxDetails: [],
       };
 
-  const companyLogo = data.companyInfo?.logo || organization?.logo;
+  const rawCompanyLogo = data.companyInfo?.logo || organization?.logo;
+
+  // Le même fichier logo est aussi affiché sans `crossOrigin` par
+  // CompanyLogoUpload (paramètres, dialog infos entreprise). R2 ne renvoie
+  // ni `Access-Control-Allow-Origin` ni `Vary` quand la requête n'a pas
+  // d'en-tête `Origin` : la copie mise en cache par ce chargement no-cors
+  // matche ensuite n'importe quelle requête sur la même URL, y compris une
+  // requête CORS, qui échoue alors le contrôle d'origine et laisse le logo
+  // vide sur les aperçus. Le paramètre de version donne une clé de cache
+  // distincte, et l'absence de `crossOrigin` sur l'<img> ci-dessous rend
+  // l'affichage écran insensible au problème. À incrémenter uniquement si
+  // une nouvelle entrée de cache empoisonnée devait apparaître.
+  const companyLogo = rawCompanyLogo
+    ? `${rawCompanyLogo}${rawCompanyLogo.includes("?") ? "&" : "?"}v=2`
+    : rawCompanyLogo;
 
   if (!data) {
     return (
@@ -444,6 +532,12 @@ const UniversalPreviewPDF = ({
   }
 
   const isInvoice = type === "invoice";
+
+  // resolvedCompanyInfo et non data.companyInfo : un document dont le champ est
+  // absent doit refléter le régime de TVA courant de l'organisation.
+  const vatPaymentMention = getVatPaymentMention(
+    resolvedCompanyInfo?.vatPaymentCondition,
+  );
 
   // Déterminer si une adresse de livraison existe (pour positionner le client au milieu)
   const hasDeliveryAddress = (() => {
@@ -616,9 +710,9 @@ const UniversalPreviewPDF = ({
         {/* CONTENU PRINCIPAL */}
         <div
           className={
-            isMobile
-              ? "px-6 pt-4 pb-4 relative flex-grow"
-              : "px-14 pt-10 pb-4 relative flex-grow"
+            // Preview mobile aligné sur le PDF : même padding (px-14 pt-10) pour
+            // un rendu cohérent trait pour trait avec le PDF R2.
+            "px-14 pt-10 pb-4 relative flex-grow"
           }
           data-pdf-content="true"
           data-pdf-section="body"
@@ -639,7 +733,6 @@ const UniversalPreviewPDF = ({
                   alt="Logo entreprise"
                   className="h-20 w-auto object-contain"
                   style={{ maxWidth: "150px" }}
-                  crossOrigin="anonymous"
                 />
               )}
             </div>
@@ -649,9 +742,12 @@ const UniversalPreviewPDF = ({
               <div className="text-3xl font-medium dark:text-[#0A0A0A] mb-2">
                 {getDocumentTitle()}
               </div>
-              <div className="space-y-1">
-                <div className="flex justify-end" style={{ fontSize: "10px" }}>
-                  <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+              {/* Flex par ligne (et non un grid partagé) : chaque valeur
+                  colle à son propre libellé au lieu de s'aligner sur la
+                  largeur du libellé le plus long parmi toutes les lignes. */}
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                  <span className="font-medium dark:text-[#0A0A0A]">
                     {isCreditNote
                       ? "Numéro d'avoir"
                       : isPurchaseOrder
@@ -694,8 +790,8 @@ const UniversalPreviewPDF = ({
                     })()}
                   </span>
                 </div>
-                <div className="flex justify-end" style={{ fontSize: "10px" }}>
-                  <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                  <span className="font-medium dark:text-[#0A0A0A]">
                     Date d'émission:
                   </span>
                   <span className="dark:text-[#0A0A0A]">
@@ -703,11 +799,8 @@ const UniversalPreviewPDF = ({
                   </span>
                 </div>
                 {!isCreditNote && (
-                  <div
-                    className="flex justify-end"
-                    style={{ fontSize: "10px" }}
-                  >
-                    <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                    <span className="font-medium dark:text-[#0A0A0A]">
                       {type === "quote" || isPurchaseOrder
                         ? "Date de validité:"
                         : "Date d'échéance:"}
@@ -721,27 +814,49 @@ const UniversalPreviewPDF = ({
                   </div>
                 )}
                 {isCreditNote && data.originalInvoice && (
-                  <div
-                    className="flex justify-end"
-                    style={{ fontSize: "10px" }}
-                  >
-                    <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                      Facture d'origine:
-                    </span>
-                    <span className="dark:text-[#0A0A0A]">
-                      {data.originalInvoice.prefix &&
-                      data.originalInvoice.number
-                        ? `${data.originalInvoice.prefix}-${data.originalInvoice.number}`
-                        : data.originalInvoice.number || data.originalInvoice}
-                    </span>
-                  </div>
+                  <>
+                    <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                      <span className="font-medium dark:text-[#0A0A0A]">
+                        Facture d'origine:
+                      </span>
+                      <span className="dark:text-[#0A0A0A]">
+                        {data.originalInvoice.prefix &&
+                        data.originalInvoice.number
+                          ? `${data.originalInvoice.prefix}-${data.originalInvoice.number}`
+                          : data.originalInvoice.number || data.originalInvoice}
+                      </span>
+                    </div>
+                    {formatDate(data.originalInvoice.issueDate) && (
+                      <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                        <span className="font-medium dark:text-[#0A0A0A]">
+                          Date facture d'origine:
+                        </span>
+                        <span className="dark:text-[#0A0A0A]">
+                          {formatDate(data.originalInvoice.issueDate)}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
+                {isCreditNote &&
+                  (data.reason?.trim() ||
+                    CREDIT_TYPE_PDF_LABELS[data.creditType]) && (
+                    <div
+                      className="flex gap-1 justify-end"
+                      style={{ fontSize: "10px", maxWidth: "260px" }}
+                    >
+                      <span className="font-medium dark:text-[#0A0A0A]">
+                        Motif:
+                      </span>
+                      <span className="dark:text-[#0A0A0A] text-right break-words">
+                        {data.reason?.trim() ||
+                          CREDIT_TYPE_PDF_LABELS[data.creditType]}
+                      </span>
+                    </div>
+                  )}
                 {data.purchaseOrderNumber && (
-                  <div
-                    className="flex justify-end"
-                    style={{ fontSize: "10px" }}
-                  >
-                    <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                    <span className="font-medium dark:text-[#0A0A0A]">
                       Référence:
                     </span>
                     <span className="dark:text-[#0A0A0A]">
@@ -752,11 +867,8 @@ const UniversalPreviewPDF = ({
                 {data.invoiceType === "situation" && (
                   <>
                     {(data.situationReference || data.purchaseOrderNumber) && (
-                      <div
-                        className="flex justify-end"
-                        style={{ fontSize: "10px" }}
-                      >
-                        <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                      <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                        <span className="font-medium dark:text-[#0A0A0A]">
                           Réf. projet:
                         </span>
                         <span className="dark:text-[#0A0A0A]">
@@ -764,22 +876,16 @@ const UniversalPreviewPDF = ({
                         </span>
                       </div>
                     )}
-                    <div
-                      className="flex justify-end"
-                      style={{ fontSize: "10px" }}
-                    >
-                      <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                    <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                      <span className="font-medium dark:text-[#0A0A0A]">
                         Montant marché:
                       </span>
                       <span className="dark:text-[#0A0A0A]">
                         {formatCurrency(montantMarcheHT)} HT
                       </span>
                     </div>
-                    <div
-                      className="flex justify-end"
-                      style={{ fontSize: "10px" }}
-                    >
-                      <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                    <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                      <span className="font-medium dark:text-[#0A0A0A]">
                         Situation n°:
                       </span>
                       <span className="dark:text-[#0A0A0A] font-semibold">
@@ -789,11 +895,8 @@ const UniversalPreviewPDF = ({
                   </>
                 )}
                 {data.operationType && (
-                  <div
-                    className="flex justify-end"
-                    style={{ fontSize: "10px" }}
-                  >
-                    <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                  <div className="flex gap-1" style={{ fontSize: "10px" }}>
+                    <span className="font-medium dark:text-[#0A0A0A]">
                       Nature de l'opération:
                     </span>
                     <span className="dark:text-[#0A0A0A]">
@@ -825,19 +928,30 @@ const UniversalPreviewPDF = ({
                 className="font-medium mb-2 dark:text-[#0A0A0A]"
                 style={{ fontSize: "10px" }}
               >
-                {data.companyInfo?.name || "Sweily"}
+                {data.companyInfo?.name || ""}
+                {/* Nom commercial (si l'affichage est activé dans les paramètres) */}
+                {data.companyInfo?.commercialName && (
+                  <div className="font-normal dark:text-[#0A0A0A]">
+                    {data.companyInfo.commercialName}
+                  </div>
+                )}
+                {/* Titre professionnel (activité réglementée) */}
+                {data.companyInfo?.professionalTitle && (
+                  <div className="font-normal dark:text-[#0A0A0A]">
+                    {data.companyInfo.professionalTitle}
+                  </div>
+                )}
               </div>
               <div className="font-normal" style={{ fontSize: "10px" }}>
                 {isPurchaseOrder ? (
                   <>
-                    {/* Adresse (rue, code postal + ville, pays) */}
-                    {data.companyInfo?.address ? (
+                    {/* Adresse (rue, code postal + ville, pays). Aucune valeur
+                        de démonstration en repli : imprimer une adresse qui
+                        n'est pas celle de l'émetteur est pire que ne rien
+                        imprimer. */}
+                    {data.companyInfo?.address && (
                       <div className="whitespace-pre-line dark:text-[#0A0A0A]">
                         {formatAddress(data.companyInfo.address)}
-                      </div>
-                    ) : (
-                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                        229 Rue Saint-Honoré\n75001 Paris, FR
                       </div>
                     )}
 
@@ -868,17 +982,23 @@ const UniversalPreviewPDF = ({
                         {data.companyInfo.email}
                       </div>
                     )}
+
+                    {/* Site web — présent dans les paramètres de l'entreprise,
+                        il n'était rendu que pour les devis et les factures */}
+                    {data.companyInfo?.website && (
+                      <div className="dark:text-[#0A0A0A]">
+                        {data.companyInfo.website}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
-                    {/* Adresse de l'entreprise */}
-                    {data.companyInfo?.address ? (
+                    {/* Adresse de l'entreprise. Aucune valeur de démonstration
+                        en repli : imprimer une adresse qui n'est pas celle de
+                        l'émetteur est pire que ne rien imprimer. */}
+                    {data.companyInfo?.address && (
                       <div className="whitespace-pre-line dark:text-[#0A0A0A]">
                         {formatAddress(data.companyInfo.address)}
-                      </div>
-                    ) : (
-                      <div className="whitespace-pre-line dark:text-[#0A0A0A]">
-                        229 Rue Saint-Honoré\n75001 Paris, FR
                       </div>
                     )}
 
@@ -955,13 +1075,14 @@ const UniversalPreviewPDF = ({
                           {formatAddress(data.client.address) || ""}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.siret && (
+                      {data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
-                          SIREN:{" "}
-                          {data.client.siret.replace(/\D/g, "").slice(0, 9)}
+                          {isClientForeign
+                            ? `N° fiscal: ${data.client.siret}`
+                            : `SIREN: ${data.client.siret.replace(/\D/g, "").slice(0, 9)}`}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.vatNumber && (
+                      {data.client?.vatNumber && (
                         <div className="dark:text-[#0A0A0A]">
                           N° TVA: {data.client.vatNumber}
                         </div>
@@ -989,10 +1110,11 @@ const UniversalPreviewPDF = ({
                           {data.client.email}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.siret && (
+                      {data.client?.siret && (
                         <div className="dark:text-[#0A0A0A]">
-                          SIREN:{" "}
-                          {data.client.siret.replace(/\D/g, "").slice(0, 9)}
+                          {isClientForeign
+                            ? `N° fiscal: ${data.client.siret}`
+                            : `SIREN: ${data.client.siret.replace(/\D/g, "").slice(0, 9)}`}
                         </div>
                       )}
                       {data.client?.phone && (
@@ -1000,7 +1122,7 @@ const UniversalPreviewPDF = ({
                           {data.client.phone}
                         </div>
                       )}
-                      {!isClientForeign && data.client?.vatNumber && (
+                      {data.client?.vatNumber && (
                         <div className="dark:text-[#0A0A0A]">
                           N° TVA: {data.client.vatNumber}
                         </div>
@@ -1299,11 +1421,11 @@ const UniversalPreviewPDF = ({
                               overflowWrap: "break-word",
                             }}
                           >
-                            <div className="font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
+                            <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
                               {item.description || ""}
                             </div>
                             {item.details && (
-                              <div className="text-xs text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
+                              <div className="text-[10px] text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
                                 {stripHtml(item.details)}
                               </div>
                             )}
@@ -1354,7 +1476,13 @@ const UniversalPreviewPDF = ({
                                   : "15%",
                             }}
                           >
-                            {formatCurrency(item.unitPrice)}
+                            {/* Sur un avoir le prix unitaire s'affiche en positif,
+                                seuls Qté, totaux HT/TVA/TTC restent négatifs */}
+                            {formatCurrency(
+                              isCreditNote
+                                ? Math.abs(parseFloat(item.unitPrice) || 0)
+                                : item.unitPrice,
+                            )}
                           </td>
                           {isSituationInvoice ? (
                             <>
@@ -1581,10 +1709,10 @@ const UniversalPreviewPDF = ({
                               width: showProgressColumn ? "13%" : "15%",
                             }}
                           >
+                            {/* Prix unitaire toujours positif, y compris sur
+                                un avoir (la Qté -1 et le total portent le signe) */}
                             {formatCurrency(
-                              isCreditNote
-                                ? -Math.abs(shippingData.shippingAmountHT)
-                                : shippingData.shippingAmountHT,
+                              Math.abs(shippingData.shippingAmountHT),
                             )}
                           </td>
                           {showProgressColumn && (
@@ -1954,7 +2082,7 @@ const UniversalPreviewPDF = ({
                     style={{
                       backgroundColor: applyOpacityToColor(
                         data.appearance?.headerBgColor || "#1d1d1b",
-                        0.15,
+                        0.1,
                       ),
                     }}
                   >
@@ -2001,42 +2129,46 @@ const UniversalPreviewPDF = ({
           )}
 
           {/* TEXTE D'EXONÉRATION DE TVA - Masqué en auto-liquidation car déjà affiché au-dessus */}
+          {/* Textes dédupliqués : chaque mention d'exonération n'apparaît qu'une seule fois */}
           {!data.isReverseCharge &&
             data.items &&
             data.items.some(
               (item) =>
                 (item.vatRate === 0 || item.vatRate === "0") &&
                 item.vatExemptionText,
-            ) && (
-              <div
-                className="mb-4 text-[10px] pt-4"
-                data-pdf-section="vat-exemption"
-                data-no-break={
-                  data.items.filter(
-                    (item) =>
-                      (item.vatRate === 0 || item.vatRate === "0") &&
-                      item.vatExemptionText,
-                  ).length <= 2
-                }
-              >
-                <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
-                  {data.items
+            ) &&
+            (() => {
+              const uniqueExemptionTexts = [
+                ...new Set(
+                  data.items
                     .filter(
                       (item) =>
                         (item.vatRate === 0 || item.vatRate === "0") &&
                         item.vatExemptionText,
                     )
-                    .map((item, index) => (
+                    .map((item) => item.vatExemptionText),
+                ),
+              ];
+
+              return (
+                <div
+                  className="mb-4 text-[10px] pt-4"
+                  data-pdf-section="vat-exemption"
+                  data-no-break={uniqueExemptionTexts.length <= 2}
+                >
+                  <div className="whitespace-pre-line dark:text-[#0A0A0A] text-[10px]">
+                    {uniqueExemptionTexts.map((text, index) => (
                       <div key={`vat-exemption-${index}`} className="mb-2">
-                        TVA non applicable, {item.vatExemptionText}
+                        TVA non applicable, {text}
                       </div>
                     ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
-          {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
-          {(data.termsAndConditions || data.terms) && !isCreditNote && (
+          {/* CONDITIONS GÉNÉRALES - y compris sur les avoirs (reprises de la facture d'origine) */}
+          {(data.termsAndConditions || data.terms) && (
             <div className="mb-4 text-[10px] pt-4" data-pdf-section="terms">
               {(data.termsAndConditions || data.terms)
                 .split("\n")
@@ -2067,8 +2199,11 @@ const UniversalPreviewPDF = ({
         {data.invoiceType === "situation" && (
           <div
             className={
+              // Même padding horizontal (px-14) que le corps et le footer, y
+              // compris en mobile : sinon la section récap déborde à gauche et
+              // à droite par rapport au reste de la facture (désalignement).
               isMobile
-                ? "w-full bg-white px-6 pt-4 pb-4"
+                ? "w-full bg-white px-14 pt-4 pb-4"
                 : "w-full bg-white px-14 pt-10 pb-4"
             }
             data-pdf-section="situation-recap"
@@ -2531,33 +2666,31 @@ const UniversalPreviewPDF = ({
 
                     return (
                       <>
-                        <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <div className="flex justify-between py-2 px-3 text-[11px] dark:text-[#0A0A0A]">
                           <span>Montant marché (HT)</span>
                           <span className="font-medium">
                             {formatCurrency(totalMarcheHT)}
                           </span>
                         </div>
-                        <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <div className="flex justify-between py-2 px-3 text-[11px] dark:text-[#0A0A0A]">
                           <span>Montant facturé à ce jour (HT)</span>
                           <span className="font-medium">
                             {formatCurrency(montantFactureHT)}
                           </span>
                         </div>
-                        <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <div className="flex justify-between py-2 px-3 text-[11px] dark:text-[#0A0A0A]">
                           <span>Avancement cumulé</span>
                           <span className="font-medium">
                             {avancementCumule.toFixed(0)} %
                           </span>
                         </div>
                         <div
-                          className="flex justify-between py-2 text-[11px] font-medium"
+                          className="flex justify-between py-2 px-3 text-[11px] font-medium"
                           style={{
                             backgroundColor:
                               data.appearance?.headerBgColor || "#1d1d1b",
                             color:
                               data.appearance?.headerTextColor || "#FFFFFF",
-                            margin: "0 -12px",
-                            padding: "8px 12px",
                           }}
                         >
                           <span>Solde à facturer (HT)</span>
@@ -2575,7 +2708,10 @@ const UniversalPreviewPDF = ({
         {/* FOOTER - DÉTAILS BANCAIRES */}
         <div
           className={
-            isMobile ? "pt-4 pb-4 px-6 w-full" : "pt-8 pb-8 px-14 w-full"
+            // Même padding qu'en PDF R2 (pt-8 pb-8 px-14) en mode mobile aussi :
+            // le bandeau footer doit avoir la même hauteur/indentation que le PDF
+            // (pas de décalage entre l'aperçu HTML et le PDF archivé).
+            "pt-8 pb-8 px-14 w-full"
           }
           style={{
             background: `linear-gradient(${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}, ${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}), white`,
@@ -2594,55 +2730,49 @@ const UniversalPreviewPDF = ({
           data-no-break
           data-position="bottom"
         >
-          {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un devis NI un avoir */}
-          {data.showBankDetails === true &&
-            type !== "quote" &&
-            !isCreditNote && (
-              <div className="mb-3">
-                <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
-                  Détails du paiement
+          {/* Afficher les coordonnées bancaires uniquement si showBankDetails est vrai ET que ce n'est pas un avoir */}
+          {data.showBankDetails === true && !isCreditNote && (
+            <div className="mb-3">
+              <div className="font-medium text-xs mb-2 dark:text-[#0A0A0A]">
+                Détails du paiement
+              </div>
+              <div className="flex flex-col gap-1 mt-2 text-[10px] dark:text-[#0A0A0A]">
+                <div className="flex">
+                  <span className="font-medium w-32">Nom du bénéficiaire</span>
+                  <span className="font-normal">{resolvedBeneficiaryName}</span>
                 </div>
-                <div className="flex flex-col gap-1 mt-2 text-[10px] dark:text-[#0A0A0A]">
-                  <div className="flex">
-                    <span className="font-medium w-32">
-                      Nom du bénéficiaire
-                    </span>
-                    <span className="font-normal">
-                      {resolvedBeneficiaryName || "Sweily"}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="font-medium w-32">Nom de la banque</span>
-                    <span className="font-normal">
-                      {data.bankDetails?.bankName ||
-                        data.userBankDetails?.bankName ||
-                        data.companyInfo?.bankDetails?.bankName ||
-                        ""}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="font-medium w-32">BIC</span>
-                    <span className="font-normal">
-                      {data.bankDetails?.bic ||
-                        data.userBankDetails?.bic ||
-                        data.companyInfo?.bankDetails?.bic ||
-                        ""}
-                    </span>
-                  </div>
-                  <div className="flex">
-                    <span className="font-medium w-32">IBAN</span>
-                    <span className="font-normal">
-                      {formatIban(
-                        data.bankDetails?.iban ||
-                          data.userBankDetails?.iban ||
-                          data.companyInfo?.bankDetails?.iban ||
-                          "",
-                      )}
-                    </span>
-                  </div>
+                <div className="flex">
+                  <span className="font-medium w-32">Nom de la banque</span>
+                  <span className="font-normal">
+                    {data.bankDetails?.bankName ||
+                      data.userBankDetails?.bankName ||
+                      data.companyInfo?.bankDetails?.bankName ||
+                      ""}
+                  </span>
+                </div>
+                <div className="flex">
+                  <span className="font-medium w-32">BIC</span>
+                  <span className="font-normal">
+                    {data.bankDetails?.bic ||
+                      data.userBankDetails?.bic ||
+                      data.companyInfo?.bankDetails?.bic ||
+                      ""}
+                  </span>
+                </div>
+                <div className="flex">
+                  <span className="font-medium w-32">IBAN</span>
+                  <span className="font-normal">
+                    {formatIban(
+                      data.bankDetails?.iban ||
+                        data.userBankDetails?.iban ||
+                        data.companyInfo?.bankDetails?.iban ||
+                        "",
+                    )}
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
           {/* NOTES ET CONDITIONS - masquées pour les avoirs */}
           {data.footerNotes && !isCreditNote && (
@@ -2675,16 +2805,48 @@ const UniversalPreviewPDF = ({
           {/* Afficher le trait de séparation seulement si des coordonnées bancaires ou des notes sont présentes */}
           <div
             className={`text-[10px] dark:text-[#0A0A0A] whitespace-pre-line ${
-              (data.showBankDetails === true &&
-                type !== "quote" &&
-                !isCreditNote) ||
+              (data.showBankDetails === true && !isCreditNote) ||
               (data.footerNotes && !isCreditNote)
                 ? "border-t pt-2"
                 : "pt-2"
             }`}
           >
-            {generateDynamicFooter(data.companyInfo)}
+            {generateDynamicFooter(resolvedCompanyInfo)}
           </div>
+
+          {/* Régime de TVA. Affiché sur factures, devis et bons de commande :
+              obligatoire sur les factures, et cohérent avec la mention de
+              franchise en base (art. 293 B) qui sort déjà sur les trois. */}
+          {!isCreditNote && vatPaymentMention && (
+            <div className="text-[10px] dark:text-[#0A0A0A]">
+              {vatPaymentMention}
+            </div>
+          )}
+
+          {/* Activité réglementée : organisme de rattachement, numéro professionnel et assurances */}
+          {(data.companyInfo?.regulatoryBody ||
+            data.companyInfo?.professionalNumber ||
+            data.companyInfo?.decennialInsurance ||
+            data.companyInfo?.professionalLiabilityInsurance) && (
+            <div className="text-[10px] dark:text-[#0A0A0A] whitespace-pre-line">
+              {[
+                data.companyInfo?.regulatoryBody
+                  ? `Organisme de rattachement : ${data.companyInfo.regulatoryBody}`
+                  : "",
+                data.companyInfo?.professionalNumber
+                  ? `Numéro professionnel : ${data.companyInfo.professionalNumber}`
+                  : "",
+                data.companyInfo?.decennialInsurance
+                  ? `Assurance décennale : ${data.companyInfo.decennialInsurance}`
+                  : "",
+                data.companyInfo?.professionalLiabilityInsurance
+                  ? `Assurance RC Pro : ${data.companyInfo.professionalLiabilityInsurance}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" • ")}
+            </div>
+          )}
         </div>
       </div>
     </div>

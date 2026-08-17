@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"] // ← ESSENTIEL pour vos imports @/src/...
@@ -36,7 +37,27 @@
     "src/components/ui/slider.jsx",
     "src/components/ui/bento-grid.jsx",
     "src/components/ui/display-cards.jsx",
-    "src/components/magicui/animated-beam-demo.jsx"
-, "app/(main)/page.jsx", "app/(main)/layout.jsx", "src/components/file-upload.jsx", "src/components/comp-333.jsx", "app/invit/page.jsx", "src/components/ui/typewriter-text.jsx", "src/components/otp-input.jsx", "app/dashboard/subscribe/page.jsx", "src/components/comp-188.jsx", "src/components/magicui/confetti.jsx", "src/components/banner.jsx", "src/components/darkmode.jsx", "src/components/ui/multiselect.jsx", "src/components/ui/context-menu.jsx"  ],
-  "exclude": ["node_modules"]
+    "src/components/magicui/animated-beam-demo.jsx",
+    "app/(main)/page.jsx",
+    "app/(main)/layout.jsx",
+    "src/components/file-upload.jsx",
+    "src/components/comp-333.jsx",
+    "app/invit/page.jsx",
+    "src/components/ui/typewriter-text.jsx",
+    "src/components/otp-input.jsx",
+    "app/dashboard/subscribe/page.jsx",
+    "src/components/comp-188.jsx",
+    "src/components/magicui/confetti.jsx",
+    "src/components/banner.jsx",
+    "src/components/darkmode.jsx",
+    "src/components/ui/multiselect.jsx",
+    "src/components/ui/context-menu.jsx"
+  ],
+  "exclude": [
+    "node_modules",
+    // Composants de démo jamais importés, qui importent des types depuis du .jsx
+    "src/components/comp-234.tsx",
+    "src/components/magicui/animated-list.tsx",
+    "src/components/patterns/p-chart-5.tsx"
+  ]
 }

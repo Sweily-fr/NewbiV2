@@ -1,52 +1,91 @@
 import { createAuthMiddleware } from "better-auth/api";
 import { sendReactivationEmail } from "./auth-utils";
 
-// Hook avant connexion pour vérifier les comptes désactivés
-// NOUVEAU-5 fix: APIError throw is OUTSIDE try/catch to prevent
-// bundler minification from breaking error.constructor.name check.
+// Hook "before" global Better Auth. Regroupe :
+//  1. le blocage des comptes désactivés à la connexion ;
+//  2. le blocage de l'invitation de membre sans abonnement (période d'essai
+//     incluse) — enforcement serveur incontournable, en plus du garde UI.
+// NOUVEAU-5 fix: les throw APIError sont OUTSIDE try/catch pour éviter que la
+// minification casse le check error.constructor.name.
 export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
-  if (ctx.path !== "/sign-in/email") {
-    return;
+  // ── 1. Comptes désactivés à la connexion ──
+  if (ctx.path === "/sign-in/email") {
+    const email = ctx.body?.email;
+    if (email) {
+      // DB lookup in try/catch — fail-open if DB is temporarily unavailable
+      let user = null;
+      let dbCheckFailed = false;
+
+      try {
+        const { getMongoDb } = await import("./mongodb");
+        const db = await getMongoDb();
+        user = await db.collection("user").findOne({ email });
+      } catch (dbError) {
+        dbCheckFailed = true;
+        console.error(
+          "⚠️ [beforeSignIn] DB check failed, allowing login:",
+          dbError?.message,
+        );
+      }
+
+      // Block deactivated users — throw OUTSIDE try/catch (cannot be swallowed)
+      if (!dbCheckFailed && user && user.isActive === false) {
+        console.warn(`[beforeSignIn] BLOCKING ${email} — isActive: false`);
+
+        await sendReactivationEmail(user).catch((err) =>
+          console.error("Failed to send reactivation email:", err?.message),
+        );
+
+        const { APIError } = await import("better-auth/api");
+        throw new APIError("BAD_REQUEST", {
+          message:
+            "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
+        });
+      }
+    }
   }
 
-  const email = ctx.body?.email;
-  if (!email) {
-    return;
-  }
+  // ── 2. Invitation de membre interdite sans abonnement (essai inclus) ──
+  // Pendant l'essai, aucun document `subscription` n'existe (le trial vit sur
+  // l'organisation) → on refuse l'invitation. Un plan payant crée un document
+  // `subscription` : on laisse alors passer (limites de sièges gérées ailleurs).
+  if (ctx.path === "/organization/invite-member") {
+    const organizationId =
+      ctx.body?.organizationId ||
+      ctx.context?.session?.session?.activeOrganizationId;
 
-  // DB lookup in try/catch — fail-open if DB is temporarily unavailable
-  let user = null;
-  let dbCheckFailed = false;
+    if (organizationId) {
+      let hasSubscription = false;
+      let seatCheckFailed = false;
 
-  try {
-    const { getMongoDb } = await import("./mongodb");
-    const db = await getMongoDb();
-    user = await db.collection("user").findOne({ email });
-  } catch (dbError) {
-    dbCheckFailed = true;
-    console.error(
-      "⚠️ [beforeSignIn] DB check failed, allowing login:",
-      dbError?.message,
-    );
-  }
+      try {
+        const { getMongoDb } = await import("./mongodb");
+        const db = await getMongoDb();
+        const subscription = await db
+          .collection("subscription")
+          .findOne({ referenceId: organizationId });
+        hasSubscription = !!subscription;
+      } catch (dbError) {
+        seatCheckFailed = true;
+        console.error(
+          "⚠️ [inviteMember] subscription check failed, allowing:",
+          dbError?.message,
+        );
+      }
 
-  if (dbCheckFailed) {
-    return; // Fail-open: allow login if DB check failed
-  }
+      // Sans abonnement → invitation refusée. throw OUTSIDE try/catch.
+      if (!seatCheckFailed && !hasSubscription) {
+        console.warn(
+          `[inviteMember] BLOCKING invite for org ${organizationId} — no subscription (trial/none)`,
+        );
 
-  // Block deactivated users — throw OUTSIDE try/catch (cannot be swallowed)
-  if (user && user.isActive === false) {
-    console.warn(`[beforeSignIn] BLOCKING ${email} — isActive: false`);
-
-    await sendReactivationEmail(user).catch((err) =>
-      console.error("Failed to send reactivation email:", err?.message),
-    );
-
-    const { APIError } = await import("better-auth/api");
-    throw new APIError("BAD_REQUEST", {
-      message:
-        "Votre compte a été désactivé. Un email de réactivation vous a été envoyé.",
-    });
+        const { APIError } = await import("better-auth/api");
+        throw new APIError("FORBIDDEN", {
+          message:
+            "L'invitation de membres nécessite un abonnement payant. Souscrivez à un plan sur newbi.fr pour inviter des collaborateurs.",
+        });
+      }
+    }
   }
 });
 

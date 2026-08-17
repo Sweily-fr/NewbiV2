@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent, GripVertical } from "lucide-react";
 import {
@@ -102,6 +102,26 @@ const calculateItemTotal = (
 
   return subtotal;
 };
+
+// Unités proposées dans le select. Une valeur hors liste (produit du
+// catalogue, données importées : "semaine", "eur", ...) est affichée telle
+// quelle via une option de secours, au lieu d'un select vide.
+const UNIT_OPTIONS = [
+  { value: "none", label: "Aucune unité" },
+  { value: "unité", label: "Unité" },
+  { value: "pièce", label: "Pièce" },
+  { value: "heure", label: "Heure" },
+  { value: "jour", label: "Jour" },
+  { value: "mois", label: "Mois" },
+  { value: "kg", label: "Kilogramme" },
+  { value: "m", label: "Mètre" },
+  { value: "m²", label: "Mètre carré" },
+  { value: "m³", label: "Mètre cube" },
+  { value: "litre", label: "Litre" },
+  { value: "forfait", label: "Forfait" },
+  { value: "ensemble", label: "Ensemble" },
+  { value: "personne(s)", label: "Personne(s)" },
+];
 
 // Fonction utilitaire pour formater les montants en euros
 const formatCurrency = (amount) => {
@@ -232,6 +252,48 @@ export default function ItemsSection({
     wasOpenRef.current.delete(active.id);
   };
 
+  // Ouvre automatiquement les articles en erreur : le contenu d'un article
+  // replié est démonté, l'erreur resterait invisible et le scroll/focus du
+  // formulaire ne trouverait pas le champ. Clé de contenu (et non la référence
+  // du tableau) : la validation live débouncée reconstruit la liste à chaque
+  // saisie, on ne veut pas re-déclencher tant que les erreurs sont les mêmes.
+  const itemErrorsKey = JSON.stringify(
+    (Array.isArray(validationErrors) ? validationErrors : []).map((error) => [
+      error.index,
+      ...(error.fields || []),
+    ]),
+  );
+  useEffect(() => {
+    if (!Array.isArray(validationErrors) || validationErrors.length === 0) {
+      return;
+    }
+    // N'agir que sur les articles en erreur actuellement repliés : si tous
+    // sont déjà ouverts (ex. erreur live pendant la saisie), l'erreur est
+    // visible et scroller/voler le focus serait intrusif.
+    const closedErrors = validationErrors.filter((error) => {
+      const id = items[error.index]?.id;
+      return id && !openItems.includes(id);
+    });
+    if (closedErrors.length === 0) return;
+    const idsToOpen = closedErrors.map((error) => items[error.index].id);
+    setOpenItems((prev) => [
+      ...prev,
+      ...idsToOpen.filter((id) => !prev.includes(id)),
+    ]);
+    const { index, fields: errorFields } = closedErrors[0];
+    const field = errorFields?.[0] || "description";
+    // Attendre la fin de l'animation d'ouverture de l'accordéon
+    const timer = setTimeout(() => {
+      const el =
+        document.querySelector(`[name="items.${index}.${field}"]`) ||
+        document.querySelector(`[data-item-index="${index}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.focus?.({ preventScroll: true });
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemErrorsKey]);
+
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
   const invoiceType = watch("invoiceType");
@@ -250,7 +312,10 @@ export default function ItemsSection({
   };
 
   const addItem = (productData = {}) => {
-    const quantity = productData.quantity || 1;
+    // Sur un avoir la quantité vit en négatif dans le formulaire
+    // (le PU reste positif, re-négativé à l'enregistrement)
+    const rawQuantity = productData.quantity || 1;
+    const quantity = isCreditNoteContext ? -Math.abs(rawQuantity) : rawQuantity;
     const unitPrice = productData.unitPrice || 0;
     const discount = productData.discount || 0;
     const discountType =
@@ -258,9 +323,11 @@ export default function ItemsSection({
         ? "PERCENTAGE"
         : productData.discountType) || "PERCENTAGE";
 
-    // Si auto-liquidation est activée, forcer la TVA à 0%
+    // Si auto-liquidation ou exonération de TVA globale est activée, forcer la TVA à 0%
     const isReverseCharge = watch("isReverseCharge");
-    const defaultVatRate = isReverseCharge ? 0 : 20;
+    const isVatExempt = watch("isVatExempt");
+    const forceZeroVat = isReverseCharge || isVatExempt;
+    const defaultVatRate = forceZeroVat ? 0 : 20;
 
     append({
       description: productData.description || "",
@@ -269,7 +336,7 @@ export default function ItemsSection({
       unitPrice: unitPrice,
       vatRate:
         productData.vatRate !== undefined
-          ? isReverseCharge
+          ? forceZeroVat
             ? 0
             : productData.vatRate
           : defaultVatRate,
@@ -300,39 +367,82 @@ export default function ItemsSection({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
-        {/* Checkbox Auto-liquidation - Masquée pour les avoirs car copiée automatiquement depuis la facture */}
+        {/* Checkboxes Auto-liquidation / Exonération de TVA - Masquées pour les avoirs car copiées automatiquement depuis la facture */}
         {!isCreditNoteContext && (
-          <div className="flex items-center space-x-2 py-2">
-            <Controller
-              name="isReverseCharge"
-              render={({ field }) => (
-                <Checkbox
-                  id="isReverseCharge"
-                  checked={field.value || false}
-                  onCheckedChange={(checked) => {
-                    field.onChange(checked);
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2 py-1">
+              <Controller
+                name="isReverseCharge"
+                render={({ field }) => (
+                  <Checkbox
+                    id="isReverseCharge"
+                    checked={field.value || false}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
 
-                    // Si auto-liquidation activée, mettre tous les taux de TVA à 0%
-                    if (checked) {
-                      const currentItems = watch("items") || [];
-                      currentItems.forEach((_, index) => {
-                        setValue(`items.${index}.vatRate`, 0, {
-                          shouldDirty: true,
-                          shouldValidate: true,
+                      // Si auto-liquidation activée, mettre tous les taux de TVA à 0%
+                      if (checked) {
+                        // Exclusion mutuelle avec l'exonération de TVA globale
+                        setValue("isVatExempt", false, { shouldDirty: true });
+                        const currentItems = watch("items") || [];
+                        currentItems.forEach((_, index) => {
+                          setValue(`items.${index}.vatRate`, 0, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
                         });
-                      });
-                    }
-                  }}
-                  disabled={!canEdit}
-                />
-              )}
-            />
-            <label
-              htmlFor="isReverseCharge"
-              className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-            >
-              Auto-liquidation (TVA non applicable - Article 283 du CGI)
-            </label>
+                      }
+                    }}
+                    disabled={!canEdit}
+                  />
+                )}
+              />
+              <label
+                htmlFor="isReverseCharge"
+                className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Auto-liquidation (TVA non applicable - Article 283 du CGI)
+              </label>
+            </div>
+
+            {/* Checkbox Exonération de TVA globale */}
+            <div className="flex items-center space-x-2 py-1">
+              <Controller
+                name="isVatExempt"
+                render={({ field }) => (
+                  <Checkbox
+                    id="isVatExempt"
+                    checked={field.value || false}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+
+                      // Si exonération activée, mettre tous les taux de TVA à 0%
+                      if (checked) {
+                        // Exclusion mutuelle avec l'auto-liquidation
+                        setValue("isReverseCharge", false, {
+                          shouldDirty: true,
+                        });
+                        const currentItems = watch("items") || [];
+                        currentItems.forEach((_, index) => {
+                          setValue(`items.${index}.vatRate`, 0, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        });
+                      }
+                    }}
+                    disabled={!canEdit}
+                  />
+                )}
+              />
+              <label
+                htmlFor="isVatExempt"
+                className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Exonéré de TVA global (TVA à 0% par défaut sur tous les
+                articles)
+              </label>
+            </div>
           </div>
         )}
 
@@ -418,8 +528,11 @@ export default function ItemsSection({
                     const description =
                       currentItem.description || `Article ${index + 1}`;
 
-                    // Calculer le total en temps réel avec avancement
-                    let subtotal = quantity * unitPrice;
+                    // Calculer le total en temps réel avec avancement.
+                    // Calcul en valeur absolue puis signe appliqué à la fin :
+                    // sur un avoir (qté négative, PU positif) les totaux
+                    // s'affichent en négatif.
+                    let subtotal = Math.abs(quantity * unitPrice);
 
                     // Appliquer le pourcentage d'avancement
                     subtotal = subtotal * (progressPercentage / 100);
@@ -435,6 +548,9 @@ export default function ItemsSection({
                         subtotal = Math.max(0, subtotal - discount);
                       }
                     }
+                    if (isCreditNoteContext) {
+                      subtotal = -subtotal;
+                    }
                     const totalTTC = subtotal * (1 + vatRate / 100);
 
                     return (
@@ -446,6 +562,7 @@ export default function ItemsSection({
                         {({ listeners, attributes }) => (
                           <AccordionItem
                             value={item.id}
+                            data-item-index={index}
                             className="rounded-xl px-4 py-1 overflow-visible border last:border-b-1 bg-[#F5F5F5] dark:bg-neutral-900"
                           >
                             <AccordionTrigger className="w-full justify-start gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 py-3 [&[data-state=open]>svg]:rotate-180">
@@ -942,67 +1059,49 @@ export default function ItemsSection({
                                       <Controller
                                         name={`items.${index}.unit`}
                                         defaultValue="none"
-                                        render={({ field }) => (
-                                          <Select
-                                            value={field.value || "none"}
-                                            onValueChange={(value) =>
-                                              field.onChange(
-                                                value === "none" ? "" : value,
-                                              )
-                                            }
-                                            disabled={
-                                              !canEdit || isItemFieldLocked
-                                            }
-                                          >
-                                            <SelectTrigger className="w-full">
-                                              <SelectValue placeholder="Aucune unité" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="none">
-                                                Aucune unité
-                                              </SelectItem>
-                                              <SelectItem value="unité">
-                                                Unité
-                                              </SelectItem>
-                                              <SelectItem value="pièce">
-                                                Pièce
-                                              </SelectItem>
-                                              <SelectItem value="heure">
-                                                Heure
-                                              </SelectItem>
-                                              <SelectItem value="jour">
-                                                Jour
-                                              </SelectItem>
-                                              <SelectItem value="mois">
-                                                Mois
-                                              </SelectItem>
-                                              <SelectItem value="kg">
-                                                Kilogramme
-                                              </SelectItem>
-                                              <SelectItem value="m">
-                                                Mètre
-                                              </SelectItem>
-                                              <SelectItem value="m²">
-                                                Mètre carré
-                                              </SelectItem>
-                                              <SelectItem value="m³">
-                                                Mètre cube
-                                              </SelectItem>
-                                              <SelectItem value="litre">
-                                                Litre
-                                              </SelectItem>
-                                              <SelectItem value="forfait">
-                                                Forfait
-                                              </SelectItem>
-                                              <SelectItem value="ensemble">
-                                                Ensemble
-                                              </SelectItem>
-                                              <SelectItem value="personne(s)">
-                                                Personne(s)
-                                              </SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        )}
+                                        render={({ field }) => {
+                                          const currentUnit =
+                                            field.value || "none";
+                                          const isCustomUnit =
+                                            !UNIT_OPTIONS.some(
+                                              (option) =>
+                                                option.value === currentUnit,
+                                            );
+                                          return (
+                                            <Select
+                                              value={currentUnit}
+                                              onValueChange={(value) =>
+                                                field.onChange(
+                                                  value === "none" ? "" : value,
+                                                )
+                                              }
+                                              disabled={
+                                                !canEdit || isItemFieldLocked
+                                              }
+                                            >
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Aucune unité" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {isCustomUnit && (
+                                                  <SelectItem
+                                                    value={currentUnit}
+                                                  >
+                                                    {currentUnit}
+                                                  </SelectItem>
+                                                )}
+                                                {UNIT_OPTIONS.map((option) => (
+                                                  <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                  >
+                                                    {option.label}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          );
+                                        }}
                                       />
                                     </div>
                                   </div>

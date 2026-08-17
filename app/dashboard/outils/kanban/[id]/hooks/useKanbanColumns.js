@@ -196,7 +196,9 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
 
     try {
       const columnId = columnToDelete.id.toString();
-      await deleteColumn({
+      // onError étant fourni, un échec GraphQL ne throw pas : vérifier
+      // result.data avant de fermer le dialog de confirmation.
+      const result = await deleteColumn({
         variables: {
           id: columnId,
           workspaceId,
@@ -225,6 +227,7 @@ export const useKanbanColumns = (boardId, refetchBoard) => {
           }
         },
       });
+      if (!result?.data?.deleteColumn) return;
       setIsDeleteColumnDialogOpen(false);
       setColumnToDelete(null);
     } catch (error) {

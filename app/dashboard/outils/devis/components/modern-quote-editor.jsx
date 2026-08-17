@@ -58,6 +58,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,6 +69,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -82,6 +84,9 @@ export default function ModernQuoteEditor({
   const [showSettings, setShowSettings] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [currentStep, setCurrentStep] = useState(1);
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
@@ -330,6 +335,7 @@ export default function ModernQuoteEditor({
     return {
       client: v.client,
       companyInfo: {
+        ...getOrganizationCompanyExtras(organization),
         name: organization?.companyName || "",
         address: {
           street: organization?.addressStreet || "",
@@ -345,6 +351,7 @@ export default function ModernQuoteEditor({
         legalForm: organization?.legalForm || "",
         capitalSocial: organization?.capitalSocial || "",
         fiscalRegime: organization?.fiscalRegime || "",
+        vatFranchise: organization?.vatFranchise || false,
         website: organization?.website || "",
         logo: organization?.logo || "",
         bankDetails: {
@@ -393,6 +400,7 @@ export default function ModernQuoteEditor({
     },
     clientPositionRight: organization?.quoteClientPositionRight || false,
     isReverseCharge: false,
+    isVatExempt: false,
     showBankDetails: organization?.showBankDetails || false,
     shipping: {
       billShipping: false,
@@ -456,6 +464,7 @@ export default function ModernQuoteEditor({
         },
         clientPositionRight: template.clientPositionRight ?? false,
         isReverseCharge: template.isReverseCharge ?? false,
+        isVatExempt: template.isVatExempt ?? false,
         showBankDetails: template.showBankDetails ?? false,
         shipping: template.shipping ?? {
           billShipping: false,
@@ -657,8 +666,13 @@ export default function ModernQuoteEditor({
                       onCancel={() => setShowSettings(false)}
                       onCloseAttempt={setCloseSettingsHandler}
                       onSave={() => {
+                        // Ne reste ici que ce qui est propre au devis
+                        // (numérotation, apparence, notes). Les informations de
+                        // l'entreprise et les coordonnées bancaires appartiennent
+                        // à l'organisation et sont enregistrées directement par
+                        // leurs modales respectives.
                         setShowSettings(false);
-                        toast.success("Paramètres appliqués à ce devis");
+                        toast.success("Paramètres appliqués");
                       }}
                       canEdit={!isReadOnly}
                       saveLabel="Appliquer à ce devis"

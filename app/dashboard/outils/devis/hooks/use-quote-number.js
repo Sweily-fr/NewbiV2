@@ -57,16 +57,21 @@ export const useQuoteNumber = (prefix, { autoNumbering = false } = {}) => {
       return { isValid: true };
     }
 
+    // Messages alignés sur ceux de l'API (validateNumberSequence) : on rappelle
+    // le dernier numéro utilisé pour ce préfixe et le numéro attendu.
+    const last = `Le dernier devis avec le préfixe "${prefix}" est le ${String(computed.lastNumber).padStart(4, "0")}`;
+    const expected = String(computed.lastNumber + 1).padStart(4, "0");
+
     if (num <= computed.lastNumber) {
       return {
         isValid: false,
-        message: `Le numéro doit être supérieur à ${String(computed.lastNumber).padStart(4, "0")}`,
+        message: `${last}. Le numéro ${String(num).padStart(4, "0")} est déjà passé : le prochain numéro doit être ${expected}.`,
       };
     }
     if (num > computed.lastNumber + 1) {
       return {
         isValid: false,
-        message: `Le numéro doit être ${String(computed.lastNumber + 1).padStart(4, "0")} pour maintenir la séquence`,
+        message: `${last}. Il y a un trou dans la séquence : le prochain numéro doit être ${expected}.`,
       };
     }
 

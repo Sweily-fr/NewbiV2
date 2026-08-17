@@ -5,7 +5,13 @@ import { useFileTransferR2Multipart } from "../hooks/useFileTransferR2Multipart"
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
 import { useUser } from "@/src/lib/auth/hooks";
-import { SettingsModal } from "@/src/components/settings-modal";
+import dynamic from "next/dynamic";
+
+// Chunk chargé à la première ouverture seulement
+const SettingsModal = dynamic(
+  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import {
   AlertCircleIcon,
   FileArchiveIcon,
@@ -1166,11 +1172,13 @@ export default function FileUploadNew({
         }}
       />
       {/* Modal Settings pour configurer Stripe Connect */}
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-        initialTab="user-info"
-      />
+      {settingsModalOpen && (
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab="user-info"
+        />
+      )}
     </>
   );
 }

@@ -8,7 +8,7 @@
  *
  * Runs once before all test suites.
  */
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import {
   IDS,
   TEST_ORGANIZATION,
@@ -254,7 +254,7 @@ export default async function globalSetup() {
 
     // Idempotent bulk upserts (replaceOne with upsert per document) instead
     // of insertMany, so a rerun without teardown never hits duplicate-key.
-    const upsertOps = <T extends { _id: unknown }>(docs: T[]) =>
+    const upsertOps = <T extends { _id: ObjectId }>(docs: T[]) =>
       docs.map((d) => ({
         replaceOne: {
           filter: { _id: d._id },

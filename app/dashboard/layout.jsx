@@ -20,6 +20,12 @@ import DashboardClientLayout from "./dashboard-client-layout";
  *   - "none"     : aucun abonnement → redirection signup
  */
 async function getOrgSubscriptionState(orgId) {
+  // Les deux lookups sont indépendants : on les lance en parallèle pour ne
+  // payer qu'un aller-retour Mongo au lieu de deux séquentiels.
+  const subscriptionPromise = mongoDb.collection("subscription").findOne({
+    $or: [{ referenceId: orgId }, { organizationId: orgId }],
+  });
+
   // App-managed trial check (feature-flagged). When ENABLE_APP_TRIAL is OFF
   // (default), this block is skipped and the legacy Stripe-based logic below
   // runs unchanged.
@@ -35,6 +41,8 @@ async function getOrgSubscriptionState(orgId) {
             )
         : null;
       if (isTrialAppActive(orgDoc)) {
+        // Éviter une rejection non gérée si la requête abonnement échoue
+        subscriptionPromise.catch(() => {});
         return "full";
       }
     } catch (err) {
@@ -46,9 +54,7 @@ async function getOrgSubscriptionState(orgId) {
     }
   }
 
-  const subscription = await mongoDb.collection("subscription").findOne({
-    $or: [{ referenceId: orgId }, { organizationId: orgId }],
-  });
+  const subscription = await subscriptionPromise;
 
   if (!subscription) return "none";
 
@@ -141,7 +147,9 @@ async function checkSubscription(userId, activeOrgId) {
       return {
         access: activeState === "readonly" ? "readonly" : "none",
         reason:
-          activeState === "readonly" ? "subscription_expired" : "no_subscription",
+          activeState === "readonly"
+            ? "subscription_expired"
+            : "no_subscription",
         organizationId,
       };
     }
@@ -238,6 +246,36 @@ async function checkRecentStripePayment(organizationId) {
   }
 }
 
+// Cache court en mémoire du résultat d'abonnement par (user, org) : évite de
+// repayer 2 à 4 lookups Mongo à chaque chargement complet d'une page du
+// dashboard (F5, premier accès). On ne met en cache que l'accès "full" : un
+// paiement fraîchement effectué ("none" → "full") ou un passage en lecture
+// seule doivent être détectés sans attendre l'expiration du cache. Pire cas :
+// un abonnement révoqué garde l'accès pendant 60s, sur une instance chaude.
+const subscriptionAccessCache = new Map();
+const SUBSCRIPTION_CACHE_TTL_MS = 60 * 1000;
+
+function getCachedAccess(cacheKey) {
+  const entry = subscriptionAccessCache.get(cacheKey);
+  if (entry && entry.expires > Date.now()) return entry.result;
+  if (entry) subscriptionAccessCache.delete(cacheKey);
+  return null;
+}
+
+function setCachedAccess(cacheKey, result) {
+  // Purge des entrées expirées quand le cache grossit (instances longue durée)
+  if (subscriptionAccessCache.size > 1000) {
+    const now = Date.now();
+    for (const [key, entry] of subscriptionAccessCache) {
+      if (entry.expires <= now) subscriptionAccessCache.delete(key);
+    }
+  }
+  subscriptionAccessCache.set(cacheKey, {
+    result,
+    expires: Date.now() + SUBSCRIPTION_CACHE_TTL_MS,
+  });
+}
+
 /**
  * Server Component Layout pour le Dashboard
  * Vérifie l'authentification ET l'abonnement côté serveur avant de rendre le contenu
@@ -265,11 +303,19 @@ export default async function DashboardLayout({ children }) {
 
   console.log(`[Dashboard Layout] Session trouvée pour: ${session.user.email}`);
 
-  // Vérifier l'abonnement
-  const { access, reason, organizationId } = await checkSubscription(
-    session.user.id,
-    session.session?.activeOrganizationId,
-  );
+  // Vérifier l'abonnement (résultat "full" mis en cache 60s, voir plus haut)
+  const cacheKey = `${session.user.id}:${session.session?.activeOrganizationId || ""}`;
+  let subscriptionResult = getCachedAccess(cacheKey);
+  if (!subscriptionResult) {
+    subscriptionResult = await checkSubscription(
+      session.user.id,
+      session.session?.activeOrganizationId,
+    );
+    if (subscriptionResult.access === "full") {
+      setCachedAccess(cacheKey, subscriptionResult);
+    }
+  }
+  const { access, reason, organizationId } = subscriptionResult;
 
   console.log(`[Dashboard Layout] access: ${access}, reason: ${reason}`);
 

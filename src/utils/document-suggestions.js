@@ -69,6 +69,78 @@ export const documentSuggestions = {
 };
 
 /**
+ * Régime de TVA effectivement applicable à un document.
+ *
+ * `??` et non `||` : une chaîne vide est un choix explicite de l'utilisateur
+ * (« Aucun » dans les informations légales, ou assujettissement à la TVA
+ * décoché, qui vide le champ). La traiter comme une absence faisait ressortir
+ * le réglage précédent de l'organisation, et la mention « Paiement de la TVA:
+ * sur les débits » restait imprimée après un passage à « Aucun ».
+ *
+ * Seul un champ réellement absent (`undefined`/`null`, cas des documents
+ * antérieurs à son introduction) retombe sur le réglage de l'organisation.
+ *
+ * @param {string|null|undefined} documentValue - companyInfo.vatPaymentCondition
+ * @param {string|null|undefined} organizationValue - organization.vatMode
+ * @returns {string}
+ */
+export const resolveVatPaymentCondition = (documentValue, organizationValue) =>
+  documentValue ?? organizationValue ?? "";
+
+/**
+ * Mention « Paiement de la TVA » du pied de page, "" si aucun régime.
+ *
+ * Couvre l'enum backend (ENCAISSEMENTS/DEBITS), la valeur brute des paramètres
+ * (encaissements/debits) et le repli régime fiscal (reel-normal/reel-simplifie
+ * -> débits), aligné sur mapFiscalRegimeToVatCondition côté API. « NONE » et la
+ * chaîne vide ne produisent aucune mention.
+ *
+ * @param {string} condition - régime de TVA résolu
+ * @returns {string}
+ */
+export const getVatPaymentMention = (condition) => {
+  const normalized = String(condition || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+
+  if (normalized === "ENCAISSEMENTS")
+    return "Paiement de la TVA: sur les encaissements";
+  if (
+    normalized === "DEBITS" ||
+    normalized === "REEL-NORMAL" ||
+    normalized === "REEL-SIMPLIFIE"
+  )
+    return "Paiement de la TVA: sur les débits";
+  return "";
+};
+
+/**
+ * Forme juridique affichable en pied de page.
+ *
+ * Les documents finalisés embarquent l'enum backend (companyStatus) et non la
+ * valeur saisie dans les paramètres : sans traduction, le PDF archivé imprimait
+ * « AUTO_ENTREPRENEUR » ou « ASSOCIATION » là où l'aperçu affichait « EI » ou
+ * « Association ». « AUTRE » est la valeur de repli du mapper quand aucune forme
+ * juridique n'est renseignée : elle ne doit rien imprimer du tout.
+ * @param {string} value - forme juridique (saisie) ou companyStatus (enum)
+ * @returns {string}
+ */
+const formatLegalForm = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const labels = {
+    AUTRE: "",
+    AUTO_ENTREPRENEUR: "EI",
+    "Auto-entrepreneur": "EI",
+    ASSOCIATION: "Association",
+  };
+  if (raw in labels) return labels[raw];
+  return raw;
+};
+
+/**
  * Génère le footer dynamique basé sur les informations de l'entreprise
  * @param {Object} companyInfo - Informations de l'entreprise (peut venir de organization ou de companyInfo)
  * @param {string} variant - Type de footer ('standard', 'micro', 'autoliquidation', 'btp', 'b2c')
@@ -83,7 +155,11 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     companyName,
     // Format ancien
     name = companyName || "",
-    legalForm = "",
+    // Les documents persistés stockent la forme juridique sous companyStatus,
+    // l'organisation sous legalForm : sans ce repli, la forme juridique et le
+    // capital social disparaissaient du pied de page de tout document rouvert.
+    companyStatus = "",
+    legalForm: rawLegalForm = companyStatus || "",
     capitalSocial = "",
     siret = "",
     rcs = "",
@@ -92,9 +168,24 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     addressZipCode = "",
     vatNumber = "",
     fiscalRegime = "",
+    // Franchise en base de TVA (art. 293 B du CGI) : source de vérité de la
+    // mention légale en pied de page.
+    vatFranchise,
     // Support pour l'adresse en format objet ou string
     address,
   } = companyInfo;
+
+  // Forme juridique lisible : les documents finalisés portent l'enum backend.
+  const legalForm = formatLegalForm(rawLegalForm);
+
+  // La case dédiée fait foi. À défaut (documents ou organisations antérieurs à
+  // son introduction), un régime fiscal micro vaut franchise en base.
+  const isFranchiseEnBase =
+    typeof vatFranchise === "boolean"
+      ? vatFranchise
+      : fiscalRegime?.toLowerCase().includes("micro") ||
+        fiscalRegime?.toLowerCase().includes("franchise") ||
+        false;
 
   // Utiliser le SIRET complet (14 chiffres) pour le footer
   const siretNumber = siret || "";
@@ -112,11 +203,6 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     // Si l'adresse est une string, on l'utilise telle quelle
     const adresseComplete = address;
     const villeRCS = rcs ? rcs.replace(/RCS\s*/i, "").trim() : "";
-
-    // Déterminer si c'est une micro-entreprise
-    const isMicroEntreprise =
-      fiscalRegime?.toLowerCase().includes("micro") ||
-      fiscalRegime?.toLowerCase().includes("franchise");
 
     // Utiliser directement l'adresse string dans les variantes
     switch (variant) {
@@ -151,7 +237,7 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
         return `${name}${legalForm ? ` • ${legalForm}` : ""}${capitalSocial ? ` au capital de ${capitalSocial}€` : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nMédiation à la consommation: [Nom du médiateur] • [Site/contact]`;
 
       default:
-        if (isMicroEntreprise) {
+        if (isFranchiseEnBase) {
           return generateDynamicFooter(companyInfo, "micro-lisible");
         }
         return generateDynamicFooter(companyInfo, "standard-lisible");
@@ -163,11 +249,6 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
 
   // Adresse complète à partir des champs séparés
   const adresseComplete = [street, zipCode, city].filter(Boolean).join(", ");
-
-  // Déterminer si c'est une micro-entreprise
-  const isMicroEntreprise =
-    fiscalRegime?.toLowerCase().includes("micro") ||
-    fiscalRegime?.toLowerCase().includes("franchise");
 
   switch (variant) {
     case "standard-compact":
@@ -198,7 +279,10 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
       } else if (capitalSocial) {
         microLegalInfo = ` • Capital: ${capitalSocial}€`;
       }
-      return `${name}${microLegalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
+      // La mention 293 B est le seul intérêt de cette variante : sans elle,
+      // le rendu était identique à "standard-lisible" et la franchise en base
+      // n'apparaissait nulle part sur les documents à adresse structurée.
+      return `${name}${microLegalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nTVA non applicable, art. 293 B du CGI`;
 
     case "autoliquidation-compact":
       return `${name}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""} • Autoliquidation TVA, art. 283-2 CGI: TVA due par le client`;
@@ -213,7 +297,7 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
 
     default:
       // Auto-détection basée sur le régime fiscal
-      if (isMicroEntreprise) {
+      if (isFranchiseEnBase) {
         return generateDynamicFooter(companyInfo, "micro-lisible");
       }
       return generateDynamicFooter(companyInfo, "standard-lisible");

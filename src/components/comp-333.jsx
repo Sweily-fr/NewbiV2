@@ -2,7 +2,13 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { SettingsModal } from "@/src/components/settings-modal";
+import dynamic from "next/dynamic";
+
+// Chunk chargé à la première ouverture seulement
+const SettingsModal = dynamic(
+  () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
+  { ssr: false },
+);
 import {
   SearchIcon,
   LayoutDashboard,
@@ -50,7 +56,7 @@ export default function Component({
     if (settingsModalOpen) {
       console.log(
         "Settings modal opened with initial tab:",
-        settingsInitialTab
+        settingsInitialTab,
       ); // Debug
     }
   }, [settingsModalOpen, settingsInitialTab]);
@@ -83,7 +89,7 @@ export default function Component({
       document.removeEventListener("keydown", down);
       document.removeEventListener(
         "openSettingsModal",
-        handleOpenSettingsModal
+        handleOpenSettingsModal,
       );
     };
   }, [openSettings]);
@@ -133,9 +139,7 @@ export default function Component({
               <span>Clients</span>
             </CommandItem>
             <CommandItem
-              onSelect={() =>
-                runCommand(() => openSettings("user-info"))
-              }
+              onSelect={() => runCommand(() => openSettings("user-info"))}
             >
               <User className="mr-2 h-4 w-4" />
               <span>Mon compte</span>
@@ -178,7 +182,7 @@ export default function Component({
             <CommandItem
               onSelect={() =>
                 runCommand(() =>
-                  router.push("/dashboard/outils/signatures-mail")
+                  router.push("/dashboard/outils/signatures-mail"),
                 )
               }
             >
@@ -227,11 +231,13 @@ export default function Component({
       </CommandDialog>
 
       {/* Modal de paramètres */}
-      <SettingsModal
-        open={settingsModalOpen}
-        onOpenChange={setSettingsModalOpen}
-        initialTab={settingsInitialTab}
-      />
+      {settingsModalOpen && (
+        <SettingsModal
+          open={settingsModalOpen}
+          onOpenChange={setSettingsModalOpen}
+          initialTab={settingsInitialTab}
+        />
+      )}
     </>
   );
 }

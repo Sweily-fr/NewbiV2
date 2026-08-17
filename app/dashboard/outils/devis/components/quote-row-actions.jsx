@@ -177,14 +177,11 @@ export default function QuoteRowActions({
     }
   };
 
-  const handleSendQuote = async () => {
-    try {
-      await changeStatus(quote.id, QUOTE_STATUS.PENDING);
-      toast.success("Devis envoyé avec succès");
-      if (onRefetch) onRefetch();
-    } catch (error) {
-      toast.error(error?.message || "Erreur lors de l'envoi du devis");
-    }
+  // Ouvrir le panel du devis plutôt que de changer le statut directement :
+  // l'utilisateur y voit les dates recalées (émission ramenée à aujourd'hui)
+  // et finalise depuis le bouton du panel.
+  const handleSendQuote = () => {
+    handleView();
   };
 
   const handleAccept = async () => {
@@ -232,6 +229,7 @@ export default function QuoteRowActions({
     customFields: source.customFields,
     shipping: source.shipping,
     isReverseCharge: source.isReverseCharge,
+    isVatExempt: source.isVatExempt,
     retenueGarantie: source.retenueGarantie,
     escompte: source.escompte,
   });
@@ -271,9 +269,12 @@ export default function QuoteRowActions({
 
   // Logique pour déterminer quelles actions sont disponibles
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
+  // Un devis déjà facturé via un bon de commande ne peut plus être converti
+  // directement en facture (même message que dans la sidebar).
   const canConvertToInvoice =
     quote.status === QUOTE_STATUS.COMPLETED &&
-    (!quote.linkedInvoices || quote.linkedInvoices.length === 0);
+    (!quote.linkedInvoices || quote.linkedInvoices.length === 0) &&
+    !quote.hasPurchaseOrderInvoices;
   const hasStatusActions =
     quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
     quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
@@ -373,9 +374,10 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {/* Accepter : uniquement les devis importés. Les devis natifs sont
-                  acceptés via la signature électronique. */}
-              {quote.status === QUOTE_STATUS.IMPORTED && (
+              {/* Accepter : acceptation manuelle possible, la signature
+                  électronique accepte aussi le devis automatiquement. */}
+              {(quote.status === QUOTE_STATUS.PENDING ||
+                quote.status === QUOTE_STATUS.IMPORTED) && (
                 <>
                   <DropdownMenuItem
                     onClick={handleAccept}
@@ -407,16 +409,13 @@ export default function QuoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {/* Faire signer - visible pour les devis non brouillon (hors importés) et sans signature en cours/terminée */}
-              {quote.status !== QUOTE_STATUS.DRAFT &&
-                quote.status !== QUOTE_STATUS.IMPORTED &&
+              {/* Faire signer - uniquement les devis en attente (un devis accepté
+                  ou refusé ne peut plus être signé), sans signature en cours/terminée */}
+              {quote.status === QUOTE_STATUS.PENDING &&
                 (!quote.signatureStatus ||
                   quote.signatureStatus === "ERROR" ||
                   quote.signatureStatus === "CANCELLED") && (
                   <>
-                    {quote.status === QUOTE_STATUS.DRAFT && (
-                      <DropdownMenuSeparator />
-                    )}
                     {esignatureAccess ? (
                       <DropdownMenuItem
                         onClick={(e) => {

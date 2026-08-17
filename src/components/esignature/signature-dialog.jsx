@@ -12,8 +12,6 @@ import {
 } from "@/src/components/ui/dialog";
 import { useRequestSignature } from "@/src/hooks/useESignature";
 import { toast } from "@/src/components/ui/sonner";
-import { domToJpeg } from "modern-screenshot";
-import jsPDF from "jspdf";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { useQuery } from "@apollo/client";
 import { GET_QUOTE } from "@/src/graphql/quoteQueries";
@@ -108,6 +106,12 @@ async function generatePdfBase64FromRef(componentRef) {
     throw new Error("Référence du composant non trouvée");
   }
 
+  // Chargés à la génération uniquement (sort jspdf du chunk de la page devis)
+  const [{ default: jsPDF }, { domToJpeg }] = await Promise.all([
+    import("jspdf"),
+    import("modern-screenshot"),
+  ]);
+
   const images = componentRef.current.querySelectorAll("img");
   await Promise.all(
     Array.from(images).map((img) => {
@@ -127,8 +131,11 @@ async function generatePdfBase64FromRef(componentRef) {
     backgroundColor: "#ffffff",
     width: 794,
     scale: 2,
+    // `cache: "reload"` : sans lui, la réponse sans en-tête CORS mise en cache
+    // par l'<img> du logo (chargée sans `crossOrigin`) resservirait ce fetch et
+    // le logo serait absent du PDF envoyé en signature (cf. generatePDF.js).
     fetch: {
-      requestInit: { mode: "cors", credentials: "omit" },
+      requestInit: { mode: "cors", credentials: "omit", cache: "reload" },
     },
   });
 
@@ -166,6 +173,13 @@ async function generatePdfBase64FromRef(componentRef) {
 
     while (currentY < img.height) {
       const sliceHeight = Math.min(pageHeightPixels, img.height - currentY);
+
+      // Le conteneur de capture (min-height 1123px) dépasse d'une fraction de
+      // pixel la hauteur A4 exacte (1122,93px à 794px de large) : sans garde,
+      // ce résidu génère une page blanche supplémentaire que le signataire
+      // doit faire défiler (signerMustRead). On ignore toute tranche finale
+      // inférieure à ~10px de contenu réel (20px à scale 2).
+      if (pageNumber > 0 && sliceHeight < 20) break;
 
       canvas.height = sliceHeight;
       ctx.fillStyle = "#ffffff";

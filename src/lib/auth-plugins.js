@@ -4,10 +4,15 @@ import {
   phoneNumber,
   twoFactor,
   multiSession,
+  emailOTP,
 } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
 import Stripe from "stripe";
-import { send2FAEmail, sendOrganizationInvitationEmail } from "./auth-utils";
+import {
+  send2FAEmail,
+  sendOrganizationInvitationEmail,
+  sendVerificationOtpEmail,
+} from "./auth-utils";
 // Import dynamique pour éviter le bundling Edge Runtime (Node.js only)
 const loadMetaCapi = () => import("../utils/metaCapiServer.js");
 import {
@@ -107,6 +112,21 @@ export const twoFactorPlugin = twoFactor({
       await send2FAEmail(user, otp);
       console.log("[2FA OTP] Email envoyé avec succès");
     },
+  },
+});
+
+// Vérification d'email par CODE OTP (flux mobile app-newbi). Cohabite avec la
+// vérification par lien (sendOnSignUp) utilisée côté desktop : le mobile appelle
+// explicitement authClient.emailOtp.sendVerificationOtp + verifyEmail.
+export const emailOTPPlugin = emailOTP({
+  otpLength: 6,
+  expiresIn: 300, // 5 minutes
+  // On n'envoie un code que pour la vérification d'email (pas sign-in/reset ici).
+  async sendVerificationOTP({ email, otp, type }) {
+    if (type !== "email-verification") return;
+    console.log("[EMAIL OTP] Envoi code de vérification à:", email);
+    await sendVerificationOtpEmail(email, otp);
+    console.log("[EMAIL OTP] Email envoyé avec succès");
   },
 });
 
@@ -1412,6 +1432,12 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Nom commercial (affiché sur les documents si showCommercialName est activé)
+        commercialName: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         companyEmail: {
           type: "string",
           input: true,
@@ -1480,6 +1506,11 @@ export const organizationPlugin = organization({
           required: false,
         },
         isVatSubject: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        vatFranchise: {
           type: "boolean",
           input: true,
           required: false,
@@ -1680,6 +1711,50 @@ export const organizationPlugin = organization({
         // Bank details display setting
         showBankDetails: {
           type: "boolean",
+          input: true,
+          required: false,
+        },
+        // Nom affiché dans les coordonnées bancaires des documents
+        // ("companyName" ou "fullName", pour les EI / auto-entrepreneurs)
+        beneficiaryNameType: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        // Commercial name display setting (devis, factures, bons de commande, avoirs)
+        showCommercialName: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        // Activité réglementée
+        isRegulatedActivity: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        professionalTitle: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        regulatoryBody: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        professionalNumber: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        decennialInsurance: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        professionalLiabilityInsurance: {
+          type: "string",
           input: true,
           required: false,
         },

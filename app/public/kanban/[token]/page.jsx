@@ -61,6 +61,12 @@ import {
 } from "@/src/components/ui/tooltip";
 import { UserAvatar, AvatarGroup } from "@/src/components/ui/user-avatar";
 import {
+  ClaudeWorkingIndicator,
+  ClaudeWorkingBadge,
+  ClaudeCodingIndicator,
+  ClaudeCodingBadge,
+} from "@/src/components/ui/claude-working-indicator";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -1000,6 +1006,10 @@ function PublicTaskCard({ task, onEdit }) {
               </TooltipContent>
             </Tooltip>
           )}
+
+          {/* Claude est en train de répondre */}
+          <ClaudeWorkingBadge claudeWorkingSince={task.claudeWorkingSince} />
+          <ClaudeCodingBadge claudeCodingSince={task.claudeCodingSince} />
         </div>
 
         {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
@@ -1237,6 +1247,23 @@ function PublicTaskActivity({
       ...activities.map((a) => ({ ...a, itemType: "activity" })),
     ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }, [comments, activities]);
+
+  // Avatar du profil invité Claude : repris de son dernier commentaire 🤖,
+  // pour le loader « Claude est en train de répondre »
+  const claudeAvatar = useMemo(() => {
+    for (let i = comments.length - 1; i >= 0; i--) {
+      const c = comments[i];
+      if (
+        c?.userImage &&
+        String(c.content || "")
+          .trimStart()
+          .startsWith("🤖")
+      ) {
+        return c.userImage;
+      }
+    }
+    return null;
+  }, [comments]);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -1617,6 +1644,16 @@ function PublicTaskActivity({
                 )}
               </>
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="comments" className="space-y-3 mt-0">
@@ -1627,6 +1664,16 @@ function PublicTaskActivity({
             ) : (
               comments.map((comment) => renderCommentItem(comment))
             )}
+            <ClaudeWorkingIndicator
+              claudeWorkingSince={task?.claudeWorkingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
+            <ClaudeCodingIndicator
+              claudeCodingSince={task?.claudeCodingSince}
+              avatarSrc={claudeAvatar}
+              className="pt-1"
+            />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-3 mt-0">

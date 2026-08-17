@@ -23,6 +23,7 @@ import {
   Unlink,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import {
@@ -64,10 +65,32 @@ import {
 } from "@/src/graphql/creditNoteQueries";
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
-import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import dynamic from "next/dynamic";
+
+// Chargés à l'ouverture de la sidebar uniquement : sort jspdf/pdf-lib (~1 Mo)
+// du chunk de la page liste.
+const UniversalPreviewPDF = dynamic(
+  () => import("@/src/components/pdf/UniversalPreviewPDF"),
+  { ssr: false },
+);
+const UniversalPDFDownloaderWithFacturX = dynamic(
+  () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
+  { ssr: false },
+);
+// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
+// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
   formatLocalDate,
@@ -101,22 +124,38 @@ export default function InvoiceSidebar({
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
 
-  // URL du document PDF archivé (R2) ou servi par SuperPDP — uniquement hors brouillon.
+  // URL du document PDF archivé (R2) ou servi par SuperPDP — uniquement hors
+  // brouillon. cache-and-network : à la réouverture le signal vient du cache
+  // (bascule immédiate sur le PDF), tout en revalidant en arrière-plan.
   const { data: docUrlData } = useQuery(INVOICE_DOCUMENT_URL, {
     variables: { workspaceId, invoiceId: initialInvoice?.id },
     skip:
       !workspaceId || !initialInvoice?.id || initialInvoice?.status === "DRAFT",
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
   const documentPdfUrl = docUrlData?.invoiceDocumentUrl || null;
+
+  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
+  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
+  useEffect(() => {
+    if (isOpen && initialInvoice?.id && initialInvoice?.status !== "DRAFT") {
+      prefetchPdf(`/api/document-preview/invoice/${initialInvoice.id}`);
+    }
+  }, [isOpen, initialInvoice?.id, initialInvoice?.status]);
 
   // URL du PDF Factur-X archivé de l'avoir sélectionné (aperçu lecture seule)
   const { data: cnDocData } = useQuery(CREDIT_NOTE_DOCUMENT_URL, {
     variables: { workspaceId, creditNoteId: selectedCreditNote?.id },
     skip: !workspaceId || !selectedCreditNote?.id,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
   const creditNoteDocumentUrl = cnDocData?.creditNoteDocumentUrl || null;
+
+  useEffect(() => {
+    if (selectedCreditNote?.id) {
+      prefetchPdf(`/api/document-preview/creditNote/${selectedCreditNote.id}`);
+    }
+  }, [selectedCreditNote?.id]);
 
   // Fetch credit notes for this invoice
   const {
@@ -193,6 +232,8 @@ export default function InvoiceSidebar({
   const [availableTransactions, setAvailableTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [showTransactionPicker, setShowTransactionPicker] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const debouncedTransactionSearch = useDebouncedValue(transactionSearch, 300);
   const [linkingTransaction, setLinkingTransaction] = useState(false);
 
   // Ref pour éviter les race conditions et les updates sur composant démonté
@@ -209,33 +250,37 @@ export default function InvoiceSidebar({
 
   // Charger les transactions disponibles pour cette facture
   // OPTIMISÉ: Utiliser useRef pour éviter les race conditions
-  const loadAvailableTransactions = useCallback(async () => {
-    if (!initialInvoice?.id || !isMountedRef.current) return;
+  const loadAvailableTransactions = useCallback(
+    async (search = "") => {
+      if (!initialInvoice?.id || !isMountedRef.current) return;
 
-    // Annuler la requête précédente si elle existe
-    if (fetchAbortRef.current) {
-      fetchAbortRef.current = false;
-    }
-    fetchAbortRef.current = true;
+      // Annuler la requête précédente si elle existe
+      if (fetchAbortRef.current) {
+        fetchAbortRef.current = false;
+      }
+      fetchAbortRef.current = true;
 
-    setLoadingTransactions(true);
-    try {
-      const { transactions } = await fetchTransactionsForInvoice(
-        initialInvoice.id,
-      );
-      // Vérifier si le composant est toujours monté et si cette requête est toujours valide
-      if (isMountedRef.current && fetchAbortRef.current) {
-        setAvailableTransactions(transactions || []);
+      setLoadingTransactions(true);
+      try {
+        const { transactions } = await fetchTransactionsForInvoice(
+          initialInvoice.id,
+          search,
+        );
+        // Vérifier si le composant est toujours monté et si cette requête est toujours valide
+        if (isMountedRef.current && fetchAbortRef.current) {
+          setAvailableTransactions(transactions || []);
+        }
+      } catch (err) {
+        // Ignorer les erreurs silencieusement pour éviter les re-renders
+        console.error("[SIDEBAR] Erreur chargement transactions:", err);
+      } finally {
+        if (isMountedRef.current) {
+          setLoadingTransactions(false);
+        }
       }
-    } catch (err) {
-      // Ignorer les erreurs silencieusement pour éviter les re-renders
-      console.error("[SIDEBAR] Erreur chargement transactions:", err);
-    } finally {
-      if (isMountedRef.current) {
-        setLoadingTransactions(false);
-      }
-    }
-  }, [initialInvoice?.id, fetchTransactionsForInvoice]);
+    },
+    [initialInvoice?.id, fetchTransactionsForInvoice],
+  );
 
   // Charger automatiquement les transactions suggérées quand le drawer s'ouvre
   // OPTIMISÉ: Dépendances minimales pour éviter les re-renders
@@ -244,12 +289,25 @@ export default function InvoiceSidebar({
       isOpen &&
       initialInvoice?.id &&
       initialInvoice?.status === INVOICE_STATUS.PENDING &&
-      !initialInvoice?.linkedTransactionId
+      (initialInvoice?.linkedTransactionIds?.length || 0) === 0
     ) {
       loadAvailableTransactions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialInvoice?.id]);
+
+  // Recherche serveur dans le sélecteur de transactions (débouncée)
+  useEffect(() => {
+    if (showTransactionPicker) {
+      loadAvailableTransactions(debouncedTransactionSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTransactionPicker, debouncedTransactionSearch]);
+
+  // Reset de la recherche à la fermeture du sélecteur
+  useEffect(() => {
+    if (!showTransactionPicker) setTransactionSearch("");
+  }, [showTransactionPicker]);
 
   // Filtrer les transactions avec un bon score de correspondance
   const suggestedTransactions = useMemo(
@@ -285,29 +343,36 @@ export default function InvoiceSidebar({
     [initialInvoice?.id, linkTransaction, onRefetch],
   );
 
-  // Délier la transaction de cette facture
-  const handleUnlinkTransaction = useCallback(async () => {
-    if (!isMountedRef.current) return;
-    setLinkingTransaction(true);
-    try {
-      const result = await unlinkTransaction(null, initialInvoice.id);
-      if (!isMountedRef.current) return;
-      if (result.success) {
-        toast.success("Paiement bancaire détaché");
-        if (onRefetch) onRefetch();
-      } else {
-        toast.error(result.error || "Erreur lors du détachement");
+  // Délier une transaction précise de cette facture (N↔N : la mutation
+  // backend exige les DEUX ids).
+  const handleUnlinkTransaction = useCallback(
+    async (transactionId) => {
+      if (!isMountedRef.current || !transactionId) return;
+      setLinkingTransaction(true);
+      try {
+        const result = await unlinkTransaction(
+          transactionId,
+          initialInvoice.id,
+        );
+        if (!isMountedRef.current) return;
+        if (result.success) {
+          toast.success("Paiement bancaire détaché");
+          if (onRefetch) onRefetch();
+        } else {
+          toast.error(result.error || "Erreur lors du détachement");
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          toast.error("Erreur lors du détachement");
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLinkingTransaction(false);
+        }
       }
-    } catch (err) {
-      if (isMountedRef.current) {
-        toast.error("Erreur lors du détachement");
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setLinkingTransaction(false);
-      }
-    }
-  }, [initialInvoice?.id, unlinkTransaction, onRefetch]);
+    },
+    [initialInvoice?.id, unlinkTransaction, onRefetch],
+  );
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -498,10 +563,12 @@ export default function InvoiceSidebar({
     onClose();
   };
 
+  // La mutation changeInvoiceStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, échéance
+  // décalée d'autant) — cohérent avec les dates affichées dans le panel.
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      // toast.success("Facture créée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
       // errorLink ne toaste pas les mutations : afficher l'erreur ici
@@ -592,16 +659,27 @@ export default function InvoiceSidebar({
       >
         <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           {loadingFullInvoice && !fullInvoice ? (
-            <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
-              <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              {/* Même skeleton que l'aperçu PDF : une seule attente visuelle,
+                  pas de loader intermédiaire */}
+              <PdfPageSkeleton />
             </div>
           ) : documentPdfUrl && invoice.status !== "DRAFT" ? (
             // Document archivé (R2) ou servi par SuperPDP : on affiche le PDF faisant foi
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              <iframe
-                src={`${documentPdfUrl}#toolbar=0&navpanes=0&view=FitH`}
-                title={`Facture ${invoice.prefix || ""}${invoice.number || ""}`}
-                className="w-full h-full min-h-[297mm] border-0"
+              {/* Proxy same-origin : un chargement direct depuis api.newbi.fr
+                  partirait sans cookie de session (cookie host-only) */}
+              <PdfPreview
+                src={`/api/document-preview/invoice/${invoice.id}`}
+                placeholder={<PdfPageSkeleton />}
+                fallback={
+                  <UniversalPreviewPDF
+                    data={invoice}
+                    type="invoice"
+                    previousSituationInvoices={previousSituationInvoices}
+                    recalcDraftDates
+                  />
+                }
               />
             </div>
           ) : (
@@ -707,7 +785,7 @@ export default function InvoiceSidebar({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Section Paiement détecté */}
           {invoice.status === INVOICE_STATUS.PENDING &&
-            !invoice.linkedTransactionId &&
+            (invoice.linkedTransactionIds?.length || 0) === 0 &&
             suggestedTransactions.length > 0 && (
               <>
                 <div className="space-y-3">
@@ -1236,45 +1314,160 @@ export default function InvoiceSidebar({
             )}
           </div>
 
-          {/* Section Paiement Bancaire - Affichée uniquement si paiement rattaché */}
-          {invoice.linkedTransactionId && (
+          {/* Section Paiement Bancaire — liste des transactions rattachées
+              (N↔N : plusieurs transactions possibles). Header avec bouton
+              "Ajouter" pour attacher une autre transaction (paiement
+              échelonné). Chaque row : nom / date / montant + bouton délier. */}
+          {(invoice.linkedTransactions?.length || 0) > 0 && (
             <>
               <Separator />
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Landmark className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Paiement bancaire
-                  </p>
-                </div>
-                <div className="p-3 border rounded-lg bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      <CheckCircle className="h-3 w-3" />
-                      Paiement rattaché
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleUnlinkTransaction}
-                      disabled={linkingTransaction}
-                      className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
-                    >
-                      {linkingTransaction ? (
-                        <LoaderCircle className="h-3 w-3 animate-spin" />
-                      ) : (
-                        <Unlink className="h-3 w-3" />
-                      )}
-                    </Button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Landmark className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                      Paiement bancaire
+                    </p>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTransactionPicker(true)}
+                    disabled={linkingTransaction}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Link2 className="h-3 w-3 mr-1" />
+                    Ajouter
+                  </Button>
                 </div>
+
+                <div className="space-y-2">
+                  {invoice.linkedTransactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="p-3 border rounded-lg bg-muted/30 flex items-start justify-between gap-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {tx.description || tx.fromAccount || "Transaction"}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span>
+                            {tx.date
+                              ? new Intl.DateTimeFormat("fr-FR", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                }).format(new Date(tx.date))
+                              : "—"}
+                          </span>
+                          <span>•</span>
+                          <span className="font-medium text-green-600 dark:text-green-400">
+                            +
+                            {new Intl.NumberFormat("fr-FR", {
+                              style: "currency",
+                              currency: tx.currency || "EUR",
+                            }).format(tx.amount || 0)}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleUnlinkTransaction(tx.id)}
+                        disabled={linkingTransaction}
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                      >
+                        {linkingTransaction ? (
+                          <LoaderCircle className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Unlink className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sélecteur pour attacher une autre transaction (N↔N) */}
+                {showTransactionPicker && (
+                  <div className="border rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Sélectionner une transaction
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowTransactionPicker(false)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <Input
+                      value={transactionSearch}
+                      onChange={(e) => setTransactionSearch(e.target.value)}
+                      placeholder="Description, libellé, montant..."
+                      className="h-8 text-sm"
+                    />
+                    {loadingTransactions ? (
+                      <div className="flex items-center justify-center py-4">
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : availableTransactions.length > 0 ? (
+                      <ScrollArea className="h-[200px]">
+                        <div className="space-y-2">
+                          {availableTransactions.map((tx) => (
+                            <div
+                              key={tx.id || tx._id}
+                              className="p-2 border rounded cursor-pointer hover:bg-muted/50"
+                              onClick={() =>
+                                handleLinkTransaction(tx.id || tx._id)
+                              }
+                            >
+                              <p className="text-sm font-medium truncate">
+                                {tx.description ||
+                                  tx.fromAccount ||
+                                  "Transaction"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                <span>
+                                  {tx.date
+                                    ? new Intl.DateTimeFormat("fr-FR", {
+                                        day: "numeric",
+                                        month: "short",
+                                      }).format(new Date(tx.date))
+                                    : "—"}
+                                </span>
+                                <span>•</span>
+                                <span className="font-medium text-green-600">
+                                  +
+                                  {new Intl.NumberFormat("fr-FR", {
+                                    style: "currency",
+                                    currency: tx.currency || "EUR",
+                                  }).format(tx.amount || 0)}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    ) : (
+                      <p className="text-center py-4 text-xs text-muted-foreground">
+                        {transactionSearch.trim()
+                          ? "Aucune transaction ne correspond à cette recherche."
+                          : "Aucune transaction disponible."}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           )}
 
           {/* Section Paiement Bancaire - Pour factures en attente sans suggestions */}
           {invoice.status === INVOICE_STATUS.PENDING &&
-            !invoice.linkedTransactionId &&
+            (invoice.linkedTransactionIds?.length || 0) === 0 &&
             suggestedTransactions.length === 0 && (
               <>
                 <Separator />
@@ -1330,6 +1523,13 @@ export default function InvoiceSidebar({
                         </Button>
                       </div>
 
+                      <Input
+                        value={transactionSearch}
+                        onChange={(e) => setTransactionSearch(e.target.value)}
+                        placeholder="Description, libellé, montant..."
+                        className="h-8 text-sm"
+                      />
+
                       {loadingTransactions ? (
                         <div className="flex items-center justify-center py-4">
                           <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -1376,11 +1576,19 @@ export default function InvoiceSidebar({
                         </ScrollArea>
                       ) : (
                         <div className="text-center py-4 text-sm text-muted-foreground">
-                          <p>Aucune transaction disponible</p>
-                          <p className="text-xs mt-1">
-                            Connectez un compte bancaire pour voir les
-                            transactions
-                          </p>
+                          {transactionSearch.trim() ? (
+                            <p>
+                              Aucune transaction ne correspond à cette recherche
+                            </p>
+                          ) : (
+                            <>
+                              <p>Aucune transaction disponible</p>
+                              <p className="text-xs mt-1">
+                                Connectez un compte bancaire pour voir les
+                                transactions
+                              </p>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1388,6 +1596,54 @@ export default function InvoiceSidebar({
                 </div>
               </>
             )}
+
+          {/* Devis lié (devis à l'origine de cette facture) */}
+          {invoice.sourceQuote && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Devis lié
+                </p>
+                <div className="space-y-1">
+                  <LinkedDocumentRow
+                    type="quote"
+                    document={invoice.sourceQuote}
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/outils/devis?id=${invoice.sourceQuote.id}`,
+                      );
+                      onClose();
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Bon de commande lié (BC à l'origine de cette facture) */}
+          {invoice.sourcePurchaseOrder && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Bon de commande lié
+                </p>
+                <div className="space-y-1">
+                  <LinkedDocumentRow
+                    type="purchaseOrder"
+                    document={invoice.sourcePurchaseOrder}
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/outils/bons-commande?id=${invoice.sourcePurchaseOrder.id}`,
+                      );
+                      onClose();
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Preview Thumbnail */}
           {/* <div className="space-y-3">
@@ -1551,10 +1807,15 @@ export default function InvoiceSidebar({
               {/* Credit Note Content */}
               {selectedCreditNote &&
                 (creditNoteDocumentUrl ? (
-                  <iframe
-                    src={`${creditNoteDocumentUrl}#toolbar=0&navpanes=0&view=FitH`}
-                    title={`Avoir ${selectedCreditNote.prefix || ""}${selectedCreditNote.number || ""}`}
-                    className="w-full h-full min-h-[297mm] border-0"
+                  <PdfPreview
+                    src={`/api/document-preview/creditNote/${selectedCreditNote.id}`}
+                    placeholder={<PdfPageSkeleton />}
+                    fallback={
+                      <UniversalPreviewPDF
+                        data={selectedCreditNote}
+                        type="creditNote"
+                      />
+                    }
                   />
                 ) : (
                   <UniversalPreviewPDF

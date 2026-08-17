@@ -1,22 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Capture the middleware fn passed to createAuthMiddleware so we can invoke it directly
-const { createAuthMiddlewareMock, APIErrorMock } = vi.hoisted(() => {
-  const capturedMiddlewares = [];
-  const createAuthMiddlewareMock = vi.fn((fn) => {
-    capturedMiddlewares.push(fn);
-    return fn;
-  });
-  class APIErrorMock extends Error {
-    constructor(code, body) {
-      super(body?.message || code);
-      this.code = code;
-      this.body = body;
-      this.name = "APIError";
+const { capturedMiddlewares, createAuthMiddlewareMock, APIErrorMock } =
+  vi.hoisted(() => {
+    const capturedMiddlewares = [];
+    const createAuthMiddlewareMock = vi.fn((fn) => {
+      capturedMiddlewares.push(fn);
+      return fn;
+    });
+    class APIErrorMock extends Error {
+      constructor(code, body) {
+        super(body?.message || code);
+        this.code = code;
+        this.body = body;
+        this.name = "APIError";
+      }
     }
-  }
-  return { capturedMiddlewares, createAuthMiddlewareMock, APIErrorMock };
-});
+    return { capturedMiddlewares, createAuthMiddlewareMock, APIErrorMock };
+  });
 
 vi.mock("better-auth/api", () => ({
   createAuthMiddleware: createAuthMiddlewareMock,
@@ -65,8 +66,12 @@ beforeEach(() => {
 });
 
 describe("beforeSignInHook", () => {
-  it.skip("is registered via createAuthMiddleware", () => {
-    expect(createAuthMiddlewareMock).toHaveBeenCalled();
+  it("is registered via createAuthMiddleware", () => {
+    // createAuthMiddlewareMock's call history is wiped by the
+    // vi.clearAllMocks() in beforeEach (it only ran once, at import time,
+    // before any test executed) — capturedMiddlewares is a plain array
+    // unaffected by clearAllMocks, so it still reflects the import-time call.
+    expect(capturedMiddlewares.length).toBeGreaterThan(0);
     expect(typeof beforeSignInHook).toBe("function");
   });
 
@@ -98,7 +103,7 @@ describe("beforeSignInHook", () => {
     expect(sendReactivationEmailMock).not.toHaveBeenCalled();
   });
 
-  it.skip("sends reactivation email and throws APIError when user is inactive", async () => {
+  it("sends reactivation email and throws APIError when user is inactive", async () => {
     const user = { email: "u@x.fr", isActive: false };
     findOneMock.mockResolvedValue(user);
 

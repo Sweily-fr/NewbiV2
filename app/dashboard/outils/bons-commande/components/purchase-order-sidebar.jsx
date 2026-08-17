@@ -19,7 +19,6 @@ import {
   Truck,
   CalendarClock,
   RotateCcw,
-  LoaderCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
@@ -45,8 +44,29 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { toast } from "@/src/components/ui/sonner";
-import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import dynamic from "next/dynamic";
+
+// Chargés à l'ouverture de la sidebar uniquement : sort jspdf/pdf-lib (~1 Mo)
+// du chunk de la page liste.
+const UniversalPreviewPDF = dynamic(
+  () => import("@/src/components/pdf/UniversalPreviewPDF"),
+  { ssr: false },
+);
+const UniversalPDFDownloaderWithFacturX = dynamic(
+  () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
+  { ssr: false },
+);
+// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
+// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 
 export default function PurchaseOrderSidebar({
   isOpen,
@@ -61,16 +81,32 @@ export default function PurchaseOrderSidebar({
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
   const { workspaceId } = useRequiredWorkspace();
 
-  // URL du PDF archivé (R2) — uniquement hors brouillon
+  // URL du PDF archivé (R2) — uniquement hors brouillon. cache-and-network :
+  // à la réouverture le signal vient du cache (bascule immédiate sur le PDF),
+  // tout en revalidant en arrière-plan.
   const { data: poDocData } = useQuery(PURCHASE_ORDER_DOCUMENT_URL, {
     variables: { workspaceId, purchaseOrderId: initialPurchaseOrder?.id },
     skip:
       !workspaceId ||
       !initialPurchaseOrder?.id ||
       initialPurchaseOrder?.status === PURCHASE_ORDER_STATUS.DRAFT,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
   const purchaseOrderDocumentUrl = poDocData?.purchaseOrderDocumentUrl || null;
+
+  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
+  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
+  useEffect(() => {
+    if (
+      isOpen &&
+      initialPurchaseOrder?.id &&
+      initialPurchaseOrder?.status !== PURCHASE_ORDER_STATUS.DRAFT
+    ) {
+      prefetchPdf(
+        `/api/document-preview/purchaseOrder/${initialPurchaseOrder.id}`,
+      );
+    }
+  }, [isOpen, initialPurchaseOrder?.id, initialPurchaseOrder?.status]);
 
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [isMobile, setIsMobile] = useState(() =>
@@ -141,13 +177,18 @@ export default function PurchaseOrderSidebar({
     onClose();
   };
 
+  // La mutation changePurchaseOrderStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
+  // décalée d'autant) — cohérent avec les dates affichées dans le panel.
   const handleConfirm = async () => {
     try {
       await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.CONFIRMED);
       toast.success("Bon de commande mis en attente");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de la confirmation du bon de commande");
+      toast.error(
+        error?.message || "Erreur lors de la confirmation du bon de commande",
+      );
     }
   };
 
@@ -157,7 +198,9 @@ export default function PurchaseOrderSidebar({
       toast.success("Bon de commande validé par le client");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de la validation du bon de commande");
+      toast.error(
+        error?.message || "Erreur lors de la validation du bon de commande",
+      );
     }
   };
 
@@ -187,7 +230,9 @@ export default function PurchaseOrderSidebar({
       toast.success("Bon de commande annulé");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de l'annulation du bon de commande");
+      toast.error(
+        error?.message || "Erreur lors de l'annulation du bon de commande",
+      );
     }
   };
 
@@ -215,6 +260,7 @@ export default function PurchaseOrderSidebar({
         customFields: po.customFields,
         shipping: po.shipping,
         isReverseCharge: po.isReverseCharge,
+        isVatExempt: po.isVatExempt,
         retenueGarantie: po.retenueGarantie,
         escompte: po.escompte,
       }),
@@ -284,17 +330,27 @@ export default function PurchaseOrderSidebar({
       >
         <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           {loadingFullPurchaseOrder && !fullPurchaseOrder ? (
-            <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
-              <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              {/* Même skeleton que l'aperçu PDF : une seule attente visuelle,
+                  pas de loader intermédiaire */}
+              <PdfPageSkeleton />
             </div>
           ) : (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
               {purchaseOrderDocumentUrl &&
               purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT ? (
-                <iframe
-                  src={`${purchaseOrderDocumentUrl}#toolbar=0&navpanes=0&view=FitH`}
-                  title={`Bon de commande ${purchaseOrder.prefix || ""}${purchaseOrder.number || ""}`}
-                  className="w-full h-full min-h-[297mm] border-0"
+                // Proxy same-origin : un chargement direct depuis api.newbi.fr
+                // partirait sans cookie de session (cookie host-only)
+                <PdfPreview
+                  src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}`}
+                  placeholder={<PdfPageSkeleton />}
+                  fallback={
+                    <UniversalPreviewPDF
+                      data={purchaseOrder}
+                      type="purchaseOrder"
+                      recalcDraftDates
+                    />
+                  }
                 />
               ) : (
                 <UniversalPreviewPDF
@@ -574,24 +630,6 @@ export default function PurchaseOrderSidebar({
             </div>
           </div>
 
-          {/* Source Quote */}
-          {purchaseOrder.sourceQuote && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Devis source
-                </p>
-                <div className="text-sm">
-                  <span className="text-muted-foreground">
-                    {purchaseOrder.sourceQuote.prefix}-
-                    {purchaseOrder.sourceQuote.number}
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-
           <Separator />
 
           {/* Articles */}
@@ -693,6 +731,30 @@ export default function PurchaseOrderSidebar({
             </div>
           </div>
 
+          {/* Devis lié (devis à l'origine de ce bon de commande) */}
+          {purchaseOrder.sourceQuote && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Devis lié
+                </p>
+                <div className="space-y-1">
+                  <LinkedDocumentRow
+                    type="quote"
+                    document={purchaseOrder.sourceQuote}
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/outils/devis?id=${purchaseOrder.sourceQuote.id}`,
+                      );
+                      onClose();
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Linked Invoices */}
           {purchaseOrder.linkedInvoices &&
             purchaseOrder.linkedInvoices.length > 0 && (
@@ -702,25 +764,19 @@ export default function PurchaseOrderSidebar({
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                     Factures liées
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {purchaseOrder.linkedInvoices.map((invoice) => (
-                      <div
+                      <LinkedDocumentRow
                         key={invoice.id}
-                        className="flex justify-between items-center text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2"
+                        type="invoice"
+                        document={invoice}
                         onClick={() => {
                           router.push(
-                            `/dashboard/outils/factures/${invoice.id}`,
+                            `/dashboard/outils/factures?id=${invoice.id}`,
                           );
                           onClose();
                         }}
-                      >
-                        <span className="text-muted-foreground">
-                          Facture {invoice.number}
-                        </span>
-                        <span>
-                          {formatCurrency(invoice.finalTotalTTC || 0)}
-                        </span>
-                      </div>
+                      />
                     ))}
                   </div>
                 </div>

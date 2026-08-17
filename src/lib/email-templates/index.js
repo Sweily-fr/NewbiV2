@@ -3,6 +3,7 @@ import { reactivation } from "./auth/reactivation.js";
 import { twoFactor } from "./auth/two-factor.js";
 import { resetPassword } from "./auth/reset-password.js";
 import { emailVerification } from "./auth/email-verification.js";
+import { emailOtp } from "./auth/email-otp.js";
 
 // Organization templates
 import { organizationInvitation } from "./organization/invitation.js";
@@ -32,6 +33,9 @@ import { additionalSeatAdded } from "./seats/additional-added.js";
 // Leads templates
 import { guideLeadNotification } from "./leads/guide-notification.js";
 
+// Contact templates
+import { contactNotification } from "./contact/notification.js";
+
 // Export all templates as a single object for backward compatibility
 export const emailTemplates = {
   // Auth
@@ -39,6 +43,7 @@ export const emailTemplates = {
   twoFactor,
   resetPassword,
   emailVerification,
+  emailOtp,
 
   // Organization
   organizationInvitation,
@@ -67,6 +72,9 @@ export const emailTemplates = {
 
   // Leads
   guideLeadNotification,
+
+  // Contact
+  contactNotification,
 };
 
 export default emailTemplates;

@@ -371,6 +371,20 @@ export function SecuritySection({
             detail: { inactivityTimeout: data.inactivityTimeout },
           }),
         );
+        // Propager aussi aux autres onglets ouverts via l'événement storage,
+        // sinon un onglet resté sur l'ancienne valeur (ex: 15 min) déconnecte
+        // toute la session malgré le nouveau timeout. Le champ updatedAt
+        // garantit que l'événement storage se déclenche même si la valeur
+        // revient à un réglage déjà stocké.
+        try {
+          localStorage.setItem(
+            "newbi_inactivity_settings",
+            JSON.stringify({
+              inactivityTimeout: data.inactivityTimeout,
+              updatedAt: Date.now(),
+            }),
+          );
+        } catch {}
       }
 
       toast.success("Paramètres de session mis à jour");

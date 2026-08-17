@@ -129,22 +129,6 @@ const APPLICATIONS = [
     support: "https://qonto.com/contact",
   },
   {
-    id: "gocardless",
-    name: "GoCardless",
-    author: "GoCardless",
-    description:
-      "Collectez les paiements par prélèvement SEPA directement depuis vos factures.",
-    category: "payment",
-    logo: `${BRANDFETCH_CDN}/gocardless.com/w/400/h/400`,
-    logoBg: "#1A1A2E",
-    installed: false,
-    verified: true,
-    comingSoon: true,
-    website: "https://gocardless.com",
-    docs: "https://developer.gocardless.com",
-    support: "https://gocardless.com/contact",
-  },
-  {
     id: "paypal",
     name: "PayPal",
     author: "PayPal",

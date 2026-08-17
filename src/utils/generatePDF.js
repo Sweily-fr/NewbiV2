@@ -1,6 +1,3 @@
-import { domToJpeg } from 'modern-screenshot';
-import jsPDF from 'jspdf';
-
 /**
  * Génère un PDF à partir d'un élément DOM
  * Utilise la même logique que UniversalPDFDownloader
@@ -9,17 +6,23 @@ import jsPDF from 'jspdf';
  */
 export async function generatePDFFromElement(element) {
   if (!element) {
-    throw new Error('Élément DOM non fourni');
+    throw new Error("Élément DOM non fourni");
   }
 
-  console.log('📄 Début génération PDF');
+  // Chargés à la génération uniquement (sort jspdf du chunk des pages)
+  const [{ default: jsPDF }, { domToJpeg }] = await Promise.all([
+    import("jspdf"),
+    import("modern-screenshot"),
+  ]);
+
+  console.log("📄 Début génération PDF");
 
   // Attendre que toutes les images soient chargées
-  const images = element.querySelectorAll('img');
+  const images = element.querySelectorAll("img");
   console.log(`🖼️ ${images.length} image(s) trouvée(s)`);
 
   await Promise.all(
-    Array.from(images).map(img => {
+    Array.from(images).map((img) => {
       if (img.complete) {
         return Promise.resolve();
       }
@@ -28,27 +31,35 @@ export async function generatePDFFromElement(element) {
         img.onerror = () => resolve(); // Continue même si erreur
         setTimeout(() => resolve(), 3000); // Timeout de sécurité
       });
-    })
+    }),
   );
 
   // Attendre un peu pour s'assurer que tout est rendu
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   // Capturer avec modern-screenshot en JPEG
   const dataUrl = await domToJpeg(element, {
     quality: 0.95,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     width: 794, // Largeur A4 en pixels
     scale: 2,
     fetch: {
       requestInit: {
-        mode: 'cors',
-        credentials: 'omit',
+        mode: "cors",
+        credentials: "omit",
+        // R2 ne renvoie `Access-Control-Allow-Origin` ni `Vary` que si la
+        // requête porte un en-tête `Origin`. L'<img> du logo dans l'aperçu
+        // n'en envoie pas (pas de `crossOrigin`, cf. UniversalPreviewPDF) :
+        // la réponse sans ACAO ni `Vary` qu'elle met en cache resservirait ce
+        // fetch CORS, qui échouerait le contrôle d'origine et laisserait le
+        // logo vide dans le PDF, silencieusement (placeholder transparent).
+        // `reload` force une requête réseau qui, elle, porte un `Origin`.
+        cache: "reload",
       },
     },
   });
 
-  console.log('✅ Capture réussie');
+  console.log("✅ Capture réussie");
 
   // Créer une image pour obtenir les dimensions
   const img = new Image();
@@ -62,9 +73,9 @@ export async function generatePDFFromElement(element) {
 
   // Créer le PDF
   const pdf = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
     compress: true,
   });
 
@@ -75,8 +86,8 @@ export async function generatePDFFromElement(element) {
 
   // Découpage intelligent si le document est trop long
   if (imgHeightMM > pdfHeight) {
-    console.log('📄 Document multi-pages');
-    
+    console.log("📄 Document multi-pages");
+
     const totalPages = Math.ceil(imgHeightMM / pdfHeight);
     const pixelsPerPage = Math.floor((img.height * pdfHeight) / imgHeightMM);
 
@@ -89,21 +100,27 @@ export async function generatePDFFromElement(element) {
       const sourceHeight = Math.min(pixelsPerPage, img.height - sourceY);
 
       // Créer un canvas temporaire pour cette page
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = img.width;
       canvas.height = sourceHeight;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
 
       ctx.drawImage(
         img,
-        0, sourceY, img.width, sourceHeight,
-        0, 0, img.width, sourceHeight
+        0,
+        sourceY,
+        img.width,
+        sourceHeight,
+        0,
+        0,
+        img.width,
+        sourceHeight,
       );
 
-      const pageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      const pageDataUrl = canvas.toDataURL("image/jpeg", 0.95);
       const pageHeightMM = (sourceHeight * pdfWidth) / img.width;
 
-      pdf.addImage(pageDataUrl, 'JPEG', 0, 0, imgWidthMM, pageHeightMM);
+      pdf.addImage(pageDataUrl, "JPEG", 0, 0, imgWidthMM, pageHeightMM);
 
       // Ajouter le numéro de page
       pdf.setFontSize(8);
@@ -112,12 +129,12 @@ export async function generatePDFFromElement(element) {
     }
   } else {
     // Document sur une seule page
-    console.log('📄 Document sur une page');
-    pdf.addImage(dataUrl, 'JPEG', 0, 0, imgWidthMM, imgHeightMM);
+    console.log("📄 Document sur une page");
+    pdf.addImage(dataUrl, "JPEG", 0, 0, imgWidthMM, imgHeightMM);
   }
 
   // Retourner le buffer du PDF
-  const pdfBuffer = pdf.output('arraybuffer');
+  const pdfBuffer = pdf.output("arraybuffer");
   console.log(`✅ PDF généré (${pdfBuffer.byteLength} bytes)`);
 
   return new Uint8Array(pdfBuffer);

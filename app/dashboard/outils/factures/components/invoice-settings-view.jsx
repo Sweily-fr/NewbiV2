@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Settings, Check, Info, Minus } from "lucide-react";
 import { useInvoiceNumber } from "../hooks/use-invoice-number";
 import {
@@ -38,6 +38,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
+import LegalInfoSettingsSection from "@/src/components/settings/legal-info-settings-section";
 import { Switch } from "@/src/components/ui/switch";
 
 // Fonction de validation de l'IBAN
@@ -57,17 +58,6 @@ const validateBIC = (value) => {
     bicRegex.test(value) ||
     "Format BIC/SWIFT invalide (8 ou 11 caractères alphanumériques)"
   );
-};
-
-// Fonction de formatage de l'IBAN avec espaces
-const formatIban = (iban) => {
-  if (!iban) return "";
-
-  // Supprimer tous les espaces existants et convertir en majuscules
-  const cleanIban = iban.replace(/\s/g, "").toUpperCase();
-
-  // Ajouter un espace tous les 4 caractères
-  return cleanIban.replace(/(.{4})/g, "$1 ").trim();
 };
 
 export default function InvoiceSettingsView({
@@ -207,6 +197,15 @@ export default function InvoiceSettingsView({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const [organizationRefreshKey, setOrganizationRefreshKey] = useState(0);
+  // L'organisation reçue en prop est chargée une fois par l'éditeur : on
+  // fusionne ce que les modales (entreprise, légal, banque) viennent
+  // d'enregistrer pour que les autres modales voient les valeurs à jour
+  // (ex: forme juridique passée en EI → choix du nom du bénéficiaire).
+  const [orgOverride, setOrgOverride] = useState({});
+  const currentOrganization = useMemo(
+    () => ({ ...(organization || {}), ...orgOverride }),
+    [organization, orgOverride],
+  );
   const [numberDuplicateError, setNumberDuplicateError] = useState(null);
   const [numberSequenceError, setNumberSequenceError] = useState(null);
   const [showAutoNumberingConfirm, setShowAutoNumberingConfirm] =
@@ -235,32 +234,53 @@ export default function InvoiceSettingsView({
   // Écouter l'événement personnalisé émis par BankDetailsDialog
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
-      const { bankName, bankIban, bankBic } = event.detail;
+      const { bankName, bankIban, bankBic, beneficiaryNameType } = event.detail;
 
-      if (bankIban || bankBic || bankName) {
-        // Mettre à jour les données bancaires dans le formulaire
-        setValue("bankDetails.iban", bankIban || "", {
-          shouldDirty: true,
-        });
-        setValue("bankDetails.bic", bankBic || "", {
-          shouldDirty: true,
-        });
-        setValue("bankDetails.bankName", bankName || "", {
-          shouldDirty: true,
-        });
+      // Garder l'organisation locale à jour, quel que soit le dialog émetteur
+      setOrgOverride((prev) => ({ ...prev, ...event.detail }));
 
-        // Mettre à jour userBankDetails pour que la checkbox soit visible
-        setValue("userBankDetails", {
-          iban: bankIban || "",
-          bic: bankBic || "",
-          bankName: bankName || "",
-        });
-
-        // Cocher automatiquement la checkbox pour afficher les coordonnées bancaires
-        setValue("showBankDetails", true, {
-          shouldDirty: true,
+      if (beneficiaryNameType !== undefined) {
+        // Déjà enregistré dans l'organisation : shouldDirty inutile.
+        setValue("beneficiaryNameType", beneficiaryNameType, {
+          shouldDirty: false,
         });
       }
+
+      // L'événement est aussi émis par les modales entreprise et légal : on
+      // ne touche aux coordonnées bancaires que si elles sont dans le payload.
+      const carriesBankDetails =
+        bankIban !== undefined ||
+        bankBic !== undefined ||
+        bankName !== undefined;
+      if (!carriesBankDetails) return;
+
+      const nextBankDetails = {
+        iban: bankIban || "",
+        bic: bankBic || "",
+        bankName: bankName || "",
+      };
+
+      // Sans le vide, un IBAN effacé dans la modale restait affiché sur
+      // l'aperçu et sur le document : la propagation est inconditionnelle.
+      setValue("bankDetails.iban", nextBankDetails.iban, { shouldDirty: true });
+      setValue("bankDetails.bic", nextBankDetails.bic, { shouldDirty: true });
+      setValue("bankDetails.bankName", nextBankDetails.bankName, {
+        shouldDirty: true,
+      });
+
+      // Pilote l'affichage de la case "Afficher les coordonnées bancaires"
+      setValue("userBankDetails", nextBankDetails);
+
+      // Renseignées → affichées d'office ; toutes vidées → plus rien à afficher.
+      setValue(
+        "showBankDetails",
+        Boolean(
+          nextBankDetails.iban ||
+          nextBankDetails.bic ||
+          nextBankDetails.bankName,
+        ),
+        { shouldDirty: true },
+      );
     };
 
     window.addEventListener("organizationUpdated", handleOrganizationUpdated);
@@ -275,11 +295,19 @@ export default function InvoiceSettingsView({
   }, [setValue]);
 
   // Exposer la fonction de gestion de fermeture au parent
+  // Enregistré UNE seule fois via une ref stable : ré-enregistrer à chaque
+  // changement de hasUnsavedChanges provoquait un setState du parent en
+  // cascade (risque de "Maximum update depth exceeded"), et le handler
+  // capturé était figé sur une valeur périmée de hasUnsavedChanges.
+  const handleCancelClickRef = React.useRef(null);
+  React.useEffect(() => {
+    handleCancelClickRef.current = handleCancelClick;
+  });
   React.useEffect(() => {
     if (onCloseAttempt) {
-      onCloseAttempt(() => handleCancelClick);
+      onCloseAttempt(() => () => handleCancelClickRef.current?.());
     }
-  }, [hasUnsavedChanges]);
+  }, [onCloseAttempt]);
 
   // Sauvegarder les valeurs initiales au montage
   useEffect(() => {
@@ -297,16 +325,10 @@ export default function InvoiceSettingsView({
         termsAndConditions: data.termsAndConditions,
         showBankDetails: data.showBankDetails,
         clientPositionRight: data.clientPositionRight,
-        // Infos entreprise (flat + companyInfo nested pour la preview)
-        companyName: data.companyName,
-        companyEmail: data.companyEmail,
-        companyPhone: data.companyPhone,
-        website: data.website,
-        addressStreet: data.addressStreet,
-        addressCity: data.addressCity,
-        addressZipCode: data.addressZipCode,
-        addressCountry: data.addressCountry,
-        companyInfo: data.companyInfo,
+        // Les informations de l'entreprise ne sont pas suivies ici : elles
+        // appartiennent à l'organisation et sont enregistrées immédiatement
+        // par leur modale, donc elles ne constituent jamais une modification
+        // en attente de ce document.
       };
     }
   }, []);
@@ -328,19 +350,17 @@ export default function InvoiceSettingsView({
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
       data.showBankDetails !== initialValuesRef.current.showBankDetails ||
-      data.clientPositionRight !==
-        initialValuesRef.current.clientPositionRight ||
-      data.companyName !== initialValuesRef.current.companyName ||
-      data.companyEmail !== initialValuesRef.current.companyEmail ||
-      data.companyPhone !== initialValuesRef.current.companyPhone ||
-      data.website !== initialValuesRef.current.website ||
-      data.addressStreet !== initialValuesRef.current.addressStreet ||
-      data.addressCity !== initialValuesRef.current.addressCity ||
-      data.addressZipCode !== initialValuesRef.current.addressZipCode ||
-      data.addressCountry !== initialValuesRef.current.addressCountry;
+      data.clientPositionRight !== initialValuesRef.current.clientPositionRight;
 
     setHasUnsavedChanges(hasChanges);
   }, [data]);
+
+  // Des coordonnées bancaires existent-elles au niveau de l'organisation ?
+  const hasBankDetails = Boolean(
+    data.userBankDetails?.iban ||
+    data.userBankDetails?.bic ||
+    data.userBankDetails?.bankName,
+  );
 
   const handleCancelClick = () => {
     if (hasUnsavedChanges) {
@@ -355,9 +375,13 @@ export default function InvoiceSettingsView({
     if (initialValuesRef.current) {
       // Numérotation : restaurer le mode AVANT préfixe/numéro pour neutraliser
       // l'effet de resynchronisation, puis remettre le numéro initial.
-      setValue("autoNumbering", initialValuesRef.current.autoNumbering ?? false, {
-        shouldValidate: false,
-      });
+      setValue(
+        "autoNumbering",
+        initialValuesRef.current.autoNumbering ?? false,
+        {
+          shouldValidate: false,
+        },
+      );
       setValue("prefix", initialValuesRef.current.prefix ?? "", {
         shouldValidate: false,
       });
@@ -390,21 +414,9 @@ export default function InvoiceSettingsView({
         "clientPositionRight",
         initialValuesRef.current.clientPositionRight || false,
       );
-      // Infos entreprise — restaurer les champs plats et l'objet companyInfo
-      setValue("companyName", initialValuesRef.current.companyName ?? "");
-      setValue("companyEmail", initialValuesRef.current.companyEmail ?? "");
-      setValue("companyPhone", initialValuesRef.current.companyPhone ?? "");
-      setValue("website", initialValuesRef.current.website ?? "");
-      setValue("addressStreet", initialValuesRef.current.addressStreet ?? "");
-      setValue("addressCity", initialValuesRef.current.addressCity ?? "");
-      setValue("addressZipCode", initialValuesRef.current.addressZipCode ?? "");
-      setValue(
-        "addressCountry",
-        initialValuesRef.current.addressCountry ?? "France",
-      );
-      if (initialValuesRef.current.companyInfo) {
-        setValue("companyInfo", initialValuesRef.current.companyInfo);
-      }
+      // Les informations de l'entreprise ne sont pas restaurées : déjà
+      // enregistrées dans l'organisation, annuler ici les remettrait dans un
+      // état incohérent avec ce qui est réellement sauvegardé.
     }
     setShowConfirmDialog(false);
     onCancel();
@@ -424,15 +436,6 @@ export default function InvoiceSettingsView({
       termsAndConditions: data.termsAndConditions,
       showBankDetails: data.showBankDetails,
       clientPositionRight: data.clientPositionRight,
-      companyName: data.companyName,
-      companyEmail: data.companyEmail,
-      companyPhone: data.companyPhone,
-      website: data.website,
-      addressStreet: data.addressStreet,
-      addressCity: data.addressCity,
-      addressZipCode: data.addressZipCode,
-      addressCountry: data.addressCountry,
-      companyInfo: data.companyInfo,
     };
     setHasUnsavedChanges(false);
     onSave();
@@ -534,10 +537,71 @@ export default function InvoiceSettingsView({
           )}
 
           {/* Section Informations de l'entreprise */}
-          <CompanyInfoSettingsSection />
+          <CompanyInfoSettingsSection organization={organization} />
+
+          {/* Section Informations légales */}
+          <LegalInfoSettingsSection organization={organization} />
+
+          {/* Coordonnées bancaires */}
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
+                Coordonnées bancaires
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              {/* Les valeurs elles-mêmes sont éditées dans la modale : seule
+                  l'option d'affichage est propre au document. */}
+              <div className="text-sm text-muted-foreground p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+                <p className="mb-2">
+                  {hasBankDetails
+                    ? "Votre IBAN, votre BIC et le nom de votre banque sont communs à tous vos documents."
+                    : "Aucune coordonnée bancaire n'est configurée pour votre entreprise."}
+                </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="p-0 h-auto font-medium flex items-center gap-1 underline"
+                  onClick={() => setShowBankDetailsDialog(true)}
+                >
+                  <Settings className="h-4 w-4" />
+                  {hasBankDetails
+                    ? "Modifier vos coordonnées bancaires"
+                    : "Configurer les coordonnées bancaires"}
+                </Button>
+              </div>
+
+              {hasBankDetails && (
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="show-bank-details"
+                    checked={data.showBankDetails || false}
+                    onCheckedChange={(checked) => {
+                      setValue("showBankDetails", checked, {
+                        shouldDirty: true,
+                      });
+                    }}
+                    disabled={!canEdit}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label
+                      htmlFor="show-bank-details"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Afficher les coordonnées bancaires
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Cochez pour inclure vos coordonnées bancaires sur la
+                      facture
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Section Numérotation */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Numérotation
@@ -746,159 +810,8 @@ export default function InvoiceSettingsView({
             </CardContent>
           </Card>
 
-          {/* Coordonnées bancaires */}
-          <Card className="shadow-none border-none bg-transparent p-0">
-            <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-medium text-lg">
-                Coordonnées bancaires
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-0">
-              {/* Vérifier si des coordonnées bancaires sont disponibles */}
-              {data.userBankDetails?.iban ||
-              data.userBankDetails?.bic ||
-              data.userBankDetails?.bankName ? (
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    id="show-bank-details"
-                    checked={data.showBankDetails || false}
-                    onCheckedChange={(checked) => {
-                      setValue("showBankDetails", checked, {
-                        shouldDirty: true,
-                      });
-                    }}
-                    disabled={!canEdit}
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label
-                      htmlFor="show-bank-details"
-                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Afficher les coordonnées bancaires
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Cochez pour inclure vos coordonnées bancaires sur la
-                      facture
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
-                  <p className="mb-2">
-                    Aucune coordonnée bancaire n'est configurée pour votre
-                    entreprise.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="p-0 h-auto font-medium flex items-center gap-1 underline"
-                    onClick={() => setShowBankDetailsDialog(true)}
-                  >
-                    <Settings className="h-4 w-4" />
-                    Configurer les coordonnées bancaires
-                  </Button>
-                </div>
-              )}
-
-              {/* Afficher les détails bancaires si activé et disponibles */}
-              {data.showBankDetails &&
-                (data.userBankDetails?.iban ||
-                  data.userBankDetails?.bic ||
-                  data.userBankDetails?.bankName) && (
-                  <div className="space-y-4 p-4 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
-                    {/* Nom de la banque */}
-                    <div>
-                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                        Nom de la banque
-                      </Label>
-                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <p className="text-sm">
-                          {data.bankDetails?.bankName || "Non spécifié"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* IBAN */}
-                    <div>
-                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                        IBAN
-                      </Label>
-                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <p className="text-sm font-mono">
-                          {formatIban(data.bankDetails?.iban) || "Non spécifié"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* BIC/SWIFT */}
-                    <div>
-                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                        BIC/SWIFT
-                      </Label>
-                      <div className="mt-2 p-2 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <p className="text-sm font-mono">
-                          {data.bankDetails?.bic || "Non spécifié"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Les coordonnées bancaires sont gérées dans les paramètres
-                      de votre entreprise.
-                    </p>
-
-                    {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
-                    {organization?.legalForm === "Auto-entrepreneur" && (
-                      <div className="flex items-center justify-between p-4 bg-white rounded-md border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-                        <div className="grid gap-1.5 leading-none">
-                          <Label
-                            htmlFor="beneficiary-name-type"
-                            className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
-                          >
-                            Nom du bénéficiaire
-                          </Label>
-                          <p className="text-xs text-muted-foreground">
-                            {data.beneficiaryNameType === "fullName"
-                              ? "Nom complet affiché sur la facture"
-                              : "Nom d'entreprise affiché sur la facture"}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">
-                            {data.beneficiaryNameType === "fullName"
-                              ? "Nom complet"
-                              : "Nom d'entreprise"}
-                          </span>
-                          <Switch
-                            id="beneficiary-name-type"
-                            checked={data.beneficiaryNameType === "fullName"}
-                            onCheckedChange={(checked) => {
-                              setValue(
-                                "beneficiaryNameType",
-                                checked ? "fullName" : "companyName",
-                                { shouldDirty: true },
-                              );
-                            }}
-                            disabled={!canEdit}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Alerte informative */}
-                    <Alert>
-                      <AlertDescription>
-                        Ces coordonnées bancaires apparaîtront sur votre facture
-                        pour faciliter les paiements de vos clients.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                )}
-            </CardContent>
-          </Card>
-
           {/* Section Apparence */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Apparence
@@ -968,7 +881,7 @@ export default function InvoiceSettingsView({
           </Card>
 
           {/* Position du client */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Position du client dans le PDF
@@ -1052,7 +965,7 @@ export default function InvoiceSettingsView({
           </Card>
 
           {/* Notes et bas de page */}
-          <Card className="shadow-none border-none bg-transparent p-0">
+          <Card className="shadow-none border-none bg-transparent p-0 py-0!">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Notes et bas de page
@@ -1274,7 +1187,7 @@ export default function InvoiceSettingsView({
       <BankDetailsDialog
         open={showBankDetailsDialog}
         onOpenChange={setShowBankDetailsDialog}
-        organization={organization}
+        organization={currentOrganization}
         onSuccess={handleBankDetailsSuccess}
       />
     </div>

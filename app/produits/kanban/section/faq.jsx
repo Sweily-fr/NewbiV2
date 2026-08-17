@@ -42,7 +42,11 @@ export default function FAQ() {
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Nous sommes là pour répondre à toutes vos questions. Si vous ne
-          trouvez pas l'information recherchée, n'hésitez pas à nous contacter.
+          trouvez pas l'information recherchée, n'hésitez pas à{" "}
+          <a href="/contact" className="underline underline-offset-4">
+            nous contacter
+          </a>
+          .
         </p>
       </div>
       <Accordion
@@ -69,8 +73,8 @@ export default function FAQ() {
       <p className="text-muted-foreground">
         Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
         <a
-          href="mailto:contact@newbi.fr"
-          className="text-primary hover:underline"
+          href="/contact"
+          className="text-primary underline underline-offset-4"
         >
           équipe support
         </a>

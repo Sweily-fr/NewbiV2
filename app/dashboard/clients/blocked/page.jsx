@@ -32,6 +32,10 @@ import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { SlashIcon } from "@/src/components/icons";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import {
+  BlockedPageSkeleton,
+  BlockedTableSkeleton,
+} from "./components/blocked-page-skeleton";
 import { useClients, useUnblockClient } from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -218,62 +222,9 @@ function BlockedContent() {
         )}
       </div>
 
-      {/* Content */}
-      {loading ? (
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
-            <table className="w-full table-fixed">
-              <thead>
-                <tr>
-                  <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle w-[40px]">
-                    <Checkbox disabled />
-                  </th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[28%]">
-                    Contact
-                  </th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[25%]">
-                    Email
-                  </th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[18%]">
-                    Bloqué le
-                  </th>
-                  <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[14%]">
-                    Raison
-                  </th>
-                  <th className="h-10 p-2 pr-4 sm:pr-6 text-right align-middle font-normal text-xs text-muted-foreground w-[10%]"></th>
-                </tr>
-              </thead>
-            </table>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <table className="w-full table-fixed">
-              <tbody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6 w-[40px]">
-                      <Skeleton className="h-4 w-4 rounded" />
-                    </td>
-                    <td className="p-2 w-[28%]">
-                      <Skeleton className="h-4 w-[150px] rounded" />
-                    </td>
-                    <td className="p-2 w-[25%]">
-                      <Skeleton className="h-4 w-[180px] rounded" />
-                    </td>
-                    <td className="p-2 w-[18%]">
-                      <Skeleton className="h-4 w-[100px] rounded" />
-                    </td>
-                    <td className="p-2 w-[14%]">
-                      <Skeleton className="h-4 w-[80px] rounded" />
-                    </td>
-                    <td className="p-2 pr-4 sm:pr-6 w-[10%]">
-                      <Skeleton className="h-4 w-[60px] rounded ml-auto" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {/* Content : skeleton uniquement au premier chargement (cache Apollo ensuite) */}
+      {loading && !clients?.length ? (
+        <BlockedTableSkeleton rows={5} />
       ) : blockedClients.length === 0 ? (
         <TableEmptyState
           icon={SlashIcon}
@@ -538,7 +489,7 @@ function BlockedContent() {
 
 export default function BlockedPage() {
   return (
-    <ProRouteGuard pageName="Clients">
+    <ProRouteGuard pageName="Clients" fallback={<BlockedPageSkeleton />}>
       <BlockedContent />
     </ProRouteGuard>
   );

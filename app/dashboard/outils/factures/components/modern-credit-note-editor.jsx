@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 import { useCreditNoteEditor } from "../hooks/use-credit-note-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedCreditNoteForm from "./enhanced-credit-note-form";
-import { toast } from "@/src/components/ui/sonner";
 import { getActiveOrganization } from "@/src/lib/organization-client";
 import { SendDocumentModal } from "./send-document-modal";
 import {
@@ -30,6 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -39,6 +39,9 @@ export default function ModernCreditNoteEditor({
 }) {
   const router = useRouter();
   const [organization, setOrganization] = useState(null);
+  // Suivre les enregistrements faits par les modales (entreprise, légal,
+  // banque, paramètres) pour ne pas rouvrir sur des valeurs périmées.
+  useOrganizationUpdatedSync(setOrganization);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdCreditNoteData, setCreatedCreditNoteData] = useState(null);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
@@ -63,6 +66,7 @@ export default function ModernCreditNoteEditor({
     form,
     formData,
     originalInvoice,
+    invoiceError,
     existingCreditNote,
     loading,
     isDirty,
@@ -81,17 +85,18 @@ export default function ModernCreditNoteEditor({
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
 
-  // La modal de confirmation ne s'affiche que si l'avoir a au moins un article.
+  // La modal de confirmation ne s'affiche que si l'utilisateur a réellement
+  // modifié le formulaire (isDirty). Les articles étant toujours pré-remplis
+  // depuis la facture d'origine, leur simple présence ne compte pas comme une
+  // modification — sinon « Annuler » ne quitterait jamais directement.
   // (Les avoirs n'ont pas de concept de brouillon : on propose juste de rester ou quitter.)
-  const watchedFormItems = form.watch("items");
-  const hasItems =
-    Array.isArray(watchedFormItems) && watchedFormItems.length > 0;
-  const hasUserChanges = hasItems;
+  const hasUserChanges = isDirty;
   const guardActive = hasUserChanges && !isReadOnly;
 
-  const backUrl = invoiceId
-    ? `/dashboard/outils/factures/${invoiceId}`
-    : "/dashboard/outils/factures";
+  // Retour vers la LISTE des factures : on arrive sur l'avoir depuis la liste
+  // (sidebar ou menu de ligne). La page détail /factures/[id] rouvre un éditeur
+  // plein écran quasi identique, ce qui donne l'impression que l'avoir se rouvre.
+  const backUrl = "/dashboard/outils/factures";
 
   useEffect(() => {
     if (!guardActive) return;
@@ -124,23 +129,6 @@ export default function ModernCreditNoteEditor({
   const handleLeaveWithoutSaving = () => {
     setShowUnsavedDialog(false);
     leaveEditor();
-  };
-
-  const handleBack = () => {
-    if (!isReadOnly && hasUserChanges) {
-      setShowUnsavedDialog(true);
-      return;
-    }
-    leaveEditor();
-  };
-
-  const handleSaveAsDraft = async () => {
-    try {
-      await saveAsDraft(false);
-      toast.success("Avoir sauvegardé en brouillon");
-    } catch (error) {
-      // Error is already handled in the hook
-    }
   };
 
   // Fonction helper pour formater les dates
@@ -210,20 +198,22 @@ export default function ModernCreditNoteEditor({
     router.push("/dashboard/outils/factures");
   };
 
+  // Les avoirs n'ont pas de brouillon : statut unique CREATED. En création,
+  // l'avoir n'existe pas encore en base, on affiche « Nouveau ».
   const getStatusBadge = () => {
-    const status = formData?.status || "DRAFT";
-    const statusConfig = {
-      DRAFT: { label: "Brouillon", variant: "secondary" },
-      PENDING: { label: "En attente", variant: "default" },
-      COMPLETED: { label: "Terminé", variant: "success" },
-      CANCELED: { label: "Annulé", variant: "destructive" },
-    };
-
-    const config = statusConfig[status] || statusConfig.DRAFT;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    if (isCreating) {
+      return <Badge variant="secondary">Nouveau</Badge>;
+    }
+    return <Badge variant="default">Créé</Badge>;
   };
 
-  if (loading) {
+  // Donnée principale selon le mode : l'avoir existant en édition, la facture
+  // d'origine en création. Les requêtes Apollo sont en cache-and-network :
+  // quand la donnée est déjà en cache, on affiche directement l'éditeur au
+  // lieu d'un loader plein écran pendant le refetch.
+  const mainDocument = isCreating ? originalInvoice : existingCreditNote;
+
+  if (loading && !mainDocument) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
@@ -234,23 +224,41 @@ export default function ModernCreditNoteEditor({
     );
   }
 
-  // Vérifier si la facture originale existe en mode création
+  // Vérifier si la facture originale existe en mode création.
+  // Une erreur de requête (session/réseau pas encore rétablis après un
+  // refresh) n'est pas une facture supprimée : on propose de réessayer.
   if (mode === "create" && invoiceId && !originalInvoice && !loading) {
+    const isLoadError = !!invoiceError;
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="mb-4">
             <X className="h-12 w-12 text-destructive mx-auto" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">Facture introuvable</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {isLoadError ? "Erreur de chargement" : "Facture introuvable"}
+          </h2>
           <p className="text-muted-foreground mb-6">
-            La facture originale n'existe pas ou a été supprimée. Impossible de
-            créer un avoir.
+            {isLoadError
+              ? "Impossible de charger la facture pour le moment. Réessayez dans quelques instants."
+              : "La facture originale n'existe pas ou a été supprimée. Impossible de créer un avoir."}
           </p>
-          <Button onClick={handleBack} variant="default">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour aux factures
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            {/* leaveEditor directement : la popup de confirmation n'est pas
+                rendue dans cette branche, handleBack y serait sans effet */}
+            <Button onClick={leaveEditor} variant="default">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour aux factures
+            </Button>
+            {isLoadError && (
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Réessayer
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );

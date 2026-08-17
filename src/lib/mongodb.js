@@ -3,9 +3,12 @@ import { MongoClient } from "mongodb";
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const dbName = process.env.MONGODB_DB_NAME || "invoice-app";
 
-// Options optimisées pour Vercel serverless + Atlas
+// Options optimisées pour Vercel serverless + Atlas.
+// maxPoolSize > 1 : avec Fluid Compute, une même instance de fonction sert
+// plusieurs requêtes concurrentes ; un pool de 1 les sérialisait toutes
+// (layout dashboard = 2 à 5 requêtes Mongo par rendu).
 const options = {
-  maxPoolSize: 1,
+  maxPoolSize: 10,
   minPoolSize: 0,
   maxIdleTimeMS: 10000,
   serverSelectionTimeoutMS: 5000,
@@ -70,6 +73,14 @@ async function ensureIndexes(db) {
       coll: "twoFactorSetupOtp",
       idx: { expiresAt: 1 },
       opts: { expireAfterSeconds: 0, background: true },
+    },
+    // Journal des révocations de sessions : purge auto après 30 jours.
+    // NB: ajouter les nouveaux index EN FIN de tableau — la migration
+    // referenceId plus bas référence results[4] par position.
+    {
+      coll: "session_revocation_log",
+      idx: { at: 1 },
+      opts: { expireAfterSeconds: 30 * 24 * 60 * 60, background: true },
     },
   ];
 

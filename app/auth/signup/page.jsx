@@ -57,6 +57,26 @@ const GoogleIcon = (props) => (
   </svg>
 );
 
+// Le provider Apple exige un Services ID (`fr.newbi.web`) et un client secret
+// signé — le flux web n'est PAS celui du mobile, qui valide un idToken natif.
+// Ces valeurs vivent dans APPLE_CLIENT_ID / APPLE_CLIENT_SECRET côté serveur.
+//
+// ⚠️ Le client secret est un JWT qui EXPIRE (6 mois max, échéance actuelle :
+// février 2027). Passé ce délai, Better Auth cesse d'initialiser le provider et
+// ce bouton renvoie 500 — sur le web comme dans l'app mobile. Régénérer avec
+// `node scripts/generate-apple-client-secret.js`.
+
+// Logo Apple officiel (pomme pleine), tracé monochrome piloté par currentColor
+// pour suivre la couleur du bouton.
+const AppleIcon = (props) => (
+  <svg viewBox="0 0 24 24" {...props}>
+    <path
+      d="M16.365 1.43c0 1.14-.42 2.2-1.12 3.01-.85.98-2.24 1.74-3.4 1.65a3.4 3.4 0 0 1-.03-.41c0-1.1.5-2.26 1.24-3.02.75-.79 2.02-1.38 3.09-1.42.01.06.02.13.02.19zM20.9 17.2c-.55 1.27-.82 1.84-1.53 2.96-.99 1.57-2.39 3.53-4.12 3.54-1.54.02-1.94-1-4.03-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.06-1.78-4.05-3.35C.34 15.97-.06 10.83 1.87 8.1c1.12-1.6 2.9-2.53 4.57-2.53 1.7 0 2.77 1 4.18 1 1.36 0 2.19-1 4.16-1 1.49 0 3.07.81 4.19 2.21-3.68 2.02-3.08 7.27.93 8.42z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
 // Views: "signup" → "email" → "workspace"
 export default function SignUpPage() {
   return (
@@ -191,24 +211,33 @@ function SignUpPageContent() {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [isCheckingSiret, setIsCheckingSiret] = useState(false);
   const [siretError, setSiretError] = useState(null);
+  // Déclaration sur l'honneur d'usage professionnel — obligatoire pour
+  // terminer l'inscription (le serveur la réexige de son côté).
+  const [honorAccepted, setHonorAccepted] = useState(false);
   const [billingCountry, setBillingCountry] = useState("FR");
   const contentRef = useRef(null);
 
   // Persist onboarding step + data to DB via API, then refetch session
   const { refetch: refetchSession } = useSession();
   const updateOnboardingStep = useCallback(
-    async (step, data) => {
+    async (step, data, extra) => {
       setIsSavingStep(true);
       try {
         const res = await fetch("/api/onboarding/step", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ step, data: data || undefined }),
+          body: JSON.stringify({ step, data: data || undefined, ...extra }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           console.error("❌ [ONBOARDING] PATCH failed:", err);
-          toast.error("Erreur lors de la sauvegarde, veuillez réessayer");
+          // Le refus de vérification SIRET porte un message précis (SIRET
+          // introuvable, établissement radié, registre indisponible) : le
+          // masquer derrière un toast générique laisse l'utilisateur sans
+          // moyen de comprendre ce qu'il doit corriger.
+          toast.error(
+            err?.error || "Erreur lors de la sauvegarde, veuillez réessayer",
+          );
           return false;
         }
         // Re-sync session so other tabs / next reload see the new step
@@ -291,6 +320,9 @@ function SignUpPageContent() {
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
+    // La déclaration nomme une entreprise précise : changer de société la
+    // rend caduque, elle doit être re-cochée.
+    setHonorAccepted(false);
     const siege = company.siege || {};
     const siret = siege.siret || "";
     if (!siret) {
@@ -356,6 +388,7 @@ function SignUpPageContent() {
   const handleWorkspaceSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCompany || isSavingStep) return;
+    if (appTrialEnabled && !honorAccepted) return;
     const siege = selectedCompany.siege || {};
     // L'API recherche-entreprises renvoie la chaîne littérale "[NON-DIFFUSIBLE]"
     // (et non null) pour les champs masqués des entreprises non-diffusibles.
@@ -388,10 +421,11 @@ function SignUpPageContent() {
     // a no-store getSession, the /onboarding/success page (and downstream
     // /dashboard) can briefly target the wrong org.
     if (appTrialEnabled) {
-      const ok = await updateOnboardingStep("completed", {
-        ...newCompanyData,
-        billingCountry,
-      });
+      const ok = await updateOnboardingStep(
+        "completed",
+        { ...newCompanyData, billingCountry },
+        { honorDeclarationAccepted: honorAccepted },
+      );
       if (ok) {
         try {
           const { authClient } = await import("@/src/lib/auth-client");
@@ -462,8 +496,26 @@ function SignUpPageContent() {
       });
     } catch {}
 
+    // `requestSignUp: true` est indispensable ici : les providers sociaux sont
+    // configurés en `disableImplicitSignUp` (cf. src/lib/auth.js), donc une
+    // connexion sociale ne crée plus de compte à moins de le demander. C'est
+    // cet écran — et lui seul — qui a le droit d'inscrire. La page de login et
+    // l'app mobile ne passent pas ce drapeau, et ne peuvent donc que connecter
+    // des comptes existants.
+    //
+    // Le retour se fait ICI, pas sur /dashboard. Un compte fraîchement créé
+    // n'a ni abonnement ni essai — l'essai n'est accordé qu'à la fin de
+    // l'onboarding — donc le garde de app/dashboard/layout.jsx, qui ne
+    // connaît que l'abonnement et ignore l'onboarding, le renvoyait aussitôt
+    // sur /auth/signup. Ce rebond faisait perdre l'étape « workspace » :
+    // l'utilisateur retombait sur le formulaire d'inscription au lieu de
+    // continuer sa configuration.
+    //
+    // En revenant directement ici, l'effet d'hydratation lit onboardingStep
+    // et ouvre la bonne étape. Ne pas remettre /dashboard : le détour est le
+    // bug, pas la destination.
     await signIn.social(
-      { provider, callbackURL: "/dashboard" },
+      { provider, callbackURL: "/auth/signup", requestSignUp: true },
       {
         onSuccess: () => {},
         onError: () => {
@@ -623,7 +675,12 @@ function SignUpPageContent() {
             <div className="mb-6" />
           )}
 
-          {/* ─── View: Signup (Google + Email buttons) ─── */}
+          {/* ─── View: Signup (Google + Apple + Email buttons) ───
+              Apple est proposé ici parce que l'app iOS offre « Se connecter
+              avec Apple » : la règle Apple 4.8 exige que ce soit une option
+              ÉQUIVALENTE aux autres connexions sociales. Sans inscription
+              Apple quelque part, aucun compte ne serait jamais lié à Apple et
+              le bouton mobile échouerait systématiquement. */}
           {view === "signup" && (
             <div className="w-full max-w-[320px] space-y-4">
               <Button
@@ -632,6 +689,14 @@ function SignUpPageContent() {
               >
                 <GoogleIcon className="size-4 mr-2" aria-hidden />
                 Continuer avec Google
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full h-11 cursor-pointer bg-white rounded-lg"
+                onClick={() => signInWithProvider("apple")}
+              >
+                <AppleIcon className="size-4 mr-2" aria-hidden />
+                Continuer avec Apple
               </Button>
               <Button
                 variant="outline"
@@ -799,13 +864,41 @@ function SignUpPageContent() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Déclaration sur l'honneur : elle nomme l'entreprise
+                      sélectionnée et exclut explicitement l'usage personnel. */}
+                  {appTrialEnabled && selectedCompany && (
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={honorAccepted}
+                        onChange={(e) => setHonorAccepted(e.target.checked)}
+                        className="mt-0.5 size-4 shrink-0 accent-[#5A50FF] cursor-pointer"
+                      />
+                      <span className="text-[13px] leading-5 text-muted-foreground">
+                        Je certifie sur l'honneur être le représentant légal, le
+                        mandataire ou un collaborateur habilité de{" "}
+                        <span className="font-medium text-foreground">
+                          {selectedCompany.nom_complet ||
+                            selectedCompany.nom_raison_sociale}
+                        </span>
+                        , et utiliser Newbi à des fins strictement
+                        professionnelles dans le cadre de cette activité
+                        déclarée.
+                      </span>
+                    </label>
+                  )}
                 </CardContent>
               </Card>
 
               <div className="flex justify-center mt-6">
                 <Button
                   type="submit"
-                  disabled={!selectedCompany || isSavingStep}
+                  disabled={
+                    !selectedCompany ||
+                    isSavingStep ||
+                    (appTrialEnabled && !honorAccepted)
+                  }
                   className="h-9 px-16 bg-[#5A50FF]/90 hover:bg-[#5A50FF] text-white cursor-pointer border-0 [box-shadow:none] rounded-lg disabled:opacity-40"
                 >
                   {isSavingStep ? (

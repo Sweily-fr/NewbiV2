@@ -390,6 +390,13 @@ export const useCreateClient = (providedWorkspaceId) => {
           // GET_CLIENTS not in cache, skipping update
         }
       },
+      // Le writeQuery ci-dessus ne couvre qu'une seule combinaison de
+      // variables (page 1, limit 10, sans recherche). Les sélecteurs de
+      // clients des éditeurs de documents interrogent GetClients avec
+      // d'autres variables (limit 50, recherche) : sans refetch, le client
+      // fraîchement créé n'apparaissait pas dans leur liste tant que la
+      // requête n'était pas relancée.
+      refetchQueries: ["GetClients"],
       errorPolicy: "all",
     },
   );
@@ -397,15 +404,31 @@ export const useCreateClient = (providedWorkspaceId) => {
   const createClient = useCallback(
     async (input) => {
       try {
-        const { data } = await createClientMutation({
+        const { data, errors } = await createClientMutation({
           variables: { workspaceId, input },
         });
 
+        // Avec errorPolicy "all", les erreurs GraphQL ne lèvent pas
+        // d'exception : sans ce garde-fou, on affichait « Client créé avec
+        // succès » et on renvoyait undefined alors que la création avait
+        // échoué (ex: email déjà utilisé côté serveur).
+        const createdClient = data?.createClient;
+        if (!createdClient) {
+          const gqlError = errors?.[0];
+          const err = new Error(
+            gqlError?.message || "Erreur lors de la création du client",
+          );
+          if (gqlError?.extensions) {
+            err.extensions = gqlError.extensions;
+          }
+          throw err;
+        }
+
         toast.success("Client créé avec succès");
-        return data.createClient;
+        return createdClient;
       } catch (err) {
         console.error("Erreur lors de la création du client:", err);
-        // Le toast d'erreur est géré par le hook useCreateClient
+        // L'affichage de l'erreur est géré par l'appelant (formulaire)
         throw err;
       }
     },

@@ -13,45 +13,40 @@ import {
   getCoreRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "../transaction-detail-drawer";
-import { PurchaseInvoiceDetailDrawer } from "../../../factures-achat/components/detail-drawer";
-import { ReceiptUploadDrawer } from "../receipt-upload-drawer";
 import { ExportDialog } from "../export-dialog";
 import {
   useCreateExpense,
   useUpdateExpense,
   useDeleteExpense,
-  useDeleteMultipleExpenses,
   useAddExpenseFile,
 } from "@/src/hooks/useExpenses";
+import { useUpdateTransaction } from "@/src/hooks/useTransactions";
+import { useTransactionsPage } from "@/src/hooks/useTransactionsPage";
+import { useLazyQuery, useMutation } from "@apollo/client";
 import {
-  useCreateTransaction,
-  useUpdateTransaction,
-  useDeleteTransaction,
-} from "@/src/hooks/useTransactions";
-import { useMutation } from "@apollo/client";
-import { UPLOAD_TRANSACTION_RECEIPT } from "@/src/graphql/queries/banking";
+  GET_TRANSACTION,
+  GET_TRANSACTIONS,
+  UPLOAD_TRANSACTION_RECEIPT,
+} from "@/src/graphql/queries/banking";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { usePromoteTemporaryFile } from "@/src/hooks/usePromoteTemporaryFile";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 import { columns } from "./columns/transactionColumns";
-import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
+import { mapTransactionToExpense } from "./utils/mapTransactionToExpense";
 import { MobileToolbar } from "./components/MobileToolbar";
 import { MobileTable } from "./components/MobileTable";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { ChartIcon } from "@/src/components/icons";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
-import { PCGSelectDialog } from "../pcg-select-dialog";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
@@ -91,17 +86,6 @@ import {
   Setting4Icon,
 } from "@/src/components/icons";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/src/components/ui/alert-dialog";
-import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -110,7 +94,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { AnimatePresence } from "framer-motion";
 import {
   Search,
-  TrashIcon,
   ChevronFirstIcon,
   ChevronLastIcon,
   ChevronLeftIcon,
@@ -133,18 +116,112 @@ import { Calendar } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
+// Taille de page max côté mobile (le serveur plafonne limit à 100) : le
+// scroll infini mobile agrandit la page courante par paliers jusqu'à ce cap.
+const MOBILE_PAGE_SIZE_MAX = 100;
+const MOBILE_LOAD_MORE_STEP = 20;
+
+// Fonction utilitaire pour formater les dates de manière sécurisée
+const safeFormatDate = (dateValue) => {
+  if (!dateValue) return formatLocalDate();
+
+  // Si c'est déjà une string au format YYYY-MM-DD
+  if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+    return dateValue.split("T")[0];
+  }
+
+  // Essayer de parser la date
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) {
+      console.warn("Date invalide:", dateValue);
+      return formatLocalDate();
+    }
+    return formatLocalDate(date);
+  } catch (error) {
+    console.warn("Erreur de parsing de date:", dateValue, error);
+    return formatLocalDate();
+  }
+};
+
+// Transforme un "expense" (format page) vers la ligne consommée par le
+// tableau et les drawers. Egalement utilisée pour le deep-link
+// ?transactionId= quand la transaction n'est pas dans la page courante.
+const mapExpenseToRow = (expense) => {
+  const formattedDate = safeFormatDate(expense.date);
+
+  return {
+    id: expense.id,
+    date: formattedDate,
+    type: expense.amount > 0 ? "INCOME" : "EXPENSE",
+    subType:
+      expense.category === "TRAVEL"
+        ? "transport"
+        : expense.category === "MEALS"
+          ? "repas"
+          : expense.category === "OFFICE_SUPPLIES"
+            ? "bureau"
+            : expense.category === "SERVICES"
+              ? "prestation"
+              : "autre",
+    category: expense.category,
+    amount: expense.amount,
+    currency: expense.currency || "EUR",
+    description: expense.description || expense.title,
+    // Libellé bancaire brut (références de virement non tronquées par Bridge)
+    reference: expense.reference || null,
+    paymentMethod: expense.paymentMethod,
+    vendor: expense.vendor,
+    invoiceNumber: expense.invoiceNumber,
+    documentNumber: expense.documentNumber,
+    vatAmount: expense.vatAmount,
+    vatRate: expense.vatRate,
+    status: expense.status,
+    tags: expense.tags || [],
+    attachment:
+      expense.files && expense.files.length > 0 ? expense.files[0].url : null,
+    files: expense.files || [],
+    receiptFiles: expense.receiptFiles || [],
+    ocrMetadata: expense.ocrMetadata || null,
+    createdAt: expense.createdAt,
+    updatedAt: expense.updatedAt,
+    // Préserver la source originale (BANK, MANUAL) ou le type (BANK_TRANSACTION, MANUAL_EXPENSE)
+    source: expense.source || expense.type || "MANUAL",
+    // Indicateurs pour la vue unifiée (N↔N : "a une facture liée" =
+    // array non vide).
+    hasReceipt:
+      expense.hasReceipt ||
+      (expense.files && expense.files.length > 0) ||
+      (expense.linkedInvoices?.length || 0) > 0 ||
+      (expense.linkedPurchaseInvoices?.length || 0) > 0,
+    receiptRequired:
+      expense.receiptRequired !== false &&
+      (expense.linkedInvoices?.length || 0) === 0 &&
+      (expense.linkedPurchaseInvoices?.length || 0) === 0,
+    expenseType: expense.expenseType || "ORGANIZATION",
+    assignedMember: expense.assignedMember || null,
+    // Données originales de la transaction bancaire si disponibles
+    originalTransaction: expense.originalTransaction || null,
+    // Champs de rapprochement bancaire (N↔N)
+    linkedInvoiceIds: expense.linkedInvoiceIds || [],
+    linkedInvoices: expense.linkedInvoices || [],
+    linkedPurchaseInvoiceIds: expense.linkedPurchaseInvoiceIds || [],
+    linkedPurchaseInvoices: expense.linkedPurchaseInvoices || [],
+    reconciliationStatus: expense.reconciliationStatus || null,
+    reconciliationDate: expense.reconciliationDate || null,
+    // Compte PCG et métadonnées (pour affichage et suggestion dans le dialog)
+    pcgAccount: expense.pcgAccount || null,
+    metadata: expense.metadata || {},
+  };
+};
+
 export default function TransactionTable({
-  expenses: expensesProp = [],
-  loading: loadingProp = false,
-  refetchExpenses: refetchExpensesProp,
+  onRefresh,
   initialTransactionId = null,
   openOcr = false,
-  triggerAddManual = false,
-  onAddManualTriggered,
-  triggerAddOcr = false,
-  onAddOcrTriggered,
   bankAccounts = [],
   initialTab = null,
+  accountId = null,
 }) {
   const id = useId();
 
@@ -168,29 +245,34 @@ export default function TransactionTable({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
-  const [expenseTypeFilter, setExpenseTypeFilter] = useState(null);
-  const [assignedMemberFilter, setAssignedMemberFilter] = useState(null);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
-  // Affichage unifié : drawer de détail d'une facture d'achat ouverte depuis
-  // la liste des transactions (lignes sourceKind === "PURCHASE_INVOICE").
-  const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] = useState(null);
-  const [isPIDrawerOpen, setIsPIDrawerOpen] = useState(false);
-  const [isAddTransactionDrawerOpen, setIsAddTransactionDrawerOpen] =
-    useState(false);
-  const [isReceiptUploadDrawerOpen, setIsReceiptUploadDrawerOpen] =
-    useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [mobileTab, setMobileTab] = useState(resolvedInitialTab);
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState([]);
-  const [pcgTransaction, setPcgTransaction] = useState(null);
-  const [isPCGDialogOpen, setIsPCGDialogOpen] = useState(false);
 
-  const handleEditPCG = useCallback((transaction) => {
-    setPcgTransaction(transaction);
-    setIsPCGDialogOpen(true);
+  // Onglet actif (partagé desktop/mobile) : prédicats calculés côté serveur
+  const [activeTab, setActiveTab] = useState(resolvedInitialTab);
+
+  // Tout changement de filtre/recherche/onglet ramène à la première page
+  const resetToFirstPage = useCallback(() => {
+    setPagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
   }, []);
+
+  const handleSearchChange = useCallback(
+    (value) => {
+      setGlobalFilter(value);
+      resetToFirstPage();
+    },
+    [resetToFirstPage],
+  );
+
+  // Changement de compte sélectionné → retour première page
+  useEffect(() => {
+    resetToFirstPage();
+  }, [accountId, resetToFirstPage]);
 
   // Options de filtres disponibles
   const filterOptions = [
@@ -222,7 +304,6 @@ export default function TransactionTable({
     source: [
       { value: "BANK", label: "Bancaire" },
       { value: "MANUAL", label: "Manuel" },
-      { value: "OCR", label: "OCR" },
     ],
   };
 
@@ -232,11 +313,13 @@ export default function TransactionTable({
       ...advancedFilters,
       { id: Date.now(), field: "category", operator: "includes", value: "" },
     ]);
+    resetToFirstPage();
   };
 
   // Supprimer un filtre
   const removeFilter = (filterId) => {
     setAdvancedFilters(advancedFilters.filter((f) => f.id !== filterId));
+    resetToFirstPage();
   };
 
   // Mettre à jour un filtre
@@ -245,23 +328,26 @@ export default function TransactionTable({
       advancedFilters.map((f) => {
         if (f.id !== filterId) return f;
         const updated = { ...f, [key]: value };
-        // Passage vers un filtre date → initialiser startDate/endDate
-        if (key === "field" && value === "date") {
-          updated.operator = "between";
-          updated.value = "";
-          updated.startDate = "";
-          updated.endDate = "";
-        }
-        // Passage depuis un filtre date vers autre chose → nettoyer
-        if (key === "field" && f.field === "date" && value !== "date") {
-          delete updated.startDate;
-          delete updated.endDate;
-          updated.operator = "includes";
-          updated.value = "";
+        // Changement de champ → réinitialiser opérateur et valeur
+        if (key === "field" && value !== f.field) {
+          if (value === "date") {
+            // Filtre date : plage startDate/endDate
+            updated.operator = "between";
+            updated.value = "";
+            updated.startDate = "";
+            updated.endDate = "";
+          } else {
+            delete updated.startDate;
+            delete updated.endDate;
+            // Le montant ne supporte que l'égalité côté serveur
+            updated.operator = value === "amount" ? "equals" : "includes";
+            updated.value = "";
+          }
         }
         return updated;
       }),
     );
+    resetToFirstPage();
   };
 
   // Mettre à jour la plage de dates (début + fin) en une seule fois
@@ -271,27 +357,14 @@ export default function TransactionTable({
         f.id === filterId ? { ...f, startDate, endDate } : f,
       ),
     );
+    resetToFirstPage();
   };
 
   // Supprimer tous les filtres
   const clearAllFilters = () => {
     setAdvancedFilters([]);
+    resetToFirstPage();
   };
-
-  // Réagir aux triggers depuis le header de la page
-  useEffect(() => {
-    if (triggerAddManual) {
-      setIsAddTransactionDrawerOpen(true);
-      onAddManualTriggered?.();
-    }
-  }, [triggerAddManual, onAddManualTriggered]);
-
-  useEffect(() => {
-    if (triggerAddOcr) {
-      setIsReceiptUploadDrawerOpen(true);
-      onAddOcrTriggered?.();
-    }
-  }, [triggerAddOcr, onAddOcrTriggered]);
 
   const { getAllCollaborators } = useOrganizationInvitations();
   const { organization: activeOrg } = useActiveOrganization();
@@ -365,231 +438,117 @@ export default function TransactionTable({
     }
   }, [activeOrg?.id]);
 
-  // Ouvrir automatiquement la sidebar si initialTransactionId est fourni
-  useEffect(() => {
-    if (initialTransactionId && expensesProp.length > 0) {
-      const transaction = expensesProp.find(
-        (exp) => exp.id === initialTransactionId,
-      );
-      if (transaction) {
-        if (openOcr) {
-          // Ouvrir la sidebar d'édition pour voir les données OCR
-          setEditingTransaction(transaction);
-          setIsEditModalOpen(true);
-        } else {
-          // Ouvrir la sidebar de détails
-          setSelectedTransaction(transaction);
-          setIsDetailDrawerOpen(true);
-        }
-      }
-    }
-  }, [initialTransactionId, openOcr, expensesProp]);
+  // Pagination serveur : items de la page courante + total + compteurs
+  // d'onglets calculés sur toute la base
+  const {
+    items: pageItems,
+    totalCount,
+    hasNextPage,
+    tabCounts,
+    loading: pageLoading,
+    refetch: refetchPage,
+  } = useTransactionsPage({
+    tab: activeTab,
+    search: globalFilter,
+    accountId,
+    advancedFilters,
+    page: pagination.pageIndex + 1,
+    pageSize: pagination.pageSize,
+  });
 
-  const expenses = expensesProp;
-  const expensesTotalCount = expensesProp.length;
-  const expensesLoading = loadingProp;
-  const expensesError = null;
-  const refetchExpenses = refetchExpensesProp;
+  // Mapping tx→expense appliqué aux items de la page courante uniquement
+  const expenses = useMemo(
+    () => pageItems.map(mapTransactionToExpense),
+    [pageItems],
+  );
 
   const { createExpense, loading: createExpenseLoading } = useCreateExpense();
-  const { createTransaction, loading: createTransactionLoading } =
-    useCreateTransaction();
   const { updateTransaction, loading: updateTransactionLoading } =
     useUpdateTransaction();
-  const { deleteTransaction, loading: deleteTransactionLoading } =
-    useDeleteTransaction();
   const { updateExpense, loading: updateExpenseLoading } = useUpdateExpense();
   const { deleteExpense, loading: deleteExpenseLoading } = useDeleteExpense();
-  const { deleteMultipleExpenses, loading: deleteMultipleExpensesLoading } =
-    useDeleteMultipleExpenses();
-  const deleteMultipleLoading = deleteMultipleExpensesLoading;
   const { addExpenseFile, loading: addExpenseFileLoading } =
     useAddExpenseFile();
-  const { promoteTemporaryFile, promoteResult } = usePromoteTemporaryFile();
-  const pendingTransactionRef = useRef(null);
 
+  const loading = pageLoading;
+  const error = null;
+
+  // Refetch combiné après mutation (upload, édition, rapprochement...) :
+  // query paginée + données de la page (solde, comptes) via onRefresh
+  const refetchExpenses = useCallback(async () => {
+    await Promise.all([refetchPage(), onRefresh?.()]);
+  }, [refetchPage, onRefresh]);
+  const refetch = refetchExpenses;
+
+  // Lignes du tableau (page courante, triée date desc par le serveur)
+  const transactions = useMemo(() => expenses.map(mapExpenseToRow), [expenses]);
+
+  // Resynchroniser les drawers ouverts avec les données fraîches quand la
+  // liste est refetchée (rapprochement, détachement, upload) : sans cela,
+  // selectedTransaction reste figé sur le snapshot posé au clic.
   useEffect(() => {
-    if (
-      promoteResult?.success &&
-      promoteResult?.url &&
-      pendingTransactionRef.current
-    ) {
-      const transaction = pendingTransactionRef.current;
-      transaction.receiptImage = promoteResult.url;
-      pendingTransactionRef.current = null;
-
-      handleAddTransaction(transaction);
-    }
-  }, [promoteResult]);
-
-  const loading = expensesLoading;
-  const error = expensesError;
-  const totalCount = expensesTotalCount;
-
-  const refetch = useCallback(() => {
-    refetchExpenses();
-  }, [refetchExpenses]);
-
-  // Fonction utilitaire pour formater les dates de manière sécurisée
-  const safeFormatDate = (dateValue) => {
-    if (!dateValue) return formatLocalDate();
-
-    // Si c'est déjà une string au format YYYY-MM-DD
-    if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
-      return dateValue.split("T")[0];
-    }
-
-    // Essayer de parser la date
-    try {
-      const date = new Date(dateValue);
-      if (isNaN(date.getTime())) {
-        console.warn("Date invalide:", dateValue);
-        return formatLocalDate();
-      }
-      return formatLocalDate(date);
-    } catch (error) {
-      console.warn("Erreur de parsing de date:", dateValue, error);
-      return formatLocalDate();
-    }
-  };
-
-  const transactions = useMemo(() => {
-    const expenseTransactions = expenses.map((expense) => {
-      const formattedDate = safeFormatDate(expense.date);
-
-      return {
-        id: expense.id,
-        date: formattedDate,
-        type: "EXPENSE",
-        subType:
-          expense.category === "TRAVEL"
-            ? "transport"
-            : expense.category === "MEALS"
-              ? "repas"
-              : expense.category === "OFFICE_SUPPLIES"
-                ? "bureau"
-                : expense.category === "SERVICES"
-                  ? "prestation"
-                  : "autre",
-        category: expense.category,
-        amount: expense.amount,
-        currency: expense.currency || "EUR",
-        description: expense.description || expense.title,
-        paymentMethod: expense.paymentMethod,
-        vendor: expense.vendor,
-        invoiceNumber: expense.invoiceNumber,
-        documentNumber: expense.documentNumber,
-        vatAmount: expense.vatAmount,
-        vatRate: expense.vatRate,
-        status: expense.status,
-        tags: expense.tags || [],
-        attachment:
-          expense.files && expense.files.length > 0
-            ? expense.files[0].url
-            : null,
-        files: expense.files || [],
-        receiptFiles: expense.receiptFiles || [],
-        ocrMetadata: expense.ocrMetadata || null,
-        createdAt: expense.createdAt,
-        updatedAt: expense.updatedAt,
-        // Préserver la source originale (BANK, MANUAL, OCR) ou le type (BANK_TRANSACTION, MANUAL_EXPENSE)
-        source: expense.source || expense.type || "MANUAL",
-        // Indicateurs pour la vue unifiée
-        hasReceipt:
-          expense.hasReceipt ||
-          (expense.files && expense.files.length > 0) ||
-          !!expense.linkedInvoice?.id,
-        receiptRequired:
-          expense.receiptRequired !== false && !expense.linkedInvoice?.id,
-        expenseType: expense.expenseType || "ORGANIZATION",
-        assignedMember: expense.assignedMember || null,
-        // Données originales de la transaction bancaire si disponibles
-        originalTransaction: expense.originalTransaction || null,
-        // Affichage unifié : ligne issue d'une facture d'achat (sourceKind)
-        sourceKind: expense.sourceKind || null,
-        originalPurchaseInvoice: expense.originalPurchaseInvoice || null,
-        // Champs de rapprochement bancaire
-        linkedInvoiceId: expense.linkedInvoiceId || null,
-        linkedInvoice: expense.linkedInvoice || null,
-        reconciliationStatus: expense.reconciliationStatus || null,
-        reconciliationDate: expense.reconciliationDate || null,
-        // Compte PCG et métadonnées (pour affichage et suggestion dans le dialog)
-        pcgAccount: expense.pcgAccount || null,
-        metadata: expense.metadata || {},
-      };
-    });
-
-    let allTransactions = [...expenseTransactions];
-
-    if (expenseTypeFilter || assignedMemberFilter) {
-      allTransactions = allTransactions.filter((transaction) => {
-        if (expenseTypeFilter) {
-          if (transaction.expenseType !== expenseTypeFilter) {
-            return false;
-          }
-        }
-
-        if (assignedMemberFilter && expenseTypeFilter === "EXPENSE_REPORT") {
-          if (
-            !transaction.assignedMember ||
-            transaction.assignedMember.userId !== assignedMemberFilter
-          ) {
-            return false;
-          }
-        }
-
-        return true;
-      });
-    }
-
-    return allTransactions.sort((a, b) => {
-      const dateA = safeFormatDate(a.date);
-      const dateB = safeFormatDate(b.date);
-      return dateB.localeCompare(dateA);
-    });
-  }, [expenses, expenseTypeFilter, assignedMemberFilter]);
-
-  // Tab counts (computed from base transactions, before tab filter)
-  const mobileTabCounts = useMemo(() => {
-    const now = new Date();
-    const oneMonthAgo = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      now.getDate(),
-    );
-    return {
-      all: transactions.length,
-      last_month: transactions.filter((tx) => {
-        const txDate = new Date(tx.date);
-        return txDate >= oneMonthAgo && tx.amount < 0;
-      }).length,
-      missing_receipt: transactions.filter(
-        (tx) => tx.amount < 0 && !tx.hasReceipt,
-      ).length,
+    const refresh = (prev) => {
+      if (!prev) return prev;
+      const fresh = transactions.find((t) => t.id === prev.id);
+      return fresh || prev;
     };
+    setSelectedTransaction(refresh);
+    setEditingTransaction(refresh);
   }, [transactions]);
 
-  // Apply mobile tab filter
-  const tabFilteredTransactions = useMemo(() => {
-    if (mobileTab === "last_month") {
-      const now = new Date();
-      const oneMonthAgo = new Date(
-        now.getFullYear(),
-        now.getMonth() - 1,
-        now.getDate(),
-      );
-      return transactions.filter((tx) => {
-        const txDate = new Date(tx.date);
-        return txDate >= oneMonthAgo && tx.amount < 0;
-      });
+  // Deep-link ?transactionId= : ouvrir automatiquement le drawer. Le ref
+  // garantit une seule ouverture par valeur de initialTransactionId : sans
+  // lui, chaque refetch rouvrirait le drawer fermé. Si la transaction n'est
+  // pas dans la page courante, elle est chargée via GET_TRANSACTION.
+  const [fetchTransactionById] = useLazyQuery(GET_TRANSACTION);
+  const processedInitialTransactionIdRef = useRef(null);
+  useEffect(() => {
+    if (
+      !initialTransactionId ||
+      processedInitialTransactionIdRef.current === initialTransactionId
+    ) {
+      return;
     }
-    if (mobileTab === "missing_receipt") {
-      return transactions.filter((tx) => tx.amount < 0 && !tx.hasReceipt);
-    }
-    return transactions;
-  }, [transactions, mobileTab]);
 
-  const totalItems = totalCount;
+    const openTransaction = (transaction) => {
+      if (openOcr) {
+        // Ouvrir la sidebar d'édition pour voir les données OCR
+        setEditingTransaction(transaction);
+        setIsEditModalOpen(true);
+      } else {
+        // Ouvrir la sidebar de détails
+        setSelectedTransaction(transaction);
+        setIsDetailDrawerOpen(true);
+      }
+    };
+
+    const transaction = transactions.find((t) => t.id === initialTransactionId);
+    if (transaction) {
+      processedInitialTransactionIdRef.current = initialTransactionId;
+      openTransaction(transaction);
+      return;
+    }
+
+    // Attendre la fin du chargement de la page avant de conclure à l'absence
+    if (pageLoading) return;
+
+    processedInitialTransactionIdRef.current = initialTransactionId;
+    fetchTransactionById({ variables: { id: initialTransactionId } })
+      .then(({ data }) => {
+        const tx = data?.transaction;
+        if (!tx) return;
+        openTransaction(mapExpenseToRow(mapTransactionToExpense(tx)));
+      })
+      .catch((error) => {
+        console.error("Erreur lors du chargement de la transaction:", error);
+      });
+  }, [
+    initialTransactionId,
+    openOcr,
+    transactions,
+    pageLoading,
+    fetchTransactionById,
+  ]);
 
   const [sorting, setSorting] = useState([
     {
@@ -604,70 +563,6 @@ export default function TransactionTable({
       paymentMethod: false,
     },
   );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {}, 300);
-    return () => clearTimeout(timer);
-  }, [globalFilter]);
-
-  const handleDeleteRows = async () => {
-    const selectedRows = tableWithFilteredData.getSelectedRowModel().rows;
-
-    if (selectedRows.length === 0) {
-      toast.error("Aucune transaction sélectionnée");
-      return;
-    }
-
-    // Filtrer les factures (non supprimables depuis cette interface) ainsi que
-    // les factures d'achat affichées en lecture (sourceKind === PURCHASE_INVOICE)
-    const deletableRows = selectedRows.filter(
-      (row) =>
-        row.original.source !== "invoice" &&
-        row.original.sourceKind !== "PURCHASE_INVOICE",
-    );
-    const invoiceRows = selectedRows.filter(
-      (row) =>
-        row.original.source === "invoice" ||
-        row.original.sourceKind === "PURCHASE_INVOICE",
-    );
-
-    if (invoiceRows.length > 0) {
-      toast.warning(
-        `${invoiceRows.length} facture(s) ignorée(s) (non supprimables depuis cette interface)`,
-      );
-    }
-
-    if (deletableRows.length === 0) {
-      toast.error("Aucune transaction sélectionnée pour la suppression");
-      return;
-    }
-
-    try {
-      // Supprimer les transactions une par une
-      let deletedCount = 0;
-      let failedCount = 0;
-
-      for (const row of deletableRows) {
-        const result = await deleteTransaction(row.original.id);
-        if (result.success) {
-          deletedCount++;
-        } else {
-          failedCount++;
-        }
-      }
-
-      if (deletedCount > 0) {
-        tableWithFilteredData.resetRowSelection();
-        toast.success(`${deletedCount} transaction(s) supprimée(s)`);
-        await refetchExpenses();
-      }
-      if (failedCount > 0) {
-        toast.error(`${failedCount} suppression(s) échouée(s)`);
-      }
-    } catch (error) {
-      console.error("Error deleting transactions:", error);
-    }
-  };
 
   const handleRefresh = async () => {
     try {
@@ -684,14 +579,6 @@ export default function TransactionTable({
   };
 
   const handleViewTransaction = (transaction) => {
-    // Ligne issue d'une facture d'achat : ouvrir le drawer facture d'achat en place
-    if (transaction?.sourceKind === "PURCHASE_INVOICE") {
-      setSelectedPurchaseInvoice(
-        transaction.originalPurchaseInvoice || transaction,
-      );
-      setIsPIDrawerOpen(true);
-      return;
-    }
     setSelectedTransaction(transaction);
     setIsDetailDrawerOpen(true);
   };
@@ -708,137 +595,21 @@ export default function TransactionTable({
     handleEditTransaction(transaction);
   };
 
-  const handleDeleteFromDrawer = async (transaction) => {
-    setIsDetailDrawerOpen(false);
-
-    if (transaction.source === "invoice") {
-      toast.error(
-        "Les factures ne peuvent pas être supprimées depuis cette interface",
-      );
-      return;
-    }
-
-    if (transaction.sourceKind === "PURCHASE_INVOICE") {
-      toast.error(
-        "Supprimez cette facture d'achat depuis la page Factures d'achat",
-      );
-      return;
-    }
-
-    try {
-      const result = await deleteTransaction(transaction.id);
-      if (result.success) {
-        await refetchExpenses();
-      }
-    } catch (error) {
-      console.error("Error deleting transaction:", error);
-    }
-  };
-
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setEditingTransaction(null);
   };
 
-  const handleAddTransaction = async (transaction) => {
-    try {
-      let promotedReceiptUrl = transaction.receiptImage;
-
-      // Promotion du fichier temporaire si nécessaire
-      if (
-        transaction.receiptImage &&
-        transaction.receiptImage.includes("/temp/")
-      ) {
-        try {
-          const urlParts = transaction.receiptImage.split("/");
-          const tempKey = urlParts.slice(-3).join("/");
-
-          pendingTransactionRef.current = transaction;
-          await promoteTemporaryFile(tempKey);
-          return;
-        } catch (promoteError) {
-          promotedReceiptUrl = transaction.receiptImage;
-        }
+  // Refetch différé après upload (OCR) : nettoyé au démontage pour ne pas
+  // déclencher un refetch sur un composant démonté.
+  const deferredRefetchTimeoutRef = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (deferredRefetchTimeoutRef.current) {
+        clearTimeout(deferredRefetchTimeoutRef.current);
       }
-
-      transaction.receiptImage = promotedReceiptUrl;
-
-      // Déterminer le type de transaction (DEBIT pour dépense, CREDIT pour revenu)
-      const isIncome = transaction.type === "INCOME";
-      const transactionType = isIncome ? "CREDIT" : "DEBIT";
-
-      // Montant : négatif pour les dépenses, positif pour les revenus
-      const amount = isIncome
-        ? Math.abs(parseFloat(transaction.amount))
-        : -Math.abs(parseFloat(transaction.amount));
-
-      // Envoyer la sous-catégorie fine directement (le backend fait le mapping vers expenseCategory)
-      const category = transaction.category || "OTHER";
-
-      // Mapper le moyen de paiement
-      const paymentMethod = mapPaymentMethodToEnum(transaction.paymentMethod);
-
-      // Construire l'input pour createTransaction
-      const transactionInput = {
-        workspaceId,
-        amount: amount,
-        currency: "EUR",
-        description:
-          transaction.description ||
-          (isIncome ? "Revenu manuel" : "Dépense manuelle"),
-        type: transactionType,
-        date: transaction.date,
-        category: category,
-        vendor: transaction.vendor || "",
-        paymentMethod: paymentMethod,
-        notes: transaction.description || "",
-      };
-
-      const result = await createTransaction(transactionInput);
-
-      if (result.success) {
-        // Upload des justificatifs si des fichiers ont été sélectionnés
-        const filesToUpload =
-          (Array.isArray(transaction.receiptFiles) &&
-            transaction.receiptFiles) ||
-          (transaction.receiptFile ? [transaction.receiptFile] : null);
-        if (filesToUpload?.length && result.transaction?.id) {
-          try {
-            await uploadReceiptMutation({
-              variables: {
-                transactionId: result.transaction.id,
-                workspaceId,
-                files: filesToUpload,
-              },
-            });
-          } catch (uploadError) {
-            console.error("Erreur upload justificatif:", uploadError);
-            toast.error(
-              "Transaction créée mais erreur lors de l'upload du justificatif",
-            );
-          }
-        }
-
-        setIsAddTransactionDrawerOpen(false);
-        await refetchExpenses();
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'ajout de la transaction:", error);
-    }
-  };
-
-  const handleReceiptUploadSuccess = (receiptData) => {
-    setIsReceiptUploadDrawerOpen(false);
-
-    // Toujours rafraîchir les données après un upload de reçu réussi
-    refetch();
-
-    if (receiptData.action === "linked") {
-      toast.success(`Justificatif lié à la transaction`);
-    } else {
-      toast.success(`Reçu "${receiptData.fileName}" traité avec succès`);
-    }
-  };
+    };
+  }, []);
 
   // Attacher un (ou plusieurs) reçu(s) à une transaction bancaire (upload via GraphQL)
   const handleAttachReceipt = async (transaction, fileOrFiles) => {
@@ -871,12 +642,40 @@ export default function TransactionTable({
         });
       }
 
-      toast.success(
-        files.length === 1
-          ? "Justificatif ajouté avec succès"
-          : `${files.length} justificatifs ajoutés avec succès`,
+      // Pour une dépense non rapprochée, le backend crée automatiquement
+      // une facture d'achat par OCR du justificatif (en tâche de fond)
+      const rawAmount = Number(
+        transaction.originalTransaction?.amount ?? transaction.amount,
       );
+      const hasLinkedPurchaseInvoice =
+        (transaction.originalTransaction?.linkedPurchaseInvoices?.length ||
+          transaction.linkedPurchaseInvoices?.length ||
+          0) > 0;
+      const willCreatePurchaseInvoice =
+        rawAmount < 0 && !hasLinkedPurchaseInvoice;
+
+      if (willCreatePurchaseInvoice) {
+        toast.success(
+          files.length === 1
+            ? "Justificatif ajouté, création de la facture d'achat en cours (OCR)"
+            : `${files.length} justificatifs ajoutés, création des factures d'achat en cours (OCR)`,
+        );
+      } else {
+        toast.success(
+          files.length === 1
+            ? "Justificatif ajouté avec succès"
+            : `${files.length} justificatifs ajoutés avec succès`,
+        );
+      }
       refetch();
+      if (willCreatePurchaseInvoice) {
+        // L'OCR prend quelques secondes : refetch différé pour voir
+        // apparaître la facture d'achat liée
+        if (deferredRefetchTimeoutRef.current) {
+          clearTimeout(deferredRefetchTimeoutRef.current);
+        }
+        deferredRefetchTimeoutRef.current = setTimeout(() => refetch(), 15000);
+      }
     } catch (error) {
       console.error("❌ [ATTACH RECEIPT] Error:", error);
       toast.error(error.message || "Erreur lors de l'upload du justificatif");
@@ -981,17 +780,39 @@ export default function TransactionTable({
     }
   };
 
+  // Gérer le changement de tab (desktop et mobile) → tab serveur + page 1
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    resetToFirstPage();
+  };
+
+  // Export à la demande : historique complet via GET_TRANSACTIONS
+  // (indépendant de la page affichée), filtré par compte sélectionné
+  const [fetchAllTransactions] = useLazyQuery(GET_TRANSACTIONS, {
+    fetchPolicy: "network-only",
+  });
+  const fetchExportRows = useCallback(async () => {
+    const { data } = await fetchAllTransactions({
+      variables: { workspaceId, limit: 0 },
+    });
+    let txList = data?.transactions || [];
+    if (accountId) {
+      txList = txList.filter((tx) => tx.fromAccount === accountId);
+    }
+    return txList.map((tx) => mapExpenseToRow(mapTransactionToExpense(tx)));
+  }, [fetchAllTransactions, workspaceId, accountId]);
+
+  // Table en pagination manuelle : le serveur pagine, filtre et trie
   const table = useReactTable({
     data: transactions,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     enableSortingRemoval: false,
-    manualPagination: false,
-    // Lignes facture d'achat (affichage unifié) : non sélectionnables
-    enableRowSelection: (row) => row.original.sourceKind !== "PURCHASE_INVOICE",
+    manualPagination: true,
+    pageCount: Math.max(1, Math.ceil(totalCount / pagination.pageSize)),
+    enableRowSelection: true,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -1001,16 +822,12 @@ export default function TransactionTable({
       sorting,
       pagination,
       columnFilters,
-      globalFilter,
       columnVisibility,
     },
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: multiColumnFilterFn,
     meta: {
       onEdit: handleEditTransaction,
       onRefresh: refetch,
       onDownloadAttachment: handleDownloadAttachment,
-      onEditPCG: handleEditPCG,
       onOpenReconciliation: (transaction) => {
         setSelectedTransaction(transaction);
         setIsDetailDrawerOpen(true);
@@ -1019,189 +836,23 @@ export default function TransactionTable({
     },
   });
 
-  // État pour les tabs de filtre rapide
-  const [activeTab, setActiveTab] = useState(resolvedInitialTab);
-
-  // Gérer le changement de tab
-  const handleTabChange = (value) => {
-    setActiveTab(value);
-    // Reset le filtre de type - le filtrage est géré dans filteredTransactions
-    setExpenseTypeFilter(null);
-  };
-
-  // Compter les transactions par filtre
-  const transactionCounts = useMemo(() => {
-    const now = new Date();
-    const oneMonthAgo = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      now.getDate(),
+  // Scroll infini mobile : agrandit la page courante par paliers (le serveur
+  // plafonne limit à 100, au-delà la liste mobile s'arrête)
+  const mobileHasNextPage =
+    hasNextPage && pagination.pageSize < MOBILE_PAGE_SIZE_MAX;
+  const handleMobileLoadMore = useCallback(() => {
+    setPagination((prev) =>
+      prev.pageSize >= MOBILE_PAGE_SIZE_MAX
+        ? prev
+        : {
+            ...prev,
+            pageSize: Math.min(
+              prev.pageSize + MOBILE_LOAD_MORE_STEP,
+              MOBILE_PAGE_SIZE_MAX,
+            ),
+          },
     );
-
-    const counts = {
-      all: transactions.length,
-      lastMonth: 0,
-      missingReceipt: 0,
-      toReconcile: 0,
-    };
-
-    transactions.forEach((t) => {
-      // Transactions du dernier mois
-      const transactionDate = new Date(t.date);
-      if (transactionDate >= oneMonthAgo) {
-        counts.lastMonth++;
-      }
-
-      // Justificatif manquant (transactions bancaires sans justificatif)
-      const source = t.source || "MANUAL";
-      const isBankTransaction =
-        source === "BANK" || source === "BANK_TRANSACTION";
-      if (isBankTransaction && !t.hasReceipt && t.receiptRequired !== false) {
-        counts.missingReceipt++;
-      }
-
-      // À rapprocher : entrée d'argent (amount > 0), non rapprochée et SANS
-      // justificatif. hasReceipt = un justificatif (receiptFiles) OU une facture
-      // liée → dans les deux cas il n'y a plus rien à rapprocher. Doit rester
-      // identique au filtre toReconcile ci-dessous et au backend (reconcileQuery).
-      const recoStatus = t.reconciliationStatus?.toLowerCase();
-      const isNotReconciled =
-        !recoStatus || recoStatus === "unmatched" || recoStatus === "suggested";
-      if (isNotReconciled && !t.hasReceipt && t.amount > 0) {
-        counts.toReconcile++;
-      }
-    });
-
-    return counts;
-  }, [transactions]);
-
-  // Filtrer les transactions selon le tab actif et les filtres avancés
-  const filteredTransactions = useMemo(() => {
-    let result = tabFilteredTransactions;
-    const now = new Date();
-    const oneMonthAgo = new Date(
-      now.getFullYear(),
-      now.getMonth() - 1,
-      now.getDate(),
-    );
-
-    // Filtrer par tab
-    if (activeTab === "lastMonth") {
-      result = result.filter((t) => {
-        const transactionDate = new Date(t.date);
-        return transactionDate >= oneMonthAgo;
-      });
-    } else if (activeTab === "missingReceipt") {
-      result = result.filter((t) => {
-        const source = t.source || "MANUAL";
-        const isBankTransaction =
-          source === "BANK" || source === "BANK_TRANSACTION";
-        return (
-          isBankTransaction && !t.hasReceipt && t.receiptRequired !== false
-        );
-      });
-    } else if (activeTab === "toReconcile") {
-      result = result.filter((t) => {
-        const recoStatus = t.reconciliationStatus?.toLowerCase();
-        const isNotReconciled =
-          !recoStatus ||
-          recoStatus === "unmatched" ||
-          recoStatus === "suggested";
-        return isNotReconciled && !t.hasReceipt && t.amount > 0;
-      });
-    }
-
-    // Appliquer les filtres avancés
-    if (advancedFilters.length > 0) {
-      result = result.filter((transaction) => {
-        return advancedFilters.every((filter) => {
-          // Filtre par plage de dates
-          if (filter.field === "date") {
-            if (!filter.startDate && !filter.endDate) return true;
-            const transactionDate = new Date(transaction.date);
-            if (filter.startDate) {
-              const start = new Date(filter.startDate);
-              start.setHours(0, 0, 0, 0);
-              if (transactionDate < start) return false;
-            }
-            if (filter.endDate) {
-              const end = new Date(filter.endDate);
-              end.setHours(23, 59, 59, 999);
-              if (transactionDate > end) return false;
-            }
-            return true;
-          }
-
-          if (!filter.value) return true; // Ignorer les filtres sans valeur
-
-          const fieldValue = transaction[filter.field];
-          const filterValue = filter.value;
-
-          switch (filter.operator) {
-            case "includes":
-              if (typeof fieldValue === "string") {
-                return fieldValue
-                  .toLowerCase()
-                  .includes(filterValue.toLowerCase());
-              }
-              return fieldValue === filterValue;
-            case "excludes":
-              if (typeof fieldValue === "string") {
-                return !fieldValue
-                  .toLowerCase()
-                  .includes(filterValue.toLowerCase());
-              }
-              return fieldValue !== filterValue;
-            case "equals":
-              return fieldValue === filterValue;
-            default:
-              return true;
-          }
-        });
-      });
-    }
-
-    return result;
-  }, [tabFilteredTransactions, activeTab, advancedFilters]);
-
-  // Mettre à jour la table avec les transactions filtrées
-  const tableWithFilteredData = useReactTable({
-    data: filteredTransactions,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
-    enableSortingRemoval: false,
-    manualPagination: false,
-    // Lignes facture d'achat (affichage unifié) : non sélectionnables
-    enableRowSelection: (row) => row.original.sourceKind !== "PURCHASE_INVOICE",
-    onPaginationChange: setPagination,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    state: {
-      sorting,
-      pagination,
-      columnFilters,
-      globalFilter,
-      columnVisibility,
-    },
-    onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: multiColumnFilterFn,
-    meta: {
-      onEdit: handleEditTransaction,
-      onRefresh: refetch,
-      onDownloadAttachment: handleDownloadAttachment,
-      onEditPCG: handleEditPCG,
-      onOpenReconciliation: (transaction) => {
-        setSelectedTransaction(transaction);
-        setIsDetailDrawerOpen(true);
-      },
-      bankAccounts,
-    },
-  });
+  }, []);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -1219,7 +870,7 @@ export default function TransactionTable({
               variant="ghost"
               ref={inputRef}
               value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
+              onChange={(event) => handleSearchChange(event.target.value)}
               placeholder="Recherchez par description, fournisseur ou montant..."
               aria-label="Filter transactions"
             />
@@ -1228,7 +879,7 @@ export default function TransactionTable({
                 className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
                 aria-label="Clear filter"
                 onClick={() => {
-                  setGlobalFilter("");
+                  handleSearchChange("");
                   if (inputRef.current) {
                     inputRef.current.focus();
                   }
@@ -1241,7 +892,7 @@ export default function TransactionTable({
 
           {/* Colonnes visibles Button */}
           {(() => {
-            const hideableColumns = tableWithFilteredData
+            const hideableColumns = table
               .getAllColumns()
               .filter(
                 (column) =>
@@ -1266,9 +917,7 @@ export default function TransactionTable({
                   <div
                     className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
                     onClick={() =>
-                      tableWithFilteredData.toggleAllColumnsVisible(
-                        !allColumnsVisible,
-                      )
+                      table.toggleAllColumnsVisible(!allColumnsVisible)
                     }
                   >
                     <Checkbox
@@ -1367,7 +1016,8 @@ export default function TransactionTable({
                         </SelectContent>
                       </Select>
 
-                      {/* Opérateur (masqué pour les filtres date) */}
+                      {/* Opérateur (masqué pour les filtres date ; le montant
+                          ne supporte que l'égalité côté serveur) */}
                       {filter.field !== "date" && (
                         <Select
                           value={filter.operator}
@@ -1379,8 +1029,9 @@ export default function TransactionTable({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="z-[9999]">
-                            <SelectItem value="includes">inclut</SelectItem>
-                            <SelectItem value="excludes">exclut</SelectItem>
+                            {filter.field !== "amount" && (
+                              <SelectItem value="includes">inclut</SelectItem>
+                            )}
                             <SelectItem value="equals">égal à</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1537,43 +1188,6 @@ export default function TransactionTable({
             </PopoverContent>
           </Popover>
         </div>
-
-        {/* Actions à droite — bulk delete */}
-        {tableWithFilteredData.getSelectedRowModel().rows.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                disabled={deleteMultipleLoading}
-                data-mobile-delete-trigger
-              >
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Supprimer (
-                {tableWithFilteredData.getSelectedRowModel().rows.length})
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer{" "}
-                  {tableWithFilteredData.getSelectedRowModel().rows.length}{" "}
-                  transaction(s) sélectionnée(s) ? Cette action ne peut pas être
-                  annulée.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteRows}
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                >
-                  Supprimer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
       </div>
 
       {/* Tabs de filtre rapide - Desktop */}
@@ -1591,7 +1205,7 @@ export default function TransactionTable({
             >
               Toutes
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                {transactionCounts.all}
+                {tabCounts.all}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -1600,7 +1214,7 @@ export default function TransactionTable({
             >
               Régler le dernier mois
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                {transactionCounts.lastMonth}
+                {tabCounts.lastMonth}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -1608,9 +1222,9 @@ export default function TransactionTable({
               className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               À rapprocher
-              {transactionCounts.toReconcile > 0 ? (
+              {tabCounts.toReconcile > 0 ? (
                 <span className="text-[10px] leading-none bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded px-1 py-0.5">
-                  {transactionCounts.toReconcile}
+                  {tabCounts.toReconcile}
                 </span>
               ) : (
                 <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
@@ -1624,7 +1238,7 @@ export default function TransactionTable({
             >
               Justificatif manquant
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                {transactionCounts.missingReceipt}
+                {tabCounts.missingReceipt}
               </span>
             </TabsTrigger>
           </TabsList>
@@ -1637,7 +1251,7 @@ export default function TransactionTable({
         <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
           <table className="w-full table-fixed">
             <thead>
-              {tableWithFilteredData.getHeaderGroups().map((headerGroup) => (
+              {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header, index, arr) => (
                     <th
@@ -1662,7 +1276,9 @@ export default function TransactionTable({
         <div className="flex-1 overflow-auto">
           <table className="w-full table-fixed">
             <tbody>
-              {loading ? (
+              {loading && transactions.length === 0 ? (
+                // Skeleton uniquement au premier chargement : si le cache a
+                // déjà des transactions, on les affiche pendant le refetch
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="border-b">
                     <td className="p-2 pl-4 sm:pl-6">
@@ -1700,8 +1316,8 @@ export default function TransactionTable({
                     </td>
                   </tr>
                 ))
-              ) : tableWithFilteredData.getRowModel().rows?.length ? (
-                tableWithFilteredData.getRowModel().rows.map((row) => (
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
@@ -1734,10 +1350,7 @@ export default function TransactionTable({
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={tableWithFilteredData.getAllColumns().length}
-                    className="p-0"
-                  >
+                  <td colSpan={table.getAllColumns().length} className="p-0">
                     <TableEmptyState
                       icon={ChartIcon}
                       title="Aucune transaction trouvée"
@@ -1755,34 +1368,33 @@ export default function TransactionTable({
       <MobileToolbar
         inputRef={inputRef}
         globalFilter={globalFilter}
-        setGlobalFilter={setGlobalFilter}
+        setGlobalFilter={handleSearchChange}
         onFilterPress={() => setIsFiltersOpen(!isFiltersOpen)}
-        activeFilterCount={
-          (expenseTypeFilter ? 1 : 0) + (assignedMemberFilter ? 1 : 0)
-        }
-        activeTab={mobileTab}
-        onTabChange={setMobileTab}
+        activeFilterCount={advancedFilters.length}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
         isScrolled={isMobileScrolled}
-        tabCounts={mobileTabCounts}
+        tabCounts={tabCounts}
       />
 
       {/* Mobile Table */}
       <MobileTable
-        table={tableWithFilteredData}
+        table={table}
         columns={columns}
         error={error}
         loading={loading}
         onRowClick={handleViewTransaction}
         onScrollChange={setIsMobileScrolled}
-        activeTab={mobileTab}
+        activeTab={activeTab}
+        hasNextPage={mobileHasNextPage}
+        onLoadMore={handleMobileLoadMore}
       />
 
       {/* Pagination - Fixe en bas sur desktop */}
       <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
         <div className="flex-1 text-xs font-normal text-muted-foreground">
-          {tableWithFilteredData.getFilteredSelectedRowModel().rows.length} sur{" "}
-          {tableWithFilteredData.getFilteredRowModel().rows.length} ligne(s)
-          sélectionnée(s).
+          {table.getFilteredSelectedRowModel().rows.length} sur {totalCount}{" "}
+          ligne(s) sélectionnée(s).
         </div>
         <div className="flex items-center space-x-4 lg:space-x-6">
           <div className="flex items-center gap-1.5">
@@ -1790,16 +1402,15 @@ export default function TransactionTable({
               Lignes par page
             </p>
             <Select
-              value={`${tableWithFilteredData.getState().pagination.pageSize}`}
+              value={`${table.getState().pagination.pageSize}`}
               onValueChange={(value) => {
-                tableWithFilteredData.setPageSize(Number(value));
+                // Changement de taille de page → retour première page
+                setPagination({ pageIndex: 0, pageSize: Number(value) });
               }}
             >
               <SelectTrigger className="h-7 w-[70px] text-xs">
                 <SelectValue
-                  placeholder={
-                    tableWithFilteredData.getState().pagination.pageSize
-                  }
+                  placeholder={table.getState().pagination.pageSize}
                 />
               </SelectTrigger>
               <SelectContent side="top">
@@ -1812,8 +1423,8 @@ export default function TransactionTable({
             </Select>
           </div>
           <div className="flex items-center whitespace-nowrap text-xs font-normal">
-            Page {tableWithFilteredData.getState().pagination.pageIndex + 1} sur{" "}
-            {tableWithFilteredData.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} sur{" "}
+            {table.getPageCount()}
           </div>
           <Pagination>
             <PaginationContent>
@@ -1822,8 +1433,8 @@ export default function TransactionTable({
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => tableWithFilteredData.setPageIndex(0)}
-                  disabled={!tableWithFilteredData.getCanPreviousPage()}
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
                   aria-label="Go to first page"
                 >
                   <ChevronFirstIcon size={14} aria-hidden="true" />
@@ -1834,8 +1445,8 @@ export default function TransactionTable({
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => tableWithFilteredData.previousPage()}
-                  disabled={!tableWithFilteredData.getCanPreviousPage()}
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
                   aria-label="Go to previous page"
                 >
                   <ChevronLeftIcon size={14} aria-hidden="true" />
@@ -1846,8 +1457,8 @@ export default function TransactionTable({
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => tableWithFilteredData.nextPage()}
-                  disabled={!tableWithFilteredData.getCanNextPage()}
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
                   aria-label="Go to next page"
                 >
                   <ChevronRightIcon size={14} aria-hidden="true" />
@@ -1858,8 +1469,8 @@ export default function TransactionTable({
                   size="icon"
                   variant="ghost"
                   className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                  onClick={() => tableWithFilteredData.lastPage()}
-                  disabled={!tableWithFilteredData.getCanNextPage()}
+                  onClick={() => table.lastPage()}
+                  disabled={!table.getCanNextPage()}
                   aria-label="Go to last page"
                 >
                   <ChevronLastIcon size={14} aria-hidden="true" />
@@ -1870,11 +1481,11 @@ export default function TransactionTable({
         </div>
       </div>
 
-      {/* Export Dialog */}
+      {/* Export Dialog : historique complet chargé à la demande */}
       <ExportDialog
         open={isExportDialogOpen}
         onOpenChange={setIsExportDialogOpen}
-        transactions={filteredTransactions}
+        fetchTransactions={fetchExportRows}
         members={organizationMembers}
       />
 
@@ -1887,23 +1498,9 @@ export default function TransactionTable({
             open={isDetailDrawerOpen}
             onOpenChange={handleCloseDetailDrawer}
             onEdit={handleEditFromDrawer}
-            onDelete={handleDeleteFromDrawer}
             onAttachReceipt={handleAttachReceipt}
             onRefresh={refetch}
             onSubmit={handleSaveTransaction}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Drawer unifié pour création */}
-      <AnimatePresence>
-        {isAddTransactionDrawerOpen && (
-          <TransactionDetailDrawer
-            open={isAddTransactionDrawerOpen}
-            onOpenChange={setIsAddTransactionDrawerOpen}
-            onSubmit={handleAddTransaction}
-            onRefresh={refetch}
-            isCreating={true}
           />
         )}
       </AnimatePresence>
@@ -1920,40 +1517,6 @@ export default function TransactionTable({
           />
         )}
       </AnimatePresence>
-
-      {/* Drawer facture d'achat (affichage unifié) — lignes sourceKind PURCHASE_INVOICE */}
-      <PurchaseInvoiceDetailDrawer
-        open={isPIDrawerOpen}
-        onOpenChange={(open) => {
-          setIsPIDrawerOpen(open);
-          if (!open) setSelectedPurchaseInvoice(null);
-        }}
-        invoice={selectedPurchaseInvoice}
-        mode="view"
-        onSaved={() => {
-          setIsPIDrawerOpen(false);
-          setSelectedPurchaseInvoice(null);
-          refetch();
-        }}
-        onDeleted={() => {
-          setIsPIDrawerOpen(false);
-          setSelectedPurchaseInvoice(null);
-          refetch();
-        }}
-      />
-
-      <ReceiptUploadDrawer
-        open={isReceiptUploadDrawerOpen}
-        onOpenChange={setIsReceiptUploadDrawerOpen}
-        onUploadSuccess={handleReceiptUploadSuccess}
-      />
-
-      <PCGSelectDialog
-        open={isPCGDialogOpen}
-        onOpenChange={setIsPCGDialogOpen}
-        transaction={pcgTransaction}
-        onRefresh={refetchExpenses}
-      />
     </div>
   );
 }

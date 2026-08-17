@@ -1,5 +1,16 @@
 import { gql } from "@apollo/client";
 
+// Noms des queries de liste de transactions à refetcher après toute mutation
+// qui change le rapprochement (link/unlink/reconcile/unignore) : leurs
+// agrégats (tabCounts, totalCount, appartenance aux onglets) sont calculés
+// serveur sur un type non normalisable par Apollo. Constante partagée pour
+// qu'un renommage d'opération ne laisse pas un site de mutation avec un
+// refetch silencieusement cassé.
+export const TRANSACTION_LIST_REFETCH_QUERIES = [
+  "GetTransactionsPage",
+  "GetTransactions",
+];
+
 // ==================== QUERIES ====================
 
 /**
@@ -91,6 +102,7 @@ export const GET_TRANSACTIONS = gql`
       amount
       currency
       description
+      reference
       category
       expenseCategory
       pcgAccount {
@@ -121,9 +133,9 @@ export const GET_TRANSACTIONS = gql`
         uploadedAt
       }
       receiptRequired
-      # Champs de rapprochement bancaire
-      linkedInvoiceId
-      linkedInvoice {
+      # Champs de rapprochement bancaire (N↔N)
+      linkedInvoiceIds
+      linkedInvoices {
         id
         number
         status
@@ -132,10 +144,126 @@ export const GET_TRANSACTIONS = gql`
         issueDate
         dueDate
       }
+      linkedPurchaseInvoiceIds
+      linkedPurchaseInvoices {
+        id
+        invoiceNumber
+        supplierName
+        status
+        amountTTC
+        issueDate
+        files {
+          url
+          filename
+          mimetype
+        }
+      }
       reconciliationStatus
       reconciliationDate
       createdAt
       updatedAt
+    }
+  }
+`;
+
+/**
+ * Liste paginée côté serveur pour la page Transactions : items de la page
+ * demandée + total + compteurs d'onglets calculés sur toute la base.
+ * Même sélection de champs que GET_TRANSACTIONS pour les items.
+ */
+export const GET_TRANSACTIONS_PAGE = gql`
+  query GetTransactionsPage(
+    $workspaceId: ID!
+    $filters: TransactionPageFiltersInput
+    $tab: TransactionListTab
+    $page: Int
+    $limit: Int
+  ) {
+    transactionsPage(
+      workspaceId: $workspaceId
+      filters: $filters
+      tab: $tab
+      page: $page
+      limit: $limit
+    ) {
+      totalCount
+      hasNextPage
+      tabCounts {
+        all
+        lastMonth
+        toReconcile
+        missingReceipt
+      }
+      items {
+        id
+        externalId
+        provider
+        type
+        status
+        amount
+        currency
+        description
+        reference
+        category
+        expenseCategory
+        pcgAccount {
+          numero
+          intitule
+          confidence
+          isManual
+          manuallySetAt
+        }
+        fromAccount
+        toAccount
+        date
+        processedAt
+        failureReason
+        fees {
+          amount
+          currency
+          provider
+        }
+        metadata
+        receiptFiles {
+          id
+          url
+          key
+          filename
+          mimetype
+          size
+          uploadedAt
+        }
+        receiptRequired
+        # Champs de rapprochement bancaire (N↔N)
+        linkedInvoiceIds
+        linkedInvoices {
+          id
+          number
+          status
+          clientName
+          totalTTC
+          issueDate
+          dueDate
+        }
+        linkedPurchaseInvoiceIds
+        linkedPurchaseInvoices {
+          id
+          invoiceNumber
+          supplierName
+          status
+          amountTTC
+          issueDate
+          files {
+            url
+            filename
+            mimetype
+          }
+        }
+        reconciliationStatus
+        reconciliationDate
+        createdAt
+        updatedAt
+      }
     }
   }
 `;
@@ -154,6 +282,7 @@ export const GET_TRANSACTION = gql`
       amount
       currency
       description
+      reference
       category
       expenseCategory
       pcgAccount {
@@ -184,9 +313,9 @@ export const GET_TRANSACTION = gql`
         uploadedAt
       }
       receiptRequired
-      # Champs de rapprochement bancaire
-      linkedInvoiceId
-      linkedInvoice {
+      # Champs de rapprochement bancaire (N↔N)
+      linkedInvoiceIds
+      linkedInvoices {
         id
         number
         status
@@ -194,6 +323,20 @@ export const GET_TRANSACTION = gql`
         totalTTC
         issueDate
         dueDate
+      }
+      linkedPurchaseInvoiceIds
+      linkedPurchaseInvoices {
+        id
+        invoiceNumber
+        supplierName
+        status
+        amountTTC
+        issueDate
+        files {
+          url
+          filename
+          mimetype
+        }
       }
       reconciliationStatus
       reconciliationDate
@@ -233,6 +376,7 @@ export const GET_TRANSACTION_HISTORY = gql`
       amount
       currency
       description
+      reference
       category
       expenseCategory
       fromAccount
@@ -410,32 +554,6 @@ export const GET_PCG_ACCOUNTS = gql`
     pcgAccounts {
       numero
       intitule
-    }
-  }
-`;
-
-/**
- * Mettre à jour le compte PCG d'une transaction
- */
-export const UPDATE_TRANSACTION_PCG = gql`
-  mutation UpdateTransactionPCG(
-    $transactionId: ID!
-    $pcgNumero: String!
-    $workspaceId: ID!
-  ) {
-    updateTransactionPCG(
-      transactionId: $transactionId
-      pcgNumero: $pcgNumero
-      workspaceId: $workspaceId
-    ) {
-      id
-      pcgAccount {
-        numero
-        intitule
-        confidence
-        isManual
-        manuallySetAt
-      }
     }
   }
 `;

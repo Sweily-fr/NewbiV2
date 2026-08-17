@@ -1,20 +1,16 @@
 "use client";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import TransactionTable from "./components/table";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSearchParams } from "next/navigation";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
-import { usePurchaseInvoices } from "@/src/hooks/usePurchaseInvoices";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
-  Plus,
   Settings,
   Eye,
   EyeOff,
-  Edit3,
-  Upload,
   Building2,
   Landmark,
   ChevronsUpDown,
@@ -24,19 +20,12 @@ import {
   FileText,
   Repeat2,
 } from "lucide-react";
-import {
-  ExportIcon as Download,
-  MoneyReciveIcon as MoneyRecive,
-  Edit2Icon,
-  ImportIcon,
-} from "@/src/components/icons";
-import * as XLSX from "xlsx";
+import { ExportIcon as Download } from "@/src/components/icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -54,303 +43,110 @@ import {
   CommandList,
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
-import { getTransactionCategory } from "@/lib/bank-categories-config";
-
-// Mapping des noms de catégories (bank-categories-config) vers les clés (category-icons-config)
-const categoryNameToKey = {
-  // Alimentation
-  Alimentation: "MEALS",
-  Restaurants: "MEALS",
-  Courses: "MEALS",
-
-  // Transport
-  Transport: "TRAVEL",
-  Carburant: "TRAVEL",
-  "Transports en commun": "TRAVEL",
-  "Taxi/VTC": "TRAVEL",
-  Parking: "TRAVEL",
-
-  // Logement
-  Logement: "ACCOMMODATION",
-  Loyer: "RENT",
-  Charges: "UTILITIES",
-  "Assurance habitation": "INSURANCE",
-
-  // Loisirs
-  Loisirs: "OTHER",
-  Sorties: "OTHER",
-  Voyages: "TRAVEL",
-  Sport: "OTHER",
-
-  // Santé
-  Santé: "SERVICES",
-  Médecin: "SERVICES",
-  Pharmacie: "SERVICES",
-  Mutuelle: "INSURANCE",
-
-  // Shopping
-  Shopping: "OFFICE_SUPPLIES",
-  Vêtements: "OTHER",
-  "High-tech": "HARDWARE",
-  Maison: "OFFICE_SUPPLIES",
-
-  // Services
-  Services: "SERVICES",
-  "Téléphone/Internet": "SUBSCRIPTIONS",
-  Abonnements: "SUBSCRIPTIONS",
-  Banque: "SERVICES",
-
-  // Impôts
-  "Impôts & Taxes": "TAXES",
-  "Impôt sur le revenu": "TAXES",
-  "Taxe foncière": "TAXES",
-
-  // Éducation
-  Éducation: "TRAINING",
-  Formation: "TRAINING",
-  Livres: "TRAINING",
-
-  // Revenus (pour les transactions positives)
-  Salaire: "OTHER",
-  Prime: "OTHER",
-  Remboursement: "OTHER",
-  "Revenus professionnels": "SERVICES",
-  Facturation: "SERVICES",
-  Honoraires: "SERVICES",
-  "Aides & Allocations": "OTHER",
-  CAF: "OTHER",
-  "Pôle Emploi": "OTHER",
-  Investissements: "OTHER",
-  Dividendes: "OTHER",
-  Intérêts: "OTHER",
-  "Virements reçus": "OTHER",
-  "Virement interne": "OTHER",
-  "Autre revenu": "OTHER",
-
-  // Autre
-  Autre: "OTHER",
-  "Non catégorisé": "OTHER",
-};
-
-// Clés de catégories valides (hors "OTHER")
-const SPECIFIC_CATEGORY_KEYS = [
-  "OFFICE_SUPPLIES",
-  "TRAVEL",
-  "MEALS",
-  "ACCOMMODATION",
-  "SOFTWARE",
-  "HARDWARE",
-  "SERVICES",
-  "MARKETING",
-  "TAXES",
-  "RENT",
-  "UTILITIES",
-  "SALARIES",
-  "INSURANCE",
-  "MAINTENANCE",
-  "TRAINING",
-  "SUBSCRIPTIONS",
-];
-
-// Fonction pour obtenir la catégorie compatible avec category-icons-config
-// Supporte les catégories larges API (TRAVEL) ET les sous-catégories fines (parking, carburant, etc.)
-const getSmartCategory = (transaction) => {
-  // Si la catégorie est une valeur spécifique (pas "OTHER"/"other"/null)
-  // getCategoryConfig supporte les deux formats (large et fine)
-  if (
-    transaction.category &&
-    transaction.category !== "OTHER" &&
-    transaction.category !== "other"
-  ) {
-    return transaction.category;
-  }
-
-  // Fallback: utiliser expenseCategory si spécifique
-  if (
-    transaction.expenseCategory &&
-    SPECIFIC_CATEGORY_KEYS.includes(transaction.expenseCategory)
-  ) {
-    return transaction.expenseCategory;
-  }
-  if (
-    transaction.metadata?.bridgeCategoryMapped &&
-    SPECIFIC_CATEGORY_KEYS.includes(transaction.metadata.bridgeCategoryMapped)
-  ) {
-    return transaction.metadata.bridgeCategoryMapped;
-  }
-
-  // Si category est "OTHER" ou null, utiliser l'analyse intelligente basée sur la description
-  const categoryInfo = getTransactionCategory(transaction);
-  const categoryName = categoryInfo?.name || "Autre";
-  return categoryNameToKey[categoryName] || "OTHER";
-};
+import { useLazyQuery } from "@apollo/client";
+import { GET_TRANSACTIONS } from "@/src/graphql/queries/banking";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { toast } from "@/src/components/ui/sonner";
+import { mapTransactionToExpense } from "./components/transactions/utils/mapTransactionToExpense";
+import {
+  TransactionsPageSkeleton,
+  TransactionTableSkeleton,
+} from "./components/transaction-page-skeleton";
 
 function GestionDepensesContent() {
   const searchParams = useSearchParams();
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
-  const [triggerAddManual, setTriggerAddManual] = useState(false);
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const [triggerAddOcr, setTriggerAddOcr] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
-  // Récupération des transactions (bancaires + manuelles) depuis la collection transactions
+  const { workspaceId } = useRequiredWorkspace();
+
+  // Comptes bancaires + solde (summary backend) : les transactions elles-mêmes
+  // sont paginées côté serveur dans TransactionTable (useTransactionsPage).
   const {
-    transactions,
     bankBalance,
     bankAccounts,
     isLoading: bankLoading,
     refreshData,
-  } = useDashboardData();
+  } = useDashboardData({ skipTransactions: true, skipInvoices: true });
 
-  // Factures d'achat non rapprochées — affichées dans la liste des transactions
-  // (affichage unifié). Une facture déjà rapprochée à une transaction
-  // (linkedTransactionIds non vide) est déjà représentée par cette transaction :
-  // on ne l'ajoute donc pas pour éviter le double comptage.
-  const { invoices: purchaseInvoices, refetch: refetchPurchaseInvoices } =
-    usePurchaseInvoices({ limit: 200 });
+  // Compte sélectionné (le sélecteur stocke account.id)
+  const selectedAccount = useMemo(() => {
+    if (selectedAccountId === "all") return null;
+    return (
+      (bankAccounts || []).find(
+        (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
+      ) || null
+    );
+  }, [selectedAccountId, bankAccounts]);
+
+  // Filtre serveur par compte : externalId (même valeur que tx.fromAccount)
+  const accountFilterId =
+    selectedAccountId === "all"
+      ? null
+      : selectedAccount?.externalId || selectedAccountId;
 
   // Solde affiché selon le compte sélectionné
   const displayedBalance = useMemo(() => {
     if (selectedAccountId === "all") return bankBalance || 0;
-    const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
-    );
-    return account?.balance?.current ?? 0;
-  }, [selectedAccountId, bankAccounts, bankBalance]);
+    return selectedAccount?.balance?.current ?? 0;
+  }, [selectedAccountId, selectedAccount, bankBalance]);
 
   // Label du compte sélectionné
   const selectedAccountLabel = useMemo(() => {
-    if (selectedAccountId === "all") return "Tous les comptes";
-    const account = (bankAccounts || []).find(
-      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
-    );
-    if (!account) return "Tous les comptes";
+    if (!selectedAccount) return "Tous les comptes";
     const name =
-      account.name || account.institutionName || account.bankName || "Compte";
-    const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+      selectedAccount.name ||
+      selectedAccount.institutionName ||
+      selectedAccount.bankName ||
+      "Compte";
+    const lastIban = selectedAccount.iban
+      ? ` ···${selectedAccount.iban.slice(-4)}`
+      : "";
     return `${name}${lastIban}`;
-  }, [selectedAccountId, bankAccounts]);
-
-  // Transformer les transactions pour le format attendu par le tableau (mémorisé)
-  const expenses = useMemo(() => {
-    let txList = transactions || [];
-
-    // Filtrer par compte bancaire si un compte est sélectionné
-    if (selectedAccountId !== "all") {
-      const account = (bankAccounts || []).find(
-        (a) => a.id === selectedAccountId || a.externalId === selectedAccountId,
-      );
-      if (account) {
-        txList = txList.filter(
-          (tx) =>
-            tx.fromAccount === account.externalId ||
-            tx.fromAccount === account.id,
-        );
-      }
-    }
-
-    const txRows = txList.map((tx) => ({
-      id: tx.id,
-      type: tx.amount > 0 ? "INCOME" : "BANK_TRANSACTION",
-      source: tx.provider === "manual" ? "MANUAL" : "BANK",
-      title: tx.description,
-      description: tx.description,
-      amount: tx.amount,
-      currency: tx.currency,
-      date: tx.processedAt || tx.date || tx.createdAt,
-      category: getSmartCategory(tx),
-      vendor: tx.metadata?.vendor || null,
-      hasReceipt:
-        (Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) ||
-        !!tx.linkedInvoice?.id,
-      receiptFiles: tx.receiptFiles || [],
-      receiptRequired:
-        tx.amount < 0 &&
-        !(Array.isArray(tx.receiptFiles) && tx.receiptFiles.length > 0) &&
-        !tx.linkedInvoice?.id,
-      status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-      paymentMethod:
-        tx.metadata?.paymentMethod ||
-        (tx.type === "debit" ? "CARD" : "BANK_TRANSFER"),
-      bankName: tx.metadata?.bankName || null,
-      provider: tx.provider,
-      originalTransaction: {
-        id: tx.id,
-        externalId: tx.externalId,
-        provider: tx.provider,
-        fromAccount: tx.fromAccount,
-      },
-      linkedInvoiceId: tx.linkedInvoiceId || null,
-      linkedInvoice: tx.linkedInvoice || null,
-      reconciliationStatus: tx.reconciliationStatus || null,
-      reconciliationDate: tx.reconciliationDate || null,
-      pcgAccount: tx.pcgAccount || null,
-      metadata: tx.metadata || {},
-      createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt,
-    }));
-
-    // Affichage unifié : ajouter les factures d'achat non rapprochées comme
-    // lignes "dépense" virtuelles (sourceKind = PURCHASE_INVOICE). On les
-    // exclut quand un compte précis est sélectionné (elles n'ont pas de compte
-    // bancaire) et quand elles sont déjà liées à une transaction.
-    const piRows =
-      selectedAccountId === "all"
-        ? (purchaseInvoices || [])
-            .filter(
-              (pi) =>
-                !pi.linkedTransactionIds ||
-                pi.linkedTransactionIds.length === 0,
-            )
-            .map((pi) => ({
-              id: `pi-${pi.id}`,
-              type: "BANK_TRANSACTION",
-              source: "PURCHASE_INVOICE",
-              sourceKind: "PURCHASE_INVOICE",
-              title: pi.supplierName || "Facture d'achat",
-              description: pi.invoiceNumber
-                ? `${pi.supplierName || "Facture d'achat"} · ${pi.invoiceNumber}`
-                : pi.supplierName || "Facture d'achat",
-              amount: -Math.abs(pi.amountTTC || 0),
-              currency: pi.currency || "EUR",
-              date: pi.issueDate || pi.createdAt,
-              category: pi.category || "OTHER",
-              vendor: pi.supplierName || null,
-              hasReceipt: Array.isArray(pi.files) && pi.files.length > 0,
-              receiptFiles: [],
-              files: pi.files || [],
-              receiptRequired: false,
-              status: pi.status === "PAID" ? "PAID" : "PENDING",
-              paymentMethod: pi.paymentMethod || null,
-              provider: "purchase_invoice",
-              originalPurchaseInvoice: pi,
-              pcgAccount: null,
-              metadata: {},
-              createdAt: pi.createdAt,
-              updatedAt: pi.updatedAt,
-            }))
-        : [];
-
-    return [...txRows, ...piRows];
-  }, [transactions, selectedAccountId, bankAccounts, purchaseInvoices]);
+  }, [selectedAccount]);
 
   const loading = bankLoading;
-  const error = null;
-  const refetchExpenses = useMemo(
-    () => async () => {
-      await Promise.all([refreshData?.(), refetchPurchaseInvoices?.()]);
-    },
-    [refreshData, refetchPurchaseInvoices],
-  );
+
+  // Export : fetch à la demande de l'historique complet (indépendant de la
+  // page affichée), puis mapping vers le format "expense".
+  const [fetchAllTransactions] = useLazyQuery(GET_TRANSACTIONS, {
+    fetchPolicy: "network-only",
+  });
+
+  const loadAllExpenses = useCallback(async () => {
+    const { data } = await fetchAllTransactions({
+      variables: { workspaceId, limit: 0 },
+    });
+    let txList = data?.transactions || [];
+    if (selectedAccount) {
+      txList = txList.filter(
+        (tx) =>
+          tx.fromAccount === selectedAccount.externalId ||
+          tx.fromAccount === selectedAccount.id,
+      );
+    }
+    return txList.map(mapTransactionToExpense);
+  }, [fetchAllTransactions, workspaceId, selectedAccount]);
 
   // Export Excel
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    // xlsx (~800 KB) chargé au clic uniquement
+    const XLSX = await import("xlsx");
+    let expenses;
+    try {
+      expenses = await loadAllExpenses();
+    } catch (error) {
+      console.error("Erreur lors de l'export des transactions:", error);
+      toast.error("Erreur lors de l'export des transactions");
+      return;
+    }
     const data = expenses.map((t) => ({
       Date: t.date
         ? typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/)
@@ -383,7 +179,15 @@ function GestionDepensesContent() {
   };
 
   // Export CSV
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
+    let expenses;
+    try {
+      expenses = await loadAllExpenses();
+    } catch (error) {
+      console.error("Erreur lors de l'export des transactions:", error);
+      toast.error("Erreur lors de l'export des transactions");
+      return;
+    }
     const data = expenses.map((t) => ({
       Date: t.date
         ? typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/)
@@ -431,39 +235,6 @@ function GestionDepensesContent() {
       maximumFractionDigits: 2,
     }).format(amount);
   };
-
-  // Calculer les statistiques des transactions
-  const transactionStats = useMemo(() => {
-    if (!expenses || expenses.length === 0) {
-      return {
-        totalExpenses: 0,
-        totalIncome: 0,
-        pendingCount: 0,
-      };
-    }
-
-    let totalExpenses = 0;
-    let totalIncome = 0;
-    let pendingCount = 0;
-
-    expenses.forEach((expense) => {
-      const amount = expense.amount || 0;
-      if (expense.type === "INCOME" || amount > 0) {
-        totalIncome += Math.abs(amount);
-      } else {
-        totalExpenses += Math.abs(amount);
-      }
-      if (expense.status === "PENDING" || expense.status === "DRAFT") {
-        pendingCount++;
-      }
-    });
-
-    return {
-      totalExpenses,
-      totalIncome,
-      pendingCount,
-    };
-  }, [expenses]);
 
   return (
     <>
@@ -622,61 +393,18 @@ function GestionDepensesContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider> */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="primary"
-                  className="self-start cursor-pointer"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <MoneyRecive className="w-3.5 h-3.5" aria-hidden="true" />
-                  Nouvelle transaction
-                  <ChevronDown
-                    size={12}
-                    className="ml-0.5 opacity-70"
-                    aria-hidden="true"
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="[--radius:0.625rem]">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                    Créer une transaction
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={() => setTriggerAddManual(true)}
-                    className="rounded-[0.5rem]"
-                  >
-                    <Edit2Icon className="w-4 h-4 text-sidebar-foreground" />
-                    Saisie manuelle
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setTriggerAddOcr(true)}
-                    className="rounded-[0.5rem]"
-                  >
-                    <ImportIcon className="w-4 h-4 text-sidebar-foreground" />
-                    Scanner un reçu (OCR)
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table — les transactions proviennent uniquement du flux bancaire
+            Bridge : plus de création manuelle/OCR. */}
         <Suspense fallback={<TransactionTableSkeleton />}>
           <TransactionTable
-            expenses={expenses}
-            loading={loading}
-            refetchExpenses={refetchExpenses}
+            accountId={accountFilterId}
+            onRefresh={refreshData}
             initialTransactionId={searchParams.get("transactionId")}
             openOcr={searchParams.get("openOcr") === "true"}
             initialTab={searchParams.get("filter")}
-            triggerAddManual={triggerAddManual}
-            onAddManualTriggered={() => setTriggerAddManual(false)}
-            triggerAddOcr={triggerAddOcr}
-            onAddOcrTriggered={() => setTriggerAddOcr(false)}
             bankAccounts={bankAccounts}
           />
         </Suspense>
@@ -806,47 +534,18 @@ function GestionDepensesContent() {
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
-                    disabled={isReadOnly}
-                    title={readOnlyTooltip}
-                  >
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="[--radius:1rem]">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                      Créer une transaction
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => setTriggerAddManual(true)}>
-                      <Edit3 size={16} />
-                      Saisie manuelle
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTriggerAddOcr(true)}>
-                      <Upload size={16} />
-                      Scanner un reçu (OCR)
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
           </div>
         </div>
 
         {/* Table */}
         <Suspense fallback={<TransactionTableSkeleton />}>
           <TransactionTable
-            expenses={expenses}
-            loading={loading}
-            refetchExpenses={refetchExpenses}
+            accountId={accountFilterId}
+            onRefresh={refreshData}
             initialTransactionId={searchParams.get("transactionId")}
             openOcr={searchParams.get("openOcr") === "true"}
             initialTab={searchParams.get("filter")}
+            bankAccounts={bankAccounts}
           />
         </Suspense>
       </div>
@@ -857,65 +556,11 @@ function GestionDepensesContent() {
 export default function GestionDepenses() {
   // Page transactions - accessible en Pro
   return (
-    <ProRouteGuard pageName="Transactions">
+    <ProRouteGuard
+      pageName="Transactions"
+      fallback={<TransactionsPageSkeleton />}
+    >
       <GestionDepensesContent />
     </ProRouteGuard>
-  );
-}
-
-function TransactionTableSkeleton() {
-  return (
-    <>
-      {/* Desktop Skeleton */}
-      <div className="hidden md:block space-y-4 p-4 sm:p-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-[300px]" />
-          <div className="flex gap-2">
-            <Skeleton className="h-10 w-[100px]" />
-            <Skeleton className="h-10 w-[100px]" />
-          </div>
-        </div>
-        <div className="rounded-md border">
-          <div className="p-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center space-x-4 py-4">
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 w-[150px]" />
-                <Skeleton className="h-4 w-[200px]" />
-                <Skeleton className="h-4 w-[100px]" />
-                <Skeleton className="h-4 w-[80px]" />
-                <Skeleton className="h-4 w-[120px]" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Skeleton */}
-      <div className="md:hidden">
-        {/* Toolbar */}
-        <div className="px-4 py-3">
-          <Skeleton className="h-10 w-full" />
-        </div>
-
-        {/* Table rows */}
-        <div className="overflow-x-auto">
-          <div className="min-w-max">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="border-b border-gray-50 px-4 py-3">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-4 w-4" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                  <Skeleton className="h-6 w-16" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
   );
 }

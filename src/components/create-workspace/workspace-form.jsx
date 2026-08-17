@@ -359,7 +359,7 @@ export function WorkspaceForm({
               Logo de l&apos;entreprise
             </p>
             <p className="text-[13px] text-muted-foreground mt-1 leading-snug">
-              PNG, JPG ou GIF. 5 Mo max.
+              PNG, JPG, WebP ou SVG. 5 Mo max.
               <br />
               Taille recommandée : 400x400px.
             </p>
@@ -367,7 +367,7 @@ export function WorkspaceForm({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/gif"
+            accept="image/jpeg,image/png,image/webp,image/svg+xml,image/heic,image/heif"
             onChange={handleFileSelect}
             className="hidden"
           />

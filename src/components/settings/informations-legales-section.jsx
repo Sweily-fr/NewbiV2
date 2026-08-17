@@ -8,7 +8,9 @@ import { Switch } from "@/src/components/ui/switch";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
@@ -37,21 +39,68 @@ import {
 import { useFormContext } from "react-hook-form";
 import { Callout } from "@/src/components/ui/callout";
 
-const LEGAL_FORMS = [
-  { value: "SARL", label: "SARL - Société à Responsabilité Limitée" },
-  { value: "SAS", label: "SAS - Société par Actions Simplifiée" },
+const LEGAL_FORM_GROUPS = [
   {
-    value: "SASU",
-    label: "SASU - Société par Actions Simplifiée Unipersonnelle",
+    label: "Sociétés commerciales",
+    forms: [
+      { value: "SARL", label: "SARL - Société à responsabilité limitée" },
+      {
+        value: "EURL",
+        label: "EURL - Entreprise unipersonnelle à responsabilité limitée",
+      },
+      { value: "SAS", label: "SAS - Société par actions simplifiée" },
+      {
+        value: "SASU",
+        label: "SASU - Société par actions simplifiée unipersonnelle",
+      },
+      { value: "SA", label: "SA - Société anonyme" },
+      { value: "SCA", label: "SCA - Société en commandite par actions" },
+      { value: "SNC", label: "SNC - Société en nom collectif" },
+      { value: "SCS", label: "SCS - Société en commandite simple" },
+    ],
   },
   {
-    value: "EURL",
-    label: "EURL - Entreprise Unipersonnelle à Responsabilité Limitée",
+    label: "Sociétés d'exercice libéral",
+    forms: [
+      {
+        value: "SELARL",
+        label: "SELARL - Société d'exercice libéral à responsabilité limitée",
+      },
+      {
+        value: "SELAS",
+        label: "SELAS - Société d'exercice libéral par actions simplifiée",
+      },
+      {
+        value: "SELAFA",
+        label: "SELAFA - Société d'exercice libéral à forme anonyme",
+      },
+      {
+        value: "SELCA",
+        label: "SELCA - Société d'exercice libéral en commandite par actions",
+      },
+    ],
   },
-  { value: "SA", label: "SA - Société Anonyme" },
-  { value: "SNC", label: "SNC - Société en Nom Collectif" },
-  { value: "Auto-entrepreneur", label: "Auto-entrepreneur / Micro-entreprise" },
-  { value: "EI", label: "EI - Entreprise Individuelle" },
+  {
+    label: "Sociétés civiles",
+    forms: [
+      { value: "SCI", label: "SCI - Société civile immobilière" },
+      { value: "SCM", label: "SCM - Société civile de moyens" },
+      { value: "SCP", label: "SCP - Société civile professionnelle" },
+    ],
+  },
+  {
+    label: "Entreprise individuelle",
+    forms: [
+      {
+        value: "EI",
+        label: "EI - Entreprise individuelle (auto-entrepreneur)",
+      },
+    ],
+  },
+  {
+    label: "Associations",
+    forms: [{ value: "Association", label: "Association déclarée" }],
+  },
 ];
 
 const ALL_TAX_REGIMES = [
@@ -65,7 +114,7 @@ const ALL_TAX_REGIMES = [
 // Filtrage des régimes fiscaux selon la forme juridique
 // - Auto-entrepreneur : uniquement micro (micro-entreprise, micro-BIC, micro-BNC)
 // - EI / EURL : tous les régimes (micro possible sous conditions + réel)
-// - Sociétés (SARL, SAS, SASU, SA, SNC) : réel uniquement (IS, pas de micro)
+// - Sociétés (commerciales, d'exercice libéral, civiles) : réel uniquement (pas de micro)
 function getAvailableTaxRegimes(legalForm) {
   const microOnly = ["micro-entreprise", "micro-bic", "micro-bnc"];
   const reelOnly = ["reel-normal", "reel-simplifie"];
@@ -80,7 +129,17 @@ function getAvailableTaxRegimes(legalForm) {
     case "SAS":
     case "SASU":
     case "SA":
+    case "SCA":
     case "SNC":
+    case "SCS":
+    case "SELARL":
+    case "SELAS":
+    case "SELAFA":
+    case "SELCA":
+    case "SCI":
+    case "SCM":
+    case "SCP":
+    case "Association":
       return ALL_TAX_REGIMES.filter((r) => reelOnly.includes(r.value));
     default:
       return ALL_TAX_REGIMES;
@@ -93,6 +152,7 @@ const ACTIVITY_CATEGORIES = [
   { value: "liberale", label: "Profession libérale" },
   { value: "agricole", label: "Activité agricole" },
   { value: "industrielle", label: "Activité industrielle" },
+  { value: "mixte", label: "Activité mixte" },
 ];
 
 const VAT_REGIMES = [
@@ -106,8 +166,8 @@ const VAT_FREQUENCIES = [
 ];
 
 const VAT_MODES = [
-  { value: "debits", label: "Débits" },
-  { value: "encaissements", label: "Encaissements" },
+  { value: "debits", label: "Sur les débits" },
+  { value: "encaissements", label: "Sur les encaissements" },
 ];
 
 const RequiredLabel = ({ htmlFor, children, isRequired, tooltip }) => (
@@ -158,8 +218,7 @@ export function InformationsLegalesSection({
   const watchedValues = watch();
 
   const isVatSubject = watchedValues.legal?.isVatSubject || false;
-  const hasCommercialActivity =
-    watchedValues.legal?.hasCommercialActivity || false;
+  const isVatFranchise = watchedValues.legal?.vatFranchise || false;
   const selectedLegalForm = watchedValues.legal?.legalForm || "";
   const selectedRegime = watchedValues.legal?.regime || "";
   const selectedCategory = watchedValues.legal?.category || "";
@@ -169,10 +228,14 @@ export function InformationsLegalesSection({
 
   const handleVatSubjectChange = (checked) => {
     setValue("legal.isVatSubject", checked, { shouldDirty: true });
+    // Assujetti à la TVA et franchise en base sont mutuellement exclusifs
+    if (checked) {
+      setValue("legal.vatFranchise", false, { shouldDirty: true });
+    }
   };
 
-  const handleCommercialActivityChange = (checked) => {
-    setValue("legal.hasCommercialActivity", checked, { shouldDirty: true });
+  const handleVatFranchiseChange = (checked) => {
+    setValue("legal.vatFranchise", checked, { shouldDirty: true });
   };
 
   const availableTaxRegimes = getAvailableTaxRegimes(selectedLegalForm);
@@ -190,7 +253,11 @@ export function InformationsLegalesSection({
   };
 
   const handleRegimeChange = (value) => {
-    setValue("legal.regime", value, { shouldDirty: true });
+    // "none" = sentinelle pour vider le champ (un Select Radix ne peut pas
+    // avoir d'item à valeur vide)
+    setValue("legal.regime", value === "none" ? "" : value, {
+      shouldDirty: true,
+    });
   };
 
   const handleCategoryChange = (value) => {
@@ -219,12 +286,12 @@ export function InformationsLegalesSection({
   const requiredFields = getRequiredFields(
     selectedLegalForm,
     isVatSubject,
-    hasCommercialActivity,
+    selectedCategory,
   );
   const visibleFields = getVisibleFields(
     selectedLegalForm,
     isVatSubject,
-    hasCommercialActivity,
+    selectedCategory,
   );
 
   return (
@@ -250,28 +317,6 @@ export function InformationsLegalesSection({
           </div>
         )}
 
-        {/* Switch activité commerciale - visible seulement pour EI et Auto-entrepreneur */}
-        <div className="space-y-6 mt-4 md:mt-12">
-          {visibleFields.commercialActivityCheckbox && (
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-gray-600 mb-1">
-                  Exercez-vous une activité commerciale ?
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Cette information détermine si le numéro RCS est requis pour
-                  votre forme juridique.
-                </p>
-              </div>
-              <Switch
-                checked={hasCommercialActivity}
-                onCheckedChange={handleCommercialActivityChange}
-                className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
-              />
-            </div>
-          )}
-        </div>
-
         {/* Formulaire des informations légales */}
         <div className="space-y-6 mt-8">
           {/* Forme juridique */}
@@ -287,11 +332,21 @@ export function InformationsLegalesSection({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez la forme juridique" />
               </SelectTrigger>
-              <SelectContent>
-                {LEGAL_FORMS.map((form) => (
-                  <SelectItem key={form.value} value={form.value}>
-                    {form.label}
-                  </SelectItem>
+              {/* Liste longue : plafonnée avec marge en bas de viewport pour ne
+                  jamais coller au bord sur petit écran (scroll interne) */}
+              <SelectContent
+                collisionPadding={{ top: 16, bottom: 32 }}
+                className="max-h-[min(420px,var(--radix-select-content-available-height))]"
+              >
+                {LEGAL_FORM_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.forms.map((form) => (
+                      <SelectItem key={form.value} value={form.value}>
+                        {form.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
@@ -421,30 +476,32 @@ export function InformationsLegalesSection({
               </div>
             )}
 
-            <div className="flex flex-col gap-1">
-              <RequiredLabel
-                htmlFor="category"
-                isRequired={requiredFields.activityCategory}
-              >
-                Catégorie d'activité
-              </RequiredLabel>
-              <Select
-                value={selectedCategory}
-                onValueChange={handleCategoryChange}
-                disabled={!canManageOrgSettings}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionnez la catégorie d'activité" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ACTIVITY_CATEGORIES.map((category) => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {visibleFields.activityCategory && (
+              <div className="flex flex-col gap-1">
+                <RequiredLabel
+                  htmlFor="category"
+                  isRequired={requiredFields.activityCategory}
+                >
+                  Catégorie d'activité
+                </RequiredLabel>
+                <Select
+                  value={selectedCategory}
+                  onValueChange={handleCategoryChange}
+                  disabled={!canManageOrgSettings}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Sélectionnez la catégorie d'activité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACTIVITY_CATEGORIES.map((category) => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* ══════════════════════════════════════════ */}
@@ -470,6 +527,9 @@ export function InformationsLegalesSection({
                     <SelectValue placeholder="Sélectionnez le régime fiscal" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none" className="text-muted-foreground">
+                      Aucun
+                    </SelectItem>
                     {availableTaxRegimes.map((regime) => (
                       <SelectItem key={regime.value} value={regime.value}>
                         {regime.label}
@@ -500,6 +560,7 @@ export function InformationsLegalesSection({
                 <Switch
                   checked={isVatSubject}
                   onCheckedChange={handleVatSubjectChange}
+                  disabled={!canManageOrgSettings}
                   className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
                 />
               </div>
@@ -562,10 +623,10 @@ export function InformationsLegalesSection({
                     </div>
                   )}
 
-                  {/* Mode de TVA */}
+                  {/* Régime de la TVA */}
                   <div className="flex flex-col gap-1">
                     <RequiredLabel htmlFor="vatMode" isRequired={false}>
-                      Mode de TVA
+                      Régime de la TVA
                     </RequiredLabel>
                     <Select
                       value={selectedVatMode}
@@ -573,7 +634,7 @@ export function InformationsLegalesSection({
                       disabled={!canManageOrgSettings}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sélectionnez le mode de TVA" />
+                        <SelectValue placeholder="Sélectionnez le régime de la TVA" />
                       </SelectTrigger>
                       <SelectContent>
                         {VAT_MODES.map((mode) => (
@@ -625,10 +686,21 @@ export function InformationsLegalesSection({
                   )}
                 </div>
               ) : (
-                <div className="rounded-md bg-gray-50 dark:bg-gray-900 px-4 py-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Franchise en base de TVA
-                  </p>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-gray-600 mb-1">
+                      Êtes-vous en franchise en base de TVA ?
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      TVA non applicable, article 293 B du CGI.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isVatFranchise}
+                    onCheckedChange={handleVatFranchiseChange}
+                    disabled={!canManageOrgSettings}
+                    className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
+                  />
                 </div>
               )}
             </div>

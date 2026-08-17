@@ -63,7 +63,10 @@ import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Separator } from "@/src/components/ui/separator";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import {
+  DocumentsTreeSkeleton,
+  DocumentsListSkeleton,
+} from "./components/documents-page-skeleton";
 import { PreviewImage } from "@/src/components/ui/preview-image";
 import {
   Dialog,
@@ -1964,11 +1967,7 @@ export default function DocumentsPartagesPage() {
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {foldersInitialLoading || allDocsInitialLoading ? (
-                    <div className="space-y-2 p-2">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Skeleton key={i} className="h-7 w-full" />
-                      ))}
-                    </div>
+                    <DocumentsTreeSkeleton />
                   ) : (
                     <div className="pt-2 pb-2">
                       <DraggableTree
@@ -2063,11 +2062,7 @@ export default function DocumentsPartagesPage() {
               </div>
               <div className="flex-1 overflow-y-auto">
                 {foldersInitialLoading || allDocsInitialLoading ? (
-                  <div className="space-y-2 p-2">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-7 w-full" />
-                    ))}
-                  </div>
+                  <DocumentsTreeSkeleton />
                 ) : (
                   <div className="pt-2 pb-2">
                     <DraggableTree
@@ -3122,11 +3117,7 @@ export default function DocumentsPartagesPage() {
               {showTrash ? (
                 /* Trash view */
                 trashInitialLoading ? (
-                  <div className="space-y-2 p-2 sm:p-4">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-14 w-full rounded-lg" />
-                    ))}
-                  </div>
+                  <DocumentsListSkeleton />
                 ) : trashItemsCount === 0 ? (
                   <div className="h-full min-h-[400px] flex items-center justify-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
@@ -3638,11 +3629,7 @@ export default function DocumentsPartagesPage() {
                   )}
 
                   {docsInitialLoading ? (
-                    <div className="space-y-2 p-2 sm:p-4">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Skeleton key={i} className="h-14 w-full rounded-lg" />
-                      ))}
-                    </div>
+                    <DocumentsListSkeleton />
                   ) : filteredDocuments.length === 0 ? (
                     showSubfolders ? null : (
                       <div className="h-full min-h-[400px] flex items-center justify-center">

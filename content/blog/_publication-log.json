@@ -173,5 +173,55 @@
       "facturation-association-loi-1901",
       "tiime-vs-newbi-comparatif"
     ]
+  },
+  {
+    "date": "2026-07-06",
+    "articles": [
+      "multi-entreprises-gestion-facturation",
+      "meilleurs-logiciels-office-manager",
+      "gestion-administrative-office-manager-guide"
+    ]
+  },
+  {
+    "date": "2026-07-13",
+    "articles": [
+      "erreurs-gestion-tresorerie-eviter",
+      "gestion-tresorerie-commerce-detail",
+      "gestion-devis-commerce-en-ligne",
+      "facture-e-commerce-boutique-en-ligne"
+    ]
+  },
+  {
+    "date": "2026-07-20",
+    "articles": [
+      "gestion-projet-kanban-independant",
+      "meilleures-pratiques-relance-client",
+      "sellsy-vs-newbi-comparatif"
+    ]
+  },
+  {
+    "date": "2026-07-27",
+    "articles": [
+      "top-7-outils-gratuits-auto-entrepreneur",
+      "automatiser-facturation-recurrente",
+      "conseils-tresorerie-startup",
+      "gestion-facturation-startup-early-stage"
+    ]
+  },
+  {
+    "date": "2026-08-03",
+    "articles": [
+      "facture-createur-contenu-influenceur",
+      "dolibarr-vs-newbi-comparatif",
+      "top-6-logiciels-facturation-artisan"
+    ]
+  },
+  {
+    "date": "2026-08-10",
+    "articles": [
+      "zoho-invoice-vs-newbi-comparatif",
+      "gestion-activite-coach-sportif",
+      "obligations-legales-devis-consommateur"
+    ]
   }
 ]

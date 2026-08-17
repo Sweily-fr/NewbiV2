@@ -5,6 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+import { isNumberSequenceError } from "@/src/utils/numbering-errors";
 import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import {
   getActiveOrganization,
@@ -22,6 +23,7 @@ import { useQuoteNumber } from "./use-quote-number";
 import posthog from "posthog-js";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
+import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -461,14 +463,18 @@ export function useQuoteEditor({
     return () => clearTimeout(timeoutId);
   }, [watchedNumber, watch, checkQuoteNumber, quoteId, isFormInitialized]);
 
-  // Re-valider quand les informations entreprise changent
+  // Re-valider quand les informations entreprise changent.
+  // On dépend des valeurs et non de l'objet companyInfo : setValue le remplace
+  // par un clone à chaque écriture, donc son identité change en permanence.
+  const companyInfoName = formData.companyInfo?.name;
+  const companyInfoEmail = formData.companyInfo?.email;
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
 
     setValidationErrors((prevErrors) => {
       if (prevErrors.companyInfo) {
-        if (formData.companyInfo?.name && formData.companyInfo?.email) {
+        if (companyInfoName && companyInfoEmail) {
           const newErrors = { ...prevErrors };
           delete newErrors.companyInfo;
           return newErrors;
@@ -476,7 +482,7 @@ export function useQuoteEditor({
       }
       return prevErrors;
     });
-  }, [formData.companyInfo, isFormInitialized]);
+  }, [companyInfoName, companyInfoEmail, isFormInitialized]);
 
   // Re-valider quand la date d'émission change (avec debounce)
   useEffect(() => {
@@ -564,6 +570,36 @@ export function useQuoteEditor({
 
     return () => clearTimeout(timeoutId);
   }, [watchedValidUntil, watchedIssueDate, isFormInitialized]);
+
+  // Effacer l'erreur groupée "quoteInfo" (posée par handleSave/handleSubmit et
+  // affichée sous les champs de dates) dès que les dates redeviennent valides.
+  // Les effets ci-dessus ne gèrent que les clés granulaires issueDate/validUntil :
+  // sans celui-ci, l'erreur restait affichée après correction du champ.
+  useEffect(() => {
+    if (!isFormInitialized) return;
+
+    const timeoutId = setTimeout(() => {
+      setValidationErrors((prevErrors) => {
+        if (!prevErrors.quoteInfo) return prevErrors;
+
+        // Mêmes règles que la validation à la soumission
+        if (!watchedIssueDate) return prevErrors;
+        const issueDate = new Date(watchedIssueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (issueDate < today) return prevErrors;
+        if (watchedValidUntil && new Date(watchedValidUntil) < issueDate) {
+          return prevErrors;
+        }
+
+        const newErrors = { ...prevErrors };
+        delete newErrors.quoteInfo;
+        return newErrors;
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedIssueDate, watchedValidUntil, isFormInitialized]);
 
   // Re-valider quand les articles changent (avec debounce)
   useEffect(() => {
@@ -912,6 +948,8 @@ export function useQuoteEditor({
       currentClient.lastName !== freshClient.lastName ||
       currentClient.siret !== freshClient.siret ||
       currentClient.vatNumber !== freshClient.vatNumber ||
+      (currentClient.isInternational || false) !==
+        (freshClient.isInternational || false) ||
       JSON.stringify({
         street: currentClient.address?.street,
         city: currentClient.address?.city,
@@ -1001,7 +1039,42 @@ export function useQuoteEditor({
 
           if (organization) {
             // Mettre à jour les informations de l'entreprise
+            const companyExtras = getOrganizationCompanyExtras(organization);
             setValue("companyInfo.name", organization.companyName || "");
+            setValue(
+              "companyInfo.commercialName",
+              companyExtras.commercialName,
+            );
+            setValue(
+              "companyInfo.professionalTitle",
+              companyExtras.professionalTitle,
+            );
+            setValue(
+              "companyInfo.regulatoryBody",
+              companyExtras.regulatoryBody,
+            );
+            setValue(
+              "companyInfo.professionalNumber",
+              companyExtras.professionalNumber,
+            );
+            setValue(
+              "companyInfo.decennialInsurance",
+              companyExtras.decennialInsurance,
+            );
+            setValue(
+              "companyInfo.professionalLiabilityInsurance",
+              companyExtras.professionalLiabilityInsurance,
+            );
+            setValue(
+              "showCommercialName",
+              organization.showCommercialName || false,
+              { shouldDirty: false },
+            );
+            setValue(
+              "isRegulatedActivity",
+              organization.isRegulatedActivity || false,
+              { shouldDirty: false },
+            );
             setValue("companyInfo.email", organization.companyEmail || "");
             setValue("companyInfo.phone", organization.companyPhone || "");
             setValue("companyInfo.website", organization.website || "");
@@ -1017,7 +1090,7 @@ export function useQuoteEditor({
             );
             setValue(
               "companyInfo.vatPaymentCondition",
-              organization.fiscalRegime || "",
+              organization.vatMode || "",
             );
             setValue(
               "companyInfo.transactionCategory",
@@ -1075,6 +1148,14 @@ export function useQuoteEditor({
 
             // Charger showBankDetails depuis l'organisation
             setValue("showBankDetails", organization.showBankDetails || false);
+            // Nom du bénéficiaire (pour auto-entrepreneurs)
+            setValue(
+              "beneficiaryNameType",
+              organization.beneficiaryNameType ||
+                (["EI", "Auto-entrepreneur"].includes(organization.legalForm)
+                  ? "fullName"
+                  : "companyName"),
+            );
             setValue("companyInfo.bankDetails", {
               bankName: organization.bankName || "",
               iban: organization.bankIban || "",
@@ -1158,32 +1239,83 @@ export function useQuoteEditor({
     }
   }, [mode, setValue]);
 
+  // Nom complet de l'utilisateur, utilisé comme nom du bénéficiaire quand
+  // l'option "Nom complet" est active (entrepreneurs individuels). Sans lui,
+  // basculer l'option n'a aucun effet visible sur le document.
+  useEffect(() => {
+    if (session?.user?.name) {
+      setValue("userName", session.user.name, { shouldDirty: false });
+    }
+  }, [session?.user?.name, setValue]);
+
+  // Coordonnées bancaires de l'organisation, en création comme en édition.
+  // Sans cela le panneau de paramètres annonce "aucune coordonnée bancaire
+  // configurée" alors qu'elles existent : la valeur par défaut ne provient que
+  // de session.user.company, qui n'est plus la source de vérité.
+  useEffect(() => {
+    if (organization?.bankIban || organization?.bankBic) {
+      setValue("userBankDetails", {
+        iban: organization.bankIban || "",
+        bic: organization.bankBic || "",
+        bankName: organization.bankName || "",
+      });
+    }
+  }, [organization, setValue]);
+
+  // Écriture gardée : n'appelle setValue que si la valeur change réellement.
+  // Indispensable ici car cet effet et le "sync inverse" ci-dessous se
+  // répondent mutuellement ; sans garde, chaque écriture relance l'autre effet
+  // et React finit par lever "Maximum update depth exceeded".
+  const setFlatIfChanged = useCallback(
+    (field, value) => {
+      if (getValues(field) !== value) {
+        setValue(field, value, { shouldDirty: false });
+      }
+    },
+    [getValues, setValue],
+  );
+
   // Synchroniser les champs plats pour CompanyInfoSettingsSection
   useEffect(() => {
     if (isFormInitialized) {
       const companyInfo = formData.companyInfo;
       if (companyInfo) {
-        setValue("companyName", companyInfo.name || "", { shouldDirty: false });
-        setValue("companyEmail", companyInfo.email || "", {
-          shouldDirty: false,
-        });
-        setValue("companyPhone", companyInfo.phone || "", {
-          shouldDirty: false,
-        });
-        setValue("website", companyInfo.website || "", { shouldDirty: false });
+        setFlatIfChanged("companyName", companyInfo.name || "");
+        setFlatIfChanged("companyEmail", companyInfo.email || "");
+        setFlatIfChanged("companyPhone", companyInfo.phone || "");
+        setFlatIfChanged("website", companyInfo.website || "");
+        setFlatIfChanged("commercialName", companyInfo.commercialName || "");
+        setFlatIfChanged(
+          "professionalTitle",
+          companyInfo.professionalTitle || "",
+        );
+        setFlatIfChanged("regulatoryBody", companyInfo.regulatoryBody || "");
+        setFlatIfChanged(
+          "professionalNumber",
+          companyInfo.professionalNumber || "",
+        );
+        setFlatIfChanged(
+          "decennialInsurance",
+          companyInfo.decennialInsurance || "",
+        );
+        setFlatIfChanged(
+          "professionalLiabilityInsurance",
+          companyInfo.professionalLiabilityInsurance || "",
+        );
+        if (companyInfo.logo) {
+          setFlatIfChanged("logo", companyInfo.logo);
+        }
         if (typeof companyInfo.address === "object" && companyInfo.address) {
-          setValue("addressStreet", companyInfo.address.street || "", {
-            shouldDirty: false,
-          });
-          setValue("addressCity", companyInfo.address.city || "", {
-            shouldDirty: false,
-          });
-          setValue("addressZipCode", companyInfo.address.postalCode || "", {
-            shouldDirty: false,
-          });
-          setValue("addressCountry", companyInfo.address.country || "France", {
-            shouldDirty: false,
-          });
+          setFlatIfChanged("addressStreet", companyInfo.address.street || "");
+          setFlatIfChanged("addressCity", companyInfo.address.city || "");
+          setFlatIfChanged(
+            "addressZipCode",
+            companyInfo.address.postalCode || "",
+          );
+          setFlatIfChanged(
+            "addressCountry",
+            companyInfo.address.country || "France",
+          );
         } else if (
           typeof companyInfo.address === "string" &&
           companyInfo.address
@@ -1193,28 +1325,24 @@ export function useQuoteEditor({
             .split("\n")
             .map((l) => l.trim())
             .filter(Boolean);
-          if (lines.length >= 1)
-            setValue("addressStreet", lines[0], { shouldDirty: false });
+          if (lines.length >= 1) setFlatIfChanged("addressStreet", lines[0]);
           if (lines.length >= 2) {
             // Ligne 2 peut être "75001 Paris" ou juste "Paris"
             const cityLine = lines[1];
             const postalMatch = cityLine.match(/^(\d{4,5})\s+(.+)$/);
             if (postalMatch) {
-              setValue("addressZipCode", postalMatch[1], {
-                shouldDirty: false,
-              });
-              setValue("addressCity", postalMatch[2], { shouldDirty: false });
+              setFlatIfChanged("addressZipCode", postalMatch[1]);
+              setFlatIfChanged("addressCity", postalMatch[2]);
             } else {
-              setValue("addressCity", cityLine, { shouldDirty: false });
+              setFlatIfChanged("addressCity", cityLine);
             }
           }
-          if (lines.length >= 3)
-            setValue("addressCountry", lines[2], { shouldDirty: false });
-          else setValue("addressCountry", "France", { shouldDirty: false });
+          if (lines.length >= 3) setFlatIfChanged("addressCountry", lines[2]);
+          else setFlatIfChanged("addressCountry", "France");
         }
       }
     }
-  }, [isFormInitialized, formData.companyInfo, setValue]);
+  }, [isFormInitialized, formData.companyInfo, setFlatIfChanged]);
 
   // Sync inverse : propager les champs plats édités dans la vue paramètres
   // vers companyInfo.* pour que la preview (qui lit companyInfo) se mette à jour
@@ -1237,6 +1365,48 @@ export function useQuoteEditor({
     const nextCountry =
       formData.addressCountry ?? currentAddress.country ?? "France";
 
+    // Nom commercial, activité réglementée, logo — tri-état : la case cochée
+    // (true/false) pilote l'inclusion, undefined conserve le snapshot
+    const nextLogo = formData.logo ?? current.logo ?? "";
+    const showCommercial =
+      formData.showCommercialName ??
+      (current.commercialName ? true : undefined);
+    const nextCommercialName =
+      showCommercial === false
+        ? ""
+        : (formData.commercialName ?? current.commercialName ?? "");
+    const isRegulated =
+      formData.isRegulatedActivity ??
+      (current.professionalTitle ||
+      current.regulatoryBody ||
+      current.professionalNumber ||
+      current.decennialInsurance ||
+      current.professionalLiabilityInsurance
+        ? true
+        : undefined);
+    const regulatedValue = (flat, curr) =>
+      isRegulated === false ? "" : (flat ?? curr ?? "");
+    const nextProfessionalTitle = regulatedValue(
+      formData.professionalTitle,
+      current.professionalTitle,
+    );
+    const nextRegulatoryBody = regulatedValue(
+      formData.regulatoryBody,
+      current.regulatoryBody,
+    );
+    const nextProfessionalNumber = regulatedValue(
+      formData.professionalNumber,
+      current.professionalNumber,
+    );
+    const nextDecennialInsurance = regulatedValue(
+      formData.decennialInsurance,
+      current.decennialInsurance,
+    );
+    const nextProfessionalLiabilityInsurance = regulatedValue(
+      formData.professionalLiabilityInsurance,
+      current.professionalLiabilityInsurance,
+    );
+
     if (
       nextName !== (current.name || "") ||
       nextEmail !== (current.email || "") ||
@@ -1245,7 +1415,15 @@ export function useQuoteEditor({
       nextStreet !== (currentAddress.street || "") ||
       nextCity !== (currentAddress.city || "") ||
       nextPostalCode !== (currentAddress.postalCode || "") ||
-      nextCountry !== (currentAddress.country || "France")
+      nextCountry !== (currentAddress.country || "France") ||
+      nextLogo !== (current.logo || "") ||
+      nextCommercialName !== (current.commercialName || "") ||
+      nextProfessionalTitle !== (current.professionalTitle || "") ||
+      nextRegulatoryBody !== (current.regulatoryBody || "") ||
+      nextProfessionalNumber !== (current.professionalNumber || "") ||
+      nextDecennialInsurance !== (current.decennialInsurance || "") ||
+      nextProfessionalLiabilityInsurance !==
+        (current.professionalLiabilityInsurance || "")
     ) {
       setValue(
         "companyInfo",
@@ -1262,6 +1440,13 @@ export function useQuoteEditor({
             postalCode: nextPostalCode,
             country: nextCountry,
           },
+          logo: nextLogo,
+          commercialName: nextCommercialName,
+          professionalTitle: nextProfessionalTitle,
+          regulatoryBody: nextRegulatoryBody,
+          professionalNumber: nextProfessionalNumber,
+          decennialInsurance: nextDecennialInsurance,
+          professionalLiabilityInsurance: nextProfessionalLiabilityInsurance,
         },
         { shouldDirty: true },
       );
@@ -1276,6 +1461,15 @@ export function useQuoteEditor({
     formData.addressCity,
     formData.addressZipCode,
     formData.addressCountry,
+    formData.logo,
+    formData.commercialName,
+    formData.showCommercialName,
+    formData.isRegulatedActivity,
+    formData.professionalTitle,
+    formData.regulatoryBody,
+    formData.professionalNumber,
+    formData.decennialInsurance,
+    formData.professionalLiabilityInsurance,
     getValues,
     setValue,
   ]);
@@ -1676,7 +1870,19 @@ export function useQuoteEditor({
         }
       } catch (error) {
         if (!isAutoSave) {
-          handleError(error, "quote");
+          // Numérotation : le message de l'API dit déjà quel est le dernier
+          // numéro utilisé et lequel est attendu, on le relaie tel quel.
+          // Pas de setValidationErrors : la clé quoteNumber n'est affichée
+          // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+          // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+          const errorMessage = error?.message || String(error);
+          if (isNumberSequenceError(errorMessage)) {
+            toast.error("Numéro de devis invalide", {
+              description: errorMessage,
+            });
+          } else {
+            handleError(error, "quote");
+          }
         }
         return false;
       } finally {
@@ -2021,7 +2227,19 @@ export function useQuoteEditor({
         // Mutation résolue sans données : traiter comme un échec
         return { success: false };
       } catch (error) {
-        handleError(error, "quote");
+        // Numérotation : le message de l'API dit déjà quel est le dernier
+        // numéro utilisé et lequel est attendu, on le relaie tel quel.
+        // Pas de setValidationErrors : la clé quoteNumber n'est affichée
+        // nulle part, elle ne sert qu'à isStep1Valid() et désactiverait le
+        // bouton « Continuer » de l'étape 1 sans dire pourquoi.
+        const errorMessage = error?.message || String(error);
+        if (isNumberSequenceError(errorMessage)) {
+          toast.error("Numéro de devis invalide", {
+            description: errorMessage,
+          });
+        } else {
+          handleError(error, "quote");
+        }
         return { success: false };
       } finally {
         setSaving(false);
@@ -2181,7 +2399,8 @@ function buildValidationReasons(errors) {
   const messages = Object.values(errors || {})
     .map((e) => (typeof e === "string" ? e : e?.message))
     .filter(Boolean);
-  if (messages.length === 0) return "Veuillez vérifier les informations saisies.";
+  if (messages.length === 0)
+    return "Veuillez vérifier les informations saisies.";
   return messages.map((m) => `• ${m}`).join("\n");
 }
 
@@ -2238,6 +2457,7 @@ function getInitialFormData(mode, initialData, session, organization) {
 
     // Coordonnées bancaires
     showBankDetails: false,
+    beneficiaryNameType: "companyName",
     bankDetails: {
       iban: "",
       bic: "",
@@ -2285,6 +2505,7 @@ function getInitialFormData(mode, initialData, session, organization) {
       legalForm: userCompany.legalForm || "",
       capitalSocial: userCompany.capitalSocial || "",
       fiscalRegime: userCompany.fiscalRegime || "",
+      vatFranchise: userCompany.vatFranchise ?? false,
       address:
         typeof userCompany.address === "string"
           ? userCompany.address
@@ -2470,8 +2691,24 @@ function transformQuoteToFormData(quote) {
         }
       : null,
 
+    // Toggles dérivés du snapshot companyInfo (pour la vue paramètres)
+    showCommercialName: !!quote.companyInfo?.commercialName,
+    isRegulatedActivity: !!(
+      quote.companyInfo?.professionalTitle ||
+      quote.companyInfo?.regulatoryBody ||
+      quote.companyInfo?.professionalNumber ||
+      quote.companyInfo?.decennialInsurance ||
+      quote.companyInfo?.professionalLiabilityInsurance
+    ),
     companyInfo: {
       name: quote.companyInfo?.name || "",
+      commercialName: quote.companyInfo?.commercialName || "",
+      professionalTitle: quote.companyInfo?.professionalTitle || "",
+      regulatoryBody: quote.companyInfo?.regulatoryBody || "",
+      professionalNumber: quote.companyInfo?.professionalNumber || "",
+      decennialInsurance: quote.companyInfo?.decennialInsurance || "",
+      professionalLiabilityInsurance:
+        quote.companyInfo?.professionalLiabilityInsurance || "",
       email: quote.companyInfo?.email || "",
       phone: quote.companyInfo?.phone || "",
       website: quote.companyInfo?.website || "",
@@ -2483,6 +2720,9 @@ function transformQuoteToFormData(quote) {
       companyStatus: quote.companyInfo?.companyStatus || "",
       capitalSocial: quote.companyInfo?.capitalSocial || "",
       vatPaymentCondition: quote.companyInfo?.vatPaymentCondition || "",
+      // Conservé tel quel (y compris undefined pour les documents antérieurs) :
+      // le pied de page retombe sinon sur l'organisation.
+      vatFranchise: quote.companyInfo?.vatFranchise,
       transactionCategory: quote.companyInfo?.transactionCategory || "",
       // Conserver l'adresse structurée pour la synchronisation avec les champs plats
       // Le PDF sait gérer les deux formats (string et object)
@@ -2581,6 +2821,7 @@ function transformQuoteToFormData(quote) {
 
     // Auto-liquidation
     isReverseCharge: quote.isReverseCharge || false,
+    isVatExempt: quote.isVatExempt || false,
 
     // Position du client dans le PDF
     clientPositionRight: quote.clientPositionRight || false,
@@ -2627,6 +2868,7 @@ function transformFormDataToInput(
         lastName: formData.client.lastName,
         siret: formData.client.siret,
         vatNumber: formData.client.vatNumber,
+        isInternational: formData.client.isInternational || false,
         hasDifferentShippingAddress:
           formData.client.hasDifferentShippingAddress,
         address: formData.client.address
@@ -3001,6 +3243,7 @@ function transformFormDataToInput(
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,
+    isVatExempt: formData.isVatExempt || false,
     clientPositionRight: formData.clientPositionRight || false,
     ...(formData.operationType && { operationType: formData.operationType }),
   };

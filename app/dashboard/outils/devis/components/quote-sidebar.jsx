@@ -32,23 +32,45 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { useRouter } from "next/navigation";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery, useQuery } from "@apollo/client";
 import {
   useChangeQuoteStatus,
   useQuote,
   QUOTE_STATUS,
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
+  QUOTE_DOCUMENT_URL,
 } from "@/src/graphql/quoteQueries";
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
-import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import dynamic from "next/dynamic";
+
+// Chargés à l'ouverture de la sidebar uniquement : sort jspdf/pdf-lib (~1 Mo)
+// du chunk de la page liste.
+const UniversalPreviewPDF = dynamic(
+  () => import("@/src/components/pdf/UniversalPreviewPDF"),
+  { ssr: false },
+);
+const UniversalPDFDownloaderWithFacturX = dynamic(
+  () => import("@/src/components/pdf/UniversalPDFDownloaderWithFacturX"),
+  { ssr: false },
+);
+// Rendu canvas (pdfjs) du PDF archivé : pas de visualiseur natif (fond sombre,
+// scroll interne), aperçu intégré au scroll de la page comme le rendu HTML.
+import { PdfPageSkeleton, prefetchPdf } from "@/src/components/pdf/pdf-preview";
+const PdfPreview = dynamic(
+  () =>
+    import("@/src/components/pdf/pdf-preview").then((m) => ({
+      default: m.PdfPreview,
+    })),
+  { ssr: false },
+);
 
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import LinkedInvoicesList from "./linked-invoices-list";
+import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import { SignatureStatusBadge } from "@/src/components/esignature/signature-status-badge";
 import {
   useDocumentSignatureStatus,
@@ -88,6 +110,32 @@ export default function QuoteSidebar({
     loading: loadingFullQuote,
     error: quoteError,
   } = useQuote(initialQuote?.id);
+
+  // URL du PDF archivé (R2) — uniquement hors brouillon. Signal d'existence
+  // de l'archive : l'affichage passe par le proxy /api/document-preview.
+  // cache-and-network : à la réouverture le signal vient du cache (bascule
+  // immédiate sur le PDF), tout en revalidant en arrière-plan.
+  const { data: quoteDocData } = useQuery(QUOTE_DOCUMENT_URL, {
+    variables: { workspaceId, quoteId: initialQuote?.id },
+    skip:
+      !workspaceId ||
+      !initialQuote?.id ||
+      initialQuote?.status === QUOTE_STATUS.DRAFT,
+    fetchPolicy: "cache-and-network",
+  });
+  const quoteDocumentUrl = quoteDocData?.quoteDocumentUrl || null;
+
+  // Précharge les octets du PDF en parallèle de la query signal ci-dessus :
+  // quand le signal arrive, le téléchargement est déjà fait (ou en vol).
+  useEffect(() => {
+    if (
+      isOpen &&
+      initialQuote?.id &&
+      initialQuote?.status !== QUOTE_STATUS.DRAFT
+    ) {
+      prefetchPdf(`/api/document-preview/quote/${initialQuote.id}`);
+    }
+  }, [isOpen, initialQuote?.id, initialQuote?.status]);
 
   // Statut de signature électronique
   const { signatureRequest: signatureStatus, refetch: refetchSignature } =
@@ -165,13 +213,16 @@ export default function QuoteSidebar({
     onClose();
   };
 
+  // La mutation changeQuoteStatus recale côté serveur les dates d'un
+  // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
+  // décalée d'autant) — cohérent avec les dates affichées dans le panel.
   const handleSendQuote = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.PENDING);
-      toast.success("Devis envoyé avec succès");
+      toast.success("Devis créé");
       if (onRefetch) onRefetch();
     } catch (error) {
-      toast.error(error?.message || "Erreur lors de l'envoi du devis");
+      toast.error(error?.message || "Erreur lors de la création du devis");
     }
   };
 
@@ -208,6 +259,7 @@ export default function QuoteSidebar({
           customFields: quote.customFields,
           shipping: quote.shipping,
           isReverseCharge: quote.isReverseCharge,
+          isVatExempt: quote.isVatExempt,
           retenueGarantie: quote.retenueGarantie,
           escompte: quote.escompte,
         }),
@@ -263,6 +315,7 @@ export default function QuoteSidebar({
         customFields: quote.customFields,
         shipping: quote.shipping,
         isReverseCharge: quote.isReverseCharge,
+        isVatExempt: quote.isVatExempt,
         retenueGarantie: quote.retenueGarantie,
         escompte: quote.escompte,
       }),
@@ -365,12 +418,31 @@ export default function QuoteSidebar({
         }}
         transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
-        {/* Aperçu : rendu HTML UniversalPreviewPDF, comme la sidebar facture.
-            On n'utilise PAS l'iframe du PDF en cache (visualiseur natif = scroll). */}
+        {/* Aperçu : PDF archivé (rendu canvas pdfjs, scroll intégré) si
+            disponible, sinon rendu HTML UniversalPreviewPDF — même logique
+            que les sidebars facture et bon de commande. */}
         <div className="absolute inset-0 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           {loadingFullQuote && !fullQuote ? (
-            <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
-              <LoaderCircle className="h-8 w-8 animate-spin text-white/80" />
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              {/* Même skeleton que l'aperçu PDF : une seule attente visuelle,
+                  pas de loader intermédiaire */}
+              <PdfPageSkeleton />
+            </div>
+          ) : quoteDocumentUrl && quote.status !== QUOTE_STATUS.DRAFT ? (
+            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
+              {/* Proxy same-origin : un chargement direct depuis api.newbi.fr
+                  partirait sans cookie de session (cookie host-only) */}
+              <PdfPreview
+                src={`/api/document-preview/quote/${quote.id}`}
+                placeholder={<PdfPageSkeleton />}
+                fallback={
+                  <UniversalPreviewPDF
+                    data={quote}
+                    type="quote"
+                    recalcDraftDates
+                  />
+                }
+              />
             </div>
           ) : (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
@@ -472,7 +544,7 @@ export default function QuoteSidebar({
               Client
             </p>
             {quote.client ? (
-              <div className="space-y-2">
+              <div className="space-y-0.5">
                 <div>
                   <p className="font-medium">{quote.client.name}</p>
                   {quote.client.email && (
@@ -732,17 +804,39 @@ export default function QuoteSidebar({
             </div>
           </div>
 
+          {/* Bons de commande liés (créés à partir de ce devis) */}
+          {quote.linkedPurchaseOrders &&
+            quote.linkedPurchaseOrders.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Bons de commande liés
+                  </p>
+                  <div className="space-y-1">
+                    {quote.linkedPurchaseOrders.map((po) => (
+                      <LinkedDocumentRow
+                        key={po.id}
+                        type="purchaseOrder"
+                        document={po}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/bons-commande?id=${po.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
           {/* Liste des factures liées */}
           {quote.status === QUOTE_STATUS.COMPLETED && (
             <>
               <Separator />
-              <div className="space-y-3">
-                <LinkedInvoicesList
-                  quote={quote}
-                  onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                  isLoading={isLoading}
-                />
-              </div>
+              <LinkedInvoicesList quote={quote} />
             </>
           )}
         </div>
@@ -790,7 +884,7 @@ export default function QuoteSidebar({
                 className="flex-1 font-normal"
               >
                 <Send className="h-4 w-4 mr-2" />
-                Envoyer le devis
+                Créer le devis
               </Button>
             </div>
           )}
@@ -810,20 +904,17 @@ export default function QuoteSidebar({
                   ? "Refuser le devis"
                   : "Annuler le devis"}
               </Button>
-              {/* Accepter : UNIQUEMENT les devis importés. Les devis natifs sont
-                  acceptés automatiquement via la signature électronique (pas de
-                  bouton d'acceptation manuelle). */}
-              {quote.status === QUOTE_STATUS.IMPORTED && (
-                <Button
-                  variant="primary"
-                  onClick={handleAccept}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Accepter le devis
-                </Button>
-              )}
+              {/* Accepter : acceptation manuelle possible, la signature
+                  électronique accepte aussi le devis automatiquement. */}
+              <Button
+                variant="primary"
+                onClick={handleAccept}
+                disabled={isLoading}
+                className="flex-1 font-normal"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Accepter le devis
+              </Button>
             </div>
           )}
 
@@ -838,50 +929,17 @@ export default function QuoteSidebar({
                 </p>
               )}
 
-              {/* Boutons de création de factures liées */}
+              {/* Boutons de création de factures liées.
+                  Aucune limite de nombre : le popover s'affiche tant qu'il
+                  reste du montant à facturer (il se masque tout seul à 0). */}
               <div className="space-y-2">
-                {/* Afficher le popover seulement s'il y a moins de 2 factures liées */}
-                {!quote.hasPurchaseOrderInvoices &&
-                  (!quote.linkedInvoices ||
-                    quote.linkedInvoices.length < 2) && (
-                    <CreateLinkedInvoicePopover
-                      quote={quote}
-                      onCreateLinkedInvoice={handleCreateLinkedInvoice}
-                      isLoading={isLoading}
-                    />
-                  )}
-
-                {/* Bouton pour créer la facture finale quand il y a exactement 2 factures liées */}
-                {!quote.hasPurchaseOrderInvoices &&
-                  quote.linkedInvoices &&
-                  quote.linkedInvoices.length === 2 &&
-                  (() => {
-                    const totalInvoiced = quote.linkedInvoices.reduce(
-                      (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-                      0,
-                    );
-                    const remainingAmount =
-                      (quote.finalTotalTTC || 0) - totalInvoiced;
-                    return (
-                      remainingAmount > 0 && (
-                        <Button
-                          onClick={() =>
-                            handleCreateLinkedInvoice({
-                              quoteId: quote.id,
-                              amount: remainingAmount,
-                              isDeposit: false,
-                            })
-                          }
-                          disabled={isLoading}
-                          className="w-full font-normal"
-                        >
-                          <FileCheck className="h-4 w-4 mr-2" />
-                          Créer la facture finale (
-                          {formatCurrency(remainingAmount)})
-                        </Button>
-                      )
-                    );
-                  })()}
+                {!quote.hasPurchaseOrderInvoices && (
+                  <CreateLinkedInvoicePopover
+                    quote={quote}
+                    onCreateLinkedInvoice={handleCreateLinkedInvoice}
+                    isLoading={isLoading}
+                  />
+                )}
               </div>
 
               <div className="flex flex-col gap-2">

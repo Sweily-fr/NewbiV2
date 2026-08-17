@@ -136,6 +136,12 @@ export const useCreateClientOptimized = () => {
         },
       });
 
+      // optimizedMutate utilise errorPolicy:"all" : les erreurs GraphQL ne
+      // rejettent pas la promesse, il faut inspecter result.errors.
+      if (result?.errors?.length || !result?.data?.createClient) {
+        throw result?.errors?.[0] || new Error("Création refusée");
+      }
+
       toast.success("Client créé avec succès", {
         description: `${input.name} a été ajouté à vos clients`,
       });
@@ -231,6 +237,11 @@ export const useUpdateClientOptimized = () => {
         },
       });
 
+      // errorPolicy:"all" : inspecter result.errors avant d'annoncer un succès.
+      if (result?.errors?.length || !result?.data?.updateClient) {
+        throw result?.errors?.[0] || new Error("Modification refusée");
+      }
+
       toast.success("Client modifié avec succès", {
         description: `Les informations de ${input.name || "ce client"} ont été mises à jour`,
       });
@@ -317,6 +328,11 @@ export const useDeleteClientOptimized = () => {
           }
         },
       });
+
+      // errorPolicy:"all" : inspecter result.errors avant d'annoncer un succès.
+      if (result?.errors?.length || !result?.data?.deleteClient) {
+        throw result?.errors?.[0] || new Error("Suppression refusée");
+      }
 
       toast.success("Client supprimé avec succès", {
         description: `${clientName} a été retiré de vos clients`,

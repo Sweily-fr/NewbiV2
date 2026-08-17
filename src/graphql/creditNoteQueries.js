@@ -43,6 +43,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       lastName
       siret
       vatNumber
+      isInternational
       hasDifferentShippingAddress
       address {
         street
@@ -60,6 +61,12 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     }
     companyInfo {
       name
+      commercialName
+      professionalTitle
+      regulatoryBody
+      professionalNumber
+      decennialInsurance
+      professionalLiabilityInsurance
       email
       phone
       website
@@ -69,6 +76,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       vatNumber
       transactionCategory
       vatPaymentCondition
+      vatFranchise
       companyStatus
       address {
         street
@@ -125,6 +133,8 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     originalInvoice {
       id
       number
+      prefix
+      issueDate
       status
       shipping {
         billShipping
