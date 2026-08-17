@@ -88,7 +88,10 @@ export default function VueDensemblePage() {
     formatCurrency,
   } = useDashboardData();
 
-  // T2 — Stats des factures d'achats (non payées) pour la carte "À Payer"
+  // T2 — Stats des factures d'achats pour la carte "À Payer" : totalUnpaid
+  // couvre TOUS les statuts non payés (dont TO_PROCESS, statut par défaut des
+  // factures SuperPDP et des saisies manuelles) ; une facture rapprochée
+  // bancairement passe en PAID et sort du total
   const { stats: purchaseInvoiceStats, loading: piStatsLoading } =
     usePurchaseInvoiceStats();
 
@@ -255,7 +258,7 @@ export default function VueDensemblePage() {
                       {piStatsLoading
                         ? "—"
                         : formatCurrency(
-                            purchaseInvoiceStats?.totalToPay || 0,
+                            purchaseInvoiceStats?.totalUnpaid || 0,
                           )}{" "}
                       <span className="text-xs font-normal text-muted-foreground">
                         TTC
