@@ -33,6 +33,7 @@ import { BottomNavBar } from "@/src/components/bottom-nav-bar";
 import { SessionGateProvider } from "@/src/contexts/session-gate-context";
 import { InactivityDetector } from "@/src/components/inactivity-detector";
 import { SessionValidityDetector } from "@/src/components/session-validity-detector";
+import { OrgChangeCrossTabDetector } from "@/src/components/org-change-cross-tab-detector";
 
 // Composants lourds ou rarement affichés : chargés dans leur propre chunk pour
 // alléger le bundle commun du dashboard (payé sur chaque page).
@@ -285,6 +286,7 @@ function DashboardContent({ children }) {
               <SessionGateProvider>{children}</SessionGateProvider>
               <InactivityDetector />
               <SessionValidityDetector />
+              <OrgChangeCrossTabDetector />
             </div>
           </div>
         </SidebarInset>
