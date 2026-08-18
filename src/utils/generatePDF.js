@@ -1,7 +1,9 @@
 // Échelle de capture du DOM : 794px (A4) × 3 ≈ 288 DPI. À 2 le texte
 // rasterisé (~192 DPI) est visiblement flou sur écran Retina et à l'impression.
-const CAPTURE_SCALE = 3;
-const JPEG_QUALITY = 0.92;
+// Partagées avec les pages /pdf-generator/* (pipeline Puppeteer d'archivage) :
+// toute capture d'un document doit utiliser ces valeurs.
+export const CAPTURE_SCALE = 3;
+export const JPEG_QUALITY = 0.92;
 
 /**
  * Génère un PDF à partir d'un élément DOM

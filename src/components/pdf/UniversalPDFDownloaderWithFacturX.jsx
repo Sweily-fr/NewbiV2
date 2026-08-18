@@ -70,9 +70,9 @@ class PDFLayoutAnalyzer {
 
     allElements.forEach((el, index) => {
       const rect = el.getBoundingClientRect();
-      const relativeTop = (rect.top - containerRect.top) * 2; // *2 pour scale
-      const relativeBottom = (rect.bottom - containerRect.top) * 2;
-      const height = rect.height * 2;
+      const relativeTop = (rect.top - containerRect.top) * CAPTURE_SCALE;
+      const relativeBottom = (rect.bottom - containerRect.top) * CAPTURE_SCALE;
+      const height = rect.height * CAPTURE_SCALE;
 
       const elementInfo = {
         index,
@@ -101,7 +101,7 @@ class PDFLayoutAnalyzer {
     return {
       elementMap,
       sections,
-      totalHeight: this.element.scrollHeight * 2,
+      totalHeight: this.element.scrollHeight * CAPTURE_SCALE,
       containerRect,
     };
   }
