@@ -1,3 +1,8 @@
+// Échelle de capture du DOM : 794px (A4) × 3 ≈ 288 DPI. À 2 le texte
+// rasterisé (~192 DPI) est visiblement flou sur écran Retina et à l'impression.
+const CAPTURE_SCALE = 3;
+const JPEG_QUALITY = 0.92;
+
 /**
  * Génère un PDF à partir d'un élément DOM
  * Utilise la même logique que UniversalPDFDownloader
@@ -39,10 +44,10 @@ export async function generatePDFFromElement(element) {
 
   // Capturer avec modern-screenshot en JPEG
   const dataUrl = await domToJpeg(element, {
-    quality: 0.95,
+    quality: JPEG_QUALITY,
     backgroundColor: "#ffffff",
     width: 794, // Largeur A4 en pixels
-    scale: 2,
+    scale: CAPTURE_SCALE,
     fetch: {
       requestInit: {
         mode: "cors",
@@ -117,7 +122,7 @@ export async function generatePDFFromElement(element) {
         sourceHeight,
       );
 
-      const pageDataUrl = canvas.toDataURL("image/jpeg", 0.95);
+      const pageDataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
       const pageHeightMM = (sourceHeight * pdfWidth) / img.width;
 
       pdf.addImage(pageDataUrl, "JPEG", 0, 0, imgWidthMM, pageHeightMM);

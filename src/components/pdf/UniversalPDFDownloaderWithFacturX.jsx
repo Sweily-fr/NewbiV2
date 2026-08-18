@@ -9,6 +9,11 @@ import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "./UniversalPreviewPDF";
 import { validateFacturXData } from "@/src/utils/facturx-validation";
 
+// Échelle de capture du DOM : ×3 ≈ 288 DPI sur une page A4. À 2 le texte
+// rasterisé (~192 DPI) est visiblement flou sur écran Retina et à l'impression.
+const CAPTURE_SCALE = 3;
+const JPEG_QUALITY = 0.92;
+
 /**
  * Analyseur de structure PDF pour pagination intelligente
  */
@@ -580,10 +585,10 @@ const UniversalPDFDownloaderWithFacturX = ({
 
         console.log(`📸 Capture de ${name}...`);
         const dataUrl = await domToJpeg(element, {
-          quality: 0.98,
+          quality: JPEG_QUALITY,
           backgroundColor: "#ffffff", // Toujours blanc pour que les rgba transparents soient visibles
-          scale: 2,
-          pixelRatio: 2,
+          scale: CAPTURE_SCALE,
+          pixelRatio: CAPTURE_SCALE,
           // Sans `cache: "reload"`, la réponse sans en-tête CORS mise en cache
           // par l'<img> du logo (chargée sans `crossOrigin`) resservirait ce
           // fetch et laisserait le logo vide (cf. generatePDF.js). La
@@ -1130,7 +1135,7 @@ const UniversalPDFDownloaderWithFacturX = ({
               heightPixels, // Dest width, height
             );
 
-            const partialDataUrl = canvas.toDataURL("image/jpeg", 0.98);
+            const partialDataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
 
             pdf.addImage(
               partialDataUrl,
