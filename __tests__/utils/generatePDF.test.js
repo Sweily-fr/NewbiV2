@@ -117,8 +117,8 @@ describe("generatePDFFromElement", () => {
     expect(target).toBe(el);
     expect(opts).toMatchObject({
       width: 794,
-      scale: 2,
-      quality: 0.95,
+      scale: 3,
+      quality: 0.92,
     });
     expect(result).toBeInstanceOf(Uint8Array);
   });

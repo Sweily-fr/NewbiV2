@@ -8,6 +8,11 @@ import { domToJpeg } from "modern-screenshot";
 import jsPDF from "jspdf";
 import UniversalPreviewPDF from "./UniversalPreviewPDF";
 
+// Échelle de capture du DOM : 794px (A4) × 3 ≈ 288 DPI. À 2 le texte
+// rasterisé (~192 DPI) est visiblement flou sur écran Retina et à l'impression.
+const CAPTURE_SCALE = 3;
+const JPEG_QUALITY = 0.92;
+
 const UniversalPDFDownloader = ({
   data,
   type = "invoice",
@@ -75,10 +80,10 @@ const UniversalPDFDownloader = ({
 
       // Capturer avec modern-screenshot en JPEG (supporte oklch et compatible jsPDF)
       const dataUrl = await domToJpeg(componentRef.current, {
-        quality: 0.95,
+        quality: JPEG_QUALITY,
         backgroundColor: "#ffffff",
         width: 794, // Largeur A4 en pixels
-        scale: 2,
+        scale: CAPTURE_SCALE,
         // Activer le mode CORS anonyme pour les images externes.
         // `cache: "reload"` : sans lui, la réponse sans en-tête CORS mise en
         // cache par l'<img> du logo (chargée sans `crossOrigin`) resservirait
@@ -144,16 +149,16 @@ const UniversalPDFDownloader = ({
         protectedElements.forEach((row) => {
           const rect = row.getBoundingClientRect();
           rowPositions.push({
-            top: (rect.top - containerRect.top) * 2, // *2 pour le scale
-            bottom: (rect.bottom - containerRect.top) * 2,
-            height: rect.height * 2,
+            top: (rect.top - containerRect.top) * CAPTURE_SCALE,
+            bottom: (rect.bottom - containerRect.top) * CAPTURE_SCALE,
+            height: rect.height * CAPTURE_SCALE,
           });
         });
 
         console.log(`🔍 ${rowPositions.length} éléments protégés détectés`);
         rowPositions.forEach((row, i) => {
           console.log(
-            `  Élément ${i + 1}: top=${(row.top / 2).toFixed(0)}px, bottom=${(row.bottom / 2).toFixed(0)}px, height=${(row.height / 2).toFixed(0)}px`,
+            `  Élément ${i + 1}: top=${(row.top / CAPTURE_SCALE).toFixed(0)}px, bottom=${(row.bottom / CAPTURE_SCALE).toFixed(0)}px, height=${(row.height / CAPTURE_SCALE).toFixed(0)}px`,
           );
         });
 
@@ -253,7 +258,7 @@ const UniversalPDFDownloader = ({
           );
 
           // Convertir le canvas en image
-          const pageImageData = canvas.toDataURL("image/jpeg", 0.95);
+          const pageImageData = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
 
           // Stocker les données de la page avec sa hauteur réelle
           pages.push({
