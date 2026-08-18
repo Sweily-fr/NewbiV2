@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { domToJpeg } from "modern-screenshot";
+import { CAPTURE_SCALE, JPEG_QUALITY } from "@/src/utils/generatePDF";
 // jsPDF importé dynamiquement pour réduire la taille du bundle
 
 export default function PurchaseOrderPDFGeneratorPage() {
@@ -75,10 +76,10 @@ export default function PurchaseOrderPDFGeneratorPage() {
 
       console.log("📷 Génération PDF - Étape 3: Capture screenshot");
       const dataUrl = await domToJpeg(componentRef.current, {
-        quality: 0.95,
+        quality: JPEG_QUALITY,
         backgroundColor: "#ffffff",
         width: 794,
-        scale: 2,
+        scale: CAPTURE_SCALE,
         fetch: {
           requestInit: {
             mode: "cors",
@@ -126,8 +127,9 @@ export default function PurchaseOrderPDFGeneratorPage() {
         if (footerElement) {
           const containerRect = componentRef.current.getBoundingClientRect();
           const footerRect = footerElement.getBoundingClientRect();
-          footerHeight = footerRect.height * 2;
-          footerPositionY = (footerRect.top - containerRect.top) * 2;
+          footerHeight = footerRect.height * CAPTURE_SCALE;
+          footerPositionY =
+            (footerRect.top - containerRect.top) * CAPTURE_SCALE;
 
           console.log(
             `🔖 Footer détecté: hauteur=${footerHeight}px, position=${footerPositionY}px`,
@@ -254,7 +256,7 @@ export default function PurchaseOrderPDFGeneratorPage() {
             );
           }
 
-          const pageImageData = canvas.toDataURL("image/jpeg", 0.95);
+          const pageImageData = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
           const pageHeightMM = pdfHeight;
 
           pages.push({

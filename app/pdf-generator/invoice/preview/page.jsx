@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { domToJpeg } from "modern-screenshot";
+import { CAPTURE_SCALE, JPEG_QUALITY } from "@/src/utils/generatePDF";
 
 /**
  * PDF Preview Generator Page
@@ -87,10 +88,10 @@ export default function PDFPreviewPage() {
 
       // Capture with modern-screenshot
       const dataUrl = await domToJpeg(componentRef.current, {
-        quality: 0.95,
+        quality: JPEG_QUALITY,
         backgroundColor: "#ffffff",
         width: 794,
-        scale: 2,
+        scale: CAPTURE_SCALE,
         // `cache: "reload"` : sans lui, la réponse sans en-tête CORS mise en
         // cache par l'<img> du logo resservirait ce fetch et le logo serait
         // absent du PDF (cf. src/utils/generatePDF.js).
@@ -143,8 +144,9 @@ export default function PDFPreviewPage() {
         if (footerElement) {
           const containerRect = componentRef.current.getBoundingClientRect();
           const footerRect = footerElement.getBoundingClientRect();
-          footerHeight = footerRect.height * 2;
-          footerPositionY = (footerRect.top - containerRect.top) * 2;
+          footerHeight = footerRect.height * CAPTURE_SCALE;
+          footerPositionY =
+            (footerRect.top - containerRect.top) * CAPTURE_SCALE;
         }
 
         const colorCanvas = document.createElement("canvas");
@@ -251,7 +253,7 @@ export default function PDFPreviewPage() {
           }
 
           pages.push({
-            imageData: canvas.toDataURL("image/jpeg", 0.95),
+            imageData: canvas.toDataURL("image/jpeg", JPEG_QUALITY),
             heightMM: pdfHeight,
             isLastPage,
           });
