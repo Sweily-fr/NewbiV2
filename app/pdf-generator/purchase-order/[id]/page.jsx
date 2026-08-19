@@ -11,6 +11,7 @@ export default function PurchaseOrderPDFGeneratorPage() {
   const params = useParams();
   const [data, setData] = useState(null);
   const [status, setStatus] = useState("loading");
+  const [isPrint, setIsPrint] = useState(false);
   const componentRef = useRef(null);
 
   useEffect(() => {
@@ -31,6 +32,15 @@ export default function PurchaseOrderPDFGeneratorPage() {
         console.log("✅ Données reçues:", fetchedData);
         setData(fetchedData);
         setStatus("ready");
+
+        // Print mode (?mode=print) : rendu seul, le PDF vectoriel est généré
+        // par la route API via page.pdf() — cf. src/lib/vectorPdf.js.
+        const urlMode = new URLSearchParams(window.location.search).get("mode");
+        if (urlMode === "print") {
+          console.log("🖨️ Print mode — rendu seul (PDF vectoriel serveur)");
+          setIsPrint(true);
+          return;
+        }
 
         console.log("⏳ Attente rendu composant...");
         await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -366,24 +376,24 @@ export default function PurchaseOrderPDFGeneratorPage() {
   }
 
   return (
-    <div className="bg-white min-h-screen p-4">
-      {status === "complete" && (
+    <div className={isPrint ? "bg-white" : "bg-white min-h-screen p-4"}>
+      {!isPrint && status === "complete" && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded z-50">
           PDF généré avec succès
         </div>
       )}
-      {status === "ready" && (
+      {!isPrint && status === "ready" && (
         <div className="fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded z-50">
           Génération en cours...
         </div>
       )}
       <div
         ref={componentRef}
-        style={{
-          width: "794px",
-          backgroundColor: "#ffffff",
-          margin: "0 auto",
-        }}
+        style={
+          isPrint
+            ? { width: "794px", backgroundColor: "#ffffff" }
+            : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
+        }
       >
         {data && (
           <UniversalPreviewPDF data={data} type="purchaseOrder" forPDF={true} />

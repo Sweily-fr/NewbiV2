@@ -4,7 +4,13 @@ import { usePathname } from "next/navigation";
 import CookieManager from "./CookieManager";
 import MarketingPixels from "./MarketingPixels";
 
-const ROUTES_WITHOUT_BANNER = ["/dashboard", "/create-workspace"];
+// /pdf-generator : pages de rendu de document (Puppeteer page.pdf() et WebView
+// mobile) — un bandeau cookies s'y retrouverait imprimé dans le PDF.
+const ROUTES_WITHOUT_BANNER = [
+  "/dashboard",
+  "/create-workspace",
+  "/pdf-generator",
+];
 
 export default function CookieWrapper() {
   const pathname = usePathname();

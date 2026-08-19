@@ -12,6 +12,7 @@ export default function PDFGeneratorPage() {
   const [invoiceData, setInvoiceData] = useState(null);
   const [status, setStatus] = useState("loading");
   const [isVisual, setIsVisual] = useState(false);
+  const [isPrint, setIsPrint] = useState(false);
   const componentRef = useRef(null);
 
   useEffect(() => {
@@ -39,6 +40,15 @@ export default function PDFGeneratorPage() {
         console.log("✅ Données reçues:", data);
         setInvoiceData(data);
         setStatus("ready");
+
+        // Print mode (?mode=print) : rendu seul, le PDF vectoriel est généré
+        // par la route API via page.pdf() — cf. src/lib/vectorPdf.js.
+        const urlMode = new URLSearchParams(window.location.search).get("mode");
+        if (urlMode === "print") {
+          console.log("🖨️ Print mode — rendu seul (PDF vectoriel serveur)");
+          setIsPrint(true);
+          return;
+        }
 
         // Visual mode: just render, no PDF generation
         const isVisualMode = window.__PREVIEW_MODE === "visual";
@@ -437,20 +447,24 @@ export default function PDFGeneratorPage() {
   return (
     <div
       className={
-        isVisual ? "bg-white min-h-screen" : "bg-white min-h-screen p-4"
+        isPrint
+          ? "bg-white"
+          : isVisual
+            ? "bg-white min-h-screen"
+            : "bg-white min-h-screen p-4"
       }
     >
-      {!isVisual && status === "complete" && (
+      {!isVisual && !isPrint && status === "complete" && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded z-50">
           PDF généré avec succès
         </div>
       )}
-      {!isVisual && status === "loading" && (
+      {!isVisual && !isPrint && status === "loading" && (
         <div className="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded z-50">
           Chargement...
         </div>
       )}
-      {!isVisual && status === "ready" && (
+      {!isVisual && !isPrint && status === "ready" && (
         <div className="fixed top-4 right-4 bg-yellow-500 text-white px-4 py-2 rounded z-50">
           Génération en cours...
         </div>
@@ -458,14 +472,16 @@ export default function PDFGeneratorPage() {
       <div
         ref={componentRef}
         style={
-          isVisual
-            ? {
-                width: "100%",
-                maxWidth: "794px",
-                backgroundColor: "#ffffff",
-                margin: "0 auto",
-              }
-            : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
+          isPrint
+            ? { width: "794px", backgroundColor: "#ffffff" }
+            : isVisual
+              ? {
+                  width: "100%",
+                  maxWidth: "794px",
+                  backgroundColor: "#ffffff",
+                  margin: "0 auto",
+                }
+              : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
         }
       >
         {invoiceData && (

@@ -18,6 +18,7 @@ export default function PDFPreviewPage() {
   const [invoiceData, setInvoiceData] = useState(null);
   const [status, setStatus] = useState("loading");
   const [isVisual, setIsVisual] = useState(false);
+  const [isPrint, setIsPrint] = useState(false);
   const componentRef = useRef(null);
 
   useEffect(() => {
@@ -50,6 +51,14 @@ export default function PDFPreviewPage() {
         if (isVisualMode) {
           console.log("👁️ Visual mode — skipping PDF generation");
           setIsVisual(true);
+          return;
+        }
+
+        // Print mode (?mode=print) : rendu seul, le PDF vectoriel est généré
+        // par la route API via page.pdf() — cf. src/lib/vectorPdf.js.
+        if (urlMode === "print") {
+          console.log("🖨️ Print mode — rendu seul (PDF vectoriel serveur)");
+          setIsPrint(true);
           return;
         }
 
@@ -332,23 +341,29 @@ export default function PDFPreviewPage() {
         // Un wrapper bg-black min-h-screen RECOUVRE ce body blanc → le rendu ne
         // dépend plus de l'app : noir sous la facture, comme le PDF R2.
         // Seule la facture (UniversalPreviewPDF) reste blanche.
-        isVisual ? "bg-black min-h-screen" : "bg-white min-h-screen p-4"
+        isPrint
+          ? "bg-white"
+          : isVisual
+            ? "bg-black min-h-screen"
+            : "bg-white min-h-screen p-4"
       }
     >
       <div
         ref={componentRef}
         style={
-          isVisual
-            ? {
-                // PAS de fond blanc ici : le wrapper peut être un peu plus haut
-                // que le document (hauteur calculée), et son blanc dépassait sous
-                // le footer. Transparent → cette zone montre le fond noir du modal
-                // (comme le PDF). Seule la facture (UniversalPreviewPDF) reste blanche.
-                width: "100%",
-                maxWidth: "794px",
-                margin: "0 auto",
-              }
-            : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
+          isPrint
+            ? { width: "794px", backgroundColor: "#ffffff" }
+            : isVisual
+              ? {
+                  // PAS de fond blanc ici : le wrapper peut être un peu plus haut
+                  // que le document (hauteur calculée), et son blanc dépassait sous
+                  // le footer. Transparent → cette zone montre le fond noir du modal
+                  // (comme le PDF). Seule la facture (UniversalPreviewPDF) reste blanche.
+                  width: "100%",
+                  maxWidth: "794px",
+                  margin: "0 auto",
+                }
+              : { width: "794px", backgroundColor: "#ffffff", margin: "0 auto" }
         }
       >
         {invoiceData && (
