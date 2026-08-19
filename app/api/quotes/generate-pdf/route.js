@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { launchBrowser } from "@/src/lib/puppeteer";
+import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
@@ -50,7 +51,9 @@ async function handler(request) {
       process.env.NEXT_PUBLIC_APP_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
       "http://localhost:3000";
-    const generatorUrl = `${baseUrl}/pdf-generator/quote/${quoteId}`;
+    // mode=print : la page rend le document sans le capturer, le PDF vectoriel
+    // est produit ici par page.pdf() (cf. src/lib/vectorPdf.js).
+    const generatorUrl = `${baseUrl}/pdf-generator/quote/${quoteId}${VECTOR_PDF_ENABLED ? "?mode=print" : ""}`;
 
     console.log(`🌐 [PDF API] Navigation vers: ${generatorUrl}`);
 
@@ -68,23 +71,32 @@ async function handler(request) {
 
     console.log("✅ [PDF API] Page chargée, attente de la génération...");
 
-    await page.waitForFunction(() => window.pdfGenerationResult !== undefined, {
-      timeout: 60000,
-    });
+    let finalBuffer;
+    if (VECTOR_PDF_ENABLED) {
+      finalBuffer = await generateVectorPdf(page);
+      console.log("✅ [PDF API] PDF vectoriel généré (page.pdf)");
+    } else {
+      await page.waitForFunction(
+        () => window.pdfGenerationResult !== undefined,
+        {
+          timeout: 60000,
+        },
+      );
 
-    const pdfData = await page.evaluate(() => window.pdfGenerationResult);
+      const pdfData = await page.evaluate(() => window.pdfGenerationResult);
 
-    if (pdfData.error) {
-      throw new Error(`Erreur génération PDF: ${pdfData.error}`);
+      if (pdfData.error) {
+        throw new Error(`Erreur génération PDF: ${pdfData.error}`);
+      }
+
+      if (!pdfData.success || !pdfData.buffer) {
+        throw new Error("PDF non généré");
+      }
+
+      console.log("✅ [PDF API] PDF généré côté client");
+
+      finalBuffer = Buffer.from(pdfData.buffer);
     }
-
-    if (!pdfData.success || !pdfData.buffer) {
-      throw new Error("PDF non généré");
-    }
-
-    console.log("✅ [PDF API] PDF généré côté client");
-
-    const finalBuffer = Buffer.from(pdfData.buffer);
 
     await browser.close();
     browser = null;
