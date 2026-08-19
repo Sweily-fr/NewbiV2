@@ -5,7 +5,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
-import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import {
   Crown,
   Settings2,
@@ -245,11 +244,11 @@ export function NavSecondary({
   ...props
 }) {
   const [open, setOpen] = useState(false);
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
   const { isActive } = useSubscription();
-  const { isInTrial } = useSubscriptionAccess();
-  const { settings: eInvoicingSettings } = useEInvoicingSettings();
+  const { settings: eInvoicingSettings, loading: eInvoicingLoading } =
+    useEInvoicingSettings();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -263,15 +262,30 @@ export function NavSecondary({
     }
   };
 
+  // Avec un plan actif (essai inclus) : ouvre la modal d'activation.
+  // Sans plan actif : redirige vers l'onglet Abonnement des paramètres.
+  const handleEInvoicingClick = () => {
+    if (isActive()) {
+      if (onOpenEInvoicingPromo) {
+        onOpenEInvoicingPromo();
+      } else {
+        setEInvoicingPromoOpen(true);
+      }
+    } else {
+      setSubscriptionModalOpen(true);
+    }
+    handleLinkClick();
+  };
+
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        {/* Facturation électronique - réservée aux abonnés PAYANTS
-            (masqué en période d'essai) ET si non activée.
+        {/* Facturation électronique - visible tant qu'elle n'est pas activée
+            sur le workspace. Avec un plan actif (essai inclus), le clic ouvre
+            la modal d'activation ; sans plan, il renvoie vers l'abonnement.
             Sidebar expanded : card outline avec titre + sous-titre.
             Sidebar collapsed : icône Sparkles avec tooltip. */}
-        {isActive() &&
-          !isInTrial &&
+        {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
           (isCollapsed ? (
             <SidebarMenu>
@@ -279,14 +293,7 @@ export function NavSecondary({
                 <SidebarMenuButton
                   className="mb-3 cursor-pointer border border-[#5b50FF]/40 bg-[#5b50FF]/5 shadow-sm text-[#5b50FF] [&>svg]:text-[#5b50FF] hover:bg-[#5b50FF]/5 hover:text-[#5b50FF] active:bg-[#5b50FF]/5 active:text-[#5b50FF] data-[hovered]:bg-[#5b50FF]/5! data-[hovered]:text-[#5b50FF]!"
                   tooltip="Facturation électronique"
-                  onClick={() => {
-                    if (onOpenEInvoicingPromo) {
-                      onOpenEInvoicingPromo();
-                    } else {
-                      setEInvoicingPromoOpen(true);
-                    }
-                    handleLinkClick();
-                  }}
+                  onClick={handleEInvoicingClick}
                 >
                   <Sparkles />
                   <span>Facturation électronique</span>
@@ -297,14 +304,7 @@ export function NavSecondary({
             <div className="px-2 mb-3 mt-1">
               <button
                 type="button"
-                onClick={() => {
-                  if (onOpenEInvoicingPromo) {
-                    onOpenEInvoicingPromo();
-                  } else {
-                    setEInvoicingPromoOpen(true);
-                  }
-                  handleLinkClick();
-                }}
+                onClick={handleEInvoicingClick}
                 className="w-full text-left border border-[#5b50FF]/40 bg-[#5b50FF]/5 rounded-lg px-3 py-2.5 shadow-sm cursor-pointer"
               >
                 <p className="text-sm font-medium text-foreground leading-tight">
@@ -416,6 +416,15 @@ export function NavSecondary({
           open={eInvoicingPromoOpen}
           onOpenChange={setEInvoicingPromoOpen}
         />
+
+        {/* Paramètres ouverts sur l'abonnement quand l'utilisateur n'a pas de plan actif */}
+        {subscriptionModalOpen && (
+          <SettingsModal
+            open={subscriptionModalOpen}
+            onOpenChange={setSubscriptionModalOpen}
+            initialTab="subscription"
+          />
+        )}
       </SidebarGroupContent>
     </SidebarGroup>
   );

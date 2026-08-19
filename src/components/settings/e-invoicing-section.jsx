@@ -124,7 +124,7 @@ export function EInvoicingSection({
     status,
   } = useSuperPdp();
   const searchParams = useSearchParams();
-  const { isReadOnly, isOwner, isInTrial } = useSubscriptionAccess();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { workspaceId } = useRequiredWorkspace();
 
   const skipEInvoicing = !workspaceId || !settings?.eInvoicingEnabled;
@@ -285,21 +285,52 @@ export function EInvoicingSection({
               </div>
             </div>
           )}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h4 className="text-sm font-normal mb-1">Régime de TVA</h4>
+              <p className="text-xs text-gray-400">
+                Issu de vos{" "}
+                <button
+                  type="button"
+                  onClick={goToLegalInfo}
+                  className="underline hover:text-foreground"
+                >
+                  informations légales
+                </button>
+              </p>
+            </div>
+            {derivedVatRegime ? (
+              <div className="flex flex-col items-end gap-1">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+                  <ClipboardTickIcon className="w-3 h-3" />
+                  Renseigné
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {VAT_REGIME_LABELS[derivedVatRegime]}
+                </span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={goToLegalInfo}
+                className="text-sm text-amber-600 underline"
+              >
+                À vérifier
+              </button>
+            )}
+          </div>
           <Button
             onClick={handleConnect}
             disabled={
               isReadOnly ||
-              isInTrial ||
               !canManageOrgSettings ||
               superPdpLoading ||
               !derivedVatRegime
             }
             title={
-              isInTrial
-                ? "Réservé aux abonnements payants"
-                : !derivedVatRegime
-                  ? "Renseignez votre régime de TVA dans les informations légales"
-                  : readOnlyTooltip
+              !derivedVatRegime
+                ? "Renseignez votre régime de TVA dans les informations légales"
+                : readOnlyTooltip
             }
             variant="primary"
           >
@@ -310,11 +341,6 @@ export function EInvoicingSection({
             )}
             Activer la facturation électronique
           </Button>
-          {isInTrial && (
-            <p className="text-xs text-muted-foreground">
-              La facturation électronique est réservée aux abonnements payants.
-            </p>
-          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -506,16 +532,22 @@ export function EInvoicingSection({
                 </p>
               </div>
               {derivedVatRegime ? (
-                <span className="text-sm font-medium">
-                  {VAT_REGIME_LABELS[derivedVatRegime]}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400">
+                    <ClipboardTickIcon className="w-3 h-3" />
+                    Renseigné
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {VAT_REGIME_LABELS[derivedVatRegime]}
+                  </span>
+                </div>
               ) : (
                 <button
                   type="button"
                   onClick={goToLegalInfo}
                   className="text-sm text-amber-600 underline"
                 >
-                  À renseigner
+                  À vérifier
                 </button>
               )}
             </div>
