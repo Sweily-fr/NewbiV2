@@ -115,6 +115,75 @@ export function PdfPreview({
     if (!src) return;
     let cancelled = false;
     let pdfDoc = null;
+    let renderToken = 0; // invalide les passes de rendu obsolètes
+    let lastRenderKey = "";
+    let debounceTimer = null;
+
+    // Résolution de rendu : densité écran × pincement mobile, plafonnée pour
+    // contenir la mémoire canvas (un plafond haut sur un document court, plus
+    // bas dès que le nombre de pages grimpe).
+    const effectiveDpr = (pageCount) => {
+      const pinch = window.visualViewport?.scale || 1;
+      const cap = pageCount <= 5 ? 3 : 2;
+      return Math.min(Math.max(window.devicePixelRatio || 1, 1) * pinch, cap);
+    };
+
+    // Dessine (ou redessine) toutes les pages à la résolution courante. Les
+    // canvas sont remplacés en place, index par index : pas d'écran blanc
+    // pendant un re-rendu déclenché par un zoom.
+    const renderPass = async () => {
+      const container = containerRef.current;
+      if (!container || !pdfDoc) return;
+      const token = ++renderToken;
+      const containerWidth = container.clientWidth || 320;
+      const pageCount = firstPageOnly
+        ? 1
+        : Math.min(pdfDoc.numPages, MAX_PAGES);
+      const dpr = effectiveDpr(pageCount);
+      const renderKey = `${containerWidth}|${dpr}`;
+      if (renderKey === lastRenderKey) return;
+      lastRenderKey = renderKey;
+
+      for (let i = 1; i <= pageCount; i++) {
+        const page = await pdfDoc.getPage(i);
+        if (cancelled || token !== renderToken) return;
+
+        // Ajuster la page à la largeur du conteneur (netteté: échelle x dpr)
+        const baseViewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / baseViewport.width;
+        const viewport = page.getViewport({ scale: scale * dpr });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = "100%";
+        canvas.style.height = "auto";
+        canvas.style.display = "block";
+        if (!firstPageOnly && i > 1) canvas.style.marginTop = "8px";
+
+        await page.render({
+          canvasContext: canvas.getContext("2d"),
+          viewport,
+        }).promise;
+        if (cancelled || token !== renderToken) return;
+
+        const existing = container.children[i - 1];
+        if (existing) container.replaceChild(canvas, existing);
+        else container.appendChild(canvas);
+
+        // Basculer sur le canvas dès la première page : les suivantes
+        // s'ajoutent pendant que l'utilisateur voit déjà le document.
+        if (i === 1) setStatus("ready");
+      }
+      setStatus("ready");
+    };
+
+    const scheduleRerender = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        renderPass().catch(() => {});
+      }, 250);
+    };
 
     (async () => {
       try {
@@ -137,50 +206,24 @@ export function PdfPreview({
         const container = containerRef.current;
         if (!container) return;
         container.innerHTML = "";
-
-        const containerWidth = container.clientWidth || 320;
-        const pageCount = firstPageOnly
-          ? 1
-          : Math.min(pdfDoc.numPages, MAX_PAGES);
-        const dpr = window.devicePixelRatio || 1;
-
-        for (let i = 1; i <= pageCount; i++) {
-          const page = await pdfDoc.getPage(i);
-          if (cancelled) return;
-
-          // Ajuster la page à la largeur du conteneur (netteté: échelle x dpr)
-          const baseViewport = page.getViewport({ scale: 1 });
-          const scale = containerWidth / baseViewport.width;
-          const viewport = page.getViewport({ scale: scale * dpr });
-
-          const canvas = document.createElement("canvas");
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          canvas.style.width = "100%";
-          canvas.style.height = "auto";
-          canvas.style.display = "block";
-          if (!firstPageOnly && i > 1) canvas.style.marginTop = "8px";
-
-          await page.render({
-            canvasContext: canvas.getContext("2d"),
-            viewport,
-          }).promise;
-          if (cancelled) return;
-          container.appendChild(canvas);
-
-          // Basculer sur le canvas dès la première page : les suivantes
-          // s'ajoutent pendant que l'utilisateur voit déjà le document.
-          if (i === 1) setStatus("ready");
-        }
-        setStatus("ready");
+        await renderPass();
       } catch (error) {
         console.error("Erreur rendu PDF:", error);
         if (!cancelled) setStatus("error");
       }
     })();
 
+    // Netteté au zoom : le zoom navigateur change devicePixelRatio (et émet
+    // un resize), le pincement mobile change visualViewport.scale. Dans les
+    // deux cas, le PDF vectoriel est redessiné à la nouvelle résolution.
+    window.addEventListener("resize", scheduleRerender);
+    window.visualViewport?.addEventListener("resize", scheduleRerender);
+
     return () => {
       cancelled = true;
+      clearTimeout(debounceTimer);
+      window.removeEventListener("resize", scheduleRerender);
+      window.visualViewport?.removeEventListener("resize", scheduleRerender);
       pdfDoc?.destroy?.();
     };
   }, [src, firstPageOnly]);
