@@ -511,6 +511,67 @@ const UniversalPDFDownloaderWithFacturX = ({
   const canUseFacturX =
     enableFacturX && (type === "invoice" || type === "creditNote");
 
+  const buildFileName = () => {
+    const documentType =
+      type === "invoice"
+        ? "facture"
+        : type === "quote"
+          ? "devis"
+          : type === "purchaseOrder"
+            ? "bon-de-commande"
+            : "avoir";
+    const number = data.number || "document";
+    const prefix = data.prefix || "";
+    return (
+      filename ||
+      (prefix
+        ? `${documentType}_${prefix}-${number}.pdf`
+        : `${documentType}_${number}.pdf`)
+    );
+  };
+
+  const triggerBlobDownload = (blob, fileName) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  /**
+   * Sert le PDF archivé sur R2 (document faisant foi : vectoriel, identique à
+   * la preview et à l'email, Factur-X déjà embarqué pour factures/avoirs) via
+   * le proxy same-origin. Renvoie false si indisponible (brouillon, archive
+   * absente, erreur réseau) : l'appelant retombe sur la capture locale.
+   */
+  const downloadArchivedPdf = async () => {
+    const docId = data?.id || data?._id;
+    if (!docId || data?.status === "DRAFT") return false;
+    try {
+      const response = await fetch(`/api/document-preview/${type}/${docId}`);
+      if (!response.ok) return false;
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("pdf")) return false;
+      const blob = await response.blob();
+      if (!blob.size) return false;
+
+      triggerBlobDownload(blob, buildFileName());
+      toast.success("PDF téléchargé", {
+        description: "Document archivé (version faisant foi)",
+      });
+      return true;
+    } catch (error) {
+      console.warn(
+        "⚠️ Archive PDF indisponible, repli sur la génération locale:",
+        error?.message,
+      );
+      return false;
+    }
+  };
+
   // Attendre que le composant soit prêt
   useEffect(() => {
     if (componentRef.current) {
@@ -1244,21 +1305,7 @@ const UniversalPDFDownloaderWithFacturX = ({
       }
 
       // Nom du fichier
-      const documentType =
-        type === "invoice"
-          ? "facture"
-          : type === "quote"
-            ? "devis"
-            : type === "purchaseOrder"
-              ? "bon-de-commande"
-              : "avoir";
-      const number = data.number || "document";
-      const prefix = data.prefix || "";
-      const fileName =
-        filename ||
-        (prefix
-          ? `${documentType}_${prefix}-${number}.pdf`
-          : `${documentType}_${number}.pdf`);
+      const fileName = buildFileName();
 
       console.log(`\n💾 Fichier: ${fileName}`);
 
@@ -1301,14 +1348,7 @@ const UniversalPDFDownloaderWithFacturX = ({
               }
               const blob = new Blob([bytes], { type: "application/pdf" });
 
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = fileName;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
+              triggerBlobDownload(blob, fileName);
 
               console.log("✅ PDF Factur-X téléchargé avec succès");
               toast.success("PDF Factur-X téléchargé", {
@@ -1360,8 +1400,16 @@ const UniversalPDFDownloaderWithFacturX = ({
     }
   };
 
-  const handleDownload = (e) => {
+  const handleDownload = async (e) => {
     e?.preventDefault();
+
+    // 1. PDF archivé (R2) en priorité pour les documents finalisés
+    setIsGenerating(true);
+    const servedFromArchive = await downloadArchivedPdf();
+    setIsGenerating(false);
+    if (servedFromArchive) return;
+
+    // 2. Repli : génération locale par capture du rendu HTML
     if (!isReady) {
       toast.info("Veuillez patienter", {
         description: "Chargement du document...",
