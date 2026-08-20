@@ -930,6 +930,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3 -mx-5">
                 <div className="flex gap-2">
                   <Button
+                    type="button"
                     variant="ghost"
                     className="cursor-pointer"
                     onClick={() => {
@@ -941,6 +942,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                     Annuler
                   </Button>
                   <Button
+                    type="button"
                     variant="primary"
                     className="cursor-pointer"
                     disabled={

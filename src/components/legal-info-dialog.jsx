@@ -90,6 +90,10 @@ const LEGAL_FORM_GROUPS = [
     ],
   },
   {
+    label: "Indivision",
+    forms: [{ value: "Indivision", label: "Indivision (Situation juridique)" }],
+  },
+  {
     label: "Associations",
     forms: [{ value: "Association", label: "Association déclarée" }],
   },
@@ -444,13 +448,13 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
                     )}
                   </div>
 
-                  {/* Régime de la TVA */}
+                  {/* Exigibilité de la TVA (vatMode) : débits ou encaissements */}
                   <div className="flex flex-col gap-2">
                     <Label
                       htmlFor="dialog-vat-regime"
                       className={FIELD_LABEL_CLASS}
                     >
-                      Régime de la TVA
+                      Exigibilité de la TVA
                     </Label>
                     <Select
                       value={vatMode || ""}
@@ -463,7 +467,7 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
                       }
                     >
                       <SelectTrigger id="dialog-vat-regime" className="w-full">
-                        <SelectValue placeholder="Sélectionnez le régime de la TVA" />
+                        <SelectValue placeholder="Sélectionnez l'exigibilité de la TVA" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem

@@ -332,9 +332,13 @@ export function SettingsModal({
         vatRegime: formData.legal?.isVatSubject
           ? formData.legal?.vatRegime || ""
           : "",
-        vatFrequency: formData.legal?.isVatSubject
-          ? formData.legal?.vatFrequency || ""
-          : "",
+        // La fréquence n'a de sens qu'au réel normal (réel simplifié = CA12
+        // annuelle) : ne jamais persister une valeur périmée d'un autre régime
+        vatFrequency:
+          formData.legal?.isVatSubject &&
+          formData.legal?.vatRegime === "reel-normal"
+            ? formData.legal?.vatFrequency || ""
+            : "",
         vatMode: formData.legal?.isVatSubject
           ? formData.legal?.vatMode || ""
           : "",

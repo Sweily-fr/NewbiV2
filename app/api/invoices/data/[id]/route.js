@@ -71,6 +71,54 @@ async function handler(request, { params }) {
   // pas d'organisation active) retombait sur la dénomination sociale.
   const { beneficiaryNameType, userName } = await resolveBeneficiary(invoice);
 
+  // Factures de situation précédentes : indispensables au récapitulatif de
+  // facturation et à la colonne "Av. cumulé" de UniversalPreviewPDF. Sans
+  // elles, le PDF archivé d'une facture de situation perdait le récap et
+  // l'avancement cumulé repartait de l'avancement de la seule facture
+  // courante. Même sélection que la sidebar (resolver
+  // situationInvoicesByQuoteRef + filtre situationNumber strictement
+  // inférieur, tri croissant).
+  let previousSituationInvoices = [];
+  if (invoice.invoiceType === "situation") {
+    const reference = (
+      invoice.situationReference ||
+      invoice.purchaseOrderNumber ||
+      ""
+    ).trim();
+    if (reference) {
+      const currentSituationNumber = invoice.situationNumber || 1;
+      const siblings = await mongoDb
+        .collection("invoices")
+        .find({
+          workspaceId: invoice.workspaceId,
+          invoiceType: "situation",
+          situationReference: reference,
+          _id: { $ne: invoice._id },
+        })
+        .toArray();
+
+      previousSituationInvoices = siblings
+        .filter((inv) => (inv.situationNumber || 0) < currentSituationNumber)
+        .sort((a, b) => (a.situationNumber || 0) - (b.situationNumber || 0))
+        .map((inv) => ({
+          id: inv._id.toString(),
+          number: inv.number,
+          prefix: inv.prefix,
+          situationNumber: inv.situationNumber,
+          status: inv.status,
+          issueDate: inv.issueDate || inv.date,
+          createdAt: inv.createdAt,
+          updatedAt: inv.updatedAt,
+          finalTotalTTC: inv.finalTotalTTC,
+          isReverseCharge: inv.isReverseCharge,
+          discount: inv.discount,
+          discountType: inv.discountType,
+          escompte: inv.escompte,
+          items: inv.items,
+        }));
+    }
+  }
+
   // Format response data
   const formattedData = {
     id: invoice._id.toString(),
@@ -112,6 +160,7 @@ async function handler(request, { params }) {
     situationReference: invoice.situationReference,
     situationNumber: invoice.situationNumber,
     contractTotal: invoice.contractTotal,
+    previousSituationInvoices,
 
     showBankDetails: invoice.showBankDetails,
     isReverseCharge: invoice.isReverseCharge,
