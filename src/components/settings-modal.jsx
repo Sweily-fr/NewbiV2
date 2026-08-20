@@ -62,6 +62,9 @@ import { usePermissions } from "@/src/hooks/usePermissions";
 import { BankAccountsSection } from "./settings/bank-accounts-section";
 import { ApplicationsSection } from "./settings/applications-section";
 import { EInvoicingSection } from "./settings/e-invoicing-section";
+import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
+import { UPDATE_EINVOICING_VAT_REGIME } from "@/src/graphql/eInvoicingQueries";
+import { deriveVatRegime } from "@/src/utils/vatRegime";
 
 export function SettingsModal({
   open,
@@ -86,6 +89,10 @@ export function SettingsModal({
 
   // Vérifier si l'utilisateur peut modifier les paramètres d'organisation
   const canManageOrgSettings = isOwner() || isAdmin();
+
+  // La facturation électronique transmet le régime de TVA dérivé à SuperPDP :
+  // toute modification TVA sauvegardée ici doit y être répercutée (cf. onSuccess).
+  const { settings: eInvoicingSettings } = useEInvoicingSettings();
 
   const formMethods = useForm({
     mode: "onChange", // Validation en temps réel
@@ -382,6 +389,30 @@ export function SettingsModal({
             apolloClient.cache.gc();
           } catch (e) {
             console.error("Erreur invalidation cache (exercice):", e);
+          }
+          // Répercuter le changement de situation TVA sur SuperPDP quand la
+          // facturation électronique est active : le régime dérivé pilote la
+          // fréquence d'e-reporting au PPF côté plateforme agréée. Best-effort :
+          // l'onglet Facturation électronique resynchronise aussi à l'ouverture.
+          try {
+            if (eInvoicingSettings?.eInvoicingEnabled) {
+              const previousDerived = deriveVatRegime(organization);
+              const newDerived = deriveVatRegime(transformedData);
+              if (newDerived && newDerived !== previousDerived) {
+                await apolloClient.mutate({
+                  mutation: UPDATE_EINVOICING_VAT_REGIME,
+                  variables: {
+                    workspaceId: organization.id,
+                    vatRegime: newDerived,
+                  },
+                });
+              }
+            }
+          } catch (e) {
+            console.error("Erreur synchronisation régime TVA SuperPDP:", e);
+            toast.error(
+              "Informations sauvegardées, mais la mise à jour du régime de TVA chez SuperPDP a échoué. Rouvrez l'onglet Facturation électronique pour resynchroniser.",
+            );
           }
           // Réinitialiser les defaultValues du form avec les valeurs sauvegardées
           // pour que isDirty reparte à false (sinon un retour à la valeur précédente
