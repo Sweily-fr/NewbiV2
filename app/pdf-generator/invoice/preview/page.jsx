@@ -372,6 +372,9 @@ export default function PDFPreviewPage() {
             type="invoice"
             forPDF={!isVisual}
             isMobile={isVisual}
+            previousSituationInvoices={
+              invoiceData.previousSituationInvoices || []
+            }
           />
         )}
       </div>

@@ -490,6 +490,9 @@ export default function PDFGeneratorPage() {
             type="invoice"
             forPDF={!isVisual}
             isMobile={isVisual}
+            previousSituationInvoices={
+              invoiceData.previousSituationInvoices || []
+            }
           />
         )}
       </div>

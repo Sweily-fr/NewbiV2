@@ -68,7 +68,10 @@ export async function buildFacturXFile(invoice, type = "invoice") {
       return base64ToFile(pdfBase64, fileName);
     }
 
-    const xmlString = generateFacturXXML(invoice, type);
+    // Chaînage des situations précédentes (BG-3) si l'appelant les fournit
+    const xmlString = generateFacturXXML(invoice, type, {
+      previousSituationInvoices: invoice.previousSituationInvoices || [],
+    });
 
     // 3. Embarquement XML → PDF/A-3 conforme
     const facturxResponse = await fetch("/api/generate-facturx", {
