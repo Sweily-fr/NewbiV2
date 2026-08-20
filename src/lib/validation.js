@@ -37,9 +37,13 @@ export const LEGAL_FORMS_WITHOUT_CAPITAL = [
   "Auto-entrepreneur",
   "EI",
   "Association",
+  "Indivision",
 ];
 // Formes juridiques sans catégorie d'activité (champ masqué)
-export const LEGAL_FORMS_WITHOUT_ACTIVITY_CATEGORY = ["Association"];
+export const LEGAL_FORMS_WITHOUT_ACTIVITY_CATEGORY = [
+  "Association",
+  "Indivision",
+];
 export const LEGAL_FORMS_EI_MICRO = ["EI", "Auto-entrepreneur"];
 // Catégories d'activité qui imposent le numéro RCS aux entreprises individuelles
 export const ACTIVITY_CATEGORIES_WITH_RCS = [

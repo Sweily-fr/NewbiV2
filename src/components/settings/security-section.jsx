@@ -652,6 +652,7 @@ export function SecuritySection({
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   className="cursor-pointer font-normal"
@@ -752,7 +753,11 @@ export function SecuritySection({
                         {!device.current && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                              >
                                 Révoquer
                               </Button>
                             </AlertDialogTrigger>
@@ -829,6 +834,7 @@ export function SecuritySection({
           </div>
           <DialogFooter>
             <Button
+              type="button"
               variant="outline"
               onClick={() => {
                 setShowDisable2FADialog(false);
@@ -839,6 +845,7 @@ export function SecuritySection({
               Annuler
             </Button>
             <Button
+              type="button"
               variant="destructive"
               onClick={handleDisable2FA}
               disabled={!disable2FAPassword || isDisabling2FA}

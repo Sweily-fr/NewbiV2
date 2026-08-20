@@ -98,6 +98,10 @@ const LEGAL_FORM_GROUPS = [
     ],
   },
   {
+    label: "Indivision",
+    forms: [{ value: "Indivision", label: "Indivision (Situation juridique)" }],
+  },
+  {
     label: "Associations",
     forms: [{ value: "Association", label: "Association déclarée" }],
   },
@@ -140,6 +144,7 @@ function getAvailableTaxRegimes(legalForm) {
     case "SCM":
     case "SCP":
     case "Association":
+    case "Indivision":
       return ALL_TAX_REGIMES.filter((r) => reelOnly.includes(r.value));
     default:
       return ALL_TAX_REGIMES;
@@ -228,6 +233,16 @@ export function InformationsLegalesSection({
 
   const handleVatSubjectChange = (checked) => {
     setValue("legal.isVatSubject", checked, { shouldDirty: true });
+    // Revalider les champs TVA : requis quand on coche, plus requis quand on décoche
+    setValue("legal.vatRegime", watchedValues.legal?.vatRegime || "", {
+      shouldValidate: true,
+    });
+    setValue("legal.vatFrequency", watchedValues.legal?.vatFrequency || "", {
+      shouldValidate: true,
+    });
+    setValue("legal.vatMode", watchedValues.legal?.vatMode || "", {
+      shouldValidate: true,
+    });
     // Assujetti à la TVA et franchise en base sont mutuellement exclusifs
     if (checked) {
       setValue("legal.vatFranchise", false, { shouldDirty: true });
@@ -265,20 +280,62 @@ export function InformationsLegalesSection({
   };
 
   const handleVatRegimeChange = (value) => {
-    setValue("legal.vatRegime", value, { shouldDirty: true });
+    setValue("legal.vatRegime", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
     // Reset frequency when changing VAT regime
     if (value === "reel-simplifie") {
-      setValue("legal.vatFrequency", "", { shouldDirty: true });
+      setValue("legal.vatFrequency", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
     }
   };
 
   const handleVatFrequencyChange = (value) => {
-    setValue("legal.vatFrequency", value, { shouldDirty: true });
+    setValue("legal.vatFrequency", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
 
   const handleVatModeChange = (value) => {
-    setValue("legal.vatMode", value, { shouldDirty: true });
+    setValue("legal.vatMode", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   };
+
+  // Les champs TVA sont obligatoires dès que l'assujettissement est coché
+  // (réforme de la facturation électronique : le régime déclaratif pilote la
+  // fréquence d'e-reporting au PPF, l'exigibilité figure sur les factures).
+  // Les Select ne sont pas des inputs natifs : on enregistre les règles à la
+  // main pour que la soumission soit bloquée (toast + champ en rouge).
+  // (value, formValues) : lire l'assujettissement dans formValues et non via
+  // une closure du rendu, sinon la validation déclenchée dans le même tick
+  // qu'un setValue("legal.isVatSubject") verrait la valeur périmée.
+  register("legal.vatRegime", {
+    validate: (value, formValues) =>
+      !formValues?.legal?.isVatSubject ||
+      !!value ||
+      "Sélectionnez un régime de TVA",
+  });
+  // Fréquence : requise uniquement au réel normal (au réel simplifié la
+  // déclaration est annuelle, le champ est masqué et vidé).
+  register("legal.vatFrequency", {
+    validate: (value, formValues) =>
+      !formValues?.legal?.isVatSubject ||
+      formValues?.legal?.vatRegime !== "reel-normal" ||
+      !!value ||
+      "Sélectionnez la fréquence de déclaration",
+  });
+  register("legal.vatMode", {
+    validate: (value, formValues) =>
+      !formValues?.legal?.isVatSubject ||
+      !!value ||
+      "Sélectionnez l'exigibilité de la TVA",
+  });
 
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
@@ -569,7 +626,7 @@ export function InformationsLegalesSection({
                 <div className="space-y-6">
                   {/* Régime de TVA */}
                   <div className="flex flex-col gap-1">
-                    <RequiredLabel htmlFor="vatRegime" isRequired={false}>
+                    <RequiredLabel htmlFor="vatRegime" isRequired={true}>
                       Régime de TVA
                     </RequiredLabel>
                     <Select
@@ -588,12 +645,17 @@ export function InformationsLegalesSection({
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.legal?.vatRegime && (
+                      <p className="text-xs text-red-500">
+                        {errors.legal.vatRegime.message}
+                      </p>
+                    )}
                   </div>
 
                   {/* Fréquence - conditionnelle selon le régime de TVA */}
                   {selectedVatRegime === "reel-normal" && (
                     <div className="flex flex-col gap-1">
-                      <RequiredLabel htmlFor="vatFrequency" isRequired={false}>
+                      <RequiredLabel htmlFor="vatFrequency" isRequired={true}>
                         Fréquence de déclaration
                       </RequiredLabel>
                       <Select
@@ -612,6 +674,11 @@ export function InformationsLegalesSection({
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.legal?.vatFrequency && (
+                        <p className="text-xs text-red-500">
+                          {errors.legal.vatFrequency.message}
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -623,10 +690,14 @@ export function InformationsLegalesSection({
                     </div>
                   )}
 
-                  {/* Régime de la TVA */}
+                  {/* Exigibilité de la TVA (vatMode) : débits ou encaissements */}
                   <div className="flex flex-col gap-1">
-                    <RequiredLabel htmlFor="vatMode" isRequired={false}>
-                      Régime de la TVA
+                    <RequiredLabel
+                      htmlFor="vatMode"
+                      isRequired={true}
+                      tooltip="Moment où la TVA devient due : à l'émission de la facture (débits) ou au paiement (encaissements). Cette mention figure sur vos factures."
+                    >
+                      Exigibilité de la TVA
                     </RequiredLabel>
                     <Select
                       value={selectedVatMode}
@@ -634,7 +705,7 @@ export function InformationsLegalesSection({
                       disabled={!canManageOrgSettings}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sélectionnez le régime de la TVA" />
+                        <SelectValue placeholder="Sélectionnez l'exigibilité de la TVA" />
                       </SelectTrigger>
                       <SelectContent>
                         {VAT_MODES.map((mode) => (
@@ -644,6 +715,11 @@ export function InformationsLegalesSection({
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.legal?.vatMode && (
+                      <p className="text-xs text-red-500">
+                        {errors.legal.vatMode.message}
+                      </p>
+                    )}
                   </div>
 
                   {/* Numéro de TVA intracommunautaire */}

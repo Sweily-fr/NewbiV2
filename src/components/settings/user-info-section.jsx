@@ -160,6 +160,7 @@ export default function UserInfoSection({ onTabChange }) {
               <p className="text-xs text-gray-400">{session?.user?.email}</p>
             </div>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               className="ml-4 flex-shrink-0"
@@ -197,6 +198,7 @@ export default function UserInfoSection({ onTabChange }) {
               </p>
             </div>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               className="ml-4 flex-shrink-0"
@@ -228,6 +230,7 @@ export default function UserInfoSection({ onTabChange }) {
                 des frais futurs.
               </p>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => onTabChange && onTabChange("subscription")}
@@ -250,6 +253,7 @@ export default function UserInfoSection({ onTabChange }) {
               </p>
             </div>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               className="text-destructive border-destructive hover:text-destructive-foreground ml-4 flex-shrink-0"
