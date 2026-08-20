@@ -40,6 +40,7 @@ import {
   UPDATE_EINVOICING_VAT_REGIME,
   EINVOICING_EREPORTINGS,
 } from "@/src/graphql/eInvoicingQueries";
+import { deriveVatRegime } from "@/src/utils/vatRegime";
 
 const VAT_REGIME_LABELS = {
   monthly: "Mensuel",
@@ -47,31 +48,6 @@ const VAT_REGIME_LABELS = {
   simplified: "Réel simplifié",
   vat_exemption: "Franchise en base",
 };
-
-function deriveVatRegime(org) {
-  if (!org) return null;
-
-  if (org.isVatSubject === true) {
-    switch (org.vatRegime) {
-      case "reel-simplifie":
-        return "simplified";
-      case "reel-normal":
-        if (org.vatFrequency === "trimestriel") return "quarterly";
-        // Réel normal sans fréquence explicite = déclaration mensuelle (défaut CGI).
-        return "monthly";
-      default:
-        return null;
-    }
-  }
-
-  // Non assujetti : la franchise en base (art. 293 B du CGI) doit être
-  // explicitement déclarée dans les informations légales. Un simple
-  // « non assujetti » sans franchise cochée ne suffit pas à activer la
-  // facturation électronique.
-  if (org.vatFranchise === true) return "vat_exemption";
-
-  return null;
-}
 
 function formatActivatedDate(value) {
   if (!value) return null;
