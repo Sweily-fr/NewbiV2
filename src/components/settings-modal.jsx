@@ -237,7 +237,7 @@ export function SettingsModal({
   // qui bloque (un bouton grisé sans explication est un cul-de-sac).
   const handleInvalidForm = () => {
     toast.error(
-      "Certains champs sont invalides ou incomplets. Corrigez les champs signalés en rouge.",
+      "Certains champs sont invalides ou incomplets. Corrigez les champs signalés.",
     );
   };
 
