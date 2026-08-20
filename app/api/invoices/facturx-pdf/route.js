@@ -82,7 +82,11 @@ async function handler(request) {
     );
     return NextResponse.json({ success: true, pdfBase64, facturx: false });
   }
-  const xmlString = generateFacturXXML(invoiceData, "invoice");
+  // Chaînage des situations précédentes (BG-3) : la route data les renvoie
+  // pour les factures de situation, sinon tableau vide.
+  const xmlString = generateFacturXXML(invoiceData, "invoice", {
+    previousSituationInvoices: invoiceData.previousSituationInvoices || [],
+  });
 
   // 4. Embarquement XML → PDF/A-3 conforme
   const facturxResponse = await fetch(`${baseUrl}/api/generate-facturx`, {
