@@ -619,6 +619,15 @@ body {
 .colorblind-mode .text-red-900 { color: var(--cb-danger-900) !important; }
 .colorblind-mode .text-red-950 { color: var(--cb-danger-950) !important; }
 
+/* Toasts (sonner) : boîtes sombres (#202020). Le remap rouge -> noir y rend
+   l'icône d'erreur invisible (noir sur noir). Sur fond sombre, le négatif
+   passe en gris clair ; la forme de l'icône (cercle d'alerte vs coche)
+   assure la distinction. Le positif garde le bleu marque, lisible sur sombre. */
+.colorblind-mode [data-sonner-toast] .text-red-500,
+.colorblind-mode [data-sonner-toast] .text-red-600 {
+  color: var(--cb-danger-200) !important;
+}
+
 .colorblind-mode .text-rose-50  { color: var(--cb-danger-50)  !important; }
 .colorblind-mode .text-rose-100 { color: var(--cb-danger-100) !important; }
 .colorblind-mode .text-rose-200 { color: var(--cb-danger-200) !important; }

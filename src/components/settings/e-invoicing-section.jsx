@@ -527,8 +527,14 @@ export function EInvoicingSection({
             <div className="rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900 px-4 py-3 space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-col">
+                  {/* Nom du workspace Newbi, pas celui remonté par SuperPDP
+                      (companies/me peut renvoyer la société du compte OAuth,
+                      ex. « Sweily », et non l'organisation connectée) */}
                   <span className="text-sm font-medium">
-                    {verification.company?.formalName || "Entreprise connectée"}
+                    {organization?.companyName ||
+                      organization?.name ||
+                      verification.company?.formalName ||
+                      "Entreprise connectée"}
                   </span>
                   {verification.company?.number && (
                     <span className="text-xs text-gray-400">
@@ -651,8 +657,10 @@ export function EInvoicingSection({
             </div>
           )}
 
-          {/* Régime TVA (lecture seule, dérivé des informations légales) */}
-          {verification?.connected && (
+          {/* Régime TVA (lecture seule, dérivé des informations légales).
+              Toujours affiché quand la connexion est active : il vient des
+              données locales, inutile d'attendre la vérification SuperPDP. */}
+          {settings.eInvoicingEnabled && (
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h4 className="text-sm font-normal mb-1">Régime de TVA</h4>
@@ -706,11 +714,11 @@ export function EInvoicingSection({
                     <span>
                       {r.startPeriod
                         ? new Date(r.startPeriod).toLocaleDateString("fr-FR")
-                        : "—"}
+                        : "-"}
                       {" → "}
                       {r.endPeriod
                         ? new Date(r.endPeriod).toLocaleDateString("fr-FR")
-                        : "—"}
+                        : "-"}
                     </span>
                   </div>
                 ))}
