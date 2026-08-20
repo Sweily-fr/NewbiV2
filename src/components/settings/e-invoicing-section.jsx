@@ -16,6 +16,14 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import {
   useEInvoicingSettings,
   useEInvoicingStats,
 } from "@/src/hooks/useEInvoicing";
@@ -42,19 +50,27 @@ const VAT_REGIME_LABELS = {
 
 function deriveVatRegime(org) {
   if (!org) return null;
-  if (org.isVatSubject === false) return "vat_exemption";
-  if (org.isVatSubject !== true) return null;
 
-  switch (org.vatRegime) {
-    case "reel-simplifie":
-      return "simplified";
-    case "reel-normal":
-      if (org.vatFrequency === "trimestriel") return "quarterly";
-      // Réel normal sans fréquence explicite = déclaration mensuelle (défaut CGI).
-      return "monthly";
-    default:
-      return null;
+  if (org.isVatSubject === true) {
+    switch (org.vatRegime) {
+      case "reel-simplifie":
+        return "simplified";
+      case "reel-normal":
+        if (org.vatFrequency === "trimestriel") return "quarterly";
+        // Réel normal sans fréquence explicite = déclaration mensuelle (défaut CGI).
+        return "monthly";
+      default:
+        return null;
+    }
   }
+
+  // Non assujetti : la franchise en base (art. 293 B du CGI) doit être
+  // explicitement déclarée dans les informations légales. Un simple
+  // « non assujetti » sans franchise cochée ne suffit pas à activer la
+  // facturation électronique.
+  if (org.vatFranchise === true) return "vat_exemption";
+
+  return null;
 }
 
 function formatActivatedDate(value) {
@@ -62,6 +78,38 @@ function formatActivatedDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleDateString("fr-FR");
+}
+
+/**
+ * Fin de l'engagement du mandat de facturation : un an après l'activation.
+ * Retourne null si la date d'activation est absente ou invalide.
+ */
+function getEngagementEndDate(activatedAt) {
+  if (!activatedAt) return null;
+  const date = new Date(activatedAt);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setFullYear(date.getFullYear() + 1);
+  return date;
+}
+
+/** "3 mois et 12 jours", "27 jours"… entre maintenant et `end`. */
+function formatRemainingTime(end) {
+  const now = new Date();
+  if (end <= now) return null;
+  let months =
+    (end.getFullYear() - now.getFullYear()) * 12 +
+    (end.getMonth() - now.getMonth());
+  let anchor = new Date(now);
+  anchor.setMonth(anchor.getMonth() + months);
+  if (anchor > end) {
+    months -= 1;
+    anchor = new Date(now);
+    anchor.setMonth(anchor.getMonth() + months);
+  }
+  const days = Math.ceil((end - anchor) / (1000 * 60 * 60 * 24));
+  if (months <= 0) return `${days} jour${days > 1 ? "s" : ""}`;
+  if (days <= 0) return `${months} mois`;
+  return `${months} mois et ${days} jour${days > 1 ? "s" : ""}`;
 }
 
 function getDirectoryEntryDisplay(entry) {
@@ -230,7 +278,18 @@ export function EInvoicingSection({
     await connect();
   };
 
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+
+  // Engagement légal : l'activation vaut mandat de facturation d'un an minimum
+  // auprès de la plateforme agréée. Avant l'échéance, la déconnexion est
+  // bloquée (le backend refuse aussi la requête).
+  const engagementEndsAt = getEngagementEndDate(
+    settings?.eInvoicingActivatedAt,
+  );
+  const engagementActive = engagementEndsAt && engagementEndsAt > new Date();
+
   const handleDisconnect = async () => {
+    setDisconnectDialogOpen(false);
     await disconnect();
     refetch();
   };
@@ -278,10 +337,11 @@ export function EInvoicingSection({
                   onClick={goToLegalInfo}
                   className="underline font-medium hover:text-amber-800"
                 >
-                  régime de TVA
+                  situation de TVA
                 </button>{" "}
                 dans les informations légales avant d'activer la facturation
-                électronique.
+                électronique : assujetti à la TVA (avec votre régime), ou
+                franchise en base.
               </div>
             </div>
           )}
@@ -320,6 +380,7 @@ export function EInvoicingSection({
             )}
           </div>
           <Button
+            type="button"
             onClick={handleConnect}
             disabled={
               isReadOnly ||
@@ -329,7 +390,7 @@ export function EInvoicingSection({
             }
             title={
               !derivedVatRegime
-                ? "Renseignez votre régime de TVA dans les informations légales"
+                ? "Renseignez votre situation de TVA (assujetti ou franchise en base) dans les informations légales"
                 : readOnlyTooltip
             }
             variant="primary"
@@ -355,9 +416,10 @@ export function EInvoicingSection({
               </p>
             </div>
             <Button
+              type="button"
               variant="outline"
               size="sm"
-              onClick={handleDisconnect}
+              onClick={() => setDisconnectDialogOpen(true)}
               disabled={!canManageOrgSettings || superPdpLoading}
             >
               {superPdpLoading ? (
@@ -367,6 +429,73 @@ export function EInvoicingSection({
               )}
               Déconnecter
             </Button>
+            <Dialog
+              open={disconnectDialogOpen}
+              onOpenChange={setDisconnectDialogOpen}
+            >
+              <DialogContent className="sm:max-w-[480px]">
+                <DialogHeader>
+                  <DialogTitle>Déconnexion de SuperPDP</DialogTitle>
+                  {engagementActive ? (
+                    <DialogDescription asChild>
+                      <div className="space-y-3 pt-2 text-sm text-muted-foreground">
+                        <p>
+                          Dans le cadre de la réforme de la facturation
+                          électronique, l'activation vaut mandat de facturation
+                          d'une durée minimale d'un an auprès de SuperPDP,
+                          plateforme agréée par l'administration fiscale. La
+                          déconnexion n'est pas possible pendant cette période
+                          d'engagement.
+                        </p>
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20 p-3 text-amber-700 dark:text-amber-400">
+                          Déconnexion possible le{" "}
+                          <span className="font-medium">
+                            {engagementEndsAt.toLocaleDateString("fr-FR")}
+                          </span>{" "}
+                          (dans {formatRemainingTime(engagementEndsAt)}).
+                        </div>
+                      </div>
+                    </DialogDescription>
+                  ) : (
+                    <DialogDescription className="pt-2">
+                      Vos factures ne seront plus transmises via la plateforme
+                      agréée et votre entreprise ne pourra plus recevoir de
+                      factures électroniques via Newbi. Confirmer la déconnexion
+                      ?
+                    </DialogDescription>
+                  )}
+                </DialogHeader>
+                <DialogFooter>
+                  {engagementActive ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => setDisconnectDialogOpen(false)}
+                    >
+                      Compris
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setDisconnectDialogOpen(false)}
+                      >
+                        Annuler
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={handleDisconnect}
+                        disabled={superPdpLoading}
+                      >
+                        Se déconnecter
+                      </Button>
+                    </>
+                  )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Stats */}
@@ -461,7 +590,9 @@ export function EInvoicingSection({
                   <p className="text-xs text-gray-400">
                     {allDirectoriesRegistered
                       ? "Votre entreprise est inscrite aux annuaires Peppol et PPF"
-                      : "Inscrivez votre entreprise aux annuaires Peppol et PPF"}
+                      : verification.companyVerificationStatus !== "verified"
+                        ? "L'inscription aux annuaires Peppol et PPF sera finalisée après la vérification de votre entreprise par SuperPDP"
+                        : "Inscrivez votre entreprise aux annuaires Peppol et PPF"}
                   </p>
                 </div>
                 {allDirectoriesRegistered ? (
@@ -469,8 +600,14 @@ export function EInvoicingSection({
                     <ClipboardTickIcon className="w-3 h-3" />
                     Inscrit
                   </span>
+                ) : verification.companyVerificationStatus !== "verified" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                    <RoutingIcon className="w-3 h-3" />
+                    En attente
+                  </span>
                 ) : (
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleRegisterDirectory}

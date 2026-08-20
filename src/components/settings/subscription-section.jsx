@@ -660,6 +660,7 @@ export function SubscriptionSection({
                   <div className="mt-3">
                     {isCurrentPlan ? (
                       <Button
+                        type="button"
                         variant="outline"
                         size="sm"
                         className="w-full cursor-default text-xs"
@@ -669,6 +670,7 @@ export function SubscriptionSection({
                       </Button>
                     ) : (
                       <Button
+                        type="button"
                         variant="outline"
                         size="sm"
                         className="w-full cursor-pointer text-xs"
@@ -755,9 +757,7 @@ export function SubscriptionSection({
                           ) : value === false ? (
                             <X className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
                           ) : (
-                            <span className="text-xs font-medium">
-                              {value}
-                            </span>
+                            <span className="text-xs font-medium">{value}</span>
                           )}
                         </div>
                       );
@@ -778,6 +778,7 @@ export function SubscriptionSection({
         subscription.status !== "canceled" && (
           <div className="flex justify-end">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => setShowCancelDialog(true)}
@@ -1030,6 +1031,7 @@ export function SubscriptionSection({
 
               <div className="px-6 py-4 bg-muted/50 border-t flex justify-end gap-3">
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() => {
                     setShowPlanChangeModal(false);
@@ -1042,6 +1044,7 @@ export function SubscriptionSection({
                   Annuler
                 </Button>
                 <Button
+                  type="button"
                   onClick={confirmPlanChange}
                   disabled={
                     isLoading ||

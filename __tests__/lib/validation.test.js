@@ -19,11 +19,12 @@ describe("validation — legal form constants", () => {
     expect(LEGAL_FORMS_WITH_RCS).toContain("SASU");
   });
 
-  it("LEGAL_FORMS_WITHOUT_CAPITAL covers Auto-entrepreneur, EI and Association", () => {
+  it("LEGAL_FORMS_WITHOUT_CAPITAL covers Auto-entrepreneur, EI, Association and Indivision", () => {
     expect(LEGAL_FORMS_WITHOUT_CAPITAL).toEqual([
       "Auto-entrepreneur",
       "EI",
       "Association",
+      "Indivision",
     ]);
   });
 });

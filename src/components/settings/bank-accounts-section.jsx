@@ -540,6 +540,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           description="Connectez votre banque pour synchroniser automatiquement vos transactions."
           action={
             <Button
+              type="button"
               size="sm"
               onClick={handleOpenModal}
               disabled={isReadOnly || !canManageOrgSettings || !isEmailVerified}
@@ -564,6 +565,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
               </div>
               <div className="flex items-center gap-1.5">
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleRefresh}
@@ -580,6 +582,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         disabled={isReadOnly || isLoading || isDisconnectingAll}
@@ -602,8 +605,8 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                         <AlertDialogDescription>
                           Toutes vos connexions bancaires seront déconnectées et
                           les comptes retirés de Newbi. Cette action est
-                          irréversible — vous devrez reconnecter vos banques pour
-                          resynchroniser vos transactions.
+                          irréversible — vous devrez reconnecter vos banques
+                          pour resynchroniser vos transactions.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -620,6 +623,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                 )}
                 {canAddBankAccount ? (
                   <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     onClick={handleOpenModal}

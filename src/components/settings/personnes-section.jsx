@@ -66,12 +66,12 @@ export function PersonnesSection() {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button type="button" variant="outline" size="sm">
                     <Settings className="h-4 w-4 mr-2" />
                     Modifier
                   </Button>
                   {!role.isDefault && (
-                    <Button variant="destructive" size="sm">
+                    <Button type="button" variant="destructive" size="sm">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
@@ -80,7 +80,7 @@ export function PersonnesSection() {
             ))}
           </div>
 
-          <Button variant="outline" className="w-full">
+          <Button type="button" variant="outline" className="w-full">
             Créer un nouveau rôle
           </Button>
         </div>
