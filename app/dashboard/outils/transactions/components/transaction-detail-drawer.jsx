@@ -136,151 +136,6 @@ const statusLabels = {
   REFUNDED: "Remboursée",
 };
 
-// Mapping des catégories form vers API (étendu pour couvrir toutes les catégories du CategorySearchSelect)
-const categoryFormToApi = {
-  // Fournitures et équipement
-  bureau: "OFFICE_SUPPLIES",
-  materiel: "HARDWARE",
-  mobilier: "OFFICE_SUPPLIES",
-  equipement: "HARDWARE",
-
-  // Transport et déplacements
-  transport: "TRAVEL",
-  carburant: "TRAVEL",
-  parking: "TRAVEL",
-  peage: "TRAVEL",
-  taxi: "TRAVEL",
-  train: "TRAVEL",
-  avion: "TRAVEL",
-  location_vehicule: "TRAVEL",
-
-  // Repas et hébergement
-  repas: "MEALS",
-  restaurant: "MEALS",
-  hotel: "ACCOMMODATION",
-
-  // Communication et marketing
-  marketing: "MARKETING",
-  publicite: "MARKETING",
-  communication: "MARKETING",
-  telephone: "SUBSCRIPTIONS",
-  internet: "SUBSCRIPTIONS",
-  site_web: "SOFTWARE",
-  reseaux_sociaux: "MARKETING",
-
-  // Formation et développement
-  formation: "TRAINING",
-  conference: "TRAINING",
-  livres: "TRAINING",
-  abonnement: "SUBSCRIPTIONS",
-
-  // Services professionnels
-  comptabilite: "SERVICES",
-  juridique: "SERVICES",
-  assurance: "INSURANCE",
-  banque: "SERVICES",
-  conseil: "SERVICES",
-  sous_traitance: "SERVICES",
-
-  // Locaux et charges
-  loyer: "RENT",
-  electricite: "UTILITIES",
-  eau: "UTILITIES",
-  chauffage: "UTILITIES",
-  entretien: "MAINTENANCE",
-
-  // Logiciels et outils
-  logiciel: "SOFTWARE",
-  saas: "SOFTWARE",
-  licence: "SOFTWARE",
-
-  // Ressources humaines
-  salaire: "SALARIES",
-  charges_sociales: "SALARIES",
-  recrutement: "SERVICES",
-
-  // Fiscalité
-  impots_taxes: "TAXES",
-  tva: "TAXES",
-  avoirs_remboursement: "OTHER",
-
-  // Autres dépenses
-  cadeaux: "OTHER",
-  representation: "OTHER",
-  poste: "OFFICE_SUPPLIES",
-  impression: "OFFICE_SUPPLIES",
-  autre: "OTHER",
-
-  // Revenus
-  ventes: "SERVICES",
-  services: "SERVICES",
-  honoraires: "SERVICES",
-  commissions: "SERVICES",
-  consulting: "SERVICES",
-  abonnements_revenus: "SUBSCRIPTIONS",
-  licences_revenus: "SOFTWARE",
-  royalties: "OTHER",
-  loyers_revenus: "RENT",
-  interets: "OTHER",
-  dividendes: "OTHER",
-  plus_values: "OTHER",
-  subventions: "OTHER",
-  remboursements_revenus: "OTHER",
-  indemnites: "OTHER",
-  cadeaux_recus: "OTHER",
-  autre_revenu: "OTHER",
-};
-
-// Mapping des catégories API vers form (inverse de categoryFormToApi)
-const categoryApiToForm = {
-  // Fournitures et équipement
-  OFFICE_SUPPLIES: "bureau",
-  HARDWARE: "materiel",
-
-  // Transport et déplacements
-  TRAVEL: "transport",
-
-  // Repas et hébergement
-  MEALS: "repas",
-  ACCOMMODATION: "hotel",
-
-  // Communication et marketing
-  MARKETING: "marketing",
-  UTILITIES: "telephone",
-
-  // Formation et développement
-  TRAINING: "formation",
-  SUBSCRIPTIONS: "abonnement",
-
-  // Services professionnels
-  SERVICES: "comptabilite",
-  INSURANCE: "assurance",
-
-  // Locaux et charges
-  RENT: "loyer",
-  MAINTENANCE: "entretien",
-
-  // Logiciels et outils
-  SOFTWARE: "logiciel",
-
-  // Ressources humaines
-  SALARIES: "salaire",
-
-  // Fiscalité
-  TAXES: "impots_taxes",
-  TAXES_DUTIES: "impots_taxes",
-  VAT: "tva",
-  REFUNDS: "avoirs_remboursement",
-
-  // Autres
-  OTHER: "autre",
-
-  // Revenus (pour compatibilité avec d'anciennes données)
-  SALES: "ventes",
-  INVESTMENTS: "autre_revenu",
-  GRANTS: "subventions",
-};
-
 export function TransactionDetailDrawer({
   transaction,
   open,
@@ -529,33 +384,11 @@ export function TransactionDetailDrawer({
         formType = "INCOME";
       }
 
-      // Résoudre la catégorie du formulaire
-      // Si c'est déjà une sous-catégorie fine (ex: "parking"), l'utiliser directement
-      // Sinon c'est une catégorie large API (ex: "TRAVEL"), la mapper vers une sous-catégorie
-      let formCategory = "";
-      if (transaction.category) {
-        if (categoryFormToApi[transaction.category]) {
-          // Déjà une sous-catégorie fine (ex: "parking", "carburant")
-          formCategory = transaction.category;
-        } else if (formType === "INCOME") {
-          // Catégorie large API pour un revenu — d'abord mapper vers une catégorie revenu spécifique,
-          // sinon utiliser le mapping général (le CategorySearchSelect cherche dans les deux listes)
-          const incomeCategoryMap = {
-            SERVICES: "services",
-            SUBSCRIPTIONS: "abonnements_revenus",
-            SOFTWARE: "licences_revenus",
-            RENT: "loyers_revenus",
-            OTHER: "autre_revenu",
-          };
-          formCategory =
-            incomeCategoryMap[transaction.category] ||
-            categoryApiToForm[transaction.category] ||
-            "autre_revenu";
-        } else {
-          // Catégorie large API pour une dépense (rétro-compatibilité)
-          formCategory = categoryApiToForm[transaction.category] || "";
-        }
-      }
+      // Catégorie du formulaire : valeur stockée telle quelle (sous-catégorie
+      // fine ou catégorie large API), même principe que viewCategoryForm — le
+      // CategorySearchSelect affiche le même libellé que le tableau et un
+      // enregistrement sans changement ne réécrit plus la catégorie.
+      const formCategory = transaction.category || "";
 
       setFormData({
         type: formType,
@@ -589,28 +422,13 @@ export function TransactionDetailDrawer({
     },
   });
 
-  // Catégorie en mode vue : mapper la valeur stockée vers la sous-catégorie fine
-  const viewCategoryForm = (() => {
-    if (!transaction?.category) return "";
-    // Si c'est déjà une sous-catégorie fine
-    if (categoryFormToApi[transaction.category]) return transaction.category;
-    // Sinon c'est une catégorie large API → mapper vers une sous-catégorie
-    if (transaction.amount > 0) {
-      const incomeCategoryMap = {
-        SERVICES: "services",
-        SUBSCRIPTIONS: "abonnements_revenus",
-        SOFTWARE: "licences_revenus",
-        RENT: "loyers_revenus",
-        OTHER: "autre_revenu",
-      };
-      return (
-        incomeCategoryMap[transaction.category] ||
-        categoryApiToForm[transaction.category] ||
-        "autre_revenu"
-      );
-    }
-    return categoryApiToForm[transaction.category] || "autre";
-  })();
+  // Catégorie en mode vue : valeur stockée passée telle quelle (sous-catégorie
+  // fine OU catégorie large API). La convertir vers une sous-catégorie
+  // arbitraire faisait diverger le libellé du sélecteur de celui de la colonne
+  // du tableau (ex: "SERVICES" affiché « Sous-traitance » dans le tableau mais
+  // « Comptabilité » ici) — le CategorySearchSelect résout maintenant les deux
+  // formats via getCategoryConfig.
+  const viewCategoryForm = transaction?.category || "";
 
   // Gérer le changement de catégorie (mode vue - utilise les mêmes sous-catégories fines)
   const handleViewCategoryChange = async (newCategory) => {
@@ -998,8 +816,10 @@ export function TransactionDetailDrawer({
   // Récupérer les infos visuelles
   // L'icône doit être réactive aux changements de catégorie en mode création ET édition
   const isEditingForm = isCreateMode || isEditMode;
+  // getCategoryConfig résout directement sous-catégories fines et catégories
+  // larges : pas besoin de pré-mapper vers la catégorie large
   const currentCategoryKey = isEditingForm
-    ? categoryFormToApi[formData.category] || "OTHER"
+    ? formData.category || "OTHER"
     : transaction?.category || "OTHER";
   const categoryConfig = getCategoryConfig(currentCategoryKey);
   const CategoryIcon = categoryConfig.icon;
