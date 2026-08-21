@@ -51,7 +51,7 @@ function PurchaseOrdersContent() {
           toastManager.add({
             type: "document",
             title: "Bon de commande créé avec succès",
-            description: `BC ${poData.number} créé`,
+            description: `Bon de commande ${poData.number} créé`,
             timeout: 10000,
             actionProps: poData.clientEmail
               ? {
