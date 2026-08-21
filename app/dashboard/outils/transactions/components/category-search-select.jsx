@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
+import { getCategoryConfig } from "@/lib/category-icons-config";
 import { Button } from "@/src/components/ui/button";
 import {
   Command,
@@ -124,27 +125,6 @@ const incomeCategories = [
   { value: "autre_revenu", label: "Autre revenu" },
 ];
 
-// Mapping des catégories API vers un label lisible (fallback quand la value n'est pas dans la liste)
-const apiCategoryLabels = {
-  OFFICE_SUPPLIES: "Fournitures de bureau",
-  TRAVEL: "Transport",
-  MEALS: "Repas",
-  ACCOMMODATION: "Hébergement",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  SERVICES: "Services",
-  MARKETING: "Marketing",
-  TAXES: "Impôts et taxes",
-  RENT: "Loyer",
-  UTILITIES: "Charges",
-  SALARIES: "Salaires",
-  INSURANCE: "Assurance",
-  MAINTENANCE: "Entretien",
-  TRAINING: "Formation",
-  SUBSCRIPTIONS: "Abonnements",
-  OTHER: "Autre",
-};
-
 export default function CategorySearchSelect({
   value,
   onValueChange,
@@ -158,12 +138,17 @@ export default function CategorySearchSelect({
   // Sélectionner les catégories en fonction du type de transaction
   const categories = type === "INCOME" ? incomeCategories : expenseCategories;
 
-  // Résoudre le label affiché : chercher dans la liste active, puis dans l'autre liste, puis fallback API
+  // Résoudre le label affiché : chercher dans la liste active, puis dans
+  // l'autre liste, puis getCategoryConfig — la même source que la colonne
+  // Catégorie du tableau, pour qu'une catégorie large API (ex: "SERVICES"
+  // propagée depuis une facture d'achat rapprochée) affiche le même libellé
+  // ici et dans le tableau.
   const resolvedLabel = value
     ? categories.find((c) => c.value === value)?.label ||
-      (type === "INCOME" ? expenseCategories : incomeCategories).find((c) => c.value === value)?.label ||
-      apiCategoryLabels[value] ||
-      value
+      (type === "INCOME" ? expenseCategories : incomeCategories).find(
+        (c) => c.value === value,
+      )?.label ||
+      getCategoryConfig(value).label
     : null;
 
   return (
