@@ -2130,12 +2130,12 @@ export function useInvoiceEditor({
           currency: input.currency,
           status: input.status || "DRAFT",
         });
-        toast.success("Facture créée avec succès");
+        toast.success("Brouillon sauvegardé");
         router.push("/dashboard/outils/factures");
         return true;
       } else {
         await updateInvoice(invoiceId, input);
-        toast.success("Facture sauvegardée");
+        toast.success("Brouillon sauvegardé");
         // Reset form with current data to mark as clean
         reset(currentFormData);
         // Rediriger vers la liste des factures après sauvegarde réussie en mode édition
