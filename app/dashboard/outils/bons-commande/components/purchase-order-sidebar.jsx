@@ -786,7 +786,7 @@ export default function PurchaseOrderSidebar({
 
         {/* Action Buttons */}
         <div className="border-t px-6 py-4 space-y-3">
-          {/* DRAFT: Éditer + Confirmer (paire) */}
+          {/* DRAFT: Éditer + Créer le bon de commande (paire) */}
           {isDraft && (
             <div className="flex gap-2">
               <Button
@@ -799,13 +799,12 @@ export default function PurchaseOrderSidebar({
                 Éditer
               </Button>
               <Button
-                variant="primary"
                 onClick={handleConfirm}
                 disabled={isLoading}
                 className="flex-1 font-normal"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Confirmer
+                <FileText className="h-4 w-4 mr-2" />
+                Créer le bon de commande
               </Button>
             </div>
           )}
