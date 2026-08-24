@@ -40,6 +40,14 @@ export default function CreateLinkedInvoicePopover({
   };
 
   const remainingAmount = calculateRemainingAmount();
+  const totalAmount = quote.finalTotalTTC;
+  // Pourcentage maximum sélectionnable : part du total du devis encore facturable
+  const maxPercentage =
+    totalAmount > 0
+      ? Math.max(1, Math.floor((remainingAmount / totalAmount) * 100))
+      : 100;
+  // Clamp au cas où le reste à facturer diminue après une création
+  const sliderValue = Math.min(percentage[0], maxPercentage);
   const linkedInvoicesCount = quote.linkedInvoices
     ? quote.linkedInvoices.length
     : 0;
@@ -83,29 +91,42 @@ export default function CreateLinkedInvoicePopover({
     }
   };
 
-  const setQuickAmount = (percentage) => {
-    const quickAmount = ((remainingAmount * percentage) / 100).toFixed(2);
+  const setQuickAmount = (quickPercentage) => {
+    if (quickPercentage >= maxPercentage) {
+      // "Tout" : facturer exactement le reste à facturer
+      setAmount(remainingAmount.toFixed(2));
+      setPercentage([maxPercentage]);
+      return;
+    }
+    const quickAmount = ((totalAmount * quickPercentage) / 100).toFixed(2);
     setAmount(quickAmount);
-    setPercentage([percentage]); // Synchroniser le slider
+    setPercentage([quickPercentage]); // Synchroniser le slider
   };
 
   // Gérer le changement du slider de pourcentage
   const handlePercentageChange = (value) => {
     const newPercentage = value[0];
     setPercentage([newPercentage]);
-    const calculatedAmount = ((remainingAmount * newPercentage) / 100).toFixed(
-      2,
-    );
+    // Au maximum, facturer exactement le reste (facture de solde)
+    const calculatedAmount =
+      newPercentage >= maxPercentage
+        ? remainingAmount.toFixed(2)
+        : Math.min(
+            (totalAmount * newPercentage) / 100,
+            remainingAmount,
+          ).toFixed(2);
     setAmount(calculatedAmount);
   };
 
   // Mettre à jour le slider quand le montant change manuellement
   const updatePercentageFromAmount = (amountValue) => {
-    if (amountValue && !isNaN(parseFloat(amountValue)) && remainingAmount > 0) {
+    if (amountValue && !isNaN(parseFloat(amountValue)) && totalAmount > 0) {
       const calculatedPercentage = Math.round(
-        (parseFloat(amountValue) / remainingAmount) * 100,
+        (parseFloat(amountValue) / totalAmount) * 100,
       );
-      setPercentage([Math.min(100, Math.max(0, calculatedPercentage))]);
+      setPercentage([
+        Math.min(maxPercentage, Math.max(0, calculatedPercentage)),
+      ]);
     }
   };
 
@@ -182,16 +203,16 @@ export default function CreateLinkedInvoicePopover({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm text-muted-foreground">
-                    Pourcentage du reste à facturer
+                    Pourcentage du total du devis à facturer
                   </Label>
                   <span className="text-sm font-medium text-primary">
-                    {percentage[0]}%
+                    {sliderValue}%
                   </span>
                 </div>
                 <Slider
-                  value={percentage}
+                  value={[sliderValue]}
                   onValueChange={handlePercentageChange}
-                  max={100}
+                  max={maxPercentage}
                   min={1}
                   step={1}
                   className="w-full"
@@ -200,7 +221,7 @@ export default function CreateLinkedInvoicePopover({
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>1%</span>
-                  <span>100%</span>
+                  <span>{maxPercentage}%</span>
                 </div>
               </div>
 
@@ -224,6 +245,7 @@ export default function CreateLinkedInvoicePopover({
                   size="sm"
                   className="text-xs px-2 py-1 h-auto"
                   onClick={() => setQuickAmount(25)}
+                  disabled={maxPercentage < 25}
                 >
                   25%
                 </Button>
@@ -233,6 +255,7 @@ export default function CreateLinkedInvoicePopover({
                   size="sm"
                   className="text-xs px-2 py-1 h-auto"
                   onClick={() => setQuickAmount(50)}
+                  disabled={maxPercentage < 50}
                 >
                   50%
                 </Button>
