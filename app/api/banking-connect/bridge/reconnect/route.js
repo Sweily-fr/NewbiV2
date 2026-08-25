@@ -1,0 +1,60 @@
+import { NextResponse } from "next/server";
+import {
+  requireSession,
+  requireOrgMembership,
+  requireActiveSubscription,
+  apiError,
+  withErrorHandler,
+} from "@/src/lib/security";
+
+/**
+ * GET /api/banking-connect/bridge/reconnect?itemId=xxx
+ *
+ * Proxy to backend to generate a Bridge re-authentication URL for an
+ * existing item (expired SCA, invalid credentials...).
+ * Auth: session + org membership + active subscription.
+ */
+async function handler(request) {
+  const { user, cookieHeader } = await requireSession(request);
+
+  const workspaceId = request.headers.get("x-workspace-id");
+
+  if (!workspaceId) {
+    return apiError(400, "Header x-workspace-id manquant");
+  }
+
+  const itemId = request.nextUrl.searchParams.get("itemId");
+  if (!itemId) {
+    return apiError(400, "Paramètre itemId manquant");
+  }
+
+  await requireOrgMembership(user.id, workspaceId);
+  await requireActiveSubscription(user.id, workspaceId);
+
+  const backendUrl = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+  ).replace(/\/$/, "");
+
+  const response = await fetch(
+    `${backendUrl}/banking-connect/bridge/reconnect?itemId=${encodeURIComponent(
+      itemId,
+    )}`,
+    {
+      headers: {
+        "x-workspace-id": workspaceId,
+        Cookie: cookieHeader,
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    return NextResponse.json(error, { status: response.status });
+  }
+
+  const data = await response.json();
+  return NextResponse.json(data);
+}
+
+export const GET = withErrorHandler(handler);
