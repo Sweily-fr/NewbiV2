@@ -13,6 +13,7 @@ export function useBankingConnection(workspaceId) {
   const [accountsCount, setAccountsCount] = useState(0);
   const [hasAccounts, setHasAccounts] = useState(false);
   const [provider, setProvider] = useState(null);
+  const [itemsNeedingAction, setItemsNeedingAction] = useState([]);
   const [institutions, setInstitutions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(false);
@@ -21,18 +22,21 @@ export function useBankingConnection(workspaceId) {
   /**
    * Vérifie le statut de connexion bancaire
    */
-  const checkConnectionStatus = async () => {
+  const checkConnectionStatus = async ({ refresh = false } = {}) => {
     if (!workspaceId) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch("/api/banking-connect/status", {
-        headers: {
-          "x-workspace-id": workspaceId,
+      const response = await fetch(
+        `/api/banking-connect/status${refresh ? "?refresh=true" : ""}`,
+        {
+          headers: {
+            "x-workspace-id": workspaceId,
+          },
         },
-      });
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -40,6 +44,7 @@ export function useBankingConnection(workspaceId) {
         setAccountsCount(data.accountsCount || 0);
         setHasAccounts(data.hasAccounts || false);
         setProvider(data.provider);
+        setItemsNeedingAction(data.itemsNeedingAction || []);
       } else {
         throw new Error("Erreur lors de la vérification du statut");
       }
@@ -49,6 +54,7 @@ export function useBankingConnection(workspaceId) {
       setAccountsCount(0);
       setHasAccounts(false);
       setProvider(null);
+      setItemsNeedingAction([]);
     } finally {
       setIsLoading(false);
     }
@@ -132,6 +138,45 @@ export function useBankingConnection(workspaceId) {
   };
 
   /**
+   * Ré-authentifie une connexion bancaire existante (SCA expirée, etc.)
+   * Redirige vers la webview Bridge sans re-choisir la banque :
+   * comptes et historique sont conservés.
+   * @param {string} itemId - ID de l'item Bridge à ré-authentifier
+   */
+  const reconnectBank = async (itemId) => {
+    if (!workspaceId || !itemId) {
+      setError("Connexion bancaire introuvable");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch(
+        `/api/banking-connect/bridge/reconnect?itemId=${encodeURIComponent(itemId)}`,
+        {
+          headers: {
+            "x-workspace-id": workspaceId,
+          },
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.connectUrl;
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur de reconnexion");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error("Erreur reconnexion bancaire:", err);
+      setIsLoading(false);
+    }
+  };
+
+  /**
    * Déconnecte le compte bancaire
    * @param {Object} options - Options de déconnexion
    * @param {string} options.provider - Provider spécifique à déconnecter (optionnel)
@@ -204,12 +249,14 @@ export function useBankingConnection(workspaceId) {
     accountsCount,
     hasAccounts,
     provider,
+    itemsNeedingAction,
     institutions,
     isLoading,
     isLoadingInstitutions,
     error,
     // Actions
     connectBank,
+    reconnectBank,
     disconnectBank,
     fetchInstitutions,
     refreshStatus: checkConnectionStatus,

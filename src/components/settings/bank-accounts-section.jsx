@@ -43,6 +43,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { findBank, getBankLogo } from "@/lib/banks-config";
 import { Callout } from "@/src/components/ui/callout";
+import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 
@@ -511,6 +512,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       </div>
 
       {/* Alertes */}
+      <BankReconnectAlert />
       {!canManageOrgSettings && (
         <Callout type="warning" noMargin>
           <p className="text-xs">

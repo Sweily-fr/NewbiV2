@@ -67,6 +67,7 @@ import { redirect } from "next/navigation";
 // Financial stats and bridge hooks removed
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
+import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
 import { TreasuryChart } from "@/src/components/treasury-chart";
 import { ExpenseCategoryChart } from "@/app/dashboard/outils/transactions/components/expense-category-chart";
@@ -417,6 +418,7 @@ function DashboardContent() {
       </div>
 
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
+        <BankReconnectAlert />
         <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full mb-2 gap-1 md:gap-0">
           <h1 className="text-2xl font-semibold">
             Bonjour {session?.user?.name},
