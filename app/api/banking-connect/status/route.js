@@ -32,7 +32,13 @@ async function handler(request) {
     .replace(/\/graphql\/?$/, "")
     .replace(/\/$/, "");
 
-  const response = await fetch(`${backendUrl}/banking-connect/status`, {
+  // ?refresh=true force la relecture du statut des items Bridge côté backend
+  const refresh = request.nextUrl.searchParams.get("refresh");
+  const statusUrl = `${backendUrl}/banking-connect/status${
+    refresh === "true" ? "?refresh=true" : ""
+  }`;
+
+  const response = await fetch(statusUrl, {
     headers: {
       "x-workspace-id": workspaceId,
       Cookie: cookieHeader,
