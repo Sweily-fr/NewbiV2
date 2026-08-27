@@ -212,9 +212,9 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
         className={`fixed left-0 w-full z-100 transition-all duration-300 ${
           bannerVisible
             ? isScrolled
-              ? "top-[var(--app-banner-h)]"
-              : "top-[calc(80px_+_var(--app-banner-h))] sm:top-[calc(58px_+_var(--app-banner-h))]"
-            : "top-[var(--app-banner-h)]"
+              ? "top-0"
+              : "top-[80px] sm:top-[58px]"
+            : "top-0"
         }`}
       >
         <div
@@ -416,7 +416,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
         {/* Mobile menu overlay - Fullscreen */}
         {menuState && (
           <div
-            className={`lg:hidden fixed inset-0 bg-[#FDFDFD] z-50 overflow-hidden transition-all duration-300 ${bannerVisible && !isScrolled ? "top-[calc(148px_+_var(--app-banner-h))] sm:top-[calc(126px_+_var(--app-banner-h))]" : "top-[calc(65px_+_var(--app-banner-h))]"}`}
+            className={`lg:hidden fixed inset-0 bg-[#FDFDFD] z-50 overflow-hidden transition-all duration-300 ${bannerVisible && !isScrolled ? "top-[148px] sm:top-[126px]" : "top-[65px]"}`}
           >
             <div className="flex flex-col h-full">
               {/* Menu content - Scrollable */}
