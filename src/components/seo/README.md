@@ -34,9 +34,7 @@ export default function MaPage() {
     <>
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
-      <div>
-        {/* Contenu de la page */}
-      </div>
+      <div>{/* Contenu de la page */}</div>
     </>
   );
 }
@@ -45,6 +43,7 @@ export default function MaPage() {
 ### 2. Hooks spécialisés
 
 #### Pour les pages produits :
+
 ```jsx
 import { useProductSEO } from "@/src/hooks/use-seo";
 
@@ -52,6 +51,7 @@ const seoData = useProductSEO("Factures"); // Nom du produit
 ```
 
 #### Pour les pages d'authentification :
+
 ```jsx
 import { useAuthSEO } from "@/src/hooks/use-seo";
 
@@ -59,6 +59,7 @@ const seoData = useAuthSEO("login"); // "login" ou "signup"
 ```
 
 #### Pour les pages légales :
+
 ```jsx
 import { useLegalSEO } from "@/src/hooks/use-seo";
 
@@ -73,12 +74,12 @@ import { useSEO } from "@/src/hooks/use-seo";
 const customSEO = {
   title: "Mon titre personnalisé",
   description: "Ma description personnalisée",
-  keywords: "mot-clé1, mot-clé2, mot-clé3"
+  keywords: "mot-clé1, mot-clé2, mot-clé3",
 };
 
 const breadcrumbs = [
-  { name: "Accueil", url: "https://newbi.fr" },
-  { name: "Ma page", url: "https://newbi.fr/ma-page" }
+  { name: "Accueil", url: "https://www.newbi.fr" },
+  { name: "Ma page", url: "https://newbi.fr/ma-page" },
 ];
 
 const seoData = useSEO("pageKey", customSEO, breadcrumbs);
@@ -87,24 +88,28 @@ const seoData = useSEO("pageKey", customSEO, breadcrumbs);
 ## 📋 Fonctionnalités
 
 ### ✅ Métadonnées de base
+
 - Title et description optimisés
 - Mots-clés ciblés
 - URL canonique automatique
 - Langue et géolocalisation
 
 ### ✅ Réseaux sociaux
+
 - **Open Graph** (Facebook, LinkedIn)
 - **Twitter Cards**
 - Images optimisées (1200x630px)
 - Métadonnées personnalisables
 
 ### ✅ Référencement structuré
+
 - **JSON-LD** pour Schema.org
 - Breadcrumbs automatiques
 - Données d'organisation
 - Applications logicielles
 
 ### ✅ Optimisations techniques
+
 - Favicons et icônes
 - Preconnect pour les performances
 - Meta tags mobiles
@@ -169,8 +174,8 @@ export const seoData = {
       "@context": "https://schema.org",
       "@type": "WebPage",
       // ... autres données structurées
-    }
-  }
+    },
+  },
 };
 ```
 
@@ -216,6 +221,7 @@ export const defaultSEO = {
 ## 🚨 Bonnes pratiques
 
 ### À faire ✅
+
 - Utiliser des titres descriptifs et uniques
 - Inclure des mots-clés pertinents naturellement
 - Optimiser les images (format, taille, alt)
@@ -223,6 +229,7 @@ export const defaultSEO = {
 - Valider les données structurées
 
 ### À éviter ❌
+
 - Dupliquer les titres/descriptions
 - Bourrer de mots-clés (keyword stuffing)
 - Utiliser des images trop lourdes
@@ -232,12 +239,14 @@ export const defaultSEO = {
 ## 🔄 Maintenance
 
 ### Mise à jour régulière
+
 - Vérifier les performances dans Search Console
 - Mettre à jour les mots-clés selon les tendances
 - Optimiser les images selon les retours
 - Tester les nouvelles fonctionnalités SEO
 
 ### Monitoring
+
 - Suivre le positionnement des mots-clés
 - Analyser le taux de clic (CTR)
 - Surveiller les erreurs de crawl

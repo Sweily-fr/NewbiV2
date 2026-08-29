@@ -29,8 +29,9 @@ import { Check } from "lucide-react"
 
 # Gérer ses projets avec un tableau Kanban quand on est indépendant
 
-Quand on est freelance ou micro-entrepreneur, jongler entre plusieurs clients, devis en attente et factures impayées peut vite devenir un cauchemar organisationnel. Le **Kanban indépendant** est une approche simple et visuelle qui vous permet de reprendre le controle de votre activite sans passer des heures en gestion de projet. Dans ce guide, nous allons explorer comment adapter cette methode legendaire a la realite du travail independant, de la prospection jusqu'au paiement final.
+Quand on est freelance ou micro-entrepreneur, jongler entre plusieurs clients, devis en attente et factures impayées peut vite devenir un cauchemar organisationnel. Le **Kanban indépendant** est une approche simple et visuelle qui vous permet de reprendre le contrôle de votre activité sans passer des heures en gestion de projet. Dans ce guide, nous allons explorer comment adapter cette méthode légendaire à la réalité du travail indépendant, de la prospection jusqu'au paiement final.
 
+{/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
   <Image
     src="/blog/gestion-projet-kanban-independant/hero.webp"
@@ -41,9 +42,10 @@ Quand on est freelance ou micro-entrepreneur, jongler entre plusieurs clients, d
     priority
   />
   <figcaption className="text-center text-sm text-muted-foreground mt-2">
-    Un tableau Kanban adapte a l'activite d'un independant permet de visualiser l'ensemble de ses projets en un coup d'oeil.
+    Un tableau Kanban adapté à l'activité d'un indépendant permet de visualiser l'ensemble de ses projets en un coup d'oeil.
   </figcaption>
 </figure>
+*/}
 
 <div className="not-prose my-8">
   <Button asChild size="lg">
@@ -51,215 +53,217 @@ Quand on est freelance ou micro-entrepreneur, jongler entre plusieurs clients, d
   </Button>
 </div>
 
-## Les origines du Kanban : de Toyota a votre bureau
+## Les origines du Kanban : de Toyota à votre bureau
 
-La methode Kanban est nee dans les annees 1940 au sein des usines **Toyota** au Japon. L'ingenieur Taiichi Ohno cherchait un moyen de fluidifier la production automobile en s'inspirant du fonctionnement des supermarches americains : chaque rayon est reapprovisionne uniquement quand le stock diminue, evitant ainsi le gaspillage et la surproduction.
+La méthode Kanban est née dans les années 1940 au sein des usines **Toyota** au Japon. L'ingénieur Taiichi Ohno cherchait un moyen de fluidifier la production automobile en s'inspirant du fonctionnement des supermarchés américains : chaque rayon est réapprovisionné uniquement quand le stock diminue, évitant ainsi le gaspillage et la surproduction.
 
-Le mot "Kanban" signifie litteralement **"panneau visuel"** ou "etiquette" en japonais. Le principe est d'utiliser des cartes (les kanbans) deplaces sur un tableau pour representer l'avancement du travail. Ce systeme, initialement concu pour l'industrie, a ete adopte par le monde du developpement logiciel dans les annees 2000, puis par les equipes de toutes tailles, y compris les travailleurs independants.
+Le mot "Kanban" signifie littéralement **"panneau visuel"** ou "étiquette" en japonais. Le principe est d'utiliser des cartes (les kanbans) déplacés sur un tableau pour représenter l'avancement du travail. Ce système, initialement conçu pour l'industrie, a été adopté par le monde du développement logiciel dans les années 2000, puis par les équipes de toutes tailles, y compris les travailleurs indépendants.
 
-Ce qui rend le Kanban particulierement adapte aux freelances, c'est sa **simplicite** et sa **flexibilite**. Contrairement a des methodologies plus rigides comme Scrum, le Kanban ne necessite ni sprints, ni ceremonies, ni roles specifiques. Il s'adapte a votre rythme et a votre maniere de travailler.
+Ce qui rend le Kanban particulièrement adapté aux freelances, c'est sa **simplicité** et sa **flexibilité**. Contrairement à des méthodologies plus rigides comme Scrum, le Kanban ne nécessite ni sprints, ni cérémonies, ni rôles spécifiques. Il s'adapte à votre rythme et à votre manière de travailler.
 
 ## Les 3 principes fondamentaux du Kanban
 
 ### 1. Visualiser le travail
 
-Le premier pilier du Kanban est de rendre **visible** l'ensemble de vos taches et projets. Chaque mission, chaque devis, chaque livrable devient une carte que vous placez sur un tableau. Cette visualisation permet d'identifier immediatement ou en sont vos projets, quels clients attendent une reponse et quelles factures sont en souffrance.
+Le premier pilier du Kanban est de rendre **visible** l'ensemble de vos tâches et projets. Chaque mission, chaque devis, chaque livrable devient une carte que vous placez sur un tableau. Cette visualisation permet d'identifier immédiatement où en sont vos projets, quels clients attendent une réponse et quelles factures sont en souffrance.
 
 ### 2. Limiter le travail en cours (WIP)
 
-Le concept de **Work In Progress (WIP) limit** est au coeur de l'efficacite du Kanban. L'idee est simple : ne pas travailler sur trop de projets simultanement. Quand on est independant, la tentation est grande d'accepter toutes les missions. Mais disperser son attention sur cinq projets en parallele reduit la qualite et allonge les delais de livraison.
+Le concept de **Work In Progress (WIP) limit** est au coeur de l'efficacité du Kanban. L'idée est simple : ne pas travailler sur trop de projets simultanément. Quand on est indépendant, la tentation est grande d'accepter toutes les missions. Mais disperser son attention sur cinq projets en parallèle réduit la qualité et allonge les délais de livraison.
 
 <div className="not-prose my-6">
   <Callout type="info" title="Les limites WIP, un game-changer pour les freelances">
-    Fixez-vous une limite de 2 a 3 projets simultanement dans la colonne "En cours". Si cette colonne est pleine, terminez un projet avant d'en commencer un nouveau. Cette discipline simple peut augmenter votre productivite de 30 a 40 % selon plusieurs etudes sur le multitasking.
+    Fixez-vous une limite de 2 à 3 projets simultanément dans la colonne "En cours". Si cette colonne est pleine, terminez un projet avant d'en commencer un nouveau. Cette discipline simple peut augmenter votre productivité de 30 à 40 % selon plusieurs études sur le multitasking.
   </Callout>
 </div>
 
 ### 3. Optimiser le flux continu
 
-Le troisieme principe consiste a faire avancer les cartes de maniere fluide de gauche a droite sur votre tableau. L'objectif est de **reduire le temps** qu'une carte passe dans chaque colonne. Si un devis stagne dans "Devis envoye" depuis trois semaines, c'est un signal pour relancer le prospect. Si une facture reste dans "Facture" depuis 45 jours, il est temps d'envoyer un rappel.
+Le troisième principe consiste à faire avancer les cartes de manière fluide de gauche à droite sur votre tableau. L'objectif est de **réduire le temps** qu'une carte passe dans chaque colonne. Si un devis stagne dans "Devis envoyé" depuis trois semaines, c'est un signal pour relancer le prospect. Si une facture reste dans "Facture" depuis 45 jours, il est temps d'envoyer un rappel.
 
-## Les colonnes Kanban adaptees au freelance
+## Les colonnes Kanban adaptées au freelance
 
-Contrairement a un tableau Kanban classique (A faire / En cours / Termine), un independant a besoin de colonnes qui refletent son **cycle commercial complet**, de la prospection au paiement. Voici les colonnes que nous recommandons :
+Contrairement à un tableau Kanban classique (À faire / En cours / Terminé), un indépendant a besoin de colonnes qui reflètent son **cycle commercial complet**, de la prospection au paiement. Voici les colonnes que nous recommandons :
 
 <div className="not-prose my-8">
   <Table>
-    <TableCaption>Les 6 colonnes d'un tableau Kanban optimise pour freelance</TableCaption>
+    <TableCaption>Les 6 colonnes d'un tableau Kanban optimisé pour freelance</TableCaption>
     <TableHeader>
       <TableRow>
         <TableHead className="w-[180px]">Colonne</TableHead>
         <TableHead>Description</TableHead>
-        <TableHead className="w-[250px]">Actions cles</TableHead>
+        <TableHead className="w-[250px]">Actions clés</TableHead>
       </TableRow>
     </TableHeader>
     <TableBody>
       <TableRow>
         <TableCell className="font-medium">Prospect</TableCell>
-        <TableCell>Leads identifies, premiers contacts etablis, opportunites a qualifier.</TableCell>
-        <TableCell>Envoyer un message de prise de contact, planifier un appel decouverte.</TableCell>
+        <TableCell>Leads identifiés, premiers contacts établis, opportunités à qualifier.</TableCell>
+        <TableCell>Envoyer un message de prise de contact, planifier un appel découverte.</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell className="font-medium">Devis envoye</TableCell>
-        <TableCell>Proposition commerciale envoyee au client, en attente de validation.</TableCell>
-        <TableCell>Relancer apres 5 jours, adapter le devis si necessaire, negocier.</TableCell>
+        <TableCell className="font-medium">Devis envoyé</TableCell>
+        <TableCell>Proposition commerciale envoyée au client, en attente de validation.</TableCell>
+        <TableCell>Relancer après 5 jours, adapter le devis si nécessaire, négocier.</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">En cours</TableCell>
-        <TableCell>Mission acceptee, travail en production active. Limiter a 2-3 cartes max.</TableCell>
+        <TableCell>Mission acceptée, travail en production active. Limiter à 2-3 cartes max.</TableCell>
         <TableCell>Produire les livrables, communiquer l'avancement, respecter les deadlines.</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell className="font-medium">Livre</TableCell>
-        <TableCell>Travail termine et envoye au client, en attente de validation.</TableCell>
+        <TableCell className="font-medium">Livré</TableCell>
+        <TableCell>Travail terminé et envoyé au client, en attente de validation.</TableCell>
         <TableCell>Recueillir le feedback, effectuer les retouches, obtenir la validation finale.</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Facture</TableCell>
-        <TableCell>Livrable valide, facture emise et envoyee au client.</TableCell>
-        <TableCell>Emettre la facture, verifier les conditions de paiement, relancer si retard.</TableCell>
+        <TableCell>Livrable validé, facture émise et envoyée au client.</TableCell>
+        <TableCell>Émettre la facture, vérifier les conditions de paiement, relancer si retard.</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell className="font-medium">Paye</TableCell>
-        <TableCell>Paiement recu, mission terminee. Archive et bilan.</TableCell>
-        <TableCell>Verifier la reception, archiver le projet, demander un temoignage client.</TableCell>
+        <TableCell className="font-medium">Payé</TableCell>
+        <TableCell>Paiement reçu, mission terminée. Archivé et bilan.</TableCell>
+        <TableCell>Vérifier la réception, archiver le projet, demander un témoignage client.</TableCell>
       </TableRow>
     </TableBody>
   </Table>
 </div>
 
-Cette structure vous donne une **vue panoramique** de votre activite. D'un seul regard, vous savez combien de prospects sont dans le pipeline, combien de devis attendent une reponse, et surtout combien de factures n'ont pas encore ete reglees.
+Cette structure vous donne une **vue panoramique** de votre activité. D'un seul regard, vous savez combien de prospects sont dans le pipeline, combien de devis attendent une réponse, et surtout combien de factures n'ont pas encore été réglées.
 
-## Les avantages du Kanban pour les independants
+## Les avantages du Kanban pour les indépendants
 
-### Une vue d'ensemble sur toute l'activite
+### Une vue d'ensemble sur toute l'activité
 
-Le premier benefice, et non des moindres, est d'avoir une **vision globale** de votre entreprise. En tant qu'independant, vous etes a la fois commercial, producteur, comptable et service client. Le tableau Kanban centralise toutes ces casquettes en un seul endroit. Vous pouvez anticiper les periodes creuses (peu de prospects dans le pipeline) ou les surcharges (trop de projets en cours).
+Le premier bénéfice, et non des moindres, est d'avoir une **vision globale** de votre entreprise. En tant qu'indépendant, vous êtes à la fois commercial, producteur, comptable et service client. Le tableau Kanban centralise toutes ces casquettes en un seul endroit. Vous pouvez anticiper les périodes creuses (peu de prospects dans le pipeline) ou les surcharges (trop de projets en cours).
 
 ### Une meilleure priorisation
 
-Quand toutes vos missions sont visibles, il devient naturel de **prioriser**. Un devis a 5 000 euros en attente de relance merite peut-etre plus d'attention qu'une petite mission a 200 euros. Le Kanban vous aide a allouer votre temps et votre energie la ou l'impact est le plus fort.
+Quand toutes vos missions sont visibles, il devient naturel de **prioriser**. Un devis à 5 000 euros en attente de relance mérite peut-être plus d'attention qu'une petite mission à 200 euros. Le Kanban vous aide à allouer votre temps et votre énergie là où l'impact est le plus fort.
 
 ### Un suivi client impeccable
 
-Oublier de relancer un prospect ou envoyer une facture en retard donne une image peu professionnelle. Avec un tableau Kanban, **rien ne passe entre les mailles du filet**. Chaque carte porte les informations du client, la date de derniere action et la prochaine etape. Votre relation client s'en trouve considerablement amelioree.
+Oublier de relancer un prospect ou envoyer une facture en retard donne une image peu professionnelle. Avec un tableau Kanban, **rien ne passe entre les mailles du filet**. Chaque carte porte les informations du client, la date de dernière action et la prochaine étape. Votre relation client s'en trouve considérablement améliorée.
 
-Pour aller plus loin dans la gestion de votre relation client, consultez notre guide sur le [CRM et la gestion client pour independants](/blog/crm-gestion-client-independant).
+Pour aller plus loin dans la gestion de votre relation client, consultez notre guide sur le [CRM et la gestion client pour indépendants](/blog/crm-gestion-client-independant).
 
 ## Kanban physique vs Kanban digital
 
 ### Le tableau physique (post-its)
 
-Un simple tableau blanc avec des post-its colores peut faire l'affaire quand vous debutez. C'est **tangible**, **satisfaisant** (deplacer un post-it de "En cours" a "Livre" procure une vraie satisfaction) et ne necessite aucun apprentissage technique. En revanche, il ne vous suit pas en deplacement, ne permet pas de collaborer a distance et ne s'integre pas avec vos outils de facturation.
+Un simple tableau blanc avec des post-its colorés peut faire l'affaire quand vous débutez. C'est **tangible**, **satisfaisant** (déplacer un post-it de "En cours" à "Livré" procure une vraie satisfaction) et ne nécessite aucun apprentissage technique. En revanche, il ne vous suit pas en déplacement, ne permet pas de collaborer à distance et ne s'intègre pas avec vos outils de facturation.
 
 ### Le tableau digital
 
-Un Kanban numerique offre des avantages considerables : **accessibilite** depuis n'importe quel appareil, **automatisations** (deplacement automatique des cartes, rappels), **historique** complet des actions et surtout **integration** avec vos autres outils (facturation, CRM, calendrier). Pour decouvrir les meilleures solutions, jetez un oeil a notre comparatif des [outils de gestion de projet pour freelances](/blog/top-outils-gestion-projet-freelance).
+Un Kanban numérique offre des avantages considérables : **accessibilité** depuis n'importe quel appareil, **automatisations** (déplacement automatique des cartes, rappels), **historique** complet des actions et surtout **intégration** avec vos autres outils (facturation, CRM, calendrier). Pour découvrir les meilleures solutions, jetez un oeil à notre comparatif des [outils de gestion de projet pour freelances](/blog/top-outils-gestion-projet-freelance).
 
+{/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
   <Image
     src="/blog/gestion-projet-kanban-independant/kanban-digital-exemple.webp"
-    alt="Exemple de tableau Kanban digital integre avec la facturation pour independant"
+    alt="Exemple de tableau Kanban digital intégré avec la facturation pour indépendant"
     width={1200}
     height={630}
     className="rounded-xl"
   />
   <figcaption className="text-center text-sm text-muted-foreground mt-2">
-    Un tableau Kanban digital integre a votre outil de facturation automatise le passage de "Livre" a "Facture".
+    Un tableau Kanban digital intégré à votre outil de facturation automatise le passage de "Livré" à "Facture".
   </figcaption>
 </figure>
+*/}
 
-## Integrer le Kanban avec votre facturation
+## Intégrer le Kanban avec votre facturation
 
-C'est la ou la magie opere pour les independants. Un tableau Kanban **connecte a votre outil de facturation** transforme votre gestion de projet en veritable machine a cash-flow. Imaginez : quand vous deplacez une carte dans la colonne "Livre", un devis se convertit automatiquement en facture. Quand le paiement arrive, la carte passe dans "Paye" sans action manuelle.
+C'est là où la magie opère pour les indépendants. Un tableau Kanban **connecté à votre outil de facturation** transforme votre gestion de projet en véritable machine à cash-flow. Imaginez : quand vous déplacez une carte dans la colonne "Livré", un devis se convertit automatiquement en facture. Quand le paiement arrive, la carte passe dans "Payé" sans action manuelle.
 
-Cette integration elimine les oublis de facturation, l'un des [erreurs les plus courantes chez les independants](/blog/erreurs-facturation-independants). Elle vous permet aussi de suivre votre chiffre d'affaires previsionnel en temps reel, en additionnant les montants des cartes dans chaque colonne.
+Cette intégration élimine les oublis de facturation, l'un des [erreurs les plus courantes chez les indépendants](/blog/erreurs-facturation-independants). Elle vous permet aussi de suivre votre chiffre d'affaires prévisionnel en temps réel, en additionnant les montants des cartes dans chaque colonne.
 
-Pour optimiser encore cette transition du devis a la facture, decouvrez nos [conseils pour convertir vos devis en factures](/blog/conseils-convertir-devis-facture) efficacement.
+Pour optimiser encore cette transition du devis à la facture, découvrez nos [conseils pour convertir vos devis en factures](/blog/conseils-convertir-devis-facture) efficacement.
 
 <div className="not-prose my-6">
-  <Callout type="tip" title="Newbi integre un Kanban directement dans votre outil de facturation">
-    Avec Newbi, vous n'avez pas besoin d'un outil de gestion de projet separe. Le tableau Kanban est integre directement dans votre espace de travail, connecte a vos devis, factures et fiches clients. Deplacez une carte, et la facturation suit automatiquement. Tout est centralise en un seul endroit.
+  <Callout type="tip" title="Newbi intègre un Kanban directement dans votre outil de facturation">
+    Avec Newbi, vous n'avez pas besoin d'un outil de gestion de projet séparé. Le tableau Kanban est intégré directement dans votre espace de travail, connecté à vos devis, factures et fiches clients. Déplacez une carte, et la facturation suit automatiquement. Tout est centralisé en un seul endroit.
   </Callout>
 </div>
 
 <div className="not-prose my-8">
   <Button asChild variant="outline">
-    <Link href="/produits/projets">Decouvrir le Kanban Newbi</Link>
+    <Link href="/produits/kanban">Découvrir le Kanban Newbi</Link>
   </Button>
 </div>
 
-## Checklist : mettre en place votre Kanban en 7 etapes
+## Checklist : mettre en place votre Kanban en 7 étapes
 
 <div className="not-prose my-8 space-y-3">
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Definir vos colonnes en fonction de votre cycle commercial (prospect, devis, production, livraison, facturation, paiement).</span>
+    <span>Définir vos colonnes en fonction de votre cycle commercial (prospect, devis, production, livraison, facturation, paiement).</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Creer une carte pour chaque projet ou mission en cours, avec le nom du client, le montant et la date limite.</span>
+    <span>Créer une carte pour chaque projet ou mission en cours, avec le nom du client, le montant et la date limite.</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Fixer vos limites WIP : pas plus de 2 a 3 projets simultanement dans "En cours".</span>
+    <span>Fixer vos limites WIP : pas plus de 2 à 3 projets simultanément dans "En cours".</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Planifier un rituel quotidien de 5 minutes pour mettre a jour votre tableau chaque matin.</span>
+    <span>Planifier un rituel quotidien de 5 minutes pour mettre à jour votre tableau chaque matin.</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Ajouter des etiquettes de couleur pour differencier les types de missions (creation, conseil, maintenance).</span>
+    <span>Ajouter des étiquettes de couleur pour différencier les types de missions (création, conseil, maintenance).</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Connecter votre Kanban a votre outil de facturation pour automatiser la creation des factures.</span>
+    <span>Connecter votre Kanban à votre outil de facturation pour automatiser la création des factures.</span>
   </div>
   <div className="flex items-start gap-3">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Analyser votre tableau chaque fin de mois : temps moyen par colonne, taux de conversion devis, delai de paiement.</span>
+    <span>Analyser votre tableau chaque fin de mois : temps moyen par colonne, taux de conversion devis, délai de paiement.</span>
   </div>
 </div>
 
-## En resume
+## En résumé
 
-Le **Kanban indépendant** n'est pas simplement un outil de gestion de projet : c'est un veritable tableau de bord de votre activite de freelance. En visualisant l'ensemble de votre pipeline commercial, de la prospection au paiement, vous gagnez en clarte, en efficacite et en serenite. Les principes sont simples : visualiser, limiter le travail en cours et optimiser le flux. Combines a un outil integre comme Newbi, ils deviennent un levier puissant pour developper votre chiffre d'affaires tout en gardant le controle.
+Le **Kanban indépendant** n'est pas simplement un outil de gestion de projet : c'est un véritable tableau de bord de votre activité de freelance. En visualisant l'ensemble de votre pipeline commercial, de la prospection au paiement, vous gagnez en clarté, en efficacité et en sérénité. Les principes sont simples : visualiser, limiter le travail en cours et optimiser le flux. Combinés à un outil intégré comme Newbi, ils deviennent un levier puissant pour développer votre chiffre d'affaires tout en gardant le contrôle.
 
-Ne laissez plus vos projets, devis et factures se perdre dans des fichiers eparpilles. Adoptez le Kanban et transformez votre organisation.
+Ne laissez plus vos projets, devis et factures se perdre dans des fichiers éparpillés. Adoptez le Kanban et transformez votre organisation.
 
 <div className="not-prose my-8">
   <Button asChild size="lg">
-    <Link href="/auth/signup">Creer mon tableau Kanban gratuitement</Link>
+    <Link href="/auth/signup">Créer mon tableau Kanban gratuitement</Link>
   </Button>
 </div>
 
-## Questions frequentes
+## Questions fréquentes
 
 <div className="not-prose my-8">
   <Accordion type="single" collapsible className="w-full">
     <AccordionItem value="faq-1">
-      <AccordionTrigger>Le Kanban est-il adapte a un freelance qui travaille seul ?</AccordionTrigger>
+      <AccordionTrigger>Le Kanban est-il adapté à un freelance qui travaille seul ?</AccordionTrigger>
       <AccordionContent>
-        Absolument. Le Kanban est meme particulierement pertinent pour les independants car il permet de gerer toutes les casquettes (commercial, production, administratif) dans un seul tableau visuel. Contrairement a Scrum, il ne necessite pas d'equipe ni de ceremonies. Vous pouvez l'adapter a votre rythme et a votre volume d'activite.
+        Absolument. Le Kanban est même particulièrement pertinent pour les indépendants car il permet de gérer toutes les casquettes (commercial, production, administratif) dans un seul tableau visuel. Contrairement à Scrum, il ne nécessite pas d'équipe ni de cérémonies. Vous pouvez l'adapter à votre rythme et à votre volume d'activité.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-2">
       <AccordionTrigger>Combien de colonnes doit comporter mon tableau Kanban ?</AccordionTrigger>
       <AccordionContent>
-        Pour un independant, nous recommandons entre 5 et 7 colonnes qui couvrent l'ensemble du cycle commercial : Prospect, Devis envoye, En cours, Livre, Facture et Paye. Vous pouvez ajouter des colonnes intermediaires (par exemple "Retouches" entre "Livre" et "Facture") si votre activite le justifie, mais gardez le tableau le plus simple possible.
+        Pour un indépendant, nous recommandons entre 5 et 7 colonnes qui couvrent l'ensemble du cycle commercial : Prospect, Devis envoyé, En cours, Livré, Facture et Payé. Vous pouvez ajouter des colonnes intermédiaires (par exemple "Retouches" entre "Livré" et "Facture") si votre activité le justifie, mais gardez le tableau le plus simple possible.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-3">
-      <AccordionTrigger>Quelle est la limite WIP ideale pour un freelance ?</AccordionTrigger>
+      <AccordionTrigger>Quelle est la limite WIP idéale pour un freelance ?</AccordionTrigger>
       <AccordionContent>
-        La plupart des independants sont plus productifs avec une limite de 2 a 3 projets simultanement dans la colonne "En cours". Cette limite depend de la nature de vos missions : des missions courtes (quelques heures) permettent une limite plus elevee, tandis que des projets longs et complexes necessitent une limite plus basse. Experimentez et ajustez en fonction de votre experience.
+        La plupart des indépendants sont plus productifs avec une limite de 2 à 3 projets simultanément dans la colonne "En cours". Cette limite dépend de la nature de vos missions : des missions courtes (quelques heures) permettent une limite plus élevée, tandis que des projets longs et complexes nécessitent une limite plus basse. Expérimentez et ajustez en fonction de votre expérience.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-4">
-      <AccordionTrigger>Comment integrer le Kanban avec ma facturation ?</AccordionTrigger>
+      <AccordionTrigger>Comment intégrer le Kanban avec ma facturation ?</AccordionTrigger>
       <AccordionContent>
-        La solution la plus efficace est d'utiliser un outil qui combine Kanban et facturation nativement, comme Newbi. Ainsi, quand vous deplacez une carte de "Livre" a "Facture", la facture est generee automatiquement a partir des informations du devis. Si vous utilisez des outils separes, vous pouvez connecter votre Kanban (Trello, Notion) a votre logiciel de facturation via des automatisations (Zapier, Make), mais cela demande une configuration initiale.
+        La solution la plus efficace est d'utiliser un outil qui combine Kanban et facturation nativement, comme Newbi. Ainsi, quand vous déplacez une carte de "Livré" à "Facture", la facture est générée automatiquement à partir des informations du devis. Si vous utilisez des outils séparés, vous pouvez connecter votre Kanban (Trello, Notion) à votre logiciel de facturation via des automatisations (Zapier, Make), mais cela demande une configuration initiale.
       </AccordionContent>
     </AccordionItem>
   </Accordion>

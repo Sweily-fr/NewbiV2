@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { Badge } from "@/src/components/ui/badge";
-import { ArrowRight } from "lucide-react";
 
-export function BlogRecentArticles({ posts, lastUpdate, hasMore }) {
+export function BlogRecentArticles({
+  posts,
+  lastUpdate,
+  title = "Nos articles les plus récents",
+  description = "Retrouvez nos derniers articles sur la facturation, la gestion d'entreprise et les bonnes pratiques pour les indépendants.",
+}) {
   if (!posts.length) return null;
 
   return (
@@ -14,17 +18,15 @@ export function BlogRecentArticles({ posts, lastUpdate, hasMore }) {
           {/* Left: Title & description */}
           <div className="lg:sticky lg:top-24 lg:self-start lg:w-2/5 shrink-0 text-center lg:text-left">
             <h2 className="text-2xl md:text-3xl font-medium text-gray-900 mb-6">
-              Nos articles les plus recents
+              {title}
             </h2>
-            <p className="text-base text-gray-600 mb-4">
-              {
-                "Retrouvez nos derniers articles sur la facturation, la gestion d'entreprise et les bonnes pratiques pour les independants."
-              }
-            </p>
-            <p className="text-xs text-gray-400">
-              {"Derniere mise a jour : "}
-              {lastUpdate}
-            </p>
+            <p className="text-base text-gray-600 mb-4">{description}</p>
+            {lastUpdate && (
+              <p className="text-xs text-gray-400">
+                {"Dernière mise à jour : "}
+                {lastUpdate}
+              </p>
+            )}
           </div>
 
           {/* Right: Article cards */}
@@ -49,7 +51,7 @@ export function BlogRecentArticles({ posts, lastUpdate, hasMore }) {
                   </figure>
                   <div className="flex justify-between items-center mb-4">
                     <Badge variant="pending" className="text-xs uppercase">
-                      {post.category}
+                      {post.categoryLabel || post.category}
                     </Badge>
                     <span className="text-xs text-gray-500">
                       {post.readTime} min
@@ -66,16 +68,6 @@ export function BlogRecentArticles({ posts, lastUpdate, hasMore }) {
                 </div>
               </article>
             ))}
-
-            {hasMore && (
-              <Link
-                href="/blog"
-                className="inline-flex items-center gap-2 text-sm font-medium text-gray-900 hover:text-[#5a50ff] transition-colors group pt-4"
-              >
-                <span>Voir plus</span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            )}
           </div>
         </div>
       </div>

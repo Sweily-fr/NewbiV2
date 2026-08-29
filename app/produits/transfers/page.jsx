@@ -1,6 +1,7 @@
 import React from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
+import { BlogFurtherReading } from "@/src/components/blog/blog-further-reading";
 import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
@@ -38,22 +39,26 @@ export default function TransfersPage() {
               {
                 title: "Agences créatives",
                 desc: "Envoyez rushes vidéo, maquettes et assets lourds à vos clients sans compression ni perte de qualité.",
-                image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80",
               },
               {
                 title: "Freelances",
                 desc: "Livrez vos projets finaux en un clic : photos retouchées, fichiers sources, présentations.",
-                image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
               },
               {
                 title: "Architectes & BIM",
                 desc: "Partagez plans, maquettes 3D et dossiers techniques volumineux avec vos collaborateurs.",
-                image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
               },
               {
                 title: "Avocats & Notaires",
                 desc: "Transférez des dossiers confidentiels en toute sécurité avec chiffrement et mot de passe.",
-                image: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
               },
             ]}
             bottomTitle="Vos fichiers, en toute confiance."
@@ -349,6 +354,7 @@ export default function TransfersPage() {
           </div>
         </section> */}
         </main>
+        <BlogFurtherReading product="transfers" />
         <Footer7 />
       </div>
     </>

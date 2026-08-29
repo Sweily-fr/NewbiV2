@@ -277,8 +277,21 @@ log.push({
 fs.writeFileSync(LOG_PATH, JSON.stringify(log, null, 2), "utf-8");
 console.log(`\nPublished ${published.length} article(s) on ${today}.`);
 
-// Generate images for newly published articles
-if (!skipImages && process.env.OPENAI_API_KEY) {
+// Generate images for newly published articles.
+// Bloquant : entre mai et août 2026, 61 articles ont été publiés avec des
+// <Image> vers des fichiers jamais générés (404 sur le hero, l'OpenGraph et
+// le JSON-LD). Sans clé, on refuse de publier sauf --skip-images explicite ;
+// en cas d'échec, on sort en erreur pour que le problème soit visible.
+if (skipImages) {
+  console.log(
+    "\nSkipping image generation: --skip-images flag used. Les blocs <Image> des articles publiés doivent être commentés (marqueur image-pending) tant que les fichiers n'existent pas.",
+  );
+} else if (!process.env.OPENAI_API_KEY) {
+  console.error(
+    "\nError: OPENAI_API_KEY not set. Articles are written as published but their images are missing: set the key and run `node scripts/publish-articles.js --images-only`, or use --skip-images knowingly.",
+  );
+  process.exit(1);
+} else {
   console.log("\n--- Generating images ---");
   const slugArgs = published.join(" ");
   try {
@@ -289,12 +302,9 @@ if (!skipImages && process.env.OPENAI_API_KEY) {
     });
   } catch (err) {
     console.error(
-      "Warning: Image generation failed. Articles are published but some images may be missing.",
+      "Error: Image generation failed. Articles are published but their images are missing: fix and run `node scripts/publish-articles.js --images-only`.",
     );
     console.error(err.message);
+    process.exit(1);
   }
-} else if (!process.env.OPENAI_API_KEY) {
-  console.log("\nSkipping image generation: OPENAI_API_KEY not set.");
-} else {
-  console.log("\nSkipping image generation: --skip-images flag used.");
 }

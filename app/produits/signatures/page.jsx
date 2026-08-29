@@ -1,6 +1,7 @@
 import React from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
+import { BlogFurtherReading } from "@/src/components/blog/blog-further-reading";
 import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
@@ -40,22 +41,26 @@ export default function SignaturesPage() {
               {
                 title: "Freelances",
                 desc: "Montrez votre expertise avec une signature qui inspire confiance dès le premier email.",
-                image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
               },
               {
                 title: "Agences & Studios",
                 desc: "Uniformisez les signatures de toute votre équipe pour une image de marque cohérente.",
-                image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80",
               },
               {
                 title: "Startups",
                 desc: "Renforcez votre crédibilité avec des signatures professionnelles dès le lancement.",
-                image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
               },
               {
                 title: "TPE & PME",
                 desc: "Gérez les signatures de tous vos collaborateurs depuis un seul espace centralisé.",
-                image: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
               },
             ]}
             bottomTitle=""
@@ -353,6 +358,7 @@ export default function SignaturesPage() {
           </div>
         </section> */}
         </main>
+        <BlogFurtherReading product="signatures" />
         <Footer7 />
       </div>
     </>

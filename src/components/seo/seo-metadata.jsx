@@ -20,10 +20,11 @@ export function generateMetadata(seoData) {
     twitter = {},
     robots = "index,follow",
     author = "Newbi",
-    language = "fr-FR"
+    language = "fr-FR",
   } = seoData;
 
-  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.newbi.fr";
 
   return {
     title,
@@ -66,9 +67,9 @@ export function generateMetadata(seoData) {
     other: {
       "geo.region": "FR",
       "geo.country": "France",
-      "language": language,
+      language: language,
       "revisit-after": "7 days",
-      "rating": "general",
+      rating: "general",
     },
   };
 }
@@ -115,9 +116,23 @@ export function Favicons() {
   return (
     <>
       <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="32x32"
+        href="/favicon-32x32.png"
+      />
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="16x16"
+        href="/favicon-16x16.png"
+      />
+      <link
+        rel="apple-touch-icon"
+        sizes="180x180"
+        href="/apple-touch-icon.png"
+      />
       <link rel="manifest" href="/site.webmanifest" />
       <meta name="theme-color" content="#5B4FFF" />
       <meta name="msapplication-TileColor" content="#5B4FFF" />
@@ -132,7 +147,11 @@ export function PerformanceOptimizations() {
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossOrigin="anonymous"
+      />
       <link rel="dns-prefetch" href="https://api.newbi.fr" />
       <link rel="dns-prefetch" href="https://cdn.newbi.fr" />
     </>
