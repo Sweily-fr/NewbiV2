@@ -1,0 +1,2176 @@
+[
+  {
+    "id": 101,
+    "slug": "facture-electronique-reception-1er-septembre-2026",
+    "title": "Réception des factures électroniques dès le 1er septembre 2026 : êtes-vous prêt ?",
+    "metaDescription": "Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures électroniques. Ce que cela implique concrètement et comment s'y conformer en 3 étapes.",
+    "keyword": "réception facture électronique septembre 2026",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-08-31",
+    "week": 1,
+    "linksTo": [
+      "facturation-electronique-obligatoire-2026",
+      "quest-ce-que-pdp-plateforme-dematerialisation"
+    ]
+  },
+  {
+    "id": 102,
+    "slug": "modele-facture-gratuit-word-excel-pdf",
+    "title": "Modèle de facture gratuit à télécharger (Word, Excel, PDF)",
+    "metaDescription": "Téléchargez un modèle de facture gratuit conforme 2026 en Word, Excel ou PDF. Mentions obligatoires incluses, exemple rempli et limites du modèle face à un logiciel.",
+    "keyword": "modèle facture gratuit",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-08-31",
+    "week": 1,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "logiciel-devis-facture-gratuit"
+    ]
+  },
+  {
+    "id": 103,
+    "slug": "e-reporting-definition-obligations-calendrier",
+    "title": "E-reporting : définition, données à transmettre et calendrier 2026-2027",
+    "metaDescription": "L'e-reporting complète la facture électronique : transmission des données de transactions B2C et internationales. Qui est concerné, quelles données, à quel rythme.",
+    "keyword": "e-reporting",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-01",
+    "week": 1,
+    "linksTo": [
+      "facturation-electronique-obligatoire-2026",
+      "quest-ce-que-ppf-portail-public-facturation"
+    ]
+  },
+  {
+    "id": 104,
+    "slug": "modele-devis-gratuit-word-excel-pdf",
+    "title": "Modèle de devis gratuit à télécharger (Word, Excel, PDF)",
+    "metaDescription": "Un modèle de devis gratuit et conforme, avec les mentions obligatoires, un exemple complété et nos conseils pour le transformer en facture sans ressaisie.",
+    "keyword": "modèle devis gratuit",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-09-01",
+    "week": 1,
+    "linksTo": [
+      "comment-faire-devis-professionnel",
+      "obligations-legales-devis-consommateur"
+    ]
+  },
+  {
+    "id": 105,
+    "slug": "facture-electronique-auto-entrepreneur-2027",
+    "title": "Facture électronique et auto-entrepreneur : ce qui change en 2027",
+    "metaDescription": "Les micro-entrepreneurs devront émettre des factures électroniques dès septembre 2027. Calendrier, exceptions, franchise de TVA et outils gratuits pour s'y préparer.",
+    "keyword": "facture électronique auto-entrepreneur",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-02",
+    "week": 1,
+    "linksTo": [
+      "facturation-electronique-obligatoire-2026",
+      "tva-auto-entrepreneur-seuils-franchise"
+    ]
+  },
+  {
+    "id": 106,
+    "slug": "peut-on-facturer-sans-siret",
+    "title": "Peut-on facturer sans SIRET ? Ce que dit la loi",
+    "metaDescription": "Facturer sans numéro SIRET est-il possible ? Cas autorisés (portage, particulier, en attente d'immatriculation), risques encourus et solutions légales.",
+    "keyword": "facturer sans siret",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-02",
+    "week": 1,
+    "linksTo": [
+      "quest-ce-que-numero-siret-siren",
+      "mentions-obligatoires-facture"
+    ]
+  },
+  {
+    "id": 107,
+    "slug": "comment-choisir-sa-pdp-plateforme-dematerialisation",
+    "title": "Comment choisir sa plateforme de dématérialisation (PDP) : 8 critères",
+    "metaDescription": "Tarifs, formats supportés, connexion à votre logiciel de facturation, e-reporting : les 8 critères pour choisir la bonne plateforme de dématérialisation partenaire.",
+    "keyword": "choisir pdp",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-03",
+    "week": 1,
+    "linksTo": [
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "quest-ce-que-ppf-portail-public-facturation"
+    ]
+  },
+  {
+    "id": 108,
+    "slug": "facture-plombier-chauffagiste-guide",
+    "title": "Facture de plombier-chauffagiste : mentions, TVA réduite et modèle",
+    "metaDescription": "Comment facturer en plomberie-chauffage : TVA à 10 % ou 5,5 %, attestation simplifiée, main-d'œuvre et fournitures, acompte et facture de solde.",
+    "keyword": "facture plombier",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-03",
+    "week": 1,
+    "linksTo": [
+      "facture-btp-artisan-mentions-specifiques",
+      "taux-tva-france-guide-complet"
+    ]
+  },
+  {
+    "id": 109,
+    "slug": "indy-vs-newbi-comparatif",
+    "title": "Indy vs Newbi : quel outil choisir pour sa facturation et sa compta ?",
+    "metaDescription": "Comparatif Indy vs Newbi : facturation, comptabilité automatisée, synchronisation bancaire, tarifs et limites. Lequel convient à votre activité ?",
+    "keyword": "indy vs newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-09-04",
+    "week": 1,
+    "linksTo": ["tiime-vs-newbi-comparatif", "logiciel-gestion-tout-en-un-tpe"]
+  },
+  {
+    "id": 110,
+    "slug": "penalites-retard-indemnite-forfaitaire-40-euros",
+    "title": "Pénalités de retard et indemnité forfaitaire de 40 € : calcul et mentions",
+    "metaDescription": "Taux légal, formule de calcul, indemnité forfaitaire de 40 € pour frais de recouvrement : tout sur les pénalités de retard à mentionner sur vos factures.",
+    "keyword": "pénalités de retard facture",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-04",
+    "week": 1,
+    "linksTo": [
+      "quest-ce-que-delai-paiement-facture",
+      "relance-facture-impayee-modele"
+    ]
+  },
+  {
+    "id": 111,
+    "slug": "nouvelles-mentions-obligatoires-facture-electronique",
+    "title": "Les 4 nouvelles mentions obligatoires de la facture électronique",
+    "metaDescription": "SIREN du client, adresse de livraison, nature de l'opération, option TVA sur les débits : les nouvelles mentions imposées par la réforme de la facturation électronique.",
+    "keyword": "nouvelles mentions obligatoires facture",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-07",
+    "week": 2,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "facturation-electronique-obligatoire-2026"
+    ]
+  },
+  {
+    "id": 112,
+    "slug": "modele-facture-auto-entrepreneur-gratuit",
+    "title": "Modèle de facture auto-entrepreneur gratuit (avec et sans TVA)",
+    "metaDescription": "Modèle de facture auto-entrepreneur à télécharger : mention « TVA non applicable », numérotation, exemple rempli et version avec TVA après dépassement des seuils.",
+    "keyword": "modèle facture auto-entrepreneur",
+    "category": "modele",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-09-07",
+    "week": 2,
+    "linksTo": [
+      "comment-creer-facture-auto-entrepreneur",
+      "tva-auto-entrepreneur-seuils-franchise"
+    ]
+  },
+  {
+    "id": 113,
+    "slug": "facturer-un-particulier-regles-mentions",
+    "title": "Facturer un particulier : règles, mentions et cas où la facture est obligatoire",
+    "metaDescription": "Quand une facture est-elle obligatoire pour un particulier ? Note, facture ou ticket, mentions spécifiques B2C et conséquences de la réforme e-invoicing.",
+    "keyword": "facturer un particulier",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-08",
+    "week": 2,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "obligations-legales-devis-consommateur"
+    ]
+  },
+  {
+    "id": 114,
+    "slug": "facture-electronique-b2c-particuliers-concerne",
+    "title": "Facturation électronique et clients particuliers : êtes-vous concerné ?",
+    "metaDescription": "Les ventes aux particuliers ne passent pas par la facture électronique mais par l'e-reporting. Ce qui change pour les commerçants, artisans et professions libérales.",
+    "keyword": "facturation électronique b2c",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-08",
+    "week": 2,
+    "linksTo": [
+      "e-reporting-definition-obligations-calendrier",
+      "facturation-electronique-obligatoire-2026"
+    ]
+  },
+  {
+    "id": 115,
+    "slug": "facture-developpeur-web-freelance",
+    "title": "Facture de développeur web freelance : TJM, régie, forfait et mentions",
+    "metaDescription": "Facturer en régie ou au forfait, gérer les acomptes, la maintenance et la cession de droits : le guide de la facture pour développeur web indépendant.",
+    "keyword": "facture développeur freelance",
+    "category": "guide",
+    "sector": "Consultants / Freelances IT",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-09",
+    "week": 2,
+    "linksTo": [
+      "comment-fixer-tarif-journalier-tjm",
+      "facturer-prestation-service-consultant"
+    ]
+  },
+  {
+    "id": 116,
+    "slug": "declaration-tva-ca3-ca12-guide",
+    "title": "Déclarer sa TVA : CA3 mensuelle ou CA12 annuelle, mode d'emploi",
+    "metaDescription": "Régime réel normal ou simplifié, formulaires CA3 et CA12, acomptes, dates limites et erreurs fréquentes : comment déclarer sa TVA quand on est indépendant ou TPE.",
+    "keyword": "déclaration tva ca3",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-09-09",
+    "week": 2,
+    "linksTo": [
+      "erreurs-declaration-tva-eviter",
+      "calendrier-fiscal-independant-2026"
+    ]
+  },
+  {
+    "id": 117,
+    "slug": "plan-de-tresorerie-previsionnel-comment-faire",
+    "title": "Plan de trésorerie prévisionnel : méthode et exemple pour TPE",
+    "metaDescription": "Construire un plan de trésorerie prévisionnel mois par mois : encaissements, décaissements, TVA, scénarios. Méthode simple et exemple chiffré.",
+    "keyword": "plan de trésorerie prévisionnel",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-09-10",
+    "week": 2,
+    "linksTo": [
+      "comment-gerer-tresorerie-entreprise",
+      "erreurs-gestion-tresorerie-eviter"
+    ]
+  },
+  {
+    "id": 118,
+    "slug": "alternatives-quickbooks-france-arret",
+    "title": "QuickBooks a quitté la France : les 7 meilleures alternatives en 2026",
+    "metaDescription": "QuickBooks n'est plus commercialisé en France. Comparatif des alternatives pour migrer sans perdre vos données : fonctionnalités, tarifs, conformité e-invoicing.",
+    "keyword": "alternative quickbooks",
+    "category": "liste",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-09-10",
+    "week": 2,
+    "linksTo": [
+      "quickbooks-vs-newbi-comparatif",
+      "logiciel-gestion-tout-en-un-tpe"
+    ]
+  },
+  {
+    "id": 119,
+    "slug": "duree-validite-devis-regles",
+    "title": "Durée de validité d'un devis : règles, mention et que faire après expiration",
+    "metaDescription": "Un devis doit-il avoir une durée de validité ? Délais usuels par secteur, mention à faire figurer et conséquences d'un devis expiré ou signé tardivement.",
+    "keyword": "durée validité devis",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Devis",
+    "publishDate": "2026-09-11",
+    "week": 2,
+    "linksTo": [
+      "comment-faire-devis-professionnel",
+      "obligations-legales-devis-consommateur"
+    ]
+  },
+  {
+    "id": 120,
+    "slug": "facture-electricien-guide",
+    "title": "Facture d'électricien : mentions, TVA, attestation et modèle",
+    "metaDescription": "Facturer une intervention d'électricien : TVA 10 % ou 20 %, attestation simplifiée, certificat Consuel, décennale et détail fournitures/main-d'œuvre.",
+    "keyword": "facture électricien",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-11",
+    "week": 2,
+    "linksTo": [
+      "facture-btp-artisan-mentions-specifiques",
+      "obligation-assurance-decennale-artisan"
+    ]
+  },
+  {
+    "id": 121,
+    "slug": "formats-ubl-cii-facturx-comparatif",
+    "title": "UBL, CII ou Factur-X : quel format de facture électronique choisir ?",
+    "metaDescription": "Les trois formats du socle français de la facture électronique comparés : lisibilité, compatibilité, cas d'usage. Lequel votre logiciel doit-il produire ?",
+    "keyword": "format facture électronique ubl cii",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-14",
+    "week": 3,
+    "linksTo": [
+      "facturx-format-facture-electronique",
+      "quest-ce-que-pdp-plateforme-dematerialisation"
+    ]
+  },
+  {
+    "id": 122,
+    "slug": "modele-facture-sans-tva-franchise-en-base",
+    "title": "Modèle de facture sans TVA (franchise en base) : mention exacte et exemple",
+    "metaDescription": "Modèle de facture sans TVA pour les entreprises en franchise en base : mention article 293 B, présentation des montants et erreurs à éviter.",
+    "keyword": "modèle facture sans tva",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-09-14",
+    "week": 3,
+    "linksTo": [
+      "tva-auto-entrepreneur-seuils-franchise",
+      "mentions-obligatoires-facture"
+    ]
+  },
+  {
+    "id": 123,
+    "slug": "facturer-client-etranger-ue-hors-ue",
+    "title": "Facturer un client à l'étranger : règles TVA pour l'UE et hors UE",
+    "metaDescription": "Facturer un client européen ou hors UE : autoliquidation, numéro de TVA intracommunautaire, mentions obligatoires, devise et DES. Guide pratique avec exemples.",
+    "keyword": "facturer client étranger",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-15",
+    "week": 3,
+    "linksTo": [
+      "quest-ce-que-tva-intracommunautaire",
+      "mentions-obligatoires-facture"
+    ]
+  },
+  {
+    "id": 124,
+    "slug": "autoliquidation-tva-facture-mention",
+    "title": "Autoliquidation de TVA : quand s'applique-t-elle et quelle mention sur la facture ?",
+    "metaDescription": "Sous-traitance BTP, prestations intra-UE, import : les cas d'autoliquidation de TVA, la mention exacte à porter sur la facture et le traitement en déclaration.",
+    "keyword": "autoliquidation tva facture",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-15",
+    "week": 3,
+    "linksTo": [
+      "facturer-client-etranger-ue-hors-ue",
+      "facture-btp-artisan-mentions-specifiques"
+    ]
+  },
+  {
+    "id": 125,
+    "slug": "facture-osteopathe-guide",
+    "title": "Facture d'ostéopathe : note d'honoraires, TVA et mentions obligatoires",
+    "metaDescription": "Comment facturer en ostéopathie : exonération de TVA, note d'honoraires pour les mutuelles, mentions obligatoires et gestion des rendez-vous non honorés.",
+    "keyword": "facture ostéopathe",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-16",
+    "week": 3,
+    "linksTo": [
+      "facture-profession-liberale-guide",
+      "facturer-prestations-kinesitherapeute"
+    ]
+  },
+  {
+    "id": 126,
+    "slug": "shine-vs-newbi-comparatif",
+    "title": "Shine vs Newbi : compte pro avec facturation ou logiciel de gestion complet ?",
+    "metaDescription": "Shine intègre de la facturation à son compte pro, Newbi se connecte à toutes les banques. Comparatif des fonctionnalités, tarifs et limites pour indépendants.",
+    "keyword": "shine vs newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-09-16",
+    "week": 3,
+    "linksTo": [
+      "connexion-bancaire-rapprochement-automatique",
+      "logiciel-gestion-tout-en-un-tpe"
+    ]
+  },
+  {
+    "id": 127,
+    "slug": "bfr-besoin-en-fonds-de-roulement-calcul",
+    "title": "BFR (besoin en fonds de roulement) : définition, calcul et leviers pour le réduire",
+    "metaDescription": "Le BFR expliqué simplement : formule de calcul, exemple chiffré pour une TPE et 6 leviers concrets pour le réduire (délais clients, stocks, fournisseurs).",
+    "keyword": "bfr calcul",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-09-17",
+    "week": 3,
+    "linksTo": [
+      "comment-gerer-tresorerie-entreprise",
+      "conseils-reduire-delais-paiement"
+    ]
+  },
+  {
+    "id": 128,
+    "slug": "devis-signe-valeur-juridique-engagement",
+    "title": "Un devis signé engage-t-il ? Valeur juridique et conditions de rétractation",
+    "metaDescription": "Un devis signé vaut contrat. Conditions de validité, mention « bon pour accord », droit de rétractation du consommateur et recours si le client se désiste.",
+    "keyword": "devis signé valeur juridique",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Devis",
+    "publishDate": "2026-09-17",
+    "week": 3,
+    "linksTo": [
+      "obligations-legales-devis-consommateur",
+      "comment-faire-devis-professionnel"
+    ]
+  },
+  {
+    "id": 129,
+    "slug": "facture-electronique-sanctions-amendes",
+    "title": "Facturation électronique : les sanctions en cas de non-conformité",
+    "metaDescription": "Amende de 15 € par facture, 250 € par e-reporting manquant, plafonds annuels et tolérance de première année : le détail des sanctions de la réforme.",
+    "keyword": "sanction facturation électronique",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-18",
+    "week": 3,
+    "linksTo": [
+      "facturation-electronique-obligatoire-2026",
+      "obligations-facture-electronique-pme"
+    ]
+  },
+  {
+    "id": 130,
+    "slug": "facture-paysagiste-jardinier-guide",
+    "title": "Facture de paysagiste et jardinier : TVA, services à la personne et modèle",
+    "metaDescription": "Facturer en tant que paysagiste ou jardinier : TVA à 10 % ou 20 %, petits travaux de jardinage en services à la personne, devis et facture d'entretien récurrent.",
+    "keyword": "facture paysagiste",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-18",
+    "week": 3,
+    "linksTo": ["devis-travaux-btp-guide", "automatiser-facturation-recurrente"]
+  },
+  {
+    "id": 131,
+    "slug": "statuts-cycle-de-vie-facture-electronique",
+    "title": "Les statuts de la facture électronique : déposée, rejetée, refusée, encaissée",
+    "metaDescription": "Le cycle de vie d'une facture électronique et ses statuts obligatoires et facultatifs. Ce que signifie chaque statut et ce qu'il faut faire à chaque étape.",
+    "keyword": "statut facture électronique",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-21",
+    "week": 4,
+    "linksTo": [
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "facturation-electronique-obligatoire-2026"
+    ]
+  },
+  {
+    "id": 132,
+    "slug": "modele-facture-acompte-gratuit",
+    "title": "Modèle de facture d'acompte gratuit : exemple et règles de TVA",
+    "metaDescription": "Modèle de facture d'acompte à télécharger, avec l'exemple du solde qui déduit l'acompte. Règles de TVA sur les acomptes et numérotation.",
+    "keyword": "modèle facture acompte",
+    "category": "modele",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-09-21",
+    "week": 4,
+    "linksTo": ["quest-ce-que-acompte-facture", "facture-situation-travaux-btp"]
+  },
+  {
+    "id": 133,
+    "slug": "facture-rectificative-comment-faire",
+    "title": "Facture rectificative : quand et comment corriger une facture",
+    "metaDescription": "Erreur de montant, de TVA ou de client : facture rectificative ou avoir ? La bonne méthode selon le cas, les mentions à ajouter et ce qui est interdit.",
+    "keyword": "facture rectificative",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-22",
+    "week": 4,
+    "linksTo": ["quest-ce-que-avoir-credit", "quest-ce-que-numero-facture"]
+  },
+  {
+    "id": 134,
+    "slug": "annuler-une-facture-deja-emise",
+    "title": "Comment annuler une facture déjà émise (sans la supprimer)",
+    "metaDescription": "Une facture émise ne se supprime jamais. La procédure légale pour l'annuler par un avoir, les cas particuliers (facture non envoyée, e-invoicing) et les pièges.",
+    "keyword": "annuler une facture",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-22",
+    "week": 4,
+    "linksTo": [
+      "quest-ce-que-avoir-credit",
+      "facture-rectificative-comment-faire"
+    ]
+  },
+  {
+    "id": 135,
+    "slug": "facture-redacteur-web-freelance",
+    "title": "Facture de rédacteur web freelance : tarification, droits d'auteur et mentions",
+    "metaDescription": "Facturer au mot, au feuillet ou au forfait, mentionner la cession de droits, gérer les révisions : le guide de la facture pour rédacteur web indépendant.",
+    "keyword": "facture rédacteur web",
+    "category": "guide",
+    "sector": "Photographes / Créatifs",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-23",
+    "week": 4,
+    "linksTo": [
+      "facture-graphiste-designer-freelance",
+      "facturer-prestation-service-consultant"
+    ]
+  },
+  {
+    "id": 136,
+    "slug": "alternatives-pennylane",
+    "title": "Alternatives à Pennylane : 7 logiciels de facturation et compta comparés",
+    "metaDescription": "Pennylane est trop cher ou trop complexe pour votre activité ? Comparatif de 7 alternatives pour indépendants et TPE : fonctionnalités, tarifs, e-invoicing.",
+    "keyword": "alternative pennylane",
+    "category": "liste",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-09-23",
+    "week": 4,
+    "linksTo": [
+      "pennylane-vs-newbi-comparatif",
+      "logiciel-gestion-tout-en-un-tpe"
+    ]
+  },
+  {
+    "id": 137,
+    "slug": "dso-delai-moyen-paiement-clients-calcul",
+    "title": "DSO : calculer son délai moyen de paiement clients et le réduire",
+    "metaDescription": "Le DSO mesure le nombre de jours pour encaisser vos factures. Formule, exemple, benchmark par secteur et 5 actions pour le faire baisser.",
+    "keyword": "dso délai moyen de paiement",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-09-24",
+    "week": 4,
+    "linksTo": [
+      "conseils-reduire-delais-paiement",
+      "meilleures-pratiques-relance-client"
+    ]
+  },
+  {
+    "id": 138,
+    "slug": "devis-payant-est-ce-legal",
+    "title": "Devis payant : est-ce légal et comment le facturer ?",
+    "metaDescription": "Peut-on faire payer un devis ? Ce que dit la loi, les secteurs où c'est courant, l'obligation d'en informer le client et comment le déduire de la facture finale.",
+    "keyword": "devis payant",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "low",
+    "cluster": "Devis",
+    "publishDate": "2026-09-24",
+    "week": 4,
+    "linksTo": [
+      "obligations-legales-devis-consommateur",
+      "comment-faire-devis-professionnel"
+    ]
+  },
+  {
+    "id": 139,
+    "slug": "tva-deductible-quelles-depenses",
+    "title": "TVA déductible : quelles dépenses ouvrent droit à récupération ?",
+    "metaDescription": "Carburant, repas, véhicule, logiciels, cadeaux : la liste des dépenses dont la TVA est récupérable, celles exclues et les conditions de forme sur la facture.",
+    "keyword": "tva déductible",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-09-25",
+    "week": 4,
+    "linksTo": [
+      "erreurs-declaration-tva-eviter",
+      "gestion-notes-frais-deplacement"
+    ]
+  },
+  {
+    "id": 140,
+    "slug": "facture-vtc-chauffeur-guide",
+    "title": "Facture de chauffeur VTC : plateformes, clients directs et TVA",
+    "metaDescription": "Comment facturer en tant que chauffeur VTC : factures aux plateformes, courses en direct, TVA à 10 %, autofacturation et justificatifs pour les frais.",
+    "keyword": "facture vtc",
+    "category": "guide",
+    "sector": "Transport / Mobilité",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-25",
+    "week": 4,
+    "linksTo": [
+      "comment-creer-facture-auto-entrepreneur",
+      "tva-auto-entrepreneur-seuils-franchise"
+    ]
+  },
+  {
+    "id": 141,
+    "slug": "annuaire-facturation-electronique-a-quoi-sert",
+    "title": "L'annuaire de la facturation électronique : à quoi sert-il et comment s'y inscrire ?",
+    "metaDescription": "L'annuaire central permet d'adresser une facture électronique à la bonne plateforme. Fonctionnement, inscription via votre PDP et erreurs d'adressage à éviter.",
+    "keyword": "annuaire facturation électronique",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-28",
+    "week": 5,
+    "linksTo": [
+      "quest-ce-que-ppf-portail-public-facturation",
+      "comment-choisir-sa-pdp-plateforme-dematerialisation"
+    ]
+  },
+  {
+    "id": 142,
+    "slug": "modele-avoir-note-de-credit-gratuit",
+    "title": "Modèle d'avoir (note de crédit) gratuit : exemple et mentions",
+    "metaDescription": "Modèle d'avoir à télécharger avec la référence de la facture d'origine, la TVA et la numérotation dédiée. Exemple rempli pour un remboursement partiel.",
+    "keyword": "modèle avoir",
+    "category": "modele",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-09-28",
+    "week": 5,
+    "linksTo": ["quest-ce-que-avoir-credit", "annuler-une-facture-deja-emise"]
+  },
+  {
+    "id": 143,
+    "slug": "delai-conservation-factures-documents-comptables",
+    "title": "Combien de temps conserver ses factures et documents comptables ?",
+    "metaDescription": "6 ans, 10 ans, 3 ans : les durées légales de conservation des factures, devis, relevés et pièces comptables, au format papier ou électronique.",
+    "keyword": "durée conservation factures",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-29",
+    "week": 5,
+    "linksTo": [
+      "quest-ce-que-fec-fichier-ecritures-comptables",
+      "comptabilite-simplifiee-tpe-obligations"
+    ]
+  },
+  {
+    "id": 144,
+    "slug": "facture-en-devise-etrangere-regles",
+    "title": "Facturer en devise étrangère (USD, CHF, GBP) : règles et conversion",
+    "metaDescription": "Une facture peut être libellée en devise, mais la TVA doit apparaître en euros. Taux de conversion à utiliser, mentions et comptabilisation des écarts de change.",
+    "keyword": "facture en devise étrangère",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-09-29",
+    "week": 5,
+    "linksTo": [
+      "facturer-client-etranger-ue-hors-ue",
+      "mentions-obligatoires-facture"
+    ]
+  },
+  {
+    "id": 145,
+    "slug": "facture-psychologue-liberal-guide",
+    "title": "Facture de psychologue libéral : honoraires, TVA et mentions",
+    "metaDescription": "Facturer des consultations de psychologue : exonération de TVA, note d'honoraires, dispositif Mon soutien psy, séances annulées et facturation aux entreprises.",
+    "keyword": "facture psychologue",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-09-30",
+    "week": 5,
+    "linksTo": ["facture-profession-liberale-guide", "facture-osteopathe-guide"]
+  },
+  {
+    "id": 146,
+    "slug": "pennylane-vs-tiime-comparatif",
+    "title": "Pennylane vs Tiime : quel logiciel pour un indépendant ou une TPE ?",
+    "metaDescription": "Pennylane et Tiime comparés sur la facturation, la compta, les tarifs et l'accompagnement. Pour qui chacun est fait, et quand une troisième option s'impose.",
+    "keyword": "pennylane vs tiime",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-09-30",
+    "week": 5,
+    "linksTo": ["pennylane-vs-newbi-comparatif", "tiime-vs-newbi-comparatif"]
+  },
+  {
+    "id": 147,
+    "slug": "gestion-factures-fournisseurs-achats-tpe",
+    "title": "Gérer ses factures fournisseurs : collecte, validation, paiement et archivage",
+    "metaDescription": "Un process simple en 5 étapes pour gérer ses factures d'achat sans rien perdre : collecte automatique, OCR, rapprochement bancaire, paiement et transmission au comptable.",
+    "keyword": "gestion factures fournisseurs",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-10-01",
+    "week": 5,
+    "linksTo": [
+      "ocr-justificatifs-comptables",
+      "connexion-bancaire-rapprochement-automatique"
+    ]
+  },
+  {
+    "id": 148,
+    "slug": "taux-de-conversion-devis-ameliorer",
+    "title": "Taux de conversion des devis : le calculer et l'améliorer",
+    "metaDescription": "Combien de vos devis se transforment en factures ? Formule, benchmark par métier et 9 leviers concrets : délai d'envoi, options, relance, signature en ligne.",
+    "keyword": "taux de conversion devis",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Devis",
+    "publishDate": "2026-10-01",
+    "week": 5,
+    "linksTo": [
+      "erreurs-devis-perdre-clients",
+      "conseils-convertir-devis-facture"
+    ]
+  },
+  {
+    "id": 149,
+    "slug": "credit-de-tva-remboursement-demande",
+    "title": "Crédit de TVA : comment demander son remboursement",
+    "metaDescription": "Vous avez plus de TVA déductible que collectée ? Conditions, seuils, formulaire 3519 et délais pour obtenir le remboursement de votre crédit de TVA.",
+    "keyword": "crédit de tva remboursement",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-10-02",
+    "week": 5,
+    "linksTo": [
+      "tva-deductible-quelles-depenses",
+      "declaration-tva-ca3-ca12-guide"
+    ]
+  },
+  {
+    "id": 150,
+    "slug": "facture-agent-commercial-independant",
+    "title": "Facture d'agent commercial indépendant : commissions, TVA et mentions",
+    "metaDescription": "Comment facturer ses commissions en tant qu'agent commercial : base de calcul, périodicité, TVA, immatriculation au RSAC et modèle de facture de commission.",
+    "keyword": "facture agent commercial",
+    "category": "guide",
+    "sector": "Commerces / Retail",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-02",
+    "week": 5,
+    "linksTo": [
+      "facturer-prestation-service-consultant",
+      "mentions-obligatoires-facture"
+    ]
+  },
+  {
+    "id": 151,
+    "slug": "facture-electronique-btp-sous-traitance-situations",
+    "title": "Facturation électronique dans le BTP : sous-traitance, situations et retenues",
+    "metaDescription": "Factures de situation, autoliquidation en sous-traitance, retenue de garantie : comment ces spécificités du bâtiment se traduisent dans la facture électronique.",
+    "keyword": "facturation électronique btp",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-05",
+    "week": 6,
+    "linksTo": [
+      "facture-situation-travaux-btp",
+      "facturation-electronique-obligatoire-2026"
+    ]
+  },
+  {
+    "id": 152,
+    "slug": "modele-mise-en-demeure-facture-impayee",
+    "title": "Modèle de mise en demeure pour facture impayée (lettre à télécharger)",
+    "metaDescription": "Lettre de mise en demeure pour facture impayée : modèle complet, mentions obligatoires, envoi en recommandé et étape suivante si le client ne paie toujours pas.",
+    "keyword": "modèle mise en demeure facture impayée",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-10-05",
+    "week": 6,
+    "linksTo": [
+      "relance-facture-impayee-modele",
+      "penalites-retard-indemnite-forfaitaire-40-euros"
+    ]
+  },
+  {
+    "id": 153,
+    "slug": "escompte-remise-rabais-ristourne-difference",
+    "title": "Escompte, remise, rabais, ristourne : différences et traitement sur la facture",
+    "metaDescription": "Quatre réductions de prix, quatre traitements différents sur la facture et en TVA. Définitions, exemples chiffrés et mention obligatoire de l'escompte.",
+    "keyword": "escompte remise rabais ristourne",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-06",
+    "week": 6,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "quest-ce-que-conditions-generales-vente"
+    ]
+  },
+  {
+    "id": 154,
+    "slug": "tva-non-applicable-article-293-b-mention",
+    "title": "« TVA non applicable, art. 293 B du CGI » : la mention exacte et quand l'utiliser",
+    "metaDescription": "La mention exacte à porter sur vos factures en franchise en base de TVA, les variantes acceptées, les erreurs qui coûtent cher et que faire au dépassement des seuils.",
+    "keyword": "tva non applicable art 293 b",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-06",
+    "week": 6,
+    "linksTo": [
+      "modele-facture-sans-tva-franchise-en-base",
+      "tva-auto-entrepreneur-seuils-franchise"
+    ]
+  },
+  {
+    "id": 155,
+    "slug": "facture-traducteur-independant",
+    "title": "Facture de traducteur indépendant : tarif au mot, clients étrangers et TVA",
+    "metaDescription": "Facturer au mot, à la page ou à l'heure, gérer les clients hors de France et l'autoliquidation : le guide de la facturation pour traducteurs et interprètes.",
+    "keyword": "facture traducteur",
+    "category": "guide",
+    "sector": "Services / Indépendants",
+    "priority": "low",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-07",
+    "week": 6,
+    "linksTo": [
+      "facturer-client-etranger-ue-hors-ue",
+      "facture-redacteur-web-freelance"
+    ]
+  },
+  {
+    "id": 156,
+    "slug": "alternatives-abby",
+    "title": "Alternatives à Abby : 6 logiciels de facturation pour auto-entrepreneurs",
+    "metaDescription": "Abby ne vous convient plus ? Six alternatives comparées pour micro-entrepreneurs : facturation, déclaration URSSAF, banque, tarifs et conformité 2027.",
+    "keyword": "alternative abby",
+    "category": "liste",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-10-07",
+    "week": 6,
+    "linksTo": [
+      "abby-vs-newbi-comparatif",
+      "top-7-outils-gratuits-auto-entrepreneur"
+    ]
+  },
+  {
+    "id": 157,
+    "slug": "seuil-de-rentabilite-calcul-exemple",
+    "title": "Seuil de rentabilité : calcul, exemple et point mort pour une TPE",
+    "metaDescription": "Formule du seuil de rentabilité, distinction charges fixes et variables, calcul du point mort en jours et exemple pour un indépendant en prestation de services.",
+    "keyword": "seuil de rentabilité calcul",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-10-08",
+    "week": 6,
+    "linksTo": [
+      "comment-fixer-tarif-journalier-tjm",
+      "comment-gerer-tresorerie-entreprise"
+    ]
+  },
+  {
+    "id": 158,
+    "slug": "devis-bon-de-commande-proforma-differences",
+    "title": "Devis, bon de commande, facture proforma : quelles différences ?",
+    "metaDescription": "Trois documents souvent confondus. Qui les émet, quelle valeur juridique, à quel moment les utiliser et comment enchaîner devis, commande et facture.",
+    "keyword": "différence devis bon de commande proforma",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Devis",
+    "publishDate": "2026-10-08",
+    "week": 6,
+    "linksTo": [
+      "quest-ce-que-bon-commande",
+      "facture-proforma-guide-utilisation"
+    ]
+  },
+  {
+    "id": 159,
+    "slug": "cfe-cotisation-fonciere-entreprises-independant",
+    "title": "CFE : qui la paie, combien, et quelles exonérations pour les indépendants",
+    "metaDescription": "La cotisation foncière des entreprises expliquée : base de calcul, montant minimum, exonération la première année et sous 5 000 € de CA, paiement en décembre.",
+    "keyword": "cfe cotisation foncière entreprises",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-10-09",
+    "week": 6,
+    "linksTo": [
+      "calendrier-fiscal-independant-2026",
+      "obligations-comptables-micro-entreprise"
+    ]
+  },
+  {
+    "id": 160,
+    "slug": "facture-community-manager-freelance",
+    "title": "Facture de community manager freelance : forfait mensuel, contenus et droits",
+    "metaDescription": "Facturer un accompagnement réseaux sociaux : abonnement mensuel, création de contenus, budget publicitaire refacturé et cession de droits sur les visuels.",
+    "keyword": "facture community manager",
+    "category": "guide",
+    "sector": "Agences / Marketing",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-09",
+    "week": 6,
+    "linksTo": [
+      "automatiser-facturation-recurrente",
+      "facture-createur-contenu-influenceur"
+    ]
+  },
+  {
+    "id": 161,
+    "slug": "facture-electronique-expert-comptable-role",
+    "title": "Facturation électronique : quel rôle pour votre expert-comptable ?",
+    "metaDescription": "Votre expert-comptable peut-il émettre vos factures électroniques ? Ce qu'il peut faire, ce qui reste à votre charge et comment organiser le flux entre vous.",
+    "keyword": "facturation électronique expert-comptable",
+    "category": "guide",
+    "sector": "Comptables / Experts-comptables",
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-12",
+    "week": 7,
+    "linksTo": [
+      "comment-partager-documents-expert-comptable",
+      "facturation-electronique-obligatoire-2026"
+    ]
+  },
+  {
+    "id": 162,
+    "slug": "modele-mail-envoi-facture-client",
+    "title": "Mail d'envoi de facture : 5 modèles à copier-coller",
+    "metaDescription": "Cinq modèles de mail pour envoyer une facture (première facture, acompte, solde, récurrente, client étranger) avec objet, corps et pièce jointe conforme.",
+    "keyword": "mail envoi facture",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-10-12",
+    "week": 7,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "meilleures-pratiques-relance-client"
+    ]
+  },
+  {
+    "id": 163,
+    "slug": "facturer-en-sous-traitance-regles",
+    "title": "Facturer en sous-traitance : règles, TVA et mentions selon le secteur",
+    "metaDescription": "Sous-traitant en BTP, en informatique ou en services : à qui facturer, autoliquidation ou non, clause de paiement direct et protection contre les impayés.",
+    "keyword": "facturer en sous-traitance",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-13",
+    "week": 7,
+    "linksTo": [
+      "autoliquidation-tva-facture-mention",
+      "facture-btp-artisan-mentions-specifiques"
+    ]
+  },
+  {
+    "id": 164,
+    "slug": "debours-refacturation-frais-clients",
+    "title": "Débours et refacturation de frais : comment les traiter sur une facture",
+    "metaDescription": "Débours hors TVA ou frais refacturés avec TVA ? La différence, les conditions strictes du débours, les exemples (déplacements, achats pour le client) et la présentation.",
+    "keyword": "débours facture",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-13",
+    "week": 7,
+    "linksTo": [
+      "gestion-notes-frais-deplacement",
+      "tva-deductible-quelles-depenses"
+    ]
+  },
+  {
+    "id": 165,
+    "slug": "facture-architecte-honoraires-guide",
+    "title": "Facture d'architecte : honoraires par phase, TVA et mentions",
+    "metaDescription": "Facturer des honoraires d'architecte : pourcentage du coût des travaux, phases de mission, notes d'honoraires intermédiaires, TVA et assurance obligatoire.",
+    "keyword": "facture architecte honoraires",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-14",
+    "week": 7,
+    "linksTo": [
+      "facture-situation-travaux-btp",
+      "facturation-avocat-honoraires-guide"
+    ]
+  },
+  {
+    "id": 166,
+    "slug": "abby-vs-freebe-comparatif",
+    "title": "Abby vs Freebe : quel outil pour un auto-entrepreneur en 2026 ?",
+    "metaDescription": "Abby et Freebe visent tous deux les micro-entrepreneurs. Comparatif des fonctionnalités, des tarifs, de la déclaration URSSAF et de la conformité e-invoicing.",
+    "keyword": "abby vs freebe",
+    "category": "comparaison",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-10-14",
+    "week": 7,
+    "linksTo": ["abby-vs-newbi-comparatif", "freebe-vs-newbi-comparatif"]
+  },
+  {
+    "id": 167,
+    "slug": "categoriser-transactions-bancaires-comptabilite",
+    "title": "Catégoriser ses transactions bancaires : méthode et catégories comptables",
+    "metaDescription": "Une catégorisation propre de vos transactions bancaires simplifie la compta et la TVA. Les catégories à utiliser, les règles automatiques et les pièges fréquents.",
+    "keyword": "catégoriser transactions bancaires",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-10-15",
+    "week": 7,
+    "linksTo": [
+      "connexion-bancaire-rapprochement-automatique",
+      "ocr-justificatifs-comptables"
+    ]
+  },
+  {
+    "id": 168,
+    "slug": "relancer-devis-sans-reponse-modeles",
+    "title": "Relancer un devis sans réponse : 4 modèles de mail et le bon timing",
+    "metaDescription": "Quand et comment relancer un devis resté sans réponse : 4 modèles de mail (J+3, J+7, J+15, dernière chance), ton à adopter et erreurs qui font fuir.",
+    "keyword": "relance devis sans réponse",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Devis",
+    "publishDate": "2026-10-15",
+    "week": 7,
+    "linksTo": [
+      "taux-de-conversion-devis-ameliorer",
+      "erreurs-devis-perdre-clients"
+    ]
+  },
+  {
+    "id": 169,
+    "slug": "acre-exoneration-charges-debut-activite",
+    "title": "ACRE : conditions, montant de l'exonération et démarches en 2026",
+    "metaDescription": "L'aide à la création d'entreprise réduit vos cotisations la première année. Qui y a droit, le taux réduit, la demande à faire dans les 45 jours et les pièges.",
+    "keyword": "acre auto-entrepreneur",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-10-16",
+    "week": 7,
+    "linksTo": [
+      "erreurs-creation-micro-entreprise",
+      "obligations-comptables-micro-entreprise"
+    ]
+  },
+  {
+    "id": 170,
+    "slug": "facture-coiffeur-esthetique-domicile",
+    "title": "Facture de coiffeur ou esthéticienne à domicile : TVA, tickets et mentions",
+    "metaDescription": "Coiffure et esthétique à domicile : quand délivrer une note ou une facture, TVA à 20 %, produits vendus, services à la personne et gestion des rendez-vous.",
+    "keyword": "facture coiffeur à domicile",
+    "category": "guide",
+    "sector": "Services / Indépendants",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-16",
+    "week": 7,
+    "linksTo": [
+      "facturer-un-particulier-regles-mentions",
+      "comment-creer-facture-auto-entrepreneur"
+    ]
+  },
+  {
+    "id": 171,
+    "slug": "facture-electronique-checklist-tpe-12-points",
+    "title": "Passer à la facture électronique : la checklist en 12 points pour une TPE",
+    "metaDescription": "Une checklist opérationnelle pour être prêt avant septembre 2027 : données clients, SIREN, logiciel, PDP, formats, e-reporting, formation et archivage.",
+    "keyword": "checklist facturation électronique",
+    "category": "conseils",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-19",
+    "week": 8,
+    "linksTo": [
+      "comment-choisir-sa-pdp-plateforme-dematerialisation",
+      "nouvelles-mentions-obligatoires-facture-electronique"
+    ]
+  },
+  {
+    "id": 172,
+    "slug": "modele-facture-anglais-invoice",
+    "title": "Modèle de facture en anglais (invoice) : vocabulaire et mentions",
+    "metaDescription": "Modèle de facture en anglais à télécharger, lexique facture/invoice, mentions françaises obligatoires même en anglais et gestion de la TVA pour l'export.",
+    "keyword": "modèle facture en anglais",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-10-19",
+    "week": 8,
+    "linksTo": [
+      "facturer-client-etranger-ue-hors-ue",
+      "facture-en-devise-etrangere-regles"
+    ]
+  },
+  {
+    "id": 173,
+    "slug": "injonction-de-payer-procedure-facture-impayee",
+    "title": "Injonction de payer : la procédure pas à pas pour une facture impayée",
+    "metaDescription": "Après la mise en demeure, l'injonction de payer permet d'obtenir un titre exécutoire sans avocat. Conditions, formulaire, coût, délais et suites de la procédure.",
+    "keyword": "injonction de payer",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-20",
+    "week": 8,
+    "linksTo": [
+      "modele-mise-en-demeure-facture-impayee",
+      "relance-facture-impayee-modele"
+    ]
+  },
+  {
+    "id": 174,
+    "slug": "tva-sur-les-debits-ou-encaissements",
+    "title": "TVA sur les débits ou sur les encaissements : quelle option choisir ?",
+    "metaDescription": "Prestations de services : la TVA est due à l'encaissement, sauf option pour les débits. Différences, mention obligatoire sur la facture et impact sur la trésorerie.",
+    "keyword": "tva sur les débits",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-20",
+    "week": 8,
+    "linksTo": [
+      "declaration-tva-ca3-ca12-guide",
+      "nouvelles-mentions-obligatoires-facture-electronique"
+    ]
+  },
+  {
+    "id": 175,
+    "slug": "facture-dieteticien-nutritionniste",
+    "title": "Facture de diététicien-nutritionniste : TVA, forfaits et mentions",
+    "metaDescription": "Facturer des consultations et des programmes de suivi : exonération de TVA du diététicien, forfaits mensuels, entreprises et ateliers collectifs.",
+    "keyword": "facture diététicien",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "low",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-21",
+    "week": 8,
+    "linksTo": [
+      "facture-psychologue-liberal-guide",
+      "facture-profession-liberale-guide"
+    ]
+  },
+  {
+    "id": 176,
+    "slug": "alternatives-freebe",
+    "title": "Alternatives à Freebe : 6 logiciels pour freelances comparés",
+    "metaDescription": "Freebe est-il encore le bon choix pour votre activité de freelance ? Six alternatives comparées : facturation, compta, banque, tarifs, e-invoicing.",
+    "keyword": "alternative freebe",
+    "category": "liste",
+    "sector": "Consultants / Freelances IT",
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-10-21",
+    "week": 8,
+    "linksTo": [
+      "freebe-vs-newbi-comparatif",
+      "meilleur-logiciel-facturation-freelance"
+    ]
+  },
+  {
+    "id": 177,
+    "slug": "tableau-de-bord-financier-tpe-indicateurs",
+    "title": "Tableau de bord financier pour TPE : les 10 indicateurs à suivre",
+    "metaDescription": "CA, marge, trésorerie, DSO, encours clients, charges fixes : les 10 indicateurs qu'un dirigeant de TPE doit suivre chaque mois et comment les automatiser.",
+    "keyword": "tableau de bord financier tpe",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-10-22",
+    "week": 8,
+    "linksTo": [
+      "dso-delai-moyen-paiement-clients-calcul",
+      "seuil-de-rentabilite-calcul-exemple"
+    ]
+  },
+  {
+    "id": 178,
+    "slug": "modifier-devis-signe-avenant",
+    "title": "Modifier un devis signé : l'avenant, quand et comment le rédiger",
+    "metaDescription": "Travaux supplémentaires, changement de prix ou de délai : un devis signé se modifie par avenant. Modèle, mentions et cas où un nouveau devis s'impose.",
+    "keyword": "avenant devis",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Devis",
+    "publishDate": "2026-10-22",
+    "week": 8,
+    "linksTo": [
+      "devis-signe-valeur-juridique-engagement",
+      "devis-travaux-btp-guide"
+    ]
+  },
+  {
+    "id": 179,
+    "slug": "versement-liberatoire-impot-revenu-micro",
+    "title": "Versement libératoire de l'impôt sur le revenu : est-ce intéressant ?",
+    "metaDescription": "Le versement libératoire remplace l'impôt sur le revenu par un prélèvement sur le CA. Taux, conditions de revenu fiscal, simulation et comment l'activer ou en sortir.",
+    "keyword": "versement libératoire",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "medium",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-10-23",
+    "week": 8,
+    "linksTo": [
+      "tva-auto-entrepreneur-seuils-franchise",
+      "obligations-comptables-micro-entreprise"
+    ]
+  },
+  {
+    "id": 180,
+    "slug": "facture-professeur-particulier-cours",
+    "title": "Facture de professeur particulier : cours à domicile, crédit d'impôt et mentions",
+    "metaDescription": "Donner des cours particuliers en indépendant : agrément services à la personne, crédit d'impôt de 50 % pour les parents, attestation fiscale et TVA.",
+    "keyword": "facture professeur particulier",
+    "category": "guide",
+    "sector": "Coachs / Formateurs",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-23",
+    "week": 8,
+    "linksTo": [
+      "facture-formateur-independant",
+      "facturer-un-particulier-regles-mentions"
+    ]
+  },
+  {
+    "id": 181,
+    "slug": "od-vs-pdp-operateur-dematerialisation-difference",
+    "title": "OD ou PDP : quelle différence entre opérateur et plateforme de dématérialisation ?",
+    "metaDescription": "Un opérateur de dématérialisation ne peut pas transmettre vos factures seul. Ce qui distingue OD et PDP, et comment savoir ce que fait réellement votre logiciel.",
+    "keyword": "opérateur de dématérialisation od",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-26",
+    "week": 9,
+    "linksTo": [
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "comment-choisir-sa-pdp-plateforme-dematerialisation"
+    ]
+  },
+  {
+    "id": 182,
+    "slug": "modele-note-de-frais-excel-gratuit",
+    "title": "Modèle de note de frais Excel gratuit (avec barème kilométrique 2026)",
+    "metaDescription": "Un modèle de note de frais Excel à télécharger : déplacements, repas, hébergement, barème kilométrique 2026 intégré, TVA récupérable et justificatifs à joindre.",
+    "keyword": "modèle note de frais excel",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-10-26",
+    "week": 9,
+    "linksTo": [
+      "gestion-notes-frais-deplacement",
+      "top-outils-scan-tickets-caisse-notes-frais"
+    ]
+  },
+  {
+    "id": 183,
+    "slug": "facturer-avant-immatriculation-societe",
+    "title": "Facturer avant l'immatriculation de sa société : est-ce possible ?",
+    "metaDescription": "Vous avez un premier client avant la création de votre société ? Les solutions légales (reprise des actes, portage, micro-entreprise) et ce qu'il ne faut pas faire.",
+    "keyword": "facturer avant immatriculation",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-27",
+    "week": 9,
+    "linksTo": [
+      "peut-on-facturer-sans-siret",
+      "erreurs-creation-micro-entreprise"
+    ]
+  },
+  {
+    "id": 184,
+    "slug": "faut-il-signer-une-facture",
+    "title": "Faut-il signer une facture ? Tampon, signature et valeur légale",
+    "metaDescription": "Ni la signature ni le tampon ne sont obligatoires sur une facture. Ce qui fait sa validité, les cas où le client exige une signature et la facture électronique.",
+    "keyword": "signer une facture",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "low",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-10-27",
+    "week": 9,
+    "linksTo": ["mentions-obligatoires-facture", "facture-en-ligne-vs-excel"]
+  },
+  {
+    "id": 185,
+    "slug": "facture-wedding-planner-evenementiel",
+    "title": "Facture de wedding planner et prestataire événementiel : acomptes et annulation",
+    "metaDescription": "Acomptes échelonnés, arrhes ou acompte, conditions d'annulation, sous-traitants refacturés : comment facturer un mariage ou un événement sans mauvaise surprise.",
+    "keyword": "facture wedding planner",
+    "category": "guide",
+    "sector": "Événementiel",
+    "priority": "low",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-28",
+    "week": 9,
+    "linksTo": [
+      "quest-ce-que-acompte-facture",
+      "quest-ce-que-conditions-generales-vente"
+    ]
+  },
+  {
+    "id": 186,
+    "slug": "qonto-facturation-vs-newbi-comparatif",
+    "title": "Qonto (facturation) vs Newbi : compte pro ou logiciel de gestion dédié ?",
+    "metaDescription": "Qonto propose la facturation dans son compte pro. Comparatif avec un logiciel dédié : devis, avoirs, achats, trésorerie, multi-banques et e-invoicing.",
+    "keyword": "qonto facturation vs newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-10-28",
+    "week": 9,
+    "linksTo": [
+      "shine-vs-newbi-comparatif",
+      "connexion-bancaire-rapprochement-automatique"
+    ]
+  },
+  {
+    "id": 187,
+    "slug": "compte-bancaire-professionnel-obligatoire",
+    "title": "Compte bancaire professionnel : obligatoire ou pas selon votre statut ?",
+    "metaDescription": "Micro-entreprise au-dessus de 10 000 €, société, profession libérale : quand un compte dédié est obligatoire, la différence compte pro / compte dédié et le choix de la banque.",
+    "keyword": "compte bancaire professionnel obligatoire",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-10-29",
+    "week": 9,
+    "linksTo": [
+      "erreurs-creation-micro-entreprise",
+      "connexion-bancaire-rapprochement-automatique"
+    ]
+  },
+  {
+    "id": 188,
+    "slug": "quel-acompte-demander-sur-un-devis",
+    "title": "Quel acompte demander sur un devis ? Pourcentages par secteur",
+    "metaDescription": "30 %, 40 %, 50 % ? Les usages par métier, le maximum légal pour les particuliers, la formulation sur le devis et la facture d'acompte qui suit.",
+    "keyword": "acompte devis pourcentage",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Devis",
+    "publishDate": "2026-10-29",
+    "week": 9,
+    "linksTo": [
+      "quest-ce-que-acompte-facture",
+      "modele-facture-acompte-gratuit"
+    ]
+  },
+  {
+    "id": 189,
+    "slug": "frais-professionnels-deductibles-independant",
+    "title": "Frais professionnels déductibles : la liste complète pour un indépendant",
+    "metaDescription": "Loyer, véhicule, repas, matériel, formation, logiciels : ce qu'un indépendant au réel peut déduire, les justificatifs à garder et ce que la micro-entreprise ne déduit pas.",
+    "keyword": "frais professionnels déductibles",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-10-30",
+    "week": 9,
+    "linksTo": [
+      "tva-deductible-quelles-depenses",
+      "gestion-notes-frais-deplacement"
+    ]
+  },
+  {
+    "id": 190,
+    "slug": "facture-agence-web-marketing",
+    "title": "Facture d'agence web ou marketing : forfaits, abonnements et refacturation",
+    "metaDescription": "Projets au forfait, maintenance mensuelle, budgets publicitaires avancés, sous-traitants : structurer la facturation d'une petite agence web ou marketing.",
+    "keyword": "facture agence web",
+    "category": "guide",
+    "sector": "Agences / Marketing",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-10-30",
+    "week": 9,
+    "linksTo": [
+      "facture-community-manager-freelance",
+      "automatiser-facturation-recurrente"
+    ]
+  },
+  {
+    "id": 191,
+    "slug": "declaration-tva-pre-remplie-facture-electronique",
+    "title": "Déclaration de TVA pré-remplie : ce que la facture électronique va changer",
+    "metaDescription": "L'un des objectifs de la réforme est une déclaration de TVA pré-remplie à partir des factures électroniques et de l'e-reporting. Calendrier et conséquences pratiques.",
+    "keyword": "déclaration tva pré-remplie",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-02",
+    "week": 10,
+    "linksTo": [
+      "e-reporting-definition-obligations-calendrier",
+      "declaration-tva-ca3-ca12-guide"
+    ]
+  },
+  {
+    "id": 192,
+    "slug": "modele-plan-de-tresorerie-excel-gratuit",
+    "title": "Modèle de plan de trésorerie Excel gratuit (12 mois)",
+    "metaDescription": "Un modèle de plan de trésorerie Excel sur 12 mois à télécharger, avec TVA, échéances sociales et scénarios. Mode d'emploi et limites face à un outil connecté à la banque.",
+    "keyword": "modèle plan de trésorerie excel",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-11-02",
+    "week": 10,
+    "linksTo": [
+      "plan-de-tresorerie-previsionnel-comment-faire",
+      "comment-gerer-tresorerie-entreprise"
+    ]
+  },
+  {
+    "id": 193,
+    "slug": "retenue-de-garantie-btp-facture",
+    "title": "Retenue de garantie dans le BTP : 5 %, facturation et libération",
+    "metaDescription": "Comment faire apparaître la retenue de garantie de 5 % sur vos factures de situation, la caution bancaire de remplacement et la procédure de libération après un an.",
+    "keyword": "retenue de garantie btp",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-11-03",
+    "week": 10,
+    "linksTo": [
+      "facture-situation-travaux-btp",
+      "facture-electronique-btp-sous-traitance-situations"
+    ]
+  },
+  {
+    "id": 194,
+    "slug": "verifier-numero-tva-intracommunautaire-vies",
+    "title": "Vérifier un numéro de TVA intracommunautaire (VIES) : mode d'emploi",
+    "metaDescription": "Avant de facturer HT un client européen, vérifiez son numéro de TVA sur VIES. Procédure, preuve à conserver et que faire si le numéro est invalide.",
+    "keyword": "vérifier numéro tva intracommunautaire",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-11-03",
+    "week": 10,
+    "linksTo": [
+      "quest-ce-que-tva-intracommunautaire",
+      "facturer-client-etranger-ue-hors-ue"
+    ]
+  },
+  {
+    "id": 195,
+    "slug": "facture-peintre-batiment-guide",
+    "title": "Facture de peintre en bâtiment : TVA réduite, devis et modèle",
+    "metaDescription": "Peinture, revêtements, ravalement : quelle TVA appliquer, comment détailler surfaces et fournitures, et gérer acompte, situation et facture de fin de chantier.",
+    "keyword": "facture peintre en bâtiment",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-04",
+    "week": 10,
+    "linksTo": [
+      "facture-btp-artisan-mentions-specifiques",
+      "devis-travaux-btp-guide"
+    ]
+  },
+  {
+    "id": 196,
+    "slug": "alternatives-tiime",
+    "title": "Alternatives à Tiime : 6 logiciels de facturation et compta comparés",
+    "metaDescription": "Tiime ne couvre pas tous vos besoins ? Six alternatives comparées pour indépendants et TPE : facturation, achats, banque, trésorerie, tarifs.",
+    "keyword": "alternative tiime",
+    "category": "liste",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-11-04",
+    "week": 10,
+    "linksTo": ["tiime-vs-newbi-comparatif", "pennylane-vs-tiime-comparatif"]
+  },
+  {
+    "id": 197,
+    "slug": "lien-de-paiement-facture-en-ligne",
+    "title": "Ajouter un lien de paiement sur ses factures : avantages, coûts et outils",
+    "metaDescription": "Un lien de paiement par carte ou virement sur la facture réduit les délais de règlement. Solutions, frais, rapprochement automatique et mentions à prévoir.",
+    "keyword": "lien de paiement facture",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-11-05",
+    "week": 10,
+    "linksTo": [
+      "conseils-reduire-delais-paiement",
+      "dso-delai-moyen-paiement-clients-calcul"
+    ]
+  },
+  {
+    "id": 198,
+    "slug": "devis-options-variantes-presentation",
+    "title": "Devis avec options et variantes : comment les présenter pour vendre plus",
+    "metaDescription": "Proposer une option ou une variante sur un devis augmente le panier moyen. Présentation claire, totaux séparés, mentions et conversion en facture.",
+    "keyword": "devis avec options",
+    "category": "conseils",
+    "sector": null,
+    "priority": "low",
+    "cluster": "Devis",
+    "publishDate": "2026-11-05",
+    "week": 10,
+    "linksTo": [
+      "taux-de-conversion-devis-ameliorer",
+      "comment-faire-devis-professionnel"
+    ]
+  },
+  {
+    "id": 199,
+    "slug": "declaration-urssaf-auto-entrepreneur-guide",
+    "title": "Déclaration URSSAF auto-entrepreneur : mode d'emploi mensuel ou trimestriel",
+    "metaDescription": "Déclarer son chiffre d'affaires sur autoentrepreneur.urssaf.fr : périodicité, CA à déclarer (encaissé, pas facturé), taux 2026, déclaration à zéro et pénalités de retard.",
+    "keyword": "déclaration urssaf auto-entrepreneur",
+    "category": "guide",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-11-06",
+    "week": 10,
+    "linksTo": [
+      "obligations-comptables-micro-entreprise",
+      "acre-exoneration-charges-debut-activite"
+    ]
+  },
+  {
+    "id": 200,
+    "slug": "facture-services-a-la-personne-credit-impot",
+    "title": "Facture de services à la personne : attestation fiscale et crédit d'impôt",
+    "metaDescription": "Ménage, jardinage, cours, garde d'enfants : mentions obligatoires de la facture SAP, attestation fiscale annuelle, avance immédiate de crédit d'impôt et TVA.",
+    "keyword": "facture services à la personne",
+    "category": "guide",
+    "sector": "Services / Indépendants",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-06",
+    "week": 10,
+    "linksTo": [
+      "facture-professeur-particulier-cours",
+      "facture-paysagiste-jardinier-guide"
+    ]
+  },
+  {
+    "id": 201,
+    "slug": "facture-electronique-idees-recues",
+    "title": "10 idées reçues sur la facturation électronique (et la réalité)",
+    "metaDescription": "« Un PDF suffit », « les micro-entreprises ne sont pas concernées », « c'est reporté »... Dix affirmations passées au crible pour y voir clair avant 2027.",
+    "keyword": "facturation électronique idées reçues",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-09",
+    "week": 11,
+    "linksTo": [
+      "facturation-electronique-obligatoire-2026",
+      "facture-electronique-auto-entrepreneur-2027"
+    ]
+  },
+  {
+    "id": 202,
+    "slug": "modele-tableau-suivi-factures-excel",
+    "title": "Tableau de suivi des factures Excel : modèle gratuit et alternatives",
+    "metaDescription": "Un modèle Excel pour suivre factures émises, échéances, paiements et retards, avec formules et alertes. Et le moment où un logiciel devient indispensable.",
+    "keyword": "tableau suivi factures excel",
+    "category": "modele",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-11-09",
+    "week": 11,
+    "linksTo": [
+      "facture-en-ligne-vs-excel",
+      "alternatives-excel-gestion-entreprise"
+    ]
+  },
+  {
+    "id": 203,
+    "slug": "note-honoraires-vs-facture-differences",
+    "title": "Note d'honoraires ou facture : quelles différences et qui doit l'utiliser ?",
+    "metaDescription": "La note d'honoraires est une facture pour les professions libérales. Mentions identiques ou non, TVA, numérotation et modèles selon la profession.",
+    "keyword": "note d'honoraires",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-11-10",
+    "week": 11,
+    "linksTo": [
+      "facture-profession-liberale-guide",
+      "facturation-avocat-honoraires-guide"
+    ]
+  },
+  {
+    "id": 204,
+    "slug": "pv-reception-travaux-modele",
+    "title": "PV de réception de travaux : modèle, réserves et lien avec la facture finale",
+    "metaDescription": "Le procès-verbal de réception déclenche les garanties et la facture de solde. Modèle à télécharger, réserves, réception tacite et retenue de garantie.",
+    "keyword": "pv réception travaux",
+    "category": "modele",
+    "sector": "BTP / Artisans",
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-11-10",
+    "week": 11,
+    "linksTo": [
+      "retenue-de-garantie-btp-facture",
+      "facture-situation-travaux-btp"
+    ]
+  },
+  {
+    "id": 205,
+    "slug": "facture-garage-mecanicien-auto",
+    "title": "Facture de garage et mécanicien : pièces, main-d'œuvre et mentions obligatoires",
+    "metaDescription": "Ordre de réparation, devis obligatoire, détail pièces et main-d'œuvre, pièces d'occasion, TVA : ce qu'une facture de garage doit contenir pour être conforme.",
+    "keyword": "facture garage automobile",
+    "category": "guide",
+    "sector": "Commerces / Retail",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-11",
+    "week": 11,
+    "linksTo": [
+      "facturer-un-particulier-regles-mentions",
+      "obligations-legales-devis-consommateur"
+    ]
+  },
+  {
+    "id": 206,
+    "slug": "ebp-vs-newbi-comparatif",
+    "title": "EBP vs Newbi : logiciel installé historique ou solution en ligne ?",
+    "metaDescription": "EBP équipe les TPE depuis des décennies. Comparatif avec une solution cloud : facturation, achats, banque, mobilité, e-invoicing et coût total.",
+    "keyword": "ebp vs newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-11-11",
+    "week": 11,
+    "linksTo": ["logiciel-gestion-tout-en-un-tpe", "facture-en-ligne-vs-excel"]
+  },
+  {
+    "id": 207,
+    "slug": "recouvrement-amiable-vs-judiciaire",
+    "title": "Recouvrement amiable ou judiciaire : quelle voie pour une facture impayée ?",
+    "metaDescription": "Relance, mise en demeure, société de recouvrement, injonction de payer, référé : le parcours complet, les coûts et le bon moment pour passer à l'étape suivante.",
+    "keyword": "recouvrement de créances",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-11-12",
+    "week": 11,
+    "linksTo": [
+      "injonction-de-payer-procedure-facture-impayee",
+      "modele-mise-en-demeure-facture-impayee"
+    ]
+  },
+  {
+    "id": 208,
+    "slug": "signature-electronique-devis-valeur-outils",
+    "title": "Signature électronique de devis : valeur juridique et outils",
+    "metaDescription": "Un devis signé électroniquement a-t-il la même valeur qu'une signature manuscrite ? Niveaux eIDAS, preuve, outils gratuits et intégration au logiciel de devis.",
+    "keyword": "signature électronique devis",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Devis",
+    "publishDate": "2026-11-12",
+    "week": 11,
+    "linksTo": [
+      "devis-signe-valeur-juridique-engagement",
+      "taux-de-conversion-devis-ameliorer"
+    ]
+  },
+  {
+    "id": 209,
+    "slug": "depassement-seuil-micro-entreprise-consequences",
+    "title": "Dépassement des seuils de la micro-entreprise : conséquences et transition",
+    "metaDescription": "CA au-dessus de 77 700 € ou 188 700 € : quand perd-on le régime micro, tolérance sur deux ans, passage au réel, TVA et démarches à anticiper.",
+    "keyword": "dépassement seuil micro-entreprise",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-11-13",
+    "week": 11,
+    "linksTo": [
+      "tva-auto-entrepreneur-seuils-franchise",
+      "obligations-comptables-micro-entreprise"
+    ]
+  },
+  {
+    "id": 210,
+    "slug": "facture-food-truck-traiteur",
+    "title": "Facture de food truck et traiteur : TVA, événements et particuliers",
+    "metaDescription": "TVA à 5,5 %, 10 % ou 20 % selon la prestation, acomptes pour les événements, factures aux entreprises et notes aux particuliers : le guide pour traiteurs et food trucks.",
+    "keyword": "facture traiteur",
+    "category": "guide",
+    "sector": "Restaurants / CHR",
+    "priority": "low",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-13",
+    "week": 11,
+    "linksTo": [
+      "facture-restaurant-cafe-hotel",
+      "facture-restauration-rapide-obligations"
+    ]
+  },
+  {
+    "id": 211,
+    "slug": "facture-electronique-professions-liberales",
+    "title": "Professions libérales et facturation électronique : ce qui change vraiment",
+    "metaDescription": "Médecins, avocats, consultants : activités exonérées de TVA, clients particuliers, e-reporting et secret professionnel. Ce que la réforme change pour les libéraux.",
+    "keyword": "facturation électronique professions libérales",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-16",
+    "week": 12,
+    "linksTo": [
+      "facture-profession-liberale-guide",
+      "e-reporting-definition-obligations-calendrier"
+    ]
+  },
+  {
+    "id": 212,
+    "slug": "modele-contrat-prestation-de-services",
+    "title": "Modèle de contrat de prestation de services : clauses essentielles",
+    "metaDescription": "Un modèle de contrat de prestation de services à télécharger avec les clauses qui protègent : objet, prix, délais, propriété intellectuelle, résiliation, pénalités.",
+    "keyword": "modèle contrat prestation de services",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-11-16",
+    "week": 12,
+    "linksTo": [
+      "quest-ce-que-conditions-generales-vente",
+      "facturer-prestation-service-consultant"
+    ]
+  },
+  {
+    "id": 213,
+    "slug": "archivage-factures-valeur-probante",
+    "title": "Archivage des factures à valeur probante : obligations et solutions",
+    "metaDescription": "Conserver une facture ne suffit pas : elle doit rester intègre, lisible et authentique. Ce qu'exige l'administration, l'archivage électronique et les erreurs courantes.",
+    "keyword": "archivage factures valeur probante",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Conformité & outils",
+    "publishDate": "2026-11-17",
+    "week": 12,
+    "linksTo": [
+      "delai-conservation-factures-documents-comptables",
+      "facture-en-ligne-vs-excel"
+    ]
+  },
+  {
+    "id": 214,
+    "slug": "piste-audit-fiable-paf-definition",
+    "title": "Piste d'audit fiable (PAF) : définition et comment la mettre en place",
+    "metaDescription": "La piste d'audit fiable prouve le lien entre facture, commande et paiement. Qui est concerné, ce que doit contenir la documentation et comment un logiciel l'assure.",
+    "keyword": "piste d'audit fiable",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Conformité & outils",
+    "publishDate": "2026-11-17",
+    "week": 12,
+    "linksTo": [
+      "archivage-factures-valeur-probante",
+      "facturation-electronique-obligatoire-2026"
+    ]
+  },
+  {
+    "id": 215,
+    "slug": "facture-video-monteur-motion-design",
+    "title": "Facture de vidéaste, monteur et motion designer : droits et livrables",
+    "metaDescription": "Tournage, montage, motion design : facturer par jour ou par livrable, cession de droits d'exploitation, musique sous licence et frais de production refacturés.",
+    "keyword": "facture vidéaste freelance",
+    "category": "guide",
+    "sector": "Photographes / Créatifs",
+    "priority": "low",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-18",
+    "week": 12,
+    "linksTo": [
+      "facture-photographe-droits-auteur",
+      "facture-graphiste-designer-freelance"
+    ]
+  },
+  {
+    "id": 216,
+    "slug": "alternatives-axonaut",
+    "title": "Alternatives à Axonaut : 6 logiciels de gestion pour TPE comparés",
+    "metaDescription": "Axonaut est trop large ou trop cher pour votre structure ? Six alternatives comparées sur la facturation, le CRM, les achats, la trésorerie et les tarifs.",
+    "keyword": "alternative axonaut",
+    "category": "liste",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-11-18",
+    "week": 12,
+    "linksTo": [
+      "axonaut-vs-newbi-comparatif",
+      "logiciel-gestion-tout-en-un-tpe"
+    ]
+  },
+  {
+    "id": 217,
+    "slug": "prelevement-sepa-b2b-clients-entreprise",
+    "title": "Mettre en place le prélèvement SEPA pour vos clients : mandat et fonctionnement",
+    "metaDescription": "Pour des prestations récurrentes, le prélèvement SEPA sécurise les encaissements. Mandat, ICS, SEPA Core ou B2B, coûts et intégration à la facturation.",
+    "keyword": "prélèvement sepa entreprise",
+    "category": "guide",
+    "sector": null,
+    "priority": "low",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-11-19",
+    "week": 12,
+    "linksTo": [
+      "automatiser-facturation-recurrente",
+      "lien-de-paiement-facture-en-ligne"
+    ]
+  },
+  {
+    "id": 218,
+    "slug": "calendrier-fiscal-independant-2027",
+    "title": "Calendrier fiscal 2027 des indépendants et TPE : toutes les échéances",
+    "metaDescription": "TVA, CFE, acomptes d'impôt, déclarations URSSAF, liasse, e-invoicing en septembre : toutes les dates 2027 à noter pour un indépendant ou une TPE, mois par mois.",
+    "keyword": "calendrier fiscal 2027",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-11-19",
+    "week": 12,
+    "linksTo": [
+      "calendrier-fiscal-independant-2026",
+      "facture-electronique-auto-entrepreneur-2027"
+    ]
+  },
+  {
+    "id": 219,
+    "slug": "plafonds-micro-entreprise-2027",
+    "title": "Plafonds de la micro-entreprise en 2027 : CA, TVA et versement libératoire",
+    "metaDescription": "Les seuils de chiffre d'affaires, de franchise de TVA et de versement libératoire applicables en 2027, avec ce qui a changé et comment les surveiller.",
+    "keyword": "plafonds micro-entreprise 2027",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-11-20",
+    "week": 12,
+    "linksTo": [
+      "tva-auto-entrepreneur-seuils-franchise",
+      "depassement-seuil-micro-entreprise-consequences"
+    ]
+  },
+  {
+    "id": 220,
+    "slug": "facture-conciergerie-airbnb",
+    "title": "Facture de conciergerie Airbnb : commissions, refacturation et TVA",
+    "metaDescription": "Facturer les propriétaires (commission sur revenus locatifs), refacturer le ménage et le linge, gérer la TVA et le mandat : la facturation d'une conciergerie.",
+    "keyword": "facture conciergerie airbnb",
+    "category": "guide",
+    "sector": "Immobilier",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-20",
+    "week": 12,
+    "linksTo": [
+      "facture-agent-immobilier-honoraires",
+      "debours-refacturation-frais-clients"
+    ]
+  },
+  {
+    "id": 221,
+    "slug": "facture-electronique-clients-etrangers-regles",
+    "title": "Facture électronique et clients étrangers : quelles règles s'appliquent ?",
+    "metaDescription": "Les factures aux clients hors de France ne passent pas par la plateforme mais relèvent de l'e-reporting. Ce qu'il faut transmettre, quand et dans quel format.",
+    "keyword": "facture électronique client étranger",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-23",
+    "week": 13,
+    "linksTo": [
+      "e-reporting-definition-obligations-calendrier",
+      "facturer-client-etranger-ue-hors-ue"
+    ]
+  },
+  {
+    "id": 222,
+    "slug": "modele-recu-paiement-quittance",
+    "title": "Reçu de paiement et quittance : modèle gratuit et différence avec la facture",
+    "metaDescription": "Un reçu prouve l'encaissement, il ne remplace pas la facture. Modèle de reçu à télécharger, mentions, cas des espèces et acquittement d'une facture.",
+    "keyword": "modèle reçu de paiement",
+    "category": "modele",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-11-23",
+    "week": 13,
+    "linksTo": ["mentions-obligatoires-facture", "quest-ce-que-acompte-facture"]
+  },
+  {
+    "id": 223,
+    "slug": "logiciel-facturation-conforme-loi-anti-fraude-tva",
+    "title": "Logiciel de facturation conforme à la loi anti-fraude TVA : ce qu'il faut vérifier",
+    "metaDescription": "Inaltérabilité, sécurisation, conservation, archivage : les 4 conditions de la loi anti-fraude, qui est concerné (caisse vs facturation) et l'attestation à demander.",
+    "keyword": "logiciel facturation loi anti-fraude",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Conformité & outils",
+    "publishDate": "2026-11-24",
+    "week": 13,
+    "linksTo": [
+      "piste-audit-fiable-paf-definition",
+      "facture-en-ligne-vs-excel"
+    ]
+  },
+  {
+    "id": 224,
+    "slug": "envoyer-fichiers-volumineux-alternatives-wetransfer",
+    "title": "Envoyer des fichiers volumineux : 7 alternatives à WeTransfer pour les pros",
+    "metaDescription": "Limites de taille, expiration, sécurité, RGPD : sept alternatives à WeTransfer pour envoyer des fichiers lourds à ses clients, dont des solutions intégrées à votre gestion.",
+    "keyword": "alternative wetransfer",
+    "category": "liste",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Conformité & outils",
+    "publishDate": "2026-11-24",
+    "week": 13,
+    "linksTo": [
+      "transfert-fichiers-securise-professionnel",
+      "comment-partager-documents-expert-comptable"
+    ]
+  },
+  {
+    "id": 225,
+    "slug": "facture-assistante-virtuelle-administrative",
+    "title": "Facture d'assistante virtuelle et indépendante administrative : forfaits et heures",
+    "metaDescription": "Facturer à l'heure, au forfait ou au pack d'heures, gérer les dépassements et les frais avancés : le guide de la facturation pour assistantes indépendantes.",
+    "keyword": "facture assistante virtuelle",
+    "category": "guide",
+    "sector": "Office managers",
+    "priority": "low",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-25",
+    "week": 13,
+    "linksTo": [
+      "gestion-administrative-office-manager-guide",
+      "facturer-prestation-service-consultant"
+    ]
+  },
+  {
+    "id": 226,
+    "slug": "application-facturation-mobile-iphone-android",
+    "title": "Application de facturation mobile : les meilleures apps iPhone et Android",
+    "metaDescription": "Créer un devis sur un chantier, envoyer une facture depuis son téléphone, scanner un ticket : comparatif des applications mobiles de facturation en 2026.",
+    "keyword": "application facturation mobile",
+    "category": "liste",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-11-25",
+    "week": 13,
+    "linksTo": [
+      "top-6-logiciels-facturation-artisan",
+      "logiciel-devis-facture-gratuit"
+    ]
+  },
+  {
+    "id": 227,
+    "slug": "micro-entreprise-eurl-sasu-choisir",
+    "title": "Micro-entreprise, EURL ou SASU : quel statut choisir pour se lancer ?",
+    "metaDescription": "Charges, protection sociale, TVA, image, plafonds : comparatif des trois statuts les plus courants pour un indépendant, avec des exemples chiffrés selon le CA.",
+    "keyword": "micro-entreprise ou sasu",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Création & gestion",
+    "publishDate": "2026-11-26",
+    "week": 13,
+    "linksTo": [
+      "erreurs-creation-micro-entreprise",
+      "depassement-seuil-micro-entreprise-consequences"
+    ]
+  },
+  {
+    "id": 228,
+    "slug": "expert-comptable-obligatoire-cout-tpe",
+    "title": "Expert-comptable : obligatoire ou pas, et combien ça coûte pour une TPE ?",
+    "metaDescription": "Aucune loi n'impose l'expert-comptable, mais il est souvent indispensable. Cas où l'on peut s'en passer, tarifs moyens 2026 et comment réduire la facture.",
+    "keyword": "expert-comptable obligatoire",
+    "category": "guide",
+    "sector": "Comptables / Experts-comptables",
+    "priority": "medium",
+    "cluster": "Création & gestion",
+    "publishDate": "2026-11-26",
+    "week": 13,
+    "linksTo": [
+      "comment-partager-documents-expert-comptable",
+      "conseils-organiser-comptabilite-debut-activite"
+    ]
+  },
+  {
+    "id": 229,
+    "slug": "generateur-signature-mail-gratuit",
+    "title": "Générateur de signature mail gratuit : créer une signature pro en 2 minutes",
+    "metaDescription": "Les meilleurs générateurs de signature mail gratuits comparés, ce qu'une signature pro doit contenir et comment l'installer sur Gmail, Outlook et Apple Mail.",
+    "keyword": "générateur signature mail gratuit",
+    "category": "liste",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Conformité & outils",
+    "publishDate": "2026-11-27",
+    "week": 13,
+    "linksTo": [
+      "signature-mail-professionnelle-guide",
+      "conseils-ameliorer-signature-email"
+    ]
+  },
+  {
+    "id": 230,
+    "slug": "augmenter-ses-tarifs-annoncer-clients",
+    "title": "Augmenter ses tarifs : quand, de combien et comment l'annoncer à ses clients",
+    "metaDescription": "Inflation, expertise, carnet plein : les signaux qu'il est temps d'augmenter ses prix, le pourcentage raisonnable et 3 modèles de mail d'annonce.",
+    "keyword": "augmenter ses tarifs freelance",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Création & gestion",
+    "publishDate": "2026-11-27",
+    "week": 13,
+    "linksTo": [
+      "comment-fixer-tarif-journalier-tjm",
+      "quest-ce-que-conditions-generales-vente"
+    ]
+  }
+]

@@ -235,146 +235,147 @@ const nextConfig = {
         destination: "https://www.newbi.fr/:path*",
         permanent: true,
       },
-      // Redirections des anciens articles de blog vers la page d'accueil
+      // Anciens articles de blog : redirigés vers l'article équivalent (une
+      // redirection vers l'accueil est traitée comme un soft-404 par Google)
       {
         source: "/blog/envoyer-fichiers-contre-paiement",
-        destination: "/",
+        destination: "/blog/transfert-fichiers-securise-professionnel",
         permanent: true,
       },
       {
         source: "/blog/meilleurs-outils-gratuits-gestion-entreprise",
-        destination: "/",
+        destination: "/blog/top-7-outils-gratuits-auto-entrepreneur",
         permanent: true,
       },
       {
         source: "/blog/compte-bancaire-particulier-ou-professionnel-freelance",
-        destination: "/",
+        destination: "/blog/connexion-bancaire-rapprochement-automatique",
         permanent: true,
       },
       {
         source: "/blog/transferer-fichiers-graphistes-2025",
-        destination: "/",
+        destination: "/blog/transfert-fichiers-securise-professionnel",
         permanent: true,
       },
       {
         source:
           "/blog/comparatif-outils-gestion-projet-clickup-monday-trello-newbi",
-        destination: "/",
+        destination: "/blog/top-outils-gestion-projet-freelance",
         permanent: true,
       },
       {
         source: "/blog/optimiser-referencement-google-article-seo",
-        destination: "/",
+        destination: "/blog",
         permanent: true,
       },
       {
         source: "/blog/alternative-gratuite-wetransfer-newbi",
-        destination: "/",
+        destination: "/blog/transfert-fichiers-securise-professionnel",
         permanent: true,
       },
       {
         source: "/blog/apparaitre-premier-google-articles-optimises",
-        destination: "/",
+        destination: "/blog",
         permanent: true,
       },
       {
         source: "/blog/odoo-vs-newbi-comparatif",
-        destination: "/",
+        destination: "/blog/dolibarr-vs-newbi-comparatif",
         permanent: true,
       },
       {
         source: "/blog/gestion-agence-architecture-interieur",
-        destination: "/",
+        destination: "/blog/gestion-projet-kanban-independant",
         permanent: true,
       },
       {
         source: "/blog/calendrier-impots-2025-independants",
-        destination: "/",
+        destination: "/blog/calendrier-fiscal-independant-2026",
         permanent: true,
       },
       {
         source: "/blog/creer-factures-professionnelles-en-ligne",
-        destination: "/",
+        destination: "/blog/facture-en-ligne-vs-excel",
         permanent: true,
       },
       {
         source: "/blog/importance-signature-mail-professionnelle",
-        destination: "/",
+        destination: "/blog/signature-mail-professionnelle-guide",
         permanent: true,
       },
       {
         source: "/blog/facture-numerique-facturation-electronique-obligatoire",
-        destination: "/",
+        destination: "/blog/facturation-electronique-obligatoire-2026",
         permanent: true,
       },
       {
         source: "/blog/creer-devis-professionnel-conversion",
-        destination: "/",
+        destination: "/blog/conseils-convertir-devis-facture",
         permanent: true,
       },
       {
         source: "/blog/modeles-factures-professionnelles-auto-entrepreneurs",
-        destination: "/",
+        destination: "/blog/comment-creer-facture-auto-entrepreneur",
         permanent: true,
       },
       {
         source: "/blog/signature-mail-professionnelle-conversion",
-        destination: "/",
+        destination: "/blog/conseils-ameliorer-signature-email",
         permanent: true,
       },
       {
         source: "/blog/generateur-mentions-legales-site-web",
-        destination: "/",
+        destination: "/blog/quest-ce-que-conditions-generales-vente",
         permanent: true,
       },
       {
         source: "/blog/outils-essentiels-gestion-entreprise",
-        destination: "/",
+        destination: "/blog/logiciel-gestion-tout-en-un-tpe",
         permanent: true,
       },
       {
         source: "/blog/devis-excel-limites-alternatives",
-        destination: "/",
+        destination: "/blog/alternatives-excel-gestion-entreprise",
         permanent: true,
       },
       {
         source: "/blog/gestion-tresorerie-independant",
-        destination: "/",
+        destination: "/blog/comment-gerer-tresorerie-entreprise",
         permanent: true,
       },
       {
         source: "/blog/gestion-tresorerie-freelance",
-        destination: "/",
+        destination: "/blog/comment-gerer-tresorerie-entreprise",
         permanent: true,
       },
       {
         source: "/blog/modifier-code-ape-independant",
-        destination: "/",
+        destination: "/blog/quest-ce-que-numero-siret-siren",
         permanent: true,
       },
       {
         source: "/blog/difference-devis-bon-commande",
-        destination: "/",
+        destination: "/blog/quest-ce-que-bon-commande",
         permanent: true,
       },
       {
         source: "/blog/temps-pour-faire-un-devis",
-        destination: "/",
+        destination: "/blog/comment-faire-devis-professionnel",
         permanent: true,
       },
       {
         source: "/blog/gestion-activite-independant",
-        destination: "/",
+        destination: "/blog/logiciel-gestion-tout-en-un-tpe",
         permanent: true,
       },
       {
         source: "/blog/clickup-vs-monday-comparatif",
-        destination: "/",
+        destination: "/blog/top-outils-gestion-projet-freelance",
         permanent: true,
       },
       {
         source: "/blog/cest-quoi-un-erp",
-        destination: "/",
+        destination: "/blog/logiciel-gestion-tout-en-un-tpe",
         permanent: true,
       },
 
@@ -410,7 +411,7 @@ const nextConfig = {
       // Redirections des anciens outils/générateurs
       {
         source: "/outils",
-        destination: "/",
+        destination: "/produits/factures",
         permanent: true,
       },
       {

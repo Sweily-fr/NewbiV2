@@ -12,4 +12,4 @@ Disallow: /reactivate-account
 Disallow: /test-emails/
 Disallow: /debug-organization/
 
-Sitemap: https://newbi.fr/sitemap.xml
+Sitemap: https://www.newbi.fr/sitemap.xml

@@ -3,7 +3,8 @@
  * Contient les métadonnées, descriptions, mots-clés et données structurées
  */
 
-const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
+const baseUrl =
+  process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.newbi.fr";
 
 // Configuration SEO par défaut
 export const defaultSEO = {
