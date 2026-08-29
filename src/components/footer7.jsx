@@ -290,7 +290,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href={"/produits/devis"}
+                      href={"/produits/factures"}
                     >
                       Devis
                     </a>

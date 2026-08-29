@@ -1,6 +1,7 @@
 import React from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
+import { BlogFurtherReading } from "@/src/components/blog/blog-further-reading";
 import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
@@ -43,22 +44,26 @@ export default function GestionDesAchatsPage() {
               {
                 title: "Artisans & BTP",
                 desc: "Matériaux, sous-traitants, location de matériel et fournitures de chantier.",
-                image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&q=80",
               },
               {
                 title: "Freelances & Agences",
                 desc: "Licences logiciels, abonnements SaaS, coworking et outils de travail.",
-                image: "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
               },
               {
                 title: "Commerçants",
                 desc: "Stock, marchandises, emballages et frais de livraison.",
-                image: "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
               },
               {
                 title: "Consultants & Services",
                 desc: "Déplacements, hébergement, restauration et frais professionnels.",
-                image: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
               },
             ]}
             bottomTitle=""
@@ -71,6 +76,7 @@ export default function GestionDesAchatsPage() {
           {/* <TestimonialsSplit /> */}
           <FAQ />
         </main>
+        <BlogFurtherReading product="gestion-des-achats" />
         <Footer7 />
       </div>
     </>

@@ -8,6 +8,7 @@ import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
 import { ForceDesktopViewport } from "@/src/components/force-desktop-viewport";
 import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
+import { SITE_URL } from "@/src/lib/site";
 
 export const viewport = {
   width: "device-width",
@@ -40,9 +41,7 @@ export const metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr",
-  ),
+  metadataBase: new URL(SITE_URL),
   alternates: {
     canonical: "/",
   },

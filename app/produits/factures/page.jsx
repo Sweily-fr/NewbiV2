@@ -1,6 +1,7 @@
 import React from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
+import { BlogFurtherReading } from "@/src/components/blog/blog-further-reading";
 import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
@@ -48,22 +49,26 @@ export default function FacturesPage() {
               {
                 title: "Factures & Devis",
                 desc: "Créez, envoyez et suivez vos factures et devis conformes en quelques clics.",
-                image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80",
               },
               {
                 title: "Suivi bancaire",
                 desc: "Connectez vos comptes et synchronisez vos transactions automatiquement.",
-                image: "https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=600&q=80",
               },
               {
                 title: "Gestion des dépenses",
                 desc: "Scannez vos justificatifs et catégorisez vos dépenses sans effort.",
-                image: "https://images.unsplash.com/photo-1554224155-1696413565d3?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1554224155-1696413565d3?w=600&q=80",
               },
               {
                 title: "Projets & Clients",
                 desc: "Organisez vos projets, gérez votre fichier clients et collaborez efficacement.",
-                image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80",
+                image:
+                  "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80",
               },
             ]}
             bottomTitle=""
@@ -367,6 +372,7 @@ export default function FacturesPage() {
           </div>
         </section> */}
         </main>
+        <BlogFurtherReading product="factures" />
         <Footer7 />
       </div>
     </>

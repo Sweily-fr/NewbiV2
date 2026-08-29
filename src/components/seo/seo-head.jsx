@@ -30,11 +30,12 @@ export default function SEOHead({
   language = "fr-FR",
 }) {
   const pathname = usePathname();
-  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
-  
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.newbi.fr";
+
   // Construction de l'URL canonique
   const canonicalUrl = canonical || `${baseUrl}${pathname}`;
-  
+
   // Configuration Open Graph par défaut
   const defaultOpenGraph = {
     type: "website",
@@ -69,15 +70,15 @@ export default function SEOHead({
       <meta name="author" content={author} />
       <meta name="robots" content={robots} />
       <meta name="language" content={language} />
-      
+
       {/* URL canonique */}
       <link rel="canonical" href={canonicalUrl} />
-      
+
       {/* Meta tags pour les langues */}
       <meta httpEquiv="content-language" content="fr" />
       <meta name="geo.region" content="FR" />
       <meta name="geo.country" content="France" />
-      
+
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={defaultOpenGraph.type} />
       <meta property="og:locale" content={defaultOpenGraph.locale} />
@@ -89,7 +90,7 @@ export default function SEOHead({
       <meta property="og:image:width" content={defaultOpenGraph.imageWidth} />
       <meta property="og:image:height" content={defaultOpenGraph.imageHeight} />
       <meta property="og:image:alt" content={defaultOpenGraph.title} />
-      
+
       {/* Twitter Card */}
       <meta name="twitter:card" content={defaultTwitter.card} />
       <meta name="twitter:site" content={defaultTwitter.site} />
@@ -97,21 +98,35 @@ export default function SEOHead({
       <meta name="twitter:title" content={defaultTwitter.title} />
       <meta name="twitter:description" content={defaultTwitter.description} />
       <meta name="twitter:image" content={defaultTwitter.image} />
-      
+
       {/* Meta tags pour mobile */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="format-detection" content="telephone=no" />
-      
+
       {/* Meta tags pour les moteurs de recherche */}
       <meta name="revisit-after" content="7 days" />
       <meta name="rating" content="general" />
-      
+
       {/* Favicon et icônes */}
       <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-      
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="32x32"
+        href="/favicon-32x32.png"
+      />
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="16x16"
+        href="/favicon-16x16.png"
+      />
+      <link
+        rel="apple-touch-icon"
+        sizes="180x180"
+        href="/apple-touch-icon.png"
+      />
+
       {/* JSON-LD pour le référencement structuré */}
       {jsonLd && (
         <script
@@ -121,10 +136,14 @@ export default function SEOHead({
           }}
         />
       )}
-      
+
       {/* Preconnect pour améliorer les performances */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossOrigin="anonymous"
+      />
     </Head>
   );
 }

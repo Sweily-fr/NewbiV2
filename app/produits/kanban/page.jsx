@@ -1,6 +1,7 @@
 import React from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
+import { BlogFurtherReading } from "@/src/components/blog/blog-further-reading";
 import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
@@ -325,6 +326,7 @@ export default function KanbanPage() {
           </div>
         </section> */}
         </main>
+        <BlogFurtherReading product="kanban" />
         <Footer7 />
       </div>
     </>

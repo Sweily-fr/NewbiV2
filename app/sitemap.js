@@ -1,104 +1,115 @@
-import { getAllPosts } from "@/src/lib/blog";
+import fs from "fs";
+import path from "path";
+import { getAllPosts, getCategories, getSectors } from "@/src/lib/blog";
+import { authorSlug } from "@/src/lib/blog-authors";
+import { SITE_URL } from "@/src/lib/site";
 
 /**
- * Sitemap dynamique pour newbi.fr
- * Généré automatiquement par Next.js
+ * Sitemap dynamique pour www.newbi.fr
  * Accessible sur : https://www.newbi.fr/sitemap.xml
+ *
+ * Les pages produits sont lues depuis app/produits/ pour que le sitemap ne
+ * liste jamais une page supprimée (ex. /produits/devis, redirigée) et
+ * n'oublie jamais une page ajoutée.
  */
+
+function listProductPages() {
+  const dir = path.join(process.cwd(), "app", "produits");
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => {
+      if (!entry.isDirectory()) return false;
+      const page = path.join(dir, entry.name, "page.jsx");
+      if (!fs.existsSync(page)) return false;
+      // Page supprimée qui ne fait que rediriger (ex. synchronisation-bancaire)
+      return !/^\s*redirect\(/m.test(fs.readFileSync(page, "utf-8"));
+    })
+    .map((entry) => `/produits/${entry.name}`)
+    .sort();
+}
+
 export default function sitemap() {
-  const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
+  const baseUrl = SITE_URL;
+  const posts = getAllPosts();
+  const latestPostDate = posts[0]
+    ? new Date(posts[0].updated || posts[0].publishDate || posts[0].date)
+    : undefined;
 
+  // Pages statiques : pas de lastModified inventé (Google ignore les dates
+  // qui changent à chaque build), sauf pour les listes qui bougent avec le blog.
   const staticPages = [
-    // Page d'accueil - Priorité maximale
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1,
-    },
-
-    // Pages produits - Haute priorité
-    {
-      url: `${baseUrl}/produits/factures`,
-      lastModified: new Date(),
+    { url: baseUrl, changeFrequency: "daily", priority: 1 },
+    ...listProductPages().map((p) => ({
+      url: `${baseUrl}${p}`,
       changeFrequency: "weekly",
       priority: 0.9,
-    },
+    })),
     {
-      url: `${baseUrl}/produits/devis`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
+      url: `${baseUrl}/guide-facturation-electronique`,
+      changeFrequency: "monthly",
       priority: 0.9,
     },
-    {
-      url: `${baseUrl}/produits/signatures`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/produits/kanban`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/produits/transfers`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-
-    // Blog listing
     {
       url: `${baseUrl}/blog`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
+      lastModified: latestPostDate,
+      changeFrequency: "daily",
       priority: 0.8,
     },
-
-    // Pages informatives - Priorité moyenne
+    { url: `${baseUrl}/faq`, changeFrequency: "monthly", priority: 0.6 },
     {
-      url: `${baseUrl}/faq`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.6,
+      url: `${baseUrl}/qui-sommes-nous`,
+      changeFrequency: "monthly",
+      priority: 0.5,
     },
-
-    // Pages légales - Priorité basse
+    { url: `${baseUrl}/contact`, changeFrequency: "monthly", priority: 0.5 },
     {
       url: `${baseUrl}/mentions-legales`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "yearly",
       priority: 0.3,
     },
     {
       url: `${baseUrl}/politique-de-confidentialite`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "yearly",
       priority: 0.3,
     },
-    {
-      url: `${baseUrl}/cgv`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.3,
-    },
+    { url: `${baseUrl}/cgv`, changeFrequency: "yearly", priority: 0.3 },
     {
       url: `${baseUrl}/supprimer-compte`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "yearly",
       priority: 0.3,
     },
   ];
 
-  const posts = getAllPosts();
+  const hubPages = [
+    ...getCategories().map((c) => ({
+      url: `${baseUrl}/blog/categorie/${c.slug}`,
+      lastModified: latestPostDate,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    })),
+    ...getSectors().map((s) => ({
+      url: `${baseUrl}/blog/secteur/${s.slug}`,
+      lastModified: latestPostDate,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    })),
+  ];
+
+  const authors = [...new Set(posts.map((p) => authorSlug(p.author)))];
+  const authorPages = authors.map((author) => ({
+    url: `${baseUrl}/blog/auteur/${author}`,
+    lastModified: latestPostDate,
+    changeFrequency: "weekly",
+    priority: 0.4,
+  }));
+
   const blogPages = posts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: new Date(post.publishDate || post.date),
+    lastModified: new Date(post.updated || post.publishDate || post.date),
     changeFrequency: "monthly",
     priority: 0.7,
   }));
 
-  return [...staticPages, ...blogPages];
+  return [...staticPages, ...hubPages, ...authorPages, ...blogPages];
 }
