@@ -45,17 +45,15 @@ export default function EInvoicingSection({ maxWidth = "max-w-6xl" }) {
                 l'<strong>émission</strong> se généralisera progressivement.
               </p>
               <p className="text-base text-gray-700 max-w-xl mb-8 leading-relaxed">
-                Concrètement, vous passerez par une{" "}
-                <strong>solution comptable</strong> (SC) pour facturer en
-                conformité. Avec Newbi, vous serez accompagné pas à pas dans
-                cette transition, pour être prêt et conforme le jour J.
+                Avec Newbi, vous serez accompagné pas à pas dans cette
+                transition, pour être prêt et conforme le jour J.
               </p>
 
               <Link
                 href="/auth/register"
                 className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-medium text-white bg-[#202020] hover:bg-[#333333] transition-colors"
               >
-                Choisir Newbi comme SC
+                Choisir Newbi
               </Link>
             </div>
 
@@ -65,8 +63,10 @@ export default function EInvoicingSection({ maxWidth = "max-w-6xl" }) {
               <div
                 className="absolute top-16 -right-8 w-[110%] z-10"
                 style={{
-                  WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 50%, transparent 85%)",
-                  maskImage: "linear-gradient(to bottom, black 0%, black 50%, transparent 85%)",
+                  WebkitMaskImage:
+                    "linear-gradient(to bottom, black 0%, black 50%, transparent 85%)",
+                  maskImage:
+                    "linear-gradient(to bottom, black 0%, black 50%, transparent 85%)",
                 }}
               >
                 <img
@@ -84,7 +84,6 @@ export default function EInvoicingSection({ maxWidth = "max-w-6xl" }) {
                   className="h-20 w-auto object-contain"
                 />
               </div>
-
             </div>
           </div>
 
@@ -96,7 +95,10 @@ export default function EInvoicingSection({ maxWidth = "max-w-6xl" }) {
 
             <div className="flex flex-col md:flex-row gap-6">
               {steps.map((step, i) => (
-                <div key={i} className="relative flex-1 flex flex-col items-center gap-4">
+                <div
+                  key={i}
+                  className="relative flex-1 flex flex-col items-center gap-4"
+                >
                   {/* Ligne connectrice */}
                   {i < steps.length - 1 && (
                     <div className="hidden md:block absolute top-4 left-[calc(50%+2rem)] w-[calc(100%-3rem)] h-px bg-white" />

@@ -21,6 +21,7 @@
  * Pas d'imports server-only ici : ce module doit être consommable depuis
  * n'importe quel composant (server ou client) sans casser le bundle.
  */
+import { WHATSAPP_CONTACT_URL } from "@/src/lib/whatsapp";
 
 export const PLANS_DISPLAY = [
   {
@@ -277,6 +278,14 @@ export const PLAN_FEATURES_SECTIONS = [
   {
     title: "Support",
     features: [
+      {
+        name: "Accompagnement par un expert",
+        tooltip: "Un conseiller newbi vous accompagne directement sur WhatsApp",
+        href: WHATSAPP_CONTACT_URL,
+        freelance: false,
+        pme: true,
+        entreprise: true,
+      },
       {
         name: "Support prioritaire",
         tooltip: "Assistance prioritaire par email et chat",

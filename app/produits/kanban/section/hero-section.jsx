@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
+import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 import {
   Avatar,
   AvatarImage,
@@ -41,11 +42,12 @@ export function HeroSection() {
                   <Link href="/auth/signup" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal rounded-lg px-6 w-full sm:w-auto"
+                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal text-base rounded-lg px-6 w-full sm:w-auto"
                     >
                       Essayer 30 jours offerts
                     </Button>
                   </Link>
+                  <WhatsAppContactButton />
                 </div>
                 <div className="flex items-center gap-2 pt-2 justify-center lg:justify-start">
                   <AvatarGroup>
