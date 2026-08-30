@@ -1,0 +1,231 @@
+---
+title: 'Archivage des factures à valeur probante : obligations et solutions'
+description: >-
+  Conserver une facture ne suffit pas : elle doit rester intègre, lisible et
+  authentique. Ce qu'exige l'administration, l'archivage électronique et les
+  erreurs courantes.
+date: '2026-11-17'
+category: reglementaire
+sector: null
+keyword: archivage factures valeur probante
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-17'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Archivage des factures à valeur probante : obligations et solutions
+
+L'**archivage des factures à valeur probante** est une obligation trop souvent réduite à "garder ses factures dans un dossier". En réalité, conserver un fichier PDF sur un disque dur ou dans une boîte mail ne suffit pas à garantir sa valeur probante devant l'administration fiscale ou un tribunal. La loi exige que le document reste intègre, lisible et authentique pendant toute la durée de conservation.
+
+Ce guide explique ce que l'administration attend réellement, la différence entre simple conservation et archivage à valeur probante, les erreurs les plus fréquentes, et comment un archivage électronique conforme protège votre entreprise en cas de contrôle.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que la valeur probante d'une facture ?
+
+La valeur probante désigne la capacité d'un document à faire preuve, c'est-à-dire à être opposable en cas de litige ou de contrôle fiscal. Pour qu'une facture conserve sa valeur probante pendant toute sa durée de conservation, trois conditions cumulatives doivent être réunies :
+
+- **L'authenticité de l'origine** : la capacité à prouver l'identité de l'émetteur de la facture.
+- **L'intégrité du contenu** : la garantie que le contenu de la facture n'a pas été modifié depuis son émission.
+- **La lisibilité** : la possibilité de lire le document dans des conditions normales, du début à la fin de la durée de conservation.
+
+Ces trois exigences sont posées par l'article 289 du Code général des impôts pour les factures électroniques, mais elles s'appliquent en pratique à toute facture, papier ou numérique, dès lors qu'elle doit pouvoir être présentée lors d'un contrôle.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Conserver n'est pas archiver">
+    Stocker un fichier PDF dans un dossier partagé permet de le retrouver, mais ne garantit ni son intégrité (rien n'empêche une modification silencieuse) ni sa traçabilité (rien ne prouve la date exacte de dépôt). L'archivage à valeur probante ajoute des garanties techniques que la simple conservation n'offre pas.
+  </Callout>
+</div>
+
+## Durée de conservation : deux régimes à ne pas confondre
+
+Les durées de conservation des factures dépendent du texte qui les fonde, et elles ne sont pas identiques.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Durées légales de conservation des factures</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Fondement</TableHead>
+        <TableHead>Durée</TableHead>
+        <TableHead>Point de départ</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Code de commerce (pièces comptables)</TableCell>
+        <TableCell>10 ans</TableCell>
+        <TableCell>Clôture de l'exercice comptable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Livre des procédures fiscales (LPF)</TableCell>
+        <TableCell>6 ans</TableCell>
+        <TableCell>Année d'émission ou de réception</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+En pratique, l'obligation la plus longue s'applique : conservez vos factures **10 ans** pour être en conformité avec le Code de commerce, même si le délai fiscal du LPF est plus court. Notre article sur le [délai de conservation des factures et documents comptables](/blog/delai-conservation-factures-documents-comptables) détaille les cas particuliers, notamment pour les documents sociaux et les contrats commerciaux.
+
+## Les trois piliers de l'archivage électronique conforme
+
+Pour qu'un système d'archivage électronique garantisse la valeur probante d'une facture, il doit répondre à trois exigences techniques précises.
+
+### 1. L'intégrité par horodatage et empreinte numérique
+
+Le système doit être capable de démontrer qu'un document n'a subi aucune altération depuis son archivage. Cela passe généralement par une empreinte numérique (hachage) calculée au moment de l'archivage : toute modification, même minime, change cette empreinte et révèle l'altération.
+
+### 2. La traçabilité des accès et des versions
+
+Un système conforme doit conserver un journal des consultations, modifications ou tentatives de modification du document, avec horodatage. Cette traçabilité permet de reconstituer l'historique complet du document en cas de contestation.
+
+### 3. La pérennité du format et de l'accès
+
+Le document doit rester lisible pendant toute la durée légale de conservation, y compris si le logiciel qui l'a généré évolue ou disparaît. Les formats stables comme le PDF/A, ou pour les factures électroniques les formats du socle (Factur-X, UBL, CII), sont conçus pour garantir cette pérennité.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le document est <strong>horodaté</strong> dès son archivage, avec une empreinte numérique vérifiable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Toute <strong>modification</strong> après archivage est détectable et journalisée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le format de stockage est <strong>stable et lisible</strong> sur toute la durée de conservation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le document reste <strong>accessible et restituable</strong> en cas de contrôle, dans un délai raisonnable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>sauvegarde</strong> régulière protège contre la perte accidentelle des données</span>
+  </div>
+</div>
+
+## Ce que l'administration fiscale attend en cas de contrôle
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le fardeau de la preuve pèse sur l'entreprise">
+    En cas de contrôle fiscal, c'est à l'entreprise de démontrer que ses factures archivées n'ont pas été altérées depuis leur émission. Si l'administration ne peut vérifier l'authenticité ou l'intégrité d'une facture, elle peut la considérer comme non probante, avec des conséquences directes sur la déductibilité de la TVA ou des charges correspondantes.
+  </Callout>
+</div>
+
+L'administration s'appuie sur les mêmes exigences que celles posées pour la facture électronique : authenticité, intégrité, lisibilité. Pour les factures conservées au format papier, la piste d'audit fiable permet également de démontrer un lien fiable entre la facture, la commande et le paiement, sans que le document lui-même bénéficie des garanties techniques d'un archivage électronique.
+
+### Exemple concret : conséquence d'un archivage non conforme
+
+Une entreprise fait l'objet d'un contrôle fiscal portant sur l'exercice N-3. Elle présente des factures fournisseurs stockées en simples fichiers PDF sur un poste de travail, sans horodatage ni traçabilité. L'administration constate que plusieurs fichiers portent une date de dernière modification postérieure à leur date d'émission supposée, sans explication. Faute de pouvoir prouver l'intégrité de ces documents, l'administration peut remettre en cause la déduction de TVA correspondante, soit, sur un montant de charges de 45 000 € HT et une TVA de 9 000 €, un redressement potentiel de 9 000 €, majoré des pénalités et intérêts de retard applicables.
+
+## Papier, PDF simple ou archivage électronique : ce qui change
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="La différence entre un tableur et un vrai système d'archivage">
+    Beaucoup de petites structures gèrent encore leur suivi de factures dans un tableau Excel, avec les fichiers PDF stockés à côté. Ce mode de fonctionnement n'offre aucune garantie d'intégrité et complique la restitution en cas de contrôle. Notre comparatif entre la [facture en ligne et Excel](/blog/facture-en-ligne-vs-excel) détaille les limites concrètes de cette approche, au-delà du seul archivage.
+  </Callout>
+</div>
+
+Un fichier PDF classique, même correctement nommé et rangé, ne garantit pas son intégrité : rien n'empêche de le rouvrir et de le modifier avec un logiciel d'édition, sans que cette modification laisse de trace visible. C'est précisément ce que l'archivage à valeur probante vient corriger, en ajoutant une couche technique de preuve autour du document.
+
+## Qui est concerné par ces obligations d'archivage ?
+
+Toutes les entreprises assujetties à des obligations comptables sont concernées, quelle que soit leur taille : entreprise individuelle, société, micro-entreprise. L'obligation d'archivage porte sur les factures émises comme sur les factures reçues, ainsi que sur l'ensemble des pièces justificatives qui permettent de reconstituer la comptabilité de l'entreprise : bons de commande, contrats, relevés bancaires, et plus largement les données qui alimentent le [fichier des écritures comptables (FEC)](/blog/quest-ce-que-fec-fichier-ecritures-comptables) exigé en cas de contrôle informatisé.
+
+Ce périmètre large explique pourquoi l'archivage ne peut pas se limiter à un dossier de factures clients : il doit couvrir l'ensemble des documents qui, mis bout à bout, permettent à l'administration de vérifier la cohérence de la comptabilité de l'entreprise sur l'exercice contrôlé. C'est également ce que vérifie la mention des [informations obligatoires d'une facture](/blog/mentions-obligatoires-facture) : une facture archivée doit rester lisible avec l'ensemble de ses mentions d'origine, sans perte d'information au fil du temps.
+
+## Archivage et piste d'audit : deux exigences complémentaires
+
+L'archivage à valeur probante garantit la conservation d'un document dans le temps. Il ne suffit pourtant pas, à lui seul, à démontrer la cohérence globale d'une opération commerciale. L'administration attend également de pouvoir reconstituer le lien entre une facture, la commande qui l'a précédée et le paiement qui l'a soldée : c'est l'objet de la piste d'audit fiable, une documentation distincte de l'archivage mais qui s'appuie sur les mêmes documents correctement conservés. Une entreprise qui archive ses factures de façon conforme, mais sans lien traçable avec ses commandes et ses paiements, ne répond que partiellement aux attentes d'un contrôle.
+
+## Comment Newbi sécurise l'archivage de vos factures
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un stockage structuré et centralisé">
+    Newbi conserve l'ensemble de vos factures et documents dans un espace centralisé, avec un historique des documents générés et de leurs modifications. Vos factures émises restent accessibles et retrouvables sur toute la durée nécessaire, sans dépendre d'un poste de travail individuel ou d'une boîte mail.
+  </Callout>
+</div>
+
+Pour une TPE ou un indépendant, la meilleure protection reste d'éviter la multiplication des points de stockage : un logiciel qui génère, envoie et archive la facture au même endroit réduit fortement le risque de perte ou d'incohérence entre plusieurs versions d'un même document.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Centraliser mes factures</Link>
+  </Button>
+</div>
+
+## Bonnes pratiques pour un archivage conforme
+
+1. **Centralisez le stockage** : évitez de disperser vos factures entre boîte mail, disque dur local et clé USB.
+2. **Ne renommez ni ne modifiez jamais un fichier de facture archivé** : toute modification, même de mise en forme, peut compromettre son intégrité.
+3. **Sauvegardez régulièrement** vos archives, idéalement avec une copie hors site ou dans le cloud.
+4. **Conservez la version originale** transmise ou reçue, même si vous en générez une version imprimée pour un usage interne.
+5. **Anticipez la durée de 10 ans** : un changement de logiciel ne doit jamais entraîner la perte d'accès aux factures des exercices antérieurs.
+
+## En résumé
+
+L'archivage des factures à valeur probante va bien au-delà de la simple conservation d'un fichier. Il exige de garantir l'authenticité de l'origine, l'intégrité du contenu et la lisibilité du document pendant toute la durée légale de conservation, soit 10 ans au titre du Code de commerce. Un archivage électronique conforme repose sur l'horodatage, la traçabilité des accès et la pérennité du format de stockage. À défaut, une entreprise s'expose, en cas de contrôle, à voir ses factures écartées comme non probantes, avec des conséquences directes sur la déductibilité de la TVA et des charges correspondantes.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'archivage des factures à valeur probante
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Combien de temps faut-il conserver une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Le Code de commerce impose une durée de conservation de 10 ans à compter de la clôture de l'exercice comptable pour les pièces justificatives, dont les factures. Le Livre des procédures fiscales prévoit un délai de 6 ans, mais c'est le délai le plus long, soit 10 ans, qu'il convient de respecter en pratique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Un simple fichier PDF suffit-il pour l'archivage d'une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Un fichier PDF stocké sans mesure technique complémentaire ne garantit pas son intégrité : il peut être modifié sans laisser de trace visible. Pour une réelle valeur probante, l'archivage doit intégrer un horodatage, une empreinte numérique de contrôle et une traçabilité des accès et modifications.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Que se passe-t-il si une facture n'a pas de valeur probante lors d'un contrôle ?</AccordionTrigger>
+      <AccordionContent>
+        Si l'administration ne peut vérifier l'authenticité ou l'intégrité d'une facture, elle peut la considérer comme non probante. Cela peut entraîner un redressement fiscal, notamment le rejet de la déduction de TVA ou de la charge correspondante, assorti de pénalités et d'intérêts de retard.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>L'archivage électronique remplace-t-il l'obligation de conserver les originaux papier ?</AccordionTrigger>
+      <AccordionContent>
+        Pour une facture reçue au format papier, la numérisation ne dispense pas automatiquement de conserver l'original, sauf si le procédé de numérisation respecte des conditions strictes de fidélité et d'intégrité fixées par l'administration. Pour une facture nativement électronique, seule la version électronique fait foi.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>La facturation électronique change-t-elle les obligations d'archivage ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dans la mesure où les factures transmises via une plateforme de dématérialisation partenaire bénéficient nativement des garanties d'authenticité et d'intégrité liées au circuit de transmission. Cela ne dispense toutefois pas l'entreprise de conserver ses propres archives sur la durée légale de 10 ans.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

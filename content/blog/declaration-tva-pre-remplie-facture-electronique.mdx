@@ -1,0 +1,212 @@
+---
+title: 'Déclaration de TVA pré-remplie : ce que la facture électronique va changer'
+description: >-
+  L'un des objectifs de la réforme est une déclaration de TVA pré-remplie à partir des factures électroniques et de l'e-reporting. Calendrier et conséquences pratiques.
+date: '2026-11-02'
+category: reglementaire
+sector: null
+keyword: déclaration tva pré-remplie
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-02'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Déclaration de TVA pré-remplie : ce que la facture électronique va changer
+
+La **déclaration de TVA pré-remplie** est l'un des objectifs affichés de la réforme de la facturation électronique en France. L'idée est simple sur le papier : puisque l'administration fiscale reçoit déjà les données de vos factures et de votre e-reporting, pourquoi ne pas les utiliser pour préremplir votre CA3 ou votre CA12, comme c'est déjà le cas pour la déclaration de revenus des particuliers ? Cet article fait le point sur ce que dit vraiment le calendrier légal, ce qui existe déjà, ce qui reste à construire, et ce que vous devez faire dès maintenant pour être prêt le jour où cette automatisation arrivera.
+
+Vous découvrirez comment la chaîne de données (facture électronique, e-reporting, plateformes de dématérialisation) alimente ce projet, quelles échéances sont fixées par les textes, et pourquoi la qualité de vos données de facturation aujourd'hui conditionne la fiabilité de votre déclaration préremplie demain.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## D'où vient l'idée d'une déclaration de TVA préremplie
+
+La réforme de la facturation électronique, portée par l'article 91 de la loi de finances pour 2024 et ses textes d'application, poursuit plusieurs objectifs officiels : lutter contre la fraude à la TVA, simplifier les démarches des entreprises et, à terme, permettre à l'administration de préremplir certaines déclarations à partir des données qu'elle reçoit automatiquement.
+
+Ce troisième objectif est directement inspiré de ce qui existe déjà pour l'impôt sur le revenu des particuliers, où les données transmises par les employeurs et les banques permettent de préremplir la déclaration annuelle. Pour la TVA, le principe serait comparable : les montants de TVA collectée et déductible figurant sur vos factures électroniques, complétés par les données d'e-reporting pour les opérations hors du champ de la facture électronique, viendraient alimenter automatiquement les lignes de votre déclaration de TVA.
+
+Ce projet n'est pas une fonctionnalité qui existe à ce jour. C'est un objectif de moyen terme, qui dépend directement du succès du déploiement de la facturation électronique et de l'e-reporting. Sans données fiables et complètes, aucun préremplissage sérieux n'est possible.
+
+## Le calendrier légal de la facturation électronique
+
+Comprendre la déclaration préremplie suppose de bien connaître le calendrier de la réforme, car c'est de ce calendrier que dépend la disponibilité progressive des données.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Calendrier de la facturation électronique et de l'e-reporting</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Échéance</TableHead>
+        <TableHead>Obligation</TableHead>
+        <TableHead>Entreprises concernées</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">1er septembre 2026</TableCell>
+        <TableCell>Réception des factures électroniques</TableCell>
+        <TableCell>Toutes les entreprises, quelle que soit leur taille</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">1er septembre 2026</TableCell>
+        <TableCell>Émission des factures électroniques et e-reporting</TableCell>
+        <TableCell>Grandes entreprises et ETI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">1er septembre 2027</TableCell>
+        <TableCell>Émission des factures électroniques et e-reporting</TableCell>
+        <TableCell>PME, TPE et micro-entreprises</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ce calendrier explique pourquoi la déclaration préremplie ne peut pas exister avant que l'ensemble des entreprises françaises émette et reçoive ses factures sous forme électronique structurée. Tant qu'une partie du tissu économique reste en dehors du dispositif, l'administration ne dispose que d'une image partielle des flux de TVA, ce qui rend un préremplissage fiable impossible. Pour une vue d'ensemble de ces échéances, consultez notre article sur la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026).
+
+## Le rôle central de l'e-reporting
+
+La facture électronique ne couvre que les opérations B2B domestiques, c'est-à-dire entre deux entreprises assujetties établies en France. Or une part importante de l'activité économique se situe en dehors de ce périmètre : ventes aux particuliers (B2C), opérations avec des clients ou fournisseurs situés à l'étranger. C'est là qu'intervient l'e-reporting.
+
+L'e-reporting est l'obligation de transmettre à l'administration fiscale, via une plateforme de dématérialisation partenaire (PDP), les données de transactions qui ne donnent pas lieu à une facture électronique au sens strict : ventes B2C, opérations internationales, et données de paiement (encaissements) pour les prestations de services. C'est la combinaison de la facture électronique et de l'e-reporting qui permet, en théorie, de reconstituer l'ensemble du chiffre d'affaires taxable d'une entreprise. Pour le détail des obligations, retrouvez notre article dédié à l'[e-reporting](/blog/e-reporting-definition-obligations-calendrier).
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Deux flux de données, un seul objectif">
+    Facture électronique et e-reporting sont deux mécanismes distincts mais complémentaires. Le premier concerne les transactions B2B domestiques transmises via une PDP à un client également équipé. Le second concerne tout ce qui échappe à ce périmètre. Ensemble, ils forment la matière première d'une future déclaration de TVA préremplie.
+  </Callout>
+</div>
+
+## Le rôle du portail public de facturation (PPF)
+
+Le portail public de facturation, initialement conçu comme une plateforme d'échange gratuite entre entreprises, a vu son rôle recentré. Il n'agit plus comme un canal d'échange de factures entre partenaires commerciaux : ce rôle est désormais assuré par les plateformes de dématérialisation partenaires (PDP), immatriculées par l'administration fiscale.
+
+Le PPF conserve néanmoins une fonction essentielle pour le projet de déclaration préremplie : il joue le rôle d'annuaire national des entreprises (pour identifier la bonne PDP de chaque destinataire) et de concentrateur des données. Chaque PDP a l'obligation de transmettre au PPF les données extraites des factures et des e-reportings qu'elle traite, sous un format normé. C'est cette centralisation qui doit, à terme, alimenter les travaux de préremplissage.
+
+### Les formats techniques concernés
+
+Les factures électroniques échangées via les PDP doivent respecter l'un des trois formats du socle commun retenu par l'administration : Factur-X, UBL ou CII. Ces formats structurés permettent l'extraction automatique des données fiscales essentielles (montants HT, taux et montants de TVA, identité des parties) sans ressaisie manuelle. Cette structuration est la condition technique indispensable à tout préremplissage : une facture au format PDF simple, non structurée, ne peut pas être exploitée automatiquement par l'administration.
+
+## Exemple concret : comment les données remonteraient
+
+Prenons le cas d'une entreprise de conseil qui facture 40 000 euros HT à des clients professionnels français au cours d'un trimestre, avec une TVA à 20 %, soit 8 000 euros de TVA collectée. Elle réalise également 6 000 euros de ventes à des particuliers (B2C) et 5 000 euros de TVA déductible sur ses achats professionnels.
+
+Dans un système de préremplissage abouti, les 8 000 euros de TVA collectée sur les opérations B2B proviendraient des factures électroniques transmises via sa PDP. Les données relatives aux ventes B2C proviendraient de l'e-reporting de ses encaissements. La TVA déductible proviendrait des factures électroniques reçues de ses fournisseurs. La déclaration CA3 du trimestre afficherait alors des montants déjà calculés, que l'entreprise n'aurait plus qu'à vérifier et valider, plutôt qu'à ressaisir intégralement depuis sa comptabilité. Pour comprendre le fonctionnement actuel de cette déclaration, en attendant le préremplissage, consultez notre [guide de la déclaration de TVA CA3 et CA12](/blog/declaration-tva-ca3-ca12-guide).
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Pas encore de préremplissage automatique en 2026">
+    À la date de publication de cet article, la déclaration de TVA préremplie n'est pas un service disponible. Elle reste un objectif de la réforme, conditionné à la montée en charge de la facturation électronique et de l'e-reporting sur l'ensemble du parc d'entreprises françaises, jusqu'en septembre 2027 pour les plus petites structures.
+  </Callout>
+</div>
+
+## Ce qui reste à votre charge malgré l'automatisation à venir
+
+Même dans un scénario de préremplissage abouti, certains éléments resteront nécessairement de votre responsabilité. La ventilation entre les différents taux de TVA, les régularisations liées aux notes de crédit, la TVA sur les acquisitions intracommunautaires, les régimes particuliers (auto-liquidation, franchise en base) demanderont toujours une vérification humaine. Un système préremplissage n'exonère jamais le déclarant de sa responsabilité fiscale : c'est une aide à la saisie, pas une substitution de la déclaration proprement dite. Pour éviter les erreurs les plus fréquentes en attendant, consultez notre article sur les [erreurs de déclaration de TVA à éviter](/blog/erreurs-declaration-tva-eviter).
+
+## Pourquoi la qualité de vos factures compte dès aujourd'hui
+
+Le principe d'une déclaration préremplie repose entièrement sur la qualité des données transmises en amont. Une facture mal codée, un taux de TVA erroné, une mention manquante se répercuteront directement sur le montant préremplie, avec un risque de rectification a posteriori. Autrement dit, plus vos habitudes de facturation sont rigoureuses dès maintenant, moins vous aurez de corrections à faire lorsque le préremplissage deviendra une réalité.
+
+C'est pourquoi il est utile d'anticiper dès aujourd'hui :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier que vos <strong>taux de TVA</strong> appliqués sur chaque ligne de facture sont exacts</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Émettre des factures respectant toutes les <strong>mentions obligatoires</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Choisir un outil de facturation compatible avec les formats <strong>Factur-X, UBL ou CII</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Anticiper le raccordement à une <strong>plateforme de dématérialisation partenaire</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Suivre les échéances de la réforme sur votre <strong>calendrier fiscal</strong></span>
+  </div>
+</div>
+
+Pour ne manquer aucune échéance liée à cette réforme et à vos autres obligations, appuyez-vous sur notre [calendrier fiscal de l'indépendant](/blog/calendrier-fiscal-independant-2026).
+
+## Les sanctions en cas de non-conformité
+
+La réforme s'accompagne d'un régime de sanctions destiné à garantir la fiabilité du dispositif, et donc, indirectement, la qualité des données qui alimenteront un jour le préremplissage. Le défaut d'émission d'une facture électronique conforme peut être sanctionné d'une amende de 15 euros par facture, dans la limite de 15 000 euros par année civile. Le défaut de transmission des données d'e-reporting est sanctionné d'une amende de 250 euros par transmission manquante, également plafonnée à 15 000 euros par an. Ces montants, fixés par l'article 289 bis du Code général des impôts, restent mesurés, mais leur application répétée peut représenter un coût non négligeable pour une entreprise négligente.
+
+## Comment Newbi vous prépare à cette évolution
+
+Newbi accompagne les indépendants et les TPE dans la mise en conformité avec la facturation électronique, avec un partenaire PDP intégré pour l'émission et la réception de vos factures aux formats requis. Chaque facture générée respecte les mentions obligatoires et les règles de TVA en vigueur, ce qui limite le risque d'erreur en amont, aujourd'hui pour votre comptabilité et demain pour un éventuel préremplissage de votre déclaration.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La déclaration de TVA préremplie est un objectif à moyen terme de la réforme de la facturation électronique, et non une fonctionnalité disponible aujourd'hui. Elle repose sur la centralisation, via le portail public de facturation, des données transmises par les plateformes de dématérialisation partenaires au titre de la facturation électronique et de l'e-reporting, ce qui suppose que l'ensemble des entreprises françaises soit raccordé, échéance fixée à septembre 2027 pour les PME, TPE et micro-entreprises. En attendant, la meilleure préparation consiste à soigner dès maintenant la qualité de vos factures et à choisir un outil compatible avec les formats du socle commun.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la déclaration de TVA préremplie
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>La déclaration de TVA préremplie existe-t-elle déjà en 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        Non, ce n'est pas encore une fonctionnalité disponible. C'est un objectif annoncé de la réforme de la facturation électronique, qui dépend de la généralisation de l'émission et de la réception des factures électroniques et de l'e-reporting sur l'ensemble des entreprises françaises, calendrier qui court jusqu'en septembre 2027.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelles données alimenteraient une future déclaration préremplie ?</AccordionTrigger>
+      <AccordionContent>
+        Les données extraites des factures électroniques (montants HT, TVA collectée et déductible) pour les opérations B2B domestiques, complétées par les données d'e-reporting pour les ventes aux particuliers et les opérations internationales. Ces données transiteraient par les plateformes de dématérialisation partenaires, qui les transmettent au portail public de facturation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Le préremplissage dispensera-t-il de vérifier sa déclaration de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Même dans un système abouti, certains éléments comme les régularisations, l'auto-liquidation ou les régimes particuliers resteront à vérifier et à compléter manuellement. La responsabilité de l'exactitude de la déclaration continuera de reposer sur l'entreprise, le préremplissage n'étant qu'une aide à la saisie.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que se passe-t-il si mes factures électroniques contiennent des erreurs ?</AccordionTrigger>
+      <AccordionContent>
+        Une erreur sur une facture électronique (taux de TVA incorrect, mention manquante) se répercutera directement sur les données transmises à l'administration, et donc potentiellement sur un futur préremplissage. Il est donc essentiel de fiabiliser vos processus de facturation dès maintenant, avant même que ce service soit disponible.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quel est le lien entre e-reporting et déclaration de TVA préremplie ?</AccordionTrigger>
+      <AccordionContent>
+        L'e-reporting complète la facture électronique en couvrant les opérations qui n'en font pas l'objet, notamment les ventes aux particuliers et les opérations internationales. Sans cette brique, l'administration n'aurait qu'une vision partielle du chiffre d'affaires d'une entreprise, ce qui rendrait tout préremplissage fiable impossible.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

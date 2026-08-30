@@ -1,0 +1,227 @@
+---
+title: "Autoliquidation de TVA : quand s'applique-t-elle et quelle mention sur la facture ?"
+description: >-
+  Sous-traitance BTP, prestations intra-UE, import : les cas
+  d'autoliquidation de TVA, la mention exacte à porter sur la facture et le
+  traitement en déclaration.
+date: '2026-09-15'
+category: reglementaire
+sector: null
+keyword: autoliquidation tva facture
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-15'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Autoliquidation de TVA : quand s'applique-t-elle et quelle mention sur la facture ?
+
+L'**autoliquidation de TVA** est un mécanisme qui inverse le redevable de la taxe : ce n'est plus le fournisseur qui collecte et reverse la TVA, mais le client qui la déclare lui-même. Ce dispositif s'applique dans plusieurs situations bien précises, de la sous-traitance du bâtiment aux prestations entre professionnels européens, et impose une mention exacte sur la facture, sous peine de sanction fiscale.
+
+Ce guide fait le tour des cas concrets d'autoliquidation, vous donne la mention à recopier dans chaque situation et explique comment traiter ces opérations dans votre déclaration de TVA.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Facturer en autoliquidation avec Newbi</Link>
+  </Button>
+</div>
+
+## Le principe de l'autoliquidation
+
+En temps normal, un prestataire ou un vendeur collecte la TVA auprès de son client, puis la reverse à l'administration fiscale. Avec l'autoliquidation, ce circuit est inversé : le fournisseur émet une facture sans TVA, et c'est le client, lui-même assujetti, qui déclare la TVA due, à la fois en TVA collectée et en TVA déductible dans sa propre déclaration, ce qui rend l'opération neutre pour lui en trésorerie dans la plupart des cas.
+
+L'autoliquidation vise principalement à lutter contre la fraude à la TVA (notamment la fraude dite « carrousel ») et à simplifier les flux financiers dans certains secteurs à risque ou dans les échanges internationaux. Elle s'applique uniquement dans des cas prévus explicitement par la loi : il ne s'agit jamais d'un choix libre entre le fournisseur et le client.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Autoliquidation : ni exonération, ni TVA à 0 %">
+    L'autoliquidation ne signifie pas que l'opération est exonérée de TVA. La TVA reste due, mais son paiement est simplement transféré au client, qui la déclare et, s'il y a droit à déduction, la récupère dans la même déclaration.
+  </Callout>
+</div>
+
+## Les principaux cas d'autoliquidation
+
+### La sous-traitance dans le BTP
+
+Depuis 2014, l'autoliquidation est obligatoire pour les travaux de bâtiment réalisés par un sous-traitant pour le compte d'un entrepreneur principal, dans le cadre d'un contrat de sous-traitance au sens de la loi du 31 décembre 1975. Le sous-traitant facture hors taxe l'entrepreneur principal, qui autoliquide la TVA correspondante. Cette règle s'applique quel que soit le statut des deux parties, dès lors qu'il s'agit bien d'une relation de sous-traitance et non d'une simple co-traitance ou d'un groupement d'entreprises.
+
+Cette situation est fréquente dans le secteur du bâtiment et concerne directement les artisans qui interviennent en tant que sous-traitants sur un chantier, un point détaillé dans notre guide sur la [facture BTP et ses mentions spécifiques](/blog/facture-btp-artisan-mentions-specifiques).
+
+### Les prestations de services intra-UE entre professionnels
+
+Comme évoqué pour la facturation à l'international, les prestations de services rendues à un client professionnel assujetti établi dans un autre pays de l'Union européenne relèvent de l'autoliquidation : le prestataire français facture hors taxe, et le client étranger autoliquide la TVA dans son pays. Ce cas est développé en détail dans notre guide pour [facturer un client à l'étranger](/blog/facturer-client-etranger-ue-hors-ue).
+
+### Les acquisitions intracommunautaires de biens
+
+Lorsqu'une entreprise française assujettie achète des biens auprès d'un fournisseur établi dans un autre pays de l'UE, elle autoliquide la TVA française sur cette acquisition intracommunautaire, dans sa propre déclaration. Ce mécanisme repose sur l'identification des deux parties par leur [numéro de TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire), que le fournisseur étranger doit vérifier avant d'émettre une facture hors taxe.
+
+Par exemple, une entreprise française achète pour 8 000 € HT de matériel auprès d'un fournisseur allemand identifié à la TVA. Le fournisseur facture 8 000 € sans TVA allemande. L'entreprise française autoliquide alors 1 600 € de TVA française (20 %) dans sa déclaration, qu'elle inscrit simultanément en TVA collectée et, si son activité y ouvre droit, en TVA déductible : l'opération est donc neutre pour sa trésorerie tout en restant tracée fiscalement.
+
+### Les importations depuis un pays hors UE
+
+Depuis 2022, la TVA à l'importation de biens en provenance de pays hors Union européenne est automatiquement autoliquidée sur la déclaration de TVA pour toutes les entreprises identifiées à la TVA en France, sans démarche préalable à effectuer.
+
+## Tableau récapitulatif des cas d'autoliquidation
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Principaux cas d'autoliquidation de TVA et mention à porter sur la facture</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Situation</TableHead>
+        <TableHead>Qui autoliquide</TableHead>
+        <TableHead>Mention sur la facture</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Sous-traitance BTP</TableCell>
+        <TableCell>L'entrepreneur principal</TableCell>
+        <TableCell>Autoliquidation, article 283-2 nonies du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prestation de services intra-UE (B2B)</TableCell>
+        <TableCell>Le client professionnel étranger</TableCell>
+        <TableCell>Autoliquidation, article 283-2 du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Acquisition intracommunautaire de biens</TableCell>
+        <TableCell>L'entreprise française acheteuse</TableCell>
+        <TableCell>Autoliquidation par l'acquéreur</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Importation hors UE</TableCell>
+        <TableCell>L'entreprise importatrice</TableCell>
+        <TableCell>Traitée automatiquement en déclaration de TVA</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## La mention exacte à porter sur la facture
+
+Quelle que soit la situation, la facture émise sans TVA au titre de l'autoliquidation doit impérativement porter une mention explicite. La formulation la plus couramment utilisée est :
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne jamais omettre la mention">
+    « Autoliquidation, article 283-2 du CGI » (ou « article 283-2 nonies du CGI » pour la sous-traitance BTP). L'absence de cette mention sur une facture sans TVA peut être requalifiée par l'administration fiscale en omission de facturation, avec des conséquences sur la TVA due et des pénalités associées.
+  </Callout>
+</div>
+
+Il ne faut jamais indiquer de taux ou de montant de TVA sur une facture en autoliquidation, même à titre indicatif. Seule la mention légale doit apparaître, en lieu et place de toute ligne de TVA.
+
+## Exemple chiffré : sous-traitance dans le BTP
+
+Un artisan plombier intervient en tant que sous-traitant pour une entreprise générale de construction sur un chantier de rénovation. Sa facture s'élève à 6 000 € HT de travaux. Sans autoliquidation, il aurait facturé 7 200 € TTC avec 20 % de TVA. Avec l'autoliquidation applicable à la sous-traitance BTP, sa facture indique simplement :
+
+- Montant HT : 6 000 €
+- **Montant total à payer : 6 000 €**
+- Mention : « Autoliquidation, article 283-2 nonies du CGI »
+
+C'est l'entreprise générale, en tant que preneur, qui déclarera 1 200 € de TVA collectée et, si elle y a droit, 1 200 € de TVA déductible sur la même déclaration.
+
+## Comment traiter l'autoliquidation dans votre déclaration de TVA
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Côté fournisseur</strong> : la vente en autoliquidation est déclarée hors taxe sur une ligne spécifique de la déclaration CA3, sans TVA collectée sur cette opération.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Côté client</strong> : le montant HT reçu est déclaré à la fois en TVA collectée (autoliquidée) et en TVA déductible, si l'activité du client ouvre droit à déduction.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une erreur fréquente consiste à oublier de déclarer la TVA collectée côté client, en ne pensant qu'à la déduction : l'opération doit apparaître des deux côtés de la déclaration, même si le solde net est souvent nul.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conservez les factures reçues en autoliquidation avec la même rigueur que vos factures classiques, en cas de contrôle sur la justification du régime appliqué.</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un mécanisme neutre en trésorerie, pas en déclaration">
+    L'autoliquidation ne dispense jamais de déclarer l'opération. Elle simplifie les flux de paiement entre les parties, mais chaque opération doit apparaître dans les déclarations de TVA concernées, avec les bonnes lignes et le bon traitement comptable.
+  </Callout>
+</div>
+
+## Facturer en autoliquidation avec Newbi
+
+Newbi vous permet de générer des factures en autoliquidation avec la mention légale correspondante, sans ligne de TVA parasite, que vous soyez sous-traitant dans le BTP ou prestataire de services facturant un client professionnel européen.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mes factures en autoliquidation</Link>
+  </Button>
+</div>
+
+## Ce qu'il ne faut pas confondre avec l'autoliquidation
+
+L'autoliquidation ne doit pas être confondue avec l'exonération pure et simple de TVA, ni avec la franchise en base. Dans l'exonération (comme pour certaines exportations), l'opération sort totalement du champ de la TVA sans transfert de redevabilité. Dans la franchise en base, c'est le statut du fournisseur lui-même qui le dispense de facturer la TVA, indépendamment de la nature de l'opération ou du statut du client. L'autoliquidation, elle, suppose que l'opération reste bien soumise à la TVA, mais que sa déclaration incombe au client plutôt qu'au fournisseur.
+
+Un fournisseur qui applique à tort l'autoliquidation, par exemple en la confondant avec une simple exonération, s'expose à un risque important : si l'administration considère que la TVA aurait dû être facturée normalement, elle peut la réclamer directement au fournisseur, qui aura du mal à la récupérer a posteriori auprès d'un client déjà réglé. Mieux vaut donc vérifier systématiquement les conditions d'application avant d'émettre une facture sans TVA, en particulier la nature exacte du contrat de sous-traitance ou le statut assujetti du client.
+
+## Conservez vos justificatifs d'autoliquidation
+
+Comme pour toute facture, les documents relatifs à une opération en autoliquidation doivent être conservés pendant 10 ans au titre du Code de commerce et pendant 6 ans au titre du livre des procédures fiscales. Pour une opération en autoliquidation, il est recommandé de conserver également les éléments justifiant l'application du régime : contrat de sous-traitance pour le BTP, vérification du numéro de TVA intracommunautaire pour une prestation intra-UE, ou déclaration en douane pour une importation. Ces pièces complémentaires permettent de démontrer, en cas de contrôle, que le choix de facturer sans TVA était justifié.
+
+## En résumé
+
+L'autoliquidation de TVA transfère l'obligation de déclarer et de payer la taxe du fournisseur vers le client, dans des cas précisément définis par la loi : sous-traitance dans le BTP, prestations de services entre professionnels de l'Union européenne, acquisitions intracommunautaires de biens et importations. Dans chaque cas, la facture doit porter une mention explicite d'autoliquidation en lieu et place de toute ligne de TVA, faute de quoi vous vous exposez à une remise en cause de votre facturation lors d'un contrôle. Côté client, l'opération doit être déclarée à la fois en TVA collectée et en TVA déductible, ce qui rend le mécanisme neutre en trésorerie mais pas neutre en obligations déclaratives.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'autoliquidation de TVA
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle mention porter sur une facture en autoliquidation de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        La mention la plus utilisée est « Autoliquidation, article 283-2 du CGI », ou « article 283-2 nonies du CGI » pour la sous-traitance dans le BTP. Aucune ligne de TVA, ni aucun montant, ne doit apparaître sur la facture : seule cette mention légale remplace la TVA habituelle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>L'autoliquidation s'applique-t-elle à tous les sous-traitants du BTP ?</AccordionTrigger>
+      <AccordionContent>
+        Elle s'applique aux travaux de bâtiment réalisés dans le cadre d'un contrat de sous-traitance au sens de la loi de 1975, entre un sous-traitant et un entrepreneur principal. Elle ne concerne pas les relations de co-traitance entre entreprises d'un même groupement, qui suivent le régime de TVA classique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Qui doit déclarer la TVA en cas d'autoliquidation ?</AccordionTrigger>
+      <AccordionContent>
+        C'est le client, et non le fournisseur, qui déclare la TVA due sur l'opération. Il l'inscrit à la fois en TVA collectée et, s'il y a droit à déduction, en TVA déductible dans la même déclaration, ce qui rend généralement l'opération neutre en trésorerie pour lui.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Autoliquidation et exonération de TVA, est-ce la même chose ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Dans l'autoliquidation, l'opération reste soumise à la TVA, mais c'est le client qui la déclare à la place du fournisseur. Dans une exonération, l'opération sort totalement du champ de la TVA, sans transfert de redevabilité vers qui que ce soit.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que risque-t-on à oublier la mention d'autoliquidation sur une facture ?</AccordionTrigger>
+      <AccordionContent>
+        L'administration fiscale peut requalifier l'absence de mention en anomalie de facturation, ce qui peut entraîner un redressement sur la TVA due et des pénalités, notamment en cas de contrôle portant sur le respect des règles applicables à la sous-traitance ou aux échanges intracommunautaires.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

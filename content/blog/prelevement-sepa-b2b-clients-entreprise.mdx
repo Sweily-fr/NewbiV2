@@ -1,0 +1,240 @@
+---
+title: 'Mettre en place le prélèvement SEPA pour vos clients : mandat et fonctionnement'
+description: >-
+  Pour des prestations récurrentes, le prélèvement SEPA sécurise les
+  encaissements. Mandat, ICS, SEPA Core ou B2B, coûts et intégration à la
+  facturation.
+date: '2026-11-19'
+category: guide
+sector: null
+keyword: prélèvement sepa entreprise
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-19'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Mettre en place le prélèvement SEPA pour vos clients : mandat et fonctionnement
+
+Le **prélèvement SEPA pour les entreprises** est une solution efficace pour sécuriser les encaissements de prestations récurrentes, comme un abonnement, une maintenance mensuelle ou un forfait de services. Contrairement au virement, c'est vous qui initiez la demande de paiement, à date fixe, ce qui réduit fortement les retards et les oublis. Ce guide détaille les démarches pour obtenir un identifiant créancier SEPA, mettre en place un mandat, choisir entre SEPA Core et SEPA B2B, et intégrer le prélèvement à votre facturation.
+
+Que vous facturiez un abonnement logiciel, un contrat de maintenance ou des honoraires récurrents, le prélèvement SEPA vous évite de relancer chaque mois les mêmes clients pour le même montant. Voici comment le mettre en place correctement, avec les coûts réels et les pièges à éviter.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que le prélèvement SEPA et pour qui est-il pertinent
+
+Le prélèvement SEPA (Single Euro Payments Area) est un moyen de paiement qui permet à un créancier, c'est-à-dire vous, d'initier un débit sur le compte bancaire de son client, dans la limite d'une autorisation préalable appelée mandat. Il fonctionne dans l'ensemble de la zone euro et dans quelques pays associés, avec les mêmes règles techniques et le même délai de traitement.
+
+Ce mode de paiement est particulièrement adapté aux structures qui facturent de manière récurrente : agences avec des contrats de maintenance, consultants avec des forfaits mensuels, plateformes SaaS, prestataires de services à abonnement. Si vous [facturez déjà de manière récurrente](/blog/automatiser-facturation-recurrente), le prélèvement SEPA complète naturellement votre processus en automatisant aussi l'encaissement, pas seulement l'émission de la facture.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Prélèvement et facturation récurrente : deux automatisations complémentaires">
+    Automatiser l'émission de vos factures récurrentes réduit le travail administratif. Ajouter le prélèvement SEPA réduit en plus le risque d'impayé, puisque l'encaissement ne dépend plus d'une action du client à chaque échéance.
+  </Callout>
+</div>
+
+## SEPA Core et SEPA B2B : quelle différence
+
+Il existe deux schémas de prélèvement SEPA, avec des règles de protection différentes pour le client débité.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre SEPA Core et SEPA B2B</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>SEPA Core</TableHead>
+        <TableHead>SEPA B2B</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Public concerné</TableCell>
+        <TableCell>Particuliers et entreprises</TableCell>
+        <TableCell>Entreprises uniquement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Droit de contestation du débiteur</TableCell>
+        <TableCell>8 semaines après le prélèvement, sans justification</TableCell>
+        <TableCell>Aucun droit de contestation une fois le mandat validé par la banque</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Validation du mandat par la banque du débiteur</TableCell>
+        <TableCell>Non systématique</TableCell>
+        <TableCell>Obligatoire avant le premier prélèvement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Sécurité pour le créancier</TableCell>
+        <TableCell>Modérée (contestation possible longtemps après)</TableCell>
+        <TableCell>Élevée (paiement quasiment irrévocable)</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour une facturation strictement B2B, le schéma SEPA B2B est en général préférable : il sécurise davantage l'encaissement, au prix d'une contrainte supplémentaire pour votre client, qui doit faire valider le mandat par sa propre banque avant le premier débit. Si une partie de vos clients sont des particuliers, seul le SEPA Core est utilisable.
+
+## Obtenir un identifiant créancier SEPA (ICS)
+
+Avant de pouvoir prélever un client, vous devez disposer d'un Identifiant Créancier SEPA (ICS), délivré par votre banque ou par la Banque de France si votre établissement ne le propose pas directement. Cet identifiant unique vous identifie comme émetteur de prélèvements auprès de l'ensemble du système bancaire européen.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Demander l'ICS auprès de votre banque, avec un justificatif d'immatriculation (SIRET)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier le délai d'obtention, souvent entre une et trois semaines</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Choisir le schéma SEPA adapté (Core, B2B, ou les deux)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Configurer l'outil qui génère vos mandats et vos remises de prélèvement</span>
+  </div>
+</div>
+
+## Le mandat de prélèvement : la pièce centrale
+
+Le mandat SEPA est le document par lequel votre client vous autorise à débiter son compte. Sans mandat signé et valide, aucun prélèvement ne peut être exécuté légalement. Le mandat doit comporter :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Votre <strong>identifiant créancier SEPA (ICS)</strong> et votre raison sociale</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence unique du mandat (RUM)</strong>, propre à chaque client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>IBAN et le BIC</strong> du compte à débiter</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>type de paiement</strong> : récurrent ou ponctuel</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date et la signature</strong> du débiteur</span>
+  </div>
+</div>
+
+Le mandat peut être signé sur papier ou électroniquement. Une fois signé, vous devez le conserver pendant toute la durée de la relation contractuelle, puis 14 mois après le dernier prélèvement, en cas de contestation ultérieure.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Prénotifier votre client">
+    Vous devez informer votre client du montant et de la date de chaque prélèvement au moins 14 jours calendaires avant l'échéance, sauf accord contraire réduisant ce délai dans le mandat. Cette prénotification peut simplement correspondre à l'envoi de la facture avant la date de prélèvement.
+  </Callout>
+</div>
+
+## Le coût réel du prélèvement SEPA pour une entreprise
+
+Le prélèvement SEPA n'est pas gratuit pour le créancier. Les coûts varient selon votre banque et votre volume de transactions, mais restent en général modestes comparés aux frais d'une carte bancaire.
+
+### Exemple de calcul
+
+Un cabinet de conseil facture 15 clients en abonnement mensuel de 350 € HT chacun. Sa banque facture 0,30 € par prélèvement plus un abonnement mensuel au service de 15 €. Le coût mensuel total est donc de 15 x 0,30 € + 15 € = 19,50 €, pour sécuriser l'encaissement de 5 250 € HT de chiffre d'affaires récurrent. Le taux d'impayé constaté après mise en place du prélèvement passe généralement de 8 à 10 % (paiement par virement avec relances) à moins de 2 % (rejets bancaires ponctuels).
+
+## Le rejet de prélèvement : ce qu'il faut savoir
+
+Un prélèvement peut être rejeté pour plusieurs raisons : compte insuffisamment approvisionné, mandat révoqué, coordonnées bancaires erronées. En cas de rejet, votre banque vous notifie généralement sous 2 à 5 jours ouvrés. Vous pouvez alors relancer votre client et représenter le prélèvement, ou basculer temporairement vers un [lien de paiement en ligne](/blog/lien-de-paiement-facture-en-ligne) pour sécuriser l'encaissement sans attendre le prochain cycle. Un rejet répété doit alerter sur la solvabilité du client et peut justifier une révision des conditions de paiement.
+
+## Intégrer le prélèvement à votre processus de facturation
+
+Le prélèvement SEPA fonctionne mieux lorsqu'il s'intègre naturellement dans votre cycle de facturation, plutôt que d'être géré à part dans un fichier séparé. L'idéal est de lier chaque mandat à un client précis, de générer automatiquement la facture à échéance fixe, puis de déclencher le prélèvement correspondant, avec un rapprochement automatique de l'encaissement sur votre compte.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Prélèvement SEPA avec Newbi">
+    Newbi permet de suivre vos clients récurrents et de rapprocher automatiquement les encaissements de prélèvement avec vos factures grâce à la synchronisation bancaire. Vous visualisez en un coup d'œil les factures réglées et celles qui restent en attente, sans ressaisie manuelle.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Suivre mes encaissements</Link>
+  </Button>
+</div>
+
+## Prélèvement SEPA et pilotage de trésorerie
+
+Le prélèvement SEPA a un effet direct sur la visibilité de votre trésorerie. Contrairement au virement, où la date d'encaissement dépend du bon vouloir du client, le prélèvement vous donne une date de règlement connue à l'avance, ce qui facilite grandement votre [plan de trésorerie](/blog/comment-gerer-tresorerie-entreprise). Pour une structure qui facture plusieurs dizaines de clients en récurrent, cette prévisibilité change concrètement la gestion du besoin en fonds de roulement : vous savez, à quelques jours près, quand chaque encaissement va tomber, ce qui limite le recours à un découvert de trésorerie en fin de mois.
+
+Cette prévisibilité est particulièrement utile pour les structures en forte croissance de leur base clients récurrente. Si vous passez de 10 à 50 clients en abonnement en un an, le suivi manuel des encaissements par virement devient rapidement ingérable : relances individuelles, écarts de date, oublis de paiement. Le prélèvement SEPA automatise cette mécanique et libère du temps pour vous concentrer sur votre activité principale plutôt que sur le recouvrement.
+
+### Cas pratique : migration du virement vers le prélèvement
+
+Une agence de communication facturait auparavant ses 20 clients en abonnement par virement, avec relance manuelle en cas de retard. Le délai moyen d'encaissement était de 12 jours après échéance, avec 3 clients systématiquement en retard chaque mois. Après mise en place du prélèvement SEPA B2B, le délai moyen tombe à 1 jour (date du prélèvement), et les rejets ne concernent plus qu'un client sur 20 en moyenne, contre 3 auparavant en retard de paiement classique. Le temps consacré aux relances de paiement passe de 4 heures par mois à moins de 30 minutes.
+
+## Bonnes pratiques pour un prélèvement SEPA sans friction
+
+Pour que le prélèvement reste un outil de confiance et non une source de litiges, respectez quelques règles simples : informez systématiquement votre client avant chaque prélèvement, même par un simple envoi de facture ; gardez une trace écrite de chaque mandat signé ; ne modifiez jamais unilatéralement le montant ou la date sans nouvel accord ; et prévoyez une procédure claire en cas de rejet, avec un délai de relance avant nouvelle tentative.
+
+## En résumé
+
+Le prélèvement SEPA entreprise est un outil particulièrement adapté aux prestations récurrentes : il réduit les impayés et le temps passé à relancer les clients, en échange d'une mise en place initiale (obtention de l'ICS, gestion des mandats) et d'un coût modeste par transaction. Le choix entre SEPA Core et SEPA B2B dépend de votre public : le B2B, réservé aux entreprises, offre une sécurité de paiement plus forte mais impose une validation bancaire préalable côté client. Bien intégré à votre facturation récurrente, le prélèvement devient un levier de trésorerie fiable, à condition de respecter les obligations de prénotification et de conservation des mandats.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le prélèvement SEPA pour les entreprises
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment obtenir un identifiant créancier SEPA ?</AccordionTrigger>
+      <AccordionContent>
+        Vous devez en faire la demande auprès de votre banque, en fournissant un justificatif d'immatriculation comme votre SIRET. Si votre banque ne délivre pas d'ICS, vous pouvez le demander directement à la Banque de France. Le délai d'obtention est généralement compris entre une et trois semaines.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre SEPA Core et SEPA B2B ?</AccordionTrigger>
+      <AccordionContent>
+        Le SEPA Core s'applique aux particuliers et aux entreprises, avec un droit de contestation du débiteur pendant 8 semaines. Le SEPA B2B est réservé aux relations entre entreprises : le mandat doit être validé par la banque du débiteur avant le premier prélèvement, mais une fois validé, le paiement est quasiment irrévocable, ce qui sécurise davantage le créancier.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Combien de temps avant le prélèvement dois-je prévenir mon client ?</AccordionTrigger>
+      <AccordionContent>
+        La réglementation impose un délai de prénotification d'au moins 14 jours calendaires avant chaque prélèvement, sauf si le mandat prévoit un délai réduit accepté par les deux parties. Dans la pratique, l'envoi de la facture avant l'échéance suffit à remplir cette obligation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que faire en cas de rejet de prélèvement ?</AccordionTrigger>
+      <AccordionContent>
+        Un rejet est notifié par votre banque, en général sous 2 à 5 jours ouvrés, avec le motif (solde insuffisant, mandat révoqué, IBAN erroné). Vous pouvez relancer le client et représenter le prélèvement, ou proposer un lien de paiement en ligne pour un règlement immédiat. En cas de rejets répétés, il est recommandé de revoir les conditions de paiement avec ce client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le prélèvement SEPA a-t-il un coût pour l'entreprise qui prélève ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, la plupart des banques facturent un montant par transaction, souvent entre 0,20 et 0,50 €, parfois complété par un abonnement mensuel au service de prélèvement. Ce coût reste généralement inférieur à celui d'une carte bancaire et se justifie par la réduction sensible du taux d'impayé sur les paiements récurrents.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

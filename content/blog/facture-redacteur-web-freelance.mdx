@@ -1,0 +1,256 @@
+---
+title: 'Facture de rédacteur web freelance : tarification, droits d''auteur et mentions'
+description: >-
+  Facturer au mot, au feuillet ou au forfait, mentionner la cession de
+  droits, gérer les révisions : le guide de la facture pour rédacteur web
+  indépendant.
+date: '2026-09-23'
+category: guide
+sector: 'Photographes / Créatifs'
+keyword: facture rédacteur web
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-23'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture de rédacteur web freelance : tarification, droits d'auteur et mentions
+
+La **facture de rédacteur web** répond à des enjeux particuliers qui la distinguent d'une facture de prestation de service classique : mode de tarification variable (au mot, au feuillet ou au forfait), cession des droits d'auteur sur les textes livrés, et gestion des révisions demandées par le client. Un rédacteur web freelance mal préparé sur ces points perd du temps en aller-retours et prend le risque de facturer des révisions gratuitement sans limite.
+
+Ce guide détaille les trois méthodes de tarification les plus courantes, les mentions obligatoires spécifiques à la cession de droits, la gestion contractuelle des révisions, et un exemple chiffré complet pour bâtir votre propre facture de rédacteur web.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer ma facture de rédacteur web</Link>
+  </Button>
+</div>
+
+## Les trois méthodes de tarification du rédacteur web
+
+Le rédacteur web indépendant dispose de trois grandes méthodes pour établir le montant de sa facture, chacune avec ses avantages et ses limites.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des méthodes de tarification pour un rédacteur web</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[150px]">Méthode</TableHead>
+        <TableHead>Fonctionnement</TableHead>
+        <TableHead>Adaptée à</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Au mot</TableCell>
+        <TableCell>Tarif fixé par mot livré, généralement entre 0,08 € et 0,25 € selon la technicité</TableCell>
+        <TableCell>Articles de blog, fiches produits en volume</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Au feuillet</TableCell>
+        <TableCell>Tarif par tranche de 1 500 ou 2 000 signes, hérité de la presse écrite</TableCell>
+        <TableCell>Contenus éditoriaux longs, magazines en ligne</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Au forfait</TableCell>
+        <TableCell>Prix global pour une mission définie, incluant recherche, rédaction et une révision</TableCell>
+        <TableCell>Pages de site, livres blancs, missions récurrentes</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Le forfait sécurise mieux votre rentabilité">
+    Facturer au mot peut sembler simple, mais cela pénalise le temps passé en recherche documentaire et en optimisation SEO, non directement lié au nombre de mots produits. Le forfait, construit à partir d'une estimation de votre [tarif journalier moyen (TJM)](/blog/comment-fixer-tarif-journalier-tjm), reflète souvent mieux la valeur réelle de votre travail.
+  </Callout>
+</div>
+
+## Construire votre tarif au mot ou au feuillet
+
+Pour fixer un tarif au mot cohérent, partez de votre objectif de revenu mensuel et de votre cadence de production réaliste. Un rédacteur capable de produire 4 000 mots publiables par jour, avec un objectif de 300 € de chiffre d'affaires journalier, doit viser un tarif minimum de 0,075 € par mot, avant même de couvrir les temps de recherche, de relecture et de gestion administrative. En pratique, la plupart des rédacteurs expérimentés facturent entre 0,10 € et 0,20 € le mot pour du contenu SEO standard, et davantage pour des contenus techniques ou nécessitant une expertise sectorielle pointue.
+
+Le tarif au feuillet suit une logique similaire, mais reste surtout utilisé dans l'édition et la presse. Un feuillet de 1 500 signes facturé entre 25 € et 45 € correspond globalement à la même fourchette de rémunération qu'un tarif au mot, une fois ramené à une base comparable.
+
+## La cession des droits d'auteur : une mention à ne jamais oublier
+
+Un texte rédigé constitue une oeuvre de l'esprit protégée par le droit d'auteur, conformément au Code de la propriété intellectuelle. Sans clause de cession explicite, le rédacteur reste titulaire des droits patrimoniaux sur ses textes, même après paiement de la facture. Le client qui publie et exploite ces contenus doit donc obtenir une cession écrite, généralement intégrée au devis ou directement mentionnée sur la facture.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mentionnez explicitement la <strong>cession des droits patrimoniaux</strong> sur les textes livrés</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Précisez l'<strong>étendue de la cession</strong> : support (web, print), durée, territoire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquez si la cession est <strong>totale ou limitée</strong> à un usage précis (site web du client uniquement, par exemple)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Rappelez que le <strong>droit moral</strong> reste incessible : vous conservez le droit d'être crédité, sauf accord contraire pour les contenus anonymes</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Facturez la cession de droits comme une prestation distincte">
+    Beaucoup de rédacteurs incluent la cession de droits dans le prix de la rédaction sans le préciser, ce qui peut être source de litige si le client réutilise les textes sur des supports non prévus initialement. Il est plus sûr d'afficher une ligne de facturation dédiée, même symbolique, pour formaliser cette cession et son périmètre exact.
+  </Callout>
+</div>
+
+## Les mentions obligatoires de la facture de rédacteur web
+
+Au-delà des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classiques (identité, SIRET, numéro de facture, dates, montants HT et TTC), la facture de rédacteur web gagne à préciser :
+
+1. Le nombre exact de mots, de feuillets ou d'unités facturées, avec le tarif unitaire appliqué.
+2. Le nombre de révisions incluses dans le prix, et le tarif appliqué au-delà.
+3. La mention de la cession des droits d'auteur, avec son périmètre.
+4. La référence au brief ou au devis initial ayant cadré la mission.
+
+## Exemple chiffré : facturer une mission de rédaction SEO
+
+Un rédacteur web freelance livre pour un client e-commerce 8 fiches produits de 400 mots chacune, soit 3 200 mots au total, à un tarif de 0,12 € le mot, complétées par une page catégorie de 1 200 mots facturée au forfait à 180 € HT.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de facture détaillée pour une mission de rédaction</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Prestation</TableHead>
+        <TableHead>Détail</TableHead>
+        <TableHead>Montant HT</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">8 fiches produits</TableCell>
+        <TableCell>3 200 mots x 0,12 €</TableCell>
+        <TableCell>384 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Page catégorie</TableCell>
+        <TableCell>Forfait, une révision incluse</TableCell>
+        <TableCell>180 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Cession de droits d'auteur</TableCell>
+        <TableCell>Usage web exclusif, durée illimitée</TableCell>
+        <TableCell>Inclus</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Total HT</TableCell>
+        <TableCell></TableCell>
+        <TableCell>564 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Si le rédacteur relève de la franchise en base de TVA, ce total de 564 € constitue directement le montant facturé, avec la mention "TVA non applicable, article 293 B du CGI". Au-delà du seuil de 37 500 € de chiffre d'affaires annuel pour les prestations de services, ou du seuil majoré de 41 250 €, la TVA à 20 % devient applicable et s'ajoute au montant HT.
+
+## Gérer les révisions : cadrer avant de facturer
+
+Le point de friction le plus fréquent entre rédacteurs et clients concerne les révisions. Sans cadrage écrit, un client peut demander des modifications répétées sans fin, considérant qu'elles font partie de la prestation initiale. La solution consiste à préciser, dès le devis, un nombre de révisions incluses, par exemple une ou deux, puis un tarif horaire ou forfaitaire pour toute révision supplémentaire au-delà de ce seuil.
+
+Une révision mineure, correction de coquille ou reformulation ponctuelle, se distingue d'une révision majeure, qui implique de retravailler l'angle ou la structure entière du texte. Il est recommandé de facturer ces deux cas différemment, la révision majeure s'apparentant à une nouvelle mission plutôt qu'à un simple ajustement.
+
+## Rédacteur web et micro-entreprise : le bon régime fiscal
+
+La grande majorité des rédacteurs web freelance débutants exercent sous le régime de la micro-entreprise. Les rédacteurs relèvent généralement des bénéfices non commerciaux (BNC), avec un plafond de chiffre d'affaires annuel fixé à 77 700 € pour 2026. Au-delà de ce plafond, il devient nécessaire de basculer vers un régime réel d'imposition, ce qui implique une comptabilité plus détaillée mais permet aussi de déduire les charges réelles.
+
+Ce choix de régime a un impact direct sur votre facturation : en micro-entreprise, vous ne facturez pas de TVA tant que vous restez sous le seuil de franchise en base, ce qui simplifie vos factures mais réduit d'autant votre capacité à récupérer la TVA sur vos propres achats professionnels.
+
+## Facturer d'autres profils créatifs proches du rédacteur web
+
+Le métier de rédacteur web partage de nombreux enjeux de facturation avec d'autres professions créatives freelance. La question de la cession de droits d'auteur, en particulier, se retrouve de façon très similaire chez le [graphiste et designer freelance](/blog/facture-graphiste-designer-freelance), où la propriété intellectuelle des créations visuelles suit une logique comparable. De même, la structuration d'une facture de prestation de service autour d'un forfait ou d'un taux journalier rejoint les principes détaillés dans notre guide pour [facturer une prestation de service en tant que consultant](/blog/facturer-prestation-service-consultant).
+
+## Délais de paiement et relances pour le rédacteur web
+
+Le rédacteur web freelance travaille souvent avec des agences de contenu ou des clients directs qui gèrent de nombreux prestataires en parallèle, ce qui allonge parfois les délais de règlement. Par défaut, le délai de paiement entre professionnels est fixé à 30 jours après réception de la facture, sauf accord contraire mentionné sur le devis, dans la limite de 60 jours prévue par l'article L441-10 du Code de commerce. Indiquer clairement ce délai sur chaque facture évite les ambiguïtés et facilite une relance rapide en cas de retard.
+
+En cas de dépassement, une indemnité forfaitaire de recouvrement de 40 € est due de plein droit, sans qu'il soit nécessaire de la réclamer expressément au moment de la facturation, en complément de pénalités de retard calculées à un taux au moins égal à trois fois le taux d'intérêt légal. Pour un rédacteur qui facture plusieurs missions par mois à un même client récurrent, un rappel systématique de ces règles sur chaque facture contribue à limiter les retards de paiement, qui pèsent proportionnellement plus lourd sur la trésorerie d'un indépendant que sur celle d'une agence.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Anticipez les délais avec un acompte">
+    Pour les missions volumineuses, comme la rédaction d'un site complet ou d'un livre blanc, demander un acompte de 30 % à 50 % à la commande sécurise votre trésorerie pendant la phase de rédaction, avant même la livraison finale des contenus.
+  </Callout>
+</div>
+
+## Facturer vos missions de rédaction avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un modèle de facture adapté à la rédaction web">
+    Avec Newbi, vous créez des lignes de facturation personnalisées : nombre de mots, forfait, cession de droits, tout en gardant un catalogue de vos prestations récurrentes pour ne pas ressaisir vos tarifs à chaque nouvelle mission.
+  </Callout>
+</div>
+
+Un rédacteur web qui multiplie les clients et les formats de facturation (au mot, au feuillet, au forfait) a intérêt à s'appuyer sur un outil qui centralise ses tarifs et génère des factures conformes sans ressaisie manuelle à chaque mission.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures de rédaction</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facture de rédacteur web freelance repose sur trois méthodes de tarification possibles, au mot, au feuillet ou au forfait, chacune adaptée à un type de contenu différent. La mention explicite de la cession des droits d'auteur est indispensable pour sécuriser l'exploitation des textes par le client, tout en préservant le droit moral du rédacteur. Cadrer le nombre de révisions incluses dès le devis évite les tensions les plus fréquentes de ce métier. Enfin, le choix du régime fiscal, le plus souvent la micro-entreprise en BNC, détermine directement si la TVA doit ou non figurer sur vos factures.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de rédacteur web
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment fixer son tarif au mot en tant que rédacteur web ?</AccordionTrigger>
+      <AccordionContent>
+        Partez de votre objectif de chiffre d'affaires journalier divisé par votre cadence réaliste de production, en tenant compte du temps de recherche et de relecture. La plupart des rédacteurs facturent entre 0,10 € et 0,20 € le mot pour du contenu SEO standard, davantage pour des sujets techniques.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il mentionner la cession des droits d'auteur sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est fortement recommandé. Sans cession explicite, le rédacteur reste titulaire des droits patrimoniaux sur ses textes, même après paiement. Précisez le périmètre de la cession (support, durée, territoire) directement sur le devis ou la facture pour sécuriser l'exploitation des contenus par le client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Combien de révisions inclure gratuitement dans une mission de rédaction ?</AccordionTrigger>
+      <AccordionContent>
+        Il n'existe pas de règle légale, mais la pratique courante consiste à inclure une ou deux révisions mineures dans le forfait initial, et à facturer séparément toute révision supplémentaire ou toute demande de changement d'angle majeur, assimilable à une nouvelle mission.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un rédacteur web freelance doit-il facturer la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de son chiffre d'affaires. En dessous du seuil de franchise en base de 37 500 € pour les prestations de services, aucune TVA n'est facturée, avec la mention "TVA non applicable, article 293 B du CGI". Au-delà, la TVA à 20 % devient obligatoire sur les factures.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quelle est la différence entre facturer au mot et au forfait ?</AccordionTrigger>
+      <AccordionContent>
+        Le tarif au mot rémunère directement le volume de texte produit, ce qui convient bien aux contenus courts et répétitifs comme des fiches produits. Le forfait couvre l'ensemble d'une mission, recherche et révisions incluses, et reflète souvent mieux la valeur réelle du travail sur des contenus plus complexes.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

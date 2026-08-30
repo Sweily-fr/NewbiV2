@@ -1,0 +1,268 @@
+---
+title: 'Facture de peintre en bâtiment : TVA réduite, devis et modèle'
+description: >-
+  Peinture, revêtements, ravalement : quelle TVA appliquer, comment détailler surfaces et fournitures, et gérer acompte, situation et facture de fin de chantier.
+date: '2026-11-04'
+category: guide
+sector: BTP / Artisans
+keyword: facture peintre en bâtiment
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-04'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">BTP / Artisans</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facture de peintre en bâtiment : TVA réduite, devis et modèle
+
+Rédiger une **facture de peintre en bâtiment** conforme suppose de bien maîtriser un point technique souvent source d'erreurs : le choix du taux de TVA applicable, qui varie selon la nature des travaux et l'ancienneté du logement. À cela s'ajoutent des habitudes propres au métier, comme le détail des surfaces peintes, la distinction entre fournitures et main-d'œuvre, ou la gestion des chantiers en plusieurs phases avec acompte et situation. Ce guide reprend chacun de ces points pour vous permettre d'émettre des factures claires, conformes et qui limitent les litiges avec vos clients.
+
+Vous verrez comment déterminer le bon taux de TVA selon votre chantier, comment structurer une facture détaillée par surfaces et postes de travaux, comment gérer acompte et facture de fin de chantier, et un exemple chiffré complet de facturation d'un chantier de peinture intérieure.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Quelle TVA appliquer sur des travaux de peinture
+
+Le taux de TVA applicable aux travaux de peinture en bâtiment dépend de deux critères cumulatifs : la nature du local concerné (résidence principale ou secondaire achevée depuis plus de deux ans) et le type de travaux réalisés.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Taux de TVA applicables aux travaux de peinture selon les cas</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[250px]">Situation</TableHead>
+        <TableHead>Taux de TVA</TableHead>
+        <TableHead>Base légale</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Rénovation, entretien d'un logement de plus de 2 ans</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>Article 279-0 bis du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Amélioration énergétique éligible d'un logement de plus de 2 ans</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Article 278-0 bis A du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Construction neuve ou logement de moins de 2 ans</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Taux normal, article 278 du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Locaux professionnels ou commerciaux</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Taux normal, article 278 du CGI</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour la grande majorité des chantiers de peinture réalisés chez des particuliers, c'est le taux de **10 %** qui s'applique : peinture intérieure, ravalement de façade, remise en état de revêtements muraux dans un logement achevé depuis plus de deux ans. Le taux réduit de 5,5 % ne s'applique que si les travaux de peinture s'inscrivent dans un ensemble de travaux d'amélioration de la performance énergétique du logement, ce qui reste rare pour une prestation de peinture seule.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La TVA se justifie par une attestation">
+    Pour appliquer un taux réduit (10 % ou 5,5 %), vous devez faire signer à votre client une attestation confirmant que le logement est achevé depuis plus de deux ans et qu'il est affecté à un usage d'habitation. Ce document doit être conservé et peut être demandé lors d'un contrôle fiscal, aussi bien chez vous que chez votre client.
+  </Callout>
+</div>
+
+## Comment structurer une facture de peinture détaillée
+
+Une facture de peintre en bâtiment gagne à être détaillée par pièce et par poste de travaux, plutôt que présentée comme un montant global. Cette pratique limite les contestations et facilite la compréhension du client.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>surface peinte en m²</strong>, par pièce ou par zone de travail</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>nature du support</strong> (plâtre, placo, enduit, bois, métal) et sa préparation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>type de peinture ou de revêtement</strong> appliqué (nombre de couches, finition)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>fourniture de matériaux</strong> distinguée de la main-d'œuvre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>travaux annexes</strong> (rebouchage, ponçage, pose de protection, évacuation des déchets)</span>
+  </div>
+</div>
+
+Cette structuration détaillée reprend, poste par poste, les [mentions spécifiques de la facture BTP](/blog/facture-btp-artisan-mentions-specifiques), tout en les adaptant au vocabulaire propre au métier de peintre. Un client qui compare votre facture à votre devis initial doit pouvoir retrouver, ligne par ligne, les mêmes postes que ceux annoncés en amont.
+
+## Fournitures et main-d'œuvre : pourquoi les distinguer
+
+Séparer clairement le coût des fournitures (peinture, enduit, bâches de protection, ruban de masquage) et celui de la main-d'œuvre présente plusieurs avantages. D'abord, elle rend la facture plus lisible pour un client qui souhaite comprendre la structure du prix. Ensuite, en cas de contestation sur la qualité du travail, cette distinction facilite l'identification de l'origine du litige, matériau ou exécution. Enfin, si vous facturez au client des fournitures qu'il a lui-même choisies auprès d'une enseigne partenaire, cette ligne séparée évite toute ambiguïté sur qui a acheté quoi.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le prix au mètre carré, une pratique courante mais non obligatoire">
+    Beaucoup de peintres en bâtiment facturent au mètre carré peint, avec un tarif qui varie selon le nombre de couches et l'état du support. Cette méthode facilite l'établissement rapide d'un devis, mais rien n'oblige à l'utiliser : une facturation au forfait global, chantier par chantier, est tout aussi valable dès lors que le détail des prestations reste explicite.
+  </Callout>
+</div>
+
+## Exemple chiffré : chantier de peinture intérieure
+
+Une entreprise de peinture réalise la rénovation de trois pièces (salon, chambre, couloir) dans un appartement construit il y a quinze ans, soit une surface totale de 65 m² au sol équivalant à environ 140 m² de murs et plafonds à peindre. Le devis prévoit deux couches de peinture après rebouchage et ponçage des supports.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de facture pour un chantier de peinture intérieure</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Poste</TableHead>
+        <TableHead className="text-right">Montant HT</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Préparation des supports (rebouchage, ponçage) - 140 m²</TableCell>
+        <TableCell className="text-right">840,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Peinture 2 couches, fourniture et pose - 140 m²</TableCell>
+        <TableCell className="text-right">2 380,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Protection des sols et mobilier</TableCell>
+        <TableCell className="text-right">150,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Évacuation des déchets de chantier</TableCell>
+        <TableCell className="text-right">80,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Total HT</TableCell>
+        <TableCell className="text-right">3 450,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA à 10 %</TableCell>
+        <TableCell className="text-right">345,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Total TTC</TableCell>
+        <TableCell className="text-right">3 795,00 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Sur ce chantier, un acompte de 30 % (1 138,50 euros TTC) est généralement demandé à la signature du devis, le solde de 2 656,50 euros étant réglé à la réception des travaux.
+
+## Du devis à la facture : le workflow du peintre en bâtiment
+
+Comme pour la plupart des métiers du bâtiment, la facturation d'un chantier de peinture s'organise en plusieurs étapes qui doivent rester cohérentes entre elles.
+
+### 1. Le devis détaillé
+
+Tout commence par un [devis de travaux BTP](/blog/devis-travaux-btp-guide) précis, mentionnant les surfaces à peindre, la nature des supports, le nombre de couches prévues, les fournitures utilisées et le taux de TVA applicable. Ce document sert de référence tout au long du chantier et doit être signé par le client avant le début des travaux.
+
+### 2. L'acompte
+
+À la signature du devis, un acompte est généralement demandé, entre 20 % et 40 % du montant total selon l'ampleur du chantier. Cet acompte doit faire l'objet d'une facture d'acompte distincte, avec la TVA calculée sur le montant encaissé.
+
+### 3. La facture de fin de chantier
+
+Une fois les travaux achevés et validés par le client, la facture finale reprend le montant total du devis, déduit l'acompte déjà versé, et indique le solde restant dû. Pour les chantiers longs qui s'étalent sur plusieurs semaines, un peintre peut aussi facturer par avancement, sur le même principe que la [facture de situation dans le BTP](/blog/facture-situation-travaux-btp), même si cette pratique reste moins fréquente pour des chantiers de peinture pure de taille modeste. Sur ces chantiers de plus longue durée, une retenue de garantie peut également s'appliquer : notre article sur la [retenue de garantie dans le BTP](/blog/retenue-de-garantie-btp-facture) en détaille les règles.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticiper les imprévus de chantier">
+    Un support en mauvais état, découvert une fois les travaux commencés, peut nécessiter des travaux supplémentaires non prévus au devis initial (traitement d'humidité, rebouchage important). Prévoyez dans vos conditions générales une clause de facturation complémentaire sur devis signé, pour éviter tout litige sur ces surcoûts.
+  </Callout>
+</div>
+
+## Le cas particulier du ravalement de façade
+
+Le ravalement de façade obéit aux mêmes règles de TVA que la peinture intérieure, avec le taux de 10 % applicable dès lors que le bâtiment a plus de deux ans et que les travaux relèvent de l'entretien ou de l'amélioration. La facture doit toutefois intégrer des postes spécifiques que l'on ne retrouve pas en peinture intérieure : l'installation d'un échafaudage ou d'une nacelle, le nettoyage haute pression du support, le traitement anti-mousse ou hydrofuge, et la réparation ponctuelle d'enduit avant application de la peinture de façade.
+
+Ces prestations annexes représentent souvent une part significative du budget total, parfois plus importante que la peinture elle-même sur un ravalement complexe. Il est donc particulièrement important de les détailler séparément sur la facture, plutôt que de les noyer dans un poste global de peinture, afin que le client comprenne la structure réelle du coût de son chantier.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Ravalement obligatoire et déclaration préalable">
+    Selon la commune, un ravalement de façade peut nécessiter une déclaration préalable de travaux, notamment en cas de changement de couleur ou dans un secteur protégé (proximité de monument historique, zone classée). Cette démarche administrative relève de la responsabilité du client, mais un peintre en bâtiment averti la rappelle utilement avant le démarrage du chantier.
+  </Callout>
+</div>
+
+## Les mentions spécifiques à ne pas oublier
+
+Au-delà des mentions obligatoires classiques d'une facture (identité des parties, numéro SIRET, numéro de facture, date), une facture de peintre en bâtiment adressée à un particulier doit rappeler les garanties légales applicables aux travaux de bâtiment, notamment la référence à l'assurance décennale de l'entreprise lorsque les travaux y sont soumis, et les coordonnées de l'assureur. Ces mentions rassurent le client et constituent une obligation professionnelle pour l'artisan.
+
+## Comment Newbi simplifie la facturation des peintres en bâtiment
+
+Newbi permet de créer des devis et factures détaillés par poste de travaux, avec calcul automatique de la TVA selon le taux applicable à votre chantier. Vous pouvez enchaîner facilement devis signé, facture d'acompte et facture de solde, en conservant la cohérence des montants et de la numérotation tout au long du projet.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures de peinture</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facturation d'un chantier de peinture en bâtiment repose avant tout sur le bon choix du taux de TVA, 10 % dans la grande majorité des cas de rénovation d'un logement de plus de deux ans, et sur un détail précis des surfaces, supports et fournitures pour limiter les contestations. Le workflow classique, devis détaillé, acompte facturé au moment de son encaissement, puis facture de solde déduisant l'acompte versé, s'applique ici comme pour les autres métiers du bâtiment, avec la spécificité d'une facturation souvent exprimée au mètre carré peint.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de peintre en bâtiment
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle TVA appliquer sur des travaux de peinture chez un particulier ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux de 10 % s'applique dans la majorité des cas, pour des travaux de rénovation ou d'entretien réalisés dans un logement achevé depuis plus de deux ans. Le taux de 5,5 % ne concerne que les travaux inscrits dans une démarche d'amélioration de la performance énergétique. Le taux normal de 20 % s'applique aux constructions neuves ou aux logements de moins de deux ans.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il facturer la peinture au mètre carré ou au forfait ?</AccordionTrigger>
+      <AccordionContent>
+        Les deux méthodes sont valables. La facturation au mètre carré est une pratique courante qui facilite l'établissement rapide d'un devis, mais rien n'oblige à l'utiliser. Une facturation au forfait global est tout aussi conforme, à condition que le détail des prestations réalisées reste explicite sur la facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment justifier un taux de TVA réduit sur une facture de peinture ?</AccordionTrigger>
+      <AccordionContent>
+        Vous devez faire signer à votre client une attestation confirmant que le logement est achevé depuis plus de deux ans et qu'il est affecté à un usage d'habitation. Ce document doit être conservé par l'entreprise et peut être demandé lors d'un contrôle fiscal.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on facturer des travaux supplémentaires non prévus au devis initial ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, mais ces travaux doivent idéalement faire l'objet d'un accord écrit du client avant leur réalisation, sous forme d'un avenant au devis initial ou d'un devis complémentaire signé. Ils apparaissent ensuite sur la facture finale comme une ligne distincte, clairement identifiée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quelle différence entre facture d'acompte et facture de solde pour un peintre ?</AccordionTrigger>
+      <AccordionContent>
+        La facture d'acompte est émise au moment de l'encaissement de l'acompte, généralement à la signature du devis, et déclenche l'exigibilité de la TVA correspondante. La facture de solde est émise à la fin du chantier, reprend le montant total du devis, déduit l'acompte déjà facturé, et indique le montant restant dû par le client.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

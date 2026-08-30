@@ -1,0 +1,281 @@
+---
+title: 'Recouvrement amiable ou judiciaire : quelle voie pour une facture impayée ?'
+description: >-
+  Relance, mise en demeure, société de recouvrement, injonction de payer,
+  référé : le parcours complet, les coûts et le bon moment pour passer à
+  l'étape suivante.
+date: '2026-11-12'
+category: guide
+sector: null
+keyword: recouvrement de créances
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-12'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Recouvrement amiable ou judiciaire : quelle voie pour une facture impayée ?
+
+Le **recouvrement de créances** commence toujours par une phase amiable, avant d'envisager, si nécessaire, une procédure judiciaire. Face à un client qui ne paie pas, beaucoup d'indépendants et de dirigeants de TPE hésitent : faut-il relancer encore, faire appel à une société de recouvrement, ou saisir directement le tribunal ? Chaque étape a ses délais, son coût et son efficacité propre.
+
+Ce guide détaille le parcours complet du recouvrement, de la première relance jusqu'à la procédure judiciaire, avec les coûts réels à chaque étape et les critères pour savoir quand passer à l'étape suivante sans perdre de temps ni d'argent.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## La phase amiable : la première étape obligatoire dans les faits
+
+Avant toute action judiciaire, la loi n'impose pas formellement de tentative amiable préalable pour une facture impayée entre professionnels, mais elle est fortement recommandée et souvent exigée en pratique par les tribunaux, qui apprécient les efforts de résolution à l'amiable. Elle est aussi, la plupart du temps, la voie la plus rapide et la moins coûteuse.
+
+La phase amiable comprend généralement trois niveaux de relance :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Relance simple</strong> par e-mail ou téléphone, quelques jours après l'échéance</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Relance formelle</strong> par courrier ou e-mail avec accusé de réception, rappelant le montant dû et le délai initial</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Mise en demeure</strong> par lettre recommandée avec accusé de réception, dernière étape avant l'action judiciaire</span>
+  </div>
+</div>
+
+Dès la première relance, vous pouvez appliquer les pénalités de retard prévues par l'article L441-10 du Code de commerce. Le taux minimum applicable est de trois fois le taux d'intérêt légal, sauf mention contractuelle plus favorable au créancier. S'y ajoute une **indemnité forfaitaire de recouvrement de 40 euros**, due de plein droit dès le premier jour de retard, sans qu'il soit nécessaire de la réclamer expressément au préalable.
+
+Pour la rédaction de vos courriers, appuyez-vous sur des trames éprouvées : notre article dédié au [modèle de mise en demeure pour facture impayée](/blog/modele-mise-en-demeure-facture-impayee) détaille les mentions à inclure pour que ce courrier ait pleine valeur juridique.
+
+## La mise en demeure : le point de bascule
+
+La mise en demeure est le document qui fait officiellement courir les intérêts de retard si ce n'était pas déjà le cas, et qui constitue la preuve écrite indispensable si vous devez ensuite saisir un tribunal. Elle doit être envoyée par lettre recommandée avec accusé de réception et comporter :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Mentions obligatoires d'une mise en demeure</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Mention</TableHead>
+        <TableHead>Détail</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Référence de la facture</TableCell>
+        <TableCell>Numéro, date d'émission et montant TTC dû</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mention explicite</TableCell>
+        <TableCell>« Mise en demeure » indiquée clairement dans le corps du courrier</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Délai accordé</TableCell>
+        <TableCell>Généralement 8 à 15 jours pour régulariser</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pénalités applicables</TableCell>
+        <TableCell>Taux d'intérêt de retard et indemnité forfaitaire de 40 euros</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Avertissement</TableCell>
+        <TableCell>Mention d'une action judiciaire possible en l'absence de paiement</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Conservez toutes les preuves d'envoi">
+    Gardez les accusés de réception de chaque relance et de la mise en demeure. En cas de procédure judiciaire, ces documents prouvent que vous avez respecté un parcours de recouvrement amiable sérieux avant de saisir le tribunal, ce qui renforce votre dossier.
+  </Callout>
+</div>
+
+## Faire appel à une société de recouvrement
+
+Si la mise en demeure reste sans effet, une société de recouvrement peut intervenir avant d'engager une procédure judiciaire. Elle relance le débiteur en votre nom, avec un discours plus formel qui pousse parfois à un règlement rapide, sans les frais et les délais d'une procédure au tribunal.
+
+Le coût d'une société de recouvrement varie généralement entre 10 % et 20 % du montant recouvré, parfois avec des frais fixes en plus. Certaines sociétés ne se rémunèrent qu'en cas de succès, ce qui limite le risque financier pour le créancier. Cette solution est particulièrement adaptée pour des créances de montant moyen, entre 500 et 5 000 euros, pour lesquelles une procédure judiciaire coûterait proportionnellement trop cher.
+
+### Cas pratique : une créance de 2 400 euros
+
+Une agence de communication facture 2 400 euros TTC à un client qui ne paie pas malgré deux relances et une mise en demeure restée sans réponse. Elle confie le dossier à une société de recouvrement facturée à 15 % du montant récupéré. Si la société parvient à récupérer les 2 400 euros, elle prélève 360 euros de commission, et l'agence perçoit 2 040 euros, sans avance de frais de procédure ni délai judiciaire de plusieurs mois.
+
+## L'injonction de payer : la procédure judiciaire la plus rapide
+
+Lorsque la phase amiable échoue et que la créance est certaine, liquide et exigible (montant précis, non contesté sur le principe, échéance dépassée), l'injonction de payer est la procédure judiciaire la plus rapide et la moins coûteuse. Elle se déroule sans audience : le juge examine votre dossier sur pièces et rend une ordonnance.
+
+Cette procédure est détaillée en pratique dans notre article sur l'[injonction de payer pour facture impayée](/blog/injonction-de-payer-procedure-facture-impayee), qui explique le dépôt de la requête, les pièces à fournir et les délais de signification.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un coût maîtrisé">
+    Les frais de greffe d'une injonction de payer restent limités, de l'ordre de quelques dizaines d'euros, auxquels s'ajoutent les frais d'huissier pour la signification de l'ordonnance au débiteur. C'est nettement moins coûteux qu'une assignation classique devant le tribunal.
+  </Callout>
+</div>
+
+## Le référé-provision : quand la créance est urgente et non sérieusement contestable
+
+Le référé-provision est une autre voie judiciaire rapide, utile lorsque le débiteur conteste une partie de la créance mais que l'essentiel du montant n'est pas sérieusement discutable. Contrairement à l'injonction de payer, le référé se déroule avec une audience devant le président du tribunal, ce qui permet d'entendre les arguments des deux parties, mais reste plus rapide qu'une procédure au fond.
+
+Cette procédure convient bien lorsque le débiteur invoque un désaccord partiel (qualité de la prestation, quantité livrée) sans pour autant apporter d'éléments solides pour justifier un non-paiement total.
+
+## Comparatif des voies de recouvrement
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des options de recouvrement d'une facture impayée</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Voie</TableHead>
+        <TableHead>Délai moyen</TableHead>
+        <TableHead>Coût</TableHead>
+        <TableHead>Adaptée si</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Relances et mise en demeure</TableCell>
+        <TableCell>1 à 4 semaines</TableCell>
+        <TableCell>Faible (temps interne)</TableCell>
+        <TableCell>Toujours, en première étape</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Société de recouvrement</TableCell>
+        <TableCell>2 à 8 semaines</TableCell>
+        <TableCell>10 à 20 % du montant récupéré</TableCell>
+        <TableCell>Créance non contestée, débiteur solvable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Injonction de payer</TableCell>
+        <TableCell>1 à 3 mois</TableCell>
+        <TableCell>Faible (frais de greffe et d'huissier)</TableCell>
+        <TableCell>Créance certaine, liquide et exigible</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Référé-provision</TableCell>
+        <TableCell>1 à 2 mois</TableCell>
+        <TableCell>Modéré (avocat souvent recommandé)</TableCell>
+        <TableCell>Litige partiel, urgence à trancher</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Assignation au fond</TableCell>
+        <TableCell>6 mois à plus d'un an</TableCell>
+        <TableCell>Élevé (avocat quasi systématique)</TableCell>
+        <TableCell>Litige sérieusement contesté</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Quand passer d'une étape à l'autre : les signaux à surveiller
+
+Le choix du bon moment pour escalader est stratégique. Voici les repères les plus utiles :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Si le client ne répond à aucune relance après 15 jours, passez directement à la mise en demeure</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Si la mise en demeure reste sans réponse après le délai accordé, envisagez une société de recouvrement pour les montants moyens</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Si le débiteur ne conteste pas le principe de la dette, privilégiez l'injonction de payer plutôt qu'une procédure longue</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Si le montant est faible face au coût d'une procédure judiciaire, évaluez si l'abandon de créance n'est pas plus rationnel économiquement</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="N'attendez pas trop longtemps">
+    Plus une créance est ancienne, plus les chances de la recouvrer diminuent, en particulier si le débiteur rencontre lui-même des difficultés financières. Agissez dès le premier retard significatif plutôt que d'accumuler plusieurs factures impayées avant de réagir.
+  </Callout>
+</div>
+
+## Prévenir plutôt que guérir : réduire le risque d'impayé en amont
+
+Le meilleur recouvrement reste celui que vous n'avez jamais besoin d'engager. Plusieurs habitudes réduisent nettement le risque d'impayé, avant même l'échéance de la facture. Un devis clair, accepté par écrit, avec des conditions de paiement explicites, limite les contestations ultérieures. Demander un acompte pour les prestations importantes sécurise une partie du règlement dès le démarrage. Enfin, une politique de relance structurée dès le premier jour de retard, plutôt qu'une tolérance de plusieurs semaines, envoie un signal clair au client sur votre sérieux.
+
+Notre article sur les [meilleures pratiques de relance client](/blog/meilleures-pratiques-relance-client) détaille un calendrier de relance efficace, avec des modèles de messages à adapter selon l'ancienneté du retard. Combiné à un suivi rigoureux de vos échéances, ce type de discipline réduit sensiblement le nombre de dossiers qui doivent être transmis à une société de recouvrement ou finir devant un tribunal.
+
+### Cas pratique : impact d'une relance précoce
+
+Une entreprise de conseil facture en moyenne 40 000 euros par an à ses clients professionnels. Avant de mettre en place une relance systématique dès le lendemain de l'échéance, elle constatait environ 8 % d'impayés persistants au-delà de 60 jours, soit 3 200 euros par an. Après avoir automatisé l'envoi d'une relance dès le premier jour de retard, ce taux est descendu à 3 %, soit 1 200 euros, une économie directe de 2 000 euros sans recourir à une seule procédure judiciaire.
+
+## Comment Newbi facilite le suivi des impayés
+
+Une bonne partie du recouvrement se joue avant même la relance : dans la visibilité que vous avez sur vos factures en attente de paiement. Newbi affiche un suivi des paiements en temps réel sur votre tableau de bord, avec le statut de chaque facture (payée, en attente, en retard), ce qui permet de repérer immédiatement les créances qui dépassent leur échéance et d'agir sans délai.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Suivre mes factures et mes impayés</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Le recouvrement d'une facture impayée suit un parcours progressif : relances simples, mise en demeure, puis, si nécessaire, société de recouvrement ou procédure judiciaire adaptée à la situation (injonction de payer pour une créance non contestée, référé-provision en cas de litige partiel urgent, assignation au fond pour un désaccord sérieux). Chaque étape a un coût et un délai différents, et le bon réflexe consiste à ne pas s'attarder trop longtemps sur une étape inefficace : dès qu'une relance reste sans effet, passez à la suivante sans perdre plusieurs mois. Un suivi rigoureux de vos échéances, appuyé sur un outil qui affiche clairement les factures en retard, reste le meilleur moyen d'agir tôt et d'éviter d'en arriver à une procédure judiciaire.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le recouvrement de créances
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Combien de temps a-t-on pour recouvrer une facture impayée ?</AccordionTrigger>
+      <AccordionContent>
+        Le délai de prescription pour agir en justice est de cinq ans entre professionnels et entre un professionnel et un particulier, à compter de la date d'échéance de la facture. Passé ce délai, l'action en recouvrement judiciaire n'est plus possible, d'où l'intérêt d'agir sans tarder dès le premier retard significatif.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il un avocat pour une injonction de payer ?</AccordionTrigger>
+      <AccordionContent>
+        Non, la requête en injonction de payer peut être déposée directement par le créancier, sans avocat, pour la plupart des créances commerciales. C'est l'un des atouts de cette procédure, qui reste accessible et peu coûteuse même pour une petite entreprise ou un indépendant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Une société de recouvrement peut-elle saisir les biens du débiteur ?</AccordionTrigger>
+      <AccordionContent>
+        Non, une société de recouvrement agit uniquement dans le cadre amiable : elle relance et négocie, mais ne dispose d'aucun pouvoir de contrainte. Seule une décision de justice, obtenue par exemple via une injonction de payer, permet ensuite de faire intervenir un huissier pour des mesures d'exécution forcée comme la saisie.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on réclamer des frais de relance en plus de l'indemnité de 40 euros ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si vos frais de recouvrement réels dépassent le montant de l'indemnité forfaitaire de 40 euros, vous pouvez demander une indemnisation complémentaire sur justificatifs, par exemple les honoraires d'une société de recouvrement ou d'un avocat. Il faut alors pouvoir prouver ces frais engagés.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que faire si le client conteste la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Si le client conteste sérieusement le montant ou la prestation, l'injonction de payer n'est plus la voie adaptée puisqu'elle suppose une créance non contestée. Il faut alors envisager un référé-provision si l'urgence le justifie, ou une assignation au fond pour trancher le litige devant le tribunal compétent.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

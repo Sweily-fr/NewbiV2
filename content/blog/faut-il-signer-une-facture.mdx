@@ -1,0 +1,228 @@
+---
+title: 'Faut-il signer une facture ? Tampon, signature et valeur légale'
+description: >-
+  Ni la signature ni le tampon ne sont obligatoires sur une facture. Ce qui fait sa validité, les cas où le client exige une signature et la facture électronique.
+date: '2026-10-27'
+category: glossaire
+sector: null
+keyword: signer une facture
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-27'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Faut-il signer une facture ? Tampon, signature et valeur légale
+
+**Signer une facture** n'est pas une obligation légale en droit français : ni la signature manuscrite, ni le tampon de l'entreprise ne conditionnent la validité d'une facture. Cette idée reçue, très répandue, conduit pourtant de nombreux indépendants et dirigeants de TPE à perdre du temps sur une formalité qui n'a aucune valeur juridique obligatoire.
+
+Cet article vous explique ce qui rend réellement une facture valide, dans quels cas un client peut malgré tout exiger une signature, et comment la facture électronique change la donne en matière d'authentification.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Ce qui fait la validité juridique d'une facture
+
+La validité d'une facture ne repose pas sur une signature ou un tampon, mais sur la présence des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) prévues par le Code de commerce et le Code général des impôts (CGI), notamment son article 289. Une facture doit ainsi comporter, entre autres, le numéro et la date d'émission, l'identité complète du vendeur et de l'acheteur, la désignation précise des produits ou services, le prix unitaire hors taxes, le taux de TVA applicable et le montant total à payer.
+
+Aucun texte n'impose la signature du vendeur ou du client sur une facture, contrairement au devis, où la signature du client matérialise son acceptation de l'offre commerciale. La facture, elle, constate une opération déjà engagée : elle formalise une créance, pas un accord à valider.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Facture et devis : deux logiques différentes">
+    Un devis nécessite souvent une signature pour matérialiser l'accord du client sur les conditions proposées avant le début de la prestation. La facture, elle, intervient après l'exécution ou en cours de l'exécution : elle constate une créance déjà due, ce qui explique pourquoi la loi n'exige pas de signature à ce stade.
+  </Callout>
+</div>
+
+## Pourquoi tant d'entreprises signent quand même leurs factures
+
+Malgré l'absence d'obligation légale, la pratique du tampon ou de la signature reste répandue, notamment chez les artisans et dans certains secteurs traditionnels. Plusieurs raisons expliquent cette habitude, qui relève davantage de l'usage commercial que d'une exigence réglementaire.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>habitude commerciale</strong> héritée de la facturation papier, perçue comme un gage de sérieux</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>exigence contractuelle</strong> imposée par certains grands comptes ou administrations dans leurs conditions d'achat</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un moyen de <strong>rassurer visuellement</strong> le client, en particulier pour les nouveaux clients ou les montants élevés</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une confusion fréquente avec les règles applicables au <strong>devis</strong>, qui lui doit être signé pour valoir engagement</span>
+  </div>
+</div>
+
+## Les cas où un client peut exiger une signature
+
+Si la loi n'impose pas de signature, rien n'interdit à un client de l'exiger contractuellement, notamment dans le cadre de marchés publics ou de grands comptes qui appliquent des procédures internes strictes. Dans ce cas, l'exigence relève d'une clause contractuelle ou d'une pratique administrative propre au client, pas d'une obligation légale générale.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Signature de facture : ce qui est obligatoire et ce qui relève de l'usage</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Situation</TableHead>
+        <TableHead>Signature obligatoire ?</TableHead>
+        <TableHead>Fondement</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Facture entre professionnels (B2B)</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Aucune exigence légale, article 289 du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture à un particulier (B2C)</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Aucune exigence légale spécifique</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Marché public</TableCell>
+        <TableCell>Parfois, selon la procédure</TableCell>
+        <TableCell>Clause contractuelle ou cahier des charges de l'acheteur</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Devis avant travaux</TableCell>
+        <TableCell>Oui, pour valoir acceptation</TableCell>
+        <TableCell>Usage commercial et preuve de l'accord du client</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Le tampon d'entreprise : ni obligatoire, ni suffisant
+
+Le tampon commercial n'a aucune valeur juridique particulière en droit français. Il ne constitue ni une preuve d'authenticité, ni une garantie de conformité de la facture. N'importe qui peut fabriquer un tampon reproduisant le nom d'une entreprise, ce qui explique pourquoi il n'est jamais retenu comme élément de preuve déterminant en cas de litige.
+
+Cette absence de valeur probante s'explique aussi par le fait que le tampon ne relie techniquement le document à aucune identité vérifiable. Contrairement à une signature électronique qualifiée, qui repose sur un certificat délivré par un prestataire de confiance et garantit à la fois l'identité du signataire et l'intégrité du contenu, un tampon encreur peut être reproduit, prêté ou détourné sans laisser aucune trace vérifiable. C'est précisément cette faiblesse qui a conduit le législateur à ne jamais en faire une condition de validité des documents comptables.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le tampon ne remplace pas les mentions obligatoires">
+    Une facture tamponnée mais incomplète (sans numéro, sans SIRET, sans détail de TVA) reste une facture non conforme. À l'inverse, une facture sans tampon ni signature, mais comportant toutes les mentions obligatoires, est parfaitement valide. Ne confondez jamais l'apparence formelle d'un document avec sa conformité réelle.
+  </Callout>
+</div>
+
+## Facture électronique : l'authentification remplace la signature
+
+Avec la généralisation de la facture électronique, la question de l'authenticité prend une forme différente de la simple signature manuscrite. Depuis le 1er septembre 2026, toutes les entreprises doivent être en mesure de recevoir des factures électroniques, et les grandes entreprises et ETI doivent déjà les émettre sous cette forme. Les PME, TPE et micro-entreprises devront émettre leurs factures électroniques à partir du 1er septembre 2027.
+
+Dans ce cadre, l'authenticité de l'origine et l'intégrité du contenu de la facture ne reposent plus sur une signature visuelle, mais sur des mécanismes techniques : la transmission via une plateforme de dématérialisation partenaire (PDP) immatriculée, l'utilisation des formats structurés du socle commun (Factur-X, UBL, CII), ou, pour certaines entreprises, une signature électronique qualifiée au sens du règlement eIDAS. La facture électronique garantit ainsi une traçabilité supérieure à celle d'un simple tampon papier.
+
+## Cas pratique : un client qui refuse une facture non signée
+
+Un artisan plombier envoie une facture de 850 € TTC à un client particulier, sans tampon ni signature, comme il en a l'habitude. Le client, pensant qu'une facture doit obligatoirement être signée pour être valable, refuse initialement de la régler en invoquant l'absence de signature.
+
+L'artisan peut légitimement lui rappeler qu'aucune disposition légale n'impose la signature d'une facture, et que le document est parfaitement valide dès lors qu'il comporte toutes les mentions obligatoires : numéro de facture, date, identité des parties, description de la prestation, montant HT, taux de TVA et montant TTC. En cas de blocage persistant, l'artisan peut, à titre commercial, ajouter sa signature pour rassurer le client, sans que cela ne change la nature juridique du document. Il peut aussi renvoyer vers les [conditions générales de vente](/blog/quest-ce-que-conditions-generales-vente) qu'il a communiquées avant la prestation, qui précisent les modalités de facturation acceptées par le client.
+
+## Que faire si un client conteste une facture faute de signature
+
+Si un client refuse de payer en invoquant l'absence de signature, plusieurs réponses permettent de débloquer la situation sans céder à une exigence non fondée juridiquement. Commencez par vérifier que votre facture comporte bien l'ensemble des mentions obligatoires : c'est ce document complet, et non une signature, qui constitue votre preuve en cas de litige devant un tribunal de commerce ou un tribunal judiciaire.
+
+Rappelez également que le [délai de paiement](/blog/quest-ce-que-delai-paiement-facture) applicable court à compter de la date d'émission de la facture, et non à compter d'une éventuelle signature. Un client ne peut pas suspendre unilatéralement ce délai au motif que le document n'est pas tamponné. En cas de blocage persistant malgré ces explications, un courrier de relance rappelant les bases légales de la facturation suffit généralement à débloquer la situation, sans qu'il soit nécessaire de renvoyer une nouvelle facture signée.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Une facture claire vaut mieux qu'une signature">
+    Plutôt que d'ajouter une signature par réflexe, concentrez-vous sur la clarté et l'exhaustivité de vos factures : description précise de la prestation, montants détaillés, coordonnées bancaires visibles et échéance de paiement clairement indiquée. Ces éléments réduisent bien davantage les litiges qu'une signature manuscrite.
+  </Callout>
+</div>
+
+## Facture papier ou facture en ligne : quelle différence en pratique
+
+De plus en plus d'indépendants abandonnent la facture Excel ou Word manuscrite au profit d'outils de facturation en ligne, qui génèrent automatiquement des factures numérotées et conformes, sans avoir besoin de tampon ni de signature manuelle pour être valables. Notre comparatif entre la [facture en ligne et la facture Excel](/blog/facture-en-ligne-vs-excel) détaille les avantages de chaque méthode, notamment en matière de conformité et de gain de temps.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifiez que votre facture comporte <strong>toutes les mentions obligatoires</strong>, indépendamment de toute signature</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>N'ajoutez une signature que si votre client l'exige <strong>contractuellement</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Distinguez toujours le <strong>devis</strong> (à faire signer) de la <strong>facture</strong> (non soumise à cette exigence)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Anticipez le passage à la <strong>facture électronique</strong>, qui repose sur des mécanismes d'authentification différents du tampon papier</span>
+  </div>
+</div>
+
+## Comment Newbi garantit la conformité de vos factures
+
+Newbi génère automatiquement des factures numérotées de façon séquentielle, avec l'ensemble des mentions obligatoires pré-remplies selon votre statut et votre régime de TVA. Vous n'avez pas besoin de signer ni de tamponner vos documents pour qu'ils soient valables : la conformité repose sur le contenu de la facture, pas sur un élément visuel ajouté après coup. Pour les entreprises qui basculent vers la facturation électronique, Newbi s'appuie sur un partenaire PDP immatriculé pour garantir la transmission conforme de vos factures.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer des factures conformes avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Signer ou tamponner une facture n'est pas une obligation légale en droit français : ce qui fait la validité d'une facture, c'est la présence de l'ensemble de ses mentions obligatoires, prévues notamment par l'article 289 du Code général des impôts. La confusion vient souvent du devis, qui lui doit effectivement être signé pour valoir acceptation du client. Un client peut malgré tout exiger une signature par clause contractuelle, notamment dans les marchés publics, mais cette exigence reste une pratique et non une règle générale. Avec la généralisation de la facture électronique, l'authenticité repose désormais sur des mécanismes techniques de transmission plutôt que sur une signature visuelle.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la signature de facture
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Une facture est-elle valable sans signature ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Aucune disposition légale n'impose la signature d'une facture en droit français. Sa validité repose uniquement sur la présence de ses mentions obligatoires : numéro, date, identité des parties, description de la prestation, montants HT et TTC, et taux de TVA applicable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Le tampon d'entreprise est-il obligatoire sur une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Non, le tampon n'a aucune valeur juridique particulière et n'est jamais exigé par la loi. Il relève d'un usage commercial destiné à rassurer visuellement le client, mais ne remplace en aucun cas les mentions obligatoires qui déterminent la validité réelle d'une facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle différence entre signer un devis et signer une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Le devis doit être signé par le client pour matérialiser son acceptation de l'offre avant le début de la prestation. La facture, elle, intervient après ou pendant l'exécution : elle constate une créance déjà due, ce qui explique pourquoi la loi n'exige aucune signature à ce stade, contrairement au devis.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un client peut-il refuser de payer une facture non signée ?</AccordionTrigger>
+      <AccordionContent>
+        Non, un client ne peut pas légalement refuser de payer une facture au seul motif qu'elle n'est pas signée, dès lors qu'elle comporte toutes les mentions obligatoires. Ce refus repose sur une idée reçue et non sur une base légale, ce qui peut être rappelé au client en cas de contestation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment fonctionne l'authentification d'une facture électronique sans signature manuscrite ?</AccordionTrigger>
+      <AccordionContent>
+        La facture électronique garantit son authenticité et son intégrité par des moyens techniques : transmission via une plateforme de dématérialisation partenaire immatriculée, utilisation d'un format structuré du socle commun (Factur-X, UBL ou CII), ou, dans certains cas, signature électronique qualifiée au sens du règlement eIDAS. Ces mécanismes remplacent la logique du tampon ou de la signature manuscrite.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

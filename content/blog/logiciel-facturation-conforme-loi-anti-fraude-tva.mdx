@@ -1,0 +1,210 @@
+---
+title: "Logiciel de facturation conforme à la loi anti-fraude TVA : ce qu'il faut vérifier"
+description: >-
+  Inaltérabilité, sécurisation, conservation, archivage : les 4 conditions de
+  la loi anti-fraude, qui est concerné (caisse vs facturation) et
+  l'attestation à demander.
+date: '2026-11-24'
+category: reglementaire
+sector: null
+keyword: logiciel facturation loi anti-fraude
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-24'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Logiciel de facturation conforme à la loi anti-fraude TVA : ce qu'il faut vérifier
+
+Votre **logiciel de facturation** est-il vraiment conforme à la loi anti-fraude à la TVA ? Depuis 2018, tout professionnel assujetti à la TVA qui utilise un logiciel ou un système de caisse enregistrant les règlements de ses clients doit s'assurer que cet outil respecte des conditions strictes d'inaltérabilité, de sécurisation, de conservation et d'archivage des données. Ce guide vous explique précisément qui est concerné, les quatre critères à vérifier, l'attestation à demander à votre éditeur, et les sanctions encourues en cas de non-conformité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## D'où vient la loi anti-fraude à la TVA ?
+
+L'obligation trouve son origine dans l'article 88 de la loi de finances pour 2016, codifié à l'article 286, I-3° bis du Code général des impôts. Ce texte impose aux assujettis à la TVA qui enregistrent les règlements de leurs clients au moyen d'un logiciel de comptabilité, de gestion ou d'un système de caisse, d'utiliser un système satisfaisant à des conditions d'inaltérabilité, de sécurisation, de conservation et d'archivage des données en vue du contrôle de l'administration fiscale. Ce quatuor de conditions est souvent résumé par l'acronyme ISCA.
+
+L'objectif de cette réglementation est de lutter contre la fraude dite "à la caisse enregistreuse", qui consiste à effacer ou modifier discrètement des ventes après encaissement pour minorer le chiffre d'affaires déclaré. En imposant que les données restent inaltérées après validation, l'administration s'assure de disposer d'une piste d'audit fiable en cas de contrôle.
+
+## Qui est réellement concerné par cette obligation ?
+
+C'est le point qui sème le plus de confusion. La loi vise tout assujetti à la TVA qui utilise un logiciel ou un système enregistrant les paiements de ses clients, qu'ils soient particuliers ou professionnels. Cela inclut naturellement les systèmes de caisse en commerce et restauration, mais aussi, plus largement, les logiciels de facturation dès lors qu'ils permettent d'enregistrer les encaissements clients.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Logiciel de caisse et logiciel de facturation face à l'obligation</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Type de logiciel</TableHead>
+        <TableHead>Usage typique</TableHead>
+        <TableHead>Concerné par la loi anti-fraude</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Système de caisse enregistreuse</TableCell>
+        <TableCell>Commerce, restauration, vente au détail</TableCell>
+        <TableCell>Oui, systématiquement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Logiciel de facturation avec suivi des paiements</TableCell>
+        <TableCell>Freelances, TPE, PME facturant des clients</TableCell>
+        <TableCell>Oui, dès lors qu'il enregistre les règlements</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Simple outil de traitement de texte ou tableur</TableCell>
+        <TableCell>Rédaction manuelle de factures</TableCell>
+        <TableCell>Non concerné en tant que tel</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+En pratique, dès que vous utilisez un logiciel qui vous permet de marquer une facture comme payée et de suivre vos encaissements, vous entrez dans le champ de cette obligation. Un tableur classique, en revanche, n'est pas conçu pour garantir l'inaltérabilité des données et ne répond structurellement pas aux critères attendus, ce qui en fait un choix risqué sur ce plan précis, comme le détaille notre comparatif [facture en ligne contre Excel](/blog/facture-en-ligne-vs-excel).
+
+## Les quatre conditions ISCA à respecter
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Inaltérabilité</strong> : une donnée validée ne peut plus être modifiée ou supprimée ; toute correction doit passer par une nouvelle écriture traçable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Sécurisation</strong> : les données sont protégées contre la perte, par des sauvegardes régulières et un accès contrôlé</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Conservation</strong> : les données sont conservées pendant la durée légale, soit 10 ans au titre du Code de commerce et 6 ans au titre du livre des procédures fiscales</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Archivage</strong> : les données peuvent être exportées et stockées durablement, y compris après un changement de logiciel</span>
+  </div>
+</div>
+
+Cette exigence d'inaltérabilité rejoint la notion de [piste d'audit fiable](/blog/piste-audit-fiable-paf-definition), qui désigne la capacité d'un système à retracer, sans rupture, l'ensemble du cheminement d'une opération depuis sa création jusqu'à son enregistrement comptable final.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Une facture ne doit jamais pouvoir être supprimée silencieusement">
+    Un logiciel conforme ne permet pas de supprimer une facture émise sans laisser de trace. Si une correction est nécessaire, elle doit passer par l'émission d'un avoir ou d'une facture rectificative, la facture d'origine restant visible et inchangée dans l'historique.
+  </Callout>
+</div>
+
+## L'attestation de conformité : individuelle ou certificat
+
+Pour prouver la conformité de son logiciel lors d'un contrôle fiscal, l'utilisateur doit être en mesure de produire soit une attestation individuelle, délivrée par l'éditeur du logiciel sous sa propre responsabilité, soit un certificat délivré par un organisme accrédité, tel que le LNE ou Infocert. Les deux documents ont la même valeur probante face à l'administration.
+
+L'attestation individuelle engage directement la responsabilité de l'éditeur : si le logiciel s'avère non conforme malgré l'attestation délivrée, c'est l'éditeur qui encourt une sanction pour fausse attestation, et non uniquement l'utilisateur de bonne foi. C'est pourquoi il est essentiel de vérifier que votre prestataire est en mesure de vous fournir ce document sur simple demande.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Où trouver cette attestation ?">
+    L'attestation ou le certificat doit être daté et mentionner précisément la version du logiciel concernée. Conservez ce document avec vos justificatifs comptables : il vous sera demandé en priorité en cas de contrôle portant sur la conformité de vos outils de facturation.
+  </Callout>
+</div>
+
+## Cas pratique : contrôle fiscal et logiciel non conforme
+
+Un restaurateur utilise depuis plusieurs années un système de caisse qui permet, en théorie, de supprimer une vente après encaissement sans laisser de trace dans l'historique. Lors d'un contrôle fiscal, l'administration constate que le logiciel ne respecte pas le critère d'inaltérabilité et qu'aucune attestation de conformité ne peut être produite.
+
+Le restaurateur se voit alors notifier une amende de 7 500 € pour ce logiciel non conforme, en application de l'article 1770 duodecies du Code général des impôts, et dispose d'un délai de 60 jours pour se mettre en conformité avec un système répondant aux critères ISCA. À défaut de régularisation dans ce délai, une nouvelle amende de même montant peut être appliquée.
+
+## Comment vérifier la conformité de votre logiciel actuel
+
+Avant de choisir ou de conserver un logiciel de facturation, quelques vérifications simples permettent de sécuriser votre situation.
+
+1. **Demandez l'attestation ou le certificat** directement à votre éditeur, sans attendre un contrôle pour le faire.
+2. **Testez la modification d'une facture déjà émise** : un logiciel conforme doit refuser la suppression ou l'imposer via un avoir traçable.
+3. **Vérifiez la politique de sauvegarde** de vos données, notamment leur hébergement et leur fréquence de sauvegarde.
+4. **Contrôlez la durée de conservation** proposée par défaut et la possibilité d'exporter l'intégralité de vos données en cas de changement d'outil.
+5. **Assurez-vous que la numérotation des factures est verrouillée** et ne peut pas être modifiée rétroactivement.
+
+## Le contrôle de l'administration : comment il se déroule concrètement
+
+En cas de contrôle, l'administration fiscale peut demander à tout moment, sans préavis, la présentation de l'attestation ou du certificat de conformité de votre logiciel de facturation ou de caisse. Ce contrôle peut intervenir de façon autonome, en dehors de toute vérification comptable plus large, et se limiter à cette seule question de conformité logicielle.
+
+Si vous ne pouvez pas produire le document demandé dans l'immédiat, l'administration vous accorde généralement un délai raisonnable pour l'obtenir auprès de votre éditeur avant de constater une infraction. C'est pourquoi il est recommandé de conserver cette attestation dans un dossier facilement accessible, au même titre que vos autres justificatifs comptables, plutôt que de devoir la rechercher dans l'urgence.
+
+Au-delà du risque d'amende, un logiciel non conforme fragilise également la valeur probante de l'ensemble de votre comptabilité en cas de vérification plus approfondie. Si l'administration constate qu'une facture aurait pu être modifiée ou supprimée sans laisser de trace, elle peut être amenée à remettre en cause la sincérité de votre comptabilité dans son ensemble, avec des conséquences bien plus lourdes qu'une simple amende de 7 500 €.
+
+## Changer de logiciel sans perdre sa conformité
+
+Le passage d'un ancien outil, parfois un tableur ou un logiciel obsolète, vers une solution conforme est l'occasion de vérifier deux points souvent négligés. D'abord, la reprise de votre historique de facturation : un bon logiciel doit vous permettre d'importer vos factures existantes sans rompre la continuité de votre numérotation, condition indispensable au respect de la [comptabilité simplifiée des TPE](/blog/comptabilite-simplifiee-tpe-obligations).
+
+Ensuite, la portabilité de vos données en cas de nouveau changement futur : un logiciel réellement conforme au critère d'archivage vous permet d'exporter l'intégralité de vos factures et de leurs métadonnées, sans dépendance technique excessive envers un éditeur unique.
+
+## Comment Newbi répond aux exigences de la loi anti-fraude
+
+Newbi respecte les quatre conditions de la loi anti-fraude à la TVA : les factures émises ne peuvent pas être supprimées après validation, seule l'émission d'un avoir permet de corriger une erreur, vos données sont sauvegardées et conservées pendant toute la durée légale, et un export complet reste disponible à tout moment. Une attestation de conformité est mise à votre disposition pour justifier de cette conformité auprès de l'administration en cas de contrôle.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+Cette conformité s'inscrit dans une logique plus large de fiabilité de vos données comptables, qui rejoint les obligations déjà applicables dans le cadre de la [facturation électronique](/blog/facturation-electronique-obligatoire-2026) et les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture).
+
+## En résumé
+
+La loi anti-fraude à la TVA impose à tout professionnel assujetti utilisant un logiciel de facturation ou un système de caisse enregistrant les paiements clients de recourir à un outil garantissant l'inaltérabilité, la sécurisation, la conservation et l'archivage de ses données. La conformité doit être justifiée par une attestation individuelle de l'éditeur ou un certificat délivré par un organisme accrédité, à produire en cas de contrôle. Un logiciel non conforme expose à une amende de 7 500 €, assortie d'un délai de mise en conformité de 60 jours. Vérifier ce point avant de choisir son outil, ou le confirmer auprès de son éditeur actuel, évite un risque fiscal souvent sous-estimé.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la conformité anti-fraude TVA
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Qui est concerné par la loi anti-fraude TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Tout professionnel assujetti à la TVA qui utilise un logiciel de comptabilité, de gestion ou un système de caisse enregistrant les paiements de ses clients, particuliers ou professionnels. Cela inclut les commerces équipés d'une caisse, mais aussi les logiciels de facturation dès lors qu'ils suivent les encaissements.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle amende en cas de logiciel non conforme ?</AccordionTrigger>
+      <AccordionContent>
+        L'amende s'élève à 7 500 € par logiciel non conforme, en application de l'article 1770 duodecies du Code général des impôts. L'entreprise dispose ensuite d'un délai de 60 jours pour se mettre en conformité, faute de quoi une nouvelle amende de même montant peut être appliquée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment savoir si mon logiciel de facturation est conforme ?</AccordionTrigger>
+      <AccordionContent>
+        Demandez à votre éditeur son attestation individuelle de conformité ou son certificat délivré par un organisme accrédité comme le LNE. Vous pouvez aussi vérifier concrètement qu'une facture déjà émise ne peut pas être supprimée ou modifiée sans laisser de trace dans l'historique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quelle est la différence entre attestation individuelle et certificat NF525 ?</AccordionTrigger>
+      <AccordionContent>
+        L'attestation individuelle est délivrée directement par l'éditeur du logiciel, sous sa propre responsabilité. Le certificat, notamment de type NF525, est délivré par un organisme accrédité indépendant après audit du logiciel. Les deux documents ont la même valeur légale face à l'administration fiscale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>La loi anti-fraude TVA concerne-t-elle les auto-entrepreneurs ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dès lors qu'ils sont assujettis à la TVA et utilisent un logiciel enregistrant les paiements de leurs clients. Un auto-entrepreneur en franchise en base de TVA n'est en revanche pas soumis à cette obligation tant qu'il ne facture pas de TVA, mais doit s'y conformer dès qu'il en sort.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

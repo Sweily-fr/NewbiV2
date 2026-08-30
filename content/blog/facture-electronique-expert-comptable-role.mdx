@@ -1,0 +1,242 @@
+---
+title: 'Facturation électronique : quel rôle pour votre expert-comptable ?'
+description: >-
+  Votre expert-comptable peut-il émettre vos factures électroniques ? Ce qu'il
+  peut faire, ce qui reste à votre charge et comment organiser le flux entre
+  vous.
+date: '2026-10-12'
+category: guide
+sector: Comptables / Experts-comptables
+keyword: facturation électronique expert-comptable
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-12'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">Comptables / Experts-comptables</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facturation électronique : quel rôle pour votre expert-comptable ?
+
+Le **rôle de l'expert-comptable dans la facturation électronique** soulève une question très concrète pour des milliers d'indépendants et de dirigeants de TPE : qui va, en pratique, émettre les factures conformes à la réforme ? Votre cabinet comptable peut-il s'en charger à votre place, ou reste-t-il un simple destinataire de vos documents ? La réponse conditionne l'organisation de votre facturation pour les prochaines années.
+
+Cet article détaille précisément ce qu'un expert-comptable peut faire dans le cadre de la réforme, ce qui reste de votre responsabilité en tant qu'émetteur de factures, et comment structurer un flux efficace entre votre entreprise et votre cabinet, avec ou sans logiciel de facturation dédié.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Rappel du calendrier de la facturation électronique
+
+La réforme de la facturation électronique interentreprises repose sur deux obligations distinctes, qui n'entrent pas en vigueur à la même date selon la taille de l'entreprise.
+
+Depuis le **1er septembre 2026**, toutes les entreprises assujetties à la TVA établies en France, quelle que soit leur taille, doivent être en mesure de **recevoir** des factures électroniques. Cette même date marque le début de l'obligation d'**émettre** des factures électroniques pour les grandes entreprises et les entreprises de taille intermédiaire (ETI).
+
+Pour les PME, les TPE et les micro-entreprises, l'obligation d'émission démarre le **1er septembre 2027**. D'ici là, ces structures peuvent continuer à facturer au format papier ou PDF classique, tout en devant déjà être capables de recevoir des factures électroniques de leurs fournisseurs soumis à l'obligation depuis 2026. Ce détail explique pourquoi un [guide complet sur la facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026) reste indispensable, y compris pour les structures qui ne sont pas encore concernées par l'émission.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un décalage de calendrier qui change la donne pour les cabinets">
+    Entre septembre 2026 et septembre 2027, les cabinets comptables gèrent simultanément des clients déjà soumis à l'obligation d'émission et des clients qui ne le sont pas encore. Cette période transitoire est justement celle où le rôle du cabinet dans l'organisation du flux de facturation devient le plus stratégique.
+  </Callout>
+</div>
+
+## Ce que votre expert-comptable peut faire
+
+Un expert-comptable n'est pas juridiquement l'émetteur de vos factures : c'est vous, en tant qu'entreprise assujettie, qui restez responsable de leur émission, de leur contenu et de leur conformité. Mais dans les faits, le cabinet peut intervenir à plusieurs niveaux du processus.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Vous conseiller sur le choix de la plateforme de dématérialisation partenaire (PDP)</strong> adaptée à votre secteur et à votre volume de factures</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Paramétrer les mentions obligatoires</strong> et le mapping comptable de vos factures dans votre outil de facturation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Récupérer automatiquement</strong> vos factures de vente et d'achat au format électronique pour les intégrer à votre comptabilité</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Contrôler la cohérence</strong> des données transmises via l'e-reporting pour vos opérations avec des particuliers ou à l'international</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Vous accompagner dans le choix du format</strong> du socle (Factur-X, UBL ou CII) selon vos outils et ceux de vos clients</span>
+  </div>
+</div>
+
+En revanche, un cabinet comptable ne peut pas se substituer à vous pour décider du contenu commercial d'une facture (prix, quantités, remises négociées) : cette information reste de votre ressort. Certains cabinets proposent un service de facturation déléguée pour leurs clients, mais l'entreprise reste in fine responsable devant l'administration fiscale de l'exactitude des factures émises en son nom.
+
+## Le rôle du PPF et des PDP dans la chaîne de facturation
+
+Depuis la refonte de la réforme, le Portail public de facturation (PPF) ne joue plus le rôle de plateforme d'échange gratuite entre entreprises. Il agit désormais comme un **annuaire** et un **concentrateur de données** vers l'administration fiscale. Concrètement, toutes les factures électroniques transitent par une **plateforme de dématérialisation partenaire (PDP)**, immatriculée par l'administration, qui assure l'émission, la réception et la transmission des données de facturation et de transaction à l'administration.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Qui fait quoi dans le circuit de facturation électronique</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Acteur</TableHead>
+        <TableHead>Rôle</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Votre entreprise</TableCell>
+        <TableCell>Émettrice légale des factures, responsable de leur contenu et de leur exactitude</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Votre logiciel de facturation</TableCell>
+        <TableCell>Génère la facture au format structuré (Factur-X, UBL ou CII) et la transmet à la PDP</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">La PDP</TableCell>
+        <TableCell>Achemine la facture vers le client, extrait les données et les transmet à l'administration</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Le PPF</TableCell>
+        <TableCell>Annuaire des entreprises et concentrateur des données transmises par les PDP vers l'administration</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Votre expert-comptable</TableCell>
+        <TableCell>Conseil, paramétrage, contrôle et intégration comptable des factures et des flux de données</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Comment organiser le flux avec votre cabinet
+
+L'enjeu principal de la réforme, pour la relation client-cabinet, n'est pas technique mais organisationnel. Il s'agit de définir précisément qui fait quoi entre le moment où vous vendez une prestation et celui où votre comptabilité est à jour.
+
+### Etape 1 : choisir une PDP commune ou compatible
+
+Idéalement, votre PDP et celle de votre cabinet doivent être interopérables, ce qui est garanti par le cadre réglementaire puisque toutes les PDP immatriculées échangent selon des standards communs. Demandez tout de même à votre expert-comptable s'il a une préférence ou un partenariat, notamment pour faciliter la récupération automatique de vos factures d'achat.
+
+### Etape 2 : définir le circuit des factures fournisseurs
+
+Vos factures d'achat reçues au format électronique doivent être intégrées à votre comptabilité. Beaucoup de cabinets demandent désormais un accès direct au flux entrant plutôt qu'un envoi manuel de PDF par e-mail, ce qui réduit les oublis et les doubles saisies.
+
+### Etape 3 : sécuriser le partage des justificatifs restants
+
+Tout ne passe pas encore par la facturation électronique : notes de frais, relevés bancaires, contrats. Un espace de partage structuré avec votre cabinet reste utile pour ces documents. C'est un sujet à part entière, détaillé dans notre article sur [comment partager ses documents avec son expert-comptable](/blog/comment-partager-documents-expert-comptable).
+
+### Etape 4 : anticiper l'échéance selon votre taille d'entreprise
+
+Si vous êtes une PME, une TPE ou une micro-entreprise, vous avez jusqu'au 1er septembre 2027 pour être prête en émission, mais vous devez déjà pouvoir recevoir des factures électroniques depuis le 1er septembre 2026. Discutez avec votre cabinet du calendrier de bascule qui vous convient : rien n'empêche d'anticiper l'émission avant l'échéance légale.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticiper plutôt que subir">
+    De nombreux cabinets recommandent à leurs clients PME et TPE de basculer volontairement en émission électronique dès 2026, sans attendre 2027. Cela évite un pic de charge de dernière minute et permet de fiabiliser le format Factur-X sur des volumes plus modestes.
+  </Callout>
+</div>
+
+## Cas concret : un artisan et son cabinet comptable
+
+Prenons l'exemple d'un plombier-chauffagiste, en franchise en base de TVA, qui facture environ 15 000 € HT par mois à des particuliers et à quelques syndics de copropriété. Son cabinet comptable lui recommande d'anticiper la bascule dès janvier 2027, huit mois avant l'échéance légale de septembre 2027.
+
+Le cabinet configure avec lui son logiciel de facturation pour générer des factures au format Factur-X, paramètre le mapping des comptes comptables selon le type de prestation (dépannage, installation, entretien), et met en place une intégration automatique du flux de factures dans le dossier comptable. Résultat : le plombier continue de créer ses factures comme avant, mais chaque document part désormais dans le bon format vers ses clients professionnels, tandis que les données arrivent directement chez son comptable sans ressaisie.
+
+## Comment Newbi facilite la coordination avec votre cabinet
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un flux de facturation lisible pour vous et votre comptable">
+    Newbi centralise vos factures, devis et achats dans un espace unique. Vos documents restent accessibles et exportables pour votre expert-comptable, ce qui simplifie la préparation de votre dossier comptable et réduit les échanges de pièces justificatives par e-mail.
+  </Callout>
+</div>
+
+Newbi vous permet de générer vos factures conformes, de suivre vos achats et vos justificatifs, et de préparer votre passage à la facturation électronique dans un cadre structuré. Pour aller plus loin sur les formats attendus par la réforme, consultez notre [présentation du format Factur-X](/blog/facturx-format-facture-electronique), et pour bien choisir votre plateforme partenaire, notre [guide pour choisir sa PDP](/blog/comment-choisir-sa-pdp-plateforme-dematerialisation).
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## Ce qui reste de votre responsabilité
+
+Même avec un cabinet comptable très impliqué, certaines obligations restent attachées à votre entreprise en tant qu'émettrice des factures.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>véracité des informations commerciales</strong> figurant sur la facture (prix, quantités, description)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>respect du délai d'émission</strong> de la facture après la réalisation de la prestation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>conservation des factures</strong> pendant 10 ans conformément au Code de commerce</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le choix final de la <strong>PDP</strong> utilisée pour l'émission de vos factures</span>
+  </div>
+</div>
+
+En cas de non-respect des règles de facturation électronique, les sanctions prévues restent à la charge de l'entreprise émettrice : une amende de 15 € par facture non conforme, plafonnée à 15 000 € par exercice, et une amende de 250 € par manquement à l'e-reporting, également plafonnée à 15 000 € par an. Votre expert-comptable peut vous alerter sur un risque, mais il n'est pas responsable à votre place devant l'administration.
+
+## En résumé
+
+Votre expert-comptable joue un rôle de conseil, de paramétrage et d'intégration dans la réforme de la facturation électronique, mais il n'est ni l'émetteur légal de vos factures ni responsable de leur contenu commercial. La clé d'une transition réussie tient dans une répartition claire des tâches : à vous le choix des informations facturées et de la PDP, à votre cabinet l'accompagnement sur les formats, le paramétrage comptable et le contrôle des flux. Plus tôt cette organisation est posée, notamment si vous êtes une PME ou une TPE avec un délai jusqu'en 2027, plus la bascule se fera sans à-coups.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le rôle de l'expert-comptable dans la facturation électronique
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Mon expert-comptable peut-il émettre mes factures électroniques à ma place ?</AccordionTrigger>
+      <AccordionContent>
+        Un cabinet comptable peut vous accompagner dans le paramétrage et la génération de vos factures, mais l'entreprise reste juridiquement responsable de leur émission et de leur contenu. Certains cabinets proposent un service de facturation déléguée, mais cela ne transfère pas la responsabilité fiscale vers le cabinet.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il la même PDP que son expert-comptable ?</AccordionTrigger>
+      <AccordionContent>
+        Non, ce n'est pas obligatoire : toutes les plateformes de dématérialisation partenaires immatriculées sont interopérables entre elles selon les standards de la réforme. Utiliser une PDP différente de celle de votre cabinet reste possible, même si une plateforme commune peut simplifier certains échanges de données.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quand une PME doit-elle commencer à émettre des factures électroniques ?</AccordionTrigger>
+      <AccordionContent>
+        Les PME, TPE et micro-entreprises doivent émettre leurs factures au format électronique à partir du 1er septembre 2027. Elles doivent cependant déjà être en mesure de recevoir des factures électroniques depuis le 1er septembre 2026, date à laquelle les grandes entreprises et ETI commencent à émettre.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que devient le portail public de facturation (PPF) dans la réforme ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF n'assure plus l'échange direct des factures entre entreprises. Il fonctionne désormais comme un annuaire des entreprises et comme un concentrateur qui reçoit les données de facturation transmises par les plateformes de dématérialisation partenaires (PDP) pour les besoins de l'administration fiscale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Qui est responsable en cas de facture électronique non conforme ?</AccordionTrigger>
+      <AccordionContent>
+        L'entreprise émettrice reste responsable devant l'administration fiscale, même si son cabinet comptable l'a accompagnée dans le paramétrage de ses outils. Les sanctions applicables, 15 € par facture non conforme dans la limite de 15 000 € par an, s'appliquent à l'entreprise et non au cabinet.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

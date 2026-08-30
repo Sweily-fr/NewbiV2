@@ -1,0 +1,233 @@
+---
+title: 'Facture de conciergerie Airbnb : commissions, refacturation et TVA'
+description: >-
+  Facturer les propriétaires (commission sur revenus locatifs), refacturer le
+  ménage et le linge, gérer la TVA et le mandat : la facturation d'une
+  conciergerie.
+date: '2026-11-20'
+category: guide
+sector: Immobilier
+keyword: facture conciergerie airbnb
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-20'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facture de conciergerie Airbnb : commissions, refacturation et TVA
+
+La **facture de conciergerie Airbnb** doit répondre à une contrainte particulière : votre activité mêle une commission sur les revenus locatifs de vos propriétaires clients, et des prestations annexes comme le ménage, le linge ou la gestion des arrivées, que vous refacturez souvent en les ayant vous-même sous-traitées. Cette double nature (mandat de gestion et prestation de service) complique la facturation si vous ne structurez pas clairement vos flux dès le départ. Ce guide détaille comment facturer votre commission, refacturer les frais annexes et gérer la TVA applicable à une activité de conciergerie de location courte durée.
+
+Que vous gériez 5 ou 50 logements, la clarté de votre facturation conditionne directement la confiance de vos propriétaires mandants et la simplicité de votre comptabilité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Le modèle économique d'une conciergerie Airbnb
+
+Une conciergerie Airbnb gère, pour le compte de propriétaires, la location courte durée de leurs biens : création et optimisation de l'annonce, gestion des réservations, accueil des voyageurs, ménage entre chaque séjour, blanchisserie du linge, et parfois maintenance courante du logement. En contrepartie, la conciergerie perçoit une **commission**, le plus souvent exprimée en pourcentage des revenus locatifs générés, généralement comprise entre 15 % et 30 % selon le niveau de service.
+
+Ce modèle repose sur un **mandat de gestion**, contrat par lequel le propriétaire vous autorise à agir en son nom pour gérer la location de son bien. Ce mandat doit être écrit et préciser la nature exacte des prestations couvertes, le taux de commission, et les modalités de refacturation des frais annexes.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le mandat conditionne toute la facturation">
+    Sans mandat écrit précisant clairement le périmètre de vos prestations et votre taux de commission, vous vous exposez à des litiges avec vos propriétaires sur le calcul de vos honoraires. Le mandat doit être signé avant le début de la gestion du bien.
+  </Callout>
+</div>
+
+## Facturer la commission sur les revenus locatifs
+
+La commission constitue le cœur de votre chiffre d'affaires. Elle se calcule en général sur le montant TTC encaissé par le propriétaire au titre des réservations, hors frais de ménage et taxe de séjour lorsque ceux-ci sont facturés séparément au voyageur.
+
+### Exemple de calcul
+
+Un propriétaire génère 4 200 € de revenus locatifs sur un mois via sa plateforme de réservation. Votre commission contractuelle est de 20 %. Vous facturez donc 840 € HT au propriétaire, plus TVA si vous êtes assujetti (168 € à 20 %, soit 1 008 € TTC). Cette facture doit être émise mensuellement, en cohérence avec le relevé de réservations transmis par la plateforme de location.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de facture mensuelle de commission de conciergerie</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Élément</TableHead>
+        <TableHead>Montant</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Revenus locatifs générés (base commission)</TableCell>
+        <TableCell>4 200 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Commission conciergerie (20 %)</TableCell>
+        <TableCell>840 € HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA (20 %)</TableCell>
+        <TableCell>168 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Total facturé au propriétaire</TableCell>
+        <TableCell>1 008 € TTC</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Refacturer le ménage et le linge : deux méthodes possibles
+
+Le ménage et la blanchisserie représentent souvent une part importante de vos flux financiers, sans pour autant faire partie de votre marge de commission. Deux approches sont possibles, avec des conséquences fiscales différentes.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Refacturation en votre nom ou au nom du propriétaire ?">
+    Si vous facturez le ménage en votre nom propre, vous devez appliquer la TVA sur cette prestation, même si vous ne réalisez qu'une marge minime. Si vous agissez en tant que mandataire transparent (le propriétaire paie directement le prestataire de ménage, vous ne faites que coordonner), ce flux ne transite pas par votre facturation. Le choix doit être cohérent avec les termes exacts de votre mandat de gestion.
+  </Callout>
+</div>
+
+La méthode du **débours**, encadrée par une simple refacturation à l'identique sans marge, permet de transmettre le coût réel du prestataire de ménage au propriétaire sans appliquer votre propre TVA sur cette ligne, à condition de respecter des règles précises. Pour bien comprendre ce mécanisme, notre article sur les [débours et la refacturation de frais aux clients](/blog/debours-refacturation-frais-clients) détaille les conditions à respecter (facture du prestataire au nom du client final, refacturation à l'identique, mention explicite du débours).
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Refacturation classique</strong> : vous facturez le ménage comme une prestation propre, avec ou sans marge, TVA applicable sur le montant total</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Débours</strong> : vous répercutez le coût exact payé au prestataire de ménage, sans marge ni TVA additionnelle, à condition de facturer au nom et pour le compte du propriétaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le choix doit être identique pour tous vos propriétaires, pour éviter toute confusion comptable</span>
+  </div>
+</div>
+
+## La TVA applicable à une activité de conciergerie
+
+Les prestations de conciergerie de location courte durée sont en principe soumises à la TVA au taux normal de 20 %, dès lors que vous dépassez le seuil de franchise en base de TVA, fixé en 2026 à **37 500 €** de chiffre d'affaires annuel pour les prestations de services, avec un seuil majoré de tolérance à **41 250 €**. En dessous de ce seuil, vous facturez sans TVA, en mentionnant sur votre facture la référence à l'article 293 B du Code général des impôts.
+
+Attention, ce seuil de franchise s'apprécie sur votre chiffre d'affaires de conciergerie (vos commissions et refacturations, pas sur les revenus locatifs des propriétaires qui ne vous appartiennent pas). Une conciergerie qui gère 30 logements avec une commission moyenne de 800 € par mois et par bien atteint rapidement ce seuil : 30 x 800 € x 12 mois représenterait 288 000 €, bien au-delà de la franchise, ce qui impose la TVA dès la première année d'activité à cette échelle.
+
+## Les mentions obligatoires sur la facture de conciergerie
+
+Votre facture de commission doit respecter les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classiques, complétées par des précisions propres à votre activité :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La référence au <strong>mandat de gestion</strong> et son numéro le cas échéant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>période de gestion</strong> concernée (mois, trimestre)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>détail des revenus locatifs</strong> ayant servi de base au calcul de la commission</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>taux de commission</strong> appliqué</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>détail des refacturations</strong> (ménage, linge) avec mention du régime appliqué (marge ou débours)</span>
+  </div>
+</div>
+
+## Comparaison avec la facturation d'un agent immobilier
+
+Une conciergerie Airbnb partage des points communs avec la facturation classique d'un [agent immobilier percevant des honoraires](/blog/facture-agent-immobilier-honoraires) : dans les deux cas, la rémunération dépend d'un pourcentage sur une valeur gérée pour le compte d'un tiers, encadrée par un mandat écrit. La différence principale tient à la récurrence : un agent immobilier facture le plus souvent une commission ponctuelle à la signature d'un bail ou d'une vente, tandis qu'une conciergerie facture mensuellement, sur un flux continu de réservations.
+
+## Cas pratique : une conciergerie avec plusieurs biens
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Exemple concret">
+    Une conciergerie gère 8 appartements pour 5 propriétaires différents. Sur un mois, elle génère 22 000 € de revenus locatifs cumulés, avec une commission moyenne de 22 %, soit 4 840 € HT de chiffre d'affaires de commission. Elle a également fait intervenir un prestataire de ménage pour 1 600 € sur la période, refacturé en débours sans marge ni TVA additionnelle aux propriétaires concernés. Sa facturation mensuelle comporte donc 5 factures de commission distinctes (une par propriétaire), chacune accompagnée du détail des refacturations de ménage correspondantes.
+  </Callout>
+</div>
+
+## Gérer la facturation de conciergerie avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un catalogue adapté aux prestations récurrentes">
+    Avec Newbi, vous pouvez créer un catalogue de prestations (commission, ménage, linge) et générer rapidement vos factures mensuelles pour chaque propriétaire, avec un calcul automatique de la TVA. La synchronisation bancaire vous aide à rapprocher les encaissements de commission de vos factures émises.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes propriétaires</Link>
+  </Button>
+</div>
+
+## La facturation électronique pour les conciergeries
+
+Comme toute entreprise, une conciergerie Airbnb est concernée par la réforme de la facturation électronique. Depuis le 1er septembre 2026, elle doit être en mesure de recevoir des factures électroniques de ses fournisseurs (prestataires de ménage, plateformes de gestion). Pour l'émission de ses propres factures de commission à destination des propriétaires, l'obligation dépend de la taille de la structure : elle s'applique déjà aux grandes entreprises et ETI depuis le 1er septembre 2026, et s'étendra aux PME, TPE et micro-entreprises à partir du 1er septembre 2027. La plupart des conciergeries, souvent organisées en micro-entreprise ou en petite société, basculeront donc à cette seconde échéance.
+
+Un point de vigilance propre à ce secteur : si vos propriétaires mandants sont des particuliers, vos factures de commission relèvent du régime B2C et ne transitent pas par le circuit classique de facture électronique entre entreprises assujetties. Elles restent en revanche concernées par l'obligation d'e-reporting, qui impose de transmettre périodiquement les données de ces transactions à l'administration fiscale via votre plateforme de dématérialisation partenaire.
+
+## Erreurs fréquentes à éviter
+
+La confusion la plus courante consiste à facturer une commission incluant la taxe de séjour ou les frais de ménage payés directement par le voyageur, ce qui gonfle artificiellement votre base de commission et fausse votre chiffre d'affaires réel. Autre erreur fréquente : omettre de préciser dans le mandat si les frais de ménage sont refacturés avec ou sans marge, ce qui génère des désaccords récurrents avec les propriétaires en fin d'année. Enfin, ne pas suivre précisément le seuil de franchise en base de TVA expose à un rappel fiscal a posteriori si l'activité croît rapidement, ce qui est fréquent dans ce secteur en expansion.
+
+## En résumé
+
+Facturer une activité de conciergerie Airbnb suppose de bien distinguer trois flux : votre commission sur les revenus locatifs, qui constitue votre chiffre d'affaires propre et doit être soumise à la TVA au-delà du seuil de franchise ; la refacturation du ménage et du linge, qui peut suivre le régime de la marge ou celui du débours selon les termes de votre mandat ; et les mentions obligatoires liées au mandat de gestion, qui sécurisent la relation avec vos propriétaires. Une facturation claire, appuyée sur un mandat écrit précis, évite l'essentiel des litiges dans ce secteur en forte croissance.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de conciergerie Airbnb
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment calculer la commission d'une conciergerie Airbnb ?</AccordionTrigger>
+      <AccordionContent>
+        La commission se calcule le plus souvent en pourcentage des revenus locatifs TTC générés par les réservations sur la période facturée, hors taxe de séjour et hors frais de ménage lorsqu'ils sont payés séparément par le voyageur. Le taux, généralement compris entre 15 % et 30 %, doit être précisé dans le mandat de gestion signé avec le propriétaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il appliquer la TVA sur une commission de conciergerie ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dès lors que votre chiffre d'affaires de conciergerie dépasse le seuil de franchise en base de TVA, fixé en 2026 à 37 500 € pour les prestations de services (seuil majoré à 41 250 €). En dessous de ce seuil, vous facturez sans TVA en mentionnant l'article 293 B du CGI.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment refacturer le ménage sans payer de TVA supplémentaire ?</AccordionTrigger>
+      <AccordionContent>
+        Vous pouvez utiliser le mécanisme du débours : la facture du prestataire de ménage doit être établie au nom du propriétaire, et vous vous contentez de refacturer le montant exact sans marge. Cette refacturation n'entre alors pas dans votre base de TVA. Il faut toutefois que cette pratique soit prévue explicitement dans votre mandat de gestion.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Le mandat de gestion est-il obligatoire pour facturer une conciergerie ?</AccordionTrigger>
+      <AccordionContent>
+        Un mandat écrit n'est pas exigé par une loi spécifique à la conciergerie, mais il est fortement recommandé pour sécuriser juridiquement la relation avec le propriétaire, préciser le taux de commission, le périmètre des prestations et les modalités de refacturation des frais annexes. En pratique, il évite la quasi-totalité des litiges sur le calcul des honoraires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Peut-on facturer une commission fixe plutôt qu'un pourcentage ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, certaines conciergeries facturent un forfait mensuel fixe par bien géré plutôt qu'un pourcentage des revenus locatifs, notamment pour les biens à faible taux d'occupation. Ce modèle simplifie la facturation mais transfère le risque d'un logement peu réservé sur la conciergerie plutôt que sur le propriétaire.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

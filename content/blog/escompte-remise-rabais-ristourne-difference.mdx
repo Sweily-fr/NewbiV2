@@ -1,0 +1,243 @@
+---
+title: 'Escompte, remise, rabais, ristourne : différences et traitement sur la facture'
+description: >-
+  Quatre réductions de prix, quatre traitements différents sur la facture et
+  en TVA. Définitions, exemples chiffrés et mention obligatoire de
+  l'escompte.
+date: '2026-10-06'
+category: glossaire
+sector: null
+keyword: escompte remise rabais ristourne
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-06'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Escompte, remise, rabais, ristourne : différences et traitement sur la facture
+
+**Escompte, remise, rabais, ristourne** : ces quatre termes désignent des réductions de prix, mais ils recouvrent des réalités juridiques et comptables différentes. Les confondre sur une facture n'est pas qu'une question de vocabulaire : cela peut fausser le calcul de la TVA ou vous exposer à omettre une mention obligatoire.
+
+Ce glossaire détaille chacun de ces quatre termes, leur traitement sur la facture, leur impact sur la base de calcul de la TVA, et la mention spécifique que le Code de commerce impose pour l'escompte, même lorsque vous ne l'accordez pas.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les quatre réductions de prix en un coup d'œil
+
+Avant d'entrer dans le détail de chaque notion, voici un tableau comparatif qui résume les différences essentielles entre ces quatre types de réduction commerciale.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre escompte, remise, rabais et ristourne</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[130px]">Terme</TableHead>
+        <TableHead>Motif</TableHead>
+        <TableHead>Moment</TableHead>
+        <TableHead>Effet sur la base de TVA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Escompte</TableCell>
+        <TableCell>Paiement anticipé, avant l'échéance normale</TableCell>
+        <TableCell>Au moment du règlement</TableCell>
+        <TableCell>Réduit la base si effectivement accordé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Remise</TableCell>
+        <TableCell>Quantité achetée, statut du client, geste commercial</TableCell>
+        <TableCell>Sur la facture, avant règlement</TableCell>
+        <TableCell>Réduit directement la base HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Rabais</TableCell>
+        <TableCell>Défaut de qualité, retard, non-conformité</TableCell>
+        <TableCell>Sur la facture, avant règlement</TableCell>
+        <TableCell>Réduit directement la base HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Ristourne</TableCell>
+        <TableCell>Volume d'affaires réalisé sur une période</TableCell>
+        <TableCell>En fin de période (mois, trimestre, année)</TableCell>
+        <TableCell>Réduit la base via une facture d'avoir</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## L'escompte : la réduction liée au paiement anticipé
+
+L'**escompte** est une réduction de prix accordée à un client qui règle sa facture avant la date d'échéance normalement prévue. Il s'agit d'un geste commercial destiné à encourager le paiement rapide et à améliorer la trésorerie du vendeur. Contrairement aux trois autres réductions, l'escompte n'est pas lié à la marchandise ou à la prestation elle-même, mais uniquement au comportement de paiement du client.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La mention de l'escompte est obligatoire, même si vous ne l'accordez pas">
+    L'arrêté du 3 décembre 2019 relatif aux mentions obligatoires figurant sur les factures impose d'indiquer les conditions d'escompte applicables en cas de paiement anticipé. Si vous n'accordez pas d'escompte, vous devez tout de même le préciser avec la mention « Escompte pour paiement anticipé : néant » ou une formule équivalente. L'absence totale de cette mention est une irrégularité, même si aucun escompte n'est proposé.
+  </Callout>
+</div>
+
+### Exemple chiffré : escompte de 2 % pour paiement à 10 jours
+
+Une facture de 5 000 € HT est émise avec un délai de paiement standard de 30 jours, mais propose un escompte de 2 % si le client règle sous 10 jours :
+
+- Montant HT initial : 5 000 €
+- Escompte de 2 % : 100 €
+- Montant HT après escompte : 4 900 €
+- TVA à 20 % sur le montant réduit : 980 €
+- Montant TTC réglé si paiement anticipé : 5 880 €
+
+Si le client règle avant l'échéance et bénéficie effectivement de l'escompte, la base de TVA se calcule sur le montant réduit. S'il règle au terme normal, l'escompte n'est pas appliqué et la TVA porte sur le montant plein.
+
+## La remise : une réduction liée au client ou à la quantité
+
+La **remise** est une réduction de prix accordée en fonction d'un critère lié à la relation commerciale ou à la commande : quantité achetée, statut de client fidèle, opération promotionnelle, ou négociation commerciale ponctuelle. Elle est généralement calculée en pourcentage du prix catalogue et s'applique directement sur la ligne de facture ou en déduction globale.
+
+### Exemple chiffré : remise de fidélité
+
+Un client habituel commande une prestation facturée 3 000 € HT au tarif catalogue. Le prestataire lui accorde une remise de fidélité de 10 % :
+
+- Montant HT catalogue : 3 000 €
+- Remise de 10 % : 300 €
+- Montant HT net : 2 700 €
+- TVA à 20 % : 540 €
+- Montant TTC : 3 240 €
+
+La remise réduit directement la base de calcul de la TVA, qui porte sur le montant net après remise.
+
+## Le rabais : une réduction pour compenser un défaut
+
+Le **rabais** est une réduction de prix accordée pour compenser un défaut de qualité du bien livré ou de la prestation réalisée, un retard de livraison, ou une non-conformité par rapport à la commande initiale. Il se distingue de la remise par son motif : il ne récompense pas un comportement d'achat, il répare un désagrément.
+
+Sur le plan de la facturation, un rabais peut être intégré directement dans la facture initiale si le défaut est constaté avant l'émission, ou faire l'objet d'un avoir si la facture a déjà été émise et le paiement effectué. La procédure d'émission d'un [avoir ou note de crédit](/blog/quest-ce-que-avoir-credit) est alors identique à celle utilisée pour toute correction post-facturation.
+
+## La ristourne : une réduction calculée sur une période
+
+La **ristourne** récompense le volume d'affaires réalisé par un client sur une période donnée, généralement un mois, un trimestre ou une année. Elle est fréquente dans les relations fournisseurs-distributeurs, où un barème de ristourne progressif s'applique selon les seuils de chiffre d'affaires atteints.
+
+Contrairement à la remise et au rabais, qui s'appliquent au moment de la facturation d'une opération précise, la ristourne est calculée après coup, une fois la période close et le volume total connu. Elle se matérialise donc systématiquement par une **facture d'avoir** distincte, qui réduit la base de TVA de la période concernée.
+
+### Exemple chiffré : ristourne de fin d'année
+
+Un fournisseur accorde à un distributeur une ristourne de 3 % sur l'ensemble des achats de l'année, qui se sont élevés à 80 000 € HT :
+
+- Chiffre d'affaires annuel réalisé : 80 000 € HT
+- Ristourne de 3 % : 2 400 €
+- TVA à récupérer sur l'avoir (20 %) : 480 €
+- Montant total de l'avoir : 2 880 € TTC
+
+Le fournisseur émet un avoir de 2 880 € TTC, qui réduit d'autant sa TVA collectée sur la période, et le distributeur ajuste symétriquement sa TVA déductible.
+
+## Comment mentionner ces réductions sur la facture
+
+Quelle que soit la réduction appliquée, la facture doit rester lisible et vérifiable. Les bonnes pratiques suivantes s'appliquent à l'ensemble de ces cas :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquer le <strong>prix unitaire brut</strong> avant réduction sur chaque ligne concernée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Faire apparaître <strong>le montant ou le taux de la réduction</strong> de façon distincte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Préciser la <strong>nature de la réduction</strong> (remise, rabais, ristourne, escompte)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Toujours renseigner la <strong>mention d'escompte</strong>, même en l'absence d'escompte accordé</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Calculer la <strong>TVA sur le montant net</strong>, après déduction de la réduction accordée</span>
+  </div>
+</div>
+
+Ces bonnes pratiques complètent l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) prévues par la réglementation française. Il est également utile de préciser, dans vos [conditions générales de vente](/blog/quest-ce-que-conditions-generales-vente), les conditions dans lesquelles remises, rabais ou ristournes sont accordés, afin d'éviter toute contestation.
+
+## Pourquoi cette distinction compte pour votre comptabilité
+
+Au-delà de la facture elle-même, la nature de la réduction accordée a un impact sur votre comptabilité analytique. Les remises, rabais et ristournes accordés à vos clients viennent réduire votre chiffre d'affaires net, tandis que ceux que vous obtenez de vos fournisseurs viennent réduire le coût de vos achats. Bien distinguer ces flux permet de suivre précisément votre marge commerciale et d'identifier les clients ou fournisseurs avec lesquels les conditions négociées pèsent le plus sur votre rentabilité.
+
+Sur le plan comptable, ces réductions ne s'enregistrent pas non plus de la même façon selon leur moment d'application. Une remise ou un rabais accordé directement sur la facture initiale (dite « réduction sur facture de doit ») vient simplement diminuer le montant net comptabilisé, sans écriture supplémentaire. Une ristourne accordée après coup, via une facture d'avoir, nécessite en revanche une écriture de régularisation distincte, qui vient ajuster le chiffre d'affaires ou les achats de la période où l'avoir est émis, et non de la période d'origine des achats concernés. Cette distinction est particulièrement suivie par les experts-comptables lors de la clôture annuelle, car un volume important de ristournes non provisionnées peut fausser la lecture du résultat intermédiaire.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Formalisez vos barèmes de réduction">
+    Si vous accordez régulièrement des remises ou des ristournes, fixez un barème écrit (pourcentage selon le volume, la fidélité, ou la période) plutôt que de négocier au cas par cas. Cela facilite la facturation, sécurise vos marges et évite les demandes de traitement de faveur difficiles à refuser une fois un précédent créé.
+  </Callout>
+</div>
+
+## Comment Newbi gère ces réductions sur vos factures
+
+Newbi permet d'appliquer une remise ligne par ligne ou globale sur vos factures et devis, avec un recalcul automatique de la TVA sur le montant net. La mention d'escompte est intégrée dans le modèle de facture, ce qui évite de l'oublier. Pour les ristournes de fin de période, l'émission d'un avoir dédié reste simple et rapide, avec un lien conservé vers les factures d'origine concernées.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures avec remises</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Escompte, remise, rabais et ristourne désignent quatre réductions de prix aux logiques différentes : l'escompte récompense un paiement anticipé et doit toujours être mentionné sur la facture, même en son absence, la remise valorise un critère commercial lié au client ou à la quantité, le rabais compense un défaut de qualité ou de conformité, et la ristourne récompense un volume d'affaires sur une période et se traduit par un avoir distinct. Dans tous les cas, la TVA se calcule sur le montant net après déduction de la réduction effectivement accordée, et chaque réduction doit apparaître de façon lisible sur la facture pour rester conforme.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur escompte, remise, rabais et ristourne
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il vraiment mentionner l'escompte si on n'en accorde jamais ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. L'arrêté du 3 décembre 2019 impose de préciser les conditions d'escompte sur toute facture, y compris en indiquant qu'aucun escompte n'est accordé, généralement avec la mention « Escompte pour paiement anticipé : néant ». Omettre totalement cette information est une irrégularité formelle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre une remise et un rabais ?</AccordionTrigger>
+      <AccordionContent>
+        La remise récompense un critère positif lié au client ou à la commande, comme la quantité achetée ou la fidélité. Le rabais, à l'inverse, compense un défaut : qualité non conforme, retard de livraison, erreur dans la prestation. Les deux réduisent la base de TVA de la même manière, mais leur justification commerciale diffère.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer une ristourne de fin d'année ?</AccordionTrigger>
+      <AccordionContent>
+        La ristourne se calcule une fois la période close et le volume d'affaires connu. Elle donne lieu à une facture d'avoir distincte des factures initiales, qui réduit la base de TVA de la période. Cet avoir doit faire référence aux factures ou à la période concernées pour rester traçable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>La TVA se calcule-t-elle avant ou après une remise ?</AccordionTrigger>
+      <AccordionContent>
+        La TVA se calcule toujours sur le montant net après déduction de la remise, du rabais ou de la ristourne effectivement accordé. Seul l'escompte fait exception dans son traitement pratique : la base est réduite uniquement si le client règle effectivement dans le délai ouvrant droit à l'escompte.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Peut-on cumuler plusieurs réductions sur une même facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, rien n'interdit de cumuler une remise commerciale et un escompte pour paiement anticipé sur une même facture, à condition que chaque réduction soit clairement identifiée et calculée séparément. La TVA porte alors sur le montant net après application de l'ensemble des réductions effectivement accordées.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

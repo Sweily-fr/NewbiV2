@@ -1,0 +1,231 @@
+---
+title: 'Comment choisir sa plateforme de dématérialisation (PDP) : 8 critères'
+description: >-
+  Tarifs, formats supportés, connexion à votre logiciel de facturation, e-reporting : les 8 critères pour choisir la bonne plateforme de dématérialisation partenaire.
+date: '2026-09-03'
+category: guide
+sector: null
+keyword: choisir pdp
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-03'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Comment choisir sa plateforme de dématérialisation (PDP) : 8 critères
+
+**Choisir sa PDP** (plateforme de dématérialisation partenaire) devient une décision incontournable pour toute entreprise française. Depuis le 1er septembre 2026, toutes les entreprises doivent être en mesure de recevoir des factures électroniques, et l'échéance d'émission se rapproche à grands pas pour les PME, TPE et micro-entreprises, fixée au 1er septembre 2027.
+
+Face à la multiplication des offres, il n'est pas toujours simple de s'y retrouver. Ce guide présente 8 critères concrets pour choisir la plateforme de dématérialisation adaptée à votre activité, sans se laisser séduire par des arguments marketing qui ne correspondent pas à vos besoins réels.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi le choix de la PDP est stratégique
+
+Une [PDP (plateforme de dématérialisation partenaire)](/blog/quest-ce-que-pdp-plateforme-dematerialisation) est un opérateur privé immatriculé par l'administration fiscale pour transmettre vos factures électroniques à vos clients et déclarer les données de facturation et de transaction à l'administration. Contrairement à ce qui était initialement prévu, le [portail public de facturation (PPF)](/blog/quest-ce-que-ppf-portail-public-facturation) ne joue plus le rôle de plateforme d'échange gratuite : il agit désormais comme annuaire et concentrateur de données vers l'administration. Le choix d'une PDP est donc devenu un passage obligé pour toutes les entreprises.
+
+Ce choix engage votre entreprise sur plusieurs années : migration de vos données, formation de vos équipes, intégration avec vos outils existants. Une erreur de sélection peut coûter cher en temps et en argent lorsqu'il faut changer de prestataire en cours de route.
+
+Contrairement à un simple outil de facturation, la PDP occupe une position centrale dans votre chaîne administrative : elle réceptionne, valide et transmet chaque facture à votre client, tout en envoyant les données requises à l'administration fiscale. Une défaillance de la plateforme, une incompatibilité de format ou un rejet non détecté peut donc bloquer un paiement ou générer un incident de conformité. C'est pourquoi ce choix mérite une évaluation aussi rigoureuse que celle d'un logiciel de comptabilité ou d'une banque professionnelle.
+
+## Critère 1 : l'immatriculation officielle
+
+Le premier réflexe est de vérifier que la plateforme envisagée figure bien sur la liste officielle des PDP immatriculées par l'administration fiscale. Cette immatriculation, valable 3 ans renouvelables, garantit que l'opérateur respecte un cahier des charges strict en matière de sécurité, d'interopérabilité et de conformité aux formats requis.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Vérifiez systématiquement l'immatriculation">
+    N'engagez jamais votre entreprise avec un prestataire qui se présente comme « compatible facturation électronique » sans immatriculation officielle en tant que PDP. Seule une plateforme immatriculée peut transmettre légalement vos factures dans le cadre de la réforme.
+  </Callout>
+</div>
+
+## Critère 2 : les formats supportés (Factur-X, UBL, CII)
+
+Le socle de la facturation électronique repose sur trois formats principaux : Factur-X (format hybride PDF/XML lisible par l'humain et la machine), UBL et CII (formats purement structurés). Une bonne PDP doit prendre en charge l'ensemble de ces formats, en émission comme en réception, afin de pouvoir échanger avec tous vos partenaires commerciaux, quel que soit le format qu'ils utilisent de leur côté. Pour approfondir le sujet, consultez notre présentation du [format Factur-X](/blog/facturx-format-facture-electronique).
+
+## Critère 3 : la connexion à votre logiciel de facturation existant
+
+Une PDP performante doit pouvoir se connecter facilement à votre outil de gestion actuel, sans ressaisie manuelle de vos factures. Vérifiez l'existence de connecteurs natifs, d'une API documentée ou, a minima, d'un import/export fiable au format adapté. Plus l'intégration est fluide, moins vous perdez de temps administratif chaque mois.
+
+Beaucoup d'entreprises découvrent trop tard que leur PDP impose une double saisie : une fois dans leur logiciel de facturation habituel, une seconde fois dans l'interface de la plateforme pour déclencher l'envoi. Ce fonctionnement annule une partie du gain de temps promis par la dématérialisation. Privilégiez une solution où la facturation électronique fait partie intégrante de votre outil de gestion quotidien plutôt qu'une brique technique séparée à alimenter manuellement.
+
+### Points à vérifier concrètement
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Existence d'un connecteur natif avec votre logiciel de facturation actuel</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Documentation technique claire de l'API si vous développez en interne</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Capacité à traiter les formats Factur-X, UBL et CII sans conversion manuelle</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Compatibilité avec votre volume de factures mensuel sans latence</span>
+  </div>
+</div>
+
+## Critère 4 : la gestion de l'e-reporting
+
+Toutes les transactions ne passent pas par la facturation électronique interentreprises. Les ventes à des particuliers (B2C) et les opérations avec des clients ou fournisseurs situés à l'étranger relèvent de l'e-reporting, une transmission de données de transaction à l'administration fiscale. Votre PDP doit gérer nativement cette obligation, faute de quoi vous devrez jongler entre plusieurs outils. Le non-respect de l'e-reporting expose à une amende de 250 € par transmission manquante, plafonnée à 15 000 € par année civile.
+
+## Critère 5 : le modèle tarifaire
+
+Les modèles de tarification varient fortement d'un opérateur à l'autre : abonnement mensuel fixe, tarification au volume de factures, ou combinaison des deux. Demandez systématiquement une simulation basée sur votre volume réel de factures émises et reçues, y compris les pics saisonniers.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de comparaison de modèles tarifaires de PDP</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Modèle</TableHead>
+        <TableHead>Fonctionnement</TableHead>
+        <TableHead>Adapté à</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Abonnement fixe</TableCell>
+        <TableCell>Montant mensuel identique quel que soit le volume</TableCell>
+        <TableCell>Entreprises à volume stable et prévisible</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Tarification au volume</TableCell>
+        <TableCell>Prix par facture émise ou reçue</TableCell>
+        <TableCell>Petites structures à faible volume</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Modèle mixte</TableCell>
+        <TableCell>Socle fixe plus coût variable au-delà d'un seuil</TableCell>
+        <TableCell>Entreprises en croissance</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### Exemple chiffré
+
+Une TPE qui émet 40 factures par mois et en reçoit 25 comparera par exemple une offre à 25 € HT par mois tout compris, contre une offre facturée 0,35 € par document, soit environ 22,75 € HT pour 65 documents. À faible volume, la tarification au document est souvent plus avantageuse, mais elle devient rapidement plus coûteuse si votre activité progresse.
+
+Pensez aussi à demander si des frais de mise en service, de formation ou de migration des historiques de facturation s'ajoutent au tarif affiché. Certains prestataires facturent séparément l'accès à l'archivage à valeur probante ou le nombre de comptes utilisateurs, ce qui peut faire grimper significativement la facture finale par rapport à l'offre d'appel présentée en premier lieu.
+
+## Critère 6 : la sécurité et l'hébergement des données
+
+Vos factures contiennent des données sensibles : montants, coordonnées bancaires parfois, informations sur vos clients. Vérifiez que la plateforme héberge ses données en France ou dans l'Union européenne, qu'elle est conforme au RGPD, et qu'elle propose une politique claire de sauvegarde et de conservation des documents sur la durée légale de 10 ans prévue par le Code de commerce.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Conservation légale des factures">
+    Les factures doivent être conservées 10 ans au titre du Code de commerce et 6 ans au titre du livre des procédures fiscales. Assurez-vous que votre PDP garantit un archivage à valeur probante sur cette durée, même en cas de résiliation du contrat.
+  </Callout>
+</div>
+
+## Critère 7 : l'accompagnement au changement
+
+La bascule vers la facturation électronique implique souvent une reconfiguration de vos habitudes de travail. Une PDP sérieuse propose un accompagnement à la migration, une documentation claire et un support réactif en cas de rejet de facture ou d'incident technique. Interrogez le prestataire sur ses délais de réponse et la disponibilité d'un support en français.
+
+Demandez également si un interlocuteur humain reste joignable en cas de blocage, notamment lors des premières semaines suivant votre bascule. Un chatbot ou une simple base de connaissances peut suffire pour les questions courantes, mais un incident bloquant sur une facture en attente de paiement mérite une réponse rapide d'une personne compétente.
+
+## Critère 8 : l'évolutivité de la solution
+
+Votre entreprise va évoluer, tout comme la réglementation elle-même. Choisissez une PDP capable de suivre les évolutions du cahier des charges fixé par l'administration et d'absorber la croissance de votre volume de facturation, sans que vous ayez à changer de prestataire chaque année.
+
+Le cahier des charges des PDP a déjà connu plusieurs ajustements depuis son annonce initiale, notamment sur le calendrier de déploiement et le rôle du PPF. Une plateforme qui communique régulièrement sur ses mises à jour réglementaires et qui adapte son produit en conséquence, sans attendre que ses clients découvrent les changements par eux-mêmes, constitue un signal de fiabilité à long terme.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticipez l'échéance de 2027">
+    Même si l'obligation d'émission ne s'applique aux PME, TPE et micro-entreprises qu'à partir du 1er septembre 2027, l'obligation de réception s'applique déjà à toutes les entreprises depuis le 1er septembre 2026. Choisir votre PDP dès maintenant vous évite de la précipitation l'année prochaine.
+  </Callout>
+</div>
+
+## Comment Newbi accompagne votre passage à la facturation électronique
+
+Newbi intègre la [facturation électronique](/produits/facturation-electronique) directement dans son parcours de facturation, sans multiplier les outils. Vos factures respectent nativement les formats attendus et votre entreprise peut se préparer sereinement aux échéances de 2026 et 2027 sans changer ses habitudes de travail au quotidien.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Génération de factures aux formats compatibles avec le socle réglementaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Archivage sécurisé de vos documents sur la durée légale requise</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Suivi centralisé de vos factures émises et reçues au même endroit</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Choisir sa PDP ne se limite pas à comparer des prix affichés en une ligne : il faut examiner l'immatriculation officielle, la compatibilité avec les formats Factur-X, UBL et CII, la capacité à gérer l'e-reporting, la connexion à vos outils actuels, la sécurité des données, l'accompagnement proposé et l'évolutivité de la solution sur plusieurs années. Avec l'obligation de réception déjà en vigueur depuis le 1er septembre 2026 et l'émission qui s'imposera à toutes les entreprises au 1er septembre 2027, mieux vaut anticiper ce choix plutôt que de le subir dans l'urgence.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le choix d'une plateforme de dématérialisation
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment vérifier qu'une PDP est bien immatriculée ?</AccordionTrigger>
+      <AccordionContent>
+        L'administration fiscale publie la liste officielle des plateformes de dématérialisation partenaires immatriculées. Avant de vous engager, vérifiez que le prestataire envisagé y figure et que son immatriculation est toujours valide, celle-ci étant délivrée pour une durée de 3 ans renouvelable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on changer de PDP après l'avoir choisie ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, il est possible de changer de plateforme, mais cela implique une phase de migration des données et parfois une renégociation des connecteurs techniques. C'est pourquoi il est préférable de bien évaluer ses besoins dès le départ pour limiter les changements ultérieurs.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Une PDP est-elle obligatoire pour toutes les entreprises ?</AccordionTrigger>
+      <AccordionContent>
+        Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures électroniques via une PDP. L'obligation d'émission s'applique déjà aux grandes entreprises et ETI depuis cette même date, et s'étendra aux PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quelle est la différence entre une PDP et le PPF ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF (portail public de facturation) ne joue plus le rôle de plateforme d'échange de factures : il sert désormais d'annuaire des entreprises et de concentrateur des données transmises à l'administration. Les échanges de factures électroniques passent obligatoirement par une PDP, opérateur privé immatriculé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que risque-t-on en l'absence de PDP après les échéances ?</AccordionTrigger>
+      <AccordionContent>
+        Le défaut d'émission de facture électronique conforme expose à une amende de 15 € par facture, plafonnée à 15 000 € par an. Pour l'e-reporting, l'amende est de 250 € par transmission manquante, également plafonnée à 15 000 € par an.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

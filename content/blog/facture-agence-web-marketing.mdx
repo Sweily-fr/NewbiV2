@@ -1,0 +1,214 @@
+---
+title: 'Facture d''agence web ou marketing : forfaits, abonnements et refacturation'
+description: >-
+  Projets au forfait, maintenance mensuelle, budgets publicitaires avancés, sous-traitants : structurer la facturation d'une petite agence web ou marketing.
+date: '2026-10-30'
+category: guide
+sector: Agences / Marketing
+keyword: facture agence web
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-30'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture d'agence web ou marketing : forfaits, abonnements et refacturation
+
+La **facture d'agence web** combine souvent plusieurs modèles de facturation dans une même relation client : un projet au forfait pour la création d'un site, un abonnement mensuel pour la maintenance, et parfois des budgets publicitaires avancés pour le compte du client. Cette diversité rend la facturation plus complexe que pour une prestation ponctuelle classique, et les erreurs de structuration reviennent souvent sur les mêmes points.
+
+Ce guide détaille comment structurer la facturation d'une petite agence web ou marketing : projets au forfait avec acompte, abonnements de maintenance récurrents, refacturation de budgets publicitaires et de sous-traitants, mentions spécifiques à ne pas oublier, et un exemple chiffré pour illustrer une facturation mixte typique.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les trois modèles de facturation d'une agence
+
+Une agence web ou marketing combine généralement trois types de facturation, chacun avec ses propres règles de mise en forme.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les trois modèles de facturation courants en agence web ou marketing</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Modèle</TableHead>
+        <TableHead>Exemple</TableHead>
+        <TableHead>Rythme de facturation</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Projet au forfait</TableCell>
+        <TableCell>Création d'un site vitrine, refonte de charte graphique</TableCell>
+        <TableCell>Acompte à la signature, solde à la livraison</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Abonnement récurrent</TableCell>
+        <TableCell>Maintenance, hébergement, community management</TableCell>
+        <TableCell>Facture mensuelle ou trimestrielle automatisée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Régie publicitaire</TableCell>
+        <TableCell>Budget Google Ads, Meta Ads avancé pour le compte du client</TableCell>
+        <TableCell>Refacturation du budget réel, plus honoraires de gestion</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Facturer un projet au forfait
+
+Pour un projet au forfait (création de site, identité de marque, campagne ponctuelle), la structure classique reprend le fonctionnement décrit dans notre guide sur [comment faire un devis professionnel](/blog/comment-faire-devis-professionnel) : un devis détaillé précisant le périmètre exact des livrables, suivi d'un acompte à la signature (généralement 30 % à 50 % dans le secteur web), puis d'une facture de solde à la livraison ou à la recette du site.
+
+Le point de vigilance principal pour une agence concerne le périmètre des livrables. Un devis flou sur le nombre de pages, de révisions ou d'allers-retours autorisés entraîne fréquemment des demandes hors périmètre non facturées, ce qui dégrade la rentabilité du projet. Précisez systématiquement le nombre de cycles de retours inclus et le tarif horaire ou forfaitaire appliqué au-delà.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticipez les avenants dans le devis initial">
+    Prévoyez dans votre devis une clause indiquant que toute demande hors périmètre fera l'objet d'un avenant chiffré séparément. Cela évite les négociations tendues en cours de projet et sécurise votre marge sur les livrables initialement définis.
+  </Callout>
+</div>
+
+## Facturer un abonnement de maintenance ou de gestion mensuelle
+
+Les prestations récurrentes (maintenance technique, hébergement géré, gestion des réseaux sociaux, référencement continu) se facturent généralement sous forme d'abonnement mensuel ou trimestriel. Cette facturation récurrente doit respecter les mêmes mentions obligatoires qu'une facture classique, avec en plus une référence claire à la période couverte (par exemple "Maintenance site web - octobre 2026").
+
+Pour ce type de facturation répétitive, l'automatisation devient rapidement indispensable dès que le nombre de clients sous contrat augmente. Émettre manuellement chaque facture mensuelle pour 20 ou 30 clients en maintenance représente un travail répétitif à forte valeur ajoutée nulle, qu'il est possible d'éliminer en configurant une [facturation récurrente automatisée](/blog/automatiser-facturation-recurrente) qui génère et envoie les factures à échéance fixe.
+
+## La refacturation des budgets publicitaires : un point sensible
+
+La gestion de budgets publicitaires pour le compte d'un client (Google Ads, Meta Ads, LinkedIn Ads) pose une question de structuration comptable spécifique. Deux approches coexistent selon le mode de gestion du compte publicitaire :
+
+Si l'agence dépense directement depuis son propre compte publicitaire pour le compte du client, elle doit refacturer le montant exact dépensé, en plus de ses honoraires de gestion. Cette refacturation de débours doit apparaître distinctement du montant des honoraires, sans marge appliquée sur le budget publicitaire lui-même, sous peine de requalification fiscale du débours en prestation de service classique soumise à TVA sur l'intégralité du montant.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Débours ou prestation : la distinction compte pour la TVA">
+    Un débours au sens strict est une somme avancée au nom et pour le compte du client, sans marge, et qui n'entre pas dans l'assiette de TVA de l'agence si les conditions sont remplies (mandat, facture au nom du client, refacturation à l'identique). Si l'agence applique une marge sur le budget publicitaire, il ne s'agit plus d'un débours mais d'une prestation classique, taxable dans son intégralité. Ce point mérite d'être vérifié avec votre expert-comptable selon votre organisation contractuelle.
+  </Callout>
+</div>
+
+Si le client dispose de son propre compte publicitaire et règle directement la plateforme, l'agence ne facture alors que ses honoraires de gestion, sans refacturation de budget. Cette seconde option, plus simple sur le plan comptable, est de plus en plus privilégiée par les agences pour éviter la complexité de la refacturation de débours.
+
+## Refacturer un sous-traitant (développeur, graphiste freelance)
+
+Une agence fait fréquemment appel à des freelances externes (développeurs, graphistes, rédacteurs) sur des projets ponctuels. Cette sous-traitance doit être documentée par une facture conforme émise par le freelance à l'agence, que l'agence intègre ensuite dans son propre prix de vente au client final, sans obligation de faire apparaître le détail de la sous-traitance sur la facture client, sauf accord contraire.
+
+Les règles applicables à ce type de collaboration, notamment en matière de responsabilité et de TVA intracommunautaire si le sous-traitant est basé à l'étranger, sont détaillées dans notre guide sur [comment facturer en sous-traitance](/blog/facturer-en-sous-traitance-regles). Conservez systématiquement les factures des sous-traitants pendant la durée légale de conservation, au même titre que vos factures clients.
+
+## Exemple chiffré : facturation mixte d'un mois type
+
+Une petite agence marketing de 3 personnes facture, sur un mois donné : un projet de refonte de site au forfait de 8 500 € HT dont elle émet la facture de solde (le devis prévoyait 40 % d'acompte déjà encaissé, soit un solde de 5 100 € HT), 6 contrats de maintenance mensuelle à 180 € HT chacun (1 080 € HT au total), et la gestion d'un compte publicitaire pour un client avec 2 400 € de budget réellement dépensé plus 350 € HT d'honoraires de gestion.
+
+Le chiffre d'affaires facturé du mois se décompose ainsi : 5 100 € HT (solde du forfait) + 1 080 € HT (maintenance) + 350 € HT (honoraires de régie) = 6 530 € HT de prestations, auxquels s'ajoutent 2 400 € de refacturation de débours publicitaire si l'agence a avancé ce budget. La distinction entre ces deux flux, prestations facturées et débours refacturés, doit rester lisible dans la comptabilité de l'agence pour ne pas fausser son chiffre d'affaires réel.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Ne confondez pas chiffre d'affaires et flux refacturés">
+    Un budget publicitaire refacturé sans marge ne constitue pas du chiffre d'affaires au sens strict pour l'agence : c'est un flux de trésorerie qui transite par son compte. Bien le distinguer de ses honoraires réels évite de surestimer son activité commerciale lors de l'analyse de sa rentabilité.
+  </Callout>
+</div>
+
+## Les mentions à ne pas oublier sur une facture d'agence
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le nom du projet ou de la campagne concernée, en plus du numéro de facture.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La période couverte pour toute prestation récurrente (maintenance, gestion mensuelle).</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La distinction claire entre honoraires de gestion et budgets refacturés sans marge.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La référence au devis ou au contrat cadre signé avec le client.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les coordonnées complètes et le numéro de SIRET de l'agence et du client professionnel.</span>
+  </div>
+</div>
+
+## Le cas de la gestion des réseaux sociaux confiée à un community manager
+
+Beaucoup de petites agences marketing intègrent un volet gestion des réseaux sociaux dans leur offre, soit avec un salarié en interne, soit en s'appuyant sur un community manager freelance sous-traitant. Cette prestation se facture le plus souvent en abonnement mensuel, au même titre que la maintenance technique, avec un périmètre précis (nombre de publications, plateformes couvertes, modération incluse ou non). Lorsque la gestion des réseaux sociaux est sous-traitée à un [community manager freelance](/blog/facture-community-manager-freelance), l'agence applique la même logique de refacturation que pour tout autre sous-traitant : la facture du freelance est intégrée dans le prix de vente global présenté au client, sans obligation de détail sur la facture finale.
+
+Ce montage est particulièrement fréquent pour les agences qui démarrent et qui préfèrent s'appuyer sur un réseau de freelances spécialisés plutôt que de recruter en interne sur chaque compétence (développement, design, community management, référencement). Il permet de proposer une offre complète au client tout en gardant une structure de coûts variable, ajustée à la charge de travail réelle du mois.
+
+## Gérer plusieurs offres et plusieurs tarifs sans perdre en lisibilité
+
+Une agence propose souvent plusieurs formules à ses clients : un pack de démarrage, un abonnement standard et une offre premium avec plus de contenus ou de budget publicitaire géré. Cette diversité d'offres, combinée aux projets au forfait ponctuels, peut vite rendre la facturation difficile à suivre si chaque devis est recréé à la main. Structurer un catalogue de prestations type (forfait création de site, forfait référencement, abonnement maintenance, abonnement réseaux sociaux) avec des tarifs de référence permet de générer des devis cohérents d'un client à l'autre, tout en gardant la possibilité d'ajuster ponctuellement une ligne selon la négociation commerciale.
+
+## Comment Newbi structure la facturation d'une agence
+
+Newbi permet de gérer en parallèle les différents modèles de facturation d'une agence web ou marketing : devis et factures au forfait avec gestion de l'acompte, factures récurrentes automatisées pour les contrats de maintenance, et catalogue de prestations réutilisable d'un client à l'autre pour gagner du temps sur la rédaction des devis. Le suivi de trésorerie centralisé aide également à distinguer les encaissements liés aux honoraires réels de ceux liés à des budgets simplement transitoires.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Structurer ma facturation d'agence</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Une agence web ou marketing combine généralement trois logiques de facturation : le forfait pour les projets ponctuels avec acompte et solde, l'abonnement récurrent pour la maintenance et la gestion mensuelle, et la refacturation de budgets publicitaires qui doit être distinguée des honoraires réels pour ne pas fausser le chiffre d'affaires ni la TVA due. La rigueur sur ces distinctions, ainsi que sur la documentation de la sous-traitance freelance, évite les erreurs comptables et les litiges avec les clients. Automatiser les factures récurrentes reste le levier le plus rentable dès que le nombre de contrats de maintenance dépasse quelques unités.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture d'agence web ou marketing
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment facturer un budget publicitaire géré pour un client ?</AccordionTrigger>
+      <AccordionContent>
+        Si l'agence dépense depuis son propre compte publicitaire, elle doit refacturer le montant exact dépensé sans marge (débours), en plus de ses honoraires de gestion facturés séparément. Si le client règle directement la plateforme publicitaire depuis son propre compte, l'agence ne facture alors que ses honoraires de gestion.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il un acompte pour un projet de création de site web ?</AccordionTrigger>
+      <AccordionContent>
+        Ce n'est pas une obligation légale pour un client professionnel, mais c'est un usage très répandu dans le secteur, généralement entre 30 % et 50 % du montant du projet, versé à la signature du devis. Cela sécurise la trésorerie de l'agence et engage fermement le client avant le démarrage du travail.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer un contrat de maintenance mensuelle ?</AccordionTrigger>
+      <AccordionContent>
+        Une facture de maintenance mensuelle doit comporter les mentions obligatoires classiques ainsi que la période exacte couverte par la prestation. Pour éviter d'émettre ces factures manuellement chaque mois, il est recommandé de mettre en place une facturation récurrente automatisée qui génère la facture à date fixe.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Doit-on facturer la TVA sur un budget publicitaire refacturé ?</AccordionTrigger>
+      <AccordionContent>
+        Si la refacturation respecte les conditions du débours (montant identique, sans marge, mandat du client), elle peut ne pas entrer dans l'assiette de TVA de l'agence. Dès qu'une marge est appliquée sur ce budget, il s'agit d'une prestation de service classique, soumise à la TVA sur l'intégralité du montant facturé. Ce point technique mérite d'être validé avec un expert-comptable selon votre organisation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment facturer le travail d'un freelance sous-traitant ?</AccordionTrigger>
+      <AccordionContent>
+        Le freelance émet une facture conforme à l'agence, qui l'intègre ensuite dans son propre prix de vente au client final. L'agence n'est pas tenue de détailler cette sous-traitance sur sa facture client, sauf accord contraire, mais doit conserver les factures des sous-traitants comme tout autre justificatif comptable.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

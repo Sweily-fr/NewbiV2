@@ -1,0 +1,278 @@
+---
+title: 'TVA déductible : quelles dépenses ouvrent droit à récupération ?'
+description: >-
+  Carburant, repas, véhicule, logiciels, cadeaux : la liste des dépenses dont
+  la TVA est récupérable, celles exclues et les conditions de forme sur la
+  facture.
+date: '2026-09-25'
+category: guide
+sector: null
+keyword: tva déductible
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-25'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# TVA déductible : quelles dépenses ouvrent droit à récupération ?
+
+La **TVA déductible** est la TVA que vous avez payée sur vos achats professionnels et que vous pouvez récupérer auprès de l'État, en la déduisant de la TVA collectée sur vos ventes. Bien maîtriser ce mécanisme représente un enjeu de trésorerie réel : chaque euro de TVA déductible oublié est un euro que vous ne récupérez jamais. Ce guide détaille les dépenses qui ouvrent droit à récupération, celles qui en sont exclues, et les conditions de forme à respecter sur vos factures.
+
+Vous êtes assujetti à la TVA dès lors que vous n'êtes pas soumis à la franchise en base ? Ce guide vous concerne directement, que vous soyez dirigeant de TPE, freelance ou artisan. Il couvre les cas les plus fréquents : carburant, repas d'affaires, véhicule, logiciels, cadeaux clients, et les pièges qui font perdre de la TVA récupérable chaque année.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Le principe de la TVA déductible
+
+La TVA fonctionne sur un principe de neutralité pour les entreprises assujetties : vous collectez la TVA sur vos ventes (TVA collectée) et vous récupérez la TVA payée sur vos achats professionnels (TVA déductible). Seule la différence entre les deux, la TVA nette, est reversée à l'État lors de votre [déclaration de TVA (CA3 ou CA12)](/blog/declaration-tva-ca3-ca12-guide).
+
+Pour être déductible, une dépense doit remplir trois conditions cumulatives fixées par le Code général des impôts (article 271 du CGI) :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La dépense doit être <strong>nécessaire à l'exploitation</strong> de votre activité professionnelle.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Elle doit être justifiée par une <strong>facture régulière</strong> mentionnant la TVA de façon distincte.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Elle ne doit pas figurer dans la <strong>liste des exclusions légales</strong> du droit à déduction.</span>
+  </div>
+</div>
+
+<Callout type="info" title="Ne confondez pas TVA déductible et charge déductible">
+  Une dépense peut être déductible du résultat imposable sans que sa TVA soit récupérable, et inversement. Les deux régimes obéissent à des règles distinctes : l'un relève de l'impôt sur le revenu ou les sociétés, l'autre de la TVA.
+</Callout>
+
+## Les dépenses dont la TVA est récupérable
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Principales dépenses ouvrant droit à récupération de TVA</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Type de dépense</TableHead>
+        <TableHead>TVA récupérable ?</TableHead>
+        <TableHead>Précision</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Fournitures de bureau, logiciels, abonnements pro</TableCell>
+        <TableCell>Oui, en totalité</TableCell>
+        <TableCell>Sous réserve d'usage exclusivement professionnel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Carburant véhicule utilitaire</TableCell>
+        <TableCell>Oui, en totalité</TableCell>
+        <TableCell>Essence et gazole récupérables à 100 % sur véhicule utilitaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Carburant véhicule de tourisme</TableCell>
+        <TableCell>Partielle</TableCell>
+        <TableCell>80 % pour le gazole/GNR, 100 % pour l'électrique, 0 % pour l'essence sur véhicule non exclu</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Repas d'affaires avec un client</TableCell>
+        <TableCell>Oui, en totalité</TableCell>
+        <TableCell>Facture nominative détaillée obligatoire, montant raisonnable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Frais d'hôtel pour vous-même (dirigeant, salarié)</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Exclusion spécifique du CGI, sauf hébergement de tiers (clients, sous-traitants)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Cadeaux clients</TableCell>
+        <TableCell>Oui, si valeur ≤ 73 € TTC par bénéficiaire et par an</TableCell>
+        <TableCell>Au-delà, TVA non déductible sur le dépassement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Véhicule de tourisme (achat ou location)</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Exclusion sauf véhicules utilitaires, auto-écoles, loueurs, taxis/VTC</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Zoom sur les dépenses fréquentes des indépendants
+
+### Carburant et frais de véhicule
+
+Le traitement de la TVA sur le carburant dépend directement du type de véhicule. Pour un véhicule utilitaire inscrit à l'actif de l'entreprise, la TVA sur le carburant est récupérable à 100 %. Pour un véhicule de tourisme, les règles sont plus restrictives : la TVA sur le gazole et le GNR est récupérable à hauteur de 80 %, celle sur l'électricité de recharge à 100 %, tandis que l'essence reste exclue du droit à déduction sauf exceptions sectorielles (taxis, VTC, auto-écoles).
+
+Si vous n'utilisez pas de véhicule professionnel dédié, le [barème kilométrique](/blog/gestion-notes-frais-deplacement) permet de couvrir vos frais réels sans possibilité de récupération de TVA, puisqu'il s'agit d'une indemnisation forfaitaire et non d'un achat direct de bien ou service par l'entreprise.
+
+### Repas et notes de frais
+
+Les frais de repas pris avec un client ou un partenaire d'affaires ouvrent droit à récupération de la TVA, à condition que la facture soit nominative, détaillée, et que le montant reste raisonnable au regard des usages de votre secteur. En revanche, les frais de repas personnels du dirigeant ou du salarié pris seul, même pendant un déplacement professionnel, suivent un régime différent et plus restrictif.
+
+<Callout type="warning" title="Le ticket de carte bancaire ne suffit pas">
+  Un simple ticket de carte bancaire ne permet pas de récupérer la TVA. Vous devez conserver la facture détaillée (ou le ticket de caisse valant facture pour les montants inférieurs à 150 € TTC) mentionnant le taux et le montant de TVA de façon distincte.
+</Callout>
+
+### Logiciels, abonnements et prestations numériques
+
+Les abonnements logiciels, outils SaaS et prestations numériques utilisés pour votre activité ouvrent droit à récupération intégrale de la TVA, dès lors qu'ils sont facturés par un prestataire établi en France ou dans l'Union européenne avec application correcte de la TVA française (autoliquidation le cas échéant pour les prestataires étrangers).
+
+## Les exclusions légales à connaître
+
+Certaines dépenses sont exclues du droit à déduction par la loi, quelle que soit leur utilité pour votre activité. Les principales exclusions concernent :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les véhicules de tourisme achetés ou loués, sauf activité spécifique (location, transport de personnes, auto-école).</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les frais de logement du dirigeant ou des salariés pour eux-mêmes, même en déplacement professionnel.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les cadeaux clients au-delà de 73 € TTC par bénéficiaire et par an, sur la part excédentaire.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'essence pour les véhicules de tourisme classiques (hors régimes dérogatoires sectoriels).</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les dépenses somptuaires : chasse, pêche non professionnelle, résidences de plaisance.</span>
+  </div>
+</div>
+
+## Les conditions de forme sur la facture
+
+Même pour une dépense éligible, la récupération de TVA est refusée si la facture ne respecte pas les conditions de forme. Une facture doit notamment mentionner distinctement le montant HT, le taux de TVA appliqué et le montant de TVA correspondant, en plus des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classiques (identité du vendeur, numéro de facture, date).
+
+Oublier ces conditions de forme est l'une des [erreurs de déclaration de TVA à éviter](/blog/erreurs-declaration-tva-eviter) les plus courantes chez les indépendants : la dépense est réelle et professionnelle, mais la TVA est refusée faute de justificatif conforme.
+
+### Exemple chiffré
+
+Une graphiste freelance achète un ordinateur professionnel à 1 800 € HT, soit 2 160 € TTC avec une TVA à 20 %. Si la facture est correctement établie au nom de son entreprise, avec la TVA mentionnée distinctement, elle récupère 360 € de TVA déductible. Sur sa déclaration de TVA du trimestre, ces 360 € viennent en déduction de la TVA collectée sur son chiffre d'affaires, réduisant d'autant le montant à reverser à l'État.
+
+<Callout type="success" title="Un réflexe simple : toujours demander une facture au nom de l'entreprise">
+  Beaucoup d'indépendants perdent de la TVA récupérable en acceptant un simple reçu de caisse plutôt qu'une facture nominative complète. Demandez systématiquement une facture à votre nom professionnel, y compris pour les petits achats du quotidien.
+</Callout>
+
+## Comment Newbi facilite le suivi de votre TVA déductible
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Vos justificatifs centralisés et lisibles automatiquement">
+    Le module de gestion des achats de Newbi utilise l'OCR pour lire automatiquement vos justificatifs, extraire le montant HT, la TVA et le fournisseur, et classer chaque dépense. Vous gardez une trace fiable de toute votre TVA déductible, prête à transmettre à votre expert-comptable.
+  </Callout>
+</div>
+
+Cette centralisation évite les factures égarées et les oublis de récupération de TVA, un phénomène fréquent lorsque les justificatifs restent dispersés entre emails, photos de tickets et classeurs papier.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/gestion-des-achats">Centraliser mes justificatifs avec Newbi</Link>
+  </Button>
+</div>
+
+## Le cas particulier des achats mixtes
+
+Beaucoup de dépenses courantes ont un usage à la fois professionnel et personnel : un téléphone portable, une connexion internet au domicile, un abonnement de coworking utilisé occasionnellement. Dans ce cas, seule la quote-part professionnelle de la TVA est déductible, au prorata de l'usage réel constaté.
+
+Il n'existe pas de méthode unique imposée par l'administration pour déterminer ce prorata : vous pouvez vous appuyer sur un relevé d'usage, un forfait raisonnable et justifiable, ou une estimation cohérente avec votre activité. L'important est de pouvoir justifier votre méthode de calcul en cas de contrôle, et de l'appliquer de façon constante d'une année sur l'autre.
+
+Pour un local professionnel utilisé également comme domicile, par exemple un bureau intégré à votre résidence principale, la TVA sur les charges (électricité, chauffage, travaux) suit la même logique de prorata, calculé le plus souvent sur la surface dédiée à l'activité professionnelle rapportée à la surface totale du logement.
+
+<Callout type="tip" title="Documentez votre méthode de calcul">
+  Conservez une note explicative de la méthode utilisée pour calculer vos prorata professionnels, avec les justificatifs à l'appui (relevés, factures, plan du local). Cette documentation simplifie considérablement un éventuel contrôle fiscal et évite les redressements sur ce type de dépense.
+</Callout>
+
+## Checklist pour ne rien oublier
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifiez que chaque facture d'achat mentionne distinctement le montant de TVA.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Demandez systématiquement une facture nominative, jamais un simple ticket anonyme.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Séparez les dépenses professionnelles des dépenses personnelles dès l'achat.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identifiez le type de véhicule utilisé pour appliquer le bon taux de récupération sur le carburant.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conservez vos factures 6 ans au titre du Livre des procédures fiscales, et 10 ans au titre du Code de commerce.</span>
+  </div>
+</div>
+
+## En résumé
+
+La TVA déductible est un levier de trésorerie souvent sous-exploité par les indépendants et les TPE. Une dépense n'ouvre droit à récupération que si elle est nécessaire à l'exploitation, justifiée par une facture régulière mentionnant distinctement la TVA, et non exclue par la loi. Les véhicules de tourisme, les frais de logement du dirigeant et certains cadeaux au-delà de 73 € restent exclus, tandis que le carburant utilitaire, les logiciels et les repas d'affaires ouvrent droit à récupération sous conditions. Un suivi rigoureux de vos justificatifs, avec des factures correctement formées, garantit que vous ne perdez aucun euro de TVA récupérable.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la TVA déductible
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Qu'est-ce que la TVA déductible exactement ?</AccordionTrigger>
+      <AccordionContent>
+        La TVA déductible est la TVA que vous avez payée sur vos achats professionnels et que vous pouvez récupérer auprès de l'État en la déduisant de la TVA que vous avez collectée sur vos ventes. Elle réduit d'autant le montant de TVA à reverser lors de votre déclaration périodique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on récupérer la TVA sur le carburant ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend du type de véhicule et du carburant. Pour un véhicule utilitaire, la TVA est récupérable à 100 % quel que soit le carburant. Pour un véhicule de tourisme, le gazole et le GNR ouvrent droit à 80 % de récupération, l'électricité à 100 %, tandis que l'essence reste généralement exclue sauf activités dérogatoires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>La TVA sur les repas est-elle récupérable ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, pour les repas d'affaires pris avec un client ou un partenaire, sous réserve d'une facture nominative détaillée et d'un montant raisonnable. Les frais de repas personnels du dirigeant pris seul suivent un régime plus restrictif et sont généralement exclus du droit à déduction.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Pourquoi la TVA sur un véhicule de tourisme n'est-elle pas récupérable ?</AccordionTrigger>
+      <AccordionContent>
+        Le Code général des impôts exclut explicitement les véhicules conçus pour le transport de personnes du droit à déduction de la TVA, sauf exceptions pour les activités qui en font un usage direct comme les auto-écoles, les loueurs professionnels ou les entreprises de transport de personnes (taxis, VTC).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que faire si j'ai perdu une facture avec de la TVA déductible ?</AccordionTrigger>
+      <AccordionContent>
+        Sans facture régulière mentionnant distinctement la TVA, la récupération est refusée en cas de contrôle. Demandez un duplicata à votre fournisseur si possible. Pour éviter ce problème, centralisez systématiquement vos justificatifs dès leur réception, par exemple via un outil de gestion des achats avec OCR.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

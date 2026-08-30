@@ -1,0 +1,256 @@
+---
+title: 'Crédit de TVA : comment demander son remboursement'
+description: >-
+  Vous avez plus de TVA déductible que collectée ? Conditions, seuils,
+  formulaire 3519 et délais pour obtenir le remboursement de votre crédit
+  de TVA.
+date: '2026-10-02'
+category: guide
+sector: null
+keyword: crédit de tva remboursement
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-02'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Crédit de TVA : comment demander son remboursement
+
+Un **crédit de TVA remboursement** se produit lorsque la TVA que vous avez payée sur vos achats et investissements dépasse la TVA que vous avez collectée auprès de vos clients sur une période donnée. Plutôt que de laisser ce crédit s'accumuler d'une déclaration à l'autre, vous pouvez en demander le remboursement directement à l'administration fiscale, sous certaines conditions.
+
+Ce guide détaille les conditions à remplir, les seuils applicables, la procédure via le formulaire 3519, et les délais réels de traitement pour récupérer cette trésorerie qui vous appartient.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce qu'un crédit de TVA
+
+Chaque entreprise assujettie à la TVA collecte la taxe sur ses ventes (TVA collectée) et peut déduire la TVA payée sur ses achats professionnels (TVA déductible), conformément aux règles fixées par l'article 271 du Code général des impôts (CGI). Lorsque la TVA déductible est supérieure à la TVA collectée sur une période, la différence constitue un **crédit de TVA** en faveur de l'entreprise.
+
+Ce crédit peut survenir dans plusieurs situations courantes : un investissement important (achat de matériel, travaux), une activité fortement exportatrice dont les ventes sont exonérées de TVA tout en donnant droit à déduction, ou simplement une période de démarrage d'activité où les achats dépassent largement le chiffre d'affaires facturé.
+
+Par défaut, ce crédit peut être **reporté** sur les déclarations suivantes et venir réduire la TVA à payer des mois à venir. Mais il est également possible d'en demander le **remboursement immédiat**, ce qui est souvent préférable pour préserver la trésorerie de l'entreprise.
+
+## Les conditions pour demander un remboursement
+
+Le remboursement d'un crédit de TVA est encadré par des seuils qui dépendent de la périodicité de vos déclarations.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Seuils de remboursement du crédit de TVA selon le régime de déclaration</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Régime</TableHead>
+        <TableHead>Périodicité de la demande</TableHead>
+        <TableHead>Seuil minimum</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Régime réel normal (CA3)</TableCell>
+        <TableCell>Mensuelle ou trimestrielle</TableCell>
+        <TableCell>760 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Régime réel simplifié (CA12)</TableCell>
+        <TableCell>Annuelle, ou en cours d'année sous conditions</TableCell>
+        <TableCell>150 € (annuel) / 760 € (acomptes)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Cessation d'activité</TableCell>
+        <TableCell>À tout moment</TableCell>
+        <TableCell>Aucun seuil minimum</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Concrètement, une entreprise au régime réel normal qui dépose une déclaration CA3 mensuelle ou trimestrielle peut demander le remboursement de son crédit de TVA dès lors que celui-ci atteint au moins 760 € sur la période. En dessous de ce seuil, le crédit doit être reporté sur la déclaration suivante.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le régime réel simplifié permet aussi des remboursements en cours d'année">
+    Une entreprise au régime réel simplifier peut demander un remboursement en cours d'exercice, à l'occasion du versement de ses acomptes semestriels, si le crédit constaté dépasse 760 €. Elle n'est donc pas obligée d'attendre sa déclaration annuelle CA12.
+  </Callout>
+</div>
+
+## La procédure : le formulaire 3519
+
+La demande de remboursement de crédit de TVA se fait via le formulaire **n° 3519-SD**, à déposer en même temps que votre déclaration de TVA (CA3 ou CA12), directement depuis votre espace professionnel sur le site des impôts.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Renseigner le <strong>montant du crédit</strong> dont le remboursement est demandé</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquer les <strong>coordonnées bancaires</strong> (RIB) sur lesquelles le virement doit être effectué</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier la <strong>cohérence</strong> entre le montant demandé et celui figurant sur la déclaration de TVA correspondante</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conserver les <strong>justificatifs</strong> des achats à l'origine du crédit, en cas de demande de pièces complémentaires</span>
+  </div>
+</div>
+
+Le formulaire 3519 doit être déposé au moment même de la déclaration qui fait apparaître le crédit, et non après coup. Une demande tardive ne peut porter que sur le crédit figurant sur une déclaration déjà déposée avec la case de remboursement cochée.
+
+## Exemple chiffré : une entreprise qui investit
+
+Une société de menuiserie déclare sa TVA au régime réel normal, mensuellement. Sur le mois de mars, elle réalise un investissement important en machines-outils :
+
+- TVA collectée sur les ventes du mois : 8 200 €
+- TVA déductible sur les achats et l'investissement : 14 600 €
+- Crédit de TVA du mois : 14 600 - 8 200 = **6 400 €**
+
+Ce montant dépassant largement le seuil de 760 € applicable au régime réel normal, l'entreprise peut demander le remboursement immédiat de ces 6 400 € via le formulaire 3519, plutôt que d'attendre que ce crédit s'imprime sur les mois suivants et immobilise inutilement sa trésorerie.
+
+## Les délais réels de remboursement
+
+L'administration fiscale dispose en principe d'un délai de traitement qui varie selon la complexité du dossier et la qualité du profil de l'entreprise. En pratique, un remboursement sans anomalie particulière est généralement traité en quelques semaines, mais ce délai peut s'allonger significativement si la demande déclenche un contrôle ou une demande de justificatifs complémentaires.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Une demande de remboursement peut déclencher une vérification">
+    Un crédit de TVA important ou inhabituel par rapport à l'activité habituelle de l'entreprise peut attirer l'attention de l'administration et entraîner une demande de pièces justificatives, voire un contrôle sur place. Conservez systématiquement vos factures d'achat et vos justificatifs pendant au moins 6 ans, conformément au Livre des procédures fiscales.
+  </Callout>
+</div>
+
+Pour limiter les risques de blocage, la cohérence entre le montant du crédit demandé et la nature de l'activité déclarée est essentielle : un crédit de TVA récurrent chez une entreprise qui ne réalise ni exportation ni investissement particulier peut légitimement interroger l'administration.
+
+## Report ou remboursement : que choisir
+
+Le choix entre reporter le crédit sur les prochaines déclarations et en demander le remboursement dépend essentiellement de vos besoins de trésorerie et de la récurrence du crédit.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Demander le remboursement</strong> si votre trésorerie est tendue ou si le crédit est ponctuel (investissement, exportation)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Reporter le crédit</strong> si vous anticipez une TVA collectée élevée sur les mois suivants, qui absorbera naturellement le crédit</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Éviter les demandes répétées</strong> de faibles montants, qui multiplient les démarches administratives sans gain significatif</span>
+  </div>
+</div>
+
+Une entreprise qui alterne des mois de crédit et des mois de TVA due sur un cycle régulier a souvent intérêt à laisser le report se faire naturellement, plutôt que de multiplier les demandes de remboursement pour des montants proches du seuil minimum.
+
+## Les erreurs qui retardent ou bloquent un remboursement
+
+Certaines erreurs reviennent régulièrement dans les demandes de remboursement de crédit de TVA et expliquent une part importante des délais de traitement allongés ou des rejets partiels.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>incohérence</strong> entre le montant demandé sur le formulaire 3519 et celui figurant sur la déclaration de TVA</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Des <strong>justificatifs manquants</strong> ou illisibles pour les achats ayant généré le crédit</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>RIB périmé</strong> ou erroné transmis avec la demande</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une demande déposée <strong>hors délai</strong>, après la déclaration concernée</span>
+  </div>
+</div>
+
+Ces erreurs rejoignent plus largement les difficultés que rencontrent de nombreuses entreprises dans leur gestion courante de la TVA. Notre article sur les [erreurs de déclaration de TVA à éviter](/blog/erreurs-declaration-tva-eviter) recense les points de vigilance les plus fréquents, bien au-delà du seul cas du remboursement de crédit.
+
+## Le rôle de l'expert-comptable dans la demande
+
+Si vous travaillez avec un expert-comptable, il est fortement recommandé de lui soumettre votre demande de remboursement avant dépôt, en particulier pour un premier crédit important ou une entreprise récemment créée. Son regard permet de vérifier la cohérence du montant, la conformité des justificatifs et d'anticiper une éventuelle demande de pièces complémentaires de l'administration. Cette vérification en amont réduit sensiblement le risque de rejet ou de retard de traitement, surtout pour les crédits liés à un investissement inhabituel par rapport à l'activité courante de l'entreprise.
+
+## Le lien entre crédit de TVA et TVA déductible
+
+Le montant du crédit de TVA dépend directement de la rigueur avec laquelle vous suivez votre TVA déductible sur vos achats. Une facture fournisseur mal enregistrée, ou une TVA non réclamée parce que le justificatif a été perdu, réduit mécaniquement votre crédit potentiel. Notre article sur les [dépenses ouvrant droit à TVA déductible](/blog/tva-deductible-quelles-depenses) détaille précisément ce qui peut ou non être récupéré.
+
+De la même façon, la fiabilité de votre déclaration de TVA elle-même, qu'il s'agisse d'une CA3 mensuelle ou d'une CA12 annuelle, conditionne la validité de votre demande de remboursement. Notre guide sur la [déclaration de TVA CA3 et CA12](/blog/declaration-tva-ca3-ca12-guide) explique comment remplir ces formulaires sans erreur.
+
+## Comment Newbi vous aide à suivre votre TVA
+
+Newbi centralise vos factures de vente et d'achat, avec extraction automatique de la TVA sur les justificatifs grâce à l'OCR. Vous visualisez à tout moment votre position de TVA collectée et déductible, ce qui facilite l'identification d'un crédit de TVA et la préparation de votre demande de remboursement avec votre expert-comptable.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Suivre ma trésorerie avec Newbi</Link>
+  </Button>
+</div>
+
+## Le cas particulier des entreprises exportatrices
+
+Les entreprises qui réalisent une part importante de leur chiffre d'affaires à l'exportation, hors de l'Union européenne, ou en livraison intracommunautaire vers un autre État membre, se retrouvent structurellement en situation de crédit de TVA. Ces opérations sont en effet exonérées de TVA tout en ouvrant droit à déduction sur les achats qui leur sont liés, ce qui déséquilibre mécaniquement la balance entre TVA collectée et TVA déductible.
+
+Pour ces entreprises, la demande régulière de remboursement du crédit de TVA n'est pas une simple option de trésorerie, mais souvent une pratique de gestion incontournable, sous peine d'immobiliser durablement des sommes importantes. Un suivi rigoureux, mois après mois, du montant du crédit généré permet d'anticiper les demandes et d'éviter les pics de trésorerie négative liés à des paiements fournisseurs importants non compensés à temps par un remboursement.
+
+## En résumé
+
+Le crédit de TVA apparaît lorsque votre TVA déductible dépasse votre TVA collectée sur une période, et vous pouvez en demander le remboursement dès lors que le montant atteint 760 € au régime réel normal, ou lors du dépôt de votre déclaration annuelle au régime simplifié. La démarche se fait via le formulaire 3519-SD, déposé en même temps que la déclaration de TVA concernée. Anticiper ce crédit en amont, notamment lors d'un investissement important, permet de récupérer rapidement une trésorerie qui, sinon, resterait immobilisée jusqu'aux déclarations suivantes.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le remboursement du crédit de TVA
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel est le montant minimum pour demander un remboursement de crédit de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Au régime réel normal avec une déclaration mensuelle ou trimestrielle, le seuil est de 760 €. Au régime réel simplifié, le remboursement annuel est possible dès 150 €, et un remboursement en cours d'année, lors du versement des acomptes, nécessite d'atteindre 760 €. En cas de cessation d'activité, aucun seuil minimum ne s'applique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Comment remplir le formulaire 3519 pour un remboursement de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Le formulaire 3519-SD se dépose en ligne, depuis votre espace professionnel sur le site des impôts, en même temps que votre déclaration de TVA. Vous devez y indiquer le montant du crédit dont vous demandez le remboursement et vos coordonnées bancaires pour recevoir le virement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Combien de temps prend le remboursement d'un crédit de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Sans anomalie ni demande de justificatifs complémentaires, un remboursement est généralement traité en quelques semaines. Ce délai peut s'allonger si l'administration demande des pièces supplémentaires ou déclenche une vérification, notamment lorsque le montant du crédit est inhabituel par rapport à l'activité de l'entreprise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Vaut-il mieux reporter son crédit de TVA ou en demander le remboursement ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de votre besoin de trésorerie et de la récurrence du crédit. Si le crédit est ponctuel, lié par exemple à un investissement, le remboursement immédiat préserve votre trésorerie. Si vous anticipez une TVA collectée importante sur les mois suivants qui absorbera naturellement ce crédit, le laisser se reporter évite une démarche administrative superflue.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Une demande de remboursement de crédit de TVA peut-elle déclencher un contrôle fiscal ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est possible, en particulier si le montant du crédit est élevé ou inhabituel par rapport à l'activité déclarée de l'entreprise. L'administration peut demander des justificatifs complémentaires avant de procéder au remboursement. Conserver systématiquement les factures d'achat à l'origine du crédit pendant au moins 6 ans limite le risque de blocage.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,258 @@
+---
+title: "Facture d'électricien : mentions, TVA, attestation et modèle"
+description: >-
+  Facturer une intervention d'électricien : TVA 10 % ou 20 %, attestation
+  simplifiée, certificat Consuel, décennale et détail fournitures/main-d'œuvre.
+date: '2026-09-11'
+category: guide
+sector: BTP / Artisans
+keyword: facture électricien
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-11'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture d'électricien : mentions, TVA, attestation et modèle
+
+La **facture d'électricien** obéit à des règles précises qui vont au-delà des mentions obligatoires classiques : taux de TVA réduit sous conditions, attestation simplifiée à faire signer par le client, certificat Consuel pour les installations neuves, et mention de l'assurance décennale. Une erreur sur l'un de ces points peut entraîner un redressement fiscal ou fragiliser votre couverture en cas de sinistre.
+
+Ce guide détaille chaque élément à faire figurer sur votre facture d'intervention électrique, avec les bons taux de TVA selon le type de travaux, un exemple chiffré complet et les documents à conserver pour vous couvrir juridiquement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les mentions obligatoires d'une facture d'électricien
+
+Comme toute facture professionnelle, la facture d'un électricien doit respecter les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) prévues par l'article 289 du Code général des impôts : identité et coordonnées complètes du professionnel et du client, numéro de SIRET, numéro de facture unique et séquentiel, date d'émission, description détaillée des travaux, prix unitaire hors taxes, taux de TVA applicable et montant total.
+
+À ces mentions génériques s'ajoutent des éléments spécifiques au secteur électrique, indispensables pour la conformité et la couverture assurantielle du chantier.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>détail séparé fournitures et main-d'œuvre</strong>, avec quantités et prix unitaires</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence du certificat Consuel</strong> pour toute installation neuve ou rénovation complète</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>mention de l'assurance décennale</strong> avec numéro de contrat et coordonnées de l'assureur</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>adresse exacte du chantier</strong>, si elle diffère de l'adresse de facturation du client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date d'intervention</strong>, distincte de la date d'émission de la facture</span>
+  </div>
+</div>
+
+## Quel taux de TVA appliquer sur une intervention électrique
+
+Le taux de TVA applicable dépend de la nature du logement et du type de travaux réalisés. Le taux normal de 20 % s'applique par défaut, mais des taux réduits existent pour les travaux d'amélioration dans les logements anciens.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Taux de TVA applicables aux travaux d'électricité en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Type de travaux</TableHead>
+        <TableHead>Taux</TableHead>
+        <TableHead>Condition</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Rénovation, amélioration électrique</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>Logement achevé depuis plus de 2 ans</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Travaux d'économie d'énergie éligibles</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Liste limitative fixée par l'administration fiscale</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Construction neuve ou surélévation</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Logement de moins de 2 ans ou travaux de construction</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Local professionnel ou commercial</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Le taux réduit ne s'applique qu'à l'habitation</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="L'attestation TVA est indispensable pour le taux réduit">
+    Pour appliquer un taux de 10 % ou 5,5 %, l'électricien doit obtenir de son client une attestation simplifiée (pour les travaux inférieurs à 300 € TTC) ou normale certifiant que le logement a plus de deux ans et respecte les conditions d'éligibilité. Cette attestation doit être conservée par le professionnel, qui reste responsable en cas d'application incorrecte du taux réduit.
+  </Callout>
+</div>
+
+## Exemple chiffré : facture d'intervention en rénovation
+
+Un électricien intervient dans un appartement achevé depuis 15 ans pour remplacer un tableau électrique vétuste. Le détail de la prestation est le suivant :
+
+- Fournitures (tableau électrique, disjoncteurs, câblage) : 480 € HT
+- Main-d'œuvre (6 heures à 55 € HT) : 330 € HT
+- Total HT : 810 €
+- TVA à 10 % (logement de plus de 2 ans, attestation signée) : 81 €
+- **Total TTC : 891 €**
+
+Si la même intervention avait eu lieu dans un logement neuf de moins de deux ans, le taux normal de 20 % se serait appliqué, portant le total TTC à 972 € pour un montant HT identique.
+
+## Le certificat Consuel : quand est-il obligatoire
+
+Le certificat de conformité délivré par le Consuel (Comité national pour la sécurité des usagers de l'électricité) est obligatoire pour toute installation électrique neuve ou faisant l'objet d'une rénovation complète, avant la mise en service par le fournisseur d'électricité. La facture doit mentionner si ce certificat a été obtenu, et sa référence si c'est le cas, notamment lorsque les travaux concernent une [installation dans le cadre de travaux BTP plus larges](/blog/devis-travaux-btp-guide) menés par plusieurs corps de métier.
+
+L'absence de certificat Consuel pour une installation neuve empêche généralement la mise en service par le distributeur d'électricité, ce qui peut retarder la livraison du chantier et engager la responsabilité de l'électricien si le retard lui est imputable.
+
+## L'assurance décennale : une mention obligatoire sur la facture
+
+Les travaux d'électricité relevant du gros œuvre ou touchant à la sécurité de l'installation entrent dans le champ de la garantie décennale prévue par l'article 1792 du Code civil. La facture doit donc mentionner les coordonnées de l'assureur et le numéro du contrat de garantie décennale, ainsi que la zone géographique de validité de la couverture. Cette obligation, prévue par l'article L243-2 du Code des assurances, s'applique à tous les travaux susceptibles d'engager la responsabilité décennale de l'artisan.
+
+Pour un panorama complet de cette obligation, consultez notre article sur l'[obligation d'assurance décennale pour l'artisan](/blog/obligation-assurance-decennale-artisan), qui détaille les sanctions en cas de manquement et les modalités de souscription.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un modèle unique pour tout le secteur du bâtiment">
+    Les règles de facturation de l'électricien rejoignent largement celles des autres corps de métier du bâtiment. Notre guide sur la [facture BTP et les mentions spécifiques aux artisans](/blog/facture-btp-artisan-mentions-specifiques) permet de vérifier que votre modèle de facture couvre bien l'ensemble des obligations sectorielles, quel que soit votre métier précis.
+  </Callout>
+</div>
+
+## Facturer les situations de travaux pour les chantiers longs
+
+Pour les chantiers d'électricité de plus grande ampleur, il est fréquent de facturer par situation de travaux, c'est-à-dire par étapes successives correspondant à l'avancement réel du chantier, plutôt qu'en une seule facture finale. Chaque situation reprend le pourcentage d'avancement, déduit les éventuels acomptes déjà versés, et indique le solde restant dû jusqu'à la réception définitive des travaux. Cette pratique facilite la trésorerie de l'électricien sur des chantiers qui s'étalent sur plusieurs semaines ou mois.
+
+## Les erreurs fréquentes sur une facture d'électricien
+
+Plusieurs erreurs reviennent régulièrement sur les factures du secteur électrique et exposent l'artisan à un risque fiscal ou contractuel. La première est l'application d'un taux de TVA réduit sans attestation signée par le client : en cas de contrôle, l'administration fiscale peut alors réclamer le complément de TVA à l'électricien lui-même, puisqu'il est responsable de la bonne application du taux. La deuxième erreur consiste à ne pas détailler séparément les fournitures et la main-d'œuvre, ce qui complique la justification du prix en cas de litige avec le client sur le montant facturé.
+
+Une troisième erreur fréquente concerne la numérotation des factures : chaque intervention doit porter un numéro unique et continu, même pour les petits dépannages facturés en espèces ou par carte sur le moment. Enfin, oublier de mentionner la garantie décennale sur des travaux qui l'exigent, ou facturer un dépannage ponctuel comme s'il s'agissait de gros œuvre soumis à cette garantie, sont deux excès inverses qu'il convient d'éviter en qualifiant correctement la nature de l'intervention réalisée.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Conservez vos factures dix ans">
+    Les factures d'électricien, comme tout document comptable, doivent être conservées pendant 10 ans conformément au Code de commerce, et pendant 6 ans au titre du délai de reprise de l'administration fiscale prévu par le Livre des procédures fiscales. Cette conservation couvre aussi les attestations de TVA signées par vos clients.
+  </Callout>
+</div>
+
+## Facture d'un électricien auto-entrepreneur : ce qui change
+
+Un électricien exerçant en micro-entreprise doit respecter les mêmes règles de mentions et de taux de TVA que les autres statuts, avec une différence de taille : tant qu'il reste sous le seuil de la franchise en base fixé en 2026 à 37 500 € de chiffre d'affaires (services), il ne facture pas de TVA et doit faire figurer la mention "TVA non applicable, article 293 B du CGI" sur chacune de ses factures. Il continue en revanche à appliquer les mêmes règles concernant l'attestation TVA de son client, dans la mesure où celle-ci concerne le taux appliqué sur les fournitures et la main-d'œuvre, indépendamment du régime de TVA du professionnel.
+
+### Cas concret : dépannage facturé par un électricien auto-entrepreneur
+
+Un électricien auto-entrepreneur intervient en urgence un dimanche pour remettre en service un tableau électrique disjoncté chez un particulier. L'intervention dure 1h30, facturée 70 € HT (majoration weekend incluse), plus 25 € HT de petites fournitures (fusibles, connecteurs). Le total HT est de 95 €. Comme il est sous le seuil de la franchise en base de TVA, il ne facture aucune TVA et son total TTC est identique à son total HT, soit **95 €**. La facture doit néanmoins comporter toutes les mentions obligatoires classiques, y compris son numéro de SIRET et la mention de franchise en base.
+
+## Les documents à remettre au client en fin de chantier
+
+Au-delà de la facture elle-même, un chantier électrique bien mené se conclut par la remise d'un ensemble de documents qui, ensemble, sécurisent le client et l'électricien en cas de contrôle ou de sinistre ultérieur.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Documents à remettre selon le type d'intervention</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Document</TableHead>
+        <TableHead>Obligatoire pour</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Facture détaillée</TableCell>
+        <TableCell>Toute intervention, quel que soit le montant</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Attestation TVA (simplifiée ou normale)</TableCell>
+        <TableCell>Travaux à taux réduit dans un logement de plus de 2 ans</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Certificat Consuel</TableCell>
+        <TableCell>Installation neuve ou rénovation complète</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Attestation d'assurance décennale</TableCell>
+        <TableCell>Travaux touchant à la sécurité de l'installation</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Comment Newbi simplifie la facturation des électriciens
+
+Newbi permet de créer des modèles de facture adaptés aux artisans du bâtiment, avec le détail séparé des fournitures et de la main-d'œuvre, le calcul automatique du taux de TVA applicable selon le type de chantier, et l'ajout des mentions liées à l'assurance décennale directement dans le modèle réutilisable. Le catalogue de produits et services permet également de préenregistrer vos prestations récurrentes (dépannage, mise aux normes, tableau électrique) pour accélérer la création de vos devis et factures.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures d'électricien avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facture d'électricien doit respecter les mentions obligatoires classiques tout en intégrant des éléments spécifiques au secteur : détail des fournitures et de la main-d'œuvre, taux de TVA correctement appliqué selon l'ancienneté du logement et la nature des travaux, attestation TVA conservée pour justifier un taux réduit, référence du certificat Consuel pour les installations neuves, et mention de l'assurance décennale obligatoire pour les travaux touchant à la sécurité électrique. Une facture rigoureuse sur ces points protège l'électricien en cas de contrôle fiscal comme en cas de sinistre sur le chantier.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture d'électricien
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel taux de TVA appliquer pour une intervention d'électricien ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux dépend du type de travaux et de l'ancienneté du logement. Pour des travaux de rénovation dans un logement achevé depuis plus de deux ans, le taux réduit de 10 % s'applique, sous réserve d'une attestation TVA signée par le client. Pour une construction neuve ou un local professionnel, le taux normal de 20 % s'applique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qu'est-ce que l'attestation simplifiée de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        L'attestation simplifiée est un document que le client signe pour les travaux d'un montant inférieur à 300 € TTC, certifiant que le logement a plus de deux ans et remplit les conditions d'application du taux réduit de TVA. Au-delà de ce montant, une attestation normale, plus détaillée, doit être utilisée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Le certificat Consuel doit-il apparaître sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, pour toute installation électrique neuve ou rénovation complète, il est recommandé de mentionner la référence du certificat Consuel sur la facture, ce document conditionnant la mise en service de l'installation par le fournisseur d'électricité. Son absence peut retarder la livraison du chantier.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un électricien auto-entrepreneur doit-il facturer la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Un électricien en micro-entreprise ne facture pas la TVA tant qu'il reste sous le seuil de la franchise en base, fixé en 2026 à 37 500 € de chiffre d'affaires pour les prestations de services. Au-delà de ce seuil, il devient redevable de la TVA et doit l'appliquer sur toutes ses factures selon les règles habituelles.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que risque un électricien qui n'a pas d'assurance décennale ?</AccordionTrigger>
+      <AccordionContent>
+        L'absence d'assurance décennale pour des travaux qui l'exigent constitue un délit puni par le Code des assurances, avec des sanctions pénales pouvant aller jusqu'à 75 000 € d'amende et six mois d'emprisonnement. En cas de sinistre, l'électricien non assuré devra également indemniser lui-même le client sur ses fonds propres.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

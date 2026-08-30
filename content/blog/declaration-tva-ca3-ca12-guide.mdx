@@ -1,0 +1,289 @@
+---
+title: 'Déclarer sa TVA : CA3 mensuelle ou CA12 annuelle, mode d''emploi'
+description: >-
+  Régime réel normal ou simplifié, formulaires CA3 et CA12, acomptes, dates
+  limites et erreurs fréquentes : comment déclarer sa TVA quand on est
+  indépendant ou TPE.
+date: '2026-09-09'
+category: guide
+sector: null
+keyword: déclaration tva ca3
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-09'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Déclarer sa TVA : CA3 mensuelle ou CA12 annuelle, mode d'emploi
+
+La **déclaration de TVA CA3** est l'obligation qui revient le plus souvent dans l'agenda fiscal d'un indépendant ou d'une TPE soumis au régime réel. Chaque mois ou chaque trimestre, il faut calculer la TVA collectée, déduire la TVA payée sur les achats, et reverser la différence au Trésor public dans les délais. À côté de la CA3, le formulaire CA12 concerne les entreprises au régime simplifié, avec une logique annuelle et des acomptes en cours d'année.
+
+Ce guide détaille les deux régimes, la mécanique de calcul, les dates limites 2026 et les erreurs les plus fréquentes lors du dépôt. Vous saurez exactement quel formulaire remplir, comment déclarer sa TVA sans se tromper, et quelles pénalités éviter en cas de retard.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## CA3 ou CA12 : à quel régime de TVA êtes-vous soumis ?
+
+Le formulaire à déposer dépend du régime de TVA de votre entreprise, lui-même déterminé par votre chiffre d'affaires et, parfois, par un choix volontaire.
+
+Le **régime réel normal** impose une déclaration CA3 mensuelle (ou trimestrielle si la TVA due annuellement est inférieure à 4 000 €). Il concerne les entreprises dont le chiffre d'affaires dépasse certains seuils, ou celles qui ont opté pour ce régime afin de récupérer la TVA plus rapidement, par exemple en cas d'investissements importants.
+
+Le **régime réel simplifié** impose une déclaration CA12 annuelle, accompagnée de deux acomptes semestriels en cours d'année. Il s'adresse aux entreprises dont le chiffre d'affaires est compris entre les seuils de la franchise en base et les seuils du réel normal.
+
+En dessous des seuils de la **franchise en base de TVA**, fixés en 2026 à 37 500 € pour les prestations de services (seuil majoré 41 250 €) et 85 000 € pour les activités de vente (seuil majoré 93 500 €), l'entreprise ne facture pas de TVA et n'a donc aucune déclaration CA3 ou CA12 à déposer. Ce sujet est détaillé dans notre article sur les [seuils de la franchise en base de TVA pour l'auto-entrepreneur](/blog/tva-auto-entrepreneur-seuils-franchise).
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des régimes de TVA en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>Franchise en base</TableHead>
+        <TableHead>Réel simplifié (CA12)</TableHead>
+        <TableHead>Réel normal (CA3)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Déclaration</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Une CA12 annuelle + 2 acomptes</TableCell>
+        <TableCell>Une CA3 mensuelle ou trimestrielle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA facturée</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Oui</TableCell>
+        <TableCell>Oui</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA déductible</TableCell>
+        <TableCell>Non récupérable</TableCell>
+        <TableCell>Récupérable en fin d'exercice</TableCell>
+        <TableCell>Récupérable chaque mois ou trimestre</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Adapté à</TableCell>
+        <TableCell>Micro-entreprises sous seuils</TableCell>
+        <TableCell>TPE avec activité stable</TableCell>
+        <TableCell>Entreprises avec forte TVA déductible</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Le formulaire CA3 : déclaration mensuelle ou trimestrielle
+
+La CA3, aussi appelée déclaration de chiffre d'affaires, se dépose exclusivement en ligne, via votre espace professionnel sur le site des impôts. Elle récapitule pour la période concernée :
+
+- le montant du chiffre d'affaires réalisé, ventilé par taux de TVA (20 %, 10 %, 5,5 %, 2,1 %) ;
+- la TVA collectée sur les ventes ou prestations ;
+- la TVA déductible sur les achats, immobilisations et frais généraux ;
+- le solde à payer, ou le crédit de TVA à reporter ou à rembourser.
+
+La date limite de dépôt et de paiement de la CA3 dépend du numéro de SIREN de l'entreprise : elle est fixée dans un calendrier échelonné, généralement entre le 15 et le 24 du mois suivant. Pour ne rien manquer, consultez notre [calendrier fiscal de l'indépendant en 2026](/blog/calendrier-fiscal-independant-2026), qui regroupe toutes les échéances de l'année.
+
+### Exemple de calcul pour une CA3 mensuelle
+
+Un consultant en régime réel normal facture en un mois 12 000 € HT de prestations soumises à 20 % de TVA, soit 2 400 € de TVA collectée. Sur la même période, il a réglé 3 000 € HT de charges déductibles (loyer de bureau, logiciels, sous-traitance) avec 600 € de TVA déductible. Le calcul est le suivant :
+
+- TVA collectée : 2 400 €
+- TVA déductible : 600 €
+- TVA à payer : 2 400 - 600 = **1 800 €**
+
+Ce montant doit être télédéclaré et télépayé au plus tard à la date limite prévue pour son SIREN.
+
+## Le formulaire CA12 : la déclaration annuelle du régime simplifié
+
+Les entreprises au régime réel simplifié déposent une seule déclaration CA12 par an, généralement au mois de mai pour un exercice clos au 31 décembre (ou dans les trois mois suivant la clôture pour un exercice décalé). Cette déclaration récapitule l'ensemble de la TVA due sur l'année entière.
+
+En cours d'année, deux **acomptes semestriels** sont versés spontanément :
+
+- un acompte en juillet, représentant 55 % de la TVA due l'année précédente ;
+- un acompte en décembre, représentant 40 % de la TVA due l'année précédente.
+
+Ces acomptes sont ensuite régularisés lors du dépôt de la CA12 : si le montant réellement dû est supérieur aux acomptes versés, un complément est payé ; s'il est inférieur, l'excédent est remboursé ou imputé sur l'acompte suivant.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Dispense d'acompte pour les petites TVA">
+    Si la TVA due l'année précédente est inférieure à 1 000 €, l'entreprise est dispensée du versement des acomptes et règle la totalité de sa TVA au moment du dépôt de la CA12.
+  </Callout>
+</div>
+
+### Exemple de calcul pour une CA12
+
+Une TPE au régime simplifié a payé 1 800 € de TVA l'année précédente. Elle verse donc 990 € d'acompte en juillet (55 %) et 720 € en décembre (40 %), soit 1 710 € d'acomptes sur l'année. Lors du dépôt de sa CA12, elle calcule que la TVA réellement due pour l'exercice s'élève à 2 100 €. Elle doit donc régler un complément de 2 100 - 1 710 = **390 €** au moment de la déclaration.
+
+## Le calendrier des échéances à retenir
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Échéances clés de la TVA en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Échéance</TableHead>
+        <TableHead>Régime concerné</TableHead>
+        <TableHead>Objet</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Entre le 15 et le 24 du mois M+1</TableCell>
+        <TableCell>Réel normal</TableCell>
+        <TableCell>Dépôt et paiement de la CA3 du mois M</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>15 juillet</TableCell>
+        <TableCell>Réel simplifié</TableCell>
+        <TableCell>Premier acompte semestriel (55 %)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>15 décembre</TableCell>
+        <TableCell>Réel simplifié</TableCell>
+        <TableCell>Second acompte semestriel (40 %)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Mai (exercice civil)</TableCell>
+        <TableCell>Réel simplifié</TableCell>
+        <TableCell>Dépôt de la CA12 et régularisation</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les mentions et pièces à préparer avant de déclarer
+
+Avant de vous connecter à votre espace professionnel pour remplir la CA3 ou la CA12, rassemblez les éléments suivants :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>total du chiffre d'affaires</strong> de la période, ventilé par taux de TVA</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La liste des <strong>factures d'achat</strong> avec TVA déductible, y compris les [factures d'acompte](/blog/quest-ce-que-acompte-facture) reçues</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le montant de la <strong>TVA sur immobilisations</strong> le cas échéant (matériel, véhicule professionnel)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un éventuel <strong>crédit de TVA</strong> reporté de la période précédente</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les coordonnées bancaires valides pour le <strong>prélèvement automatique</strong> du solde</span>
+  </div>
+</div>
+
+## Les erreurs les plus fréquentes lors de la déclaration
+
+Beaucoup d'indépendants commettent les mêmes erreurs, souvent par manque de rigueur dans le suivi comptable au fil du mois. Les plus courantes sont l'oubli de TVA déductible sur des frais professionnels payés en espèces ou par carte personnelle, l'application d'un mauvais taux de TVA sur certaines prestations, la confusion entre TVA sur les encaissements et TVA sur les débits, ou encore le dépôt hors délai qui déclenche automatiquement une majoration. Notre article dédié aux [erreurs de déclaration de TVA à éviter](/blog/erreurs-declaration-tva-eviter) détaille chacun de ces pièges avec des solutions concrètes.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Sanctions en cas de retard ou d'erreur">
+    Un dépôt tardif de la CA3 ou de la CA12 entraîne une majoration de 10 % du montant dû, portée à 40 % en cas de non-dépôt après mise en demeure. Des intérêts de retard s'ajoutent également, calculés au taux de 0,20 % par mois de retard. Mieux vaut déposer une déclaration à zéro dans les délais qu'une déclaration correcte en retard.
+  </Callout>
+</div>
+
+## TVA sur les débits ou sur les encaissements : une distinction à connaître
+
+Une question technique revient souvent au moment de préparer une CA3 : à quelle date la TVA devient-elle réellement exigible ? La réponse dépend de la nature de l'opération et du régime choisi. Pour les **livraisons de biens**, la TVA est exigible dès la facturation, on parle de TVA sur les débits. Pour les **prestations de services**, la règle par défaut est la TVA sur les encaissements : elle devient exigible au moment où le client paie effectivement la facture, et non à la date d'émission du document.
+
+Les entreprises de services peuvent toutefois opter pour le régime de la TVA sur les débits, ce qui aligne l'exigibilité sur la date de facturation plutôt que sur celle du paiement. Cette option, à formuler auprès du service des impôts, simplifie le suivi comptable pour les activités ayant peu de délais de paiement, mais peut poser un problème de trésorerie si les clients paient tardivement, puisque la TVA doit alors être reversée avant même d'avoir été encaissée.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Vérifiez le régime appliqué sur vos factures">
+    La mention du régime d'exigibilité (encaissements ou débits) doit figurer sur vos factures de prestations de services. Une erreur sur ce point peut entraîner un décalage entre la TVA déclarée par votre entreprise et celle déduite par votre client, ce qui attire l'attention lors d'un contrôle fiscal croisé.
+  </Callout>
+</div>
+
+### Exemple concret
+
+Une agence de communication facture une prestation de 4 000 € HT le 5 mars, avec une TVA de 800 €. Son client la règle le 28 avril. Si l'agence est au régime des encaissements, par défaut pour les prestations de services, elle déclare et reverse les 800 € de TVA au titre du mois d'avril, mois de l'encaissement réel, et non au titre de mars, mois de la facturation.
+
+## Bien tenir sa comptabilité pour ne jamais rater une échéance
+
+La difficulté principale n'est pas de remplir le formulaire lui-même, qui est assez simple une fois les chiffres réunis, mais de disposer à temps d'une comptabilité à jour. Cela suppose de suivre en continu les factures émises, les factures reçues et les mouvements bancaires, plutôt que de tout reconstituer la veille de l'échéance. Notre guide sur la [comptabilité simplifiée en TPE](/blog/comptabilite-simplifiee-tpe-obligations) explique comment organiser ce suivi au quotidien sans y passer des heures chaque semaine.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticiper la TVA dans votre trésorerie">
+    La TVA collectée n'appartient pas à votre entreprise : elle transite par votre compte avant d'être reversée à l'État. Mettez de côté, sur un compte dédié, le montant estimé de TVA due chaque mois pour éviter les mauvaises surprises au moment du paiement.
+  </Callout>
+</div>
+
+## Comment Newbi facilite le suivi de votre TVA
+
+Newbi centralise vos factures de vente et vos factures d'achat au même endroit, avec le détail de la TVA collectée et de la TVA déductible pour chaque document. Grâce à la connexion bancaire et au rapprochement automatique, chaque encaissement et chaque décaissement est associé à la pièce justificative correspondante, ce qui simplifie considérablement la préparation de votre CA3 ou de votre CA12. L'outil génère également un suivi de trésorerie qui vous aide à anticiper le montant de TVA à provisionner avant chaque échéance.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Découvrir le suivi de trésorerie Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La déclaration TVA CA3 s'adresse aux entreprises au régime réel normal et se dépose chaque mois ou chaque trimestre, tandis que la CA12 concerne le régime réel simplifié avec une déclaration annuelle et deux acomptes semestriels en juillet et décembre. Dans les deux cas, le principe reste identique : calculer la différence entre TVA collectée et TVA déductible, puis reverser le solde au Trésor public dans les délais fixés par votre numéro de SIREN. Une comptabilité tenue à jour tout au long de l'année, avec un suivi précis des factures et de la trésorerie, est la meilleure garantie pour déposer une déclaration exacte et éviter les majorations de retard.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la déclaration de TVA
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre la CA3 et la CA12 ?</AccordionTrigger>
+      <AccordionContent>
+        La CA3 est une déclaration mensuelle ou trimestrielle destinée aux entreprises au régime réel normal de TVA. La CA12 est une déclaration annuelle destinée aux entreprises au régime réel simplifié, complétée par deux acomptes semestriels versés en juillet et décembre. Le régime applicable dépend du chiffre d'affaires de l'entreprise ou d'une option volontaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Que se passe-t-il en cas de retard de déclaration de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Un dépôt tardif entraîne une majoration de 10 % du montant de TVA dû, qui peut atteindre 40 % après mise en demeure restée sans effet. Des intérêts de retard de 0,20 % par mois s'ajoutent également. Il est toujours préférable de déposer une déclaration dans les délais, même approximative, plutôt que de la retarder.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment savoir si je suis au régime réel normal ou simplifié ?</AccordionTrigger>
+      <AccordionContent>
+        Le régime dépend de votre chiffre d'affaires annuel et du montant de TVA due l'année précédente. Le régime réel simplifié s'applique généralement lorsque la TVA due sur l'année est inférieure à 15 000 €. Vous pouvez vérifier votre régime sur votre espace professionnel des impôts ou opter volontairement pour le réel normal si vous préférez récupérer la TVA plus rapidement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Puis-je payer ma TVA en plusieurs fois ?</AccordionTrigger>
+      <AccordionContent>
+        Le paiement de la TVA s'effectue par prélèvement automatique lors de la télédéclaration, en une seule fois pour le montant dû. En cas de difficulté de trésorerie, il est possible de demander un délai de paiement auprès du service des impôts des entreprises, mais cette démarche reste exceptionnelle et n'est pas automatique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que faire si je constate un crédit de TVA sur ma déclaration ?</AccordionTrigger>
+      <AccordionContent>
+        Lorsque la TVA déductible dépasse la TVA collectée sur la période, l'entreprise dispose d'un crédit de TVA. Ce crédit peut être reporté sur la déclaration suivante pour venir en déduction de la TVA à payer, ou faire l'objet d'une demande de remboursement auprès de l'administration fiscale si son montant est significatif.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

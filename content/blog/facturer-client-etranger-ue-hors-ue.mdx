@@ -1,0 +1,216 @@
+---
+title: "Facturer un client à l'étranger : règles TVA pour l'UE et hors UE"
+description: >-
+  Facturer un client européen ou hors UE : autoliquidation, numéro de TVA
+  intracommunautaire, mentions obligatoires, devise et DES. Guide pratique
+  avec exemples.
+date: '2026-09-15'
+category: guide
+sector: null
+keyword: facturer client étranger
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-15'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Facturer un client à l'étranger : règles TVA pour l'UE et hors UE
+
+**Facturer un client étranger** obéit à des règles de TVA différentes de celles d'une facture domestique classique. Selon que votre client se trouve dans l'Union européenne ou hors UE, qu'il s'agisse d'un professionnel ou d'un particulier, le régime applicable change complètement : autoliquidation, exonération, ou TVA française classique.
+
+Ce guide vous explique, avec des exemples chiffrés, comment déterminer le bon régime de TVA, quelles mentions ajouter sur votre facture et quelles déclarations complémentaires vous devez éventuellement remplir.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Facturer mes clients étrangers avec Newbi</Link>
+  </Button>
+</div>
+
+## Le principe général : où la TVA est-elle due
+
+En matière de TVA, la règle de base pour les prestations de services entre professionnels est que la taxe est due dans le pays où le client est établi, et non dans celui du prestataire. C'est ce qu'on appelle la règle du preneur (article 259-1 du CGI). Concrètement, si vous êtes établi en France et que vous facturez un client professionnel situé dans un autre pays, la TVA française ne s'applique généralement pas : c'est le client qui doit lui-même déclarer et payer la TVA de son propre pays, par le mécanisme de l'autoliquidation.
+
+Cette règle générale connaît des exceptions selon la nature de la prestation et selon que le client est un professionnel (B2B) ou un particulier (B2C). Les travaux sur un immeuble situé à l'étranger, par exemple, restent imposables dans le pays où se trouve le bien, quel que soit le statut du client. Il en va de même pour les prestations événementielles, imposables au lieu où se déroule l'événement, ou pour le transport de personnes, imposable en fonction du trajet parcouru. Il est donc essentiel de bien qualifier chaque situation avant d'émettre votre facture, en identifiant la nature exacte de la prestation avant d'appliquer une règle générale qui ne s'applique pas forcément à votre cas.
+
+## Facturer un client professionnel dans l'Union européenne
+
+Lorsque vous facturez un client professionnel assujetti à la TVA dans un autre État membre de l'Union européenne, vous appliquez le mécanisme de l'**autoliquidation** : votre facture ne comporte pas de TVA française, et c'est le client qui la déclare dans son propre pays.
+
+Pour appliquer ce régime en toute sécurité, vous devez :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier le [numéro de TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire) de votre client sur le système de vérification européen VIES</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Faire figurer votre propre numéro de TVA intracommunautaire et celui de votre client sur la facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ajouter la mention « Autoliquidation » ou « Exonération de TVA, article 283-2 du CGI » sur la facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Déclarer l'opération dans la Déclaration Européenne de Services (DES) mensuelle si vous vendez des prestations de services à des professionnels établis dans l'UE</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La DES est distincte de votre déclaration de TVA">
+    La Déclaration Européenne de Services doit être déposée en ligne, en principe avant le 10e jour ouvrable du mois suivant la prestation, dès que vous facturez un client professionnel assujetti dans un autre pays de l'UE. Elle est indépendante de votre [déclaration de TVA](/blog/declaration-tva-ca3-ca12-guide) (CA3 ou CA12) mais tout aussi obligatoire ; l'oublier fait partie des [erreurs de déclaration de TVA à éviter](/blog/erreurs-declaration-tva-eviter) les plus fréquentes chez les indépendants qui démarrent une activité à l'international.
+  </Callout>
+</div>
+
+### Exemple chiffré : prestation à un client belge
+
+Vous êtes développeur freelance établi en France et vous facturez 4 500 € HT de développement à une société établie en Belgique, assujettie à la TVA. Votre facture indique 4 500 €, sans aucune ligne de TVA, avec la mention « Autoliquidation - article 283-2 du CGI », votre numéro de TVA intracommunautaire et celui de votre client. C'est la société belge qui déclarera et paiera la TVA belge sur cette opération dans sa propre déclaration.
+
+## Facturer un client professionnel hors Union européenne
+
+Pour un client professionnel établi hors de l'Union européenne (Suisse, États-Unis, Royaume-Uni depuis le Brexit, etc.), la logique est proche : la prestation de service est en principe **hors du champ d'application de la TVA française**, car elle est réputée se dérouler dans le pays du client.
+
+Votre facture doit alors porter la mention « TVA non applicable, article 259-1 du CGI » (ou une formulation équivalente précisant l'absence de TVA française pour une opération hors champ). Il n'y a pas de DES à déposer pour les clients situés hors de l'Union européenne, mais vous devez conserver les preuves du statut professionnel et de la localisation de votre client, en cas de contrôle.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Vente de biens vers un pays hors UE : l'exportation">
+    Si vous vendez des marchandises physiques expédiées hors de l'Union européenne, il s'agit d'une exportation. Elle est exonérée de TVA à condition de disposer d'un justificatif douanier de sortie du territoire (déclaration en douane). Les règles diffèrent donc des prestations de services : conservez systématiquement vos documents d'expédition.
+  </Callout>
+</div>
+
+## Facturer un particulier à l'étranger : la règle B2C
+
+Facturer un particulier (client non assujetti à la TVA) suit une logique différente de celle du B2B. Pour les prestations de services immatérielles fournies à des particuliers, le principe général reste que la TVA du pays du prestataire s'applique, sauf exceptions (services électroniques, télécommunications, qui suivent le régime du guichet unique de TVA, l'OSS).
+
+Pour un particulier situé dans l'Union européenne, vous facturez donc en principe avec la TVA française, comme pour un client domestique. Pour un particulier situé hors UE, la prestation de service immatérielle est généralement hors du champ de la TVA française. Dans les deux cas, mieux vaut qualifier précisément la nature de votre prestation avant d'appliquer une exonération, car les règles B2C comportent plus d'exceptions que les règles B2B.
+
+## Tableau récapitulatif par situation
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Régime de TVA applicable selon le type de client et sa localisation (prestations de services)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Situation</TableHead>
+        <TableHead>Régime de TVA</TableHead>
+        <TableHead>Mention à porter</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Professionnel dans l'UE</TableCell>
+        <TableCell>Autoliquidation par le client</TableCell>
+        <TableCell>Autoliquidation, article 283-2 du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Professionnel hors UE</TableCell>
+        <TableCell>Hors champ de la TVA française</TableCell>
+        <TableCell>TVA non applicable, article 259-1 du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Particulier dans l'UE</TableCell>
+        <TableCell>TVA française applicable (sauf services électroniques)</TableCell>
+        <TableCell>TVA 20 % mentionnée normalement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Particulier hors UE</TableCell>
+        <TableCell>Généralement hors champ de la TVA française</TableCell>
+        <TableCell>TVA non applicable, article 259-1 du CGI</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les autres mentions à ne pas oublier
+
+Au-delà de la TVA, une facture adressée à l'étranger doit respecter les mêmes [mentions obligatoires](/blog/mentions-obligatoires-facture) qu'une facture domestique : numéro de facture, date, identité des parties, désignation de la prestation, conditions de paiement. Deux points méritent une attention particulière à l'international :
+
+- La **devise** : vous pouvez facturer en euros ou dans une autre devise si le contrat le prévoit, mais indiquez toujours clairement la devise utilisée pour éviter toute ambiguïté sur le montant réellement dû.
+- La **langue** : rien n'oblige à traduire la facture, mais une version bilingue ou en anglais facilite le règlement, notamment pour les clients hors zone francophone.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Vérifiez toujours le numéro de TVA avant d'exonérer une facture">
+    Ne facturez jamais sans TVA un client professionnel de l'Union européenne sans avoir vérifié la validité de son numéro de TVA intracommunautaire sur le service VIES de la Commission européenne. Un numéro invalide ou inexistant peut vous priver du bénéfice de l'exonération et vous rendre redevable de la TVA française sur l'opération.
+  </Callout>
+</div>
+
+## Facturer à l'international avec Newbi
+
+Newbi vous permet de créer des factures avec le numéro de TVA intracommunautaire de votre client, la mention d'autoliquidation appropriée et la devise de votre choix, tout en conservant la même rigueur sur les mentions obligatoires que pour vos factures domestiques.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Exemple complet : trois clients, trois régimes
+
+Une agence de conseil en marketing digital, établie en France, facture le même mois trois clients différents pour une prestation similaire de 3 000 € HT :
+
+- Un client professionnel en Allemagne : facture de 3 000 €, autoliquidation, mention de l'article 283-2 du CGI, numéros de TVA des deux parties, déclaration DES à déposer.
+- Un client professionnel au Canada : facture de 3 000 €, hors champ de la TVA française, mention de l'article 259-1 du CGI, pas de DES à déposer.
+- Un particulier en France : facture de 3 000 € HT + 600 € de TVA (20 %) = 3 600 € TTC, régime domestique classique.
+
+Ce cas illustre pourquoi la qualification précise de chaque client, professionnel ou particulier, UE ou hors UE, conditionne entièrement le régime de TVA applicable et les mentions à porter sur la facture. Ces trois factures doivent, comme toute facture, être conservées pendant 10 ans au titre du Code de commerce et pendant 6 ans au titre du livre des procédures fiscales, y compris les factures sans TVA ou en autoliquidation, qui peuvent faire l'objet d'un contrôle spécifique sur la justification du régime appliqué.
+
+## En résumé
+
+Facturer un client à l'étranger dépend de deux critères combinés : la localisation du client et son statut professionnel ou particulier. Pour un professionnel dans l'Union européenne, l'autoliquidation s'applique et une déclaration DES est requise. Pour un professionnel hors UE, la prestation est généralement hors du champ de la TVA française. Pour un particulier, la TVA française s'applique dans la plupart des cas au sein de l'UE, et la prestation reste souvent hors champ hors UE. Dans tous les cas, vérifiez le numéro de TVA intracommunautaire de vos clients professionnels européens et conservez les justificatifs de localisation pour vos clients hors UE.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation à l'international
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Dois-je facturer avec ou sans TVA un client professionnel européen ?</AccordionTrigger>
+      <AccordionContent>
+        Sans TVA, dans la grande majorité des cas, grâce au mécanisme de l'autoliquidation : c'est le client qui déclare et paie la TVA dans son propre pays. Votre facture doit alors mentionner « Autoliquidation » et faire figurer les numéros de TVA intracommunautaire des deux parties.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qu'est-ce que la DES et quand dois-je la déposer ?</AccordionTrigger>
+      <AccordionContent>
+        La Déclaration Européenne de Services est une déclaration mensuelle obligatoire dès que vous vendez des prestations de services à un client professionnel assujetti établi dans un autre pays de l'Union européenne. Elle se dépose en ligne, distinctement de votre déclaration de TVA habituelle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer un client situé aux États-Unis ou en Suisse ?</AccordionTrigger>
+      <AccordionContent>
+        Pour un client professionnel hors Union européenne, la prestation de service est en principe hors du champ de la TVA française. Votre facture ne comporte pas de TVA et porte une mention précisant l'absence d'application de la TVA française, comme la référence à l'article 259-1 du CGI.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment vérifier le numéro de TVA intracommunautaire d'un client européen ?</AccordionTrigger>
+      <AccordionContent>
+        Le système VIES, géré par la Commission européenne, permet de vérifier en ligne et gratuitement la validité d'un numéro de TVA intracommunautaire. C'est une vérification indispensable avant d'appliquer une exonération de TVA sur une facture destinée à un professionnel de l'UE.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Puis-je facturer un client étranger dans une autre devise que l'euro ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si le contrat le prévoit. Indiquez alors clairement la devise utilisée sur la facture pour éviter toute ambiguïté sur le montant dû. Les autres mentions obligatoires restent identiques, quelle que soit la devise choisie.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

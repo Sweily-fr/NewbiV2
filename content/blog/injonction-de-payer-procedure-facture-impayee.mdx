@@ -1,0 +1,314 @@
+---
+title: 'Injonction de payer : la procédure pas à pas pour une facture impayée'
+description: >-
+  Après la mise en demeure, l'injonction de payer permet d'obtenir un titre
+  exécutoire sans avocat. Conditions, formulaire, coût, délais et suites de la
+  procédure.
+date: '2026-10-20'
+category: guide
+sector: null
+keyword: injonction de payer
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-20'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Injonction de payer : la procédure pas à pas pour une facture impayée
+
+L'**injonction de payer** est une procédure judiciaire simplifiée qui permet à un créancier d'obtenir un titre exécutoire contre un débiteur qui ne règle pas une facture, sans passer par un procès classique ni obligatoirement recourir à un avocat. Lorsque la mise en demeure n'a produit aucun effet, cette voie de recours reste rapide, peu coûteuse et accessible directement en ligne ou auprès du tribunal compétent.
+
+Ce guide détaille les conditions à remplir, les étapes de la procédure, le coût réel de la démarche et ce qui se passe après l'ordonnance d'injonction de payer.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Quand recourir à l'injonction de payer
+
+L'injonction de payer intervient en dernier recours, après une phase amiable restée infructueuse. Avant d'engager cette procédure, vous devez avoir adressé au moins une [relance de facture impayée](/blog/relance-facture-impayee-modele), puis une [mise en demeure de payer](/blog/modele-mise-en-demeure-facture-impayee) restée sans réponse à l'expiration du délai fixé.
+
+Cette procédure s'adresse aux créances qui remplissent trois conditions cumulatives : la créance doit être **certaine** (son existence n'est pas contestable), **liquide** (son montant est déterminé) et **exigible** (son échéance est dépassée). Une facture impayée correspondant à une prestation réalisée et non contestée par le client remplit en général ces trois critères.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Pourquoi ne pas saisir directement le tribunal en procédure classique ?">
+    L'injonction de payer présente deux avantages majeurs par rapport à une assignation classique : elle est plus rapide, le juge statuant uniquement sur pièces sans audience contradictoire dans un premier temps, et elle est moins coûteuse, les frais se limitant le plus souvent aux frais de greffe et à la signification par huissier de justice.
+  </Callout>
+</div>
+
+## Les conditions et le tribunal compétent
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Tribunal compétent selon la nature du litige</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Nature de la créance</TableHead>
+        <TableHead>Juridiction compétente</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Créance entre deux commerçants ou sociétés commerciales</TableCell>
+        <TableCell>Président du tribunal de commerce</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Créance civile (particulier, profession libérale)</TableCell>
+        <TableCell>Juge du tribunal judiciaire ou juge des contentieux de la protection</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Créance mixte (professionnel contre particulier)</TableCell>
+        <TableCell>Tribunal judiciaire du lieu où demeure le débiteur</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le tribunal territorialement compétent est, en principe, celui du lieu où demeure le débiteur, c'est-à-dire son siège social pour une entreprise ou son domicile pour un particulier.
+
+## Les 6 étapes de la procédure
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>1. Réunir les justificatifs</strong> : facture impayée, devis ou bon de commande signé, preuve de la mise en demeure envoyée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>2. Remplir le formulaire Cerfa</strong> adapté (n° 12946*03 pour le tribunal de commerce, n° 12948*03 pour le tribunal judiciaire)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>3. Déposer la requête</strong> au greffe du tribunal compétent, par courrier, sur place ou en ligne selon la juridiction</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>4. Attendre l'ordonnance du juge</strong>, qui statue sur pièces sans convoquer les parties</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>5. Faire signifier l'ordonnance</strong> au débiteur par un commissaire de justice (ex-huissier), dans un délai de 6 mois</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>6. Obtenir le titre exécutoire</strong> si le débiteur ne fait pas opposition dans le mois suivant la signification</span>
+  </div>
+</div>
+
+## Le coût réel d'une injonction de payer
+
+Le coût de la procédure varie selon la juridiction et le montant de la créance.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un coût maîtrisé comparé à un procès classique">
+    Devant le tribunal de commerce, le dépôt de la requête entraîne des frais de greffe, généralement de l'ordre de 30 à 50 euros. Devant le tribunal judiciaire, la requête est gratuite. Dans les deux cas, la signification de l'ordonnance par un commissaire de justice représente le poste de dépense principal, entre 50 et 150 euros selon la complexité du dossier. Ces frais peuvent être mis à la charge du débiteur dans l'ordonnance.
+  </Callout>
+</div>
+
+### Cas pratique : une créance de 3 200 euros
+
+Vous êtes graphiste freelance et un client professionnel ne règle pas une facture de 3 200 € TTC, malgré une relance et une mise en demeure restées sans réponse. Vous déposez une requête en injonction de payer devant le tribunal de commerce compétent. Les frais de greffe s'élèvent à 35 €. Le juge rend une ordonnance faisant droit à votre demande. Vous faites signifier cette ordonnance par un commissaire de justice, pour un coût de 90 €. Le débiteur ne fait pas opposition dans le délai d'un mois : vous obtenez un titre exécutoire vous permettant de engager une procédure de recouvrement forcé, comme une saisie sur compte bancaire.
+
+Vous pouvez également ajouter à votre demande l'[indemnité forfaitaire de recouvrement de 40 euros](/blog/penalites-retard-indemnite-forfaitaire-40-euros), due de plein droit entre professionnels en cas de retard de paiement, ainsi que les pénalités de retard calculées depuis la date d'échéance de la facture.
+
+## Que se passe-t-il après l'ordonnance ?
+
+Trois scénarios sont possibles une fois l'ordonnance rendue et signifiée au débiteur.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les suites possibles de l'ordonnance d'injonction de payer</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Scénario</TableHead>
+        <TableHead>Conséquence</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Le débiteur paie</TableCell>
+        <TableCell>La procédure s'arrête, la créance est soldée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Le débiteur ne réagit pas dans le mois</TableCell>
+        <TableCell>Vous demandez au greffe l'apposition de la formule exécutoire : le titre devient exécutoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Le débiteur fait opposition</TableCell>
+        <TableCell>Une audience contradictoire classique est organisée devant le tribunal</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Si le débiteur fait opposition, la procédure devient un contentieux classique : les deux parties sont convoquées, échangent leurs arguments et pièces, et le juge tranche après débat contradictoire. Cette issue reste minoritaire lorsque la créance est bien documentée et incontestable.
+
+## L'opposition du débiteur : ce qu'il faut anticiper
+
+Un débiteur peut faire opposition sans avoir à justifier immédiatement d'un motif solide : il lui suffit de manifester son désaccord dans le délai d'un mois suivant la signification. C'est pourquoi la qualité de votre dossier initial reste déterminante : plus vos justificatifs sont clairs (facture, devis signé, bon de commande, preuve de livraison ou de réalisation de la prestation), plus vous limitez le risque qu'une opposition prospère lors de l'audience.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Anticiper la trésorerie pendant la procédure">
+    Une procédure d'injonction de payer, même rapide, prend généralement entre 2 et 4 mois du dépôt de la requête à l'obtention du titre exécutoire, davantage en cas d'opposition. Pendant ce délai, votre trésorerie reste amputée du montant impayé. Il est donc utile de suivre l'ensemble de vos créances en cours pour anticiper les tensions de trésorerie, comme détaillé dans notre guide pour [gérer la trésorerie de votre entreprise](/blog/comment-gerer-tresorerie-entreprise).
+  </Callout>
+</div>
+
+## Injonction de payer ou référé provision : quelle différence ?
+
+L'injonction de payer n'est pas la seule voie judiciaire rapide pour recouvrer une créance. Le référé provision constitue une alternative, particulièrement utile lorsque le débiteur a déjà manifesté une contestation, même partielle, ou lorsque vous souhaitez une décision plus rapidement grâce à une audience.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Injonction de payer et référé provision</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>Injonction de payer</TableHead>
+        <TableHead>Référé provision</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Audience</TableCell>
+        <TableCell>Aucune dans un premier temps, décision sur pièces</TableCell>
+        <TableCell>Audience contradictoire obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Condition</TableCell>
+        <TableCell>Créance certaine, liquide et exigible</TableCell>
+        <TableCell>Absence de contestation sérieuse</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Coût</TableCell>
+        <TableCell>Frais de greffe réduits, signification par commissaire de justice</TableCell>
+        <TableCell>Frais de procédure plus élevés, assignation nécessaire</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Dans la majorité des cas d'une facture professionnelle impayée sans contestation de la prestation, l'injonction de payer reste la procédure la plus simple et la plus économique à engager en premier lieu.
+
+## Les documents indispensables pour constituer votre dossier
+
+La solidité de votre requête dépend directement de la qualité des pièces justificatives fournies au juge. Rassemblez systématiquement les documents suivants avant de déposer votre requête.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>facture impayée</strong>, avec toutes ses mentions obligatoires</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>devis ou bon de commande signé</strong> par le client, preuve de l'accord initial</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>preuve de réalisation</strong> de la prestation ou de livraison du bien</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>copie de la mise en demeure</strong> envoyée en recommandé avec accusé de réception</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>décompte précis</strong> de la créance, incluant pénalités de retard et indemnité forfaitaire</span>
+  </div>
+</div>
+
+## Comment Newbi vous aide en amont de l'injonction de payer
+
+La meilleure façon d'éviter une procédure judiciaire reste de sécuriser votre facturation en amont et de réagir vite dès le premier retard. Newbi centralise le suivi de vos factures, avec un statut clair pour chaque document et des relances automatisées avant d'en arriver à une procédure contentieuse.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivi du statut de chaque facture</strong> : envoyée, vue, payée, en retard</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Historique complet</strong> des échanges et documents liés à une créance</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Export des justificatifs</strong> nécessaires pour constituer un dossier d'injonction de payer</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Suivre mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## Après le titre exécutoire : les moyens de recouvrement forcé
+
+Une fois le titre exécutoire obtenu, plusieurs voies de recouvrement forcé s'ouvrent à vous, toujours par l'intermédiaire d'un commissaire de justice. La saisie sur compte bancaire (saisie-attribution) permet de bloquer et de récupérer directement les sommes disponibles sur les comptes du débiteur. La saisie de rémunération, plus longue, s'applique lorsque le débiteur est un particulier salarié. Pour une entreprise, la saisie des parts sociales ou du fonds de commerce reste possible en dernier recours, pour les créances les plus importantes.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un titre exécutoire valable 10 ans">
+    Une fois obtenu, le titre exécutoire reste valable 10 ans. Si le débiteur ne dispose d'aucun actif saisissable au moment de la procédure, vous pouvez engager une mesure de recouvrement forcé plus tard, dès que sa situation financière le permet, sans avoir à recommencer toute la procédure judiciaire.
+  </Callout>
+</div>
+
+## En résumé
+
+L'injonction de payer est une procédure judiciaire simplifiée, accessible sans avocat, qui permet d'obtenir un titre exécutoire contre un débiteur défaillant après l'échec des relances amiables et de la mise en demeure. Elle suppose une créance certaine, liquide et exigible, s'engage par une requête au greffe du tribunal compétent, et débouche sur une ordonnance signifiée par un commissaire de justice. Faute d'opposition du débiteur dans le mois suivant, le créancier obtient un titre exécutoire lui permettant d'engager un recouvrement forcé. Un dossier bien documenté, avec factures et preuves de relance, reste la meilleure garantie du succès de la procédure.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'injonction de payer
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il un avocat pour déposer une injonction de payer ?</AccordionTrigger>
+      <AccordionContent>
+        Non, l'assistance d'un avocat n'est pas obligatoire pour déposer une requête en injonction de payer, que ce soit devant le tribunal de commerce ou le tribunal judiciaire. Vous pouvez remplir vous-même le formulaire Cerfa et joindre vos justificatifs.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel est le délai pour obtenir une ordonnance d'injonction de payer ?</AccordionTrigger>
+      <AccordionContent>
+        Le juge statue en général sous quelques semaines après le dépôt de la requête, puisqu'il examine le dossier uniquement sur pièces, sans audience. Comptez ensuite un délai supplémentaire pour la signification par un commissaire de justice et le délai d'opposition d'un mois laissé au débiteur.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Que faire si le débiteur fait opposition à l'injonction de payer ?</AccordionTrigger>
+      <AccordionContent>
+        En cas d'opposition, la procédure se transforme en un contentieux classique devant le tribunal : les deux parties sont convoquées à une audience contradictoire et présentent leurs arguments et pièces. Le juge tranche ensuite sur le fond du litige.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on demander des pénalités de retard dans une injonction de payer ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Vous pouvez inclure dans votre requête le montant principal de la facture, les pénalités de retard calculées depuis la date d'échéance, ainsi que l'indemnité forfaitaire de recouvrement de 40 euros due de plein droit entre professionnels.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>L'injonction de payer est-elle possible sans mise en demeure préalable ?</AccordionTrigger>
+      <AccordionContent>
+        La mise en demeure n'est pas une condition légale obligatoire pour déposer une requête, mais elle est vivement recommandée. Elle démontre au juge que vous avez tenté une résolution amiable et renforce la solidité de votre dossier.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,235 @@
+---
+title: 'Facturation électronique et clients particuliers : êtes-vous concerné ?'
+description: >-
+  Les ventes aux particuliers ne passent pas par la facture électronique mais
+  par l'e-reporting. Ce qui change pour les commerçants, artisans et
+  professions libérales.
+date: '2026-09-08'
+category: reglementaire
+sector: null
+keyword: facturation électronique b2c
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-08'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturation électronique et clients particuliers : êtes-vous concerné ?
+
+La **facturation électronique B2C** ne fonctionne pas comme la facturation électronique entre professionnels. Si vous vendez à des particuliers, en tant que commerçant, artisan ou profession libérale, vous n'êtes pas soumis à l'obligation d'émettre des factures électroniques structurées pour ces ventes. Un autre dispositif s'applique à la place : l'e-reporting. Ce guide clarifie précisément ce qui change pour vous, ce qui reste identique, et comment articuler vos deux obligations si votre clientèle est mixte, particuliers et professionnels.
+
+Vous y trouverez un tableau comparatif entre facture électronique et e-reporting, un calendrier des échéances, un exemple concret et une checklist pour vérifier votre niveau de préparation.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi les particuliers sont exclus de la facture électronique
+
+La réforme de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026) repose sur l'échange, entre deux entreprises assujetties à la TVA, de factures au format structuré (Factur-X, UBL ou CII), transmises via une plateforme de dématérialisation partenaire (PDP). Ce mécanisme suppose que les deux parties, émetteur et destinataire, disposent d'un numéro SIREN et d'un accès à une PDP.
+
+Or, un particulier consommateur ne dispose ni de numéro SIREN ni de plateforme de dématérialisation. Le législateur a donc exclu les transactions B2C du champ de la facture électronique obligatoire, tout en maintenant un objectif de transparence fiscale équivalent grâce à un dispositif complémentaire : l'e-reporting.
+
+<Callout type="info" title="Deux dispositifs, un même objectif">
+  La facture électronique s'applique aux ventes B2B entre entreprises françaises assujetties à la TVA. L'e-reporting s'applique aux ventes B2C (à des particuliers) ainsi qu'aux opérations avec des clients ou fournisseurs étrangers. Les deux poursuivent le même objectif : donner à l'administration fiscale une visibilité en temps quasi réel sur l'activité économique.
+</Callout>
+
+## Qu'est-ce que l'e-reporting concrètement ?
+
+L'**e-reporting** est l'obligation de transmettre périodiquement à l'administration fiscale des données agrégées relatives à vos transactions qui ne relèvent pas de la facturation électronique classique, principalement vos ventes à des particuliers. Contrairement à la facture électronique, il ne s'agit pas de transmettre chaque facture individuellement dans un format structuré, mais de communiquer des données de synthèse : montant total des ventes, montant de TVA collectée, ventilé par taux applicable.
+
+Pour un panorama complet du dispositif, consultez notre article dédié à l'[e-reporting : définition, obligations et calendrier](/blog/e-reporting-definition-obligations-calendrier).
+
+Concrètement, les données à transmettre incluent notamment :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant total</strong> des transactions B2C réalisées sur la période</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant de TVA collectée</strong>, ventilé par taux (20 %, 10 %, 5,5 %, 2,1 %)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>opérations avec des clients ou fournisseurs situés hors de France</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Certaines <strong>données de paiement</strong>, transmises à un rythme régulier selon votre régime de TVA</span>
+  </div>
+</div>
+
+## Tableau comparatif : facture électronique et e-reporting
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Facturation électronique B2B et e-reporting B2C : les différences</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critère</TableHead>
+        <TableHead>Facturation électronique</TableHead>
+        <TableHead>E-reporting</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Transactions concernées</TableCell>
+        <TableCell>Ventes B2B entre entreprises françaises</TableCell>
+        <TableCell>Ventes B2C et opérations internationales</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Contenu transmis</TableCell>
+        <TableCell>Chaque facture au format structuré</TableCell>
+        <TableCell>Données agrégées périodiques</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Support</TableCell>
+        <TableCell>Plateforme de dématérialisation partenaire (PDP)</TableCell>
+        <TableCell>PDP également, en mode synthèse</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Sanction en cas de manquement</TableCell>
+        <TableCell>15 € par facture, plafond 15 000 EUR/an</TableCell>
+        <TableCell>250 € par transmission, plafond 15 000 EUR/an</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Calendrier : les mêmes dates que la facture électronique
+
+L'e-reporting suit le même calendrier que la facturation électronique classique. Les entreprises doivent être en mesure de transmettre leurs données d'e-reporting selon les mêmes échéances que celles applicables à l'émission de factures électroniques :
+
+- **1er septembre 2026** : obligation pour les grandes entreprises et les ETI.
+- **1er septembre 2027** : obligation pour les PME, TPE et micro-entreprises.
+
+Comme pour la facture électronique, la réception n'est pas concernée par l'e-reporting puisqu'il s'agit d'une transmission d'informations à l'administration, et non d'un échange entre deux entreprises.
+
+## Qui doit se soucier de l'e-reporting ?
+
+Sont concernés tous les professionnels assujettis à la TVA dont une partie de l'activité s'adresse à des particuliers : commerçants de détail, restaurateurs, artisans intervenant chez des clients particuliers, professions libérales de santé ou de conseil, plateformes de e-commerce. Si vous êtes en franchise en base de TVA, vous n'êtes pas concerné, car vous ne collectez pas de TVA sur vos ventes.
+
+<Callout type="warning" title="Une clientèle mixte impose une double vigilance">
+  Si vous facturez à la fois des professionnels et des particuliers, par exemple un artisan qui travaille pour des entreprises et pour des propriétaires occupants, vous devez gérer les deux flux en parallèle : facturation électronique structurée pour vos clients professionnels, e-reporting pour vos ventes aux particuliers.
+</Callout>
+
+## Exemple concret : un commerce de détail multi-clientèle
+
+Prenons l'exemple d'une boutique de matériel électroménager qui réalise 70 % de son chiffre d'affaires auprès de particuliers et 30 % auprès de professionnels (hôtels, cabinets médicaux). Pour ses ventes aux particuliers, représentant par exemple 210 000 € TTC sur un trimestre, l'entreprise n'a pas à transmettre facture par facture, mais doit reporter à l'administration le montant global des ventes et de la TVA collectée correspondante, soit environ 35 000 € de TVA à 20 %.
+
+Pour les 90 000 € TTC restants réalisés auprès de professionnels, chaque facture doit en revanche être transmise individuellement au format structuré via une PDP, avec toutes les mentions obligatoires B2B, y compris le numéro SIREN du client professionnel.
+
+## Ce qui ne change pas pour vos clients particuliers
+
+Même si vos ventes B2C ne passent pas par la facturation électronique, vos obligations vis-à-vis de vos clients particuliers restent inchangées sur le fond. Vous devez continuer à respecter les règles classiques de [facturation d'un particulier](/blog/facturer-un-particulier-regles-mentions), notamment sur l'obligation de délivrer une note ou une facture au-delà de 25 € TTC pour une prestation de services, ou sur demande expresse du client. Le format du document, PDF classique ou papier, reste libre.
+
+## Faut-il quand même préparer un outil capable de gérer les deux flux ?
+
+Même si l'e-reporting ne vous impose pas de transmettre chaque vente individuellement, il reste préférable d'anticiper son fonctionnement plutôt que de découvrir ses contraintes à la dernière minute. Contrairement à la déclaration de TVA classique, qui reste mensuelle ou trimestrielle selon votre régime, l'e-reporting impose une fréquence de transmission propre, qui peut être plus rapprochée selon la taille de votre entreprise. Un professionnel qui suit déjà sa TVA de façon rigoureuse dans son outil de facturation n'aura pas de difficulté à en extraire les données agrégées nécessaires. À l'inverse, une entreprise qui gère encore ses ventes B2C sur un tableur risque de perdre un temps considérable à reconstituer ces chiffres a posteriori.
+
+Il est également utile de vérifier dès maintenant que votre logiciel de facturation ou votre plateforme de dématérialisation partenaire proposera bien un module d'e-reporting intégré. La plupart des éditeurs de logiciels de gestion, dont Newbi, travaillent à faire converger les deux obligations dans un seul flux de données, pour éviter aux professionnels d'avoir à ressaisir manuellement leurs chiffres de vente sur deux interfaces distinctes.
+
+## Les opérations internationales, autre volet méconnu de l'e-reporting
+
+L'e-reporting ne concerne pas uniquement vos ventes aux particuliers français. Il s'applique également aux opérations réalisées avec des clients ou fournisseurs situés hors de France, qu'il s'agisse d'exportations vers des pays tiers, de livraisons intracommunautaires vers d'autres États membres de l'Union européenne, ou de prestations de services à des clients étrangers non assujettis. Ces opérations échappent en effet au périmètre strict de la facturation électronique franco-française, tout en restant soumises à une obligation de transparence vis-à-vis de l'administration fiscale.
+
+Pour une entreprise qui exporte une partie de sa production ou qui travaille avec des clients basés dans un autre pays de l'Union européenne, cela signifie qu'il faut distinguer trois catégories de flux à traiter séparément : les ventes B2B domestiques soumises à la facture électronique classique, les ventes B2C domestiques soumises à l'e-reporting, et les opérations internationales également soumises à l'e-reporting mais selon des règles de TVA parfois différentes, notamment en matière de TVA intracommunautaire.
+
+## Comment Newbi gère la double obligation
+
+Newbi accompagne les professionnels dont la clientèle est mixte en distinguant automatiquement les factures émises à des clients professionnels, soumises au format structuré, et celles émises à des particuliers, qui restent au format classique tout en alimentant les données nécessaires à votre e-reporting. Vous conservez ainsi une vision unifiée de votre chiffre d'affaires sans avoir à gérer deux outils différents.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## Checklist : suis-je concerné par l'e-reporting ?
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je réalise des ventes à des <strong>particuliers</strong> et je suis assujetti à la TVA</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je réalise des opérations avec des <strong>clients ou fournisseurs situés à l'étranger</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je connais l'échéance qui s'applique à ma taille d'entreprise : 2026 ou 2027</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mon logiciel de facturation sait distinguer mes ventes B2B et B2C</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je sais que les sanctions de l'e-reporting atteignent 250 € par transmission manquante ou erronée</span>
+  </div>
+</div>
+
+## En résumé
+
+La facturation électronique B2C n'existe pas telle quelle : les ventes à des particuliers ne relèvent pas de l'échange de factures structurées via une PDP, mais du dispositif d'e-reporting, qui impose de transmettre périodiquement des données agrégées de chiffre d'affaires et de TVA collectée à l'administration fiscale. Ce dispositif suit le même calendrier que la facturation électronique, avec une échéance au 1er septembre 2026 pour les grandes entreprises et ETI, et au 1er septembre 2027 pour les PME, TPE et micro-entreprises. Si votre clientèle est mixte, vous devez gérer en parallèle vos obligations de facturation électronique pour vos clients professionnels et d'e-reporting pour vos clients particuliers, sans que la seconde n'allège la première.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation électronique B2C
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Dois-je envoyer une facture électronique structurée à mes clients particuliers ?</AccordionTrigger>
+      <AccordionContent>
+        Non, les ventes à des particuliers ne relèvent pas de l'obligation de facturation électronique. Vous continuez à leur remettre une facture ou une note au format classique, tout en transmettant à l'administration fiscale des données agrégées de vos ventes B2C via le dispositif d'e-reporting.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qu'est-ce que l'e-reporting exactement ?</AccordionTrigger>
+      <AccordionContent>
+        L'e-reporting est l'obligation de transmettre périodiquement à l'administration fiscale des données de synthèse sur vos transactions qui ne passent pas par la facture électronique, principalement vos ventes à des particuliers et vos opérations internationales, notamment le montant total des ventes et la TVA collectée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelles sont les sanctions en cas de manquement à l'e-reporting ?</AccordionTrigger>
+      <AccordionContent>
+        Le défaut de transmission ou une transmission erronée expose à une amende de 250 € par manquement, plafonnée à 15 000 € par exercice comptable. Ce plafond est distinct de celui applicable aux manquements sur la facturation électronique classique, fixé à 15 € par facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un auto-entrepreneur en franchise de TVA est-il concerné par l'e-reporting ?</AccordionTrigger>
+      <AccordionContent>
+        Non, tant qu'il reste sous les seuils de la franchise en base de TVA, un auto-entrepreneur ne collecte pas de TVA et n'est donc pas concerné par l'e-reporting. Dès qu'il devient redevable de la TVA, cette obligation s'applique à lui comme aux autres entreprises.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment gérer une clientèle mixte de professionnels et de particuliers ?</AccordionTrigger>
+      <AccordionContent>
+        Vous devez traiter vos deux flux de vente séparément : les factures adressées à des clients professionnels doivent transiter par une plateforme de dématérialisation partenaire au format structuré, tandis que vos ventes aux particuliers alimentent uniquement vos données d'e-reporting, transmises de façon agrégée et périodique.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

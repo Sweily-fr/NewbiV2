@@ -1,0 +1,237 @@
+---
+title: 'Facturer un particulier : règles, mentions et cas où la facture est obligatoire'
+description: >-
+  Quand une facture est-elle obligatoire pour un particulier ? Note, facture
+  ou ticket, mentions spécifiques B2C et conséquences de la réforme
+  e-invoicing.
+date: '2026-09-08'
+category: guide
+sector: null
+keyword: facturer un particulier
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-08'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturer un particulier : règles, mentions et cas où la facture est obligatoire
+
+**Facturer un particulier** obéit à des règles différentes de celles applicables entre professionnels. Contrairement à une idée répandue, la facture n'est pas systématiquement obligatoire pour une vente ou une prestation à un client consommateur : tout dépend du secteur d'activité et du montant en jeu. Ce guide fait le point sur les cas où la facture est réellement exigée, sur les mentions spécifiques à respecter en B2C, et sur les conséquences de la réforme de la facturation électronique pour vos clients particuliers.
+
+Vous y trouverez un tableau des seuils et obligations sectorielles, un exemple chiffré et une checklist pour sécuriser vos ventes aux particuliers, que vous soyez artisan, commerçant ou profession libérale.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## La facture est-elle toujours obligatoire pour un particulier ?
+
+Contrairement à une facture émise entre professionnels, qui est **systématiquement obligatoire** en vertu de l'article L441-9 du Code de commerce, la facturation à un particulier n'est obligatoire que dans certains cas précis. Le principe général veut que, pour une vente ou une prestation de services à un consommateur, une **note** suffise en dessous d'un certain seuil, sauf demande expresse du client.
+
+L'arrêté du 3 décembre 1987 fixe le seuil à partir duquel la note devient obligatoire pour les prestations de services à **25 € TTC**. En dessous de ce montant, aucun document n'est légalement requis, même si la plupart des professionnels en délivrent un par bonne pratique commerciale. Au-delà de 25 €, une note détaillée doit être remise au client, sans que celle-ci ait nécessairement la forme d'une facture complète.
+
+<Callout type="info" title="Note et facture ne sont pas identiques">
+  Une note peut se limiter à la date, la désignation de la prestation, le montant et l'identité du prestataire. Une facture, elle, doit comporter l'intégralité des mentions obligatoires prévues par le Code général des impôts, y compris lorsqu'elle est émise à destination d'un particulier.
+</Callout>
+
+## Les cas où la facture devient obligatoire pour un particulier
+
+Certaines situations imposent l'émission d'une véritable facture, quel que soit le montant :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le client particulier <strong>demande expressément une facture</strong>, ce qu'il est toujours en droit de faire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La prestation concerne des <strong>travaux du bâtiment</strong> ouvrant droit à une garantie décennale</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La vente porte sur un bien ou service <strong>éligible à un crédit d'impôt ou une aide publique</strong> (rénovation énergétique par exemple)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La vente est réalisée <strong>à distance</strong> (e-commerce), en application du Code de la consommation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le professionnel est lui-même <strong>assujetti à la TVA</strong> et doit justifier ses recettes en comptabilité</span>
+  </div>
+</div>
+
+En pratique, la grande majorité des artisans, commerçants et professions libérales choisissent d'émettre systématiquement une facture, y compris pour de petits montants, car ce document sert aussi de justificatif comptable pour leur propre activité et de preuve en cas de litige.
+
+## Les mentions obligatoires spécifiques à la facturation B2C
+
+Lorsque vous facturez un particulier, la plupart des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique s'appliquent : votre identité et vos coordonnées, votre numéro SIREN ou SIRET, le numéro et la date de la facture, le détail de la prestation, les montants HT et TTC. En revanche, certaines mentions propres au B2B disparaissent ou changent de nature :
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Différences de mentions entre une facture B2B et une facture B2C</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Mention</TableHead>
+        <TableHead>Facture B2B</TableHead>
+        <TableHead>Facture B2C (particulier)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">SIREN du client</TableCell>
+        <TableCell>Obligatoire depuis la réforme e-invoicing</TableCell>
+        <TableCell>Sans objet, le particulier n'en a pas</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA intracommunautaire du client</TableCell>
+        <TableCell>Obligatoire pour les échanges intra-UE</TableCell>
+        <TableCell>Sans objet</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Indemnité forfaitaire de recouvrement</TableCell>
+        <TableCell>40 € obligatoire en cas de retard</TableCell>
+        <TableCell>Non applicable aux particuliers</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mentions droit de la consommation</TableCell>
+        <TableCell>Non requises</TableCell>
+        <TableCell>Droit de rétractation, garanties légales</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Notez en particulier que l'indemnité forfaitaire de recouvrement de 40 €, obligatoire sur les factures entre professionnels en cas de retard de paiement, ne s'applique pas aux transactions avec un consommateur. C'est le droit de la consommation qui prend le relais pour encadrer les délais et pénalités éventuelles.
+
+## Devis et mentions de rétractation : ce qui change avec un particulier
+
+Lorsque la prestation dépasse un certain montant, en particulier dans le secteur du bâtiment ou des services à la personne, il est fortement recommandé, voire imposé selon les cas, d'établir un devis préalable détaillant les conditions de la prestation. Ce devis doit intégrer des mentions propres au droit de la consommation, notamment le droit de rétractation lorsque la vente est conclue à distance ou hors établissement. Pour en savoir plus, consultez notre article sur les [obligations légales du devis face au consommateur](/blog/obligations-legales-devis-consommateur).
+
+<Callout type="warning" title="Vente à distance : le droit de rétractation change la donne">
+  Pour toute vente ou prestation conclue à distance ou en dehors de votre local commercial (démarchage, foire, salon), le client particulier dispose d'un délai de rétractation de 14 jours. Ce délai doit être mentionné clairement dans vos documents commerciaux, faute de quoi il peut être prolongé jusqu'à 12 mois.
+</Callout>
+
+## Exemple chiffré : artisan facturant une prestation à un particulier
+
+Un plombier intervient chez un particulier pour une réparation de robinetterie. Le montant de l'intervention s'élève à 180 € TTC, TVA à 10 % incluse (taux réduit applicable aux travaux d'entretien dans les logements de plus de deux ans). Le client n'a rien demandé de particulier, mais le montant dépassant le seuil de 25 € fixé pour les prestations de services, le plombier doit lui remettre une note ou une facture détaillée.
+
+Le détail du calcul est le suivant :
+- Montant HT : 163,64 €
+- TVA à 10 % : 16,36 €
+- **Montant TTC : 180 €**
+
+Si ce même plombier réalise des travaux ouvrant droit à un crédit d'impôt pour la rénovation énergétique, une facture complète devient obligatoire, quel que soit le montant, afin que le client puisse justifier sa demande d'aide auprès de l'administration fiscale.
+
+## La facturation électronique concerne-t-elle vos clients particuliers ?
+
+La réforme de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026) ne s'applique qu'aux transactions entre professionnels assujettis à la TVA établis en France. Les ventes à des particuliers restent en dehors du champ de la facture électronique proprement dite : elles relèvent d'un dispositif distinct, l'**e-reporting**, qui impose aux entreprises de transmettre périodiquement à l'administration fiscale des données agrégées sur leurs ventes B2C, sans passer par l'échange facture par facture. Vous pouvez continuer à émettre une facture classique en PDF à vos clients particuliers, tout en respectant vos obligations d'e-reporting en parallèle.
+
+## Comment Newbi simplifie la facturation aux particuliers
+
+Newbi permet de générer facilement des factures conformes pour vos clients particuliers comme pour vos clients professionnels, en adaptant automatiquement les mentions affichées selon le type de client renseigné dans votre fiche. Vous évitez ainsi d'indiquer par erreur une mention réservée au B2B, comme l'indemnité de retard de 40 €, sur une facture adressée à un consommateur.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mes factures clients avec Newbi</Link>
+  </Button>
+</div>
+
+## Le cas particulier de la vente en ligne et du e-commerce
+
+Pour les activités de vente à distance, notamment le commerce en ligne, la facture n'est pas systématiquement obligatoire non plus, mais le Code de la consommation impose la remise d'une **confirmation de commande** détaillée reprenant les caractéristiques du bien ou du service, le prix total, les modalités de paiement et de livraison, ainsi que les informations relatives au droit de rétractation. Beaucoup de sites marchands choisissent néanmoins d'émettre systématiquement une facture pour chaque commande, car ce document rassure le client et facilite la gestion des retours ou des litiges.
+
+Si vous exercez une activité de vente en ligne à destination de particuliers, vous restez soumis à l'obligation d'e-reporting décrite plus haut, quel que soit le volume de vos ventes. En revanche, si une partie de votre clientèle est composée de professionnels, par exemple des revendeurs, ces ventes-là basculent bien dans le champ de la facturation électronique classique, avec toutes les mentions B2B associées.
+
+## Conserver une trace de chaque vente, même sans facture obligatoire
+
+Même lorsque la loi ne vous impose pas d'émettre une facture pour une vente à un particulier, conserver une trace de chaque transaction reste indispensable pour votre propre comptabilité. Un ticket de caisse, une note ou un relevé de vente journalier suffisent à documenter vos recettes auprès de l'administration fiscale en cas de contrôle, à condition que le total corresponde bien à votre chiffre d'affaires déclaré.
+
+Cette rigueur est d'autant plus importante pour les artisans et commerçants qui encaissent une part significative de leurs ventes en espèces. En l'absence de document justificatif, l'administration peut requalifier tout ou partie du chiffre d'affaires non justifié en recettes dissimulées, avec des conséquences fiscales et pénales potentiellement lourdes.
+
+## Checklist avant de facturer un particulier
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je vérifie si le montant dépasse le seuil de 25 € TTC déclenchant l'obligation de note</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je réponds systématiquement à toute demande de facture du client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je n'indique pas de mentions réservées au B2B, comme l'indemnité forfaitaire de 40 €</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je mentionne le droit de rétractation si la vente est conclue à distance ou hors établissement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>J'établis une facture complète, sans condition de montant, pour les travaux ouvrant droit à un crédit d'impôt</span>
+  </div>
+</div>
+
+## En résumé
+
+Facturer un particulier n'obéit pas aux mêmes règles que facturer un professionnel : la facture n'est obligatoire qu'à partir de 25 € TTC pour les prestations de services, sur demande du client, ou dans des cas spécifiques comme les travaux ouvrant droit à un crédit d'impôt. Les mentions à faire figurer restent proches de celles d'une facture classique, à l'exception des éléments propres au B2B comme le SIREN du client ou l'indemnité de recouvrement de 40 €. La réforme de la facturation électronique ne s'applique pas à ces ventes, qui relèvent du dispositif d'e-reporting. Adapter vos documents au profil de chaque client, particulier ou professionnel, vous garantit une facturation conforme et évite les malentendus commerciaux.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation à un particulier
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un particulier peut-il exiger une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, tout client particulier peut demander une facture à un professionnel, qui est alors tenu de la lui délivrer, quel que soit le montant de la transaction. En dehors de cette demande, une simple note suffit en principe en dessous de 25 € TTC pour les prestations de services.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre une note et une facture ?</AccordionTrigger>
+      <AccordionContent>
+        La note est un document simplifié, sans toutes les mentions obligatoires d'une facture, qui suffit en dessous d'un certain seuil pour les ventes à des particuliers. La facture, elle, doit comporter l'ensemble des mentions prévues par le Code général des impôts, y compris lorsqu'elle est émise à destination d'un consommateur.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Dois-je indiquer le SIREN de mon client particulier sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Non, un particulier ne dispose pas de numéro SIREN. Cette mention, devenue obligatoire dans le cadre de la réforme de la facturation électronique, ne concerne que les factures adressées à des clients professionnels assujettis à la TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>La facturation électronique s'applique-t-elle aux ventes aux particuliers ?</AccordionTrigger>
+      <AccordionContent>
+        Non, la réforme de la facturation électronique concerne uniquement les transactions entre professionnels assujettis à la TVA. Les ventes à des particuliers relèvent d'un dispositif distinct appelé e-reporting, qui impose la transmission périodique de données agrégées à l'administration fiscale, sans échange de facture structurée facture par facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quelles mentions ajouter pour une vente à distance à un particulier ?</AccordionTrigger>
+      <AccordionContent>
+        Pour une vente conclue à distance ou hors établissement, vous devez informer le client de son droit de rétractation de 14 jours, ainsi que des garanties légales de conformité et des vices cachés. L'absence de cette information peut prolonger le délai de rétractation jusqu'à 12 mois.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,273 @@
+---
+title: 'BFR (besoin en fonds de roulement) : définition, calcul et leviers pour le réduire'
+description: >-
+  Le BFR expliqué simplement : formule de calcul, exemple chiffré pour une
+  TPE et 6 leviers concrets pour le réduire (délais clients, stocks,
+  fournisseurs).
+date: '2026-09-17'
+category: glossaire
+sector: null
+keyword: bfr calcul
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-17'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# BFR (besoin en fonds de roulement) : définition, calcul et leviers pour le réduire
+
+Le **calcul du BFR** est l'un des exercices les plus utiles pour un dirigeant de TPE, car il révèle un besoin de trésorerie que le résultat comptable ne montre pas toujours. Une entreprise peut être rentable sur le papier et pourtant manquer de liquidités si son besoin en fonds de roulement n'est pas maîtrisé. Comprendre cette notion permet d'anticiper les tensions de trésorerie avant qu'elles ne deviennent critiques.
+
+Cet article vous donne la définition précise du BFR, la formule de calcul avec un exemple chiffré pour une TPE, et six leviers concrets pour le réduire durablement : délais clients, gestion des stocks et négociation fournisseurs.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que le besoin en fonds de roulement ?
+
+Le besoin en fonds de roulement représente le montant que votre entreprise doit financer entre le moment où elle engage une dépense (achat de matières premières, paiement d'un sous-traitant) et le moment où elle encaisse le paiement de ses clients. Concrètement, il s'agit de l'argent immobilisé dans le cycle d'exploitation, avant même que la vente ne se traduise par une rentrée de trésorerie.
+
+Ce décalage existe dans presque toutes les activités. Un artisan achète des matériaux, réalise les travaux, puis attend le règlement de sa facture, parfois 30 ou 45 jours après émission. Pendant tout ce délai, il a dû avancer les fonds nécessaires à la production. Ce montant à avancer, c'est le BFR.
+
+Un BFR élevé n'est pas nécessairement un problème s'il est financé correctement, par de la trésorerie disponible ou une ligne de crédit adaptée. En revanche, un BFR mal anticipé est l'une des principales causes de difficultés de trésorerie, y compris pour des entreprises en croissance et rentables.
+
+## La formule de calcul du BFR
+
+Le calcul du BFR repose sur trois grandes masses du bilan : les stocks, les créances clients et les dettes fournisseurs.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Formule de calcul du besoin en fonds de roulement</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Composante</TableHead>
+        <TableHead>Description</TableHead>
+        <TableHead>Effet sur le BFR</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Stocks</TableCell>
+        <TableCell>Matières premières, produits finis ou en-cours non encore vendus</TableCell>
+        <TableCell>Augmente le BFR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Créances clients</TableCell>
+        <TableCell>Factures émises mais non encore encaissées</TableCell>
+        <TableCell>Augmente le BFR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Dettes fournisseurs</TableCell>
+        <TableCell>Achats reçus mais non encore payés</TableCell>
+        <TableCell>Diminue le BFR</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+La formule s'écrit ainsi : **BFR = Stocks + Créances clients - Dettes fournisseurs**. Plus vos clients paient tard et plus vos stocks sont importants, plus votre BFR augmente. À l'inverse, plus vous négociez des délais de paiement longs auprès de vos fournisseurs, plus votre BFR diminue, car ce sont eux qui financent temporairement une partie de votre cycle d'exploitation.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="BFR positif ou négatif ?">
+    Un BFR positif signifie que votre entreprise doit financer son cycle d'exploitation sur sa trésorerie ou par un financement externe. Un BFR négatif, fréquent dans la distribution ou la restauration où les clients paient comptant alors que les fournisseurs sont payés à 30 ou 60 jours, signifie au contraire que votre activité génère de la trésorerie disponible.
+  </Callout>
+</div>
+
+## Exemple chiffré pour une TPE
+
+Prenons le cas d'une TPE de menuiserie qui réalise 240 000 € de chiffre d'affaires annuel HT.
+
+- **Stocks moyens** de bois et de quincaillerie : 18 000 €
+- **Créances clients** en cours (factures émises, délai moyen de 35 jours) : 23 000 €
+- **Dettes fournisseurs** en cours (achats non encore réglés, délai moyen de 25 jours) : 12 000 €
+
+Le calcul donne : BFR = 18 000 + 23 000 - 12 000 = **29 000 €**.
+
+Cette entreprise doit donc disposer en permanence de 29 000 € de trésorerie pour financer son cycle d'exploitation, indépendamment de sa rentabilité. Si sa trésorerie disponible est inférieure à ce montant, elle devra recourir à un découvert, une ligne de crédit court terme ou un affacturage pour combler l'écart, même si son activité est bénéficiaire.
+
+## Pourquoi le BFR peut mettre une entreprise rentable en difficulté
+
+C'est l'un des pièges les plus fréquents chez les dirigeants de TPE : confondre rentabilité et trésorerie disponible. Une entreprise peut afficher un résultat net positif tout en étant à court de liquidités si son BFR augmente plus vite que sa capacité d'autofinancement, notamment en phase de croissance rapide, quand les ventes progressent mais que les délais de paiement clients restent longs.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Croissance et BFR vont souvent de pair">
+    Plus votre chiffre d'affaires augmente, plus votre BFR augmente en valeur absolue, à structure de délais inchangée. Anticipez ce besoin de financement supplémentaire avant qu'il ne devienne une urgence de trésorerie.
+  </Callout>
+</div>
+
+Pour éviter cette situation, un suivi régulier s'impose. Consultez notre guide pour [gérer la trésorerie de votre entreprise](/blog/comment-gerer-tresorerie-entreprise) au quotidien et anticiper les besoins de financement liés au BFR.
+
+## Six leviers concrets pour réduire son BFR
+
+Réduire son BFR ne signifie pas réduire son activité, mais optimiser le financement de son cycle d'exploitation. Voici les leviers les plus efficaces.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Réduire les délais de paiement clients</strong> en facturant plus rapidement après livraison et en relançant systématiquement les factures échues</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Demander des acomptes</strong> à la commande pour financer une partie du cycle avant même de livrer</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Optimiser la gestion des stocks</strong> en évitant le surstockage et en ajustant les commandes à la demande réelle</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Négocier des délais fournisseurs plus longs</strong>, dans le respect des plafonds légaux applicables</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Mettre en place des factures récurrentes</strong> pour les prestations régulières, afin de lisser les encaissements</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivre un plan de trésorerie prévisionnel</strong> pour anticiper les pics de besoin plutôt que de les subir</span>
+  </div>
+</div>
+
+### Attention aux délais de paiement légaux
+
+En France, les délais de paiement entre professionnels sont encadrés par l'article L441-10 du Code de commerce. Sauf accord contraire, le délai légal est de 30 jours après réception de la marchandise ou exécution de la prestation. Les parties peuvent convenir d'un délai différent, mais celui-ci ne peut pas dépasser 60 jours calendaires à compter de la date d'émission de la facture, ou 45 jours fin de mois. Ces plafonds jouent directement sur votre BFR : plus vous obtenez de délai auprès de vos fournisseurs dans ces limites, moins votre trésorerie est mise à contribution. Pour aller plus loin sur ce sujet, consultez nos [conseils pour réduire les délais de paiement](/blog/conseils-reduire-delais-paiement).
+
+## Comment Newbi aide à piloter le BFR
+
+Le suivi du BFR suppose de connaître en permanence l'état réel de vos créances clients, de vos dettes fournisseurs et de votre trésorerie disponible. C'est précisément ce que centralise Newbi, en connectant votre compte bancaire pour un rapprochement automatique des encaissements et des paiements.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un pilotage en temps réel plutôt qu'un calcul trimestriel">
+    Avec un tableau de bord de trésorerie à jour, vous n'avez plus besoin d'attendre la clôture comptable pour savoir où en est votre BFR. Vous visualisez vos factures en attente de paiement, vos échéances fournisseurs et votre solde de trésorerie au même endroit.
+  </Callout>
+</div>
+
+Newbi permet notamment de suivre les factures impayées en un coup d'œil, de relancer facilement les clients en retard, de gérer les achats et les justificatifs par OCR, et de disposer d'une vision de trésorerie actualisée grâce à la connexion bancaire. Cette visibilité est un préalable indispensable pour agir sur les leviers de réduction du BFR présentés plus haut.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Suivre ma trésorerie avec Newbi</Link>
+  </Button>
+</div>
+
+## BFR, fonds de roulement et trésorerie nette : ne pas confondre
+
+Le BFR est souvent confondu avec deux autres notions proches. Le fonds de roulement (FR) représente les ressources stables de l'entreprise (capitaux propres, emprunts long terme) diminuées de ses immobilisations. La trésorerie nette, elle, résulte de la différence entre le fonds de roulement et le BFR : Trésorerie nette = FR - BFR.
+
+Si le fonds de roulement est supérieur au BFR, l'entreprise dégage une trésorerie positive. Si le BFR dépasse le fonds de roulement, l'entreprise doit recourir à des financements court terme (découvert, affacturage, ligne de crédit) pour combler l'écart. C'est cette articulation entre les trois notions qui permet de comprendre pourquoi une entreprise rentable peut malgré tout manquer de liquidités. Un bon point de départ pour objectiver la situation reste l'analyse du [bilan comptable](/blog/quest-ce-que-bilan-comptable), qui regroupe les données nécessaires à ce calcul.
+
+## Le BFR varie fortement selon le secteur d'activité
+
+Le niveau de BFR n'a pas la même signification selon le secteur dans lequel vous exercez. Certaines activités génèrent structurellement un BFR élevé, d'autres un BFR faible, voire négatif. Comprendre où se situe votre secteur permet de relativiser vos propres chiffres plutôt que de les comparer à une norme universelle qui n'existe pas.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Niveau de BFR typique selon le secteur d'activité</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Secteur</TableHead>
+        <TableHead>Niveau de BFR typique</TableHead>
+        <TableHead>Raison principale</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">BTP et artisanat</TableCell>
+        <TableCell>Élevé</TableCell>
+        <TableCell>Achats de matériaux avancés, délais de paiement clients longs, situations de travaux</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conseil et prestations intellectuelles</TableCell>
+        <TableCell>Modéré</TableCell>
+        <TableCell>Peu de stocks, mais délais de paiement clients parfois longs (30 à 60 jours)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Commerce de détail</TableCell>
+        <TableCell>Faible ou négatif</TableCell>
+        <TableCell>Clients qui paient comptant, fournisseurs réglés à 30 ou 60 jours</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">E-commerce</TableCell>
+        <TableCell>Variable</TableCell>
+        <TableCell>Encaissement rapide des ventes mais stocks parfois importants</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Un artisan du BTP doit souvent avancer l'achat de matériaux plusieurs semaines avant d'être payé par son client, surtout lorsque le chantier donne lieu à des situations de travaux étalées dans le temps. Un consultant indépendant, à l'inverse, n'a généralement pas de stock à financer, mais peut subir des délais de paiement clients tout aussi pénalisants. Un commerçant qui vend directement aux particuliers encaisse en revanche immédiatement, ce qui limite fortement, voire annule, son besoin en fonds de roulement.
+
+## Exemple chiffré : un artisan du BTP face à une situation de travaux
+
+Prenons un second exemple, plus tendu, pour illustrer l'impact du BFR sur un chantier long. Un artisan électricien intervient sur un chantier de rénovation d'un montant total de 45 000 € HT, réparti en trois situations de travaux facturées à 15 000 € HT chacune, avec un délai de paiement contractuel de 45 jours fin de mois.
+
+Pour démarrer le chantier, il doit avancer environ 9 000 € de matériel et de sous-traitance avant même d'émettre sa première facture de situation. Une fois cette première facture émise, il doit encore attendre jusqu'à 75 jours avant l'encaissement effectif, en cumulant le délai de facturation en fin de mois et le délai de paiement de 45 jours. Sur cette période, l'artisan finance donc à la fois ses achats initiaux et sa créance client, ce qui peut représenter un BFR ponctuel proche de 20 000 € sur un chantier de cette taille, avant que les situations suivantes ne viennent progressivement compenser cette avance.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Les situations de travaux ne suppriment pas le BFR, elles l'étalent">
+    Facturer par situations de travaux permet d'encaisser progressivement plutôt qu'en une seule fois à la fin du chantier, mais cela ne dispense pas d'anticiper le financement du tout premier décaissement, souvent le plus difficile à couvrir en trésorerie.
+  </Callout>
+</div>
+
+## En résumé
+
+Le besoin en fonds de roulement mesure le montant que votre entreprise doit financer entre ses dépenses engagées et l'encaissement de ses ventes. Il se calcule en additionnant les stocks et les créances clients, puis en soustrayant les dettes fournisseurs. Un BFR mal maîtrisé peut mettre en difficulté une entreprise pourtant rentable, notamment en période de croissance. Les leviers pour le réduire reposent sur la réduction des délais clients, l'optimisation des stocks, la négociation des délais fournisseurs dans le respect du cadre légal, et un suivi de trésorerie régulier, idéalement outillé pour anticiper plutôt que subir.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le BFR
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment calculer le BFR d'une entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Le BFR se calcule en additionnant les stocks et les créances clients, puis en soustrayant les dettes fournisseurs : BFR = Stocks + Créances clients - Dettes fournisseurs. Ces trois montants s'observent au bilan ou dans votre comptabilité de gestion à une date donnée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qu'est-ce qu'un BFR négatif ?</AccordionTrigger>
+      <AccordionContent>
+        Un BFR négatif signifie que les dettes fournisseurs dépassent la somme des stocks et des créances clients. C'est fréquent dans les activités où les clients paient comptant ou à l'avance, comme le commerce de détail ou la restauration. Dans ce cas, l'activité génère de la trésorerie plutôt que d'en consommer.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle est la différence entre BFR et fonds de roulement ?</AccordionTrigger>
+      <AccordionContent>
+        Le fonds de roulement représente les ressources stables de l'entreprise diminuées de ses immobilisations. Le BFR mesure le besoin de financement lié au cycle d'exploitation. La différence entre les deux donne la trésorerie nette réellement disponible.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment réduire rapidement son BFR ?</AccordionTrigger>
+      <AccordionContent>
+        Les actions les plus rapides consistent à demander des acomptes à la commande, relancer systématiquement les factures impayées et facturer dès la fin de la prestation plutôt que d'attendre. À moyen terme, la négociation des délais fournisseurs et l'optimisation des stocks produisent aussi des effets significatifs.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Pourquoi une entreprise rentable peut-elle manquer de trésorerie ?</AccordionTrigger>
+      <AccordionContent>
+        Parce que le résultat comptable ne tient pas compte du décalage entre les dépenses engagées et les encaissements réels. Si le BFR augmente plus vite que la trésorerie disponible, notamment en période de forte croissance, l'entreprise peut se retrouver en tension malgré une activité bénéficiaire.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,245 @@
+---
+title: "Facture d'ostéopathe : note d'honoraires, TVA et mentions obligatoires"
+description: >-
+  Comment facturer en ostéopathie : exonération de TVA, note d'honoraires
+  pour les mutuelles, mentions obligatoires et gestion des rendez-vous non
+  honorés.
+date: '2026-09-16'
+category: guide
+sector: Professions médicales
+keyword: facture ostéopathe
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-16'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">Professions médicales</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture d'ostéopathe : note d'honoraires, TVA et mentions obligatoires
+
+La **facture d'ostéopathe**, appelée le plus souvent note d'honoraires, obéit à des règles spécifiques : exonération de TVA sous conditions, mentions différentes de celles d'une facture commerciale classique, et documents à fournir aux patients pour leurs remboursements de mutuelle. Beaucoup d'ostéopathes libéraux improvisent leur note d'honoraires sans connaître précisément ce qui est exigé.
+
+Ce guide détaille les règles de TVA applicables à l'ostéopathie, le contenu exact d'une note d'honoraires conforme, la gestion des rendez-vous non honorés et les bonnes pratiques pour un cabinet bien organisé.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes notes d'honoraires avec Newbi</Link>
+  </Button>
+</div>
+
+## L'ostéopathie et la TVA : une exonération sous conditions
+
+Contrairement à une idée reçue, l'exonération de TVA des ostéopathes n'est pas automatique du seul fait de leur profession. Elle dépend de la nature de l'acte réalisé et du statut du praticien.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le principe applicable en 2026">
+    Les soins dispensés par un ostéopathe titulaire du titre d'ostéopathe, dans le cadre de son activité de soins à la personne, bénéficient de l'exonération de TVA prévue à l'article 261-4-1° du Code général des impôts, applicable aux professions médicales et paramédicales réglementées, dès lors que l'acte a un but thérapeutique.
+  </Callout>
+</div>
+
+En pratique, la quasi-totalité des consultations d'ostéopathie relève de cette exonération. Elle s'applique que l'ostéopathe soit installé en libéral pur ou qu'il exerce sous le statut de la micro-entreprise, à condition d'être titulaire du titre professionnel d'ostéopathe. Les ostéopathes qui débutent une activité restent par ailleurs, dans la grande majorité des cas, également sous les seuils de la [franchise en base de TVA](/blog/tva-auto-entrepreneur-seuils-franchise) applicables aux prestations de services, ce qui les dispense doublement de facturer la TVA.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Les prestations sans but thérapeutique restent taxables">
+    Si un ostéopathe propose des prestations sans finalité thérapeutique démontrée (par exemple certaines prestations de confort ou de bien-être présentées comme telles), l'exonération peut être remise en cause pour ces actes précis. La grande majorité des consultations d'ostéopathie courantes reste néanmoins couverte par l'exonération.
+  </Callout>
+</div>
+
+## Note d'honoraires ou facture : quelle différence
+
+Dans le langage courant, les professionnels de santé libéraux parlent de « note d'honoraires » plutôt que de « facture ». Juridiquement, il s'agit pourtant du même type de document : un écrit qui atteste du montant payé par le patient en contrepartie d'un acte de soins. Le terme « note d'honoraires » est simplement l'usage consacré dans les professions médicales et paramédicales.
+
+Ce document reste soumis, dans sa structure, aux mêmes principes que les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique, mais son contenu doit être adapté au secteur de la santé.
+
+## Les mentions obligatoires d'une note d'honoraires d'ostéopathe
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identité du praticien : nom, adresse du cabinet, numéro SIRET et numéro ADELI ou RPPS le cas échéant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identité du patient : nom et prénom</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Date de la consultation ou de l'acte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Nature de l'acte réalisé (consultation d'ostéopathie)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Montant réglé par le patient</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mode de règlement (espèces, carte bancaire, virement, chèque)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mention d'exonération de TVA, article 261-4-1° du CGI, lorsque l'acte en bénéficie</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Numéro de la note d'honoraires, suivant une numérotation continue et séquentielle</span>
+  </div>
+</div>
+
+Le numéro SIRET reste obligatoire même pour une activité médicale ou paramédicale libérale : aucune profession n'est dispensée de cette mention, et il n'est jamais possible d'exercer une activité facturable [sans numéro SIRET](/blog/peut-on-facturer-sans-siret).
+
+## La note d'honoraires et le remboursement par les mutuelles
+
+De nombreuses mutuelles remboursent tout ou partie des séances d'ostéopathie, dans la limite d'un forfait annuel défini par le contrat du patient. Pour obtenir ce remboursement, le patient a besoin d'une note d'honoraires suffisamment précise, mentionnant clairement la nature de l'acte, la date et le montant réglé.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Pensez à la remise systématique du document">
+    Beaucoup de patients ne demandent leur note d'honoraires qu'après coup, une fois qu'ils réalisent qu'ils peuvent être remboursés par leur mutuelle. Remettre systématiquement une note d'honoraires à l'issue de chaque séance, même sans demande explicite, évite les reconstitutions a posteriori et fluidifie le suivi administratif du cabinet.
+  </Callout>
+</div>
+
+### Exemple de note d'honoraires
+
+Un ostéopathe reçoit un patient pour une séance de suivi lombaire, facturée 60 €, réglée par carte bancaire le jour même. Sa note d'honoraires indique :
+
+- Consultation d'ostéopathie du 14 septembre 2026
+- Montant réglé : 60 €
+- Mode de règlement : carte bancaire
+- Mention : « Exonération de TVA, article 261-4-1° du CGI »
+- Numéro de note d'honoraires : NH-2026-0342
+
+## Tableau : TVA applicable selon la nature de l'acte
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Régime de TVA selon la nature de la prestation d'ostéopathie</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Type de prestation</TableHead>
+        <TableHead>Régime de TVA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Consultation d'ostéopathie à but thérapeutique</TableCell>
+        <TableCell>Exonérée (article 261-4-1° du CGI)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Consultation de suivi ou de prévention en lien avec un trouble identifié</TableCell>
+        <TableCell>Exonérée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prestation présentée uniquement comme du bien-être, sans finalité thérapeutique</TableCell>
+        <TableCell>Potentiellement taxable, à analyser au cas par cas</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Formation ou vente de produits annexes (le cas échéant)</TableCell>
+        <TableCell>Taxable selon les règles de droit commun</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les rendez-vous non honorés : peut-on facturer une absence
+
+C'est une question fréquente chez les ostéopathes libéraux : un patient qui ne se présente pas à son rendez-vous, sans prévenir suffisamment à l'avance, peut-il être facturé ? La réponse dépend de ce qui a été annoncé au préalable.
+
+En l'absence d'engagement contractuel explicite (affichage en cabinet, mention lors de la prise de rendez-vous, conditions générales communiquées au patient), il n'est pas possible d'exiger un paiement pour une séance non honorée : aucun acte n'a été réalisé, et la relation entre l'ostéopathe et son patient reste, sauf accord contraire, dénuée de formalisme contractuel écrit. En revanche, si le praticien a clairement informé ses patients qu'un rendez-vous non annulé au moins 24 ou 48 heures à l'avance pourrait faire l'objet d'une facturation forfaitaire, cette pratique est généralement admise, à condition de rester raisonnable dans le montant demandé et de l'appliquer de manière cohérente à l'ensemble de la patientèle.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un rendez-vous non honoré facturé reste hors TVA">
+    Si vous facturez un forfait pour un rendez-vous non honoré, ce montant suit le même régime de TVA que vos consultations habituelles : l'exonération s'applique dans les mêmes conditions, puisqu'il s'agit toujours d'un contexte lié à votre activité de soins.
+  </Callout>
+</div>
+
+## Facturer un forfait de plusieurs séances
+
+Certains ostéopathes proposent des forfaits regroupant plusieurs séances, par exemple dans le cadre d'un suivi sportif ou d'un accompagnement périnatal avec des rendez-vous rapprochés. Dans ce cas, deux approches sont possibles : émettre une note d'honoraires à chaque séance réalisée, ou émettre une seule note pour l'ensemble du forfait au moment de l'encaissement.
+
+La première option est généralement préférable pour la clarté du suivi patient et pour la mutuelle, qui rembourse le plus souvent séance par séance. Un forfait de 4 séances facturé 220 € au total, par exemple, donne lieu à quatre notes d'honoraires distinctes de 55 € chacune, émises au fur et à mesure des rendez-vous, plutôt qu'à un document unique difficile à ventiler pour le patient lors de sa demande de remboursement.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un encaissement anticipé n'est pas un acte réalisé">
+    Si un patient règle un forfait à l'avance, il est recommandé de ne délivrer la note d'honoraires détaillée qu'au fur et à mesure des séances effectivement réalisées, plutôt qu'en une seule fois dès l'encaissement, pour rester cohérent avec la nature de soins déjà rendus du document.
+  </Callout>
+</div>
+
+## Comparaison avec les autres professions paramédicales
+
+Le régime de TVA et de facturation de l'ostéopathe est proche de celui d'autres professions de santé, avec quelques nuances. Notre guide dédié à la [facturation du kinésithérapeute](/blog/facturer-prestations-kinesitherapeute) détaille par exemple les spécificités liées au conventionnement avec l'Assurance maladie, une situation que la majorité des ostéopathes ne rencontrent pas puisque leur profession n'est pas prise en charge par la Sécurité sociale, hormis quelques cas particuliers de coordination avec un médecin prescripteur.
+
+## Simplifiez vos notes d'honoraires avec Newbi
+
+Newbi permet aux ostéopathes et aux professions libérales de santé de générer des notes d'honoraires conformes, avec la mention d'exonération de TVA appropriée, une numérotation continue et un suivi clair des règlements reçus, séance après séance.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes notes d'honoraires</Link>
+  </Button>
+</div>
+
+## Conservation et organisation administrative du cabinet
+
+Comme toute pièce comptable, les notes d'honoraires doivent être conservées 10 ans au titre du Code de commerce et 6 ans au titre du livre des procédures fiscales. Pour un ostéopathe qui reçoit plusieurs dizaines de patients par semaine, organiser cette conservation numériquement plutôt qu'en papier volant représente un vrai gain de temps, en particulier lors de la déclaration de revenus ou en cas de contrôle. Ce guide s'inscrit plus largement dans les enjeux de facturation propres aux [professions libérales](/blog/facture-profession-liberale-guide), auxquelles appartiennent les ostéopathes exerçant en cabinet indépendant. Numériser vos notes d'honoraires dès leur émission, plutôt que de les reconstituer en fin de mois à partir d'un agenda papier, réduit fortement le risque d'oubli et facilite le rapprochement avec vos relevés bancaires lors de la déclaration de vos revenus professionnels.
+
+## En résumé
+
+La facture d'ostéopathe, plus souvent appelée note d'honoraires, bénéficie d'une exonération de TVA au titre de l'article 261-4-1° du CGI pour les actes à finalité thérapeutique, ce qui couvre la grande majorité des consultations. Elle doit néanmoins comporter des mentions précises : identité du praticien avec son numéro SIRET, identité du patient, date, nature de l'acte, montant réglé et mode de règlement, sans oublier la mention d'exonération de TVA. Une note d'honoraires bien renseignée facilite le remboursement du patient par sa mutuelle et simplifie la gestion administrative du cabinet, y compris pour la question sensible des rendez-vous non honorés.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture d'ostéopathe
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un ostéopathe doit-il facturer avec ou sans TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Dans la très grande majorité des cas, sans TVA. Les actes d'ostéopathie à but thérapeutique bénéficient de l'exonération prévue à l'article 261-4-1° du Code général des impôts, applicable aux professions médicales et paramédicales réglementées, dès lors que le praticien est titulaire du titre d'ostéopathe.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle différence entre une note d'honoraires et une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Aucune sur le plan juridique : la note d'honoraires est simplement le terme d'usage employé par les professions de santé libérales pour désigner leur facture. Elle doit contenir des informations équivalentes, adaptées au contexte des soins : identité du patient, nature de l'acte, montant et mode de règlement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment un patient utilise-t-il la note d'honoraires pour se faire rembourser par sa mutuelle ?</AccordionTrigger>
+      <AccordionContent>
+        Le patient transmet la note d'honoraires à sa mutuelle, qui vérifie si les séances d'ostéopathie sont couvertes par son contrat, généralement dans la limite d'un forfait annuel. Plus la note d'honoraires est précise sur la date, la nature de l'acte et le montant, plus le remboursement est traité rapidement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on facturer un patient qui ne s'est pas présenté à son rendez-vous ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, mais seulement si le praticien a préalablement informé ses patients d'une politique de facturation en cas d'absence non annoncée dans un délai raisonnable, par exemple via un affichage en cabinet. En l'absence d'une telle information préalable, aucune facturation ne peut être exigée pour un acte non réalisé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Un ostéopathe a-t-il besoin d'un numéro SIRET pour facturer ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, un numéro SIRET est obligatoire pour toute activité facturable, y compris les professions médicales et paramédicales libérales. Il doit figurer sur chaque note d'honoraires, quel que soit le statut juridique choisi par le praticien.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
