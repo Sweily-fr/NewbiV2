@@ -95,6 +95,22 @@ function stripLeadingH1(content: string): string {
 }
 
 /**
+ * Le bandeau de badges en tête des MDX (catégorie, temps de lecture écrit à
+ * la main) fait doublon avec la ligne de métadonnées de la page, qui affiche
+ * la catégorie et le temps de lecture calculé. On retire ce premier bloc de
+ * badges s'il précède le premier « ## ».
+ */
+function stripLeadingBadges(content: string): string {
+  const firstH2 = content.search(/^## /m);
+  const head = firstH2 === -1 ? content : content.slice(0, firstH2);
+  const m = head.match(
+    /<div[^>]*>\s*(?:<Badge[^>]*>[^<]*<\/Badge>\s*)+<\/div>\s*/,
+  );
+  if (!m || m.index === undefined) return content;
+  return content.slice(0, m.index) + content.slice(m.index + m[0].length);
+}
+
+/**
  * Les articles générés embarquent leurs propres blocs
  * <script type="application/ld+json" dangerouslySetInnerHTML={{...}} />.
  * La page article génère désormais un JSON-LD unique et cohérent (BlogPosting,
@@ -135,8 +151,8 @@ function parsePost(slug: string): BlogPost | null {
   const raw = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(raw);
 
-  const strippedContent = stripLeadingH1(
-    stripInlineJsonLd(stripImports(content)),
+  const strippedContent = stripLeadingBadges(
+    stripLeadingH1(stripInlineJsonLd(stripImports(content))),
   );
 
   return {
