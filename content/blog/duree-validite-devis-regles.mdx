@@ -1,0 +1,260 @@
+---
+title: "Durée de validité d'un devis : règles, mention et que faire après expiration"
+description: >-
+  Un devis doit-il avoir une durée de validité ? Délais usuels par secteur,
+  mention à faire figurer et conséquences d'un devis expiré ou signé
+  tardivement.
+date: '2026-09-11'
+category: glossaire
+sector: null
+keyword: durée validité devis
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-11'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Durée de validité d'un devis : règles, mention et que faire après expiration
+
+La **durée de validité d'un devis** est la période pendant laquelle le professionnel s'engage à maintenir les conditions, notamment le prix, qu'il a proposées à son client. Passé ce délai, rien n'oblige plus le professionnel à honorer le devis aux mêmes conditions, ce qui protège l'entreprise contre l'évolution du coût des matières premières ou de sa charge de travail.
+
+Ce guide explique si la mention est obligatoire, quels délais pratiquer selon votre secteur d'activité, comment la formuler correctement sur vos devis, et ce qu'il faut faire lorsqu'un client signe après l'expiration du délai indiqué.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## La durée de validité d'un devis est-elle obligatoire ?
+
+Contrairement à une idée répandue, la mention d'une durée de validité n'est pas une obligation légale générale pour tous les devis. Le Code de commerce et le Code de la consommation n'imposent pas systématiquement de délai de validité chiffré sur un devis adressé à un professionnel.
+
+En revanche, dans certains secteurs réglementés, la mention devient obligatoire. C'est notamment le cas pour les devis de travaux de bâtiment adressés à des consommateurs, où l'arrêté du 24 janvier 1978 relatif à la publicité des prix impose d'indiquer la durée pendant laquelle l'offre reste valable. De façon plus générale, les [obligations légales encadrant les devis destinés aux consommateurs](/blog/obligations-legales-devis-consommateur) imposent une information claire et non trompeuse sur les conditions de l'offre, ce qui inclut en pratique la mention d'une durée de validité dès que le prix est susceptible d'évoluer.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Une absence de mention n'est pas sans risque">
+    Même lorsque la mention n'est pas légalement obligatoire, son absence peut être interprétée comme un engagement à durée indéterminée du professionnel envers son client, ce qui l'expose à devoir honorer un prix devenu obsolète, notamment en cas de hausse du coût des matériaux ou de la main d'œuvre.
+  </Callout>
+</div>
+
+## Pourquoi indiquer une durée de validité sur vos devis
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Se protéger contre la variation des coûts</strong> (matières premières, sous-traitance, énergie)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Éviter d'être engagé indéfiniment</strong> par une offre commerciale ancienne</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Créer un sentiment d'urgence</strong> qui pousse le client à se décider plus rapidement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Faciliter la gestion de votre planning</strong>, un devis accepté tardivement pouvant décaler vos disponibilités</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Clarifier la relation commerciale</strong> et éviter les litiges sur les conditions applicables</span>
+  </div>
+</div>
+
+## Quels délais pratiquer selon votre secteur
+
+Il n'existe pas de durée légale unique : le délai est fixé librement par le professionnel, en fonction de la nature de la prestation et de la volatilité de ses coûts. Voici les pratiques usuelles observées par secteur.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Durées de validité usuelles par secteur d'activité</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Secteur</TableHead>
+        <TableHead>Durée usuelle</TableHead>
+        <TableHead>Raison principale</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">BTP et artisanat</TableCell>
+        <TableCell>1 à 3 mois</TableCell>
+        <TableCell>Variation du coût des matériaux</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conseil et prestations intellectuelles</TableCell>
+        <TableCell>15 jours à 1 mois</TableCell>
+        <TableCell>Disponibilité et charge de travail</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Vente de matériel informatique</TableCell>
+        <TableCell>7 à 15 jours</TableCell>
+        <TableCell>Fluctuation rapide des prix fournisseurs</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Événementiel</TableCell>
+        <TableCell>1 à 2 mois</TableCell>
+        <TableCell>Réservation de dates et de prestataires</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Graphisme et création</TableCell>
+        <TableCell>1 mois</TableCell>
+        <TableCell>Planification du calendrier de production</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Comment rédiger la mention sur votre devis
+
+La formulation doit être claire, chiffrée et facilement identifiable sur le document. Les formulations les plus courantes sont : "Devis valable 30 jours à compter de la date d'émission" ou "Offre valable jusqu'au 15 octobre 2026". Il est préférable d'indiquer une date précise plutôt qu'un délai relatif, pour éviter toute ambiguïté en cas de litige sur la date de réception du devis par le client.
+
+Cette mention s'ajoute aux autres informations qui doivent figurer sur un [devis professionnel](/blog/comment-faire-devis-professionnel) : identification complète des parties, description détaillée de la prestation, prix unitaire et total, taux de TVA applicable, et conditions de règlement.
+
+### Exemple concret
+
+Un artisan plombier établit le 1er septembre 2026 un devis de 2 400 € TTC pour la rénovation d'une salle de bains, avec la mention "Devis valable 45 jours, soit jusqu'au 16 octobre 2026". Si le client signe le devis le 20 octobre, quatre jours après l'expiration, l'artisan n'est plus tenu d'honorer le prix initial : il peut proposer un nouveau devis actualisé si le coût des matériaux a évolué entre-temps.
+
+## Que faire en cas de devis expiré ou signé tardivement
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un devis expiré n'engage plus le professionnel">
+    Passé le délai de validité indiqué, le professionnel n'a plus l'obligation d'honorer les conditions du devis initial. Il peut proposer un nouveau devis, avec des prix actualisés, sans que le client puisse exiger le maintien de l'offre expirée.
+  </Callout>
+</div>
+
+Plusieurs cas de figure se présentent lorsqu'un devis arrive à expiration :
+
+- si le client signe avant l'expiration, le devis devient un engagement ferme dès son acceptation, y compris si la prestation démarre après la date limite ;
+- si le client signe après l'expiration, le professionnel peut refuser d'honorer le prix initial et proposer un nouveau devis ;
+- si le professionnel accepte malgré tout d'honorer un devis expiré, cela reste possible par accord mutuel, mais rien ne l'y oblige juridiquement.
+
+Dans tous les cas, il est recommandé de communiquer clairement avec le client dès l'approche de l'échéance, plutôt que de le laisser découvrir l'expiration au moment de la signature. Cette communication s'inscrit dans une bonne pratique plus large de suivi commercial, qui contribue aussi à limiter les [erreurs qui font perdre des clients lors de la phase de devis](/blog/erreurs-devis-perdre-clients).
+
+## Peut-on prolonger un devis expiré ?
+
+Oui, rien n'empêche un professionnel de prolonger la validité d'un devis à la demande du client, à condition de matérialiser cette prolongation par écrit, par exemple par un email confirmant le maintien des conditions initiales pour une période supplémentaire. Sans confirmation écrite, mieux vaut considérer que le devis initial n'a plus de valeur contractuelle et établir un nouveau document.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Automatisez le suivi de vos devis">
+    Plutôt que de suivre manuellement les dates d'expiration dans un tableur, utilisez un outil qui vous alerte automatiquement à l'approche de l'échéance d'un devis en attente de signature. Cela évite de laisser filer une opportunité commerciale ou de devoir renégocier un prix au dernier moment.
+  </Callout>
+</div>
+
+## Devis et acceptation tardive : les conséquences pratiques
+
+Au-delà de l'aspect purement tarifaire, une signature tardive du devis peut avoir des répercussions concrètes sur l'organisation du professionnel. Un artisan qui a bloqué une semaine de chantier pour un client peut voir ce créneau se libérer si le devis n'est pas signé à temps, et devoir le réattribuer à un autre client. Un consultant qui a réservé des journées dans son planning peut se retrouver dans la même situation. C'est pourquoi la durée de validité ne protège pas uniquement contre la variation des prix, elle protège aussi la disponibilité réelle du professionnel.
+
+Dans certains cas, notamment pour les prestations nécessitant une réservation de ressources rares (matériel spécifique, sous-traitant, créneau logistique), il est recommandé de coupler la durée de validité du devis à une clause de réservation, qui précise que la disponibilité annoncée n'est garantie que jusqu'à la date d'expiration. Cette précision évite tout malentendu si le client souhaite signer après l'échéance en pensant que la date d'intervention initialement discutée reste acquise.
+
+### Le cas particulier de l'acompte demandé au devis
+
+Lorsque le devis prévoit le versement d'un acompte à la signature, la durée de validité prend une importance renforcée : c'est la date de réception effective de l'acompte, et non uniquement la date de signature, qui déclenche généralement l'engagement définitif des deux parties. Il est donc utile de préciser sur le devis que l'offre reste valable sous réserve de réception de l'acompte avant la date d'expiration indiquée, afin d'éviter qu'un client signe dans les temps sans effectuer le paiement correspondant.
+
+## Devis gratuit ou payant : un autre point à clarifier
+
+Une question voisine, souvent posée en même temps que celle de la durée de validité, concerne la gratuité du devis. En principe, l'établissement d'un devis est gratuit pour le client, sauf si le professionnel a clairement informé ce dernier, avant toute intervention, que l'établissement du document serait facturé, par exemple pour un déplacement à distance ou une étude technique poussée. Cette information doit alors figurer par écrit avant l'engagement du client, faute de quoi le devis reste réputé gratuit.
+
+Ce point n'a pas de lien direct avec la durée de validité, mais les deux figurent généralement dans les mêmes conditions générales de vente affichées ou remises au client. Mentionner clairement le caractère gratuit ou payant du devis, à côté de sa durée de validité, évite toute contestation ultérieure et renforce la clarté commerciale de votre offre.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Récapitulatif des mentions à associer à la durée de validité</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Mention</TableHead>
+        <TableHead>Utilité</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Date d'expiration précise</TableCell>
+        <TableCell>Évite l'ambiguïté sur le point de départ du délai</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Caractère gratuit ou payant du devis</TableCell>
+        <TableCell>Prévient toute contestation sur l'établissement du document</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conditions de réservation de créneau</TableCell>
+        <TableCell>Clarifie la disponibilité réelle après expiration</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Modalités de l'acompte éventuel</TableCell>
+        <TableCell>Précise la date qui déclenche l'engagement définitif</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Comment Newbi gère la validité de vos devis
+
+Avec Newbi, chaque devis créé intègre une date de validité paramétrable, visible directement par le client au moment de la consultation. L'outil permet de suivre en un coup d'œil le statut de chaque devis (en attente, accepté, expiré) et de le transformer directement en facture une fois signé, sans ressaisie. Cette continuité entre devis et facture limite les erreurs et accélère le passage à la facturation dès l'accord du client.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes devis avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La durée de validité d'un devis n'est pas systématiquement obligatoire, sauf dans certains secteurs réglementés comme les travaux de bâtiment adressés aux consommateurs, mais elle reste une pratique fortement recommandée pour protéger le professionnel contre l'évolution de ses coûts. Le délai varie généralement de 7 jours à 3 mois selon le secteur, et doit être formulé de façon claire, avec une date précise plutôt qu'un délai relatif. Passé ce délai, le professionnel n'est plus tenu d'honorer le prix initial, sauf accord exprès de prolongation. Un suivi rigoureux des dates d'expiration, idéalement automatisé, évite les malentendus et les négociations tardives avec vos clients.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la durée de validité d'un devis
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un devis sans date de validité est-il valable indéfiniment ?</AccordionTrigger>
+      <AccordionContent>
+        En l'absence de mention explicite, le devis peut être interprété comme restant valable sans limite de temps, ce qui expose le professionnel à devoir honorer un prix ancien même après une forte évolution de ses coûts. Il est donc fortement recommandé d'indiquer systématiquement une durée de validité, même lorsque ce n'est pas une obligation légale stricte.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle durée de validité choisir pour un devis de travaux ?</AccordionTrigger>
+      <AccordionContent>
+        Pour les travaux de bâtiment, une durée de 1 à 3 mois est courante, car elle laisse au client le temps de comparer plusieurs devis tout en protégeant l'artisan contre les variations du prix des matériaux. Certains professionnels réduisent ce délai à 15 jours en période de forte instabilité des prix.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Le client peut-il exiger le maintien d'un devis expiré ?</AccordionTrigger>
+      <AccordionContent>
+        Non, une fois le délai de validité dépassé, le professionnel n'est plus tenu par les conditions du devis initial. Il peut légitimement proposer un nouveau devis avec des tarifs actualisés. Le client ne dispose d'aucun droit à exiger le maintien du prix d'un devis expiré, sauf accord amiable du professionnel.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment formuler la mention de validité sur un devis ?</AccordionTrigger>
+      <AccordionContent>
+        La formulation la plus sûre indique une date précise, par exemple "Devis valable jusqu'au 15 octobre 2026", plutôt qu'un délai relatif comme "valable 30 jours", qui peut prêter à confusion sur la date de départ du calcul. La mention doit être visible et facilement identifiable sur le document.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que se passe-t-il si le client signe le devis juste avant son expiration ?</AccordionTrigger>
+      <AccordionContent>
+        Si la signature intervient avant la date limite indiquée, le devis devient un engagement ferme entre les deux parties, même si la réalisation de la prestation débute après cette date. Seule la date de signature compte pour apprécier le respect du délai de validité, pas la date de début d'exécution.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

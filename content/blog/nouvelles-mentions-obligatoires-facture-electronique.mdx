@@ -1,0 +1,243 @@
+---
+title: 'Les 4 nouvelles mentions obligatoires de la facture électronique'
+description: >-
+  SIREN du client, adresse de livraison, nature de l'opération, option TVA sur
+  les débits : les nouvelles mentions imposées par la réforme de la
+  facturation électronique.
+date: '2026-09-07'
+category: reglementaire
+sector: null
+keyword: nouvelles mentions obligatoires facture
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-07'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Les 4 nouvelles mentions obligatoires de la facture électronique
+
+Les **nouvelles mentions obligatoires de la facture** entrent en vigueur avec la réforme de la facturation électronique. Elles s'ajoutent aux mentions classiques déjà connues des entreprises (SIREN du vendeur, numéro de facture, TVA) et concernent tous les émetteurs de factures, du micro-entrepreneur à la PME. Quatre mentions nouvelles doivent désormais figurer sur vos documents, sous peine de facture non conforme.
+
+Ce guide détaille chacune de ces quatre mentions, leur base légale, la manière de les renseigner correctement et les sanctions encourues en cas d'omission. Vous y trouverez aussi un tableau récapitulatif et un exemple chiffré pour vérifier la conformité de vos propres factures.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi de nouvelles mentions apparaissent sur la facture
+
+La [facturation électronique devient obligatoire](/blog/facturation-electronique-obligatoire-2026) par étapes en France : réception obligatoire pour toutes les entreprises depuis le 1er septembre 2026, émission obligatoire pour les grandes entreprises et les ETI depuis la même date, puis émission obligatoire pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027. Cette réforme repose sur l'échange de données structurées, au format Factur-X, UBL ou CII, entre une plateforme de dématérialisation partenaire (PDP) émettrice et une PDP réceptrice.
+
+Pour que ces données structurées puissent être exploitées automatiquement, notamment par l'administration fiscale via l'annuaire et le concentrateur de données du portail public de facturation (PPF), certaines informations qui étaient auparavant facultatives ou implicites doivent désormais être explicitement codées sur la facture. C'est l'origine des quatre nouvelles mentions présentées ci-dessous. Elles complètent la liste des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) déjà en vigueur.
+
+<Callout type="info" title="Ces mentions s'ajoutent, elles ne remplacent rien">
+  Les nouvelles mentions ne suppriment aucune mention classique. Le numéro de facture, l'identité du vendeur et de l'acheteur, le détail des prestations, les montants HT et TTC ainsi que les conditions de règlement restent obligatoires dans tous les cas, qu'il s'agisse d'une facture électronique ou d'une facture papier.
+</Callout>
+
+## Mention n°1 : le numéro SIREN du client
+
+Jusqu'ici, seul le numéro SIREN ou SIRET du vendeur figurait obligatoirement sur la facture. Avec la réforme, le **numéro SIREN du client** devient également obligatoire dès lors que ce client est une entreprise assujettie à la TVA, c'est-à-dire dans une relation B2B.
+
+Cette mention permet à l'administration fiscale de rapprocher automatiquement, via les données transmises par les PDP, la facture de vente enregistrée chez le vendeur et la facture d'achat enregistrée chez l'acheteur. C'est l'un des piliers du contrôle facilité par la réforme : le rapprochement des données réduit la fraude à la TVA et les erreurs de déclaration.
+
+En pratique, vous devez donc demander à chacun de vos clients professionnels leur numéro SIREN (9 chiffres) avant de leur adresser une facture électronique. Cette information figure sur l'extrait Kbis du client ou peut être vérifiée gratuitement sur le site de l'Institut national de la statistique. Pour rappel, le [numéro SIRET et le numéro SIREN](/blog/quest-ce-que-numero-siret-siren) ne désignent pas la même chose : le SIREN identifie l'entreprise, le SIRET un établissement précis. Pour vos clients particuliers, cette mention ne s'applique pas puisqu'ils ne disposent pas de numéro SIREN.
+
+## Mention n°2 : l'adresse de livraison des biens
+
+La deuxième nouvelle mention concerne l'**adresse de livraison**, lorsque celle-ci diffère de l'adresse de facturation du client. Cette exigence existait déjà de façon marginale dans le Code de commerce, mais elle devient systématique et structurée dans le cadre de la facturation électronique, en particulier pour les livraisons de biens.
+
+Concrètement, si vous vendez du matériel, des marchandises ou des fournitures et que le lieu de livraison n'est pas le siège social du client (par exemple un chantier, un entrepôt ou une antenne régionale), vous devez indiquer cette adresse précise sur la facture, distinctement de l'adresse de facturation. Pour les prestations de services réalisées à distance (conseil, développement, formation en ligne), cette mention est généralement sans objet, sauf lorsque la prestation est réalisée physiquement sur un site du client.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Renseignez l'adresse de livraison uniquement si elle diffère de l'adresse de facturation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquez l'adresse complète : numéro, rue, code postal, ville</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Pour les chantiers du BTP, précisez l'adresse exacte du site concerné</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Pour une prestation de services à distance, cette mention n'est généralement pas requise</span>
+  </div>
+</div>
+
+## Mention n°3 : la nature de l'opération
+
+Autre nouveauté : votre facture doit préciser explicitement la **nature de l'opération** parmi trois catégories définies par l'administration fiscale :
+
+- **Livraison de biens** : vente de marchandises, matériel, produits physiques
+- **Prestation de services** : conseil, formation, développement, maintenance, honoraires
+- **Opération mixte** : facture combinant à la fois des biens et des services
+
+Cette catégorisation n'est pas anodine sur le plan fiscal, car elle conditionne le régime d'exigibilité de la TVA. Pour une prestation de services, la TVA est en principe exigible à l'encaissement, alors que pour une livraison de biens, elle est exigible à la livraison (ou à l'encaissement d'un acompte, depuis le 1er janvier 2023). Coder correctement la nature de l'opération sur chaque facture évite les erreurs de déclaration de TVA et facilite le contrôle automatisé par les plateformes.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Une erreur de catégorisation peut fausser votre TVA">
+    Si vous facturez une prestation mêlant fourniture de matériel et main d'oeuvre (par exemple un artisan qui pose des équipements), qualifiez l'opération de mixte plutôt que de choisir arbitrairement une seule catégorie. Une déclaration erronée de la nature de l'opération peut entraîner un redressement en cas de contrôle.
+  </Callout>
+</div>
+
+## Mention n°4 : l'option pour le paiement de la TVA sur les débits
+
+La quatrième mention concerne les entreprises qui ont opté pour le régime du paiement de la TVA d'après les **débits** plutôt que d'après les encaissements. Ce régime, réservé de plein droit aux livraisons de biens mais optionnel pour les prestataires de services, doit désormais être signalé de manière explicite et codée sur la facture électronique, et non plus par une simple mention manuscrite ou une phrase libre.
+
+Concrètement, deux régimes coexistent pour les prestations de services :
+
+- **TVA sur les encaissements** (régime par défaut) : la TVA devient exigible au moment où le client paie la facture.
+- **TVA sur les débits** (régime optionnel) : la TVA devient exigible dès l'émission de la facture, indépendamment de la date de paiement effectif par le client.
+
+Si vous avez opté pour le régime des débits, vous devez continuer à faire figurer la mention « TVA acquittée sur les débits » sur vos factures, mais cette information est désormais également transmise sous forme de donnée structurée à la plateforme de dématérialisation, afin que l'administration puisse identifier automatiquement votre régime d'exigibilité.
+
+## Tableau récapitulatif des quatre nouvelles mentions
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Les quatre nouvelles mentions obligatoires de la facture électronique</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Mention</TableHead>
+        <TableHead>Quand la renseigner</TableHead>
+        <TableHead>Objectif</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">SIREN du client</TableCell>
+        <TableCell>Toute facture B2B à un client assujetti</TableCell>
+        <TableCell>Rapprochement automatique vente / achat</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Adresse de livraison</TableCell>
+        <TableCell>Si différente de l'adresse de facturation</TableCell>
+        <TableCell>Traçabilité des flux de biens</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Nature de l'opération</TableCell>
+        <TableCell>Sur chaque facture, dans les trois catégories</TableCell>
+        <TableCell>Régime d'exigibilité de la TVA correct</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Option TVA sur les débits</TableCell>
+        <TableCell>Uniquement si vous avez exercé cette option</TableCell>
+        <TableCell>Identification du régime de TVA appliqué</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Exemple chiffré : une facture avant et après la réforme
+
+Prenons le cas d'un artisan qui facture 3 200 € HT de fourniture et pose de matériel à une entreprise cliente, sur un chantier situé à une adresse différente du siège social du client. Avant la réforme, sa facture mentionnait uniquement son propre SIRET, l'adresse de facturation du client, le détail des prestations et le montant de TVA à 20 %, soit 640 € de TVA pour un total TTC de 3 840 €.
+
+Avec les nouvelles mentions, cette même facture doit désormais préciser le numéro SIREN de l'entreprise cliente, l'adresse exacte du chantier en tant qu'adresse de livraison, la nature mixte de l'opération puisqu'elle combine fourniture de matériel et main d'oeuvre, et, le cas échéant, le régime de TVA appliqué. Les montants HT, TVA et TTC restent inchangés, mais la facture devient beaucoup plus riche en données structurées exploitables par l'administration.
+
+## Sanctions en cas de mention manquante
+
+Une facture électronique non conforme aux nouvelles exigences est assimilée à une facture ne respectant pas les mentions obligatoires. Les sanctions applicables restent celles prévues pour toute irrégularité de facturation : une amende de **15 € par facture** comportant une mention manquante ou erronée, plafonnée à **15 000 € par exercice**. Ce plafond s'applique par catégorie de manquement, ce qui signifie qu'une entreprise émettant un grand nombre de factures non conformes peut cumuler des sanctions sur plusieurs points.
+
+<Callout type="tip" title="Vérifiez vos modèles de facture avant le 1er septembre 2027">
+  Si vous êtes une TPE, une PME ou un micro-entrepreneur, l'émission de factures électroniques ne devient obligatoire que le 1er septembre 2027. C'est le moment idéal pour mettre à jour vos modèles de facture et vous assurer que votre logiciel de facturation gère nativement ces quatre nouvelles mentions.
+</Callout>
+
+## Comment Newbi intègre les nouvelles mentions
+
+Newbi permet de créer des factures conformes en centralisant toutes les mentions obligatoires, classiques et nouvelles, directement dans le formulaire de création. Le numéro SIREN du client, l'adresse de livraison, la nature de l'opération et l'option de TVA se renseignent une seule fois dans la fiche client ou le paramétrage de facturation, puis s'appliquent automatiquement à chaque facture générée. L'outil est pensé pour accompagner la transition vers la [facturation électronique](/produits/facturation-electronique) sans que vous ayez à mémoriser chaque exigence réglementaire.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## Checklist avant de transmettre votre première facture électronique
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>J'ai récupéré le <strong>numéro SIREN</strong> de tous mes clients professionnels</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je précise l'<strong>adresse de livraison</strong> quand elle diffère de l'adresse de facturation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je qualifie correctement chaque facture : bien, service ou opération mixte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Je vérifie mon régime de TVA (encaissements ou débits) et je l'indique si nécessaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mon logiciel de facturation transmet ces données via une PDP au format Factur-X, UBL ou CII</span>
+  </div>
+</div>
+
+## En résumé
+
+La réforme de la facturation électronique introduit quatre nouvelles mentions obligatoires : le numéro SIREN du client, l'adresse de livraison lorsqu'elle diffère de l'adresse de facturation, la nature de l'opération classée en livraison de biens, prestation de services ou opération mixte, et l'option pour le paiement de la TVA sur les débits lorsqu'elle est exercée. Ces mentions s'ajoutent aux mentions classiques déjà connues et servent avant tout à fiabiliser les échanges de données structurées entre plateformes de dématérialisation partenaires. Les anticiper dès maintenant, y compris avant l'échéance du 1er septembre 2027 pour les PME, TPE et micro-entreprises, évite les mauvaises surprises et les sanctions de 15 € par facture non conforme.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les nouvelles mentions obligatoires
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il indiquer le SIREN du client sur toutes les factures ?</AccordionTrigger>
+      <AccordionContent>
+        Le numéro SIREN du client est obligatoire uniquement sur les factures adressées à des clients professionnels assujettis à la TVA, dans le cadre de relations B2B. Pour les factures adressées à des particuliers, cette mention n'a pas lieu d'être puisqu'ils ne disposent pas de numéro SIREN.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Dois-je toujours indiquer l'adresse de livraison ?</AccordionTrigger>
+      <AccordionContent>
+        Non, cette mention n'est nécessaire que lorsque l'adresse de livraison du bien diffère de l'adresse de facturation du client. Si les deux adresses sont identiques, ou si vous facturez une prestation de services réalisée à distance, la mention n'a pas à être renseignée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Qu'est-ce qu'une opération mixte au sens de la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Une opération mixte combine, sur une même facture, une livraison de biens et une prestation de services, par exemple la fourniture de matériel accompagnée de son installation. Elle doit être codée comme telle pour que le régime de TVA applicable soit correctement identifié.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que se passe-t-il si une mention obligatoire est manquante ?</AccordionTrigger>
+      <AccordionContent>
+        Une facture comportant une mention manquante ou inexacte expose l'émetteur à une amende de 15 € par facture, plafonnée à 15 000 € par exercice comptable. Au-delà de la sanction financière, une facture non conforme peut aussi ralentir son traitement automatique par la plateforme de dématérialisation du destinataire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Ces nouvelles mentions s'appliquent-elles déjà aux auto-entrepreneurs ?</AccordionTrigger>
+      <AccordionContent>
+        Les auto-entrepreneurs devront émettre des factures électroniques respectant ces mentions à partir du 1er septembre 2027, comme les autres PME et TPE. En revanche, depuis le 1er septembre 2026, ils doivent déjà être en mesure de recevoir des factures électroniques de leurs fournisseurs.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,242 @@
+---
+title: 'UBL, CII ou Factur-X : quel format de facture électronique choisir ?'
+description: >-
+  Les trois formats du socle français de la facture électronique comparés :
+  lisibilité, compatibilité, cas d'usage. Lequel votre logiciel doit-il
+  produire ?
+date: '2026-09-14'
+category: glossaire
+sector: null
+keyword: format facture électronique ubl cii
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-14'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# UBL, CII ou Factur-X : quel format de facture électronique choisir ?
+
+Le **format de facture électronique** que produit votre logiciel n'est pas un détail technique : c'est ce qui détermine si vos factures seront acceptées par vos clients, par votre plateforme de dématérialisation et, in fine, par l'administration. Trois formats composent le socle français : **UBL**, **CII** et **Factur-X**. Ils répondent tous à la même norme européenne mais ne se ressemblent pas du tout.
+
+Ce guide compare les trois formats point par point : structure, lisibilité, compatibilité avec les logiciels existants et cas d'usage. Vous saurez lequel privilégier selon votre activité, et pourquoi cette question devient urgente avec l'entrée en vigueur de la facturation électronique obligatoire.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi ces trois formats et pas un seul
+
+La [réforme de la facturation électronique](/blog/facturation-electronique-obligatoire-2026) repose sur un principe simple mais souvent mal compris : il n'existe pas un format électronique imposé, mais un socle de formats interopérables que tout logiciel de facturation doit être capable de produire et de lire. Depuis le 1er septembre 2026, la **réception** des factures électroniques est obligatoire pour toutes les entreprises établies en France, quelle que soit leur taille. L'**émission** suit un calendrier échelonné : elle est obligatoire pour les grandes entreprises et les ETI depuis le 1er septembre 2026, et le sera pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+
+Concrètement, une facture ne transite plus par email en PDF classique : elle circule via une [PDP (plateforme de dématérialisation partenaire)](/blog/quest-ce-que-pdp-plateforme-dematerialisation), immatriculée par l'administration fiscale, sous l'un des trois formats du socle. Le PPF (portail public de facturation) n'agit plus comme circuit d'échange gratuit : il joue désormais un rôle d'annuaire et de concentrateur des données transmises à l'administration. Comprendre la différence entre UBL, CII et Factur-X est donc indispensable pour choisir un logiciel de facturation ou vérifier que le vôtre est réellement conforme.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un socle commun, trois syntaxes différentes">
+    UBL, CII et Factur-X respectent la même norme sémantique européenne EN 16931, qui définit les données obligatoires d'une facture électronique (montants, TVA, identifiants des parties, etc.). Ce qui change, c'est la manière dont ces données sont encodées et transportées.
+  </Callout>
+</div>
+
+## Factur-X : la facture hybride PDF et XML
+
+[Factur-X](/blog/facturx-format-facture-electronique) est un format hybride né d'une collaboration franco-allemande. Il combine deux éléments dans un seul fichier :
+
+- Un **PDF/A-3** lisible par un humain, identique à une facture classique que vous pouvez ouvrir dans n'importe quel lecteur PDF.
+- Un fichier **XML structuré** intégré en pièce jointe invisible, lisible uniquement par les logiciels et les plateformes.
+
+Cette double nature fait tout l'intérêt de Factur-X : le destinataire humain voit une facture normale, tandis que le système d'information de son entreprise extrait automatiquement les données structurées pour les intégrer en comptabilité. C'est le format le plus adapté aux structures de petite taille, aux artisans et aux professions libérales qui envoient encore leurs factures par email ou qui veulent garder une trace visuelle facilement exploitable.
+
+Factur-X est également celui que la majorité des logiciels de facturation français, dont Newbi, produisent en priorité pour les petites structures, car il ne nécessite pas de logiciel spécifique côté client pour être consulté.
+
+## UBL : le format XML pur d'origine européenne
+
+**UBL** (Universal Business Language) est un format 100 % XML, sans partie visuelle intégrée. Il a été développé par l'organisation internationale OASIS et est largement utilisé dans les marchés publics européens et par de nombreux grands groupes qui échangent leurs documents commerciaux de manière automatisée.
+
+Un fichier UBL n'est pas destiné à être ouvert et lu directement par un humain : il est conçu pour être traité par des systèmes d'information (ERP, logiciels comptables, plateformes de commande). Sa structure est riche et permet de décrire des cas complexes : commandes groupées, remises en cascade, taxes multiples, références croisées avec des bons de commande. C'est un format d'échange B2B pur, très répandu dans les grandes organisations et dans les appels d'offres publics.
+
+## CII : le format né de l'EDI industriel
+
+**CII** (Cross Industry Invoice) est également un format XML pur, mais issu d'une lignée différente : celle des standards EDI (échange de données informatisé) utilisés depuis longtemps dans l'industrie et la grande distribution. Il est porté par l'organisme international UN/CEFACT.
+
+CII partage avec UBL la même logique de fichier structuré non lisible directement, mais sa syntaxe et son organisation interne diffèrent. Les grands groupes industriels, notamment dans l'automobile ou la logistique, l'utilisent souvent car il prolonge des échanges EDI déjà en place depuis des années. Pour une petite structure qui démarre la facturation électronique, il est rare de devoir produire du CII directement : ce sont surtout les PDP et les grands donneurs d'ordre qui le manipulent.
+
+Dans la pratique, une entreprise n'a presque jamais à composer un fichier CII à la main : ce format circule essentiellement entre systèmes automatisés, en amont ou en aval de votre propre logiciel de facturation. Ce qui compte pour vous, en tant qu'émetteur, c'est que les données de votre facture (montants, taux de TVA, identifiants SIREN, dates) soient correctes et complètes à la source : la conversion technique vers CII, si elle est nécessaire, est ensuite prise en charge par la chaîne de dématérialisation.
+
+## Tableau comparatif des trois formats
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>UBL, CII et Factur-X : les différences essentielles</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[150px]">Critère</TableHead>
+        <TableHead>Factur-X</TableHead>
+        <TableHead>UBL</TableHead>
+        <TableHead>CII</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Structure</TableCell>
+        <TableCell>Hybride : PDF visible + XML intégré</TableCell>
+        <TableCell>XML pur</TableCell>
+        <TableCell>XML pur</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Lisibilité humaine</TableCell>
+        <TableCell>Oui, directement via le PDF</TableCell>
+        <TableCell>Non, nécessite un logiciel</TableCell>
+        <TableCell>Non, nécessite un logiciel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Origine</TableCell>
+        <TableCell>Coopération franco-allemande (FNFE-MPE, FeRD)</TableCell>
+        <TableCell>OASIS, marchés publics européens</TableCell>
+        <TableCell>UN/CEFACT, héritage EDI industriel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Cas d'usage typique</TableCell>
+        <TableCell>TPE, artisans, professions libérales, factures envoyées par email</TableCell>
+        <TableCell>Marchés publics, grands groupes, échanges B2B automatisés</TableCell>
+        <TableCell>Industrie, logistique, prolongement d'échanges EDI existants</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Norme sémantique</TableCell>
+        <TableCell>EN 16931</TableCell>
+        <TableCell>EN 16931</TableCell>
+        <TableCell>EN 16931</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Quel format choisir selon votre profil
+
+Dans la pratique, vous n'avez pas toujours à choisir vous-même : c'est votre [PDP](/blog/quest-ce-que-pdp-plateforme-dematerialisation) qui reçoit vos factures et les convertit, si besoin, dans le format attendu par le destinataire. Mais savoir ce que produit votre logiciel de facturation reste utile pour éviter les mauvaises surprises.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Auto-entrepreneur, freelance, artisan</strong> : Factur-X convient dans la grande majorité des cas, car vos clients ont besoin de lire la facture aussi bien que leur logiciel comptable.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>PME travaillant avec de grands donneurs d'ordre</strong> : vérifiez si votre client impose UBL ou CII pour s'intégrer à son ERP ; votre PDP peut souvent gérer la conversion automatiquement.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Entreprise répondant à des marchés publics</strong> : UBL est le format le plus fréquemment exigé par les plateformes de commande publique.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Groupe industriel avec des flux EDI historiques</strong> : CII permet souvent de réutiliser des connecteurs déjà en place.</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Vous n'avez pas à choisir un seul format définitivement">
+    La plupart des logiciels de facturation, et les PDP en particulier, savent produire et convertir entre les trois formats du socle. L'essentiel est que votre logiciel soit capable de générer une facture conforme à la norme EN 16931, quel que soit le format de sortie demandé par votre client ou votre plateforme.
+  </Callout>
+</div>
+
+### Un exemple concret
+
+Une entreprise de services numériques facture à la fois des TPE en direct et un grand groupe industriel via un appel d'offres remporté l'an dernier. Pour ses clients TPE, elle envoie une facture Factur-X de 2 400 € HT, lisible immédiatement sans logiciel spécifique. Pour le grand groupe, sa PDP convertit automatiquement la même facture en UBL, format exigé par le portail fournisseurs du client, sans aucune intervention manuelle de sa part. Le montant facturé (2 400 € HT, soit 2 880 € TTC à 20 % de TVA) reste identique : seule la syntaxe du fichier change.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne confondez pas format et plateforme">
+    Le format (UBL, CII, Factur-X) décrit comment la facture est encodée. La plateforme (PDP) est le canal par lequel elle circule. Une facture au mauvais format peut être rejetée par une PDP même si le contenu est correct : vérifiez toujours que votre logiciel produit un fichier conforme à la norme EN 16931 avant l'envoi.
+  </Callout>
+</div>
+
+## Comment Newbi gère les formats de facture électronique
+
+Newbi génère vos factures dans les formats attendus par les plateformes de dématérialisation partenaires, sans que vous ayez à vous soucier de la structure XML sous-jacente. Vous créez votre facture normalement, et elle est transmise dans un format conforme au socle réglementaire, prête à circuler vers vos clients et vers l'administration selon les règles applicables à votre activité.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## Erreurs fréquentes à éviter
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas confondre un simple PDF envoyé par email avec une facture électronique conforme : seul un fichier structuré selon UBL, CII ou Factur-X répond aux obligations à venir.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier auprès de vos clients professionnels s'ils imposent un format précis avant de configurer votre logiciel de facturation.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas attendre le dernier moment : tester la réception de factures électroniques dès maintenant permet d'anticiper d'éventuels blocages techniques.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Retenir que le choix du format n'a aucun impact sur le montant, la TVA ou les mentions obligatoires de la facture : seule la présentation technique change.</span>
+  </div>
+</div>
+
+## En résumé
+
+UBL, CII et Factur-X sont les trois formats qui composent le socle français de la facturation électronique, tous conformes à la norme européenne EN 16931 mais construits différemment : Factur-X combine un PDF lisible et un XML intégré, ce qui en fait le choix naturel des petites structures, tandis qu'UBL et CII sont des formats XML purs davantage utilisés dans les marchés publics et les échanges industriels automatisés. Dans la pratique, votre logiciel de facturation et votre PDP se chargent de produire et de convertir ces formats selon les besoins de vos clients, à condition d'avoir vérifié en amont leur conformité à la norme sémantique commune.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les formats de facture électronique
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel format de facture électronique dois-je utiliser en tant qu'auto-entrepreneur ?</AccordionTrigger>
+      <AccordionContent>
+        Factur-X est généralement le plus adapté, car il produit un fichier PDF lisible directement par vos clients tout en intégrant les données structurées nécessaires aux plateformes et aux logiciels comptables. Vous n'avez pas besoin de connaître UBL ou CII pour être conforme.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>UBL et CII peuvent-ils être ouverts comme un PDF classique ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Ce sont des formats XML purs, sans mise en page visuelle intégrée. Ils sont destinés à être traités par des logiciels (ERP, comptabilité, plateformes de dématérialisation) et non consultés directement par un humain, contrairement à Factur-X.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Mon logiciel de facturation doit-il produire les trois formats ?</AccordionTrigger>
+      <AccordionContent>
+        Pas nécessairement lui-même : c'est souvent votre PDP qui assure la conversion entre formats selon les exigences du destinataire. L'essentiel est que la facture d'origine respecte la norme sémantique EN 16931, quel que soit le format de sortie utilisé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Le format choisi change-t-il les mentions obligatoires de la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Non, les mentions obligatoires restent identiques quel que soit le format technique. Le format détermine uniquement la manière dont ces informations sont encodées et transmises, pas leur contenu réglementaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le PPF peut-il encore recevoir directement des factures au format UBL ou CII ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF ne joue plus le rôle de plateforme d'échange gratuite des factures : il agit désormais comme annuaire et concentrateur des données transmises à l'administration. L'émission et la réception des factures passent par une PDP immatriculée, qui gère les formats du socle.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

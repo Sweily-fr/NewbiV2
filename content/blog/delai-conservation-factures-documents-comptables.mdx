@@ -1,0 +1,241 @@
+---
+title: 'Combien de temps conserver ses factures et documents comptables ?'
+description: >-
+  6 ans, 10 ans, 3 ans : les durées légales de conservation des factures,
+  devis, relevés et pièces comptables, au format papier ou électronique.
+date: '2026-09-29'
+category: reglementaire
+sector: null
+keyword: durée conservation factures
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-29'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Combien de temps conserver ses factures et documents comptables ?
+
+La **durée de conservation des factures** varie selon la nature du document et le texte qui l'impose : Code de commerce, Livre des procédures fiscales ou Code civil ne fixent pas tous la même échéance. Se tromper sur ces durées expose à deux risques opposés : jeter un document trop tôt et ne plus pouvoir le présenter lors d'un contrôle, ou accumuler indéfiniment des archives qui alourdissent votre gestion sans nécessité. Ce guide fait le point précis sur chaque catégorie de document.
+
+Vous saurez exactement combien de temps garder vos factures, vos devis, vos relevés bancaires et vos pièces comptables, sous quel format, et ce qui change avec l'archivage électronique.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les deux durées de référence : 6 ans et 10 ans
+
+Deux textes se superposent en matière de conservation des factures, et c'est cette superposition qui explique la confusion la plus fréquente.
+
+L'article L102 B du Livre des procédures fiscales impose une conservation de **6 ans** pour l'ensemble des documents et pièces justificatives sur lesquels l'administration fiscale peut exercer son droit de contrôle, à compter de la dernière opération mentionnée sur ces documents.
+
+L'article L123-22 du Code de commerce impose, lui, une conservation de **10 ans** pour les documents comptables et les pièces justificatives, à compter de la clôture de l'exercice concerné.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Retenez la durée la plus longue">
+    Dans la pratique, une facture relève à la fois du droit fiscal et du droit comptable. Pour éviter tout risque, la règle de prudence communément appliquée consiste à conserver vos factures pendant **10 ans**, ce qui couvre les deux obligations simultanément.
+  </Callout>
+</div>
+
+## Tableau des durées de conservation par type de document
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Durées légales de conservation selon le type de document</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Document</TableHead>
+        <TableHead>Durée</TableHead>
+        <TableHead>Texte de référence</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Factures clients et fournisseurs</TableCell>
+        <TableCell>10 ans</TableCell>
+        <TableCell>Code de commerce, art. L123-22</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pièces justificatives fiscales (TVA, IS)</TableCell>
+        <TableCell>6 ans</TableCell>
+        <TableCell>Livre des procédures fiscales, art. L102 B</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Livres et registres comptables</TableCell>
+        <TableCell>10 ans</TableCell>
+        <TableCell>Code de commerce, art. L123-22</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Devis et bons de commande</TableCell>
+        <TableCell>5 ans (10 ans conseillés)</TableCell>
+        <TableCell>Code civil, art. 2224 (prescription civile)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Contrats commerciaux</TableCell>
+        <TableCell>5 ans après la fin du contrat</TableCell>
+        <TableCell>Code civil, art. 2224</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Relevés bancaires</TableCell>
+        <TableCell>5 ans</TableCell>
+        <TableCell>Code civil, art. 2224</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Bulletins de paie (employeur)</TableCell>
+        <TableCell>5 ans</TableCell>
+        <TableCell>Code du travail, art. L3243-4</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Déclarations de TVA (CA3, CA12)</TableCell>
+        <TableCell>6 ans</TableCell>
+        <TableCell>Livre des procédures fiscales, art. L102 B</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour les entreprises soumises à des obligations comptables allégées, ce tableau vaut aussi bien pour une facture papier que pour une facture au format Factur-X ou UBL issue de la facturation électronique. Retrouvez le détail des obligations qui pèsent sur les plus petites structures dans notre article sur la [comptabilité simplifiée des TPE](/blog/comptabilite-simplifiee-tpe-obligations).
+
+## Le cas particulier du FEC (fichier des écritures comptables)
+
+Le [fichier des écritures comptables](/blog/quest-ce-que-fec-fichier-ecritures-comptables) (FEC) obéit à la même logique que les autres pièces comptables : il doit être conservé pendant 6 ans à compter de la clôture de l'exercice, conformément à l'obligation fiscale, mais la prudence recommande également 10 ans dans une logique comptable. Ce fichier étant systématiquement demandé lors d'un contrôle fiscal informatisé, son absence ou sa perte constitue un manquement grave, indépendamment de la conservation des factures individuelles qui le composent.
+
+## Exemple concret : quelle échéance pour une facture de 2020 ?
+
+Prenons l'exemple d'une facture émise le 15 mars 2020 par une entreprise de conseil, dans un exercice comptable clos au 31 décembre 2020.
+
+- Point de départ du délai fiscal (6 ans, art. L102 B du LPF) : 31 décembre 2020, soit une conservation jusqu'au **31 décembre 2026**.
+- Point de départ du délai comptable (10 ans, art. L123-22 du Code de commerce) : clôture de l'exercice 2020, soit une conservation jusqu'au **31 décembre 2030**.
+
+Dans ce cas, l'entreprise doit conserver la facture jusqu'en 2030, puisque la durée la plus longue s'applique. Passé le 1er janvier 2031, elle peut légalement détruire ce document, sauf s'il reste utile pour un litige commercial en cours.
+
+## Conservation papier ou électronique : ce qui change
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le format électronique a la même valeur probante">
+    Une facture conservée sous forme électronique a la même valeur qu'une facture papier, à condition que son intégrité et sa lisibilité soient garanties pendant toute la durée de conservation. C'est notamment le cas pour les factures transmises via une [PDP](/blog/quest-ce-que-pdp-plateforme-dematerialisation) dans le cadre de la facturation électronique obligatoire.
+  </Callout>
+</div>
+
+Avec la généralisation de la facturation électronique, la question du support papier tend à disparaître pour les transactions entre entreprises assujetties à la TVA. La réception obligatoire s'applique à toutes les entreprises depuis le 1er septembre 2026, et l'archivage numérique conforme devient la norme plutôt que l'exception. Cet archivage doit garantir trois qualités cumulatives :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>authenticité de l'origine</strong> : identité vérifiable de l'émetteur</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>intégrité du contenu</strong> : aucune modification possible sans laisser de trace</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>lisibilité</strong> du document pendant toute la durée légale de conservation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>disponibilité immédiate</strong> en cas de demande de l'administration fiscale</span>
+  </div>
+</div>
+
+Une facture papier peut être numérisée puis détruite, à condition que la numérisation respecte des conditions de fidélité strictes (résolution suffisante, absence de modification, horodatage). En cas de doute sur la conformité de votre procédure de numérisation, conserver l'original papier reste la solution la plus sûre.
+
+## Cas particuliers : associations, professions libérales et sociétés
+
+Les durées de conservation présentées plus haut s'appliquent quelle que soit la forme juridique de votre structure, mais certaines particularités méritent d'être signalées. Une association relevant de la loi de 1901 qui émet des factures, par exemple pour des prestations facturées à d'autres organismes, reste soumise aux mêmes obligations de conservation de 10 ans que n'importe quelle entreprise commerciale, dès lors qu'elle tient une comptabilité. Les professions libérales relevant des bénéfices non commerciaux (BNC) doivent quant à elles conserver leurs notes d'honoraires et leur livre-journal des recettes et dépenses selon les mêmes durées de 6 et 10 ans.
+
+Pour les sociétés commerciales (SARL, SAS, SASU notamment), s'ajoute une obligation spécifique de conservation des documents sociaux, tels que les procès-verbaux d'assemblée générale ou les statuts, pendant des durées qui peuvent aller jusqu'à 30 ans selon la nature du document. Ces obligations relèvent d'une logique différente de celle des factures et documents comptables, mais elles doivent être anticipées dans l'organisation globale de votre archivage d'entreprise, en particulier lors d'un changement de dirigeant ou d'une cession de parts sociales.
+
+## Quels risques en cas de destruction anticipée ?
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un document manquant peut coûter cher lors d'un contrôle">
+    Si l'administration fiscale demande une facture ou une pièce justificative que vous ne pouvez plus présenter parce qu'elle a été détruite avant l'expiration du délai légal, elle peut rejeter la charge ou la déduction de TVA correspondante, avec un redressement à la clé. En matière de facturation électronique, l'absence de transmission ou de conservation conforme peut aussi être sanctionnée par une amende de 15 € par facture, plafonnée à 15 000 € par an.
+  </Callout>
+</div>
+
+Au-delà du risque fiscal, une pièce manquante peut aussi vous priver d'un argument de preuve dans un litige commercial : un client qui conteste un montant facturé, ou un fournisseur qui réclame un paiement déjà effectué, sont deux situations où retrouver rapidement la facture ou le justificatif de paiement fait toute la différence.
+
+## Organiser son archivage par exercice comptable
+
+Plutôt que de conserver l'ensemble de vos documents dans un seul dossier indifférencié, il est recommandé de structurer votre archivage par exercice comptable, puis par nature de document à l'intérieur de chaque exercice. Cette organisation présente deux avantages concrets. D'abord, elle vous permet d'identifier rapidement les documents dont la durée légale de conservation arrive à expiration, exercice par exercice, sans avoir à examiner individuellement chaque facture. Ensuite, elle facilite le travail de votre expert-comptable lors de la clôture annuelle, puisque les pièces justificatives sont déjà classées selon la période qu'elles concernent.
+
+Pour les entreprises qui archivent encore une partie de leurs documents au format papier, il est utile de tenir un tableau de suivi indiquant, pour chaque exercice, la date à partir de laquelle les documents peuvent être détruits. Cela évite à la fois la destruction prématurée d'une pièce encore utile et l'accumulation inutile d'archives dont la durée légale est largement dépassée. Cette même logique s'applique à l'archivage numérique : nommer vos fichiers avec l'année d'exercice en préfixe, par exemple, simplifie considérablement les recherches ponctuelles et les purges périodiques.
+
+## Comment organiser la conservation de vos documents avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un archivage centralisé, sans classement manuel">
+    Newbi conserve automatiquement vos factures, devis et bons de commande dans un espace unique, accessible à tout moment. Vous évitez la dispersion des documents entre boîtes mail, dossiers locaux et classeurs papier, et vous retrouvez en quelques secondes une pièce ancienne en cas de besoin.
+  </Callout>
+</div>
+
+Cette centralisation facilite aussi le partage de vos documents avec votre expert-comptable au moment de la clôture de l'exercice, sans avoir à rassembler manuellement des pièces éparpillées sur plusieurs supports.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Centraliser mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La conservation des factures et documents comptables obéit à deux durées principales, 6 ans au titre fiscal et 10 ans au titre comptable, la seconde primant en pratique par prudence. Les devis, contrats et relevés bancaires relèvent d'une prescription civile plus courte de 5 ans, tandis que les bulletins de paie doivent être conservés 5 ans par l'employeur. Le format électronique a la même valeur probante que le papier, à condition de garantir l'authenticité, l'intégrité et la lisibilité du document sur toute la période, ce qui devient d'autant plus structurant avec la généralisation de la facturation électronique. Un archivage centralisé et organisé par exercice reste le meilleur moyen d'éviter tout risque en cas de contrôle.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la durée de conservation des factures
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Combien de temps dois-je garder mes factures en tant qu'auto-entrepreneur ?</AccordionTrigger>
+      <AccordionContent>
+        Les mêmes règles s'appliquent qu'il s'agisse d'une micro-entreprise ou d'une société : 6 ans au titre fiscal, 10 ans au titre comptable. Par prudence, conservez vos factures de vente et d'achat pendant 10 ans, quel que soit votre régime d'imposition.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on jeter une facture papier après l'avoir numérisée ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, à condition que la numérisation respecte des conditions strictes de fidélité : résolution suffisante, absence de toute altération du contenu et horodatage de l'opération. Si vous avez un doute sur la conformité de votre procédure, conservez l'original papier en complément de la version numérisée jusqu'à l'expiration du délai légal.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>La durée de conservation change-t-elle avec la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Non, les durées légales restent les mêmes. Ce qui change, c'est le support : les factures transmises via une plateforme de dématérialisation partenaire sont conservées nativement au format électronique, ce qui facilite le respect des exigences d'intégrité et de disponibilité sur toute la période légale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que risque-t-on si l'on ne retrouve pas une facture demandée en contrôle ?</AccordionTrigger>
+      <AccordionContent>
+        L'administration fiscale peut refuser la déduction de la TVA associée à cette facture, ou remettre en cause la charge correspondante si elle concerne un achat. Ce refus s'accompagne généralement d'un redressement fiscal, avec des pénalités et des intérêts de retard calculés sur le montant concerné.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il conserver les devis aussi longtemps que les factures ?</AccordionTrigger>
+      <AccordionContent>
+        La prescription civile applicable aux devis et contrats commerciaux est de 5 ans à compter de la fin de la relation contractuelle. Toutefois, il est conseillé de les conserver 10 ans lorsqu'ils sont liés à une facture, notamment pour prouver l'accord initial en cas de litige sur le périmètre d'une prestation.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

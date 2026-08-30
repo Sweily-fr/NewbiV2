@@ -1,0 +1,294 @@
+---
+title: 'Modèle de facture en anglais (invoice) : vocabulaire et mentions'
+description: >-
+  Modèle de facture en anglais à télécharger, lexique facture/invoice,
+  mentions françaises obligatoires même en anglais et gestion de la TVA pour
+  l'export.
+date: '2026-10-19'
+category: modele
+sector: null
+keyword: modèle facture en anglais
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-19'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Modèle de facture en anglais (invoice) : vocabulaire et mentions
+
+Un **modèle de facture en anglais** devient indispensable dès que vous facturez un client basé au Royaume-Uni, aux Etats-Unis ou dans tout autre pays anglophone. Mais attention : une facture en anglais destinée à un client étranger reste soumise aux règles françaises si vous êtes établi en France. Il ne suffit pas de traduire les mots, il faut aussi conserver toutes les mentions obligatoires du droit français.
+
+Ce guide vous donne la structure complète d'une invoice conforme, le lexique facture-invoice à connaître, et les règles de TVA applicables lorsque vous facturez à l'étranger.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer ma facture en anglais gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi les mentions obligatoires françaises restent nécessaires
+
+Une entreprise française qui émet une facture en anglais reste soumise à l'article 289 du Code général des impôts (CGI), qui fixe la liste des mentions obligatoires d'une facture. Rédiger votre document en anglais, pour la lisibilité de votre client, ne vous dispense d'aucune mention : numéro de facture, SIREN, TVA intracommunautaire le cas échéant, date, montants HT et TTC doivent toujours figurer sur le document, quelle que soit la langue utilisée.
+
+En pratique, la solution la plus sûre consiste à conserver l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique, simplement traduites ou doublées en anglais pour les libellés (numéro de facture / invoice number, date d'émission / issue date, etc.). Cela évite toute contestation en cas de contrôle fiscal, tout en restant lisible pour votre interlocuteur étranger.
+
+## Le lexique facture-invoice essentiel
+
+Voici les termes anglais les plus utiles pour construire votre modèle de facture bilingue ou entièrement en anglais.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Lexique français-anglais de la facturation</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Français</TableHead>
+        <TableHead>Anglais</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Facture</TableCell>
+        <TableCell>Invoice</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numéro de facture</TableCell>
+        <TableCell>Invoice number</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Date d'émission</TableCell>
+        <TableCell>Issue date / Invoice date</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Date d'échéance</TableCell>
+        <TableCell>Due date</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Montant hors taxes (HT)</TableCell>
+        <TableCell>Amount excluding tax / Subtotal</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Montant toutes taxes comprises (TTC)</TableCell>
+        <TableCell>Total amount including tax / Total due</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Taux de TVA</TableCell>
+        <TableCell>VAT rate</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numéro de TVA intracommunautaire</TableCell>
+        <TableCell>VAT number / Intra-community VAT number</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conditions de paiement</TableCell>
+        <TableCell>Payment terms</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Coordonnées bancaires</TableCell>
+        <TableCell>Bank details</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Autoliquidation de la TVA</TableCell>
+        <TableCell>Reverse charge</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Exonération de TVA</TableCell>
+        <TableCell>VAT exempt</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## La structure d'un modèle de facture en anglais conforme
+
+Votre invoice doit reprendre l'ensemble des blocs d'une facture classique, dans un ordre lisible.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>En-tête</strong> : vos coordonnées complètes (Seller / Issued by), SIREN et numéro de TVA intracommunautaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Coordonnées du client</strong> (Bill to / Client), y compris son pays</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Invoice number et Issue date</strong>, suivant votre séquence de numérotation habituelle</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Description des prestations ou biens</strong>, en anglais, avec quantités et prix unitaires</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Sous-total, taux de TVA applicable et total TTC</strong>, ou mention d'exonération le cas échéant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Payment terms</strong> : délai de paiement et pénalités applicables</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Bank details</strong> : IBAN et BIC pour le règlement</span>
+  </div>
+</div>
+
+## La TVA selon la destination de votre client
+
+La règle de TVA applicable dépend de la localisation de votre client et de son statut. C'est le point le plus fréquemment mal maîtrisé lorsqu'on [facture un client étranger](/blog/facturer-client-etranger-ue-hors-ue).
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne confondez pas les régimes de TVA à l'export">
+    Pour un client professionnel assujetti dans un autre pays de l'Union européenne, la TVA française n'est en principe pas applicable : c'est le mécanisme d'**autoliquidation** qui s'applique, le client déclarant lui-même la TVA dans son pays. Pour un client hors Union européenne, professionnel ou particulier, la prestation est le plus souvent exonérée de TVA française. Ces deux cas nécessitent une mention spécifique sur la facture, sous peine de redressement.
+  </Callout>
+</div>
+
+### Cas pratique : facturer un client au Royaume-Uni
+
+Vous êtes développeur freelance et facturez une prestation de 8 000 € HT à une entreprise basée à Londres. Le Royaume-Uni n'étant plus membre de l'Union européenne, cette prestation est hors du champ d'application de la TVA française. Votre facture doit porter la mention "VAT not applicable - export of services" ou une formulation équivalente, et aucun montant de TVA n'est ajouté : le client paie 8 000 € au total.
+
+### Cas pratique : facturer un client en Allemagne
+
+Vous facturez cette fois une prestation de conseil de 6 000 € HT à une entreprise allemande assujettie à la TVA, identifiée par son numéro de [TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire). Vous appliquez l'autoliquidation : votre facture indique "VAT reverse charge - Article 283-2 CGI" ou une mention équivalente, et le montant facturé reste 6 000 €, sans TVA française ajoutée. Le client allemand déclare lui-même la TVA due dans son propre pays. Le détail de cette mécanique figure dans notre article sur l'[autoliquidation de la TVA](/blog/autoliquidation-tva-facture-mention).
+
+## La devise : rester en euros ou facturer en devise étrangère
+
+Vous pouvez facturer en euros même à un client étranger, ce qui simplifie votre comptabilité. Mais certains clients, notamment américains ou britanniques, demandent une facturation en dollars ou en livres sterling. Dans ce cas, des règles spécifiques de conversion et de mention du taux de change s'appliquent. Consultez notre guide sur la [facture en devise étrangère](/blog/facture-en-devise-etrangere-regles) pour les modalités précises de conversion et d'enregistrement comptable.
+
+## Les délais et pénalités de paiement dans un contexte international
+
+Les délais de paiement contractuels restent régis par le droit applicable au contrat, souvent le droit français si votre entreprise est établie en France et si le contrat le prévoit. Il reste néanmoins recommandé d'indiquer clairement vos conditions de paiement sur votre invoice, en anglais, pour éviter tout malentendu avec un client basé à l'étranger.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Mentions de délai de paiement à inclure sur une invoice</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Mention en français</TableHead>
+        <TableHead>Mention en anglais</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Paiement à réception</TableCell>
+        <TableCell>Due on receipt</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Paiement à 30 jours</TableCell>
+        <TableCell>Net 30 / Payment due within 30 days</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pénalités de retard</TableCell>
+        <TableCell>Late payment penalties</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Indemnité forfaitaire de recouvrement</TableCell>
+        <TableCell>Fixed recovery compensation</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour un client professionnel établi en France ou dans l'Union européenne, vous pouvez continuer à appliquer les règles françaises de pénalités de retard, avec un taux minimum de trois fois le taux d'intérêt légal et une indemnité forfaitaire de recouvrement de 40 euros. Pour un client hors Union européenne, il est préférable de négocier ces conditions en amont, dans vos conditions générales de vente traduites en anglais, car le droit applicable au litige n'est pas toujours celui de votre pays.
+
+### Cas pratique : retard de paiement d'un client américain
+
+Vous facturez 4 500 € à un client basé à New York, avec un délai "Net 30" indiqué sur votre invoice. Le client règle avec 20 jours de retard. Si vos conditions générales de vente, communiquées et acceptées avant la prestation, prévoient l'application du droit français en cas de litige, vous pouvez réclamer l'indemnité forfaitaire de recouvrement de 40 € ainsi que des pénalités de retard calculées sur la base du taux minimum légal. Sans cette clause explicite, la réclamation devient plus complexe à faire valoir face à un client situé hors de l'Union européenne.
+
+## Les erreurs fréquentes sur un modèle de facture en anglais
+
+Certaines erreurs reviennent régulièrement sur les invoices rédigées par des indépendants français.
+
+1. **Oublier le SIREN ou le numéro de TVA intracommunautaire** parce qu'ils semblent "franco-français" : ces mentions restent obligatoires quelle que soit la langue de la facture.
+2. **Traduire littéralement "TVA" par "TVA"** au lieu d'utiliser "VAT", ce qui peut créer une confusion pour un client anglophone.
+3. **Oublier la mention d'exonération ou d'autoliquidation** alors qu'aucune TVA n'est facturée : sans cette mention, l'administration peut considérer l'omission comme une erreur, pas comme un choix assumé.
+4. **Mélanger les formats de date** : privilégiez le format international AAAA-MM-JJ pour éviter toute ambiguïté entre le format américain (mois/jour/année) et le format européen (jour/mois/année).
+5. **Négliger les conditions de paiement en anglais** : un "Payment terms" clair, avec la date d'échéance, limite les retards de paiement liés à une simple incompréhension.
+
+## Numérotation et archivage d'une facture en anglais
+
+Votre invoice émise à destination d'un client étranger doit s'inscrire dans la même séquence de numérotation que vos factures françaises. Il n'est pas possible de créer une séquence distincte réservée aux clients internationaux : l'article A102 B-2 du Livre des procédures fiscales impose une numérotation chronologique et continue, tous documents confondus.
+
+De la même manière, la durée de conservation ne change pas selon la langue du document. Vos invoices doivent être archivées pendant 10 ans au titre du Code de commerce et pendant 6 ans au titre du Livre des procédures fiscales, exactement comme vos factures françaises. Si vous facturez plusieurs devises, conservez également le justificatif du taux de change utilisé pour chaque conversion, afin de pouvoir le présenter en cas de contrôle fiscal.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Une seule séquence, tous documents confondus">
+    Que votre facture soit rédigée en français ou en anglais, destinée à un client à Paris ou à Chicago, elle doit porter un numéro s'inscrivant dans votre séquence unique et continue de numérotation. Mélanger les séquences par langue ou par zone géographique constitue une irrégularité comptable.
+  </Callout>
+</div>
+
+## Comment Newbi facilite la facturation multilingue
+
+Newbi permet de générer vos factures avec les mentions obligatoires françaises, tout en adaptant les libellés pour vos clients internationaux. Le catalogue de produits et services reste identique, seule la présentation du document s'ajuste à votre interlocuteur.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un seul outil pour vos clients français et étrangers">
+    Avec Newbi, vous gérez vos clients français et internationaux depuis la même interface. Les mentions obligatoires sont appliquées automatiquement selon le pays et le statut du client, ce qui limite le risque d'oubli sur une facture destinée à l'export.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Un modèle de facture en anglais destiné à un client étranger doit conserver l'intégralité des mentions obligatoires du droit français, uniquement présentées avec des libellés en anglais. La TVA applicable dépend de la localisation et du statut du client : autoliquidation pour un professionnel dans l'Union européenne, exonération le plus souvent pour un client hors Union européenne. En structurant votre invoice avec un lexique clair et les bonnes mentions de TVA, vous évitez les erreurs de conformité tout en donnant une image professionnelle à l'international.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture en anglais
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Une facture en anglais doit-elle respecter les mentions obligatoires françaises ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Une entreprise établie en France reste soumise à l'article 289 du Code général des impôts, quelle que soit la langue de la facture. Toutes les mentions obligatoires, numéro de facture, SIREN, montants HT et TTC, doivent figurer sur le document, en français ou traduites en anglais.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il appliquer la TVA sur une facture envoyée à un client anglophone ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de la localisation du client. Pour un professionnel dans l'Union européenne, l'autoliquidation s'applique généralement, sans TVA française. Pour un client hors Union européenne, la prestation est le plus souvent exonérée de TVA française. Une mention spécifique doit alors figurer sur la facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment traduire "TVA" en anglais sur une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Le terme "VAT" (Value Added Tax) est l'équivalent international de la TVA française. Il est utilisé aussi bien au Royaume-Uni que dans les échanges commerciaux internationaux en anglais.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on facturer en dollars ou en livres sterling un client étranger ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, mais cela implique des règles de conversion en euros pour votre comptabilité française, avec mention du taux de change appliqué. Il reste possible et souvent plus simple de facturer en euros, même à un client basé à l'étranger.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Où trouver un modèle de facture en anglais prêt à l'emploi ?</AccordionTrigger>
+      <AccordionContent>
+        Un logiciel de facturation en ligne comme Newbi permet de générer une facture avec des libellés adaptés à un client international, tout en conservant automatiquement les mentions obligatoires exigées par le droit français.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

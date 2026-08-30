@@ -1,0 +1,290 @@
+---
+title: 'Plan de trésorerie prévisionnel : méthode et exemple pour TPE'
+description: >-
+  Construire un plan de trésorerie prévisionnel mois par mois : encaissements,
+  décaissements, TVA, scénarios. Méthode simple et exemple chiffré.
+date: '2026-09-10'
+category: guide
+sector: null
+keyword: plan de trésorerie prévisionnel
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-10'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Plan de trésorerie prévisionnel : méthode et exemple pour TPE
+
+Un **plan de trésorerie prévisionnel** permet d'anticiper, mois par mois, les entrées et les sorties d'argent de votre entreprise. C'est l'outil le plus concret pour savoir si vous pourrez payer vos charges, vos fournisseurs et votre TVA à chaque échéance, bien avant que le problème ne survienne sur votre compte bancaire. Contrairement au compte de résultat, il ne s'intéresse pas aux bénéfices comptables mais aux flux réels de trésorerie.
+
+Ce guide vous propose une méthode simple pour construire votre plan de trésorerie, avec un exemple chiffré complet sur plusieurs mois, les postes à ne pas oublier et les erreurs qui faussent le plus souvent les prévisions.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Plan de trésorerie prévisionnel : de quoi parle-t-on ?
+
+Le plan de trésorerie prévisionnel est un tableau qui recense, mois par mois, l'ensemble des **encaissements** attendus (règlements clients, apports, emprunts) et des **décaissements** prévus (fournisseurs, salaires, charges sociales, TVA, remboursements d'emprunt). Il permet de calculer un solde de trésorerie à la fin de chaque mois, en partant du solde du mois précédent.
+
+Il se distingue de deux autres documents avec lesquels il est souvent confondu :
+
+- le **compte de résultat prévisionnel**, qui mesure la rentabilité (produits moins charges), indépendamment du moment où l'argent est réellement encaissé ou décaissé ;
+- le **plan de financement**, qui a une vision plus large et pluriannuelle des besoins et ressources durables de l'entreprise.
+
+Le plan de trésorerie, lui, se concentre uniquement sur les flux réels de cash, avec une granularité mensuelle, voire hebdomadaire pour les périodes tendues. C'est l'outil de pilotage le plus utile au quotidien pour un indépendant ou une TPE, car une entreprise rentable sur le papier peut malgré tout se retrouver en défaut de paiement si sa trésorerie n'est pas suivie. Ce sujet est développé plus largement dans notre article sur [comment gérer la trésorerie de son entreprise](/blog/comment-gerer-tresorerie-entreprise).
+
+## Pourquoi construire un plan de trésorerie prévisionnel
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Anticiper les tensions de trésorerie</strong> avant qu'elles ne se transforment en incident de paiement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Prévoir les échéances fiscales et sociales</strong> (TVA, URSSAF, impôt sur les sociétés) sans être pris au dépourvu</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Négocier un financement</strong> avec un banquier ou un investisseur sur la base de chiffres construits</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Arbitrer un investissement</strong> ou une embauche en connaissant précisément sa capacité de financement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Sécuriser les périodes creuses</strong>, fréquentes pour les activités saisonnières ou les prestations de service à cycle long</span>
+  </div>
+</div>
+
+## La méthode en 5 étapes
+
+### 1. Fixer la période et le niveau de détail
+
+Un plan de trésorerie prévisionnel se construit généralement sur 12 mois glissants, avec une colonne par mois. Pour une activité récente ou instable, il est utile d'ajouter un suivi hebdomadaire sur les deux ou trois mois à venir, période où l'incertitude sur les encaissements est la plus forte.
+
+### 2. Lister tous les encaissements prévus
+
+Il s'agit de recenser, mois par mois, les règlements clients attendus en fonction des [délais de paiement](/blog/quest-ce-que-delai-paiement-facture) réels constatés (et non des délais théoriques indiqués sur vos factures), les apports en capital ou en compte courant, les éventuels emprunts débloqués, et les remboursements de crédit de TVA.
+
+### 3. Lister tous les décaissements prévus
+
+Cette étape recense les achats et charges fournisseurs, les salaires et charges sociales, les cotisations URSSAF du dirigeant, la TVA à reverser, les échéances de prêt, les impôts (CFE, IS ou impôt sur le revenu), les assurances et abonnements, et les investissements prévus.
+
+### 4. Calculer le solde mensuel et le solde cumulé
+
+Pour chaque mois : solde de trésorerie de fin de mois = solde initial + encaissements du mois - décaissements du mois. Ce solde devient le solde initial du mois suivant. C'est ce solde cumulé qui révèle les mois à risque, ceux où la trésorerie devient négative ou passe sous un seuil de sécurité que vous aurez défini.
+
+### 5. Construire des scénarios
+
+Un bon plan de trésorerie ne se limite pas à une seule hypothèse. Construisez au minimum un scénario optimiste (encaissements dans les délais), un scénario réaliste (délais moyens constatés) et un scénario prudent (retards de paiement, perte d'un client important). Cela permet de mesurer votre marge de sécurité réelle.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Mettez à jour votre plan chaque mois">
+    Un plan de trésorerie prévisionnel n'est utile que s'il est actualisé régulièrement avec les chiffres réels. Comparez chaque mois le prévisionnel et le réalisé pour affiner vos hypothèses des mois suivants et repérer rapidement un écart anormal.
+  </Callout>
+</div>
+
+## Exemple chiffré : plan de trésorerie sur 3 mois
+
+Prenons le cas d'une TPE de services avec un solde de trésorerie de départ de 8 000 € au 1er janvier.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de plan de trésorerie prévisionnel sur 3 mois (en euros)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Poste</TableHead>
+        <TableHead>Janvier</TableHead>
+        <TableHead>Février</TableHead>
+        <TableHead>Mars</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Solde initial</TableCell>
+        <TableCell>8 000</TableCell>
+        <TableCell>6 400</TableCell>
+        <TableCell>3 100</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Encaissements clients</TableCell>
+        <TableCell>9 500</TableCell>
+        <TableCell>7 200</TableCell>
+        <TableCell>12 000</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Charges fournisseurs</TableCell>
+        <TableCell>2 800</TableCell>
+        <TableCell>2 600</TableCell>
+        <TableCell>3 100</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Salaires et charges sociales</TableCell>
+        <TableCell>4 500</TableCell>
+        <TableCell>4 500</TableCell>
+        <TableCell>4 500</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA à reverser</TableCell>
+        <TableCell>1 800</TableCell>
+        <TableCell>1 400</TableCell>
+        <TableCell>1 900</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Autres charges</TableCell>
+        <TableCell>2 000</TableCell>
+        <TableCell>2 000</TableCell>
+        <TableCell>2 000</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Solde final</TableCell>
+        <TableCell>6 400</TableCell>
+        <TableCell>3 100</TableCell>
+        <TableCell>3 600</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ce tableau montre une trésorerie qui se dégrade en janvier et février, avant de se redresser en mars grâce à un encaissement client plus important. Sans ce plan, l'entreprise aurait pu être surprise par le creux de février, notamment si une échéance imprévue s'y était ajoutée.
+
+## Les postes fréquemment oubliés dans un plan de trésorerie
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne sous-estimez pas les échéances fiscales et sociales">
+    La TVA, la CFE, l'impôt et les acomptes de charges sociales sont les postes les plus souvent oubliés ou sous-évalués dans un plan de trésorerie de débutant. Ils ne sont pourtant ni négociables ni reportables sans conséquence. Intégrez-les dès la construction du tableau, en vous appuyant sur un [calendrier fiscal](/blog/calendrier-fiscal-independant-2026) précis.
+  </Callout>
+</div>
+
+Parmi les oublis fréquents : la TVA sur les acomptes encaissés, les congés payés et charges patronales en cas d'embauche, les frais bancaires et agios, l'amortissement du matériel qui n'est pas un décaissement mais dont le remplacement futur doit être anticipé, ainsi que les retards de paiement clients, souvent surestimés dans l'optimisme des premières prévisions. Notre article sur les [erreurs de gestion de trésorerie à éviter](/blog/erreurs-gestion-tresorerie-eviter) revient en détail sur ces pièges classiques.
+
+## Quel est le lien entre le plan de trésorerie et le besoin en fonds de roulement
+
+Une question revient souvent une fois le tableau construit : pourquoi mon entreprise est-elle rentable mais manque-t-elle malgré tout d'argent certains mois ? La réponse tient en grande partie au **besoin en fonds de roulement** (BFR), c'est-à-dire au décalage entre le moment où vous payez vos charges et vos fournisseurs, et le moment où vos clients vous règlent. Plus vos délais de paiement clients sont longs et vos délais fournisseurs courts, plus ce besoin est élevé, et plus votre plan de trésorerie doit intégrer une marge de sécurité importante.
+
+Le BFR se calcule simplement : stocks et créances clients, moins dettes fournisseurs. Une entreprise de services sans stock, mais qui facture à 30 jours et paie ses sous-traitants à réception, aura un BFR positif qu'il faut financer par de la trésorerie disponible. C'est précisément ce que le plan de trésorerie prévisionnel permet de visualiser mois après mois, en révélant les périodes où ce décalage se creuse, par exemple lors d'un pic d'activité qui augmente les créances clients avant que les encaissements ne suivent.
+
+### Cas concret : une activité saisonnière
+
+Prenons une entreprise de paysagisme dont l'activité est concentrée entre avril et septembre. Le tableau ci-dessous illustre comment le plan de trésorerie révèle un besoin de financement en basse saison, alors que le compte de résultat annuel reste largement bénéficiaire.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Trésorerie d'une activité saisonnière sur l'année (en euros)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Période</TableHead>
+        <TableHead>Encaissements moyens/mois</TableHead>
+        <TableHead>Décaissements moyens/mois</TableHead>
+        <TableHead>Solde mensuel</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Basse saison (oct. à mars)</TableCell>
+        <TableCell>3 200</TableCell>
+        <TableCell>6 800</TableCell>
+        <TableCell>-3 600</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Haute saison (avr. à sept.)</TableCell>
+        <TableCell>14 500</TableCell>
+        <TableCell>8 200</TableCell>
+        <TableCell>+6 300</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Sur l'année, le solde cumulé reste largement positif, mais l'entreprise doit impérativement constituer une réserve pendant la haute saison pour financer les six mois de basse saison qui suivent. Sans plan de trésorerie mensuel, ce besoin de financement resterait invisible jusqu'à ce que le compte bancaire soit dans le rouge en plein hiver.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Constituez une réserve de trésorerie en haute saison">
+    Pour une activité saisonnière, une bonne pratique consiste à provisionner chaque mois, dès les premiers encaissements de la haute saison, une part fixe du chiffre d'affaires sur un compte dédié, afin de sécuriser les mois creux sans avoir à recourir systématiquement à un découvert bancaire.
+  </Callout>
+</div>
+
+## Interpréter les résultats et réagir à temps
+
+Un plan de trésorerie n'a de valeur que s'il déclenche des actions. Lorsqu'un mois affiche un solde négatif ou proche de zéro, plusieurs leviers existent : accélérer les encaissements en relançant les factures impayées ou en demandant des acomptes plus importants, décaler certains décaissements non urgents, mobiliser une ligne de découvert ou un affacturage, ou encore ajuster le rythme des investissements prévus. L'important est d'identifier ces mois à risque plusieurs semaines à l'avance, et non lorsque le découvert est déjà atteint.
+
+## Comment Newbi vous aide à construire et suivre votre trésorerie
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Une vision de trésorerie connectée à vos vraies factures">
+    Newbi relie votre facturation, vos achats et votre compte bancaire pour construire une vision de trésorerie fondée sur des données réelles plutôt que sur des estimations manuelles. Chaque facture émise, chaque facture reçue et chaque mouvement bancaire rapproché alimente automatiquement votre suivi.
+  </Callout>
+</div>
+
+Avec la connexion bancaire et le rapprochement automatique, vous suivez en temps réel l'écart entre vos prévisions et votre trésorerie réelle, sans ressaisie manuelle dans un tableur. Cela permet d'ajuster rapidement vos hypothèses et de repérer un décalage avant qu'il ne devienne critique.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Découvrir le suivi de trésorerie Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Le plan de trésorerie prévisionnel est l'outil de pilotage le plus concret pour une TPE : il traduit mois par mois les encaissements et décaissements réels, révèle les périodes à risque et permet d'anticiper les échéances fiscales et sociales avant qu'elles ne mettent l'entreprise en difficulté. La méthode reste simple, lister les flux, calculer un solde cumulé et construire plusieurs scénarios, mais son efficacité dépend d'une mise à jour régulière avec les chiffres réels. Couplé à un suivi bancaire automatisé, ce plan devient un véritable outil d'aide à la décision plutôt qu'un exercice théorique réalisé une fois par an.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le plan de trésorerie prévisionnel
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre plan de trésorerie et compte de résultat ?</AccordionTrigger>
+      <AccordionContent>
+        Le compte de résultat mesure la rentabilité de l'entreprise, produits moins charges, indépendamment de la date réelle d'encaissement ou de décaissement. Le plan de trésorerie, lui, ne suit que les flux réels d'argent sur le compte bancaire, mois par mois. Une entreprise peut être rentable sur le papier tout en manquant de trésorerie si ses clients paient en retard.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Sur quelle durée construire un plan de trésorerie prévisionnel ?</AccordionTrigger>
+      <AccordionContent>
+        La durée classique est de 12 mois glissants avec un détail mensuel. Pour les entreprises jeunes ou les périodes tendues, il est recommandé d'ajouter un suivi hebdomadaire sur les deux ou trois prochains mois, période où les prévisions sont les plus fiables et les risques les plus immédiats.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment estimer les délais de paiement réels de mes clients ?</AccordionTrigger>
+      <AccordionContent>
+        Le meilleur indicateur est votre historique réel de paiement, et non le délai indiqué sur vos factures. Calculez le délai moyen constaté sur les derniers mois pour chaque catégorie de clients et utilisez ce délai, plutôt que le délai contractuel, pour positionner les encaissements dans votre plan de trésorerie.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que faire si mon plan de trésorerie révèle un solde négatif dans deux mois ?</AccordionTrigger>
+      <AccordionContent>
+        Il faut agir dès que le risque est identifié : relancer les factures en attente, demander des acomptes sur les prochaines prestations, négocier des délais avec certains fournisseurs, ou solliciter une ligne de découvert ou un financement court terme auprès de votre banque avant que la situation ne devienne urgente.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il un plan de trésorerie même pour une petite activité indépendante ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, même une activité modeste bénéficie d'un plan de trésorerie simplifié, car les échéances fiscales, sociales et les délais de paiement clients existent quelle que soit la taille de l'entreprise. Un tableau simple sur trois à six mois suffit souvent pour un indépendant, à condition d'être mis à jour régulièrement.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,277 @@
+---
+title: "Modifier un devis signé : l'avenant, quand et comment le rédiger"
+description: >-
+  Travaux supplémentaires, changement de prix ou de délai : un devis signé se
+  modifie par avenant. Modèle, mentions et cas où un nouveau devis s'impose.
+date: '2026-10-22'
+category: guide
+sector: null
+keyword: avenant devis
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-22'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Modifier un devis signé : l'avenant, quand et comment le rédiger
+
+Un **avenant à un devis** permet de modifier un devis déjà accepté par le client sans avoir à annuler l'ensemble du projet. Travaux supplémentaires découverts en cours de chantier, changement de délai, ajustement de prix : ces situations sont fréquentes, notamment dans le BTP et les prestations de service longues, et un devis signé ne peut pas être modifié unilatéralement. Ce guide explique dans quels cas rédiger un avenant, comment le faire correctement, et quand il vaut mieux établir un nouveau devis.
+
+Beaucoup de professionnels hésitent face à une demande de modification en cours de projet : faut-il tout refaire, envoyer un simple mail ou rédiger un document formel ? La réponse a des conséquences juridiques directes, puisqu'un devis signé engage les deux parties. Voici la marche à suivre pour sécuriser ces évolutions sans fragiliser votre relation commerciale.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi un devis signé ne peut pas être modifié seul
+
+Un devis accepté par le client, daté et signé, constitue un contrat au sens du droit civil. Dès sa signature, il engage les deux parties sur le prix, les prestations et les délais indiqués. C'est d'ailleurs ce qui fait la [valeur juridique du devis signé](/blog/devis-signe-valeur-juridique-engagement) : ni le professionnel ni le client ne peuvent en modifier unilatéralement le contenu.
+
+Toute modification, qu'elle porte sur le prix, le périmètre des travaux ou le délai, doit donc faire l'objet d'un accord formalisé entre les deux parties. C'est le rôle de l'**avenant** : un document qui vient compléter ou modifier le devis initial, sans le remplacer intégralement, et qui doit lui aussi être accepté et signé par le client pour produire ses effets.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="L'avenant ne remplace pas le devis initial">
+    L'avenant s'ajoute au devis d'origine, il ne l'annule pas. Le devis initial et l'avenant forment ensemble le nouvel accord contractuel. Conservez toujours les deux documents dans le dossier du client.
+  </Callout>
+</div>
+
+## Dans quels cas rédiger un avenant
+
+L'avenant est adapté chaque fois que le projet évolue sans remettre en cause sa nature globale. Les cas les plus fréquents sont les suivants.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Travaux supplémentaires</strong> découverts en cours de chantier (BTP notamment)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Modification du délai</strong> d'exécution, à la demande du client ou du prestataire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Ajout ou retrait d'une prestation</strong> sans changer l'objet principal du contrat</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Révision du prix</strong> liée à une hausse du coût des matériaux ou à une prestation additionnelle</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Changement d'échéancier de paiement</strong> ou du montant des acomptes</span>
+  </div>
+</div>
+
+Dans le secteur du bâtiment, l'avenant est particulièrement courant : la découverte d'un problème structurel, d'une mise aux normes électriques imprévue ou d'un besoin de reprise de fondations amène régulièrement à revoir le devis initial. Notre [guide du devis travaux BTP](/blog/devis-travaux-btp-guide) détaille les spécificités de ce secteur, où les avenants sont presque la norme sur les chantiers de rénovation.
+
+## Avenant ou nouveau devis : comment choisir
+
+Tous les changements ne justifient pas un avenant. Si le projet change de nature ou si l'ampleur de la modification dépasse largement le cadre initial, un nouveau devis est plus adapté.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Avenant ou nouveau devis selon la nature de la modification</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Situation</TableHead>
+        <TableHead>Solution recommandée</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Ajout d'une prestation liée au projet initial</TableCell>
+        <TableCell>Avenant</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Changement de délai sans modification du périmètre</TableCell>
+        <TableCell>Avenant</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Révision du prix suite à un imprévu de chantier</TableCell>
+        <TableCell>Avenant</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Le client change complètement de projet</TableCell>
+        <TableCell>Nouveau devis</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Le montant de la modification dépasse le devis initial</TableCell>
+        <TableCell>Nouveau devis</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Le projet initial est abandonné avant exécution</TableCell>
+        <TableCell>Nouveau devis</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Une règle de bon sens plutôt qu'un seuil légal">
+    Il n'existe pas de seuil légal précis fixant à partir de quel montant un nouveau devis s'impose plutôt qu'un avenant. En pratique, si la modification représente plus de 30 à 50 % du montant initial ou change la nature du projet, il est plus prudent d'établir un nouveau devis complet plutôt qu'un avenant, pour éviter toute ambiguïté en cas de litige.
+  </Callout>
+</div>
+
+## Les mentions obligatoires d'un avenant
+
+Un avenant doit reprendre certaines informations pour être juridiquement solide et rattaché sans ambiguïté au devis initial.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence du devis initial</strong> (numéro et date)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>numéro et une date</strong> propres à l'avenant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>description précise</strong> de la ou des modifications apportées</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>nouveau montant</strong> ou l'impact chiffré sur le prix initial (en plus ou en moins)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>nouveau délai</strong> d'exécution, le cas échéant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>signature des deux parties</strong>, précédée de la mention "bon pour accord"</span>
+  </div>
+</div>
+
+### Exemple concret
+
+Un artisan a signé un devis de rénovation de salle de bain pour 8 500 € TTC. En ouvrant le mur, il découvre une fuite sur une canalisation qui nécessite une reprise de plomberie non prévue, estimée à 950 € TTC. Il rédige un avenant n° 1 au devis n° D-2026-042, daté du jour de la découverte, détaillant la nature des travaux supplémentaires, leur montant de 950 € TTC, et l'impact sur le délai global (2 jours supplémentaires). Le client signe l'avenant avant que les travaux ne débutent. Le montant total du chantier passe ainsi de 8 500 € à 9 450 € TTC, documenté par les deux pièces contractuelles.
+
+## L'accord du client reste indispensable
+
+Un point est parfois mal compris : même pour des travaux supplémentaires objectivement nécessaires, le professionnel ne peut pas facturer une prestation non prévue au devis sans l'accord préalable du client, sauf urgence avérée mettant en jeu la sécurité. Réaliser des travaux non validés expose à un refus de paiement, le client pouvant légitimement contester une facture qui dépasse le devis signé sans avenant.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Formalisez l'accord avant d'exécuter, pas après">
+    Dans l'idéal, faites signer l'avenant avant de réaliser les travaux ou la prestation supplémentaire. Si l'urgence l'impose, un accord écrit même informel (mail, SMS confirmé) reste préférable à un accord uniquement oral, plus difficile à prouver en cas de litige.
+  </Callout>
+</div>
+
+## Facturer après un avenant
+
+Une fois l'avenant signé, la facturation suit la même logique que pour le devis initial. Si des acomptes ont déjà été versés sur le devis d'origine, la facture finale doit reprendre le montant total incluant l'avenant, déduction faite des acomptes déjà encaissés. Il est recommandé de faire apparaître clairement sur la facture la référence du devis initial et de l'avenant, pour assurer la traçabilité de l'ensemble du dossier en cas de contrôle ou de litige.
+
+## Comment Newbi simplifie la gestion des avenants
+
+Dans Newbi, un devis accepté peut être dupliqué pour créer rapidement un avenant reprenant les coordonnées du client et la référence du document initial, sans ressaisie. Vous ajustez ensuite les lignes concernées (prestations supplémentaires, nouveau délai, révision de prix) et envoyez le document pour signature électronique.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un historique clair par projet">
+    Newbi conserve le lien entre le devis initial et ses avenants dans la fiche client, ce qui facilite le suivi de l'historique complet d'un projet et évite les erreurs lors de la facturation finale.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes devis et avenants</Link>
+  </Button>
+</div>
+
+## Bonnes pratiques pour limiter les avenants
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Détaillez le plus précisément possible le devis initial pour réduire le risque d'imprévus</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Prévoyez une clause de révision de prix dans les conditions générales de vente pour les chantiers longs</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Documentez systématiquement les découvertes de chantier par photo avant de proposer un avenant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne démarrez jamais une prestation supplémentaire sans validation écrite du client</span>
+  </div>
+</div>
+
+## Prévenir les litiges liés aux avenants
+
+La majorité des litiges sur des avenants naissent d'un désaccord sur ce qui avait été réellement convenu. Pour les limiter, intégrez une clause de révision de prix directement dans vos [conditions générales de vente](/blog/quest-ce-que-conditions-generales-vente), qui précise les modalités selon lesquelles un devis peut évoluer en cours d'exécution : découverte de sujétions imprévues, hausse significative du coût des matériaux, demande du client. Cette clause ne dispense pas de faire signer chaque avenant individuellement, mais elle pose un cadre que le client a accepté dès la signature du devis initial, ce qui réduit les contestations ultérieures.
+
+En cas de désaccord persistant sur un avenant, privilégiez toujours l'échange écrit (mail, courrier) plutôt que l'oral, et conservez systématiquement les preuves de la demande du client, qu'il s'agisse d'un message, d'un compte rendu de réunion de chantier ou d'un mail de validation. Ces éléments sont déterminants si le litige devait être porté devant le tribunal de commerce ou un conciliateur.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un avenant oral reste risqué à prouver">
+    Un accord oral sur une modification de devis a la même valeur juridique qu'un accord écrit, mais il est beaucoup plus difficile à prouver en cas de litige. Systématisez la confirmation écrite, même sous forme d'un simple mail récapitulatif signé "bon pour accord" par le client.
+  </Callout>
+</div>
+
+## Avenant et délai de rétractation
+
+Un point souvent ignoré concerne les devis conclus avec des particuliers hors établissement (à domicile, sur un salon, par démarchage). Dans ce cas, le client bénéficie d'un délai de rétractation de 14 jours prévu par le Code de la consommation. Un avenant qui modifie substantiellement la prestation initiale peut, selon les circonstances, faire courir un nouveau délai de rétractation sur la partie modifiée. Par prudence, pour les prestations concernées par ce régime, informez explicitement le client de ses droits lors de la signature de l'avenant, au même titre que pour le devis initial.
+
+## En résumé
+
+Un devis signé engage fermement les deux parties et ne peut être modifié qu'avec leur accord commun, formalisé par un avenant. Ce document doit référencer le devis initial, détailler précisément la modification apportée et son impact sur le prix ou le délai, puis être signé par le client avant l'exécution des travaux supplémentaires. Un nouveau devis reste préférable lorsque le projet change de nature ou que la modification dépasse largement le périmètre initial. Bien géré, l'avenant sécurise à la fois votre trésorerie et votre relation client.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'avenant à un devis
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Peut-on modifier un devis signé sans l'accord du client ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Un devis signé constitue un contrat qui engage les deux parties. Toute modification du prix, du périmètre ou du délai doit être formalisée par un avenant accepté et signé par le client, sauf urgence avérée mettant en jeu la sécurité des personnes ou des biens.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il un nouveau devis ou un avenant pour des travaux supplémentaires ?</AccordionTrigger>
+      <AccordionContent>
+        Un avenant suffit lorsque les travaux supplémentaires restent liés au projet initial et n'en changent pas la nature. Un nouveau devis est plus adapté si le projet évolue significativement ou si le montant de la modification représente une part importante, souvent supérieure à 30 ou 50 %, du devis d'origine.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>L'avenant doit-il être signé avant le début des travaux supplémentaires ?</AccordionTrigger>
+      <AccordionContent>
+        C'est fortement recommandé. Réaliser des travaux non prévus au devis avant d'avoir obtenu l'accord écrit du client expose le professionnel à un refus de paiement, le client pouvant contester une prestation non validée contractuellement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que doit contenir un avenant à un devis ?</AccordionTrigger>
+      <AccordionContent>
+        L'avenant doit mentionner la référence et la date du devis initial, son propre numéro et sa date, la description précise de la modification, l'impact chiffré sur le prix et le délai, et la signature des deux parties précédée de la mention "bon pour accord".
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment facturer un chantier après un avenant ?</AccordionTrigger>
+      <AccordionContent>
+        La facture finale reprend le montant total du devis initial augmenté ou diminué du montant de l'avenant, en déduisant les acomptes déjà versés. Il est conseillé de faire apparaître sur la facture les références du devis initial et de l'avenant pour assurer une traçabilité complète du dossier.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

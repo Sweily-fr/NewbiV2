@@ -1,0 +1,239 @@
+---
+title: 'Facture de chauffeur VTC : plateformes, clients directs et TVA'
+description: >-
+  Comment facturer en tant que chauffeur VTC : factures aux plateformes,
+  courses en direct, TVA à 10 %, autofacturation et justificatifs pour les
+  frais.
+date: '2026-09-25'
+category: guide
+sector: Transport / Mobilité
+keyword: facture vtc
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-25'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">Transport / Mobilité</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facture de chauffeur VTC : plateformes, clients directs et TVA
+
+La **facture VTC** obéit à des règles particulières selon que vous travaillez via une plateforme comme Uber ou Bolt, ou que vous facturez directement vos clients en course privée. Beaucoup de chauffeurs indépendants découvrent tardivement que la relation avec les plateformes fonctionne par autofacturation, un mécanisme qui inverse le processus habituel d'émission de facture. Ce guide détaille les deux circuits de facturation, le taux de TVA applicable, et les justificatifs à conserver pour vos frais professionnels.
+
+Que vous soyez auto-entrepreneur débutant ou chauffeur VTC en société depuis plusieurs années, vous trouverez ici les réponses concrètes sur l'autofacturation des plateformes, le taux de TVA à 10 % sur le transport de personnes, et la structuration de vos factures pour les courses réservées en direct.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les deux circuits de facturation d'un chauffeur VTC
+
+Un chauffeur VTC facture rarement de la même façon selon l'origine de la course. Deux circuits coexistent, avec des obligations différentes.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des circuits de facturation pour un chauffeur VTC</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Circuit</TableHead>
+        <TableHead>Qui émet la facture</TableHead>
+        <TableHead>Ce que vous devez faire</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Courses via plateforme</TableCell>
+        <TableCell>La plateforme, par autofacturation</TableCell>
+        <TableCell>Vérifier et accepter les factures reçues chaque mois</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Courses en direct (clients privés, entreprises)</TableCell>
+        <TableCell>Vous-même</TableCell>
+        <TableCell>Émettre une facture conforme à chaque course ou en fin de mois</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## L'autofacturation avec les plateformes VTC
+
+Lorsque vous travaillez via une plateforme de mise en relation (Uber, Bolt, Heetch), c'est la plateforme elle-même qui établit la facture en votre nom, un mécanisme appelé **autofacturation**, prévu par l'article 289 du Code général des impôts. Vous n'avez donc pas à créer manuellement une facture pour chaque course réalisée via l'application.
+
+<Callout type="info" title="L'autofacturation ne vous dispense pas de vérifier">
+  Même si la plateforme émet la facture à votre place, vous restez responsable de son exactitude. Vérifiez systématiquement le nombre de courses, les montants et le taux de TVA appliqués avant d'accepter le document, en général via un délai d'acceptation tacite fixé dans les conditions contractuelles.
+</Callout>
+
+Concrètement, un accord d'autofacturation formalise ce fonctionnement entre vous et la plateforme : elle édite la facture, vous la recevez, et vous disposez d'un délai pour la contester si une erreur apparaît. Passé ce délai, la facture est réputée acceptée. Conservez ces documents au même titre que toute facture professionnelle : ils constituent la preuve de votre chiffre d'affaires réalisé via la plateforme.
+
+## Facturer une course en direct
+
+Lorsqu'un client vous réserve directement, sans passer par une plateforme, par exemple pour un transfert aéroport négocié en direct ou un contrat régulier avec une entreprise, c'est à vous d'émettre la facture. Cette facture doit respecter les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classiques : votre numéro SIRET, l'identité du client, la date et le lieu de la course, le montant HT et TTC, et le taux de TVA applicable.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Numéro de facture unique, suivant votre séquence de numérotation.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Description de la prestation : trajet, date, éventuellement kilométrage.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Montant HT, taux de TVA (10 % pour le transport de personnes) et montant de TVA.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vos coordonnées complètes : nom commercial, adresse, numéro SIRET.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conditions et délai de paiement, en particulier pour les comptes entreprises facturés en fin de mois.</span>
+  </div>
+</div>
+
+## Quel taux de TVA pour une course VTC ?
+
+Le transport de voyageurs relève en France du taux réduit de TVA à **10 %**, applicable aux courses VTC comme aux taxis. Ce taux s'applique dès lors que vous êtes assujetti à la TVA, c'est-à-dire lorsque votre chiffre d'affaires dépasse le seuil de la franchise en base.
+
+<Callout type="warning" title="Franchise en base : vérifiez votre seuil">
+  Un chauffeur VTC exerce une activité de prestation de services : le seuil de franchise en base de TVA applicable est de 37 500 € de chiffre d'affaires annuel en 2026, avec un seuil majoré de tolérance à 41 250 €. Au-delà, vous devenez redevable de la TVA et devez l'appliquer sur toutes vos courses, y compris celles facturées en direct.
+</Callout>
+
+### Exemple chiffré
+
+Un chauffeur VTC assujetti à la TVA facture une course en direct à 50 € HT pour un transfert aéroport. Avec un taux de TVA à 10 %, la TVA due est de 5 €, soit une facture totale de 55 € TTC. Sur les courses réalisées via une plateforme, le même calcul s'applique, mais c'est la plateforme qui établit la facture correspondante par autofacturation, en tenant compte de sa propre commission facturée séparément.
+
+## La commission de la plateforme : bien comprendre le flux financier
+
+Un point de confusion fréquent chez les chauffeurs VTC concerne le traitement de la commission prélevée par la plateforme. En général, deux flux distincts existent : la plateforme facture le client final pour la course, puis vous reverse votre part après déduction de sa commission, elle-même facturée à vous en tant que prestation de mise en relation.
+
+Ce mécanisme signifie que vous devez suivre à la fois votre chiffre d'affaires brut réalisé (montant des courses) et les commissions payées à la plateforme, qui constituent une charge déductible pour votre activité. Un suivi rigoureux de ces deux flux est indispensable pour ne pas fausser votre déclaration de TVA ni votre résultat imposable.
+
+## Les justificatifs et frais professionnels du chauffeur VTC
+
+L'activité de chauffeur VTC génère des frais professionnels réguliers dont la TVA peut être en partie récupérable si vous êtes assujetti : carburant, entretien du véhicule, péages, assurance professionnelle, nettoyage du véhicule. Le régime de TVA applicable au carburant dépend du type de véhicule et suit les règles générales détaillées dans le guide sur la [TVA déductible](/blog/tva-deductible-quelles-depenses).
+
+<Callout type="tip" title="Conservez systématiquement vos justificatifs de carburant et d'entretien">
+  Photographiez ou scannez chaque ticket dès son émission. Les tickets thermiques s'effacent rapidement, ce qui rend la preuve impossible à fournir en cas de contrôle plusieurs mois après l'achat.
+</Callout>
+
+## Comment Newbi simplifie la facturation VTC
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Centralisez vos courses en direct et vos justificatifs de frais">
+    Avec Newbi, vous créez rapidement vos factures pour les courses en direct, avec le bon taux de TVA appliqué automatiquement. Le module de gestion des achats avec OCR lit vos justificatifs de carburant et d'entretien pour vous éviter la ressaisie manuelle à chaque déclaration.
+  </Callout>
+</div>
+
+Cette organisation est particulièrement utile pour les chauffeurs qui combinent courses de plateforme et clientèle directe : vous gardez une vision claire de votre chiffre d'affaires total et de vos charges déductibles, sans dispersion entre plusieurs outils.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures VTC avec Newbi</Link>
+  </Button>
+</div>
+
+## Auto-entrepreneur VTC : les points de vigilance
+
+La grande majorité des chauffeurs VTC démarrent sous le statut de [micro-entrepreneur](/blog/comment-creer-facture-auto-entrepreneur). Ce statut impose des plafonds de chiffre d'affaires à surveiller : 77 700 € pour les prestations de services relevant des BNC en 2026. Au-delà, un changement de régime fiscal s'impose.
+
+Le suivi des [seuils de la franchise en base de TVA](/blog/tva-auto-entrepreneur-seuils-franchise) est également essentiel : dès que votre chiffre d'affaires cumulé sur l'année dépasse 37 500 € (ou 41 250 € au titre du seuil majoré), vous devenez redevable de la TVA dès le premier jour du mois de dépassement, y compris sur vos revenus de plateforme. Il est donc recommandé de suivre son chiffre d'affaires mensuel de près pour anticiper ce basculement.
+
+## VTC en société : ce qui change par rapport au statut de micro-entrepreneur
+
+Certains chauffeurs VTC optent pour une société (EURL, SASU) plutôt que pour le statut de micro-entrepreneur, en particulier lorsque leur activité se développe et qu'ils recrutent d'autres chauffeurs. Ce choix a des conséquences directes sur la facturation.
+
+En société, il n'existe plus de seuil de franchise en base applicable par défaut de la même façon : selon les options fiscales retenues, l'entreprise peut être redevable de la TVA dès sa création. Toutes les factures, qu'elles proviennent de l'autofacturation des plateformes ou de courses en direct, doivent alors intégrer la TVA à 10 % dès le premier jour d'activité.
+
+La société doit également suivre une comptabilité plus structurée, avec un bilan annuel et des obligations déclaratives renforcées par rapport au régime micro-social simplifié. Si vous employez d'autres chauffeurs, chaque véhicule et chaque conducteur doivent être identifiés distinctement dans votre suivi de facturation, notamment pour ventiler correctement le chiffre d'affaires par chauffeur en cas de contrôle de l'activité de transport.
+
+### Exemple chiffré : comparaison des deux statuts
+
+Un chauffeur VTC réalise 60 000 € de chiffre d'affaires annuel. En micro-entreprise, il dépasse le seuil de franchise en base de TVA (37 500 €) en cours d'année et doit facturer la TVA à 10 % sur le reste de son chiffre d'affaires à partir du mois de dépassement, tout en restant plafonné à 77 700 € de chiffre d'affaires annuel pour conserver son statut. En société soumise à la TVA dès l'origine, il facture la TVA à 10 % sur l'intégralité de ses courses dès le premier jour, mais récupère en contrepartie la TVA sur l'ensemble de ses achats professionnels (véhicule, carburant, entretien), ce qui peut représenter une économie substantielle selon le niveau d'investissement dans le véhicule.
+
+## Checklist du chauffeur VTC pour une facturation conforme
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifiez chaque facture d'autofacturation reçue de votre plateforme avant l'expiration du délai de contestation.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Émettez une facture conforme pour chaque course réservée en direct.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Appliquez le taux de TVA à 10 % dès que vous dépassez le seuil de la franchise en base.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conservez tous les justificatifs de carburant, entretien et péages.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Suivez votre chiffre d'affaires cumulé pour anticiper le passage en régime réel de TVA.</span>
+  </div>
+</div>
+
+## En résumé
+
+La facturation d'un chauffeur VTC combine deux logiques distinctes : l'autofacturation par les plateformes pour les courses passant par leur application, et l'émission directe de factures conformes pour les courses réservées en direct. Le taux de TVA applicable au transport de personnes est de 10 % dès que vous dépassez le seuil de franchise en base fixé à 37 500 € de chiffre d'affaires en 2026. Un suivi rigoureux de vos factures de plateforme, de vos courses directes et de vos justificatifs de frais professionnels vous permet de rester conforme et de récupérer la TVA déductible à laquelle vous avez droit.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture VTC
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un chauffeur VTC doit-il émettre une facture pour chaque course de plateforme ?</AccordionTrigger>
+      <AccordionContent>
+        Non, pour les courses réalisées via une plateforme comme Uber ou Bolt, c'est la plateforme qui émet la facture en votre nom grâce au mécanisme de l'autofacturation. Vous devez cependant vérifier et accepter ces factures, car vous restez responsable de leur exactitude.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel est le taux de TVA applicable aux courses VTC ?</AccordionTrigger>
+      <AccordionContent>
+        Le transport de personnes relève du taux réduit de TVA à 10 %, applicable dès que vous êtes assujetti à la TVA, c'est-à-dire lorsque votre chiffre d'affaires dépasse le seuil de la franchise en base fixé à 37 500 € en 2026 pour les prestations de services.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer une course VTC réservée en direct par un client ?</AccordionTrigger>
+      <AccordionContent>
+        Vous devez émettre vous-même une facture conforme, avec votre numéro SIRET, la description de la course, le montant HT et TTC, le taux de TVA applicable si vous y êtes assujetti, et les conditions de paiement. Cette facture suit les mêmes mentions obligatoires que toute facture professionnelle classique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un chauffeur VTC auto-entrepreneur peut-il récupérer la TVA sur son carburant ?</AccordionTrigger>
+      <AccordionContent>
+        Un micro-entrepreneur en franchise en base de TVA ne récupère pas la TVA, quelle que soit la dépense, car il ne facture pas lui-même de TVA à ses clients. En revanche, dès qu'il dépasse le seuil de franchise et devient redevable de la TVA, il peut récupérer la TVA sur son carburant selon les règles applicables au type de véhicule utilisé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que faire si une facture d'autofacturation de la plateforme comporte une erreur ?</AccordionTrigger>
+      <AccordionContent>
+        Contactez le support de la plateforme dans le délai de contestation prévu par l'accord d'autofacturation, généralement précisé dans vos conditions contractuelles. Passé ce délai, la facture est réputée acceptée, d'où l'importance de vérifier chaque document dès sa réception plutôt qu'en fin d'année.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

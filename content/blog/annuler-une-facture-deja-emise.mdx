@@ -1,0 +1,237 @@
+---
+title: 'Comment annuler une facture déjà émise (sans la supprimer)'
+description: >-
+  Une facture émise ne se supprime jamais. La procédure légale pour l'annuler
+  par un avoir, les cas particuliers (facture non envoyée, e-invoicing) et les
+  pièges.
+date: '2026-09-22'
+category: guide
+sector: null
+keyword: annuler une facture
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-22'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Comment annuler une facture déjà émise (sans la supprimer)
+
+Vouloir **annuler une facture** déjà émise est une situation fréquente : erreur de client, commande finalement non honorée, doublon de saisie. Mais contrairement à un brouillon ou un devis, une facture émise ne peut jamais être supprimée de votre comptabilité. La loi impose une procédure précise pour la neutraliser, qui préserve la numérotation continue et la traçabilité exigées par l'administration fiscale.
+
+Ce guide détaille la procédure légale pour annuler une facture, les cas particuliers selon que la facture a été envoyée ou non au client, les règles spécifiques à la facturation électronique, et les erreurs qui exposent à un redressement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Gérer mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## Pourquoi une facture émise ne peut jamais être supprimée
+
+La numérotation des factures doit être chronologique et continue, sans rupture ni trou de séquence, conformément aux exigences de l'article 289 du Code général des impôts. Si vous supprimez purement et simplement une facture, vous créez un trou dans cette séquence, ce qui constitue un indice de facturation dissimulée aux yeux de l'administration fiscale lors d'un contrôle. Même une facture erronée, envoyée par erreur ou jamais réglée, doit rester visible dans votre historique.
+
+C'est pour cette raison que la seule méthode légale pour neutraliser une facture consiste à émettre un [avoir](/blog/quest-ce-que-avoir-credit), c'est-à-dire une facture négative qui vient annuler tout ou partie de la facture d'origine, tout en conservant la trace des deux documents.
+
+## La procédure légale en quatre étapes
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Identifiez la facture</strong> à annuler par son numéro et sa date d'émission exacts</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Émettez un avoir</strong> reprenant le même montant, en négatif, avec la mention "Avoir sur facture n° ..."</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Attribuez un numéro</strong> propre à l'avoir, dans votre séquence de numérotation continue</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Régularisez la TVA</strong> collectée sur la période où l'avoir est émis, pas sur celle de la facture initiale</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="info" title="L'avoir, seul document légal d'annulation">
+    Il n'existe aucun bouton "supprimer" légal pour une facture déjà émise, quel que soit votre logiciel de facturation. Le seul document reconnu pour neutraliser une facture est l'avoir, aussi appelé note de crédit, qui vient compenser exactement le montant de la facture d'origine.
+  </Callout>
+</div>
+
+## Facture non envoyée au client : la marge de manoeuvre existe
+
+Un cas particulier mérite d'être distingué : la facture émise dans votre logiciel mais jamais transmise au client. Tant qu'un document n'a pas quitté votre système pour atteindre le destinataire, certains éditeurs de logiciels autorisent sa suppression technique, à condition qu'elle n'ait généré aucune écriture comptable définitive et qu'aucun numéro n'ait été "sauté" dans la séquence.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un cas à manier avec précaution">
+    Même dans ce cas, la prudence recommande de privilégier l'avoir plutôt que la suppression, dès lors que la facture a été comptabilisée ou qu'elle est visible dans votre journal de vente. En cas de doute, demandez conseil à votre expert-comptable avant de supprimer un document, y compris non envoyé.
+  </Callout>
+</div>
+
+## Tableau comparatif : les situations et leur solution
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Que faire selon la situation de la facture à annuler</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Situation</TableHead>
+        <TableHead>Solution</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Facture envoyée au client, jamais réglée</TableCell>
+        <TableCell>Avoir total</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture envoyée et déjà réglée</TableCell>
+        <TableCell>Avoir total, puis remboursement ou avoir utilisable sur une facture future</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture avec erreur de montant ou de TVA</TableCell>
+        <TableCell><Link href="/blog/facture-rectificative-comment-faire">Facture rectificative</Link></TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture créée mais jamais transmise</TableCell>
+        <TableCell>Suppression technique possible selon le logiciel, avoir recommandé si un doute subsiste</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture rejetée par une plateforme de facturation électronique</TableCell>
+        <TableCell>Correction du fichier et redépôt, sans avoir</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Exemple chiffré : annuler une facture réglée par erreur de destinataire
+
+Une entreprise de conseil facture par erreur une mission de 3 000 € HT (3 600 € TTC) à la mauvaise filiale d'un groupe client. La facture n° F-2026-0210 a déjà été envoyée et réglée par virement.
+
+Pour corriger la situation, l'entreprise émet un avoir n° F-2026-0231 pour un montant de - 3 000 € HT (- 3 600 € TTC), référençant explicitement la facture n° F-2026-0210. Elle émet ensuite une nouvelle facture n° F-2026-0232 adressée à la bonne filiale, pour le même montant de 3 000 € HT. Le virement initial est soit remboursé à la filiale qui a payé par erreur, soit affecté au règlement de la nouvelle facture si les deux entités appartiennent au même groupe et en sont d'accord.
+
+## Annulation et facturation électronique
+
+Dans le cadre de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026), l'annulation d'une facture suit un circuit précis via votre plateforme de dématérialisation partenaire. L'avoir doit être transmis dans les mêmes formats du socle que la facture initiale, Factur-X, UBL ou CII, et son statut est suivi comme celui de n'importe quelle facture. Si la facture d'origine a été rejetée par la plateforme avant même d'atteindre le destinataire, aucun avoir n'est nécessaire : elle n'a jamais été considérée comme émise, et il suffit de corriger puis redéposer le document.
+
+En revanche, une fois qu'une facture a atteint le statut "déposée" avec succès et qu'elle a été transmise au client, seul un avoir permet de la neutraliser dans le système. Cette règle vaut particulièrement pour les grandes entreprises et les ETI, soumises à l'émission obligatoire depuis le 1er septembre 2026, puis pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+
+## Les erreurs à ne pas commettre
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne réutilisez jamais le numéro d'une facture annulée pour un nouveau document</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne supprimez pas une facture de votre logiciel une fois qu'elle a été transmise au client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>N'oubliez pas de régulariser la TVA collectée sur la période de l'avoir</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne modifiez pas le fichier PDF ou électronique de la facture originale déjà transmise</span>
+  </div>
+</div>
+
+## Impact sur la TVA déjà déclarée
+
+Lorsque vous annulez une facture par un avoir, la TVA collectée sur la facture initiale doit être régularisée. Si la facture d'origine et son avoir interviennent sur la même période de déclaration, la régularisation est simple : le montant de TVA de l'avoir vient en déduction de celui de la facture, et le solde net est déclaré. Si l'avoir intervient sur une période de déclaration ultérieure, par exemple un mois après la facture initiale, la TVA de l'avoir se déduit de la TVA collectée sur cette nouvelle période, sans qu'il soit nécessaire de déposer une déclaration rectificative pour le mois précédent.
+
+Ce mécanisme évite d'avoir à revenir sur des déclarations déjà transmises à l'administration, tant que l'écart reste correctement documenté par l'avoir et sa référence à la facture annulée. Pour les entreprises soumises à un régime réel normal avec déclaration mensuelle, ce point mérite une attention particulière lorsque l'annulation intervient à cheval sur deux mois civils.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Prévenez votre expert-comptable dès l'annulation">
+    Signalez immédiatement à votre expert-comptable toute annulation de facture significative, en particulier si elle chevauche deux périodes de déclaration de TVA. Cela lui permet d'intégrer correctement l'avoir dans votre prochaine déclaration et d'éviter tout écart avec vos livres comptables.
+  </Callout>
+</div>
+
+## Annulation partielle : quand seule une partie de la facture doit disparaître
+
+L'annulation n'est pas toujours totale. Si une facture comporte plusieurs lignes et qu'une seule doit être annulée, par exemple parce qu'un article commandé n'a finalement pas été livré, un avoir partiel suffit. Il reprend uniquement le montant de la ligne concernée, en négatif, et laisse le reste de la facture initiale inchangé et toujours dû.
+
+Prenons l'exemple d'une facture de 2 200 € HT comportant trois prestations : une prestation de conseil à 1 200 € HT, une formation à 600 € HT et un déplacement à 400 € HT. Si la formation est finalement annulée, l'avoir partiel porte uniquement sur 600 € HT, soit 720 € TTC avec une TVA à 20 %. Le solde restant dû sur la facture initiale, 1 600 € HT, n'est pas affecté par cette annulation partielle.
+
+## Conserver la trace, même après annulation
+
+La facture annulée et son avoir doivent tous deux rester archivés pendant 10 ans conformément au Code de commerce, et pendant 6 ans au titre du Livre des procédures fiscales. En cas de contrôle, l'administration attend de retrouver l'intégralité de la séquence de numérotation, y compris les documents annulés, avec leur avoir correspondant clairement référencé. Un trou de numérotation non justifié est l'un des signaux qui déclenchent le plus fréquemment un examen approfondi de la comptabilité.
+
+## Annuler vos factures en toute conformité avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un avoir généré en quelques clics, lié à sa facture d'origine">
+    Avec Newbi, l'émission d'un avoir depuis une facture existante conserve automatiquement le lien avec le document initial et respecte votre numérotation continue. Vous gardez une vue d'ensemble claire de vos factures actives, annulées et remboursées.
+  </Callout>
+</div>
+
+Gérer une annulation de facture à la main expose facilement à des oublis : numéro mal référencé, TVA non régularisée, ou pire, suppression pure et simple d'un document déjà transmis. Un logiciel qui structure ce processus limite fortement le risque d'erreur en cas de contrôle.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mes factures et avoirs</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Une facture émise ne se supprime jamais : elle doit être neutralisée par un avoir, qui reprend le même montant en négatif et référence explicitement la facture d'origine. Seule une facture créée mais jamais transmise au client peut, dans certains cas, être supprimée techniquement, et encore, avec prudence. Dans le cadre de la facturation électronique, une facture rejetée par la plateforme avant d'atteindre le destinataire ne nécessite pas d'avoir, contrairement à une facture déjà déposée et transmise. Dans tous les cas, la traçabilité complète, y compris des documents annulés, doit être conservée pendant 10 ans.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'annulation de facture
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Peut-on supprimer une facture directement dans son logiciel de facturation ?</AccordionTrigger>
+      <AccordionContent>
+        Non, pas si la facture a déjà été émise et transmise au client. La seule méthode légale consiste à émettre un avoir qui neutralise le montant de la facture initiale, tout en conservant les deux documents dans votre historique et votre séquence de numérotation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre annuler une facture et la rectifier ?</AccordionTrigger>
+      <AccordionContent>
+        Annuler une facture signifie neutraliser intégralement son montant via un avoir, généralement parce qu'elle n'aurait pas dû être émise dans cette forme. La rectifier consiste à corriger une erreur ponctuelle, comme un taux de TVA erroné, via une facture rectificative qui référence le document initial.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Que faire si le client a déjà payé la facture à annuler ?</AccordionTrigger>
+      <AccordionContent>
+        Vous émettez un avoir du même montant que la facture réglée, puis vous procédez soit à un remboursement effectif, soit à l'affectation de cet avoir sur une facture future si le client et vous êtes d'accord sur ce mode de compensation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Une facture électronique rejetée par une plateforme doit-elle être annulée par un avoir ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Tant que la facture n'a pas été transmise avec succès au destinataire, elle n'est pas considérée comme émise. Il suffit de corriger le fichier et de le redéposer sur la plateforme, sans passer par un avoir.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Combien de temps faut-il conserver une facture annulée et son avoir ?</AccordionTrigger>
+      <AccordionContent>
+        Les deux documents doivent être archivés pendant 10 ans conformément au Code de commerce, et pendant 6 ans au titre du Livre des procédures fiscales. Cette conservation s'applique même si la facture a été intégralement neutralisée par un avoir.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

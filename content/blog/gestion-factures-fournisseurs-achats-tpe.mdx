@@ -1,0 +1,260 @@
+---
+title: 'Gérer ses factures fournisseurs : collecte, validation, paiement et archivage'
+description: >-
+  Un process simple en 5 étapes pour gérer ses factures d'achat sans rien
+  perdre : collecte automatique, OCR, rapprochement bancaire, paiement et
+  transmission au comptable.
+date: '2026-10-01'
+category: guide
+sector: null
+keyword: gestion factures fournisseurs
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-01'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Gérer ses factures fournisseurs : collecte, validation, paiement et archivage
+
+La **gestion des factures fournisseurs** est l'un des chantiers les plus chronophages pour une TPE : un justificatif reçu par mail, un ticket papier oublié dans une poche, un virement fait sans lien clair avec la facture d'origine. Sans process clair, on perd du temps à chaque clôture et on risque de rater des échéances de paiement ou des délais de récupération de TVA déductible.
+
+Ce guide détaille un process en cinq étapes, applicable dès demain, pour collecter, valider, payer et archiver vos factures d'achat sans rien perdre. Vous y trouverez aussi les obligations légales de conservation et un exemple chiffré de suivi mensuel.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi la gestion des factures fournisseurs pose problème aux TPE
+
+Dans une petite structure, personne n'est dédié à temps plein au traitement des factures d'achat. Elles arrivent par des canaux différents : mail, courrier, application du fournisseur, remise en main propre. Résultat, une part significative des justificatifs finit égarée, saisie en retard ou tout simplement jamais transmise au comptable.
+
+Les conséquences concrètes sont connues : TVA déductible non récupérée faute de justificatif, retards de paiement qui abîment la relation fournisseur, doublons de saisie, et une clôture comptable qui traîne chaque trimestre parce qu'il manque des pièces. Un process structuré, même minimal, change immédiatement la donne.
+
+## Les 5 étapes d'un process fiable
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Le cycle de vie d'une facture fournisseur, de la réception à l'archivage</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[140px]">Étape</TableHead>
+        <TableHead>Objectif</TableHead>
+        <TableHead>Point de vigilance</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">1. Collecte</TableCell>
+        <TableCell>Centraliser tous les justificatifs au même endroit</TableCell>
+        <TableCell>Ne pas dépendre d'une seule boîte mail</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">2. Extraction</TableCell>
+        <TableCell>Récupérer montant, TVA, fournisseur, date</TableCell>
+        <TableCell>Éviter la ressaisie manuelle, source d'erreurs</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">3. Validation</TableCell>
+        <TableCell>Vérifier la cohérence avec le devis ou la commande</TableCell>
+        <TableCell>Fixer un responsable, même dans une petite équipe</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">4. Paiement et rapprochement</TableCell>
+        <TableCell>Lier le virement bancaire à la bonne facture</TableCell>
+        <TableCell>Respecter les délais contractuels</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">5. Archivage</TableCell>
+        <TableCell>Conserver le justificatif de façon exploitable</TableCell>
+        <TableCell>Respecter les durées légales de conservation</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### Étape 1 : centraliser la collecte
+
+La première cause de perte de justificatifs est la dispersion des canaux de réception. Une bonne pratique consiste à rediriger systématiquement les factures fournisseurs vers une seule adresse mail dédiée, ou à les déposer immédiatement dans un espace de stockage partagé dès leur réception papier ou par photo. L'objectif est simple : qu'aucun document ne reste isolé sur un téléphone personnel ou dans une boîte mail générale noyée sous d'autres messages.
+
+### Étape 2 : extraire les données sans ressaisie
+
+Une fois collectée, chaque facture doit être exploitée sans passer par une saisie manuelle intégrale. C'est le rôle de la reconnaissance optique de caractères (OCR), qui extrait automatiquement le montant HT, la TVA, le fournisseur et la date d'échéance depuis un PDF ou une photo de ticket. Cette étape réduit fortement le risque d'erreur de saisie et fait gagner un temps considérable sur un volume mensuel de dizaines de factures. Le sujet est détaillé dans notre guide sur l'[OCR des justificatifs comptables](/blog/ocr-justificatifs-comptables).
+
+### Étape 3 : valider avant paiement
+
+Avant de régler une facture, il est utile de vérifier qu'elle correspond bien à une commande passée, à un montant attendu et à un fournisseur identifié. Dans une TPE, cette validation peut être aussi simple qu'un contrôle visuel par le dirigeant, mais elle doit être systématique pour éviter les doublons de paiement ou les factures frauduleuses.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Attention aux fausses factures fournisseurs">
+    La fraude au faux fournisseur (RIB modifié, facture imitant un fournisseur réel) touche aussi les petites structures. Vérifiez systématiquement tout changement de coordonnées bancaires par un appel téléphonique au fournisseur avant de payer, surtout pour un montant inhabituel.
+  </Callout>
+</div>
+
+### Étape 4 : payer et rapprocher automatiquement
+
+Une fois la facture validée, le paiement doit être effectué dans les délais convenus, puis rapproché du mouvement bancaire correspondant. C'est là que la [connexion bancaire et le rapprochement automatique](/blog/connexion-bancaire-rapprochement-automatique) deviennent précieux : ils permettent d'associer chaque virement sortant à la facture d'achat correspondante, sans pointage manuel ligne par ligne dans le relevé de compte.
+
+### Étape 5 : archiver dans les règles
+
+La dernière étape, souvent négligée, est l'archivage. En droit français, les factures d'achat doivent être conservées **10 ans** au titre des obligations comptables du Code de commerce, et **6 ans** au titre du délai de reprise de l'administration fiscale prévu par le Livre des procédures fiscales (LPF). Un archivage numérique structuré, avec le fichier original conservé et non une simple photo floue, sécurise ce délai.
+
+## Les délais de paiement à respecter envers vos fournisseurs
+
+La gestion des factures fournisseurs ne se limite pas à l'organisation interne : elle engage aussi votre entreprise sur le plan légal. L'article L441-10 du Code de commerce fixe un délai de paiement par défaut de **30 jours** après réception de la marchandise ou exécution de la prestation, sauf accord contractuel différent. Les parties peuvent convenir d'un délai plus long, mais celui-ci ne peut en principe pas dépasser **60 jours** à compter de la date d'émission de la facture, ou 45 jours fin de mois si cette option est expressément prévue par le contrat.
+
+Le non-respect de ces délais expose l'entreprise débitrice à des pénalités de retard, dont le taux minimum est fixé par la loi à **trois fois le taux d'intérêt légal**, ainsi qu'à une indemnité forfaitaire de recouvrement de **40 €** par facture, due de plein droit dès le premier jour de retard, sans qu'il soit besoin de mise en demeure préalable. Ces pénalités s'appliquent aussi bien lorsque vous êtes en retard envers un fournisseur que lorsqu'un de vos propres clients l'est envers vous.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Anticiper les échéances grâce au suivi centralisé">
+    En centralisant vos factures fournisseurs dans un seul outil avec leur date d'échéance, vous limitez le risque de dépasser ces délais légaux par simple oubli, un facteur de tension fréquent avec les fournisseurs stratégiques d'une TPE.
+  </Callout>
+</div>
+
+## Qui doit valider les factures dans une petite structure
+
+Dans une entreprise de moins de 10 salariés, il est rarement pertinent de créer un circuit de validation lourd à plusieurs niveaux. L'essentiel est de désigner clairement un responsable unique, souvent le dirigeant ou le responsable administratif, chargé de vérifier chaque facture avant paiement. Ce responsable doit pouvoir répondre à trois questions simples : la commande a-t-elle bien été passée, le montant correspond-il à ce qui était attendu, et le fournisseur est-il bien identifié.
+
+Pour les structures un peu plus grandes, un second niveau de contrôle peut être ajouté sur les montants dépassant un seuil défini à l'avance, par exemple 1 000 €. Ce seuil évite de ralentir le traitement des petites factures récurrentes tout en sécurisant les paiements les plus importants.
+
+## Exemple chiffré : le mois d'une TPE de 4 salariés
+
+Prenons le cas d'une TPE du bâtiment qui reçoit en moyenne 35 factures fournisseurs par mois : matériaux, sous-traitance, carburant, fournitures de bureau. Sans process structuré, le dirigeant estime passer environ 6 heures par mois à rechercher des justificatifs manquants et à ressaisir des montants.
+
+En appliquant le process en 5 étapes :
+
+- **Collecte centralisée** : toutes les factures arrivent sur une seule adresse ou sont photographiées immédiatement sur le chantier.
+- **Extraction automatique** : l'OCR traite les 35 factures en quelques minutes au lieu d'une saisie manuelle d'environ 3 minutes par facture, soit près de 1h45 économisées.
+- **Rapprochement bancaire automatique** : les 35 paiements sont associés à leurs factures sans pointage manuel, contre environ 1h30 auparavant.
+- **Archivage numérique** : plus de recherche de justificatif papier lors du contrôle fiscal ou de la clôture avec l'expert-comptable.
+
+Au global, le temps consacré au traitement des factures fournisseurs passe d'environ 6 heures à moins de 2 heures par mois, soit un gain estimé à plus de 48 heures par an, sans compter la réduction du risque d'erreur ou d'oubli de TVA déductible.
+
+## Les mentions à vérifier sur chaque facture reçue
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>numéro de facture</strong> et la date d'émission</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>identité complète du fournisseur</strong> (dénomination, SIRET, adresse)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>détail des produits ou prestations</strong> facturés</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>taux et le montant de TVA</strong> appliqués, cohérents avec l'activité du fournisseur</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>conditions et la date d'échéance</strong> du règlement</span>
+  </div>
+</div>
+
+Ces mentions correspondent globalement à celles exigées côté vente, détaillées dans notre article sur les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture). Une facture fournisseur incomplète peut compliquer la récupération de la TVA déductible et doit être signalée à l'émetteur.
+
+## La réception électronique obligatoire depuis 2026
+
+Depuis le **1er septembre 2026**, toutes les entreprises françaises, y compris les TPE et micro-entreprises, doivent être en mesure de **recevoir** des factures électroniques transmises via une plateforme de dématérialisation partenaire (PDP), dans l'un des formats du socle : Factur-X, UBL ou CII. L'obligation d'**émission** suit un calendrier différent : elle s'applique depuis la même date aux grandes entreprises et aux ETI, et s'étendra aux PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Réception dès maintenant, émission plus tard">
+    Même si votre entreprise n'est pas encore concernée par l'obligation d'émission, vous devez déjà être en capacité de recevoir des factures électroniques depuis le 1er septembre 2026 si vos fournisseurs y sont soumis. Vérifiez que votre outil de gestion des achats gère bien ces flux.
+  </Callout>
+</div>
+
+## Comment Newbi organise la gestion des achats
+
+Newbi centralise la gestion des factures fournisseurs dans un module dédié : les justificatifs peuvent être déposés ou envoyés directement, l'OCR extrait automatiquement les données clés, et la connexion bancaire permet un rapprochement automatique entre chaque paiement et sa facture d'origine. Les documents restent ensuite accessibles pour être partagés avec l'expert-comptable au moment de la clôture.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/gestion-des-achats">Découvrir la gestion des achats Newbi</Link>
+  </Button>
+</div>
+
+## Les erreurs fréquentes à éviter
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Payer une facture <strong>sans vérifier</strong> qu'elle correspond à une commande réelle</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conserver les justificatifs uniquement en <strong>photo sur un téléphone personnel</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Oublier de <strong>rapprocher</strong> le paiement bancaire de la facture correspondante</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Transmettre les pièces au comptable <strong>en retard</strong>, en vrac, une fois par trimestre</span>
+  </div>
+</div>
+
+## En résumé
+
+Gérer efficacement ses factures fournisseurs repose sur un process simple mais tenu de bout en bout : centraliser la collecte, extraire les données sans ressaisie grâce à l'OCR, valider avant paiement, rapprocher automatiquement chaque règlement de sa facture, puis archiver dans le respect des durées légales de 10 ans côté commercial et 6 ans côté fiscal. Ce process fait gagner un temps mesurable chaque mois, réduit le risque d'erreur et facilite le travail de l'expert-comptable à chaque clôture.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la gestion des factures fournisseurs
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Combien de temps conserver une facture fournisseur ?</AccordionTrigger>
+      <AccordionContent>
+        Une facture fournisseur doit être conservée 10 ans au titre des obligations comptables prévues par le Code de commerce, et au minimum 6 ans au titre du délai de reprise de l'administration fiscale fixé par le Livre des procédures fiscales. En pratique, un archivage numérique de 10 ans sécurise les deux obligations à la fois.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il obligatoirement utiliser l'OCR pour traiter ses factures d'achat ?</AccordionTrigger>
+      <AccordionContent>
+        L'OCR n'est pas une obligation légale, mais un outil qui accélère considérablement le traitement des factures fournisseurs en extrayant automatiquement le montant, la TVA et les autres données clés depuis un PDF ou une photo. Sur un volume important de factures, il réduit fortement le temps de saisie manuelle et les erreurs qui en découlent.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment vérifier qu'une facture fournisseur n'est pas frauduleuse ?</AccordionTrigger>
+      <AccordionContent>
+        Contrôlez la cohérence des informations avec vos échanges précédents avec ce fournisseur : SIRET, adresse, montant attendu. En cas de changement de coordonnées bancaires, contactez toujours le fournisseur par un canal déjà connu, comme un numéro de téléphone habituel, avant d'effectuer le paiement, surtout pour un montant inhabituel.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Dois-je pouvoir recevoir des factures fournisseurs électroniques dès 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Depuis le 1er septembre 2026, toutes les entreprises, y compris les TPE et micro-entreprises, doivent être en capacité de recevoir des factures électroniques via une plateforme de dématérialisation partenaire, dans l'un des formats Factur-X, UBL ou CII. L'obligation d'émission de vos propres factures suit un calendrier différent selon la taille de votre entreprise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment lier automatiquement un paiement à sa facture fournisseur ?</AccordionTrigger>
+      <AccordionContent>
+        La connexion bancaire couplée à un rapprochement automatique permet d'associer chaque mouvement sortant du compte à la facture d'achat correspondante, sur la base du montant, de la date et du libellé. Cela évite le pointage manuel ligne par ligne dans le relevé bancaire et sécurise le suivi de trésorerie.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

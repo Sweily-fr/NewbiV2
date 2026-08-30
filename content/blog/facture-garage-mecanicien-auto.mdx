@@ -1,0 +1,275 @@
+---
+title: 'Facture de garage et mécanicien : pièces, main-d''œuvre et mentions obligatoires'
+description: >-
+  Ordre de réparation, devis obligatoire, détail pièces et main-d'œuvre,
+  pièces d'occasion, TVA : ce qu'une facture de garage doit contenir pour être
+  conforme.
+date: '2026-11-11'
+category: guide
+sector: Commerces / Retail
+keyword: facture garage automobile
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-11'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture de garage et mécanicien : pièces, main-d'œuvre et mentions obligatoires
+
+La **facture de garage automobile** obéit à des règles précises qui vont au-delà des mentions obligatoires classiques : détail des pièces changées, distinction entre pièces neuves et d'occasion, décompte de la main-d'œuvre, et souvent un devis préalable obligatoire dès que le montant dépasse un certain seuil. Pour un garagiste ou un mécanicien indépendant, une facture mal détaillée peut être source de litiges avec le client, voire de sanctions en cas de contrôle de la répression des fraudes.
+
+Cet article détaille précisément ce que doit contenir une facture de garage conforme, la réglementation applicable au devis préalable, et les points de vigilance propres à la vente de pièces automobiles, neuves ou d'occasion.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## L'ordre de réparation : la première étape avant la facture
+
+Avant même de parler de facturation, tout garage sérieux doit établir un **ordre de réparation** signé par le client au moment du dépôt du véhicule. Ce document recense les prestations demandées, l'état du véhicule à son arrivée (kilométrage, dommages visibles, niveau de carburant) et, le cas échéant, les réparations complémentaires découvertes en cours d'intervention et validées par le client avant leur réalisation. Il sert de base contractuelle à la facture finale et limite les contestations sur la nature exacte des travaux effectués.
+
+## Le devis obligatoire au-delà de 150 euros
+
+La réglementation impose au professionnel de l'automobile de remettre un devis écrit et gratuit dès lors que le montant prévisionnel de la réparation dépasse 150 euros TTC, en application de l'arrêté du 3 décembre 1987 relatif à l'information du consommateur sur les prix. Ce devis doit être accepté par le client, daté et signé, avant le début des travaux. En dessous de ce seuil, le devis n'est pas obligatoire mais reste fortement recommandé pour éviter tout litige.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le piège des réparations complémentaires">
+    Si des réparations supplémentaires sont découvertes en cours d'intervention (une pièce cassée détectée au démontage, par exemple), le garagiste doit impérativement obtenir l'accord préalable du client avant de les facturer, sauf urgence dûment justifiée. Facturer une prestation non prévue au devis initial et non validée expose à une contestation du client, voire à un signalement pour pratique commerciale déloyale.
+  </Callout>
+</div>
+
+Pour un panorama plus large des règles applicables face à un client particulier, notre article sur les [obligations légales du devis pour un consommateur](/blog/obligations-legales-devis-consommateur) complète utilement ce point.
+
+## Les mentions obligatoires d'une facture de garage
+
+Au-delà des mentions classiques d'une facture (identité des parties, numéro, date, SIRET, TVA), la facture de garage doit détailler avec précision chaque élément de l'intervention :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>identification du véhicule</strong> : immatriculation, marque, modèle, kilométrage au moment de l'intervention</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>détail de chaque pièce</strong> remplacée, avec sa référence et son prix unitaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention explicite <strong>« pièce neuve »</strong> ou <strong>« pièce d'occasion »</strong> pour chaque pièce facturée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>temps de main-d'œuvre</strong> facturé, en heures ou en unités d'œuvre, avec le taux horaire appliqué</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence au devis</strong> initial accepté par le client, s'il existe</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>taux de TVA</strong> applicable à chaque ligne (pièces et main-d'œuvre suivent en général le même taux)</span>
+  </div>
+</div>
+
+## Exemple de facture détaillée pour une réparation courante
+
+Voici un exemple concret pour une intervention de changement de plaquettes de frein et de vidange.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de facture de garage détaillée</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Désignation</TableHead>
+        <TableHead>Quantité</TableHead>
+        <TableHead>Prix unitaire HT</TableHead>
+        <TableHead>Total HT</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Plaquettes de frein avant (neuves)</TableCell>
+        <TableCell>1 jeu</TableCell>
+        <TableCell>65,00 €</TableCell>
+        <TableCell>65,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Huile moteur 5W30 (5 litres)</TableCell>
+        <TableCell>1</TableCell>
+        <TableCell>42,00 €</TableCell>
+        <TableCell>42,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Filtre à huile</TableCell>
+        <TableCell>1</TableCell>
+        <TableCell>12,00 €</TableCell>
+        <TableCell>12,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Main-d'œuvre (1h30 à 55 EUR/h)</TableCell>
+        <TableCell>1,5 h</TableCell>
+        <TableCell>55,00 €</TableCell>
+        <TableCell>82,50 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Calcul du montant final">
+    Le total HT de cette intervention s'élève à 201,50 €. Avec une TVA à 20 %, soit 40,30 €, le montant TTC facturé au client atteint 241,80 €. Ce niveau de détail, ligne par ligne, protège le garagiste en cas de contestation et rassure le client sur la nature exacte de l'intervention réalisée.
+  </Callout>
+</div>
+
+## Pièces neuves, pièces d'occasion et pièces reconditionnées
+
+La réglementation impose une transparence totale sur l'origine des pièces utilisées. Depuis la loi relative à la lutte contre le gaspillage et à l'économie circulaire de 2020, les réparateurs automobiles doivent informer le client de la possibilité d'utiliser des pièces issues de l'économie circulaire (pièces d'occasion) pour certaines catégories de réparations, et recueillir son accord explicite. Sur la facture, chaque pièce doit être clairement identifiée selon sa nature.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Types de pièces automobiles et obligations de mention</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Type de pièce</TableHead>
+        <TableHead>Mention obligatoire</TableHead>
+        <TableHead>Point de vigilance</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Pièce neuve d'origine</TableCell>
+        <TableCell>« Pièce neuve d'origine constructeur »</TableCell>
+        <TableCell>Référence constructeur à indiquer</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pièce neuve adaptable</TableCell>
+        <TableCell>« Pièce neuve adaptable »</TableCell>
+        <TableCell>Marque équivalente à préciser</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pièce d'occasion (PIEC)</TableCell>
+        <TableCell>« Pièce issue de l'économie circulaire »</TableCell>
+        <TableCell>Accord préalable écrit du client requis</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## La TVA sur les prestations de garage
+
+Les prestations de réparation automobile suivent en principe le taux normal de TVA à 20 %, aussi bien pour les pièces que pour la main-d'œuvre. Il n'existe pas de taux réduit spécifique pour la réparation automobile en France, contrairement à certains autres secteurs de services à la personne. Un garage soumis au régime de la franchise en base de TVA, sous les seuils 2026 de 37 500 € pour les prestations de services ou 85 000 € pour la revente de pièces en tant que vente de biens, doit faire figurer la mention « TVA non applicable, article 293 B du CGI » sur ses factures, comme expliqué dans notre guide sur les [seuils de la franchise en base auto-entrepreneur](/blog/tva-auto-entrepreneur-seuils-franchise).
+
+## Le paiement et les garanties applicables
+
+Une fois la facture émise, le client dispose des garanties légales classiques : garantie de conformité pour les pièces neuves vendues, et garantie contractuelle si le garage en propose une (souvent 3 à 6 mois sur la main-d'œuvre et les pièces posées). En cas de litige sur la qualité de la réparation, l'ordre de réparation initial et la facture détaillée constituent les pièces principales du dossier. Pour un client qui tarde à régler, les règles générales de [facturation d'un particulier](/blog/facturer-un-particulier-regles-mentions) et de relance s'appliquent comme pour toute autre activité commerciale.
+
+## Cas pratique : un litige évité grâce à une facture détaillée
+
+Un garagiste reçoit un véhicule pour un simple contrôle de freinage. Au démontage, il constate que le disque de frein avant droit est fissuré et doit être remplacé en urgence pour des raisons de sécurité. Il appelle immédiatement le client, obtient son accord téléphonique, et note cet accord ainsi que l'heure de l'appel directement sur l'ordre de réparation. La facture finale détaille séparément la prestation initialement prévue (contrôle et remplacement des plaquettes, 95 € HT) et la réparation complémentaire validée en cours d'intervention (disque de frein avant droit, pièce et main-d'œuvre, 145 € HT), avec une mention explicite renvoyant à l'accord téléphonique du client.
+
+Deux semaines plus tard, le client conteste le montant total de la facture, estimant avoir seulement demandé un contrôle. Grâce à la trace écrite de l'accord sur l'ordre de réparation et au détail précis de la facture, le garagiste peut démontrer que la réparation complémentaire a bien été validée avant d'être réalisée. Sans cette documentation, le litige aurait probablement tourné en faveur du client, faute de preuve de son consentement.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="La leçon à retenir">
+    Documenter systématiquement les accords du client, même oraux, en les reportant par écrit sur l'ordre de réparation avant de facturer, constitue la meilleure protection contre les litiges. Cette habitude prend quelques secondes mais peut éviter des semaines de contentieux et un impayé.
+  </Callout>
+</div>
+
+## La garantie et le service après-vente
+
+Au-delà de la facture elle-même, il est recommandé d'indiquer sur le document ou en pièce jointe la durée de garantie appliquée sur les pièces et la main-d'œuvre, en général comprise entre 3 et 12 mois selon le type d'intervention. Cette information rassure le client et limite les malentendus en cas de panne récurrente après l'intervention. Si le même problème réapparaît dans le délai de garantie, la facture initiale sert de référence pour identifier si la nouvelle intervention doit être facturée ou prise en charge gratuitement au titre du service après-vente.
+
+## Comment Newbi simplifie la facturation en garage automobile
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un catalogue de pièces et prestations réutilisable">
+    Avec Newbi, vous pouvez constituer un catalogue de vos pièces et prestations courantes (vidange, plaquettes, pneumatiques) pour générer vos factures détaillées en quelques clics, sans ressaisir les prix à chaque intervention. Le calcul de la TVA et des totaux se fait automatiquement.
+  </Callout>
+</div>
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Catalogue de pièces et prestations</strong> réutilisable d'une facture à l'autre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Conversion du devis accepté</strong> en facture, sans ressaisie</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Calcul automatique</strong> de la TVA et des totaux pièces et main-d'œuvre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivi des paiements</strong> clients directement depuis le tableau de bord</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mon garage avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Une facture de garage automobile conforme va au-delà des mentions obligatoires classiques : elle doit identifier précisément le véhicule, détailler chaque pièce avec sa référence et sa nature (neuve, adaptable ou d'occasion), et décomposer la main-d'œuvre avec le temps passé et le taux horaire appliqué. Le devis préalable devient obligatoire dès que le montant dépasse 150 euros TTC, en application de l'arrêté du 3 décembre 1987, et toute réparation complémentaire découverte en cours d'intervention doit être validée par le client avant d'être facturée. Ce niveau de rigueur protège autant le garagiste que le client en cas de contestation ultérieure.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de garage automobile
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un devis est-il obligatoire avant une réparation automobile ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dès que le montant prévisionnel de la réparation dépasse 150 euros TTC, en application de l'arrêté du 3 décembre 1987. Le devis doit être écrit, gratuit, daté et accepté par le client avant le début des travaux. En dessous de ce seuil, il reste recommandé mais n'est pas obligatoire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Que doit contenir une facture de garage pour être conforme ?</AccordionTrigger>
+      <AccordionContent>
+        Elle doit reprendre les mentions obligatoires classiques (identité des parties, numéro, date, TVA) et détailler l'identification du véhicule, chaque pièce remplacée avec sa référence et sa nature (neuve ou d'occasion), ainsi que le temps de main-d'œuvre facturé avec le taux horaire appliqué.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Un garagiste peut-il facturer des réparations non prévues au devis ?</AccordionTrigger>
+      <AccordionContent>
+        Seulement après avoir obtenu l'accord préalable du client, sauf urgence dûment justifiée mettant en cause la sécurité. Facturer une prestation complémentaire sans validation expose le garagiste à une contestation, voire à un signalement pour pratique commerciale déloyale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quelle TVA s'applique sur une facture de garage automobile ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux normal de 20 % s'applique aussi bien aux pièces qu'à la main-d'œuvre. Un garage relevant de la franchise en base de TVA, sous les seuils 2026 de 37 500 € ou 85 000 € selon la nature de l'activité, doit indiquer la mention « TVA non applicable, article 293 B du CGI » à la place.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il préciser si une pièce est neuve ou d'occasion sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est une obligation issue de la loi relative à la lutte contre le gaspillage et à l'économie circulaire. Le client doit être informé de la possibilité d'utiliser des pièces issues de l'économie circulaire pour certaines réparations, et son accord doit être recueilli avant leur pose. La facture doit mentionner clairement la nature de chaque pièce utilisée.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

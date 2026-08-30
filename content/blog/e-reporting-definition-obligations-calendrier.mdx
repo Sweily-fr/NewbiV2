@@ -1,0 +1,256 @@
+---
+title: 'E-reporting : définition, données à transmettre et calendrier 2026-2027'
+description: >-
+  L'e-reporting complète la facture électronique : transmission des données
+  de transactions B2C et internationales. Qui est concerné, quelles données,
+  à quel rythme.
+date: '2026-09-01'
+category: glossaire
+sector: null
+keyword: e-reporting
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-01'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# E-reporting : définition, données à transmettre et calendrier 2026-2027
+
+L'**e-reporting** désigne l'obligation de transmettre à l'administration fiscale des données de transactions qui échappent au périmètre de la facture électronique interentreprises, notamment les ventes aux particuliers et les échanges avec des opérateurs situés hors de France. Ce mécanisme complète la réforme de la facturation électronique et concerne, à terme, la quasi-totalité des entreprises assujetties à la TVA.
+
+Si vous vendez à des particuliers ou si vous travaillez avec des clients ou fournisseurs étrangers, vous êtes concerné par l'e-reporting, même si vous n'émettez jamais de facture électronique au sens strict. Ce guide définit précisément ce mécanisme, détaille les données à transmettre, le rythme de transmission et le calendrier applicable entre 2026 et 2027.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que l'e-reporting exactement
+
+L'e-reporting est l'obligation de transmettre à l'administration fiscale, sous forme de données agrégées ou détaillées, les informations relatives à des transactions qui ne font pas l'objet d'une facture électronique structurée transmise entre entreprises françaises. Il s'agit principalement de deux catégories d'opérations : les ventes de biens ou de prestations de services à des particuliers (B2C), et les opérations avec des clients ou fournisseurs établis à l'étranger, qu'ils soient professionnels ou particuliers.
+
+Contrairement à la facture électronique, l'e-reporting ne transmet pas nécessairement la facture elle-même. Il transmet des données de transaction : montant, date, taux de TVA, parfois agrégées sur une période. L'objectif de l'administration reste identique dans les deux cas : disposer d'une vision complète et en temps quasi réel de l'activité économique des entreprises, pour lutter contre la fraude à la TVA et préremplir à terme les déclarations fiscales.
+
+## E-reporting et facture électronique : quelle différence
+
+Ces deux mécanismes sont complémentaires et s'inscrivent dans la même réforme, détaillée dans notre guide sur la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026). Ils ne s'appliquent cependant pas aux mêmes opérations.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Différence entre facture électronique et e-reporting</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>Facture électronique</TableHead>
+        <TableHead>E-reporting</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Opérations concernées</TableCell>
+        <TableCell>Ventes entre entreprises françaises assujetties (B2B domestique)</TableCell>
+        <TableCell>Ventes aux particuliers (B2C) et opérations internationales</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Objet transmis</TableCell>
+        <TableCell>La facture elle-même, au format structuré</TableCell>
+        <TableCell>Des données de transaction, parfois agrégées</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Destinataire de la donnée</TableCell>
+        <TableCell>Le client, via une PDP, avec copie des données à l'administration</TableCell>
+        <TableCell>L'administration fiscale uniquement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Sanction en cas de manquement</TableCell>
+        <TableCell>15 € par facture, plafonnée à 15 000 € par an</TableCell>
+        <TableCell>250 € par transmission manquante, plafonnée à 15 000 € par an</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Qui est concerné par l'e-reporting et à partir de quand
+
+Le calendrier de l'e-reporting suit celui de la facturation électronique, en fonction de la taille de l'entreprise.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Grandes entreprises et ETI</strong> : obligation d'e-reporting depuis le 1er septembre 2026, en parallèle de l'obligation d'émission de factures électroniques.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>PME</strong> : obligation d'e-reporting à partir du 1er septembre 2027.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>TPE</strong> : obligation d'e-reporting à partir du 1er septembre 2027.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Micro-entreprises</strong> : obligation d'e-reporting à partir du 1er septembre 2027, y compris pour les auto-entrepreneurs qui vendent à des particuliers.</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Une entreprise peut cumuler les deux obligations">
+    Une entreprise qui vend à la fois à des professionnels et à des particuliers doit gérer simultanément la facturation électronique pour ses ventes B2B domestiques et l'e-reporting pour ses ventes B2C, dès qu'elle atteint son échéance réglementaire. C'est notamment le cas des commerces de détail, des artisans ou des professions libérales avec une clientèle mixte.
+  </Callout>
+</div>
+
+## Quelles données transmettre
+
+Les données attendues dans le cadre de l'e-reporting portent sur les éléments essentiels de la transaction, sans nécessairement reprendre l'intégralité d'une facture détaillée.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant total de la transaction</strong>, hors taxe et toutes taxes comprises</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant de la TVA</strong> par taux applicable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date de l'opération</strong> ou la période concernée en cas de transmission agrégée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>mode de règlement</strong> pour certaines catégories de transactions</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>identification de l'entreprise émettrice</strong>, via son numéro SIREN</span>
+  </div>
+</div>
+
+Pour les ventes aux particuliers réalisées au comptoir, comme dans un commerce ou un restaurant, les données peuvent être transmises de façon agrégée par journée ou par période, sans identifier individuellement chaque client. Pour les opérations avec des professionnels étrangers, en revanche, les données sont transmises de façon plus détaillée, à l'image d'une facture classique.
+
+## À quel rythme transmettre les données
+
+La fréquence de transmission dépend du régime de TVA de l'entreprise. Une entreprise soumise au régime réel normal, qui déclare sa TVA mensuellement, transmettra ses données d'e-reporting selon un rythme mensuel. Une entreprise sous régime simplifié, avec des acomptes semestriels, pourra transmettre ses données selon une périodicité adaptée à ce régime. Dans tous les cas, la transmission se fait via la même [plateforme de dématérialisation partenaire](/blog/quest-ce-que-pdp-plateforme-dematerialisation) que celle utilisée pour la facturation électronique, ce qui évite de multiplier les outils.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="L'e-reporting ne remplace pas votre déclaration de TVA">
+    L'e-reporting est une transmission de données à l'administration fiscale, distincte de votre déclaration de TVA périodique, qui reste obligatoire. À terme, ces données pourraient permettre à l'administration de préremplir certaines déclarations, mais cette évolution ne dispense pas l'entreprise de ses obligations déclaratives actuelles.
+  </Callout>
+</div>
+
+## Le rôle du Portail public de facturation
+
+Le [Portail public de facturation](/blog/quest-ce-que-ppf-portail-public-facturation) (PPF) ne joue plus le rôle de plateforme d'échange gratuite initialement envisagé. Il conserve néanmoins une fonction centrale dans le dispositif d'e-reporting : il agit comme concentrateur des données transmises par l'ensemble des plateformes de dématérialisation partenaires, qu'il s'agisse de factures électroniques ou de données d'e-reporting. C'est également le PPF qui tient l'annuaire permettant d'identifier la PDP choisie par chaque entreprise.
+
+## Cas pratique : un commerce avec vente en boutique et export
+
+Prenons l'exemple d'une boutique de prêt-à-porter qui réalise 180 000 € de chiffre d'affaires annuel, dont 150 000 € de ventes en boutique à des particuliers et 30 000 € de ventes à un distributeur professionnel établi en Belgique. Une fois son échéance réglementaire atteinte, cette entreprise doit :
+
+- Transmettre en e-reporting les données agrégées de ses ventes en boutique, par exemple 12 500 € de chiffre d'affaires TTC moyen par mois, avec le détail de la TVA collectée à 20 %, soit environ 2 083 € de TVA mensuelle sur cette activité.
+- Transmettre en e-reporting le détail de ses transactions avec son client belge, l'opération étant intracommunautaire et donc hors du périmètre strict de la facture électronique domestique.
+
+Cette entreprise ne gère donc pas la facturation électronique classique, faute de clients professionnels français assujettis dans son activité principale, mais elle reste pleinement concernée par l'e-reporting sur l'ensemble de son chiffre d'affaires. Si, l'année suivante, elle commence également à vendre à un grossiste installé en France, elle basculera alors partiellement vers le régime de la facture électronique classique pour cette nouvelle relation commerciale, tout en conservant l'e-reporting pour ses ventes en boutique et son client belge.
+
+## Comment se préparer concrètement à l'e-reporting
+
+Anticiper l'e-reporting suppose de revoir la façon dont vous suivez vos ventes, en particulier si elles sont aujourd'hui dispersées entre plusieurs outils : caisse enregistreuse, feuille de calcul, logiciel de facturation. Voici les actions à mener en priorité.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Identifiez la part de votre chiffre d'affaires réalisée avec des particuliers</strong> et celle réalisée avec des professionnels étrangers, car ce sont ces deux catégories qui relèvent de l'e-reporting.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Centralisez vos encaissements</strong> dans un seul outil, afin de pouvoir produire facilement les données agrégées attendues, période par période.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Vérifiez votre échéance réglementaire</strong> selon la taille de votre entreprise, pour ne pas être pris de court par l'obligation.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Choisissez une plateforme de dématérialisation partenaire</strong> capable de gérer à la fois la facturation électronique et l'e-reporting, pour éviter de jongler entre plusieurs outils.</span>
+  </div>
+</div>
+
+## Sanctions en cas de non-transmission
+
+Le défaut de transmission des données d'e-reporting est sanctionné par une amende de 250 € par transmission manquante, plafonnée à 15 000 € par année civile. Ce montant, supérieur à celui de la sanction applicable à la facture électronique classique, reflète l'importance donnée par l'administration à ce dispositif de suivi de l'activité économique.
+
+## Comment Newbi prépare votre entreprise à l'e-reporting
+
+Newbi accompagne les indépendants et les petites structures dans la structuration de leur facturation en vue des échéances de la réforme, y compris pour les entreprises qui vendent principalement à des particuliers ou à l'international. En centralisant vos factures, vos encaissements et votre suivi de TVA, Newbi facilite la préparation des données nécessaires à l'e-reporting, au fur et à mesure que votre échéance réglementaire approche.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+L'e-reporting complète la réforme de la facturation électronique en couvrant les opérations qui échappent à la facture électronique interentreprises classique : ventes aux particuliers et opérations internationales. Il consiste à transmettre à l'administration fiscale des données de transaction, agrégées ou détaillées selon les cas, à un rythme aligné sur votre régime de TVA. Le calendrier suit celui de la facturation électronique : obligation depuis le 1er septembre 2026 pour les grandes entreprises et ETI, à partir du 1er septembre 2027 pour les PME, TPE et micro-entreprises. Le défaut de transmission expose à une amende de 250 € par manquement, plafonnée à 15 000 € par an, ce qui justifie d'anticiper la mise en conformité de votre facturation dès maintenant.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'e-reporting
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Qu'est-ce que l'e-reporting en quelques mots ?</AccordionTrigger>
+      <AccordionContent>
+        L'e-reporting est l'obligation de transmettre à l'administration fiscale des données de transactions qui ne relèvent pas de la facture électronique interentreprises classique, notamment les ventes aux particuliers et les opérations avec l'étranger. Il vise à donner à l'administration une vision complète de l'activité économique des entreprises.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qui doit transmettre des données d'e-reporting ?</AccordionTrigger>
+      <AccordionContent>
+        Toute entreprise assujettie à la TVA qui réalise des ventes à des particuliers ou des opérations avec des clients ou fournisseurs étrangers est concernée, dès son échéance réglementaire. Les grandes entreprises et ETI sont concernées depuis le 1er septembre 2026, les PME, TPE et micro-entreprises le seront à partir du 1er septembre 2027.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle est la différence entre e-reporting et facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        La facture électronique concerne les ventes entre entreprises françaises assujetties et transmet la facture elle-même au client, via une plateforme de dématérialisation partenaire. L'e-reporting concerne les ventes aux particuliers et les opérations internationales, et transmet uniquement des données de transaction à l'administration fiscale, sans notion de facture destinée à un client professionnel domestique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>À quelle fréquence faut-il transmettre les données d'e-reporting ?</AccordionTrigger>
+      <AccordionContent>
+        La fréquence dépend du régime de TVA de l'entreprise : mensuelle pour les entreprises au régime réel normal, adaptée à la périodicité des acomptes pour celles au régime simplifié. La transmission se fait via la même plateforme de dématérialisation partenaire que celle utilisée pour la facturation électronique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que risque une entreprise qui ne transmet pas ses données d'e-reporting ?</AccordionTrigger>
+      <AccordionContent>
+        Le défaut de transmission est sanctionné par une amende de 250 € par transmission manquante, plafonnée à 15 000 € par année civile. Ce plafond s'applique indépendamment de celui prévu pour les manquements à la facturation électronique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Les auto-entrepreneurs sont-ils concernés par l'e-reporting ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, à partir du 1er septembre 2027. Un auto-entrepreneur qui vend des produits ou des services à des particuliers devra transmettre ses données de transaction à l'administration selon les mêmes principes que les autres entreprises, même s'il reste en franchise de TVA.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,255 @@
+---
+title: "Facture d'architecte : honoraires par phase, TVA et mentions"
+description: >-
+  Facturer des honoraires d'architecte : pourcentage du coût des travaux,
+  phases de mission, notes d'honoraires intermédiaires, TVA et assurance
+  obligatoire.
+date: '2026-10-14'
+category: guide
+sector: BTP / Artisans
+keyword: facture architecte honoraires
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-14'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">BTP / Artisans</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facture d'architecte : honoraires par phase, TVA et mentions
+
+Une **facture d'honoraires d'architecte** ne ressemble à aucune autre facture de prestation de service : elle s'étale souvent sur plusieurs mois, se décompose par phase de mission et repose fréquemment sur un pourcentage du coût des travaux plutôt que sur un montant forfaitaire fixé à l'avance. Cette structure particulière impose une rigueur documentaire précise, sous peine de litiges avec le client sur les montants dus à chaque étape.
+
+Cet article détaille comment structurer les honoraires d'un architecte par phase de mission, comment calculer un pourcentage sur le coût des travaux, quelle TVA appliquer, et quelles mentions spécifiques doivent figurer sur chaque note d'honoraires intermédiaire.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les deux modes de calcul des honoraires d'architecte
+
+Un architecte peut facturer ses honoraires selon deux logiques principales, parfois combinées dans un même contrat de maîtrise d'oeuvre.
+
+Le **forfait** consiste à fixer un montant global déterminé à l'avance pour l'ensemble de la mission, indépendamment du coût final des travaux. Cette formule offre une meilleure visibilité au client, mais expose l'architecte si le projet évolue en cours de route sans avenant.
+
+Le **pourcentage du coût des travaux** reste la méthode la plus répandue, en particulier pour les missions de maîtrise d'oeuvre complète. Le taux appliqué varie généralement entre 8 % et 15 % du montant hors taxes des travaux, selon la complexité du projet, sa taille et le niveau de service assuré par l'architecte (conception seule ou suivi complet du chantier).
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le contrat d'architecte est obligatoirement écrit">
+    L'article 14 de la loi n° 77-2 du 3 janvier 1977 sur l'architecture impose que la mission de l'architecte fasse l'objet d'un contrat écrit précisant l'étendue de sa mission et les modalités de sa rémunération. Ce contrat sert de base à toute contestation ultérieure sur le calcul des honoraires.
+  </Callout>
+</div>
+
+## Les phases de mission qui structurent la facturation
+
+La maîtrise d'oeuvre se découpe traditionnellement en plusieurs phases, chacune pouvant faire l'objet d'une note d'honoraires distincte à mesure de son achèvement.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Phases de mission et répartition indicative des honoraires</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Phase</TableHead>
+        <TableHead>Contenu</TableHead>
+        <TableHead>Part indicative des honoraires</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Esquisse (ESQ)</TableCell>
+        <TableCell>Premières intentions architecturales, faisabilité du projet</TableCell>
+        <TableCell>5 à 10 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Avant-projet (APS/APD)</TableCell>
+        <TableCell>Plans détaillés, choix techniques, estimation du coût</TableCell>
+        <TableCell>20 à 25 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Permis de construire (PC)</TableCell>
+        <TableCell>Constitution et dépôt du dossier administratif</TableCell>
+        <TableCell>10 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Etudes d'exécution (EXE)</TableCell>
+        <TableCell>Plans techniques détaillés pour les entreprises</TableCell>
+        <TableCell>15 à 20 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Direction de l'exécution (DET)</TableCell>
+        <TableCell>Suivi et coordination du chantier</TableCell>
+        <TableCell>25 à 30 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Réception (AOR)</TableCell>
+        <TableCell>Assistance à la réception des travaux</TableCell>
+        <TableCell>5 %</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Cette répartition n'est qu'indicative : chaque contrat peut adapter les pourcentages selon la nature du projet et les phases effectivement confiées à l'architecte, certains clients ne lui confiant par exemple que la conception sans le suivi de chantier.
+
+## Exemple chiffré : calcul des honoraires sur un projet de rénovation
+
+Un particulier confie à un architecte la maîtrise d'oeuvre complète d'une extension de maison, dont le coût des travaux est estimé à 180 000 € HT. Le contrat prévoit des honoraires à 11 % du coût des travaux, soit 19 800 € HT au total.
+
+A l'issue de la phase d'avant-projet détaillé (22 % de la mission), l'architecte émet une note d'honoraires intermédiaire de 4 356 € HT (19 800 x 22 %), soit 5 227,20 € TTC avec 20 % de TVA. Cette note d'honoraires référence explicitement la phase achevée et le pourcentage appliqué, pour que le client puisse vérifier le calcul.
+
+## Exemple chiffré : ajustement en fin de chantier
+
+Si le coût final des travaux dépasse l'estimation initiale, par exemple 195 000 € HT au lieu de 180 000 € HT prévus, le contrat d'architecte prévoit généralement un ajustement proportionnel des honoraires sur les phases restant à facturer. La dernière note d'honoraires intègre alors cette régularisation : 195 000 x 11 % = 21 450 € HT d'honoraires totaux, dont il faut déduire les montants déjà facturés sur les phases précédentes pour obtenir le solde dû.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Prévoyez l'ajustement dès le contrat">
+    Sans clause contractuelle explicite sur l'ajustement des honoraires en cas de dépassement du coût des travaux, l'architecte s'expose à devoir renégocier ou à facturer sur la base de l'estimation initiale, même si le chantier a coûté plus cher que prévu.
+  </Callout>
+</div>
+
+## La TVA applicable aux honoraires d'architecte
+
+Les honoraires d'architecte sont soumis à la TVA au taux normal de 20 %, comme la plupart des prestations de services intellectuelles, y compris lorsque les travaux eux-mêmes bénéficient d'un taux réduit (10 % pour la rénovation énergétique, 5,5 % pour certains travaux spécifiques). Il n'y a pas de lien automatique entre le taux de TVA des travaux et celui appliqué aux honoraires de conception ou de suivi.
+
+Un architecte relevant de la franchise en base de TVA, avec un chiffre d'affaires annuel inférieur au plafond de 37 500 € pour les prestations de services (seuil majoré à 41 250 €), ne facture pas de TVA et doit porter la mention "TVA non applicable, article 293 B du CGI" sur ses notes d'honoraires.
+
+## Les mentions obligatoires d'une note d'honoraires d'architecte
+
+Au-delà des mentions classiques d'une facture (identité des parties, numéro SIRET, description de la prestation, montant HT et TTC), une note d'honoraires d'architecte comporte des précisions propres à la profession.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence au contrat de maîtrise d'oeuvre</strong> signé avec le client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>numéro d'inscription à l'Ordre des architectes</strong>, obligatoire pour exercer</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les références de son <strong>assurance responsabilité civile professionnelle et décennale</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>phase de mission</strong> concernée par la note d'honoraires et le pourcentage d'avancement appliqué</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>coût des travaux de référence</strong> ayant servi de base au calcul des honoraires</span>
+  </div>
+</div>
+
+## L'assurance obligatoire, un préalable à toute facturation
+
+Tout architecte doit être couvert par une **assurance responsabilité civile professionnelle** et, pour les missions liées à la construction, par une **assurance décennale**, conformément aux articles L241-1 et suivants du Code des assurances. Sans cette couverture, il ne peut exercer légalement et engage sa responsabilité personnelle en cas de sinistre. Cette exigence rejoint celle qui pèse sur les autres intervenants du bâtiment, également soumis à l'[obligation d'assurance décennale pour les artisans](/blog/facture-btp-artisan-mentions-specifiques) selon leurs activités respectives.
+
+## Le rythme de facturation : intermédiaire ou en fin de mission
+
+La plupart des architectes optent pour une facturation par note d'honoraires intermédiaire, émise à chaque phase achevée, plutôt qu'une facturation unique en fin de mission. Cette pratique présente un double avantage : elle sécurise la trésorerie de l'architecte tout au long d'un projet qui peut s'étaler sur plusieurs mois, voire plusieurs années pour les chantiers importants, et elle permet au client de suivre l'avancement financier du projet en parallèle de l'avancement technique.
+
+Cette logique se rapproche de la facturation par étapes utilisée dans le bâtiment, notamment pour la [facture de situation de travaux en BTP](/blog/facture-situation-travaux-btp), où chaque situation reflète l'avancement réel du chantier plutôt qu'un montant forfaitaire figé.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>acompte à la signature</strong> du contrat, souvent entre 5 et 10 % des honoraires prévisionnels</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>note d'honoraires à l'issue de chaque phase</strong> achevée et validée par le client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>note de solde</strong> en fin de mission, avec ajustement éventuel sur le coût final des travaux</span>
+  </div>
+</div>
+
+## Architecte et autres professions réglementées : des logiques proches
+
+Bien que la profession d'architecte réponde à un cadre réglementaire spécifique (Ordre, assurance décennale, mission encadrée par la loi de 1977), la logique de facturation par phase et de suivi rigoureux du contrat se retrouve dans d'autres professions libérales et réglementées. C'est notamment le cas des honoraires d'avocat, également calculés selon des modalités variées et facturés par étape de mission : notre guide sur la [facturation des honoraires d'avocat](/blog/facturation-avocat-honoraires-guide) détaille ces mécanismes. Comparer ces pratiques aide à identifier les bons réflexes de gestion administrative, quel que soit le métier exercé, y compris pour les autres [professions libérales](/blog/facture-profession-liberale-guide).
+
+## Comment Newbi accompagne les architectes dans leur facturation
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un suivi clair des phases et des montants facturés">
+    Newbi permet de créer des notes d'honoraires détaillées, de suivre les montants déjà facturés par phase de mission et de calculer automatiquement la TVA applicable. Vous gardez une vue d'ensemble sur l'avancement financier de chacun de vos projets, même sur des missions étalées sur plusieurs mois.
+  </Callout>
+</div>
+
+Le suivi de trésorerie intégré à Newbi aide également à anticiper les échéances de facturation en fonction de l'avancement de vos chantiers.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes notes d'honoraires</Link>
+  </Button>
+</div>
+
+## Bonnes pratiques pour sécuriser vos honoraires
+
+1. **Formalisez toujours le contrat par écrit**, avec le détail des phases confiées et le mode de calcul retenu (forfait ou pourcentage).
+2. **Prévoyez une clause d'ajustement** en cas de dépassement du coût des travaux estimé initialement.
+3. **Facturez à chaque phase achevée** plutôt qu'en une seule fois, pour sécuriser votre trésorerie sur les projets longs.
+4. **Mentionnez systématiquement vos références d'assurance** sur vos notes d'honoraires.
+5. **Conservez tous vos contrats et notes d'honoraires** pendant 10 ans, conformément au Code de commerce, en particulier pour les missions engageant votre responsabilité décennale.
+
+## En résumé
+
+La facturation des honoraires d'architecte repose sur un contrat écrit obligatoire, un mode de calcul défini à l'avance (forfait ou pourcentage du coût des travaux) et un découpage par phases de mission qui permet une facturation intermédiaire échelonnée. La TVA au taux normal de 20 % s'applique indépendamment du taux appliqué aux travaux eux-mêmes, et chaque note d'honoraires doit mentionner la phase concernée, le pourcentage appliqué et les références d'assurance de l'architecte. Une facturation rigoureuse, phase après phase, sécurise à la fois la trésorerie de l'architecte et la lisibilité financière du projet pour le client.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture d'architecte
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment sont calculés les honoraires d'un architecte ?</AccordionTrigger>
+      <AccordionContent>
+        Les honoraires d'architecte sont calculés soit sous forme de forfait fixé à l'avance, soit en pourcentage du coût des travaux, généralement entre 8 % et 15 % du montant hors taxes des travaux. Le mode de calcul retenu doit figurer dans le contrat de maîtrise d'oeuvre signé avant le début de la mission.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle TVA s'applique aux honoraires d'architecte ?</AccordionTrigger>
+      <AccordionContent>
+        Les honoraires d'architecte sont soumis à la TVA au taux normal de 20 %, quel que soit le taux réduit éventuellement applicable aux travaux eux-mêmes. Un architecte relevant de la franchise en base de TVA ne facture pas de TVA et doit indiquer la mention correspondante sur ses notes d'honoraires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Un architecte peut-il facturer par phase de mission ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est même la pratique la plus courante. La mission de maîtrise d'oeuvre se découpe en plusieurs phases (esquisse, avant-projet, permis de construire, études d'exécution, direction de chantier, réception), chacune pouvant faire l'objet d'une note d'honoraires intermédiaire une fois achevée et validée par le client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que se passe-t-il si le coût des travaux dépasse l'estimation initiale ?</AccordionTrigger>
+      <AccordionContent>
+        Si le contrat prévoit une clause d'ajustement, les honoraires sont recalculés sur la base du coût final des travaux, avec régularisation sur les notes d'honoraires restant à émettre. Sans clause explicite, l'architecte risque de devoir se limiter à l'estimation initiale ou de renégocier avec le client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>L'assurance décennale doit-elle apparaître sur la facture d'architecte ?</AccordionTrigger>
+      <AccordionContent>
+        Il est fortement recommandé de mentionner les références de l'assurance responsabilité civile professionnelle et décennale sur les notes d'honoraires, même si ce n'est pas une mention obligatoire au sens strict du Code de commerce. Cette information rassure le client et facilite la gestion d'un éventuel sinistre après réception des travaux.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

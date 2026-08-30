@@ -1,0 +1,234 @@
+---
+title: 'Facture de développeur web freelance : TJM, régie, forfait et mentions'
+description: >-
+  Facturer en régie ou au forfait, gérer les acomptes, la maintenance et la
+  cession de droits : le guide de la facture pour développeur web
+  indépendant.
+date: '2026-09-09'
+category: guide
+sector: Consultants / Freelances IT
+keyword: facture développeur freelance
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-09'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Facture de développeur web freelance : TJM, régie, forfait et mentions
+
+La **facture de développeur freelance** doit s'adapter au mode de collaboration choisi avec le client : régie facturée au temps passé, forfait à prix fixe, ou combinaison des deux sur un même projet. À cela s'ajoutent des questions propres au métier, comme la cession des droits sur le code produit ou la facturation de la maintenance récurrente. Ce guide détaille comment structurer vos factures selon ces différents modèles, avec des exemples chiffrés et les mentions spécifiques à ne pas oublier.
+
+Vous y trouverez un tableau comparatif régie/forfait, un exemple de facturation d'acompte pour un projet de développement, ainsi que les bonnes pratiques pour éviter les impayés, fréquents dans ce secteur où les projets s'étalent souvent sur plusieurs mois.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Régie ou forfait : deux logiques de facturation différentes
+
+Le développeur web freelance facture généralement selon deux grands modèles, qui déterminent la structure de sa facture.
+
+En **régie**, le développeur facture son temps de travail au [tarif journalier moyen (TJM)](/blog/comment-fixer-tarif-journalier-tjm) convenu avec le client, généralement sur une base mensuelle, en fonction du nombre de jours réellement travaillés. Ce modèle convient bien aux missions longues, aux équipes intégrées chez le client, ou aux projets dont le périmètre évolue en cours de route.
+
+Au **forfait**, le développeur facture un prix global fixé à l'avance pour un livrable défini, indépendamment du temps réellement passé. Ce modèle rassure le client sur le budget final, mais impose au développeur de bien estimer sa charge de travail en amont, sous peine de voir sa rentabilité horaire s'effondrer en cas de dérapage.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Comparatif entre facturation en régie et au forfait</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>Régie</TableHead>
+        <TableHead>Forfait</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Base de facturation</TableCell>
+        <TableCell>Nombre de jours travaillés x TJM</TableCell>
+        <TableCell>Prix fixe convenu au devis</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Risque financier</TableCell>
+        <TableCell>Porté par le client (dépassement possible)</TableCell>
+        <TableCell>Porté par le développeur (estimation à respecter)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fréquence de facturation</TableCell>
+        <TableCell>Mensuelle, sur relevé d'activité</TableCell>
+        <TableCell>Selon jalons définis dans le devis</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Document justificatif</TableCell>
+        <TableCell>Compte-rendu d'activité (CRA)</TableCell>
+        <TableCell>Devis initial et bon de commande</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Facturer en régie : le rôle du compte-rendu d'activité
+
+Lorsque vous facturez en régie, votre facture doit systématiquement s'appuyer sur un **compte-rendu d'activité (CRA)**, document qui détaille les jours ou demi-journées travaillés sur la période, généralement validé par le client avant l'émission de la facture. Ce CRA constitue une pièce justificative essentielle en cas de litige sur le nombre de jours facturés.
+
+### Exemple chiffré de facture en régie
+
+Un développeur freelance travaille 18 jours sur le mois pour un client, à un TJM de 550 € HT. Sa facture mensuelle s'établit ainsi :
+
+- Nombre de jours facturés : 18
+- TJM : 550 € HT
+- Montant HT : 9 900 €
+- TVA à 20 % (si le développeur est assujetti) : 1 980 €
+- **Montant TTC : 11 880 €**
+
+Si le développeur est en franchise en base de TVA (sous le seuil de 37 500 € de chiffre d'affaires annuel pour les prestations de services en 2026), la mention « TVA non applicable, article 293 B du CGI » remplace la ligne de TVA, et le montant TTC est identique au montant HT.
+
+## Facturer au forfait : structurer les jalons de paiement
+
+Sur un projet au forfait, la facturation s'organise généralement en plusieurs étapes, correspondant aux jalons définis dans le [devis professionnel](/blog/comment-faire-devis-professionnel) initial. Une structure courante consiste à demander un acompte de 30 % à la signature, une facture intermédiaire de 40 % à la livraison d'une version de test, et le solde de 30 % à la recette finale validée par le client.
+
+<Callout type="info" title="Sécurisez votre trésorerie avec un acompte">
+  Pour un projet de développement au forfait, demander un acompte à la signature du devis est une pratique courante et recommandée. Elle engage fermement le client et vous permet de couvrir vos premiers frais avant même de démarrer le développement.
+</Callout>
+
+### Exemple chiffré de facturation au forfait avec acompte
+
+Un développeur facture la création d'une application web sur mesure pour 24 000 € HT au total. Le découpage est le suivant :
+
+- Acompte de 30 % à la signature : 7 200 € HT, soit 8 640 € TTC avec TVA à 20 %
+- Facture intermédiaire de 40 % à la version bêta : 9 600 € HT, soit 11 520 € TTC
+- Solde de 30 % à la livraison finale : 7 200 € HT, soit 8 640 € TTC
+
+## La cession de droits : une mention souvent oubliée
+
+Un point spécifique au développement web mérite une attention particulière : la **cession des droits de propriété intellectuelle** sur le code source produit. En droit français, l'auteur d'un logiciel conserve par défaut ses droits patrimoniaux, sauf clause de cession explicite dans le contrat ou le devis. Si votre client souhaite disposer d'une licence d'exploitation exclusive ou d'une cession complète du code, cette clause doit être formalisée par écrit, généralement dans le devis ou le contrat de prestation, et peut être rappelée sur la facture.
+
+<Callout type="warning" title="Sans clause de cession, le code reste votre propriété">
+  En l'absence de clause de cession explicite dans votre devis ou votre contrat, vous restez juridiquement titulaire des droits patrimoniaux sur le code que vous développez, même après paiement intégral de la facture. Beaucoup de litiges naissent de ce malentendu : formalisez toujours cette clause par écrit avant de démarrer un projet.
+</Callout>
+
+## Facturer la maintenance et le support récurrent
+
+Après la livraison d'un projet, de nombreux développeurs proposent un contrat de maintenance récurrente, facturé mensuellement ou trimestriellement sous forme d'abonnement. Cette facturation récurrente doit respecter les mêmes règles de numérotation continue que vos autres factures, en s'inscrivant dans votre séquence globale, et non dans une numérotation séparée par client.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Décrivez précisément le <strong>périmètre du contrat de maintenance</strong> (correctifs, mises à jour, hébergement)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquez la <strong>période couverte</strong> par chaque facture récurrente</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Précisez si les <strong>heures de développement additionnelles</strong> sont incluses ou facturées à part</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Maintenez une <strong>numérotation continue</strong> avec vos autres factures de projet</span>
+  </div>
+</div>
+
+## Les mentions obligatoires à ne pas oublier
+
+Au-delà des spécificités du développement web, votre facture reste soumise aux [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) applicables à toute prestation de services. Si vous [facturez une prestation de service](/blog/facturer-prestation-service-consultant) en tant que consultant indépendant, la logique reste la même : identité complète, numéro SIRET, numéro de facture unique, détail de la prestation, montants HT et TTC, conditions de règlement.
+
+Pensez également à préciser la nature de l'opération sur vos factures dans le cadre de la réforme de la facturation électronique : le développement web est une **prestation de services**, ce qui détermine le régime d'exigibilité de la TVA (en principe à l'encaissement, sauf option pour le régime des débits).
+
+## Gérer les retards de paiement, fréquents sur les longs projets
+
+Les projets de développement s'étalant souvent sur plusieurs mois, le risque d'impayé ou de retard de paiement est réel, en particulier avec des clients en démarrage d'activité ou en tension de trésorerie. Toute facture B2B doit mentionner le taux de pénalités de retard, dont le minimum légal est fixé à trois fois le taux d'intérêt légal, ainsi que l'indemnité forfaitaire de recouvrement de **40 €**, due de plein droit dès le premier jour de retard, sans qu'il soit nécessaire de la réclamer formellement.
+
+<Callout type="tip" title="Découpez vos factures pour limiter le risque">
+  Sur un projet long, mieux vaut multiplier les jalons de facturation plutôt que d'attendre la fin du projet pour émettre une seule facture. Un client qui ne paie pas une facture intermédiaire de 3 000 € représente un risque bien plus gérable qu'un client qui ne règle pas 20 000 € à la livraison finale.
+</Callout>
+
+## Facturer les frais annexes et les prestations tierces
+
+Un projet de développement web s'accompagne souvent de frais annexes qu'il convient de facturer distinctement plutôt que de les noyer dans le prix de la prestation principale : nom de domaine, hébergement, licences de bibliothèques ou de composants tiers payants, abonnements à des services externes (API de paiement, envoi d'emails transactionnels). Ces frais peuvent être refacturés au client à l'identique, sans marge, ou intégrés avec une marge de gestion clairement annoncée dans le devis initial.
+
+Dans les deux cas, la facture doit détailler ces éléments ligne par ligne plutôt que de les agréger dans un poste générique. Cette transparence évite les contestations ultérieures et facilite la compréhension du client, notamment lorsqu'il s'agit de renouvellements annuels de licences qui reviendront sur les factures des années suivantes.
+
+### Exemple chiffré avec frais annexes
+
+Un développeur livre un site e-commerce pour 15 000 € HT de développement, auquel s'ajoutent un nom de domaine à 15 € HT et un abonnement d'hébergement annuel refacturé à 240 € HT. Sa facture finale détaille chaque poste séparément :
+
+- Développement du site : 15 000 € HT
+- Nom de domaine (1 an) : 15 € HT
+- Hébergement (1 an) : 240 € HT
+- Montant total HT : 15 255 €
+- TVA à 20 % : 3 051 €
+- **Montant TTC : 18 306 €**
+
+## Comment Newbi accompagne les développeurs freelances
+
+Newbi permet de créer facilement des factures de régie à partir d'un relevé de jours travaillés, de découper un forfait en plusieurs échéances avec acompte et solde, et de mettre en place une facturation récurrente pour vos contrats de maintenance. L'outil génère automatiquement une numérotation continue et cohérente, quel que soit le mode de facturation choisi sur chaque projet.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes projets de développement avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facture d'un développeur web freelance doit s'adapter au mode de collaboration retenu avec le client : facturation en régie au TJM et au nombre de jours travaillés, appuyée sur un compte-rendu d'activité, ou facturation au forfait découpée en jalons avec acompte, facture intermédiaire et solde. Deux points méritent une attention particulière dans ce métier : la clause de cession des droits sur le code, qui doit être formalisée par écrit pour transférer la propriété intellectuelle au client, et la facturation récurrente de la maintenance, qui doit s'inscrire dans votre numérotation globale. Bien structurer ces factures, avec les mentions obligatoires classiques et une gestion rigoureuse des délais de paiement, sécurise votre trésorerie sur des projets qui s'étalent souvent sur plusieurs mois.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de développeur freelance
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il facturer en régie ou au forfait quand on développe pour un client ?</AccordionTrigger>
+      <AccordionContent>
+        Le choix dépend de la nature du projet. La régie convient aux missions longues ou aux périmètres évolutifs, car elle facture le temps réellement passé. Le forfait convient aux projets bien définis dès le départ, avec un livrable précis, car il fixe un budget global rassurant pour le client, au risque financier du développeur en cas de dépassement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Le client devient-il automatiquement propriétaire du code après paiement de la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Non, en droit français, le paiement de la facture ne suffit pas à transférer la propriété intellectuelle du code au client. Une clause de cession des droits patrimoniaux doit être formalisée explicitement dans le devis ou le contrat de prestation, faute de quoi le développeur reste titulaire des droits sur le code produit.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer un contrat de maintenance récurrent ?</AccordionTrigger>
+      <AccordionContent>
+        Un contrat de maintenance se facture généralement sous forme d'abonnement mensuel ou trimestriel. Chaque facture doit préciser la période couverte et le périmètre exact des prestations incluses, tout en respectant la même séquence de numérotation continue que vos autres factures de projet.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quel est le montant d'acompte habituel pour un projet de développement au forfait ?</AccordionTrigger>
+      <AccordionContent>
+        Il n'existe pas de règle légale fixant un pourcentage précis, mais un acompte compris entre 30 % et 40 % à la signature du devis est une pratique courante chez les développeurs freelances, complété par une ou plusieurs échéances intermédiaires selon la durée du projet.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que faire si un client ne paie pas une facture de développement à échéance ?</AccordionTrigger>
+      <AccordionContent>
+        Vous pouvez appliquer de plein droit les pénalités de retard mentionnées sur votre facture ainsi que l'indemnité forfaitaire de recouvrement de 40 €, sans mise en demeure préalable. Il est recommandé de relancer rapidement le client et, en l'absence de règlement, d'envisager une mise en demeure formelle avant toute procédure de recouvrement.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

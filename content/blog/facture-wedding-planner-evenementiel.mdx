@@ -1,0 +1,205 @@
+---
+title: 'Facture de wedding planner et prestataire événementiel : acomptes et annulation'
+description: >-
+  Acomptes échelonnés, arrhes ou acompte, conditions d'annulation, sous-traitants refacturés : comment facturer un mariage ou un événement sans mauvaise surprise.
+date: '2026-10-28'
+category: guide
+sector: Événementiel
+keyword: facture wedding planner
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-28'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">Événementiel</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture de wedding planner et prestataire événementiel : acomptes et annulation
+
+La **facture de wedding planner** obéit à des règles particulières, différentes de la plupart des prestations de service classiques : les montants sont souvent élevés, la date de l'événement est fixe et non négociable, et le risque d'annulation impose une gestion rigoureuse des acomptes. Une mauvaise anticipation de ces éléments peut transformer un simple désistement client en perte financière sèche pour votre activité.
+
+Cet article détaille comment structurer vos acomptes échelonnés, la différence essentielle entre arrhes et acompte pour un événement, la gestion des conditions d'annulation, et la refacturation des sous-traitants (traiteur, photographe, DJ) que vous coordonnez pour le compte de vos clients.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi la facturation événementielle demande une organisation spécifique
+
+Un mariage ou un événement d'entreprise se prépare généralement plusieurs mois, parfois plus d'un an, avant la date effective. Entre la signature du contrat et le jour J, plusieurs paiements interviennent, le nombre d'invités peut évoluer, des prestataires supplémentaires peuvent être ajoutés, et le risque d'annulation ou de report reste réel, notamment pour des raisons indépendantes de la volonté du client.
+
+Contrairement à une prestation de service ponctuelle facturée en une seule fois, la facturation événementielle repose presque toujours sur un échéancier structuré, avec plusieurs acomptes intermédiaires et un solde final réglé après l'événement ou juste avant. Cette structure protège à la fois votre trésorerie et votre client, qui peut ainsi étaler son budget.
+
+## Arrhes ou acompte : un choix déterminant pour votre activité
+
+La distinction entre arrhes et [acompte](/blog/quest-ce-que-acompte-facture) est particulièrement importante dans l'événementiel, où le risque d'annulation est plus élevé que dans d'autres secteurs. Un acompte engage fermement les deux parties : si le client annule, vous conservez la somme et pouvez réclamer réparation du préjudice subi. Les arrhes, à l'inverse, permettent une rétractation : le client qui annule perd la somme versée, mais vous, en tant que prestataire, devez rembourser le double si c'est vous qui annulez.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le régime par défaut favorise le client">
+    En l'absence de mention explicite du terme « acompte » dans votre contrat, le Code de la consommation présume qu'il s'agit d'arrhes. Pour un secteur où les montants engagés peuvent dépasser 10 000 €, cette présomption par défaut peut avoir des conséquences financières importantes en cas d'annulation tardive. Précisez toujours le régime choisi noir sur blanc.
+  </Callout>
+</div>
+
+Beaucoup de wedding planners choisissent un système hybride : des arrhes pour les premiers versements, plus faciles à négocier commercialement avec un client hésitant, puis un acompte ferme pour les versements proches de la date de l'événement, période où l'annulation devient la plus coûteuse pour vous en raison de l'impossibilité de reprogrammer un autre client sur la même date.
+
+## Structurer un échéancier d'acomptes pour un mariage
+
+Un échéancier bien construit répartit le paiement en plusieurs étapes, alignées sur l'avancement réel de la prestation et les engagements que vous devez prendre auprès de vos propres prestataires (traiteur, salle, fleuriste).
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple d'échéancier de paiement pour une prestation de wedding planning</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Étape</TableHead>
+        <TableHead>Montant</TableHead>
+        <TableHead>Moment du versement</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Acompte de réservation</TableCell>
+        <TableCell>30 % du montant total</TableCell>
+        <TableCell>À la signature du contrat</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Second versement</TableCell>
+        <TableCell>40 % du montant total</TableCell>
+        <TableCell>6 mois avant l'événement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Solde final</TableCell>
+        <TableCell>30 % du montant total</TableCell>
+        <TableCell>15 jours avant l'événement</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Chaque versement doit donner lieu à une facture d'acompte distincte, mentionnant le montant HT et TTC, le taux de TVA applicable, et la référence au devis ou au contrat initial. Pour les prestations de service, la TVA sur chaque acompte est exigible dès son encaissement, ce qui implique de la déclarer au titre de la période concernée, même si l'événement n'a pas encore eu lieu.
+
+## Exemple chiffré : facturation d'un mariage de 12 000 euros
+
+Une wedding planner signe un contrat de coordination complète pour un mariage, facturé 12 000 € HT (14 400 € TTC avec 20 % de TVA). À la signature, elle encaisse un acompte de 30 %, soit 3 600 € HT (4 320 € TTC), avec une TVA de 720 € immédiatement exigible et à déclarer sur la période d'encaissement.
+
+Six mois avant l'événement, elle encaisse le second versement de 40 %, soit 4 800 € HT (5 760 € TTC), TVA de 960 € incluse. Quinze jours avant le mariage, elle facture le solde de 30 %, soit 3 600 € HT (4 320 € TTC), TVA de 720 € incluse. Chacune de ces trois factures doit référencer le contrat initial et, pour les deux dernières, mentionner explicitement qu'il s'agit d'acomptes ou du solde d'une prestation déjà engagée.
+
+## Les conditions d'annulation à préciser contractuellement
+
+L'événementiel étant particulièrement exposé aux annulations et aux reports, il est indispensable de préciser dans vos [conditions générales de vente](/blog/quest-ce-que-conditions-generales-vente) un barème clair de pénalités selon le délai d'annulation. Ce barème protège votre trésorerie, car un mariage annulé à un mois de la date ne vous laisse généralement aucune possibilité de retrouver un autre client sur ce créneau.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Annulation à plus de <strong>6 mois</strong> de l'événement : conservation du premier acompte uniquement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Annulation entre <strong>3 et 6 mois</strong> : conservation des sommes déjà versées, facturation d'une partie du solde restant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Annulation à <strong>moins de 3 mois</strong> : conservation de l'intégralité des sommes prévues au contrat</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Prévoir un cas distinct pour le <strong>report de date</strong>, plus favorable au client qu'une annulation pure</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticiper les engagements pris auprès des sous-traitants">
+    Vos conditions d'annulation doivent aussi tenir compte de vos propres engagements financiers auprès du traiteur, du lieu de réception ou du fleuriste, souvent non remboursables passé un certain délai. Alignez votre barème de pénalités sur celui de vos prestataires pour ne jamais vous retrouver à devoir avancer des frais non couverts.
+  </Callout>
+</div>
+
+## Refacturer les sous-traitants : traiteur, photographe, DJ
+
+Un wedding planner ou un organisateur d'événements coordonne souvent plusieurs prestataires externes pour le compte de son client : traiteur, photographe, DJ, fleuriste, location de mobilier. Deux options existent pour ces prestations, avec des conséquences différentes en matière de facturation.
+
+La première option consiste à faire facturer chaque prestataire directement au client final, le wedding planner ne facturant alors que ses propres honoraires de coordination. La seconde option consiste à intégrer le coût de ces prestataires dans votre propre facture, en les refacturant à votre client, généralement avec une marge de coordination. Dans ce second cas, vous devez appliquer la TVA sur l'intégralité du montant refacturé, y compris la part correspondant aux prestataires, et non seulement sur votre marge.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Débours ou refacturation : une distinction à ne pas négliger">
+    Si vous agissez comme simple intermédiaire de paiement, sans marge, pour le compte du client (mécanisme du débours), la TVA ne s'applique que dans certaines conditions strictes et le montant ne doit pas apparaître comme votre chiffre d'affaires. Dans la majorité des cas de coordination événementielle, il s'agit en réalité d'une refacturation classique avec marge, soumise à TVA sur le montant total.
+  </Callout>
+</div>
+
+## Le nombre d'invités : un facteur de variation du prix
+
+Contrairement à de nombreuses prestations de service à montant fixe, la facturation événementielle intègre souvent une part variable liée au nombre d'invités, notamment pour la restauration. Prévoyez dans votre contrat une date limite de confirmation du nombre définitif d'invités (généralement 2 à 3 semaines avant l'événement), au-delà de laquelle toute augmentation fera l'objet d'une facture complémentaire, et toute diminution ne donnera lieu à aucun remboursement.
+
+Cette clause évite les négociations de dernière minute et sécurise votre marge, en particulier lorsque vous avez déjà engagé des commandes fermes auprès du traiteur sur la base d'un nombre d'invités communiqué en amont.
+
+Précisez également, dans votre contrat, le [délai de paiement](/blog/quest-ce-que-delai-paiement-facture) applicable à votre facture de solde et aux éventuelles factures complémentaires liées à une augmentation du nombre d'invités. Un délai court, de 8 à 15 jours par exemple, limite votre exposition en cas de retard de paiement à un moment où vous avez déjà réglé l'intégralité de vos prestataires pour le jour J.
+
+## Comment Newbi facilite la facturation événementielle
+
+Pour un wedding planner ou un prestataire événementiel, gérer plusieurs factures d'acompte échelonnées sur plusieurs mois, avec une facture de solde finale, demande un suivi rigoureux. Newbi permet de créer un devis détaillé, d'y associer un échéancier d'acomptes, puis de générer automatiquement chaque facture d'acompte au moment de l'encaissement, avec calcul automatique de la TVA et déduction des acomptes déjà versés sur la facture de solde.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mes acomptes événementiels avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facturation d'un mariage ou d'un événement repose sur un échéancier d'acomptes structuré, une distinction claire entre arrhes et acompte précisée par écrit, et des conditions d'annulation alignées sur vos propres engagements auprès des sous-traitants. Chaque versement doit donner lieu à une facture d'acompte conforme, avec TVA exigible dès l'encaissement pour les prestations de service. La refacturation des prestataires externes (traiteur, photographe, DJ) doit être soumise à TVA sur le montant total dès lors qu'elle intègre une marge de coordination, et non traitée comme un simple débours. Une organisation rigoureuse de ces éléments protège votre trésorerie face au risque d'annulation, particulièrement élevé dans ce secteur.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation d'un wedding planner
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il demander des arrhes ou un acompte pour un mariage ?</AccordionTrigger>
+      <AccordionContent>
+        Un acompte est généralement préférable pour les versements proches de la date de l'événement, car il engage fermement le client et vous protège en cas d'annulation tardive. Les arrhes, qui permettent une rétractation, peuvent convenir pour un premier versement de réservation, plus facile à négocier commercialement. Précisez toujours le terme choisi par écrit dans votre contrat.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Comment facturer les prestataires que je coordonne pour mon client ?</AccordionTrigger>
+      <AccordionContent>
+        Si vous refacturez le traiteur, le photographe ou le DJ avec une marge de coordination, vous devez appliquer la TVA sur le montant total refacturé, pas seulement sur votre marge. Si vous agissez comme simple intermédiaire de paiement sans marge, le mécanisme du débours peut s'appliquer, sous des conditions strictes qui excluent ce montant de votre chiffre d'affaires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Que se passe-t-il si un client annule un mariage un mois avant la date ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend des conditions d'annulation prévues dans votre contrat. En général, plus l'annulation est proche de la date de l'événement, plus les pénalités sont élevées, car vous ne pouvez généralement plus retrouver un autre client sur ce créneau. Un barème contractuel clair, avec des paliers selon le délai d'annulation, évite tout litige sur ce point.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quand la TVA est-elle exigible sur un acompte de mariage ?</AccordionTrigger>
+      <AccordionContent>
+        Pour une prestation de service comme la coordination d'un mariage, la TVA est exigible dès l'encaissement de chaque acompte, et non à la date de l'événement. Vous devez la déclarer au titre de la période durant laquelle vous avez encaissé la somme, même si le mariage n'a pas encore eu lieu.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment gérer une augmentation du nombre d'invités en cours de préparation ?</AccordionTrigger>
+      <AccordionContent>
+        Prévoyez contractuellement une date limite de confirmation du nombre définitif d'invités, généralement 2 à 3 semaines avant l'événement. Toute augmentation après cette date doit faire l'objet d'une facture complémentaire, tandis qu'une diminution ne donne généralement pas lieu à un remboursement, en raison des commandes déjà engagées auprès de vos prestataires.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

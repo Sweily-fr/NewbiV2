@@ -1,0 +1,274 @@
+---
+title: 'Catégoriser ses transactions bancaires : méthode et catégories comptables'
+description: >-
+  Une catégorisation propre de vos transactions bancaires simplifie la compta
+  et la TVA. Les catégories à utiliser, les règles automatiques et les pièges
+  fréquents.
+date: '2026-10-15'
+category: guide
+sector: null
+keyword: catégoriser transactions bancaires
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-15'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Catégoriser ses transactions bancaires : méthode et catégories comptables
+
+**Catégoriser ses transactions bancaires** correctement est l'étape qui détermine la qualité de toute votre comptabilité. Une transaction mal classée fausse votre suivi de trésorerie, complique votre déclaration de TVA et fait perdre un temps précieux à votre expert-comptable en fin d'exercice. Ce guide détaille les catégories à utiliser, la méthode pour classer vos mouvements bancaires efficacement, et les pièges les plus fréquents chez les indépendants et les TPE.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi la catégorisation des transactions bancaires est essentielle
+
+Chaque mouvement sur votre compte professionnel raconte une histoire comptable : un encaissement client, un achat de fournitures, un paiement de charges sociales, un prélèvement d'abonnement logiciel. Classer ces mouvements dans la bonne catégorie n'est pas un exercice de rangement, c'est la base de trois usages concrets.
+
+D'abord, la catégorisation alimente votre suivi de trésorerie : sans elle, impossible de savoir combien vous dépensez réellement en achats, en frais fixes ou en charges sociales chaque mois. Ensuite, elle conditionne la fiabilité de votre déclaration de TVA, puisque seules certaines dépenses ouvrent droit à récupération. Enfin, elle facilite considérablement le travail de votre expert-comptable, qui reconstitue votre bilan à partir de ces catégories plutôt que de deviner la nature de chaque ligne bancaire.
+
+Une bonne catégorisation s'appuie généralement sur le [rapprochement bancaire automatique](/blog/connexion-bancaire-rapprochement-automatique), qui associe chaque transaction à une facture ou un justificatif, avant même de lui attribuer une catégorie comptable.
+
+## Les grandes catégories comptables à utiliser
+
+Pour un indépendant ou une TPE, une dizaine de catégories suffit généralement à couvrir l'essentiel de l'activité. Voici les plus courantes.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Catégories comptables courantes pour les transactions bancaires</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Catégorie</TableHead>
+        <TableHead>Exemples de transactions</TableHead>
+        <TableHead>TVA déductible</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Ventes / prestations</TableCell>
+        <TableCell>Encaissements clients, virements de factures</TableCell>
+        <TableCell>Non applicable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Achats de marchandises</TableCell>
+        <TableCell>Fournisseurs, matières premières, stock</TableCell>
+        <TableCell>Oui, si facture conforme</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Frais généraux</TableCell>
+        <TableCell>Fournitures de bureau, assurances, abonnements</TableCell>
+        <TableCell>Oui, partiellement selon les cas</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Charges sociales</TableCell>
+        <TableCell>Cotisations URSSAF, caisses de retraite</TableCell>
+        <TableCell>Non</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Charges fiscales</TableCell>
+        <TableCell>CFE, TVA reversée, impôt sur les sociétés</TableCell>
+        <TableCell>Non</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Frais bancaires</TableCell>
+        <TableCell>Commissions, agios, frais de tenue de compte</TableCell>
+        <TableCell>Non</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Salaires et rémunération</TableCell>
+        <TableCell>Paie, virements de rémunération du dirigeant</TableCell>
+        <TableCell>Non</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Investissements</TableCell>
+        <TableCell>Matériel, véhicule, équipement informatique</TableCell>
+        <TableCell>Oui, selon amortissement</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Cette liste peut être affinée selon votre secteur : un artisan du BTP distinguera par exemple ses achats de matériaux de ses locations d'outillage, tandis qu'un consultant séparera ses frais de déplacement de ses abonnements logiciels.
+
+## Catégorisation manuelle, règles automatiques : quelle méthode choisir
+
+Deux approches coexistent pour catégoriser vos transactions.
+
+La **catégorisation manuelle** consiste à classer chaque transaction une par une, à la main, au fil de l'eau ou en fin de mois. Elle fonctionne pour un très faible volume de mouvements, mais devient vite chronophage et source d'erreurs dès que vous dépassez une trentaine de transactions mensuelles.
+
+Les **règles automatiques** appliquent une catégorie dès qu'un mouvement correspond à un critère défini : un libellé récurrent (le nom d'un fournisseur), un montant fixe (un abonnement mensuel), ou un type d'opération (prélèvement URSSAF). Une fois la règle créée, chaque nouvelle transaction correspondante est classée sans intervention.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Combinez règles automatiques et vérification ponctuelle">
+    Les règles automatiques couvrent 80 à 90 % des transactions récurrentes d'une activité stable. Gardez toutefois une vérification mensuelle rapide pour repérer les nouvelles transactions atypiques, un nouveau fournisseur ou un mouvement exceptionnel, que les règles existantes ne reconnaîtront pas encore.
+  </Callout>
+</div>
+
+## Le lien entre catégorisation et déclaration de TVA
+
+Une catégorisation approximative se paie cher au moment de la déclaration de TVA. Seules les dépenses professionnelles, justifiées par une facture conforme et liées à l'activité, ouvrent droit à récupération de la TVA payée. Une dépense mal catégorisée, classée par exemple en frais généraux alors qu'elle relève d'une dépense mixte professionnelle et personnelle, peut entraîner une récupération de TVA indue et un redressement en cas de contrôle.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne mélangez jamais dépenses professionnelles et personnelles">
+    Un compte bancaire professionnel dédié à l'activité facilite grandement la catégorisation et limite le risque de requalification de dépenses personnelles en charges déductibles. Cette séparation est d'ailleurs une bonne pratique recommandée, même lorsqu'elle n'est pas juridiquement obligatoire pour votre statut.
+  </Callout>
+</div>
+
+Pour aller plus loin sur la récupération de TVA, référez-vous aux règles détaillées sur la [TVA déductible et les dépenses concernées](/blog/tva-deductible-quelles-depenses).
+
+## Exemple concret : un artisan qui structure sa catégorisation
+
+Prenons le cas de Sofiane, plombier à son compte, qui traite en moyenne 45 transactions bancaires par mois : 12 encaissements clients, 15 achats de fournitures chez des grossistes, 8 prélèvements de charges (URSSAF, assurance décennale, CFE), 6 frais de carburant et péage, et 4 abonnements (logiciel de facturation, téléphonie, assurance véhicule).
+
+Avant de structurer sa catégorisation, Sofiane passait environ 2 heures par mois à trier ses relevés bancaires pour préparer l'envoi à son comptable. En créant des règles automatiques pour ses fournisseurs récurrents et ses abonnements fixes, il ne traite plus manuellement que les 6 à 8 transactions réellement nouvelles chaque mois, soit un gain estimé à 1h30 par mois, 18 heures par an.
+
+Sur le plan fiscal, cette structuration lui permet aussi d'identifier rapidement ses **1 800 € de TVA déductible** annuelle sur ses achats de fournitures et son matériel, un montant qu'il négligeait partiellement faute de catégorisation rigoureuse les années précédentes.
+
+## Comment Newbi automatise la catégorisation de vos transactions
+
+<div className="not-prose my-8">
+  <Callout type="info" title="La catégorisation automatique, intégrée au rapprochement bancaire">
+    Newbi connecte votre compte professionnel, récupère vos transactions et propose une catégorisation automatique basée sur des règles apprises de vos habitudes. Chaque transaction peut être rapprochée d'une facture, d'un devis ou d'un justificatif scanné par OCR, sans ressaisie.
+  </Callout>
+</div>
+
+Concrètement, Newbi structure ce travail en trois temps : la connexion bancaire sécurisée récupère vos mouvements, le [rapprochement automatique](/blog/connexion-bancaire-rapprochement-automatique) associe chaque transaction à un document, et l'[OCR des justificatifs comptables](/blog/ocr-justificatifs-comptables) extrait automatiquement le montant, le fournisseur et la TVA d'un ticket ou d'une facture photographiée.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Connexion bancaire sécurisée</strong> avec récupération automatique des transactions</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Règles de catégorisation</strong> personnalisables par fournisseur ou par type de dépense</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Rapprochement automatique</strong> entre transactions et factures ou justificatifs</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>OCR des justificatifs</strong> pour extraire montant, TVA et fournisseur d'un ticket scanné</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Export structuré</strong> pour votre expert-comptable, catégorie par catégorie</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Découvrir la trésorerie Newbi</Link>
+  </Button>
+</div>
+
+## Catégoriser selon votre statut juridique
+
+La granularité de votre catégorisation dépend aussi de votre régime fiscal et de votre statut.
+
+En **micro-entreprise**, la comptabilité se limite à un livre des recettes et, pour les activités de vente, un registre des achats. La catégorisation reste donc relativement simple : elle sert surtout à distinguer les encaissements par nature d'activité si vous exercez plusieurs activités, et à isoler vos dépenses professionnelles pour votre propre suivi, puisque le régime micro ne permet pas de déduire les charges réelles du chiffre d'affaires imposable.
+
+En **société** (EURL, SASU, SARL), la catégorisation doit se rapprocher du plan comptable général : chaque transaction correspond in fine à un compte comptable (achats, charges externes, charges de personnel, immobilisations). C'est cette catégorisation qui alimente directement le [bilan comptable](/blog/quest-ce-que-bilan-comptable) et le compte de résultat de l'exercice. Une catégorisation approximative en cours d'année se traduit alors par un travail de reclassement long et coûteux au moment de la clôture, généralement facturé par l'expert-comptable au temps passé.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Anticipez le passage à un régime réel">
+    Si vous envisagez de dépasser les plafonds de la micro-entreprise ou de créer une société, commencez à catégoriser vos transactions selon une logique proche du plan comptable général dès maintenant. Vous éviterez ainsi une reprise fastidieuse de l'historique de vos comptes lors de la bascule.
+  </Callout>
+</div>
+
+## Catégorisation et gestion des fournisseurs récurrents
+
+Un point souvent négligé : la catégorisation ne se limite pas à classer une transaction isolée, elle doit aussi permettre de suivre l'évolution de vos postes de dépenses dans le temps. En regroupant vos transactions par fournisseur au sein d'une même catégorie, vous identifiez rapidement une hausse anormale de tarif, un abonnement oublié qui continue d'être prélevé, ou une dérive progressive de vos frais généraux.
+
+Pour un TPE qui gère plusieurs [factures fournisseurs](/blog/gestion-factures-fournisseurs-achats-tpe) chaque mois, ce suivi par catégorie et par fournisseur devient un véritable outil de pilotage : il permet de renégocier les contrats les plus coûteux, de repérer les doublons d'abonnements logiciels, et de mieux anticiper la trésorerie disponible sur les mois suivants. C'est aussi ce niveau de détail qui rend un audit ou un contrôle fiscal beaucoup plus rapide à traverser, chaque catégorie pouvant être justifiée poste par poste.
+
+## Checklist pour une catégorisation propre
+
+Avant de considérer votre catégorisation comme fiable, vérifiez ces points essentiels chaque mois :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Toutes les transactions du mois sont classées dans une catégorie, aucune ne reste « en attente »</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Chaque dépense professionnelle est rattachée à une facture ou un justificatif</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les dépenses mixtes (personnel et professionnel) sont identifiées et isolées</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les règles automatiques sont à jour après tout changement de fournisseur ou d'abonnement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le total par catégorie est cohérent avec votre suivi de trésorerie prévisionnel</span>
+  </div>
+</div>
+
+## En résumé
+
+Catégoriser ses transactions bancaires n'est pas une formalité annexe : c'est ce qui rend votre trésorerie lisible, votre déclaration de TVA fiable et le travail de votre expert-comptable efficace. Une dizaine de catégories bien définies, combinées à des règles automatiques pour les mouvements récurrents, permettent de traiter l'essentiel de vos transactions sans effort manuel répété. Il reste important de conserver une vérification mensuelle pour les mouvements inhabituels et de toujours rattacher chaque dépense à un justificatif, condition indispensable pour récupérer la TVA déductible en toute sécurité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la catégorisation des transactions bancaires
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Combien de catégories comptables faut-il utiliser ?</AccordionTrigger>
+      <AccordionContent>
+        Pour un indépendant ou une petite structure, une dizaine de catégories suffit généralement : ventes, achats de marchandises, frais généraux, charges sociales, charges fiscales, frais bancaires, salaires et investissements. Vous pouvez affiner ces catégories selon votre secteur, mais un trop grand nombre de catégories complique le suivi sans réel bénéfice.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Comment automatiser la catégorisation de mes transactions bancaires ?</AccordionTrigger>
+      <AccordionContent>
+        La méthode la plus efficace consiste à créer des règles automatiques basées sur le libellé du fournisseur, le montant ou le type d'opération. Un outil connecté à votre compte bancaire applique alors ces règles à chaque nouvelle transaction, ce qui réduit le travail manuel aux seuls mouvements réellement nouveaux ou atypiques.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Toutes les dépenses catégorisées ouvrent-elles droit à récupération de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Seules les dépenses professionnelles justifiées par une facture conforme et directement liées à votre activité ouvrent droit à récupération de la TVA déductible. Les charges sociales, fiscales et les dépenses personnelles ne sont jamais éligibles, même si elles transitent par le compte professionnel.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que faire des transactions que je n'arrive pas à catégoriser ?</AccordionTrigger>
+      <AccordionContent>
+        Ne les laissez jamais en attente indéfiniment. Rapprochez-les d'un justificatif si possible, ou classez-les temporairement dans une catégorie « à vérifier » que vous traiterez lors de votre point mensuel avec votre expert-comptable. Une transaction non catégorisée fausse votre suivi de trésorerie et peut être source d'erreur en fin d'exercice.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il un compte bancaire professionnel dédié pour bien catégoriser ses transactions ?</AccordionTrigger>
+      <AccordionContent>
+        Ce n'est pas systématiquement obligatoire selon votre statut, mais c'est fortement recommandé. Un compte dédié évite le mélange entre dépenses personnelles et professionnelles, simplifie considérablement la catégorisation et réduit le risque de requalification lors d'un contrôle fiscal.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

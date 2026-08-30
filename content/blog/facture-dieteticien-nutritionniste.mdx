@@ -1,0 +1,254 @@
+---
+title: 'Facture de diététicien-nutritionniste : TVA, forfaits et mentions'
+description: >-
+  Facturer des consultations et des programmes de suivi : exonération de TVA
+  du diététicien, forfaits mensuels, entreprises et ateliers collectifs.
+date: '2026-10-21'
+category: guide
+sector: Professions médicales
+keyword: facture diététicien
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-21'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture de diététicien-nutritionniste : TVA, forfaits et mentions
+
+La **facture de diététicien** obéit à des règles particulières, à commencer par une question qui revient systématiquement : faut-il ou non appliquer la TVA sur une consultation de diététique ? Le diététicien-nutritionniste est une profession paramédicale réglementée, inscrite au Code de la santé publique, ce qui ouvre droit à une exonération de TVA sous certaines conditions, mais pas sur toutes les prestations.
+
+Ce guide détaille les règles de TVA applicables, les mentions obligatoires à faire figurer sur vos factures, et la façon de facturer forfaits de suivi, entreprises et ateliers collectifs.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes factures de diététicien gratuitement</Link>
+  </Button>
+</div>
+
+## L'exonération de TVA : un principe encadré, pas automatique
+
+L'article 261-4-1° du Code général des impôts (CGI) exonère de TVA les soins dispensés par les membres des professions médicales et paramédicales réglementées. Le diététicien-nutritionniste figure parmi ces professions, sa qualification étant encadrée par le Code de la santé publique depuis la loi du 21 juillet 2009 dite loi HPST.
+
+Cette exonération s'applique aux actes qui présentent un caractère de **soins à la personne**, c'est-à-dire un objectif thérapeutique ou de prévention individualisée : consultation initiale, bilan nutritionnel, suivi personnalisé d'un patient, accompagnement dans le cadre d'une pathologie (diabète, obésité, troubles du comportement alimentaire). En revanche, certaines prestations ne bénéficient pas de cette exonération, faute de finalité thérapeutique individuelle directe.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Toutes les prestations ne sont pas exonérées de TVA">
+    Une consultation individuelle avec un objectif de soin ou de prévention est en principe exonérée de TVA. En revanche, un atelier collectif de sensibilisation à l'alimentation en entreprise, une prestation de coaching sportif et nutritionnel à visée purement esthétique, ou la vente de compléments alimentaires, peuvent être soumis à la TVA dans les conditions de droit commun. En cas de doute sur une prestation spécifique, un rescrit fiscal ou l'avis de votre expert-comptable reste la solution la plus sûre.
+  </Callout>
+</div>
+
+## Panorama des prestations et de leur régime de TVA
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Régime de TVA selon le type de prestation du diététicien</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Type de prestation</TableHead>
+        <TableHead>Régime de TVA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Consultation individuelle avec bilan nutritionnel</TableCell>
+        <TableCell>Exonérée (article 261-4-1° du CGI)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Suivi individualisé sur ordonnance ou pour une pathologie</TableCell>
+        <TableCell>Exonérée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Forfait de suivi individuel sur plusieurs mois</TableCell>
+        <TableCell>Exonérée si le contenu reste un accompagnement individuel de soin</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Atelier collectif de sensibilisation en entreprise</TableCell>
+        <TableCell>Soumis à la TVA (prestation de formation ou d'animation, pas un soin individuel)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Vente de compléments alimentaires ou de produits</TableCell>
+        <TableCell>Soumise à la TVA au taux applicable au produit vendu</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Facturer une consultation individuelle exonérée
+
+Lorsque votre prestation est exonérée, votre facture doit impérativement porter la mention justifiant l'absence de TVA, sous peine de voir votre exonération contestée lors d'un contrôle.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>"TVA non applicable, article 261-4-1° du CGI"</strong> à la place du taux de TVA</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Votre <strong>numéro ADELI ou RPPS</strong> attestant votre inscription en tant que diététicien-nutritionniste</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date et la nature de la consultation</strong> (bilan initial, séance de suivi, entretien de contrôle)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>numéro de facture</strong>, la date d'émission et vos coordonnées complètes avec SIRET</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant net à payer</strong> par le patient</span>
+  </div>
+</div>
+
+Retrouvez le détail complet des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) applicables à l'ensemble des professionnels, et notre guide dédié à la [mention TVA non applicable de l'article 293 B](/blog/tva-non-applicable-article-293-b-mention) pour les diététiciens qui relèvent en plus de la franchise en base sur le reste de leur activité.
+
+## Cas pratique : un forfait de suivi sur 3 mois
+
+Une diététicienne libérale propose un forfait de suivi nutritionnel sur trois mois, comprenant une consultation initiale, quatre séances de suivi et un bilan final, facturé 360 €. Ce forfait constitue un accompagnement individualisé à visée de soin : il reste exonéré de TVA au titre de l'article 261-4-1° du CGI. La facture émise au moment de la première séance, ou fractionnée en plusieurs échéances selon l'organisation retenue avec la patiente, doit porter la mention d'exonération sur chaque facture émise.
+
+Si cette même diététicienne facture par ailleurs à une entreprise un atelier collectif "bien manger au travail" pour 15 salariés, à raison de 800 € la journée, cette prestation ne relève plus d'un soin individualisé : elle est en principe soumise à la TVA au taux normal de 20 %, sauf si la diététicienne reste sous le seuil de la franchise en base de TVA pour cette partie de son activité.
+
+## Facturer des entreprises et des ateliers collectifs
+
+De plus en plus de diététiciens-nutritionnistes diversifient leur activité en intervenant auprès d'entreprises, dans le cadre de programmes de qualité de vie au travail. Ces prestations, distinctes du soin individuel, doivent être facturées séparément, avec une numérotation qui peut rester dans la même séquence chronologique que vos factures de consultations, mais avec un traitement de TVA différent.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Séparez clairement vos deux types d'activité">
+    Si vous exercez à la fois des consultations individuelles exonérées et des prestations collectives soumises à la TVA, il est recommandé de bien distinguer les deux activités dans votre comptabilité, avec des libellés de facture explicites. Cela facilite votre déclaration de TVA et limite le risque d'erreur en cas de contrôle.
+  </Callout>
+</div>
+
+## La franchise en base de TVA pour les prestations non exonérées
+
+Sur la partie de votre activité qui n'est pas couverte par l'exonération de soin, comme les ateliers collectifs en entreprise ou la vente de produits, vous restez soumis aux règles de TVA de droit commun. Si votre chiffre d'affaires sur ces prestations reste modeste, la franchise en base de TVA peut s'appliquer.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Seuils de la franchise en base de TVA en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Seuil</TableHead>
+        <TableHead>Montant</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Seuil de base (prestations de services)</TableCell>
+        <TableCell>37 500 € de chiffre d'affaires annuel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Seuil majoré (prestations de services)</TableCell>
+        <TableCell>41 250 € de chiffre d'affaires annuel</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+En dessous du seuil de base, vous ne facturez pas de TVA sur ces prestations non exonérées et vous portez la mention "TVA non applicable, article 293 B du CGI". Entre le seuil de base et le seuil majoré, vous restez en franchise jusqu'à la fin de l'année en cours, sauf dépassement du seuil majoré en cours d'année, qui vous rend redevable de la TVA dès le premier jour du mois de dépassement. Une erreur classique en début d'activité consiste à ne pas suivre ce cumul, une des [erreurs fréquentes lors de la création d'une micro-entreprise](/blog/erreurs-creation-micro-entreprise) que l'on retrouve régulièrement chez les professionnels de santé qui diversifient leur activité.
+
+## Le statut du diététicien : profession libérale ou micro-entreprise
+
+La grande majorité des diététiciens-nutritionnistes exercent en libéral, souvent sous le statut de la micro-entreprise en début d'activité. Les plafonds de chiffre d'affaires pour la micro-entreprise, dans la catégorie des bénéfices non commerciaux (BNC) applicable à cette activité, s'élèvent en 2026 à 77 700 €. Ce guide se combine utilement avec notre article sur la [facturation des professions libérales](/blog/facture-profession-liberale-guide), qui détaille l'ensemble des obligations comptables et fiscales communes à ces professions, et avec celui consacré à la [facture du psychologue libéral](/blog/facture-psychologue-liberal-guide), une profession soumise à des règles de TVA très proches.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Conservez vos factures 10 ans">
+    Comme tout professionnel, le diététicien-nutritionniste doit conserver ses factures pendant 10 ans au titre du Code de commerce, et pendant 6 ans au titre du Livre des procédures fiscales pour le délai de reprise de l'administration. En pratique, une conservation de 10 ans couvre l'ensemble des situations de contrôle.
+  </Callout>
+</div>
+
+## Facturer un bilan pris en charge par une mutuelle
+
+De plus en plus de complémentaires santé proposent un remboursement partiel ou forfaitaire des consultations de diététique, dans la limite d'un nombre de séances par an. Dans ce cas, la facture reste établie au nom du patient, qui règle directement le praticien : c'est ensuite au patient de transmettre cette facture à sa mutuelle pour obtenir son remboursement.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Une facture nominative reste indispensable">
+    Même lorsque le patient sera remboursé par sa mutuelle, la facture doit toujours être établie à son nom, avec le détail de la ou des séances concernées et leur date. Certaines mutuelles exigent également que la facture précise le numéro ADELI ou RPPS du praticien, ainsi que la mention de son diplôme d'État de diététicien, pour valider la prise en charge.
+  </Callout>
+</div>
+
+Il est recommandé de conserver un modèle de facture homogène pour l'ensemble de vos patients, avec toutes les informations nécessaires à un remboursement mutuelle, plutôt que d'adapter chaque facture au cas par cas selon la complémentaire santé du patient. Cela limite les échanges administratifs et les demandes de rectification a posteriori.
+
+## Comment Newbi simplifie la facturation du diététicien
+
+Newbi permet aux diététiciens-nutritionnistes de générer des factures conformes, avec la mention d'exonération de TVA appliquée automatiquement lorsque la prestation le justifie, et un suivi distinct entre consultations individuelles et prestations collectives.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Modèles de facture</strong> adaptés aux consultations et aux forfaits de suivi</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Gestion des mentions d'exonération</strong> de TVA selon le type de prestation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivi des paiements</strong> patients et entreprises depuis un tableau de bord unique</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Le diététicien-nutritionniste bénéficie d'une exonération de TVA sur ses consultations et ses forfaits de suivi individualisé à visée de soin, en application de l'article 261-4-1° du Code général des impôts, à condition de porter la mention adéquate sur chaque facture et de justifier de son inscription en tant que profession paramédicale réglementée. Cette exonération ne s'étend pas systématiquement aux prestations collectives en entreprise ni à la vente de produits, qui suivent le régime de TVA de droit commun. Une distinction claire entre vos différentes activités, dans votre facturation comme dans votre comptabilité, reste la meilleure garantie de conformité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de diététicien
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un diététicien-nutritionniste doit-il facturer la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Les consultations individuelles à visée de soin sont exonérées de TVA en application de l'article 261-4-1° du Code général des impôts, car le diététicien-nutritionniste est une profession paramédicale réglementée. En revanche, les prestations collectives en entreprise ou la vente de produits peuvent rester soumises à la TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle mention indiquer sur une facture de consultation exonérée de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        La facture doit porter la mention "TVA non applicable, article 261-4-1° du CGI" à la place du taux de TVA, ainsi que le numéro ADELI ou RPPS du praticien qui atteste de son inscription en tant que profession paramédicale réglementée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Un atelier collectif en entreprise est-il soumis à la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Oui en principe. Un atelier collectif de sensibilisation, une conférence ou une formation en entreprise ne constitue pas un soin individualisé au sens de l'exonération de TVA : cette prestation est généralement soumise à la TVA au taux normal, sauf si le diététicien reste sous le seuil de la franchise en base sur cette partie de son activité.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on facturer un forfait de suivi sur plusieurs mois ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, un forfait de suivi individualisé s'échelonnant sur plusieurs mois reste exonéré de TVA tant qu'il constitue un accompagnement de soin personnalisé. Chaque facture émise dans le cadre de ce forfait doit porter la mention d'exonération de TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Combien de temps conserver ses factures en tant que diététicien libéral ?</AccordionTrigger>
+      <AccordionContent>
+        Les factures doivent être conservées 10 ans au titre du Code de commerce et 6 ans au titre du Livre des procédures fiscales pour couvrir le délai de reprise de l'administration fiscale. En pratique, une conservation de 10 ans permet de répondre à tout contrôle éventuel.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

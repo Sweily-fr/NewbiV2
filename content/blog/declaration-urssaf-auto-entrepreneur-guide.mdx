@@ -1,0 +1,239 @@
+---
+title: "Déclaration URSSAF auto-entrepreneur : mode d'emploi mensuel ou trimestriel"
+description: >-
+  Déclarer son chiffre d'affaires sur autoentrepreneur.urssaf.fr :
+  périodicité, CA à déclarer (encaissé, pas facturé), taux 2026, déclaration
+  à zéro et pénalités de retard.
+date: '2026-11-06'
+category: guide
+sector: Particuliers / Micro-entreprise
+keyword: déclaration urssaf auto-entrepreneur
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-06'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Déclaration URSSAF auto-entrepreneur : mode d'emploi mensuel ou trimestriel
+
+La **déclaration URSSAF de l'auto-entrepreneur** est une obligation périodique incontournable pour tout micro-entrepreneur, qu'il ait réalisé du chiffre d'affaires ou non sur la période concernée. Réalisée sur autoentrepreneur.urssaf.fr, cette déclaration détermine le montant de vos cotisations sociales et conditionne vos droits sociaux. Ce guide détaille la périodicité mensuelle ou trimestrielle, ce qu'il faut déclarer exactement, les taux applicables en 2026 et les conséquences d'un oubli ou d'un retard.
+
+Vous saurez précisément comment remplir votre déclaration, même à zéro, et comment éviter les pénalités qui s'appliquent en cas de manquement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Mensuel ou trimestriel : comment choisir sa périodicité
+
+Lors de votre inscription en tant que micro-entrepreneur, vous choisissez la périodicité de votre déclaration de chiffre d'affaires : mensuelle ou trimestrielle. Ce choix peut être modifié une fois par an, avant le 31 octobre, pour une application l'année suivante.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre déclaration mensuelle et trimestrielle</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[150px]">Critère</TableHead>
+        <TableHead>Déclaration mensuelle</TableHead>
+        <TableHead>Déclaration trimestrielle</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Fréquence</TableCell>
+        <TableCell>Tous les mois</TableCell>
+        <TableCell>Tous les trimestres</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Date limite</TableCell>
+        <TableCell>Autour du 30 du mois suivant (date exacte communiquée par l'URSSAF)</TableCell>
+        <TableCell>Fin avril, juillet, octobre et janvier pour le trimestre écoulé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Lissage de trésorerie</TableCell>
+        <TableCell>Cotisations réparties sur l'année, montants plus petits et fréquents</TableCell>
+        <TableCell>Montants plus élevés mais moins fréquents</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Charge administrative</TableCell>
+        <TableCell>12 déclarations par an</TableCell>
+        <TableCell>4 déclarations par an</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+En pratique, la périodicité mensuelle convient mieux aux activités avec un chiffre d'affaires régulier, car elle lisse la charge de cotisations. La périodicité trimestrielle réduit la charge administrative mais demande une meilleure anticipation de trésorerie, le montant à régler étant plus élevé sur chaque échéance.
+
+## Quel chiffre d'affaires déclarer : encaissé, pas facturé
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le point le plus mal compris de la déclaration URSSAF">
+    Vous devez déclarer le chiffre d'affaires **encaissé** sur la période, et non le chiffre d'affaires facturé. Si vous avez émis une facture en mars mais que le client vous a réglé en avril, ce montant se déclare au titre du mois ou trimestre d'avril, date de l'encaissement effectif, et non au titre de mars.
+  </Callout>
+</div>
+
+Cette règle surprend souvent les nouveaux micro-entrepreneurs habitués à raisonner en date de facturation. Pour éviter les erreurs, il est recommandé de tenir un [suivi de trésorerie](/blog/comment-gerer-tresorerie-entreprise) précis, distinguant la date d'émission de la facture de la date effective de paiement par le client.
+
+### Exemple chiffré
+
+Une graphiste freelance facture 2 000 € HT en février, encaissés en deux fois : 1 000 € fin février et 1 000 € mi-mars. Sur une déclaration mensuelle, elle déclare 1 000 € de chiffre d'affaires au titre de février et 1 000 € au titre de mars, même si la facture elle-même a été émise en février. Sur une déclaration trimestrielle couvrant janvier à mars, l'ensemble des 2 000 € encaissés sur le trimestre est déclaré en une seule fois à l'échéance d'avril.
+
+## Les taux de cotisation 2026 par activité
+
+Le taux de cotisations sociales appliqué à votre chiffre d'affaires encaissé dépend de la nature de votre activité :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Vente de marchandises</strong> (BIC) : taux réduit, généralement autour de 12,3 %</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Prestations de services commerciales ou artisanales</strong> (BIC) : taux intermédiaire, autour de 21,2 %</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Professions libérales</strong> relevant de la Cipav ou du régime général (BNC) : taux le plus élevé, autour de 21,1 % à 23,2 % selon la caisse de rattachement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>versement libératoire de l'impôt sur le revenu</strong> peut s'ajouter à ces taux si vous avez opté pour ce régime et respectez les plafonds de revenu fiscal de référence</span>
+  </div>
+</div>
+
+Ces taux évoluent régulièrement : vérifiez toujours le taux exact applicable à votre situation sur [autoentrepreneur.urssaf.fr](https://www.autoentrepreneur.urssaf.fr) avant chaque déclaration. Pour les micro-entrepreneurs ayant opté pour le versement libératoire, notre article sur le [versement libératoire de l'impôt sur le revenu en micro-entreprise](/blog/versement-liberatoire-impot-revenu-micro) détaille les conditions d'éligibilité.
+
+## Déclarer à zéro : une obligation même sans chiffre d'affaires
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Zéro chiffre d'affaires ne dispense pas de déclarer">
+    Même si vous n'avez encaissé aucun montant sur la période, vous devez impérativement déposer une déclaration à zéro sur autoentrepreneur.urssaf.fr avant la date limite. L'absence de déclaration, même à zéro, entraîne des pénalités, contrairement à une déclaration renseignée à 0 € qui est parfaitement conforme.
+  </Callout>
+</div>
+
+Cette obligation surprend souvent les micro-entrepreneurs qui pensent, à tort, qu'une absence de revenus les dispense de toute démarche. C'est l'inverse : ne rien déclarer est sanctionné, tandis que déclarer zéro euro de chiffre d'affaires est la démarche correcte à effectuer.
+
+## Comment procéder à la déclaration étape par étape
+
+1. **Connectez-vous** à votre espace personnel sur autoentrepreneur.urssaf.fr avec vos identifiants.
+2. **Sélectionnez la période** concernée (mois ou trimestre) dans la rubrique dédiée aux déclarations.
+3. **Renseignez le chiffre d'affaires encaissé**, en distinguant si besoin vente de marchandises et prestations de services lorsque vous exercez une activité mixte.
+4. **Vérifiez le montant de cotisations calculé automatiquement** par la plateforme selon votre taux applicable.
+5. **Validez et procédez au paiement**, par prélèvement automatique si vous avez activé cette option, ou par virement.
+6. **Conservez l'accusé de dépôt** de votre déclaration, utile en cas de contrôle ou de litige.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticipez avec un suivi précis de vos encaissements">
+    Pour éviter les erreurs de montant, rapprochez systématiquement vos encaissements bancaires de vos factures avant chaque déclaration. Un outil de gestion avec [connexion bancaire et rapprochement automatique](/blog/connexion-bancaire-rapprochement-automatique) simplifie considérablement cette étape.
+  </Callout>
+</div>
+
+## Les pénalités en cas de retard ou d'oubli
+
+Le non-respect de l'obligation déclarative expose à plusieurs types de sanctions :
+
+- Une **pénalité forfaitaire** appliquée en cas de défaut de déclaration à la date limite, dont le montant est fixé par l'URSSAF et peut être majoré en cas de récidive.
+- Une **taxation d'office** si aucune déclaration n'est déposée après relance : l'URSSAF calcule alors vos cotisations sur une base forfaitaire, généralement moins favorable que votre chiffre d'affaires réel.
+- Des **majorations de retard** sur les cotisations dues, calculées à compter de la date limite de paiement.
+- Un **radiation possible** du régime de la micro-entreprise en cas de défauts répétés et prolongés de déclaration.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La taxation d'office est rarement à votre avantage">
+    Lorsque l'URSSAF procède à une taxation d'office faute de déclaration, la base retenue est souvent supérieure à votre chiffre d'affaires réel, notamment si votre activité a ralenti sur la période. Mieux vaut toujours déclarer, y compris en retard, plutôt que de laisser l'organisme calculer à votre place.
+  </Callout>
+</div>
+
+## Le lien avec vos obligations comptables
+
+La déclaration URSSAF ne dispense pas des autres [obligations comptables de la micro-entreprise](/blog/obligations-comptables-micro-entreprise), notamment la tenue d'un livre des recettes chronologique et, pour les activités de vente, d'un registre des achats. Ce livre des recettes doit correspondre exactement aux montants encaissés déclarés à l'URSSAF, ce qui en fait un document de référence en cas de contrôle.
+
+Si vous démarrez votre activité, sachez également que l'aide à la création ou à la reprise d'entreprise (ACRE) peut réduire vos cotisations sociales sur les premiers mois d'activité. Notre article sur l'[ACRE et l'exonération de charges en début d'activité](/blog/acre-exoneration-charges-debut-activite) détaille les conditions d'éligibilité et l'impact sur vos déclarations URSSAF.
+
+## Comment Newbi facilite le suivi de votre chiffre d'affaires encaissé
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un suivi clair de vos encaissements pour préparer vos déclarations">
+    Newbi vous permet de suivre en temps réel les paiements reçus sur vos factures, grâce à la synchronisation bancaire et au rapprochement automatique. Vous visualisez rapidement le montant encaissé sur la période, ce qui facilite le remplissage de votre déclaration URSSAF sans recalcul manuel.
+  </Callout>
+</div>
+
+En centralisant facturation, encaissements et trésorerie, Newbi vous évite de reconstituer manuellement votre chiffre d'affaires encaissé à chaque échéance déclarative.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Suivre ma trésorerie avec Newbi</Link>
+  </Button>
+</div>
+
+## Cas particulier : activité mixte vente et prestations de services
+
+Certains micro-entrepreneurs exercent une activité mixte, par exemple un artisan qui vend des matériaux et facture aussi la pose. Dans ce cas, la déclaration URSSAF doit distinguer les deux natures d'activité, car elles ne sont pas soumises au même taux de cotisation. Prenons un exemple chiffré : sur un trimestre, cet artisan encaisse 3 500 € au titre de la vente de matériaux (taux autour de 12,3 %) et 4 800 € au titre de la prestation de pose (taux autour de 21,2 %). Il doit déclarer ces deux montants séparément sur autoentrepreneur.urssaf.fr, qui calcule alors deux bases de cotisation distinctes : environ 430 € pour la vente et environ 1 018 € pour la prestation, soit un total de cotisations d'environ 1 448 € sur le trimestre.
+
+Une erreur fréquente consiste à déclarer l'ensemble du chiffre d'affaires dans une seule catégorie, ce qui fausse le calcul des cotisations, parfois à la hausse, parfois à la baisse selon le sens de l'erreur. Un contrôle ultérieur peut alors entraîner un redressement. Il est donc essentiel de bien catégoriser chaque encaissement selon sa nature dès l'émission de la facture, pour ne pas avoir à reconstituer cette ventilation au moment de déclarer.
+
+## Le respect des plafonds de chiffre d'affaires
+
+La déclaration URSSAF s'inscrit aussi dans le respect des plafonds annuels du régime de la micro-entreprise, fixés en 2026 à 188 700 € pour les activités de vente de marchandises et à 77 700 € pour les prestations de services relevant des BNC. Le franchissement de ces seuils sur deux années consécutives entraîne la sortie du régime micro-fiscal et micro-social l'année suivante, avec un passage au régime réel d'imposition. Un suivi rigoureux de votre chiffre d'affaires cumulé sur l'année, au fil de vos déclarations, permet d'anticiper ce basculement plutôt que de le découvrir tardivement.
+
+## En résumé
+
+La déclaration URSSAF auto-entrepreneur porte sur le chiffre d'affaires réellement encaissé sur la période, mensuelle ou trimestrielle selon votre choix, et non sur les montants facturés. Elle reste obligatoire même à zéro, sous peine de pénalités et de taxation d'office potentiellement défavorable. Les taux de cotisation varient selon la nature de votre activité, entre environ 12,3 % pour la vente de marchandises et plus de 21 % pour les prestations de services et professions libérales. Un suivi rigoureux de vos encaissements, distinct de votre facturation, est la clé pour déclarer sans erreur et éviter tout retard.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la déclaration URSSAF de l'auto-entrepreneur
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il déclarer le chiffre d'affaires facturé ou encaissé à l'URSSAF ?</AccordionTrigger>
+      <AccordionContent>
+        Il faut déclarer le chiffre d'affaires effectivement encaissé sur la période, et non celui facturé. Si une facture est émise un mois mais payée le mois suivant, le montant se déclare au titre de la période durant laquelle le paiement a été effectivement reçu.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Que se passe-t-il si je ne déclare rien à l'URSSAF alors que je n'ai pas eu de chiffre d'affaires ?</AccordionTrigger>
+      <AccordionContent>
+        Vous devez tout de même déposer une déclaration à zéro. Ne rien déclarer du tout expose à des pénalités et, en cas de manquements répétés, à une taxation d'office calculée sur une base forfaitaire potentiellement plus élevée que votre chiffre d'affaires réel.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Peut-on changer de périodicité de déclaration en cours d'année ?</AccordionTrigger>
+      <AccordionContent>
+        Le changement de périodicité, mensuelle vers trimestrielle ou l'inverse, se fait généralement une fois par an, avec une demande à formuler avant le 31 octobre pour une application l'année suivante. Il n'est pas possible de changer de rythme à tout moment en cours de mois ou de trimestre.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quel est le délai pour effectuer sa déclaration URSSAF ?</AccordionTrigger>
+      <AccordionContent>
+        Pour une déclaration mensuelle, la date limite se situe généralement autour du 30 du mois suivant la période concernée. Pour une déclaration trimestrielle, les échéances tombent fin avril, juillet, octobre et janvier. La date exacte est communiquée par l'URSSAF et peut varier légèrement selon le calendrier.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quelles sont les conséquences d'un retard de paiement des cotisations URSSAF ?</AccordionTrigger>
+      <AccordionContent>
+        Un retard entraîne des majorations calculées à compter de la date limite de paiement. En cas de retards répétés ou de défaut prolongé de déclaration, l'URSSAF peut procéder à une taxation d'office et, dans les cas les plus graves, engager une procédure pouvant conduire à la radiation du régime de la micro-entreprise.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

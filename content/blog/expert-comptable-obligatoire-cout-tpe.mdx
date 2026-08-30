@@ -1,0 +1,239 @@
+---
+title: "Expert-comptable : obligatoire ou pas, et combien ça coûte pour une TPE ?"
+description: >-
+  Aucune loi n'impose l'expert-comptable, mais il est souvent indispensable.
+  Cas où l'on peut s'en passer, tarifs moyens 2026 et comment réduire la
+  facture.
+date: '2026-11-26'
+category: guide
+sector: Comptables / Experts-comptables
+keyword: expert-comptable obligatoire
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-26'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Expert-comptable : obligatoire ou pas, et combien ça coûte pour une TPE ?
+
+L'**expert-comptable obligatoire**, c'est une idée reçue très répandue chez les créateurs d'entreprise. En réalité, aucune loi française n'impose de faire appel à un expert-comptable pour gérer sa comptabilité, quel que soit le statut juridique. Pourtant, dans la pratique, s'en passer devient risqué dès que l'activité se complexifie. Ce guide fait le point sur les cas où vous pouvez réellement vous en passer, les tarifs moyens pratiqués en 2026 et les leviers pour réduire la facture sans sacrifier la conformité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Ce que dit vraiment la loi sur l'expert-comptable
+
+Contrairement à une idée répandue, aucun texte n'oblige un entrepreneur, quel que soit son statut, à confier sa comptabilité à un expert-comptable. Ce qui est obligatoire, en revanche, ce sont les obligations comptables elles-mêmes : tenue d'une comptabilité régulière, conservation des pièces justificatives, dépôt des comptes annuels pour les sociétés, déclarations fiscales et sociales dans les délais.
+
+La micro-entreprise, par exemple, se contente d'un livre des recettes et, le cas échéant, d'un registre des achats. Une EURL ou une SASU, en revanche, doit tenir une comptabilité complète avec bilan, compte de résultat et annexes, déposés chaque année au greffe. Rien n'empêche un dirigeant compétent et disponible de réaliser lui-même ces obligations, mais la complexité croît vite avec le volume d'activité.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Ce qui est réellement obligatoire">
+    Ce n'est pas l'expert-comptable qui est obligatoire, mais le respect des obligations comptables et fiscales qui varient selon votre statut. Notre article sur les [obligations comptables de la micro-entreprise](/blog/obligations-comptables-micro-entreprise) détaille précisément ce qui est exigé selon votre régime.
+  </Callout>
+</div>
+
+## Dans quels cas peut-on s'en passer
+
+Certaines situations permettent raisonnablement de gérer sa comptabilité sans expert-comptable, au moins dans les premières années d'activité.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous êtes en <strong>micro-entreprise</strong>, avec un chiffre d'affaires modéré et peu d'opérations complexes</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous êtes à l'aise avec les outils numériques et disposez du temps nécessaire à un suivi rigoureux</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous n'avez pas ou peu de salariés, ce qui simplifie fortement la partie sociale</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous utilisez un logiciel de gestion capable de centraliser factures, achats et rapprochement bancaire</span>
+  </div>
+</div>
+
+À l'inverse, dès que vous créez une société (EURL, SASU, SARL), recrutez un premier salarié, dépassez les seuils de la micro-entreprise ou traitez des opérations complexes (TVA intracommunautaire, importations, investissements), l'accompagnement d'un professionnel devient nettement plus prudent, voire quasiment incontournable pour éviter les erreurs coûteuses.
+
+## Combien coûte un expert-comptable en 2026
+
+Les tarifs varient fortement selon le statut juridique, le volume d'opérations et la région. Voici les fourchettes moyennes constatées pour une TPE.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Tarifs moyens d'un expert-comptable pour une TPE en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Statut</TableHead>
+        <TableHead>Prestation de base</TableHead>
+        <TableHead>Coût annuel moyen</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Micro-entreprise</TableCell>
+        <TableCell>Déclaration de CA, conseil ponctuel</TableCell>
+        <TableCell>250 à 600 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">EURL ou SASU sans salarié</TableCell>
+        <TableCell>Tenue comptable, bilan, liasse fiscale</TableCell>
+        <TableCell>1 200 à 2 500 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">SARL ou SAS avec 1 à 5 salariés</TableCell>
+        <TableCell>Comptabilité, bilan, paie</TableCell>
+        <TableCell>2 500 à 5 000 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mission ponctuelle (bilan seul)</TableCell>
+        <TableCell>Révision et dépôt de la liasse fiscale</TableCell>
+        <TableCell>800 à 1 800 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ces montants dépendent aussi du niveau de préparation en amont. Plus votre comptabilité est propre et vos justificatifs bien classés au moment de la transmission, moins l'expert-comptable passe de temps à corriger ou reconstituer les données, ce qui réduit d'autant sa facture.
+
+## Cas pratique : coût selon le niveau de préparation
+
+Une graphiste freelance en EURL transmet chaque année à son expert-comptable un ensemble de factures et de justificatifs mal classés, avec des rapprochements bancaires manuels incomplets. Le cabinet facture 2 200 € par an, dont une part importante correspond au temps passé à trier et ressaisir les documents.
+
+L'année suivante, elle utilise un logiciel de gestion qui centralise ses factures, ses achats scannés par OCR et son rapprochement bancaire automatique. Son expert-comptable reçoit des données déjà structurées et exportables. La facture annuelle descend à 1 500 €, soit une économie de 700 €, simplement grâce à une meilleure organisation en amont.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Le bon outil réduit la facture de l'expert-comptable">
+    Plus vos documents sont organisés et exportables facilement, moins votre expert-comptable facture de temps de saisie et de correction. C'est souvent le levier le plus efficace pour réduire durablement le coût de cette prestation.
+  </Callout>
+</div>
+
+## Cabinet traditionnel, cabinet en ligne ou expert-comptable indépendant
+
+Le marché de l'expertise comptable s'est diversifié ces dernières années. Trois types d'acteurs coexistent aujourd'hui, avec des positionnements tarifaires et des niveaux de proximité différents.
+
+Le cabinet traditionnel de proximité offre un contact humain régulier, souvent apprécié pour les questions ponctuelles ou en cas de contrôle fiscal. Ses tarifs sont généralement dans la moyenne haute des fourchettes présentées plus haut, mais l'accompagnement est personnalisé et le comptable connaît bien votre dossier au fil des années.
+
+Les cabinets en ligne, apparus avec la digitalisation du secteur, proposent des forfaits mensuels souvent plus compétitifs, avec un accès à une plateforme et un interlocuteur joignable à distance. Ils conviennent bien aux activités simples, avec peu d'opérations complexes, mais le suivi peut être moins personnalisé qu'avec un cabinet de proximité.
+
+Enfin, certains experts-comptables indépendants proposent des tarifs intermédiaires, avec un contact direct mais une structure plus légère qu'un grand cabinet. Le choix entre ces trois options dépend surtout de votre besoin de proximité, de la complexité de votre activité et de votre budget.
+
+## Ce qui fait varier le prix d'une mission comptable
+
+Au-delà du statut juridique, plusieurs facteurs font varier significativement le devis d'un expert-comptable pour une TPE.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>volume d'écritures comptables</strong> à traiter sur l'exercice (nombre de factures, d'achats, de mouvements bancaires)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>présence de salariés</strong>, qui ajoute la gestion de la paie et des déclarations sociales</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>régime de TVA</strong> applicable, la TVA intracommunautaire étant plus complexe à traiter que la franchise en base</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>niveau de conseil</strong> attendu, au-delà de la simple tenue comptable (optimisation fiscale, accompagnement stratégique)</span>
+  </div>
+</div>
+
+## Comment réduire la facture sans sacrifier la conformité
+
+Plusieurs leviers permettent de limiter les coûts sans prendre de risque sur la conformité de votre comptabilité.
+
+1. **Organisez vos justificatifs au fil de l'eau** plutôt qu'en fin d'année, pour éviter la reconstitution fastidieuse de plusieurs mois de dépenses.
+2. **Utilisez un logiciel de gestion** qui centralise factures de vente, achats et rapprochement bancaire, avec un export compatible avec les outils de votre expert-comptable.
+3. **Comparez les offres** : certains cabinets proposent des forfaits mensuels avec accès en ligne, d'autres facturent au temps passé.
+4. **Limitez la mission au strict nécessaire** en début d'activité : un bilan annuel plutôt qu'un accompagnement mensuel complet, si votre volume le permet.
+5. **Partagez l'accès à vos documents en temps réel** plutôt que d'envoyer un lot de pièces en fin d'exercice, ce qui répartit la charge de travail sur l'année.
+6. **Demandez un devis détaillé** avant de signer une lettre de mission, en précisant exactement ce qui est inclus (bilan, déclarations de TVA, paie, conseil) et ce qui serait facturé en supplément.
+
+## Le rôle du logiciel de gestion dans la relation avec l'expert-comptable
+
+Un bon logiciel de gestion ne remplace pas l'expert-comptable sur les missions réglementées (dépôt de bilan, certaines déclarations fiscales complexes), mais il transforme la manière dont vous collaborez avec lui. Plutôt que d'envoyer un dossier papier ou une multitude de fichiers en fin d'année, vous partagez un accès direct et structuré à vos données. Notre article sur [comment partager ses documents avec son expert-comptable](/blog/comment-partager-documents-expert-comptable) détaille les bonnes pratiques pour fluidifier cette collaboration.
+
+Cette organisation dès le début de l'activité est également un facteur de sérénité. Notre guide sur [comment organiser sa comptabilité en début d'activité](/blog/conseils-organiser-comptabilite-debut-activite) propose une méthode simple pour prendre de bonnes habitudes dès les premiers mois, avant que le volume de documents ne devienne difficile à gérer.
+
+## Comment Newbi facilite le lien avec votre expert-comptable
+
+Newbi centralise vos factures de vente, vos justificatifs d'achat scannés par OCR et votre rapprochement bancaire automatique dans un seul espace. Vous pouvez ensuite exporter vos données ou accorder un accès direct à votre expert-comptable, qui retrouve des documents déjà classés et cohérents plutôt que des pièces éparpillées.
+
+Cette centralisation réduit le temps que votre expert-comptable doit consacrer à la reconstitution de vos écritures, ce qui se traduit généralement par une facture allégée, sans que vous ayez à renoncer à son accompagnement sur les sujets réellement techniques : optimisation fiscale, choix de statut, ou anticipation d'un contrôle.
+
+Cette logique s'inscrit également dans la transition vers la facturation électronique. Les données déjà structurées et transmises via une plateforme conforme facilitent le travail de l'expert-comptable, qui n'a plus à ressaisir manuellement des informations déjà présentes dans le système. À terme, cette automatisation profite autant au dirigeant, qui gagne du temps, qu'au cabinet, qui peut consacrer davantage de temps au conseil plutôt qu'à la saisie.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/gestion-des-achats">Découvrir la gestion des achats Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+L'expert-comptable n'est pas une obligation légale, mais les obligations comptables et fiscales, elles, le sont bien, quel que soit votre statut. En micro-entreprise ou pour une activité simple, il est possible de s'en passer avec de la rigueur et les bons outils. Dès qu'une société est créée, qu'un salarié est recruté ou que les opérations se complexifient, l'accompagnement devient fortement recommandé, avec des tarifs annuels allant de quelques centaines d'euros à plusieurs milliers selon le volume. Le meilleur moyen de réduire cette facture reste d'arriver avec une comptabilité déjà organisée, ce qu'un bon logiciel de gestion facilite considérablement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'expert-comptable pour une TPE
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Est-il obligatoire d'avoir un expert-comptable en micro-entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Non, aucune loi n'impose de recourir à un expert-comptable en micro-entreprise. Les obligations se limitent en général à un livre des recettes et, selon l'activité, un registre des achats. De nombreux micro-entrepreneurs gèrent seuls cette partie, en particulier au démarrage de leur activité.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel est le prix moyen d'un expert-comptable pour une petite entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Pour une micro-entreprise, comptez entre 250 et 600 € par an pour un accompagnement ponctuel. Pour une EURL ou une SASU sans salarié, le tarif annuel se situe généralement entre 1 200 et 2 500 €, selon le volume d'opérations et la région.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Une société (EURL, SASU) peut-elle se passer d'expert-comptable ?</AccordionTrigger>
+      <AccordionContent>
+        Juridiquement, oui, rien ne l'impose. En pratique, la comptabilité complète exigée pour une société (bilan, compte de résultat, liasse fiscale) est plus technique qu'en micro-entreprise, ce qui rend l'accompagnement d'un professionnel fortement recommandé pour éviter les erreurs, surtout en l'absence de formation comptable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment réduire le coût de son expert-comptable ?</AccordionTrigger>
+      <AccordionContent>
+        Le principal levier consiste à arriver avec une comptabilité déjà organisée : factures classées, justificatifs numérisés, rapprochement bancaire tenu à jour. Un logiciel de gestion qui centralise ces éléments réduit fortement le temps de traitement facturé par le cabinet, ce qui se répercute directement sur le montant final.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>À partir de quel chiffre d'affaires faut-il envisager un expert-comptable ?</AccordionTrigger>
+      <AccordionContent>
+        Il n'existe pas de seuil légal, mais dans la pratique, l'accompagnement devient pertinent dès que le chiffre d'affaires approche les plafonds de la micro-entreprise, qu'un premier salarié est recruté, ou que l'activité implique des opérations fiscales plus complexes comme la TVA intracommunautaire.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

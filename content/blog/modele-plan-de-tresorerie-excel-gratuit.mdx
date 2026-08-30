@@ -1,0 +1,239 @@
+---
+title: 'Modèle de plan de trésorerie Excel gratuit (12 mois)'
+description: >-
+  Un modèle de plan de trésorerie Excel sur 12 mois à télécharger, avec TVA, échéances sociales et scénarios. Mode d'emploi et limites face à un outil connecté à la banque.
+date: '2026-11-02'
+category: modele
+sector: null
+keyword: modèle plan de trésorerie excel
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-02'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Modèle de plan de trésorerie Excel gratuit (12 mois)
+
+Un **modèle de plan de trésorerie excel** bien construit reste l'un des outils les plus simples pour piloter la santé financière de votre activité, que vous soyez auto-entrepreneur, freelance ou dirigeant de TPE. Avant d'investir dans un logiciel spécialisé, beaucoup d'entreprises démarrent avec un tableur, et c'est tout à fait raisonnable au démarrage. Cet article vous explique comment construire vous-même ce modèle sur 12 mois, quelles lignes y intégrer, et jusqu'où il tient la route.
+
+Vous trouverez ici la structure complète d'un plan de trésorerie mensuel, un exemple chiffré détaillé, les pièges classiques d'Excel pour ce type de suivi, et les limites concrètes de la feuille de calcul face à un outil connecté à votre banque.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi construire un plan de trésorerie sur 12 mois
+
+Le plan de trésorerie prévisionnel a un objectif précis : anticiper, mois par mois, le solde de votre compte bancaire en fonction des encaissements et des décaissements attendus. Contrairement au compte de résultat, qui raisonne en produits et charges comptables, la trésorerie raisonne en flux réels d'argent, à la date où l'argent entre ou sort effectivement de votre compte.
+
+Un horizon de 12 mois est le standard recommandé pour une petite structure. Il permet de couvrir un cycle complet d'activité, y compris les périodes creuses (été, fin d'année) et les échéances fiscales et sociales récurrentes. Pour la méthode complète de construction, notre guide sur le [plan de trésorerie prévisionnel](/blog/plan-de-tresorerie-previsionnel-comment-faire) détaille chaque étape en profondeur ; cet article se concentre sur la version Excel prête à l'emploi.
+
+## La structure du modèle Excel
+
+Un modèle de plan de trésorerie fonctionnel repose sur trois blocs qui se répètent sur 12 colonnes, une par mois.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Structure d'un plan de trésorerie mensuel sur tableur</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Bloc</TableHead>
+        <TableHead>Lignes types</TableHead>
+        <TableHead>Source</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Solde de trésorerie initial</TableCell>
+        <TableCell>Solde bancaire au 1er jour du mois</TableCell>
+        <TableCell>Relevé bancaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Encaissements</TableCell>
+        <TableCell>Règlements clients, acomptes, apports, subventions</TableCell>
+        <TableCell>Factures émises et devis en cours</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Décaissements</TableCell>
+        <TableCell>Fournisseurs, salaires, loyer, TVA, cotisations sociales, impôts</TableCell>
+        <TableCell>Factures fournisseurs et échéancier fiscal/social</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Solde de trésorerie final</TableCell>
+        <TableCell>Solde initial + encaissements - décaissements</TableCell>
+        <TableCell>Calcul automatique</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le point de vigilance principal : le solde final d'un mois devient automatiquement le solde initial du mois suivant. C'est cette chaîne qui donne au modèle toute sa valeur prédictive et qui permet de repérer, plusieurs mois à l'avance, un mois où la trésorerie risque de devenir négative.
+
+## Les lignes à ne jamais oublier : TVA et charges sociales
+
+L'erreur la plus fréquente dans un plan de trésorerie fait maison est d'oublier les décaissements périodiques qui ne sont pas liés directement à l'activité commerciale.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>TVA à reverser</strong> (mensuelle, trimestrielle ou annuelle selon votre régime)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>cotisations sociales URSSAF</strong>, mensuelles ou trimestrielles</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>acompte d'impôt sur le revenu ou d'impôt sur les sociétés</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>Cotisation Foncière des Entreprises (CFE)</strong>, généralement due en décembre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>remboursements d'emprunt</strong> et les échéances de crédit-bail</span>
+  </div>
+</div>
+
+Ces échéances sont prévisibles à l'avance : elles doivent figurer dans votre modèle dès sa création, et non être ajoutées au fur et à mesure qu'elles tombent. Pour ne pas en manquer une seule, appuyez-vous sur notre [calendrier fiscal de l'indépendant](/blog/calendrier-fiscal-independant-2026) au moment de bâtir votre échéancier annuel.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La TVA n'est pas un encaissement">
+    Si vous facturez TTC, la part de TVA collectée ne vous appartient pas : elle transite par votre compte avant d'être reversée à l'État. Ne la comptez jamais comme un encaissement net dans votre plan de trésorerie, sous peine de surestimer largement votre trésorerie réelle disponible.
+  </Callout>
+</div>
+
+## Exemple chiffré : un mois de plan de trésorerie
+
+Prenons le cas d'une graphiste freelance qui prépare son mois de mars. Son solde de trésorerie au 1er mars est de 4 200 euros. Elle attend le règlement de deux factures clients pour un total de 3 600 euros TTC, et elle facture 20 % de TVA sur ses prestations.
+
+Côté décaissements, elle doit régler 800 euros de loyer d'atelier, 450 euros de cotisations URSSAF, 600 euros de TVA au titre de sa déclaration trimestrielle, et 300 euros d'abonnements logiciels et de charges diverses. Le calcul donne : 4 200 + 3 600 - 800 - 450 - 600 - 300 = 5 650 euros de solde final au 31 mars. Ce solde devient le solde initial d'avril, et ainsi de suite sur les 12 mois de l'exercice.
+
+## Les scénarios : optimiste, réaliste, pessimiste
+
+Un modèle de plan de trésorerie solide ne se limite pas à une seule projection. Il est recommandé de construire trois versions du même tableau :
+
+1. **Le scénario réaliste** : basé sur vos encaissements les plus probables, en tenant compte des délais de paiement habituels de vos clients.
+2. **Le scénario optimiste** : en cas de signature rapide de nouveaux contrats ou de paiement anticipé de certains clients.
+3. **Le scénario pessimiste** : en cas de retard de paiement généralisé ou de baisse d'activité, pour identifier le mois où votre trésorerie deviendrait critique.
+
+Ce travail de simulation, facile à faire sur Excel en dupliquant l'onglet, permet d'anticiper les décisions à prendre : négocier un délai fournisseur, solliciter une ligne de découvert, ou au contraire investir un excédent de trésorerie.
+
+## Les limites du tableur face à un outil connecté
+
+Le modèle Excel a un mérite réel : il est gratuit, personnalisable et pédagogique. Mais il présente des limites structurelles qui deviennent gênantes dès que l'activité se développe.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Ce qu'Excel ne fait pas tout seul">
+    Un tableau Excel reste une photographie figée au moment où vous l'avez mis à jour manuellement. Il ne se connecte pas à votre compte bancaire, ne détecte pas automatiquement les encaissements réels, et ne vous alerte pas en cas d'écart entre le prévisionnel et le réel. Toute la fiabilité du modèle dépend de la rigueur avec laquelle vous le mettez à jour, semaine après semaine.
+  </Callout>
+</div>
+
+Concrètement, les limites les plus fréquentes sont :
+
+- **La ressaisie manuelle** : chaque facture, chaque paiement, chaque décaissement doit être saisi à la main, avec un risque d'erreur et d'oubli.
+- **L'absence de rapprochement bancaire** : rien ne garantit que ce que vous avez prévu correspond à ce qui s'est réellement passé sur votre compte.
+- **Le manque de réactivité** : un retard de paiement client n'apparaît que si vous mettez à jour le tableau vous-même, alors qu'un outil connecté le détecte en temps réel.
+- **La difficulté à consolider** : dès que plusieurs comptes bancaires ou plusieurs activités entrent en jeu, le tableur devient vite difficile à maintenir sans erreur.
+
+Ces limites ne signifient pas qu'il faut abandonner le principe du plan de trésorerie prévisionnel, bien au contraire. Elles indiquent simplement le moment où un outil connecté à votre banque devient plus pertinent qu'un fichier statique. Pour aller plus loin sur les bonnes pratiques générales de gestion de trésorerie, consultez notre article sur [comment gérer la trésorerie de son entreprise](/blog/comment-gerer-tresorerie-entreprise).
+
+## Comment Newbi complète (ou remplace) le tableur
+
+Newbi propose un module de trésorerie qui reprend la même logique que le plan de trésorerie Excel, avec la connexion bancaire en plus. Une fois votre compte relié, les encaissements et décaissements réels alimentent automatiquement votre suivi, ce qui évite la ressaisie manuelle et permet de comparer en un coup d'œil le prévisionnel et le réalisé. Les factures émises depuis Newbi viennent directement enrichir la projection des encaissements attendus, avec leur date d'échéance.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Découvrir la trésorerie Newbi</Link>
+  </Button>
+</div>
+
+Pour beaucoup d'indépendants, la bonne stratégie consiste à démarrer avec un modèle Excel simple, le temps de comprendre la logique des flux de trésorerie, puis à basculer vers un outil connecté dès que le volume de transactions rend la mise à jour manuelle trop chronophage ou trop risquée en termes d'erreurs.
+
+## Les erreurs les plus courantes à éviter
+
+Au-delà des limites propres au tableur, certaines erreurs de méthode reviennent souvent, qu'on utilise Excel ou un logiciel :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Confondre <strong>date de facturation</strong> et <strong>date d'encaissement réel</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Oublier les <strong>charges annuelles</strong> qui ne tombent qu'une fois par an (assurance, CFE)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas mettre à jour le tableau <strong>chaque semaine</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne construire qu'un <strong>seul scénario</strong>, sans variante pessimiste</span>
+  </div>
+</div>
+
+Pour un panorama plus large des erreurs à éviter dans le pilotage de votre trésorerie, notre article sur les [erreurs de gestion de trésorerie à éviter](/blog/erreurs-gestion-tresorerie-eviter) complète utilement cette liste.
+
+## En résumé
+
+Un modèle de plan de trésorerie Excel sur 12 mois reste un excellent point de départ pour piloter votre activité : il structure vos encaissements et décaissements mois par mois, à condition d'y intégrer systématiquement la TVA et les échéances sociales, et de le décliner en plusieurs scénarios. Sa principale limite est qu'il dépend entièrement de votre rigueur de mise à jour manuelle et ne se connecte pas à votre compte bancaire. Dès que le volume de vos transactions rend cette ressaisie trop lourde, un outil connecté comme Newbi prend le relais avec la même logique, en automatisant le rapprochement entre le prévisionnel et le réel.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le modèle de plan de trésorerie Excel
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment faire un plan de trésorerie sur Excel gratuitement ?</AccordionTrigger>
+      <AccordionContent>
+        Créez un tableau avec 12 colonnes, une par mois, et quatre blocs de lignes : solde initial, encaissements attendus, décaissements prévus (fournisseurs, salaires, TVA, charges sociales), puis solde final calculé automatiquement. Le solde final d'un mois doit être relié en formule au solde initial du mois suivant pour que la projection s'enchaîne correctement sur l'année.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle différence entre un plan de trésorerie et un budget prévisionnel ?</AccordionTrigger>
+      <AccordionContent>
+        Le budget prévisionnel raisonne en produits et charges comptables, indépendamment de la date réelle de paiement. Le plan de trésorerie raisonne uniquement en flux d'argent réels, à la date où l'argent entre ou sort effectivement de votre compte bancaire. Une facture émise en décembre mais payée en février apparaît en décembre dans le budget, mais en février dans la trésorerie.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Faut-il inclure la TVA dans le plan de trésorerie ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, absolument, mais avec prudence. La TVA collectée transite par votre compte mais ne vous appartient pas : vous devez prévoir son reversement à l'échéance de votre déclaration comme un décaissement futur. Ne la comptabilisez jamais comme un encaissement net disponible pour vos propres charges.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>À quelle fréquence mettre à jour un plan de trésorerie ?</AccordionTrigger>
+      <AccordionContent>
+        Une mise à jour hebdomadaire est recommandée pour une petite structure, afin de comparer rapidement le prévisionnel et le réalisé et de détecter tôt un écart significatif. Une mise à jour uniquement mensuelle expose à découvrir un problème de trésorerie trop tard pour réagir efficacement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Un modèle Excel suffit-il pour une petite entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Il suffit souvent au démarrage, tant que le volume de transactions reste limité et que vous avez la discipline de le mettre à jour régulièrement. Dès que les flux se multiplient ou que vous gérez plusieurs comptes, un outil connecté à votre banque devient plus fiable, car il élimine la ressaisie manuelle et le risque d'oubli.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

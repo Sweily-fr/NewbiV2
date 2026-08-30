@@ -1,0 +1,289 @@
+---
+title: 'Tableau de suivi des factures Excel : modèle gratuit et alternatives'
+description: >-
+  Un modèle Excel pour suivre factures émises, échéances, paiements et
+  retards, avec formules et alertes. Et le moment où un logiciel devient
+  indispensable.
+date: '2026-11-09'
+category: modele
+sector: null
+keyword: tableau suivi factures excel
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-09'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Tableau de suivi des factures Excel : modèle gratuit et alternatives
+
+Un **tableau de suivi des factures Excel** reste, pour beaucoup d'indépendants et de petites entreprises, la première solution pour garder un œil sur ses créances clients. Simple à mettre en place, il permet de visualiser en un coup d'œil les factures émises, les échéances de paiement et les retards éventuels. Cet article vous propose une structure de tableau complète, avec les colonnes et formules essentielles, ainsi que les limites de cette méthode lorsque le volume de factures augmente.
+
+Vous y trouverez aussi une checklist pour bâtir votre propre modèle en quelques minutes, et les repères pour savoir à partir de quand un logiciel de facturation devient plus pertinent qu'un fichier Excel partagé entre plusieurs personnes.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi utiliser un tableau de suivi des factures
+
+Suivre ses factures dans un tableau permet de répondre à des questions simples mais essentielles pour la trésorerie d'une entreprise : combien de factures sont en attente de paiement, quel montant total reste dû, quelles échéances arrivent bientôt et quels clients accumulent du retard. Sans ce suivi, il est facile de perdre de vue une facture impayée, surtout lorsque l'activité se développe et que le nombre de clients augmente.
+
+Un tableau bien construit sert aussi de base pour préparer vos relances. Plutôt que de rechercher chaque facture individuellement dans votre messagerie, vous disposez d'une vue centralisée qui facilite l'organisation de vos relances et la [réduction des délais de paiement](/blog/conseils-reduire-delais-paiement).
+
+## Les colonnes indispensables d'un tableau de suivi
+
+Pour être réellement utile, votre tableau doit contenir un socle de colonnes minimal. Voici les informations à intégrer systématiquement.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Colonnes essentielles d'un tableau de suivi de factures</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Colonne</TableHead>
+        <TableHead>Description</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Numéro de facture</TableCell>
+        <TableCell>Identifiant unique et séquentiel de la facture</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Client</TableCell>
+        <TableCell>Nom de l'entreprise ou du particulier facturé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Date d'émission</TableCell>
+        <TableCell>Date à laquelle la facture a été envoyée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Date d'échéance</TableCell>
+        <TableCell>Date limite de paiement convenue</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Montant HT et TTC</TableCell>
+        <TableCell>Montants hors taxes et toutes taxes comprises</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Statut</TableCell>
+        <TableCell>En attente, payée partiellement, payée, en retard</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Date de paiement</TableCell>
+        <TableCell>Date effective de règlement par le client</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Retard (jours)</TableCell>
+        <TableCell>Calcul automatique du nombre de jours de retard</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les formules Excel qui font gagner du temps
+
+Un tableau de suivi devient réellement efficace quand il automatise les calculs répétitifs. Voici les formules les plus utiles à intégrer.
+
+### Calcul automatique du retard
+
+En supposant que la date d'échéance figure en colonne D et que la date du jour serve de référence, la formule `=SI(D2<AUJOURDHUI();AUJOURDHUI()-D2;0)` affiche le nombre de jours de retard uniquement si la facture n'a pas été payée et que l'échéance est dépassée.
+
+### Alerte visuelle par mise en forme conditionnelle
+
+La mise en forme conditionnelle permet de colorer automatiquement en rouge les lignes dont le retard dépasse un seuil, par exemple 15 jours. Cela évite de parcourir manuellement chaque ligne pour repérer les impayés les plus critiques.
+
+### Totaux et sous-totaux
+
+Une ligne de synthèse en bas de tableau, utilisant la formule `=SOMME.SI(F2:F50;"En attente";E2:E50)`, permet d'afficher instantanément le montant total des factures encore impayées, un indicateur clé pour piloter votre trésorerie.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Exemple de calcul de retard cumulé">
+    Sur 20 factures émises dans le mois pour un montant total de 18 000 € HT, si 5 factures représentant 4 200 € HT sont en retard de paiement de plus de 10 jours, votre taux d'impayés en cours s'élève à 23 %. Ce type d'indicateur, calculé automatiquement dans votre tableau, vous alerte avant que la situation ne devienne critique pour votre trésorerie.
+  </Callout>
+</div>
+
+## Modèle de structure prête à l'emploi
+
+Voici un exemple de structure minimale que vous pouvez reproduire directement dans un tableur.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une ligne d'en-tête figée (volet figé) pour garder les colonnes visibles en faisant défiler</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un filtre automatique activé sur chaque colonne pour trier par statut ou par client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une colonne de statut avec une liste déroulante (validation de données) pour éviter les erreurs de saisie</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un onglet séparé pour le tableau de bord synthétique (montants totaux, nombre de retards)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une sauvegarde régulière, idéalement sur un espace partagé ou dans le cloud</span>
+  </div>
+</div>
+
+## Les limites d'un tableau Excel pour le suivi des factures
+
+Le tableau Excel a ses avantages, notamment sa gratuité et sa flexibilité, mais il montre rapidement ses limites dès que l'activité grandit. La saisie manuelle des données expose à des erreurs de copier-coller, à des formules cassées par une ligne insérée au mauvais endroit, ou à des doublons quand plusieurs personnes modifient le fichier en parallèle.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le risque de la double saisie">
+    Avec un tableau Excel, vous créez votre facture dans un logiciel ou un traitement de texte, puis vous reportez manuellement les informations dans votre tableau de suivi. Cette double saisie est une source fréquente d'erreurs : montant mal recopié, date d'échéance oubliée, statut non mis à jour après un paiement reçu. Chaque erreur peut retarder une relance ou fausser votre vision de trésorerie.
+  </Callout>
+</div>
+
+Un tableau Excel ne relance pas non plus vos clients automatiquement, ne génère pas de rappel avant échéance, et ne se synchronise pas avec votre compte bancaire pour détecter les paiements reçus. Pour approfondir cette comparaison, notre article [facture en ligne contre Excel](/blog/facture-en-ligne-vs-excel) détaille les écarts de productivité entre les deux approches, et notre panorama des [alternatives à Excel pour la gestion d'entreprise](/blog/alternatives-excel-gestion-entreprise) présente les options disponibles.
+
+## A partir de combien de factures un logiciel devient pertinent
+
+Il n'existe pas de seuil universel, mais l'expérience de terrain montre des repères utiles. En dessous de 5 factures par mois, un tableau Excel bien tenu reste gérable pour un indépendant seul. Entre 5 et 20 factures mensuelles, le temps passé à la saisie manuelle et aux relances commence à peser significativement sur votre semaine de travail. Au-delà de 20 factures par mois, ou dès que plusieurs personnes doivent accéder au suivi (vous et votre expert-comptable, par exemple), un logiciel dédié devient nettement plus rentable en temps gagné.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Quand basculer d'Excel vers un logiciel de facturation</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Volume mensuel</TableHead>
+        <TableHead>Solution recommandée</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Moins de 5 factures</TableCell>
+        <TableCell>Tableau Excel suffisant, avec rigueur de mise à jour</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">5 à 20 factures</TableCell>
+        <TableCell>Tableau encore possible, mais logiciel recommandé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Plus de 20 factures</TableCell>
+        <TableCell>Logiciel de facturation fortement conseillé</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Cas pratique : le tableau d'une graphiste freelance
+
+Prenons l'exemple concret d'une graphiste indépendante qui facture en moyenne 12 clients par mois, avec des montants allant de 300 € à 2 500 € HT selon les missions. En début d'année, elle gère son suivi sur un tableau Excel simple avec les colonnes de base. Après trois mois d'activité, elle constate plusieurs problèmes : deux factures ont été oubliées dans le tableau après leur envoi, une facture payée n'a jamais été marquée comme réglée, ce qui l'a conduite à relancer un client par erreur, et le total de son chiffre d'affaires encaissé ne correspondait pas à ses relevés bancaires.
+
+Elle décide alors d'ajouter deux colonnes supplémentaires à son tableau : une colonne « mode de paiement » (virement, carte, chèque) et une colonne « relance envoyée » avec la date de la dernière relance. Elle met également en place un contrôle mensuel : chaque fin de mois, elle compare le total de son tableau avec ses relevés bancaires pour détecter les écarts.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Résultat après ajustement">
+    Grâce à ces deux colonnes supplémentaires et à son contrôle mensuel, notre graphiste réduit son délai moyen de paiement de 38 jours à 24 jours en deux mois, simplement parce qu'elle relance plus tôt et plus systématiquement les factures dont l'échéance est dépassée de plus de 5 jours.
+  </Callout>
+</div>
+
+Ce cas illustre une réalité fréquente : un tableau Excel fonctionne bien lorsqu'il est mis à jour avec rigueur, mais chaque information manuelle non actualisée (un paiement reçu non coché, une relance non enregistrée) fait perdre en fiabilité au fil des mois. C'est précisément ce type d'erreur récurrente que l'automatisation d'un logiciel de facturation permet de supprimer.
+
+## Organiser ses relances directement depuis le tableau
+
+Au-delà du simple suivi, un tableau de facturation bien construit sert de base à votre stratégie de relance. Vous pouvez ajouter une colonne « prochaine action » qui indique, pour chaque facture en retard, si une relance amiable a déjà été envoyée, si un rappel téléphonique est prévu, ou si le dossier doit être transmis pour une procédure plus formelle. Pour les retards les plus anciens, au-delà de 30 ou 45 jours, il peut être utile d'envisager une [mise en demeure](/blog/modele-mise-en-demeure-facture-impayee) avant d'engager une procédure judiciaire.
+
+N'oubliez pas non plus l'indemnité forfaitaire de recouvrement de 40 €, due de plein droit par tout professionnel en retard de paiement en application de l'article L441-10 du Code de commerce, que vous pouvez suivre dans une colonne dédiée de votre tableau pour ne pas l'oublier lors de vos relances.
+
+## Comment Newbi remplace le tableau Excel
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le suivi se fait automatiquement">
+    Avec Newbi, chaque facture émise apparaît directement dans un tableau de bord centralisé, sans double saisie. Le statut (payée, en attente, en retard) se met à jour automatiquement grâce à la connexion bancaire, et les relances peuvent être programmées en quelques clics.
+  </Callout>
+</div>
+
+Newbi reprend l'essentiel des atouts d'un tableau Excel, la lisibilité et la vue d'ensemble, tout en supprimant ses limites principales :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivi automatique</strong> du statut de chaque facture, sans mise à jour manuelle</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Détection des paiements</strong> via la synchronisation bancaire et le rapprochement automatique</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Alertes de retard</strong> visibles directement sur le tableau de bord</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Accès partagé</strong> avec votre expert-comptable sans risque d'écrasement de données</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Suivre mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Un tableau de suivi des factures Excel constitue un point de départ accessible pour organiser ses créances clients, à condition d'y intégrer les bonnes colonnes (numéro, échéance, statut, retard) et des formules automatisées pour limiter la saisie manuelle. Cette solution montre néanmoins ses limites dès que le volume de factures augmente ou que plusieurs personnes doivent y accéder, avec un risque d'erreurs lié à la double saisie et l'absence de relance automatique. Passé un certain seuil, généralement autour de 20 factures mensuelles, un logiciel de facturation connecté à votre compte bancaire devient nettement plus efficace pour garder une vision fiable de votre trésorerie.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le tableau de suivi des factures
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment créer un tableau de suivi des factures sur Excel ?</AccordionTrigger>
+      <AccordionContent>
+        Créez une ligne d'en-tête avec les colonnes numéro de facture, client, date d'émission, date d'échéance, montant HT et TTC, statut et date de paiement. Ajoutez une formule de calcul de retard basée sur la date du jour, puis une mise en forme conditionnelle pour visualiser rapidement les factures en retard.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Existe-t-il un modèle Excel gratuit pour suivre ses factures ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, la structure présentée dans cet article peut être reproduite gratuitement dans n'importe quel tableur. L'essentiel est d'inclure les colonnes clés (échéance, statut, retard) et des formules simples comme SI et SOMME.SI pour automatiser une partie des calculs.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelles formules Excel utiliser pour calculer les retards de paiement ?</AccordionTrigger>
+      <AccordionContent>
+        La formule `=SI(date_échéance<AUJOURDHUI();AUJOURDHUI()-date_échéance;0)` calcule le nombre de jours de retard pour une facture non payée. Combinée à une mise en forme conditionnelle, elle permet de colorer automatiquement les lignes en retard pour les repérer d'un coup d'œil.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quand faut-il abandonner Excel pour un logiciel de facturation ?</AccordionTrigger>
+      <AccordionContent>
+        Au-delà de 20 factures par mois, ou dès que plusieurs personnes doivent partager le suivi, un logiciel de facturation devient plus rentable qu'un tableau Excel. Il élimine la double saisie, synchronise automatiquement les paiements reçus et automatise les relances clients.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Un tableau Excel suffit-il pour être conforme à la facturation électronique 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le tableau de suivi est un outil de gestion interne, il ne remplace pas l'obligation d'émettre des factures au format structuré via une plateforme de dématérialisation partenaire. Il reste toutefois utile en complément d'un logiciel conforme pour visualiser vos échéances et vos retards.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,260 @@
+---
+title: 'Tableau de bord financier pour TPE : les 10 indicateurs à suivre'
+description: >-
+  CA, marge, trésorerie, DSO, encours clients, charges fixes : les 10
+  indicateurs qu'un dirigeant de TPE doit suivre chaque mois et comment les
+  automatiser.
+date: '2026-10-22'
+category: guide
+sector: null
+keyword: tableau de bord financier tpe
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-22'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Tableau de bord financier pour TPE : les 10 indicateurs à suivre
+
+Un **tableau de bord financier TPE** bien construit vous évite de découvrir un problème de trésorerie une fois qu'il est trop tard pour réagir. Beaucoup de dirigeants de petites structures pilotent leur activité au jugé, en regardant simplement le solde bancaire, sans disposer d'une vision d'ensemble sur la marge réelle, les délais de paiement ou l'évolution des charges fixes. Ce guide détaille les 10 indicateurs à suivre chaque mois et la façon de les automatiser pour ne plus perdre de temps à les recalculer.
+
+Piloter une TPE sans indicateurs financiers, c'est un peu conduire de nuit sans phares : on avance, mais on ne voit les obstacles qu'au dernier moment. Les indicateurs présentés ici ne nécessitent pas de compétences comptables poussées. Ils reposent sur des données que vous avez déjà, à condition de savoir où les chercher et comment les interpréter.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi un dirigeant de TPE a besoin d'un tableau de bord
+
+Une TPE dispose rarement d'un service financier dédié. Le dirigeant porte souvent seul la responsabilité du pilotage, en plus de la production, de la vente et de la gestion des équipes. Dans ce contexte, un tableau de bord synthétique permet de repérer rapidement les signaux d'alerte : une trésorerie qui se tend, des délais de paiement clients qui s'allongent, une marge qui s'érode sans que le chiffre d'affaires ne baisse.
+
+L'enjeu n'est pas de suivre 50 indicateurs, mais une dizaine de chiffres clés, mis à jour régulièrement et croisés entre eux. Un chiffre d'affaires en hausse avec une trésorerie qui se dégrade est un signal d'alerte classique, souvent lié à un allongement des délais de paiement ou à une hausse des charges non répercutée sur les prix.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="La fréquence compte autant que le contenu">
+    Un tableau de bord consulté une fois par trimestre ne sert à rien pour anticiper une tension de trésorerie. Visez une mise à jour hebdomadaire pour la trésorerie et le carnet de commandes, et une mise à jour mensuelle pour la marge et les charges fixes.
+  </Callout>
+</div>
+
+## Les 10 indicateurs financiers essentiels
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les 10 indicateurs à suivre dans un tableau de bord financier de TPE</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Indicateur</TableHead>
+        <TableHead>Ce qu'il mesure</TableHead>
+        <TableHead>Fréquence conseillée</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Chiffre d'affaires (CA)</TableCell>
+        <TableCell>Volume d'activité facturé sur la période</TableCell>
+        <TableCell>Mensuelle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Marge brute</TableCell>
+        <TableCell>CA moins coûts directs (achats, sous-traitance)</TableCell>
+        <TableCell>Mensuelle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Trésorerie disponible</TableCell>
+        <TableCell>Liquidités réellement disponibles sur les comptes</TableCell>
+        <TableCell>Hebdomadaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">DSO (délai moyen de paiement clients)</TableCell>
+        <TableCell>Nombre de jours moyen pour être payé</TableCell>
+        <TableCell>Mensuelle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Encours clients</TableCell>
+        <TableCell>Montant total des factures émises non encore payées</TableCell>
+        <TableCell>Hebdomadaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Charges fixes</TableCell>
+        <TableCell>Loyer, salaires, abonnements, assurances</TableCell>
+        <TableCell>Mensuelle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Seuil de rentabilité</TableCell>
+        <TableCell>CA minimum pour couvrir toutes les charges</TableCell>
+        <TableCell>Trimestrielle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Taux de conversion devis</TableCell>
+        <TableCell>Part des devis transformés en commandes</TableCell>
+        <TableCell>Mensuelle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Panier moyen</TableCell>
+        <TableCell>Montant moyen facturé par client ou par commande</TableCell>
+        <TableCell>Mensuelle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">BFR (besoin en fonds de roulement)</TableCell>
+        <TableCell>Écart de trésorerie généré par le cycle d'exploitation</TableCell>
+        <TableCell>Trimestrielle</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Chiffre d'affaires et marge : la base du pilotage
+
+Le chiffre d'affaires seul ne dit rien de la santé de votre entreprise. Une TPE peut voir son CA progresser tout en dégageant une marge de plus en plus faible, à cause d'une hausse des coûts d'achat non répercutée sur les tarifs. Il faut donc toujours lire le CA en parallèle de la **marge brute**, qui correspond au chiffre d'affaires diminué des coûts directement liés à la production ou à la prestation (achats de matières, sous-traitance, coût des marchandises vendues).
+
+### Exemple chiffré
+
+Une TPE de services facture 18 000 € HT en un mois. Elle a sous-traité une partie de la prestation pour 4 500 € HT. Sa marge brute est de 13 500 € HT, soit un taux de marge brute de 75 %. Si le mois suivant, elle facture 20 000 € HT mais sous-traite pour 8 000 € HT, sa marge brute tombe à 12 000 € HT, soit 60 % de taux de marge : le CA a augmenté, mais la marge en valeur relative s'est dégradée.
+
+## Trésorerie, DSO et encours clients : le trio à surveiller de près
+
+La trésorerie disponible est l'indicateur le plus regardé, mais il faut le croiser avec le **délai moyen de paiement clients (DSO)**, qui mesure en jours le temps moyen entre l'émission d'une facture et son encaissement. Un DSO qui s'allonge, même avec un CA stable, annonce une tension de trésorerie à venir. Le calcul détaillé du DSO et sa formule sont expliqués dans notre article dédié au [DSO et délai moyen de paiement clients](/blog/dso-delai-moyen-paiement-clients-calcul).
+
+L'**encours clients**, c'est-à-dire le total des factures émises et non encore payées, complète cette lecture : il quantifie en euros ce que le DSO mesure en jours. Un encours qui grimpe rapidement, surtout s'il est concentré sur un petit nombre de clients, représente un risque de dépendance et d'impayé à surveiller.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le délai de paiement légal encadre vos encours">
+    En l'absence d'accord contraire, le délai de paiement entre professionnels est de 30 jours après réception des marchandises ou exécution de la prestation, ou 45 jours fin de mois si les parties en conviennent, conformément à l'article L441-10 du Code de commerce. Tout dépassement expose votre client à des pénalités de retard, calculées au taux minimum de 3 fois le taux d'intérêt légal, et à une indemnité forfaitaire de recouvrement de 40 € par facture en retard.
+  </Callout>
+</div>
+
+## Charges fixes et seuil de rentabilité
+
+Les charges fixes regroupent tout ce que vous payez indépendamment du niveau d'activité : loyer, salaires, abonnements logiciels, assurances, cotisations. Suivre leur évolution mensuelle permet de calculer le **seuil de rentabilité**, c'est-à-dire le chiffre d'affaires minimum à réaliser pour couvrir l'ensemble des charges fixes et variables. Le mode de calcul détaillé, avec un exemple complet, est présenté dans notre article sur le [seuil de rentabilité et son calcul](/blog/seuil-de-rentabilite-calcul-exemple).
+
+### Exemple concret
+
+Une TPE a 6 000 € de charges fixes mensuelles et un taux de marge sur coûts variables de 60 %. Son seuil de rentabilité mensuel est de 6 000 / 0,60 = 10 000 € de chiffre d'affaires. En dessous de ce montant, elle perd de l'argent chaque mois ; au-dessus, chaque euro de CA supplémentaire contribue au résultat.
+
+## Taux de conversion des devis et panier moyen
+
+Deux indicateurs commerciaux complètent utilement le tableau de bord financier : le **taux de conversion des devis**, qui mesure la part des devis transformés en commandes, et le **panier moyen**, qui indique le montant moyen facturé par client. Un taux de conversion faible peut signaler un problème de tarification, de délai de réponse ou de qualité de la proposition commerciale. Un panier moyen en baisse, à volume de clients constant, doit alerter sur une érosion des prix ou un glissement vers des prestations moins rémunératrices.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Calculez le taux de conversion sur une base glissante de 3 mois pour lisser les effets saisonniers</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Comparez le panier moyen par type de client ou de prestation, pas uniquement en valeur globale</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identifiez les devis perdus et leur motif pour ajuster votre argumentaire</span>
+  </div>
+</div>
+
+## Le besoin en fonds de roulement, l'indicateur souvent oublié
+
+Le BFR (besoin en fonds de roulement) mesure le décalage de trésorerie généré par votre cycle d'exploitation : vous payez souvent vos fournisseurs ou vos charges avant d'être payé par vos clients. Plus ce décalage est important, plus vous devez disposer d'une trésorerie de sécurité pour ne pas être bloqué. Le calcul complet est détaillé dans notre article sur le [BFR et son calcul](/blog/bfr-besoin-en-fonds-de-roulement-calcul), mais retenez qu'un BFR qui augmente plus vite que le chiffre d'affaires est un signal d'alerte, souvent lié à un allongement des délais de paiement clients ou à un accroissement des stocks.
+
+## Automatiser le suivi avec Newbi
+
+Construire ce tableau de bord manuellement, en recopiant des chiffres depuis plusieurs outils, prend du temps et introduit des risques d'erreur. Newbi centralise les données de facturation, d'achats et de trésorerie dans un même espace, ce qui permet de suivre l'essentiel de ces indicateurs sans ressaisie.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Une vision consolidée en un coup d'oeil">
+    Avec la [synchronisation bancaire](/produits/tresorerie) et le rapprochement automatique des transactions, Newbi actualise en continu votre trésorerie disponible et votre encours clients, sans export manuel vers un tableur.
+  </Callout>
+</div>
+
+Le module de [trésorerie](/produits/tresorerie) de Newbi connecte vos comptes bancaires, rapproche automatiquement les transactions avec vos factures et vos achats, et donne une vision à jour de votre solde disponible et de vos flux prévisionnels. Couplé au suivi des devis et des factures, il permet de reconstituer la plupart des indicateurs de ce tableau de bord sans jongler entre plusieurs fichiers.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Découvrir la trésorerie Newbi</Link>
+  </Button>
+</div>
+
+## Mettre en place son tableau de bord en pratique
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Choisissez 5 à 10 indicateurs maximum, pas plus, pour garder un suivi réellement exploitable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Fixez une fréquence de mise à jour réaliste : hebdomadaire pour la trésorerie, mensuelle pour la marge</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Comparez toujours vos chiffres à un mois de référence ou à un objectif, pas dans l'absolu</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Automatisez la collecte des données plutôt que de recopier des chiffres à la main</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Bloquez un créneau fixe chaque semaine pour consulter le tableau de bord, même 15 minutes</span>
+  </div>
+</div>
+
+## En résumé
+
+Un tableau de bord financier pour TPE n'a pas besoin d'être complexe pour être utile : chiffre d'affaires, marge brute, trésorerie disponible, DSO, encours clients, charges fixes, seuil de rentabilité, taux de conversion des devis, panier moyen et BFR suffisent à donner une vision claire et actionnable de la santé de votre entreprise. L'essentiel est de les suivre régulièrement, de les croiser entre eux plutôt que de les regarder isolément, et d'automatiser leur collecte pour ne pas y passer plus de temps que nécessaire. Un outil qui centralise facturation, achats et trésorerie facilite grandement cette mise en place.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le tableau de bord financier
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quels sont les indicateurs financiers les plus importants pour une TPE ?</AccordionTrigger>
+      <AccordionContent>
+        Les indicateurs prioritaires sont la trésorerie disponible, le chiffre d'affaires, la marge brute et le DSO (délai moyen de paiement clients). Ce sont ceux qui permettent d'anticiper une tension de trésorerie avant qu'elle ne devienne critique. Les autres indicateurs, comme le seuil de rentabilité ou le BFR, complètent l'analyse à une fréquence trimestrielle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>À quelle fréquence faut-il mettre à jour son tableau de bord financier ?</AccordionTrigger>
+      <AccordionContent>
+        La trésorerie disponible et l'encours clients doivent être suivis chaque semaine, car ce sont les indicateurs qui évoluent le plus vite. Le chiffre d'affaires, la marge et les charges fixes peuvent être suivis mensuellement, tandis que le seuil de rentabilité et le BFR se recalculent utilement chaque trimestre.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment automatiser un tableau de bord financier sans logiciel comptable complexe ?</AccordionTrigger>
+      <AccordionContent>
+        Un logiciel de gestion qui connecte votre compte bancaire, centralise vos factures et vos achats permet de générer automatiquement la plupart des indicateurs financiers sans ressaisie manuelle. C'est le cas de solutions comme Newbi, qui combinent facturation, rapprochement bancaire et suivi de trésorerie dans un même espace.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quelle différence entre chiffre d'affaires et marge brute ?</AccordionTrigger>
+      <AccordionContent>
+        Le chiffre d'affaires est le montant total facturé sur une période, hors taxes. La marge brute correspond au chiffre d'affaires diminué des coûts directement liés à la production ou à la prestation, comme les achats de matières ou la sous-traitance. Un CA en hausse ne garantit pas une marge en hausse si les coûts directs progressent plus vite.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le DSO et l'encours clients mesurent-ils la même chose ?</AccordionTrigger>
+      <AccordionContent>
+        Non, ils sont complémentaires. Le DSO mesure en jours le délai moyen entre l'émission d'une facture et son paiement. L'encours clients mesure en euros le total des factures émises et non encore encaissées à un instant donné. Un DSO stable avec un encours qui augmente peut simplement traduire une hausse du volume d'activité.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

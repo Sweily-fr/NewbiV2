@@ -1,0 +1,233 @@
+---
+title: 'Facture rectificative : quand et comment corriger une facture'
+description: >-
+  Erreur de montant, de TVA ou de client : facture rectificative ou avoir ? La
+  bonne méthode selon le cas, les mentions à ajouter et ce qui est interdit.
+date: '2026-09-22'
+category: guide
+sector: null
+keyword: facture rectificative
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-22'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture rectificative : quand et comment corriger une facture
+
+Une **facture rectificative** permet de corriger une erreur détectée après l'émission d'une facture, sans jamais modifier ni supprimer le document d'origine. Erreur de montant, de taux de TVA, de coordonnées client ou de quantité : la loi encadre strictement la manière de rectifier une facture déjà émise, et confondre facture rectificative avec avoir est une source fréquente d'erreurs comptables.
+
+Ce guide détaille dans quels cas utiliser une facture rectificative plutôt qu'un avoir, la méthode exacte pour la rédiger, les mentions obligatoires à ajouter, et ce que la réglementation interdit formellement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Corriger mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## Le principe : on ne modifie jamais une facture émise
+
+Une fois émise et transmise à un client, une facture ne peut plus être modifiée, supprimée ou remplacée par un nouveau document portant le même numéro. Ce principe découle des règles de numérotation chronologique et continue imposées par l'administration fiscale, ainsi que de l'article L123-22 du Code de commerce sur la conservation des documents comptables. Toute erreur constatée après l'émission doit être corrigée par un document distinct, qui vient rectifier ou annuler tout ou partie de la facture initiale, tout en conservant la trace de celle-ci.
+
+C'est cette exigence de traçabilité qui distingue la facturation professionnelle d'une simple modification de fichier : l'historique complet, y compris les erreurs, doit rester consultable pendant la durée de conservation légale de 10 ans prévue par le Code de commerce.
+
+## Facture rectificative ou avoir : lequel choisir
+
+La confusion entre ces deux documents est très répandue. Voici les critères qui permettent de choisir la bonne option selon la nature de l'erreur.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Facture rectificative ou avoir selon la nature de l'erreur</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Type d'erreur</TableHead>
+        <TableHead>Document à émettre</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Erreur de calcul (montant, TVA)</TableCell>
+        <TableCell>Facture rectificative</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Erreur sur l'identité du client (nom, SIRET, adresse)</TableCell>
+        <TableCell>Facture rectificative</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Remise commerciale accordée après coup</TableCell>
+        <TableCell><Link href="/blog/quest-ce-que-avoir-credit">Avoir</Link></TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Retour de marchandise ou prestation annulée</TableCell>
+        <TableCell><Link href="/blog/quest-ce-que-avoir-credit">Avoir</Link></TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture à annuler intégralement</TableCell>
+        <TableCell>Avoir total, puis nouvelle facture si besoin</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="info" title="La distinction en une phrase">
+    La facture rectificative corrige une erreur objective sur un document qui n'aurait jamais dû exister sous cette forme. L'avoir, lui, constate un événement commercial postérieur et légitime à la facture d'origine, comme un retour ou une remise. Consultez notre définition complète de l'[avoir](/blog/quest-ce-que-avoir-credit) pour approfondir ce point.
+  </Callout>
+</div>
+
+## Les trois méthodes de rectification
+
+Selon l'ampleur de l'erreur, trois méthodes coexistent dans la pratique comptable française.
+
+### 1. La facture rectificative par annulation et remplacement
+
+Vous émettez un avoir qui annule intégralement la facture initiale, puis une nouvelle facture correcte portant un nouveau numéro. Cette méthode est recommandée lorsque l'erreur touche des éléments structurants comme l'identité du client ou le montant total.
+
+### 2. La facture rectificative complémentaire
+
+Vous émettez une facture complémentaire qui ajoute ou retranche un montant à la facture initiale, sans l'annuler. Cette méthode convient aux erreurs partielles, par exemple un oubli de ligne ou une quantité sous-évaluée.
+
+### 3. La note de correction
+
+Pour les erreurs purement formelles, comme une faute de frappe sur une adresse qui n'affecte ni le montant ni la TVA, un courrier ou un email de correction accompagné d'une copie annotée peut suffire, sans nécessiter l'émission d'un nouveau document comptable.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identifiez précisément la nature de l'erreur avant de choisir une méthode</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Référencez systématiquement le <Link href="/blog/quest-ce-que-numero-facture">numéro de facture</Link> d'origine sur le document rectificatif</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Attribuez un numéro de facture propre au document rectificatif, dans votre séquence continue</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conservez la facture initiale, même erronée : elle ne doit jamais être supprimée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Régularisez la déclaration de TVA de la période concernée si le montant de taxe a changé</span>
+  </div>
+</div>
+
+## Les mentions obligatoires d'une facture rectificative
+
+Une facture rectificative doit comporter toutes les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique, plus deux éléments spécifiques indispensables : la référence explicite au numéro et à la date de la facture initiale corrigée, et une formule claire indiquant la nature de la correction, par exemple "Facture rectificative de la facture n° F-2026-0142 du 3 mars 2026 : correction du taux de TVA appliqué".
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ce qui est formellement interdit">
+    Il est interdit de réutiliser le numéro de la facture initiale, de modifier le fichier PDF ou le document original déjà transmis au client, ou de supprimer une facture de votre logiciel de facturation une fois qu'elle a été émise. Ces pratiques exposent à une requalification pour fraude fiscale en cas de contrôle, indépendamment du caractère involontaire de l'erreur initiale.
+  </Callout>
+</div>
+
+## Exemple chiffré : correction d'une erreur de TVA
+
+Une agence de communication émet une facture n° F-2026-0087 le 5 avril 2026 pour une prestation de 4 000 € HT, en appliquant par erreur un taux de TVA de 10 % au lieu de 20 %, soit un montant TTC de 4 400 € au lieu des 4 800 € attendus.
+
+L'entreprise émet alors une facture rectificative n° F-2026-0103 le 12 avril 2026, mentionnant explicitement qu'elle corrige la facture n° F-2026-0087 du 5 avril 2026. Cette facture rectificative complémentaire porte uniquement sur l'écart de TVA, soit 400 € supplémentaires à régulariser. La déclaration de TVA du mois d'avril doit intégrer ce complément de 400 €, et non celle du mois de mars où la facture initiale avait été émise à tort.
+
+## Facture rectificative et facturation électronique
+
+Dans le cadre de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026), une facture rectificative suit le même circuit qu'une facture classique : elle transite par une plateforme de dématérialisation partenaire, respecte les formats du socle (Factur-X, UBL ou CII), et son statut est suivi au même titre que les autres documents. Si la facture initiale a été rejetée par la plateforme avant même d'atteindre le destinataire, aucune facture rectificative n'est nécessaire : il suffit de corriger le fichier source et de le redéposer, car la facture erronée n'a jamais été considérée comme émise vis-à-vis du client.
+
+## Quand la rectification devient une annulation complète
+
+Certaines erreurs sont trop importantes pour une simple correction ponctuelle : mauvais client destinataire, doublon de facturation, ou commande finalement annulée dans son intégralité. Dans ces situations, la méthode d'annulation et remplacement décrite plus haut s'impose : vous émettez un avoir qui neutralise intégralement la facture initiale, puis, si nécessaire, une nouvelle facture correcte portant un nouveau numéro dans votre séquence. La facture initiale reste conservée dans votre historique, associée à son avoir d'annulation, ce qui permet de reconstituer l'enchaînement complet en cas de contrôle.
+
+Ce cas de figure est fréquent lors d'un doublon de facturation, par exemple lorsqu'une même prestation a été saisie deux fois par erreur dans votre logiciel. L'administration fiscale attend alors une traçabilité complète : la facture en trop doit être neutralisée par un avoir, jamais simplement supprimée de vos livres comptables, même si le client n'a pas encore réglé la somme.
+
+## Les conséquences pour votre client en cas de correction
+
+Une facture rectificative n'a pas d'impact uniquement sur votre propre comptabilité : elle en a aussi sur celle de votre client, particulièrement s'il a déjà déduit la TVA de la facture initiale. Si le montant de TVA augmente, comme dans l'exemple précédent, le client doit régulariser sa propre déclaration pour tenir compte du complément. Si le montant de TVA diminue, par exemple à la suite d'une erreur de taux appliqué trop haut, le client devra ajuster son crédit de TVA à la baisse.
+
+Il est donc recommandé de prévenir votre client par écrit dès que vous constatez une erreur, avant même l'émission de la facture rectificative. Cette transparence évite les mauvaises surprises lors d'un contrôle fiscal côté client, et limite le risque de contestation ou de refus de la facture corrigée sur votre plateforme de facturation électronique.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticipez le délai de régularisation">
+    Plus la correction intervient rapidement après la détection de l'erreur, plus la régularisation de la TVA reste simple, tant pour vous que pour votre client. Au-delà de quelques mois, la correction peut nécessiter une déclaration rectificative auprès de l'administration fiscale plutôt qu'un simple ajustement sur la période en cours.
+  </Callout>
+</div>
+
+## Facture rectificative et délai de prescription
+
+La possibilité de corriger une facture n'est pas illimitée dans le temps. En matière de TVA, le droit à régularisation ou de reprise de l'administration s'exerce en principe jusqu'au 31 décembre de la troisième année suivant celle de l'exigibilité de la taxe. Au-delà de ce délai, une correction reste possible sur le plan comptable et commercial, mais elle ne peut plus donner lieu à une régularisation de la TVA déjà prescrite. Il est donc dans l'intérêt de toutes les parties de traiter les erreurs de facturation le plus tôt possible après leur découverte, plutôt que d'attendre la clôture de l'exercice comptable.
+
+## Corriger vos factures sereinement avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Une traçabilité automatique entre facture initiale et rectificative">
+    Avec Newbi, chaque facture rectificative reste liée à la facture d'origine dans votre historique. Vous retrouvez en un clic l'enchaînement complet des corrections, sans risque d'incohérence dans votre numérotation.
+  </Callout>
+</div>
+
+Corriger une facture à la main, sur un tableur ou un traitement de texte, augmente le risque d'incohérence dans la numérotation ou d'oubli de référence à la facture d'origine. Un logiciel qui conserve l'historique des documents liés facilite considérablement le travail de votre expert-comptable en cas de contrôle.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mes factures et corrections</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facture rectificative corrige une erreur objective sur une facture déjà émise, en la référençant explicitement sans jamais modifier ni supprimer le document d'origine. Elle se distingue de l'avoir, réservé aux événements commerciaux postérieurs comme une remise ou un retour. Trois méthodes existent selon l'ampleur de l'erreur : annulation et remplacement, facture complémentaire, ou simple note de correction pour les erreurs formelles. Dans tous les cas, la facture initiale doit rester conservée et consultable, et la déclaration de TVA doit être régularisée sur la période où la correction est constatée.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture rectificative
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Peut-on modifier directement une facture déjà envoyée à un client ?</AccordionTrigger>
+      <AccordionContent>
+        Non, une facture émise et transmise ne peut jamais être modifiée ou supprimée. Toute correction doit passer par un document distinct, une facture rectificative ou un avoir selon la nature de l'erreur, qui référence explicitement la facture d'origine sans la remplacer physiquement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre une facture rectificative et un avoir ?</AccordionTrigger>
+      <AccordionContent>
+        La facture rectificative corrige une erreur objective, comme un mauvais taux de TVA ou une erreur d'identité du client. L'avoir constate un événement commercial postérieur et légitime, comme une remise accordée ou un retour de marchandise. Le choix dépend donc de la cause de la modification, pas de son montant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Faut-il un nouveau numéro de facture pour une rectification ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, la facture rectificative doit obligatoirement porter son propre numéro, inscrit dans votre séquence de numérotation continue et chronologique, tout en mentionnant clairement le numéro et la date de la facture initiale qu'elle corrige.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment corriger une erreur de TVA sur une facture déjà déclarée ?</AccordionTrigger>
+      <AccordionContent>
+        Vous émettez une facture rectificative précisant l'écart de TVA constaté, puis vous régularisez ce montant sur la déclaration de TVA de la période durant laquelle la correction est effectuée, et non sur celle de la facture initiale erronée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Une facture rejetée par une plateforme de facturation électronique nécessite-t-elle une rectification ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Si la facture a été rejetée par la plateforme avant d'atteindre le destinataire, elle n'a jamais été considérée comme émise. Il suffit de corriger le fichier source et de le redéposer, sans passer par une facture rectificative ni un avoir.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,250 @@
+---
+title: 'Débours et refacturation de frais : comment les traiter sur une facture'
+description: >-
+  Débours hors TVA ou frais refacturés avec TVA ? La différence, les
+  conditions strictes du débours, les exemples (déplacements, achats pour le
+  client) et la présentation.
+date: '2026-10-13'
+category: guide
+sector: null
+keyword: débours facture
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-13'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Débours et refacturation de frais : comment les traiter sur une facture
+
+Un **débours** sur une facture n'est pas la même chose qu'un frais refacturé, et confondre les deux expose à un redressement de TVA en cas de contrôle. Beaucoup d'indépendants et de TPE facturent des frais engagés pour le compte de leur client, déplacement, achat de matériel, prestation sous-traitée, sans savoir laquelle des deux logiques appliquer, ni quelle TVA en découle.
+
+Cet article détaille la différence entre débours et refacturation de frais, les conditions strictes que doit remplir un débours pour être exclu de la base TVA, et comment présenter correctement ces montants sur votre facture, avec des exemples chiffrés pour chaque cas de figure.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Débours ou refacturation de frais : la distinction essentielle
+
+Un **débours** est une somme que vous avancez au nom et pour le compte de votre client, pour l'achat d'un bien ou d'un service qui lui est directement destiné. Fiscalement, le débours n'entre pas dans votre chiffre d'affaires et n'est pas soumis à la TVA lorsqu'il vous a été remboursé, car vous n'avez agi que comme intermédiaire de paiement.
+
+Une **refacturation de frais**, à l'inverse, correspond à des dépenses que vous avez engagées pour les besoins de votre propre activité, dans le cadre de l'exécution de la prestation, et que vous répercutez ensuite sur votre client. Ces frais font partie intégrante du prix de votre prestation et doivent être soumis à la TVA, au même taux que la prestation principale.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le débours est une exception, pas la règle par défaut">
+    L'administration fiscale considère par principe que tout frais engagé dans le cadre d'une prestation de service fait partie du prix de cette prestation et doit donc être soumis à la TVA. Le régime du débours, hors TVA, ne s'applique que si des conditions strictes et cumulatives sont réunies.
+  </Callout>
+</div>
+
+## Les conditions cumulatives du débours
+
+Pour qu'une somme soit qualifiée de débours et échappe à la TVA, l'article 267-II-2° du Code général des impôts et la doctrine administrative exigent la réunion de plusieurs conditions.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous avez agi <strong>au nom et pour le compte</strong> de votre client, en tant que simple mandataire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La dépense figure sur une <strong>facture établie au nom du client</strong>, et non au vôtre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous ne conservez <strong>aucune marge</strong> sur cette somme : vous la refacturez à l'identique, centime pour centime</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La dépense est <strong>comptabilisée dans un compte de tiers</strong>, distinct de vos charges et produits habituels</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous êtes en mesure de <strong>justifier la dépense</strong> par le justificatif original correspondant</span>
+  </div>
+</div>
+
+Si une seule de ces conditions n'est pas respectée, en particulier le fait que la facture d'origine soit établie au nom du client, la somme ne peut pas être traitée en débours : elle doit être refacturée avec TVA, comme n'importe quel autre élément de votre prestation.
+
+## Tableau comparatif : débours et refacturation de frais
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Débours versus refacturation de frais : ce qui change</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>Débours</TableHead>
+        <TableHead>Refacturation de frais</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Facture d'origine</TableCell>
+        <TableCell>Etablie au nom du client</TableCell>
+        <TableCell>Etablie à votre nom</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA applicable</TableCell>
+        <TableCell>Aucune (hors champ)</TableCell>
+        <TableCell>TVA de votre prestation principale</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Marge autorisée</TableCell>
+        <TableCell>Aucune, remboursement à l'identique</TableCell>
+        <TableCell>Possible, à votre discrétion</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Exemple type</TableCell>
+        <TableCell>Frais de greffe payés au nom du client par un professionnel du droit</TableCell>
+        <TableCell>Billet de train pour se rendre chez le client</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Exemple chiffré : un déplacement facturé en frais refacturés
+
+Un consultant se rend chez un client situé à 300 km de son lieu d'activité. Il engage 180 € de billets de train et 90 € de nuit d'hôtel, soit 270 € de frais au total, facturés à son nom sur les justificatifs.
+
+Ces frais ayant été engagés pour les besoins de sa propre activité, ils sont refacturés au client avec la TVA de sa prestation de conseil, soit 20 % : 270 € HT + 54 € de TVA = 324 € TTC. Ce montant s'ajoute au prix de la prestation de conseil sur la même facture ou sur une ligne dédiée. Pour organiser le suivi de ces dépenses en amont, la [gestion des notes de frais de déplacement](/blog/gestion-notes-frais-deplacement) mérite d'être structurée dès le départ.
+
+## Exemple chiffré : un vrai débours
+
+Un architecte fait établir, au nom et pour le compte de son client, un extrait cadastral auprès du service du cadastre, facturé 35 € sur une facture émise directement au nom du client. L'architecte avance cette somme, puis la refacture à l'identique dans sa note d'honoraires.
+
+Ce montant de 35 €, dès lors que la facture d'origine porte bien le nom du client et que l'architecte ne prend aucune marge, est traité en débours : il apparaît sur la note d'honoraires hors du champ de la TVA, sans taux ni montant de TVA appliqué à cette ligne spécifique.
+
+## Comment présenter débours et frais refacturés sur la facture
+
+La présentation doit permettre de distinguer clairement les deux natures de montants, notamment pour la lisibilité côté client et pour la cohérence de votre déclaration de TVA.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Séparez toujours les lignes">
+    Ne mélangez jamais un débours et un frais refacturé sur la même ligne de facture. Créez une ligne "Débours - [nature]" sans TVA, distincte des lignes de prestation et de frais refacturés qui, elles, portent la TVA applicable à votre activité.
+  </Callout>
+</div>
+
+Concrètement, une facture combinant les deux peut se structurer ainsi : une ligne pour la prestation principale avec TVA, une ligne pour les frais refacturés (déplacement, matériel acheté pour les besoins de la mission) avec la même TVA que la prestation, et une ligne séparée pour le débours, sans TVA, avec la mention explicite de sa nature et, idéalement, la référence au justificatif correspondant. Cette présentation doit rester cohérente avec les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture), qui exigent notamment le détail HT, TVA et TTC de chaque ligne facturée.
+
+## Cas particulier : les achats pour le compte du client
+
+Certains professionnels achètent régulièrement du matériel ou des fournitures destinées à être installées ou remises au client. Deux situations doivent être distinguées avec soin.
+
+Si vous achetez le matériel en votre nom, que vous le stockez, le transformez ou l'intégrez à votre prestation avant de le livrer, il s'agit d'une **vente ou d'une fourniture** dans le cadre de votre activité, soumise à la TVA au taux applicable, sans lien avec le régime du débours. C'est le cas, par exemple, d'un artisan qui achète des matériaux pour un chantier.
+
+Si en revanche vous réglez une facture déjà établie au nom du client, pour un bien ou un service qu'il a lui-même choisi et dont il assume la responsabilité, vous pouvez être dans une situation de débours, sous réserve de respecter les conditions cumulatives évoquées plus haut. La TVA déductible sur vos propres achats professionnels suit des règles différentes, détaillées dans notre article sur les [dépenses ouvrant droit à déduction de TVA](/blog/tva-deductible-quelles-depenses).
+
+## Exemple chiffré : achat de matériel intégré à la prestation
+
+Un plombier achète des pièces détachées pour 220 € HT chez son fournisseur habituel, facture établie à son propre nom. Il installe ces pièces chez son client dans le cadre d'une intervention facturée 450 € HT de main-d'oeuvre.
+
+Ce montant de 220 € ne peut pas être traité en débours puisque la facture d'origine n'est pas au nom du client : il s'agit d'une fourniture intégrée à sa prestation, soumise à la TVA de son activité. La facture finale s'établit donc à 670 € HT (450 + 220) + 134 € de TVA (20 %) = 804 € TTC.
+
+## Conservation des justificatifs de débours
+
+Un débours mal justifié, en cas de contrôle fiscal, peut être requalifié en élément du prix soumis à TVA, avec rappel de TVA et pénalités à la clé. Conservez systématiquement les justificatifs originaux, établis au nom du client, pendant la durée légale de conservation des pièces comptables, soit 6 ans au titre du Livre des procédures fiscales et 10 ans au titre du Code de commerce pour les pièces justificatives des écritures comptables.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conservez le <strong>justificatif original</strong> au nom du client, pas une simple copie interne</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Notez la <strong>référence du justificatif</strong> sur la ligne de débours de votre facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifiez qu'aucune <strong>marge</strong> n'a été ajoutée au montant remboursé</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Isolez ces montants dans un <strong>compte de tiers</strong> distinct en comptabilité</span>
+  </div>
+</div>
+
+## Comment Newbi facilite la gestion des débours et frais refacturés
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Des lignes de facture distinctes, sans erreur de TVA">
+    Newbi vous permet de créer des lignes de facture séparées pour vos prestations, vos frais refacturés avec TVA et vos débours hors TVA, tout en centralisant les justificatifs correspondants. Vous limitez ainsi le risque d'erreur lors de votre déclaration de TVA.
+  </Callout>
+</div>
+
+L'outil de gestion des achats intégré à Newbi vous aide également à centraliser les justificatifs liés à vos frais et débours, pour les retrouver facilement en cas de contrôle ou lors de la préparation de votre déclaration.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/gestion-des-achats">Gérer mes achats et justificatifs</Link>
+  </Button>
+</div>
+
+## Erreurs fréquentes à éviter
+
+1. **Facturer un débours en votre nom** : si la facture d'origine n'est pas au nom du client, ce n'est pas un débours mais une refacturation soumise à TVA.
+2. **Ajouter une marge à un débours** : dès qu'une marge apparaît, la somme perd sa nature de débours et doit être soumise à TVA.
+3. **Mélanger débours et frais sur une même ligne** : cela complique la lecture de la facture et le contrôle de votre TVA collectée.
+4. **Oublier de conserver le justificatif original** : sans lui, la nature de débours peut être remise en cause lors d'un contrôle.
+5. **Appliquer systématiquement la TVA de la prestation aux débours** : cette pratique, fréquente par excès de prudence, prive le client du bénéfice de la TVA déjà réglée en amont.
+
+## En résumé
+
+Le débours et la refacturation de frais répondent à des logiques fiscales opposées : le premier est hors TVA à condition d'être fait au nom du client, sans marge et justifié par une facture d'origine à son nom ; la seconde est une charge de votre activité que vous répercutez avec la TVA de votre prestation. En cas de doute sur le respect des conditions cumulatives du débours, il est plus prudent de traiter la somme en frais refacturés soumis à TVA, pour éviter tout risque de redressement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les débours et la refacturation de frais
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un débours est-il soumis à la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Non, un véritable débours n'est pas soumis à la TVA, à condition de remplir des conditions cumulatives strictes : la dépense doit être engagée au nom et pour le compte du client, la facture d'origine doit être établie à son nom, et vous ne devez conserver aucune marge sur le montant remboursé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre un débours et des frais refacturés ?</AccordionTrigger>
+      <AccordionContent>
+        Le débours correspond à une somme avancée au nom du client, sur une facture établie à son nom, hors TVA. Les frais refacturés sont des dépenses engagées en votre nom pour les besoins de votre propre activité, comme un déplacement, que vous répercutez ensuite sur le client avec la TVA de votre prestation principale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Peut-on ajouter une marge sur un débours ?</AccordionTrigger>
+      <AccordionContent>
+        Non, dès qu'une marge est ajoutée au montant remboursé, la somme perd sa qualification de débours au sens fiscal et doit être traitée comme un élément du prix de la prestation, soumis à la TVA applicable à votre activité.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Faut-il conserver un justificatif pour un débours ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, il est indispensable de conserver le justificatif original, établi au nom du client, pour prouver la nature de débours en cas de contrôle fiscal. La durée de conservation recommandée est de 10 ans, conformément aux obligations du Code de commerce pour les pièces justificatives comptables.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment refacturer des frais de déplacement à un client ?</AccordionTrigger>
+      <AccordionContent>
+        Les frais de déplacement engagés pour votre propre activité, comme un billet de train ou une nuit d'hôtel facturés à votre nom, doivent être refacturés au client avec la TVA de votre prestation principale, sur une ligne distincte de la facture, et non traités comme un débours hors TVA.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

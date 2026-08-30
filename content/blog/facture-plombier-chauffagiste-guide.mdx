@@ -1,0 +1,254 @@
+---
+title: 'Facture de plombier-chauffagiste : mentions, TVA réduite et modèle'
+description: >-
+  Comment facturer en plomberie-chauffage : TVA à 10 % ou 5,5 %, attestation simplifiée, main-d'œuvre et fournitures, acompte et facture de solde.
+date: '2026-09-03'
+category: guide
+sector: 'BTP / Artisans'
+keyword: facture plombier
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-03'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">BTP / Artisans</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture de plombier-chauffagiste : mentions, TVA réduite et modèle
+
+Établir une **facture de plombier** conforme demande de maîtriser des règles spécifiques : taux de TVA réduits selon la nature des travaux, attestation à faire signer par le client, distinction entre main-d'œuvre et fournitures, gestion des acomptes sur les chantiers de plus grande ampleur. Une erreur sur ces points peut coûter cher, aussi bien au professionnel qu'au client.
+
+Ce guide détaille les mentions obligatoires propres à la plomberie-chauffage, les règles de TVA à 10 % ou 5,5 % applicables selon les travaux réalisés, le fonctionnement de l'attestation simplifiée, et propose un modèle de structuration pour vos factures d'acompte et de solde.
+
+Beaucoup de plombiers et de chauffagistes gèrent encore leur facturation avec des outils bureautiques génériques, mal adaptés aux spécificités du secteur du bâtiment. Résultat : des erreurs de taux de TVA, des attestations oubliées ou mal classées, et des litiges avec des clients qui contestent une ligne de facture mal justifiée. Structurer sa facturation dès le premier chantier évite ces écueils et professionnalise durablement la relation avec la clientèle.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les mentions obligatoires d'une facture de plombier-chauffagiste
+
+Comme toute facture, celle d'un plombier-chauffagiste doit comporter l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) : identité et SIRET du professionnel, identité du client, date d'émission, numéro de facture unique, description détaillée des travaux, montants HT et TTC, taux de TVA applicable. À cela s'ajoutent des mentions propres au secteur du bâtiment, à retrouver dans notre guide sur les [mentions spécifiques de la facture BTP et artisan](/blog/facture-btp-artisan-mentions-specifiques), notamment la référence à l'assurance décennale et à la garantie biennale sur les équipements installés.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Description précise des travaux (nature de l'intervention, équipements posés)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Distinction entre <strong>main-d'œuvre</strong> et <strong>fournitures</strong> sur des lignes séparées</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Taux de TVA applicable justifié (10 % ou 5,5 % selon la nature des travaux)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Adresse du chantier si elle diffère de l'adresse de facturation du client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Référence à l'assurance décennale et mention de sa validité</span>
+  </div>
+</div>
+
+## Quelle TVA appliquer : 20 %, 10 % ou 5,5 % ?
+
+Le taux de TVA applicable aux travaux de plomberie-chauffage dépend de deux critères cumulatifs : l'ancienneté du logement et la nature exacte des travaux réalisés. Retrouvez le détail complet dans notre [guide des taux de TVA en France](/blog/taux-tva-france-guide-complet).
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Taux de TVA applicables selon le type de travaux et le logement</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Situation</TableHead>
+        <TableHead>Taux de TVA</TableHead>
+        <TableHead>Condition</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Logement neuf ou de moins de 2 ans</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Aucun taux réduit applicable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Travaux d'amélioration, entretien, réparation</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>Logement achevé depuis plus de 2 ans, usage d'habitation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Travaux de rénovation énergétique éligibles</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Chaudière basse consommation, pompe à chaleur, isolation liée aux réseaux</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le taux réduit ne s'applique pas aux fournitures pures">
+    Si vous vendez du matériel de plomberie sans intervention de pose, la TVA à taux plein de 20 % s'applique. Le taux réduit de 10 % ou 5,5 % concerne les travaux dans leur ensemble (main-d'œuvre et fournitures posées), pas la simple vente d'équipement.
+  </Callout>
+</div>
+
+## L'attestation simplifiée : une formalité indispensable
+
+Pour appliquer un taux de TVA réduit, le professionnel doit faire remplir et signer par son client une attestation confirmant que le logement a plus de 2 ans et que les travaux entrent dans le champ du taux réduit. Depuis la simplification entrée en vigueur, une attestation simplifiée suffit pour les travaux dont le montant TTC est inférieur à 300 €, sous forme d'une simple mention portée sur le devis ou la facture plutôt qu'un document séparé.
+
+Au-delà de ce seuil, l'attestation normale, plus détaillée, doit être signée avant le début des travaux et conservée par le professionnel pendant 5 ans, ainsi qu'une copie chez le client. En cas de contrôle, l'absence d'attestation valide peut entraîner un redressement de TVA à la charge du professionnel, qui devra alors régulariser la différence entre le taux réduit appliqué et le taux normal de 20 %.
+
+Dans la pratique, il est recommandé de systématiser la collecte de l'attestation dès la signature du devis plutôt que d'attendre la fin du chantier. Cela évite les oublis liés à l'urgence des interventions de dépannage, fréquentes dans ce métier, où le client signe rapidement pour que l'intervention démarre sans délai. Un dossier chantier complet doit ainsi regrouper le devis signé, l'attestation de TVA et les factures d'acompte et de solde.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Qui doit conserver l'attestation ?">
+    C'est le professionnel qui a réalisé les travaux qui doit conserver l'attestation signée, et non le client. En cas de sous-traitance, chaque intervenant qui applique un taux réduit doit disposer de sa propre attestation ou d'une copie transmise par l'entreprise principale.
+  </Callout>
+</div>
+
+## Main-d'œuvre et fournitures : pourquoi les distinguer
+
+Séparer clairement la main-d'œuvre des fournitures sur la facture présente plusieurs avantages. Cela facilite la compréhension du devis par le client, permet de justifier le taux de TVA appliqué poste par poste si nécessaire, et simplifie la gestion comptable des marges du professionnel. Certains clients, notamment dans le cadre de travaux donnant droit à un crédit d'impôt ou une aide de l'Agence nationale de l'habitat, ont également besoin de cette ventilation précise pour constituer leur dossier.
+
+Cette ventilation aide également le professionnel à suivre sa propre rentabilité chantier par chantier. En isolant le coût des fournitures de la valeur de la main-d'œuvre facturée, un plombier-chauffagiste peut identifier plus facilement les interventions les moins rentables, par exemple celles impliquant beaucoup de déplacement pour un montant de fournitures limité, et ajuster ses tarifs en conséquence pour les devis suivants.
+
+### Exemple chiffré : remplacement d'une chaudière
+
+Un chauffagiste remplace une chaudière gaz classique par une chaudière à condensation dans un logement de plus de 15 ans. Le devis se décompose ainsi :
+
+- Fourniture de la chaudière à condensation : 3 200 € HT
+- Main-d'œuvre de dépose et pose : 800 € HT
+- Total HT : 4 000 €
+- TVA à 5,5 % (travaux de rénovation énergétique éligibles) : 220 €
+- Total TTC : 4 220 €
+
+Si la même intervention concernait un simple remplacement de robinetterie sans dimension énergétique, le taux applicable serait de 10 % et non 5,5 %, d'où l'importance de bien qualifier la nature exacte des travaux avant d'émettre le devis.
+
+## Gérer les acomptes sur un chantier de plomberie
+
+Sur les chantiers dont le montant est significatif, il est courant de demander un acompte à la signature du devis, puis d'émettre une facture de solde à la fin des travaux. Chaque acompte encaissé doit faire l'objet d'une facture d'acompte distincte, mentionnant le taux de TVA applicable et le référencement au devis initial.
+
+Pour les interventions de dépannage urgent, en revanche, la logique est différente : le règlement intervient généralement en une seule fois, à l'issue de l'intervention, sans acompte préalable. Dans ce cas, une facture unique suffit, à condition qu'elle reprenne l'intégralité des mentions obligatoires, y compris le taux horaire de main-d'œuvre et le détail des pièces remplacées, souvent facturées avec une marge sur leur prix d'achat.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de structuration d'une facturation en plusieurs étapes</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Étape</TableHead>
+        <TableHead>Document</TableHead>
+        <TableHead>Montant</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Signature du devis</TableCell>
+        <TableCell>Devis détaillé avec attestation TVA jointe</TableCell>
+        <TableCell>4 220 € TTC (total prévisionnel)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Début des travaux</TableCell>
+        <TableCell>Facture d'acompte (30 %)</TableCell>
+        <TableCell>1 266 € TTC</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fin des travaux</TableCell>
+        <TableCell>Facture de solde</TableCell>
+        <TableCell>2 954 € TTC</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Facturation électronique : ce qui change pour les artisans
+
+Les artisans plombiers-chauffagistes, comme toutes les entreprises françaises, doivent pouvoir recevoir des factures électroniques depuis le 1er septembre 2026. L'obligation d'émission s'appliquera à leur tour à partir du 1er septembre 2027, la plupart d'entre eux relevant du statut de micro-entreprise, TPE ou PME. Anticiper cette transition en choisissant dès maintenant un outil de facturation compatible évite une bascule précipitée l'année suivante.
+
+Cette échéance concerne particulièrement les artisans qui travaillent avec des donneurs d'ordre déjà soumis à l'obligation d'émission depuis 2026, comme les grandes entreprises du bâtiment ou les bailleurs sociaux de taille importante. Il est donc utile de se renseigner dès maintenant sur les formats de facture électronique attendus par ces clients, plutôt que d'attendre la date butoir applicable à sa propre structure.
+
+## Comment Newbi simplifie la facturation des artisans du bâtiment
+
+Newbi permet de créer un [catalogue de produits et services](/blog/comment-creer-catalogue-produits-services) reprenant vos prestations types (dépannage, pose de chaudière, entretien annuel) avec leur taux de TVA associé, afin d'éviter les erreurs de saisie répétées d'un devis à l'autre.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Application automatique du bon taux de TVA selon vos prestations enregistrées</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Passage du devis à la facture d'acompte puis à la facture de solde en quelques clics</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Suivi des règlements clients et relances automatiques en cas de retard</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures de plomberie avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facturation d'un plombier-chauffagiste obéit à des règles précises qui s'ajoutent aux mentions obligatoires classiques : application du bon taux de TVA (20 %, 10 % ou 5,5 %) selon l'ancienneté du logement et la nature des travaux, attestation signée par le client et conservée 5 ans, distinction claire entre main-d'œuvre et fournitures, et gestion rigoureuse des acomptes sur les chantiers importants. Respecter ces règles dès l'émission du devis évite les redressements de TVA et sécurise la relation commerciale avec le client.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de plombier-chauffagiste
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel taux de TVA appliquer sur une facture de plomberie ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux dépend de l'ancienneté du logement et de la nature des travaux. Pour un logement de plus de 2 ans, le taux réduit de 10 % s'applique aux travaux d'amélioration et de réparation, et le taux de 5,5 % aux travaux de rénovation énergétique éligibles. Un logement neuf ou de moins de 2 ans reste soumis au taux normal de 20 %.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il toujours faire signer une attestation de TVA au client ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dès qu'un taux réduit de 10 % ou 5,5 % est appliqué. En dessous de 300 € TTC, une attestation simplifiée mentionnée sur la facture ou le devis suffit. Au-delà, une attestation normale plus détaillée doit être signée avant le début des travaux et conservée 5 ans par le professionnel.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Doit-on séparer la main-d'œuvre et les fournitures sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Ce n'est pas une obligation légale stricte pour l'application du taux réduit, qui porte sur l'ensemble de la prestation, mais c'est une bonne pratique fortement recommandée. Elle facilite la lecture du devis par le client et la constitution de dossiers d'aides ou de crédits d'impôt liés aux travaux de rénovation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que risque un plombier qui applique à tort un taux de TVA réduit ?</AccordionTrigger>
+      <AccordionContent>
+        En cas de contrôle, l'administration fiscale peut redresser la TVA et exiger le paiement de la différence entre le taux appliqué et le taux normal de 20 %, majorée d'intérêts de retard. C'est pourquoi l'attestation signée par le client est essentielle pour justifier l'application du taux réduit.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment facturer un acompte sur un chantier de chauffage ?</AccordionTrigger>
+      <AccordionContent>
+        Chaque acompte encaissé doit donner lieu à une facture d'acompte distincte, indiquant le taux de TVA applicable et la référence au devis signé. À la fin du chantier, une facture de solde reprend le montant total, déduit les acomptes déjà versés et indique le solde restant dû par le client.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
