@@ -32,7 +32,7 @@ export function FacturationBanner() {
           </div>
           <p className="text-sm text-[#202020]">
             Passez à la facturation électronique dès maintenant avec notre outil{" "}
-            <span className="font-semibold">100% conforme</span>
+            <span className="font-semibold">100% compatible</span>
           </p>
         </div>
         <div className="flex items-center gap-3">

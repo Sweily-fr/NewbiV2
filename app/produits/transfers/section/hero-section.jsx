@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
+import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 // Animations gsap chargées dans leur propre chunk (hors chemin critique SEO)
 const DragDropAnimation = dynamic(
   () => import("./DragDropAnimation").then((m) => m.DragDropAnimation),
@@ -44,6 +45,7 @@ export function HeroSection() {
                       Essayer 30 jours offerts
                     </Button>
                   </Link>
+                  <WhatsAppContactButton />
                 </div>
                 <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
                   Plusieurs entreprises nous font déjà confiance · Jusqu&apos;à

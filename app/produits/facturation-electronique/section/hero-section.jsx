@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
+import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 import { FacturationElectroniqueAnimation } from "./FacturationElectroniqueAnimation";
 import { FacturesAnimationIphone } from "./Facturesanimationiphone";
 
@@ -15,11 +16,14 @@ export function HeroSection() {
               {/* Contenu texte à gauche */}
               <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
                 <div className="inline-flex items-center gap-2 rounded-lg bg-[#cdcaff] text-[#1D1D1B] px-3 py-1.5 text-sm font-semibold relative overflow-hidden">
-                  <span className="relative z-10">Facturation électronique 100% conforme</span>
+                  <span className="relative z-10">
+                    Facturation électronique 100% compatible
+                  </span>
                   <div
                     className="absolute inset-0 z-0"
                     style={{
-                      background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)",
+                      background:
+                        "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%)",
                       backgroundSize: "200% 100%",
                       animation: "shineTag 3s ease-in-out infinite",
                     }}
@@ -53,18 +57,11 @@ export function HeroSection() {
                       Essayer 30 jours offerts
                     </Button>
                   </Link>
-                  <Link href="https://meet.brevo.com/sweily/newbi" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="font-normal text-base rounded-lg px-6 w-full sm:w-auto"
-                    >
-                      Demander une démo
-                    </Button>
-                  </Link>
+                  <WhatsAppContactButton />
                 </div>
                 <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
-                  Plusieurs entreprises nous font déjà confiance · Incluse dans toutes les offres Newbi
+                  Plusieurs entreprises nous font déjà confiance · Incluse dans
+                  toutes les offres Newbi
                 </p>
               </div>
 

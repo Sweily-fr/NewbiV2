@@ -7,14 +7,12 @@ import {
   Receipt,
   CreditCard,
   TrendingUp,
-  HandCoins,
   Mail,
   Share2,
   Kanban,
   Landmark,
   Zap,
   BookOpen,
-  Users,
   Info,
   Award,
   ArrowRight,
@@ -22,6 +20,7 @@ import {
   Quote,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 import React from "react";
 import { cn } from "@/src/lib/utils";
 import { useSession } from "@/src/lib/auth-client";
@@ -99,7 +98,7 @@ const menuItems = [
     hasDropdown: true,
     dropdownColumns: [
       {
-        title: "APPRENDRE",
+        title: "À PROPOS",
         items: [
           {
             name: "Documentation",
@@ -114,10 +113,10 @@ const menuItems = [
             href: "/blog",
           },
           {
-            name: "Communauté",
-            description: "Échangez avec d'autres utilisateurs newbi",
-            icon: <Users size={18} />,
-            href: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
+            name: "Qui sommes-nous",
+            description: "Découvrez l'équipe et la vision de newbi",
+            icon: <Info size={18} />,
+            href: "/qui-sommes-nous",
           },
           // {
           //   name: "Questions fréquentes",
@@ -125,17 +124,6 @@ const menuItems = [
           //   icon: <HelpCircle size={18} />,
           //   href: "/faq",
           // },
-        ],
-      },
-      {
-        title: "À PROPOS",
-        items: [
-          {
-            name: "Qui sommes-nous",
-            description: "Découvrez l'équipe et la vision de newbi",
-            icon: <Info size={18} />,
-            href: "/qui-sommes-nous",
-          },
           // {
           //   name: "Pourquoi choisir Newbi",
           //   description:
@@ -143,12 +131,6 @@ const menuItems = [
           //   icon: <Award size={18} />,
           //   href: "/pourquoi-newbi",
           // },
-          {
-            name: "Apporteur d'affaire",
-            description: "Devenez partenaire et gagnez des commissions",
-            icon: <HandCoins size={18} />,
-            href: "https://partenaire.newbi.fr",
-          },
           // {
           //   name: "Témoignages clients",
           //   description:
@@ -291,11 +273,23 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                     {/* Dropdown Menu */}
                     {item.hasDropdown && openDropdown === index && (
                       <div
-                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[850px] bg-gray-50 dark:bg-background border rounded-xl shadow-sm p-6 z-50"
+                        className={cn(
+                          "absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-50 dark:bg-background border rounded-xl shadow-sm p-6 z-50",
+                          item.dropdownColumns?.length === 1
+                            ? "w-[600px]"
+                            : "w-[850px]",
+                        )}
                         onMouseEnter={() => setOpenDropdown(index)}
                         onMouseLeave={() => setOpenDropdown(null)}
                       >
-                        <div className="grid grid-cols-3 gap-6">
+                        <div
+                          className={cn(
+                            "grid gap-6",
+                            item.dropdownColumns?.length === 1
+                              ? "grid-cols-2"
+                              : "grid-cols-3",
+                          )}
+                        >
                           {/* Colonnes OUTILS FINANCIERS et AUTRES OUTILS */}
                           {item.dropdownColumns?.map((column, colIdx) => (
                             <div key={colIdx} className="space-y-4">
@@ -356,27 +350,25 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                           ) : (
                             <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 flex flex-col">
                               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-                                APPORTEUR D'AFFAIRE
+                                FAITES-VOUS ACCOMPAGNER
                               </h3>
                               <p className="text-xs text-gray-600 dark:text-gray-300 mb-4">
-                                Devenez partenaire et générez des revenus en
-                                recommandant newbi
+                                Une question, un doute ? Un conseiller newbi
+                                vous répond sur WhatsApp et vous aide à démarrer
+                                sereinement.
                               </p>
                               <div className="flex-1 flex items-center justify-center mb-6">
                                 <img
-                                  src="/undraw_business-deal_nx2n.svg"
-                                  alt="Apporteur d'affaire"
+                                  src="/undraw_questions.svg"
+                                  alt="Faites-vous accompagner par un conseiller newbi"
                                   className="w-48 h-auto object-contain"
                                 />
                               </div>
 
-                              <Link
-                                href="https://partenaire.newbi.fr/"
-                                className="inline-block text-center px-4 py-2 bg-[#202020] text-white text-sm font-medium rounded-md hover:bg-[#202020] transition-colors"
+                              <WhatsAppContactButton
+                                className="w-full rounded-md text-sm font-medium px-4 py-2 h-auto"
                                 onClick={() => setOpenDropdown(null)}
-                              >
-                                Commencer avec newbi
-                              </Link>
+                              />
                             </div>
                           )}
                         </div>

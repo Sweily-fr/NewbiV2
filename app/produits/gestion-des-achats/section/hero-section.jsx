@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
+import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 
 export function HeroSection() {
   return (
@@ -34,25 +35,21 @@ export function HeroSection() {
                       Essayer 30 jours offerts
                     </Button>
                   </Link>
-                  <Link href="https://meet.brevo.com/sweily/newbi" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="font-normal text-base rounded-lg px-6 w-full sm:w-auto"
-                    >
-                      Demander une démo
-                    </Button>
-                  </Link>
+                  <WhatsAppContactButton />
                 </div>
                 <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
-                  Plusieurs entreprises nous font déjà confiance · OCR et scan de justificatifs inclus
+                  Plusieurs entreprises nous font déjà confiance · OCR et scan
+                  de justificatifs inclus
                 </p>
               </div>
 
               {/* Image à droite */}
               <div className="relative flex items-center justify-center lg:items-end lg:justify-end pt-8 lg:pt-24 lg:overflow-visible">
                 <div className="relative w-full lg:w-[1000px] xl:w-[1100px] lg:-mr-96 xl:-mr-[28rem] scale-[1.7] sm:scale-[1.5] lg:scale-100 origin-top translate-x-[45%] sm:translate-x-[25%] lg:translate-x-0">
-                  <div className="relative rounded-lg lg:rounded-[2rem] overflow-hidden" style={{ border: "4px solid #2F2F2D" }}>
+                  <div
+                    className="relative rounded-lg lg:rounded-[2rem] overflow-hidden"
+                    style={{ border: "4px solid #2F2F2D" }}
+                  >
                     <img
                       src="/images/gestion-achats-hero.png"
                       alt="Gestion des achats Newbi"

@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
+import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 import { FacturesAnimation } from "./FacturesAnimation";
 
 export function HeroSection() {
@@ -35,18 +36,11 @@ export function HeroSection() {
                       Essayer 30 jours offerts
                     </Button>
                   </Link>
-                  <Link href="https://meet.brevo.com/sweily/newbi" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="font-normal text-base rounded-lg px-6 w-full sm:w-auto"
-                    >
-                      Demander une démo
-                    </Button>
-                  </Link>
+                  <WhatsAppContactButton />
                 </div>
                 <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
-                  Plusieurs entreprises nous font déjà confiance · Conforme facturation électronique 2026
+                  Plusieurs entreprises nous font déjà confiance · Conforme
+                  facturation électronique 2026
                 </p>
               </div>
 
