@@ -187,6 +187,17 @@ describe("getPostBySlug", () => {
     expect(post.content).toContain("Real content.");
   });
 
+  it("strips the leading markdown H1 (the page renders the title itself)", () => {
+    fsState.files = {
+      "x.mdx": `---\ntitle: "X"\npublished: true\n---\n<div>badges</div>\n\n# Mon titre\n\nIntro.\n\n## Section\n\n# pas un titre de page`,
+    };
+    const post = getPostBySlug("x");
+    expect(post.content).not.toContain("# Mon titre");
+    expect(post.content).toContain("Intro.");
+    expect(post.content).toContain("## Section");
+    expect(post.content).toContain("# pas un titre de page");
+  });
+
   it("strips inline JSON-LD script blocks from the content", () => {
     fsState.files = {
       "x.mdx": `---\ntitle: "X"\npublished: true\n---\nAvant.\n\n<script\n  type="application/ld+json"\n  dangerouslySetInnerHTML={{\n    __html: JSON.stringify({ "@type": "Article" })\n  }}\n/>\n\n<script type="application/ld+json">{"@type":"FAQPage"}</script>\n\nAprès.`,
