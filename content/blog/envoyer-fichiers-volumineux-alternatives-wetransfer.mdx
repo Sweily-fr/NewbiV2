@@ -1,0 +1,256 @@
+---
+title: 'Envoyer des fichiers volumineux : 7 alternatives à WeTransfer pour les pros'
+description: >-
+  Limites de taille, expiration, sécurité, RGPD : sept alternatives à
+  WeTransfer pour envoyer des fichiers lourds à ses clients, dont des
+  solutions intégrées à votre gestion.
+date: '2026-11-24'
+category: liste
+sector: null
+keyword: alternative wetransfer
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-24'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Liste</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Envoyer des fichiers volumineux : 7 alternatives à WeTransfer pour les pros
+
+Vous cherchez une **alternative à WeTransfer** fiable pour transmettre des fichiers lourds à vos clients ou à votre expert-comptable, sans buter sur les limites de la version gratuite ? WeTransfer reste pratique, mais ses restrictions de taille, la durée de conservation limitée et l'absence de contrôle sur l'hébergement des données posent problème dès que vous travaillez avec des documents professionnels sensibles. Ce guide passe en revue sept alternatives concrètes, leurs limites réelles, et les critères à vérifier avant de choisir un outil pour votre activité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les limites de WeTransfer pour un usage professionnel
+
+La version gratuite de WeTransfer limite l'envoi à 2 Go par transfert et conserve les fichiers seulement 7 jours avant suppression automatique. Pour un usage professionnel régulier, envoi de maquettes, de dossiers de reporting, de photos en haute définition ou de fichiers comptables, ces limites sont vite atteintes. La version payante lève ces restrictions mais reste un outil isolé, déconnecté de votre gestion commerciale et de vos échanges avec vos clients ou votre expert-comptable.
+
+Se pose aussi la question de l'hébergement des données : les serveurs utilisés ne sont pas nécessairement situés dans l'Union européenne, ce qui peut poser une difficulté pour des documents contenant des données personnelles au sens du RGPD.
+
+## Les critères à vérifier avant de choisir un outil
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>taille maximale</strong> autorisée par envoi en version gratuite</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>durée de conservation</strong> du fichier avant expiration du lien</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La possibilité de <strong>protéger le lien par un mot de passe</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>lieu d'hébergement</strong> des données, idéalement dans l'Union européenne</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>notification automatique</strong> au destinataire et à l'expéditeur</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>intégration</strong> éventuelle à votre outil de facturation ou de gestion</span>
+  </div>
+</div>
+
+## Sept alternatives à WeTransfer pour les professionnels
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des principales alternatives à WeTransfer</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[150px]">Outil</TableHead>
+        <TableHead>Taille max gratuite</TableHead>
+        <TableHead>Durée de conservation</TableHead>
+        <TableHead>Hébergement</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">SwissTransfer</TableCell>
+        <TableCell>50 Go</TableCell>
+        <TableCell>30 jours</TableCell>
+        <TableCell>Suisse</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Smash</TableCell>
+        <TableCell>Illimitée (débit variable)</TableCell>
+        <TableCell>14 jours</TableCell>
+        <TableCell>France</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TransferNow</TableCell>
+        <TableCell>5 Go</TableCell>
+        <TableCell>7 jours</TableCell>
+        <TableCell>France</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Filemail</TableCell>
+        <TableCell>5 Go</TableCell>
+        <TableCell>7 jours</TableCell>
+        <TableCell>Union européenne</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Grosfichiers</TableCell>
+        <TableCell>10 Go</TableCell>
+        <TableCell>30 jours</TableCell>
+        <TableCell>France</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Google Drive (partage de lien)</TableCell>
+        <TableCell>15 Go (stockage total)</TableCell>
+        <TableCell>Illimitée tant que stocké</TableCell>
+        <TableCell>Hors UE</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Transfert de fichiers intégré à un outil de gestion</TableCell>
+        <TableCell>Variable selon l'offre</TableCell>
+        <TableCell>Variable, souvent liée à un lien signé de courte durée</TableCell>
+        <TableCell>Selon le prestataire</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### SwissTransfer
+
+Développé par l'hébergeur suisse Infomaniak, SwissTransfer permet d'envoyer jusqu'à 50 Go gratuitement, avec une conservation de 30 jours et une protection par mot de passe optionnelle. L'hébergement en Suisse séduit les professionnels attachés à une juridiction hors Union européenne mais réputée protectrice des données.
+
+### Smash
+
+Smash, solution française, ne fixe pas de limite stricte de taille en version gratuite mais applique une limitation de débit. La conservation des fichiers est de 14 jours et l'outil propose un suivi de l'état du téléchargement par le destinataire.
+
+### TransferNow
+
+TransferNow limite les envois gratuits à 5 Go mais propose une interface simple et un contrôle fin des droits d'accès, avec la possibilité de définir un nombre maximal de téléchargements par lien.
+
+### Filemail
+
+Filemail, hébergé dans l'Union européenne, propose 5 Go gratuits avec une conservation de 7 jours et une option de chiffrement renforcé pour les fichiers sensibles, souvent utilisée dans les secteurs réglementés.
+
+### Grosfichiers
+
+Service français historique, Grosfichiers autorise jusqu'à 10 Go par envoi gratuit avec une conservation de 30 jours, sans création de compte obligatoire pour l'expéditeur occasionnel.
+
+### Google Drive ou OneDrive en partage de lien
+
+Plutôt qu'un service de transfert dédié, de nombreux professionnels utilisent le partage de lien de leur espace de stockage cloud habituel. La limite dépend alors du quota de stockage global du compte, et non d'un envoi ponctuel, ce qui convient pour un partage récurrent avec les mêmes interlocuteurs.
+
+### Un outil de transfert intégré à votre gestion
+
+Plutôt que de multiplier les outils, certaines solutions de facturation et de gestion intègrent directement une fonction de transfert de fichiers volumineux, pensée pour l'échange avec vos clients ou votre expert-comptable, sans jongler entre plusieurs comptes.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Attention aux données personnelles dans vos fichiers">
+    Dès qu'un fichier contient des données personnelles, coordonnées bancaires, bulletins de paie, pièces d'identité, vérifiez que l'outil choisi héberge ses données dans l'Union européenne ou dans un pays reconnu par la Commission européenne comme offrant un niveau de protection adéquat. C'est un point de vigilance RGPD trop souvent négligé.
+  </Callout>
+</div>
+
+## Exemple concret : transmettre un dossier de 3 Go à un client
+
+Une agence de communication doit transmettre à un client un dossier de 3 Go contenant des visuels haute définition et une présentation vidéo. Avec la version gratuite de WeTransfer, limitée à 2 Go, l'envoi en une seule fois est impossible. L'agence doit alors soit scinder l'envoi en deux fichiers, soit basculer vers une solution acceptant des volumes plus importants comme SwissTransfer ou Smash, soit passer par un lien de partage depuis son espace cloud habituel.
+
+Ce type de situation, fréquent dès qu'un projet dépasse quelques fichiers légers, illustre l'intérêt de choisir en amont un outil adapté au volume réel de vos échanges plutôt que de découvrir la limite au moment de l'envoi.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Privilégiez un outil avec accusé de réception">
+    Pour les envois professionnels importants, choisissez un outil qui vous notifie automatiquement lorsque le destinataire a téléchargé le fichier. Cette confirmation évite les échanges de relance inutiles et sécurise le suivi de vos livrables.
+  </Callout>
+</div>
+
+## Le transfert de fichiers intégré à votre outil de facturation
+
+Pour les professionnels qui échangent régulièrement des documents volumineux avec leurs clients ou leur expert-comptable, factures scannées, photos de chantier, fichiers d'écritures comptables ou dossiers clients complets, Newbi propose une fonction de transfert de fichiers directement intégrée à votre espace de gestion. Vous générez un lien de téléchargement sécurisé, sans obliger votre destinataire à créer un compte, et vous conservez la traçabilité de chaque envoi au même endroit que vos factures et vos échanges clients.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/transfers">Découvrir le transfert de fichiers Newbi</Link>
+  </Button>
+</div>
+
+Cette approche est particulièrement utile pour [partager des documents avec votre expert-comptable](/blog/comment-partager-documents-expert-comptable) sans multiplier les outils, notamment lorsqu'il s'agit de transmettre un [fichier des écritures comptables](/blog/quest-ce-que-fec-fichier-ecritures-comptables) volumineux en cas de contrôle. Pour aller plus loin sur la sécurisation de vos échanges professionnels, consultez notre guide sur le [transfert de fichiers sécurisé en entreprise](/blog/transfert-fichiers-securise-professionnel).
+
+## Combien coûte l'envoi de fichiers volumineux au quotidien ?
+
+Les offres gratuites suffisent pour un usage occasionnel, mais un professionnel qui envoie plusieurs dossiers volumineux chaque semaine a intérêt à comparer le coût d'un abonnement dédié à celui d'une solution déjà incluse dans son outil de gestion. Un abonnement à un service de transfert seul coûte généralement entre 10 et 20 € par mois et par utilisateur, un coût qui s'ajoute à celui de vos autres outils professionnels.
+
+## Sécuriser un envoi contenant des documents sensibles
+
+Au-delà du choix de l'outil, quelques bonnes pratiques renforcent la sécurité d'un envoi de fichiers volumineux, en particulier lorsqu'il s'agit de documents comptables, contractuels ou contenant des données personnelles.
+
+Protégez systématiquement le lien de téléchargement par un mot de passe, transmis séparément au destinataire, par exemple par SMS ou par téléphone plutôt que dans le même e-mail que le lien. Privilégiez une durée d'expiration courte : un lien valable seulement quelques heures ou quelques jours limite le risque qu'il soit intercepté ou transféré à un tiers non autorisé. Vérifiez enfin que le fichier est supprimé automatiquement des serveurs une fois la période de conservation écoulée, plutôt que conservé indéfiniment sans que vous le sachiez.
+
+Pour les échanges récurrents avec les mêmes interlocuteurs, comme un expert-comptable qui reçoit chaque mois vos justificatifs, il est souvent plus sûr et plus simple de centraliser ces envois dans un espace dédié et permanent plutôt que de générer un nouveau lien de transfert à chaque fois.
+
+## Format et compression des fichiers avant l'envoi
+
+Avant de choisir un outil, pensez aussi à réduire la taille de vos fichiers lorsque c'est possible. Un dossier de photos haute définition peut souvent être compressé de 30 à 50 % sans perte visible de qualité, ce qui réduit d'autant le temps d'envoi et de téléchargement pour votre destinataire. Pour les documents PDF volumineux, notamment des rapports illustrés ou des dossiers de présentation, un export optimisé pour le web divise généralement le poids du fichier par deux ou trois par rapport à un export destiné à l'impression.
+
+Cette étape simple évite parfois de devoir changer d'outil : un dossier de 4 Go compressé à 2,2 Go peut redevenir compatible avec la version gratuite d'un service qui, sans cette optimisation, aurait nécessité une offre payante. Pensez également à regrouper plusieurs petits fichiers dans une seule archive compressée plutôt que de multiplier les envois séparés, ce qui simplifie le suivi côté destinataire et réduit le nombre de liens à gérer de votre côté.
+
+## En résumé
+
+WeTransfer reste une solution pratique pour un envoi ponctuel et léger, mais ses limites de taille, la durée de conservation courte et l'incertitude sur l'hébergement des données en font un choix fragile pour un usage professionnel régulier. Des alternatives comme SwissTransfer, Smash, TransferNow, Filemail ou Grosfichiers répondent chacune à des besoins différents en matière de volume et de sécurité. Pour les professionnels qui échangent fréquemment des documents avec leurs clients ou leur expert-comptable, intégrer le transfert de fichiers directement à son outil de gestion évite de multiplier les comptes et centralise le suivi des échanges.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les alternatives à WeTransfer
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la meilleure alternative gratuite à WeTransfer ?</AccordionTrigger>
+      <AccordionContent>
+        SwissTransfer se distingue par sa limite gratuite de 50 Go par envoi, nettement supérieure aux 2 Go de WeTransfer. Le choix dépend toutefois de vos priorités : Smash convient pour des envois volumineux sans limite stricte, tandis que Filemail est préférable si vous souhaitez un hébergement garanti dans l'Union européenne.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle taille de fichier peut-on envoyer gratuitement ?</AccordionTrigger>
+      <AccordionContent>
+        Cela varie fortement selon l'outil, de 2 Go pour WeTransfer gratuit à 50 Go pour SwissTransfer, voire sans limite stricte pour Smash. Vérifiez systématiquement cette limite avant de préparer votre envoi, car elle peut nécessiter de scinder un dossier volumineux en plusieurs fichiers.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Les alternatives à WeTransfer sont-elles conformes au RGPD ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de chaque outil et de son lieu d'hébergement. Les solutions hébergées dans l'Union européenne, comme Filemail, Smash ou TransferNow, offrent des garanties plus simples à justifier. Pour un fichier contenant des données personnelles, vérifiez systématiquement où sont stockées les données avant de choisir l'outil.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on envoyer des fichiers volumineux directement depuis son logiciel de facturation ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, certains outils de gestion comme Newbi intègrent une fonction de transfert de fichiers volumineux, ce qui évite de passer par un service tiers séparé. Vous générez un lien de téléchargement sécurisé directement depuis votre espace de gestion, avec un suivi centralisé de vos envois.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Combien de temps un fichier reste-t-il disponible au téléchargement ?</AccordionTrigger>
+      <AccordionContent>
+        La durée varie selon l'outil : 7 jours pour WeTransfer ou TransferNow gratuit, 14 jours pour Smash, 30 jours pour SwissTransfer ou Grosfichiers. Certains outils intégrés à un logiciel de gestion utilisent des liens à durée volontairement plus courte pour renforcer la sécurité des documents sensibles.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

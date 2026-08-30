@@ -1,0 +1,233 @@
+---
+title: "Vérifier un numéro de TVA intracommunautaire (VIES) : mode d'emploi"
+description: >-
+  Avant de facturer HT un client européen, vérifiez son numéro de TVA sur VIES. Procédure, preuve à conserver et que faire si le numéro est invalide.
+date: '2026-11-03'
+category: guide
+sector: null
+keyword: vérifier numéro tva intracommunautaire
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-03'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Vérifier un numéro de TVA intracommunautaire (VIES) : mode d'emploi
+
+Avant d'émettre une facture hors taxes à un client professionnel établi dans un autre pays de l'Union européenne, il est indispensable de **vérifier le numéro de TVA intracommunautaire** de ce client sur le système VIES. Cette vérification, souvent négligée, est pourtant la seule preuve reconnue par l'administration fiscale que votre client est bien assujetti à la TVA dans son pays, condition nécessaire pour appliquer l'exonération de TVA sur vos ventes intracommunautaires de biens ou vos prestations de services B2B.
+
+Vous découvrirez ici la procédure exacte pour effectuer cette vérification, la preuve à conserver pour vous couvrir en cas de contrôle fiscal, et la marche à suivre si le numéro de votre client se révèle invalide ou introuvable dans la base.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que le système VIES
+
+VIES, pour VAT Information Exchange System, est le système électronique mis en place par la Commission européenne qui permet de vérifier la validité d'un numéro de TVA intracommunautaire attribué par l'un des États membres de l'Union européenne. Ce service interroge en temps réel les bases de données nationales des administrations fiscales de chaque pays et renvoie une réponse binaire : le numéro est valide, ou il ne l'est pas.
+
+L'intérêt de cette vérification dépasse la simple curiosité administrative. Elle conditionne directement le régime de TVA applicable à votre facture. Pour bien comprendre les enjeux, il est utile de revenir sur la notion même de [TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire), qui régit les échanges entre professionnels assujettis au sein de l'Union européenne.
+
+## Pourquoi cette vérification est indispensable
+
+Lorsque vous vendez un bien ou réalisez une prestation de service pour un client professionnel établi dans un autre État membre de l'Union européenne, vous pouvez, sous certaines conditions, facturer hors taxes (HT), la TVA étant auto-liquidée par votre client dans son propre pays. Cette exonération n'est possible que si votre client dispose bien d'un numéro de TVA intracommunautaire valide et actif au moment de la transaction.
+
+Si vous facturez HT un client dont le numéro s'avère invalide, ou qui n'est en réalité pas assujetti, vous vous exposez à un redressement : l'administration fiscale française peut alors exiger de vous le paiement de la TVA française que vous auriez dû collecter, avec les pénalités de retard associées. La vérification préalable sur VIES est donc votre première ligne de défense.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le risque pèse sur le vendeur, pas sur le client">
+    En cas de contrôle, c'est vous, en tant que vendeur, qui devez justifier que vous étiez en droit de facturer hors taxes. Un numéro de TVA non vérifié ou invalide peut vous être opposé plusieurs années après la transaction, avec un rappel de TVA à votre charge, même si l'erreur provient d'une information erronée transmise par votre client.
+  </Callout>
+</div>
+
+## La procédure de vérification pas à pas
+
+La vérification sur [le portail VIES de la Commission européenne](https://ec.europa.eu/taxation_customs/vies/) est gratuite, rapide et accessible à tous. Voici les étapes à suivre.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Rendez-vous sur le site officiel <strong>VIES</strong> de la Commission européenne</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Sélectionnez le <strong>pays de l'Union européenne</strong> qui a attribué le numéro à votre client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Saisissez le <strong>numéro de TVA</strong> du client, sans le code pays répété inutilement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Renseignez, si le champ le permet, <strong>votre propre numéro de TVA français</strong> pour obtenir une preuve horodatée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Lancez la recherche et <strong>enregistrez le résultat</strong> (capture d'écran ou impression PDF)</span>
+  </div>
+</div>
+
+Le service est disponible directement sur le portail officiel de la Commission européenne, accessible par une simple recherche du sigle VIES. La réponse est immédiate et indique le nom et l'adresse associés au numéro, lorsque l'État membre concerné accepte de transmettre cette information (certains pays, comme l'Allemagne, ne renvoient qu'une validation binaire sans les coordonnées).
+
+## Comprendre les résultats de la vérification
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Résultats possibles d'une vérification VIES</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Résultat</TableHead>
+        <TableHead>Signification</TableHead>
+        <TableHead>Action à prendre</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Numéro valide</TableCell>
+        <TableCell>Le numéro est actif dans la base de l'État membre concerné</TableCell>
+        <TableCell>Conservez la preuve, vous pouvez facturer HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numéro invalide</TableCell>
+        <TableCell>Le numéro n'existe pas ou plus dans la base à la date de la recherche</TableCell>
+        <TableCell>Contactez votre client, ne facturez pas HT sans régularisation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Service indisponible</TableCell>
+        <TableCell>La base nationale de l'État membre est temporairement inaccessible</TableCell>
+        <TableCell>Réessayez plus tard et conservez une capture de l'incident technique</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Exemple concret : une prestation de conseil vers l'Allemagne
+
+Une consultante en marketing établie en France facture 6 000 euros HT une prestation de conseil à une entreprise cliente basée en Allemagne. Avant d'émettre sa facture, elle vérifie le numéro de TVA allemand communiqué par son client sur VIES. Le numéro apparaît valide à la date de la vérification : elle imprime le résultat en PDF et le classe dans son dossier client.
+
+Elle peut alors émettre une facture hors taxes de 6 000 euros, avec la mention obligatoire d'auto-liquidation de la TVA par le preneur, et le numéro de TVA intracommunautaire du client clairement indiqué. Sans cette vérification, en cas de contrôle deux ans plus tard, elle n'aurait aucune preuve à opposer à l'administration si le numéro s'avérait en réalité invalide au moment de la transaction, avec un rappel de TVA française de 1 200 euros (20 %) à sa charge.
+
+## Que faire si le numéro est invalide
+
+Un numéro invalide sur VIES ne signifie pas nécessairement une fraude de la part de votre client : il peut s'agir d'une erreur de saisie, d'un numéro pas encore activé, ou d'un délai de mise à jour de la base nationale. Dans tous les cas, la marche à suivre est la même.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="La bonne réaction face à un numéro invalide">
+    Contactez immédiatement votre client pour vérifier le numéro exact qu'il vous a communiqué et corriger une éventuelle erreur de saisie. S'il persiste à afficher un statut invalide, demandez à votre client un justificatif récent de son immatriculation fiscale auprès de son administration nationale. Tant que le doute persiste, il est plus prudent de facturer avec la TVA française applicable, quitte à régulariser ensuite par un avoir si la validité est confirmée.
+  </Callout>
+</div>
+
+Ne facturez jamais hors taxes sur la seule bonne foi d'un client qui affirme être assujetti sans que la vérification VIES le confirme. C'est cette vérification, et sa conservation en tant que preuve, qui vous protège en cas de contrôle.
+
+## La preuve à conserver
+
+La simple consultation de VIES ne suffit pas : c'est la trace matérielle de cette consultation qui a une valeur probante. L'administration fiscale française attend que vous puissiez démontrer, pour chaque facture intracommunautaire hors taxes émise, que vous avez vérifié le numéro de TVA de votre client **à une date proche de la transaction**.
+
+En pratique, conservez systématiquement :
+
+- Une **capture d'écran ou un export PDF** du résultat VIES, avec la date de consultation visible.
+- Le **numéro de confirmation** délivré par certains États membres qui en fournissent un.
+- Une trace de la **communication avec votre client** en cas de correction du numéro.
+
+Ces éléments doivent être conservés pendant la même durée que vos autres pièces comptables, soit **10 ans** au titre du Code de commerce et **6 ans** au titre du Livre des procédures fiscales. Pour bien connaître l'ensemble des règles applicables à la facturation de clients situés hors de France, consultez notre guide sur [facturer un client étranger, dans l'Union européenne ou hors Union européenne](/blog/facturer-client-etranger-ue-hors-ue).
+
+## Les mentions à ajouter sur la facture hors taxes
+
+Une fois le numéro de TVA vérifié et la preuve conservée, votre facture hors taxes doit encore respecter un formalisme précis. Au-delà des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classiques (identité des parties, numéro de facture, date, description de la prestation), une facture intracommunautaire exonérée de TVA doit impérativement comporter :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Votre <strong>numéro de TVA intracommunautaire</strong> français</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>numéro de TVA intracommunautaire</strong> vérifié de votre client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>"Exonération de TVA, article 262 ter I du CGI"</strong> pour une livraison de biens</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>"Autoliquidation"</strong> pour une prestation de service relevant de l'article 283-2 du CGI</span>
+  </div>
+</div>
+
+L'absence de ces mentions, même si le numéro de TVA du client est valide, peut être considérée par l'administration comme une facture incomplète et fragiliser votre défense en cas de contrôle. La vérification VIES et le formalisme de la facture doivent donc toujours aller de pair.
+
+## Un contrôle à répéter, pas une formalité ponctuelle
+
+Un numéro valide aujourd'hui peut être désactivé demain, par exemple si l'entreprise cliente cesse son activité ou change de régime fiscal dans son pays. Pour une relation commerciale ponctuelle, une vérification au moment de la facturation suffit généralement. Pour un client récurrent, il est recommandé de renouveler le contrôle à intervalles réguliers, par exemple à chaque nouvel exercice comptable, et de conserver à chaque fois une nouvelle preuve datée. Cette discipline simple limite fortement le risque de découvrir, plusieurs années après coup, qu'une série de factures a été émise hors taxes sur la base d'un numéro devenu invalide entre-temps.
+
+## Comment Newbi facilite la facturation intracommunautaire
+
+Lors de la création d'une facture à destination d'un client professionnel européen, Newbi permet d'enregistrer le numéro de TVA intracommunautaire du client dans sa fiche, et applique automatiquement les mentions requises pour l'auto-liquidation lorsque les conditions sont réunies. Vous conservez ainsi une trace structurée de chaque facture émise hors taxes, facilement retrouvable en cas de contrôle.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes clients européens</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Vérifier le numéro de TVA intracommunautaire d'un client européen sur VIES avant d'émettre une facture hors taxes n'est pas une formalité facultative : c'est la condition qui vous permet de justifier, en cas de contrôle, votre droit à l'exonération de TVA sur une vente ou une prestation intracommunautaire. La procédure est gratuite et immédiate sur le portail officiel de la Commission européenne, mais elle n'a de valeur que si vous conservez une preuve datée du résultat. En cas de numéro invalide, contactez votre client avant de facturer hors taxes, et privilégiez la prudence en cas de doute persistant.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la vérification du numéro de TVA intracommunautaire
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment vérifier un numéro de TVA intracommunautaire gratuitement ?</AccordionTrigger>
+      <AccordionContent>
+        Utilisez le service VIES de la Commission européenne, accessible gratuitement en ligne. Sélectionnez le pays qui a attribué le numéro, saisissez-le, et lancez la recherche. Le résultat s'affiche immédiatement et indique si le numéro est valide ou non à la date de la consultation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Que faire si le numéro de TVA de mon client n'apparaît pas sur VIES ?</AccordionTrigger>
+      <AccordionContent>
+        Contactez votre client pour vérifier qu'il vous a communiqué le bon numéro, sans erreur de frappe. S'il n'est toujours pas reconnu, demandez-lui un justificatif récent d'immatriculation fiscale. En cas de doute persistant, il est plus prudent de facturer avec la TVA française plutôt que de risquer un redressement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Faut-il vérifier le numéro de TVA à chaque facture ou une seule fois ?</AccordionTrigger>
+      <AccordionContent>
+        Une vérification à chaque nouvelle relation commerciale est un minimum, mais il est recommandé de revérifier périodiquement pour les clients récurrents, car un numéro de TVA peut être désactivé entre deux transactions. Conserver une preuve datée pour chaque période de facturation reste la pratique la plus sûre en cas de contrôle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que risque une entreprise qui facture HT sans vérifier le numéro de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        En cas de contrôle fiscal, l'administration peut estimer que l'exonération n'était pas justifiée et réclamer le paiement de la TVA française qui aurait dû être collectée, majorée de pénalités de retard. Le vendeur, et non le client, supporte ce risque financier, d'où l'importance de conserver une preuve de vérification.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le numéro de TVA intracommunautaire est-il le même pour toute l'Union européenne ?</AccordionTrigger>
+      <AccordionContent>
+        Non, chaque État membre attribue ses propres numéros selon un format qui lui est propre, commençant toujours par le code du pays sur deux lettres (FR, DE, ES, etc.). Le système VIES interroge la base nationale correspondante en fonction du pays sélectionné lors de la recherche.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

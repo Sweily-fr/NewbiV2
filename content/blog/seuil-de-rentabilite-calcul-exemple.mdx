@@ -1,0 +1,249 @@
+---
+title: 'Seuil de rentabilité : calcul, exemple et point mort pour une TPE'
+description: >-
+  Formule du seuil de rentabilité, distinction charges fixes et variables, calcul du point mort en jours et exemple pour un indépendant en prestation de services.
+date: '2026-10-08'
+category: glossaire
+sector: null
+keyword: seuil de rentabilité calcul
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-08'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Seuil de rentabilité : calcul, exemple et point mort pour une TPE
+
+Le **seuil de rentabilité calcul** revient régulièrement dans les questions des indépendants et dirigeants de TPE qui veulent savoir à partir de quel chiffre d'affaires leur activité cesse d'être déficitaire. C'est un indicateur simple mais souvent mal maîtrisé, car il suppose de bien distinguer charges fixes et charges variables avant d'appliquer la formule.
+
+Ce guide détaille la formule du seuil de rentabilité, explique comment l'appliquer à une activité de prestation de services, et montre comment en déduire le point mort, c'est-à-dire le nombre de jours nécessaires dans l'année pour atteindre ce seuil.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que le seuil de rentabilité ?
+
+Le seuil de rentabilité, aussi appelé chiffre d'affaires critique, est le montant de chiffre d'affaires à partir duquel une entreprise couvre l'ensemble de ses charges, fixes et variables, sans encore dégager de bénéfice. En dessous de ce seuil, l'activité est déficitaire. Au-delà, chaque euro de chiffre d'affaires supplémentaire contribue au résultat.
+
+Ce n'est pas un indicateur théorique réservé aux grandes entreprises. Pour un indépendant, il répond à une question très concrète : combien dois-je facturer ce mois-ci, ou cette année, pour ne pas travailler à perte ? Il est particulièrement utile en début d'activité, lors d'un changement de statut, ou avant d'investir dans du matériel, un local ou un recrutement qui augmente les charges fixes. Il complète naturellement un [plan de trésorerie prévisionnel](/blog/plan-de-tresorerie-previsionnel-comment-faire), qui projette mois par mois vos encaissements et vos décaissements.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Seuil de rentabilité et point mort : deux notions liées mais différentes">
+    Le seuil de rentabilité s'exprime en euros de chiffre d'affaires. Le point mort s'exprime en durée, généralement en jours ou en mois : il indique à quel moment de l'année ce seuil est atteint si l'activité est régulière.
+  </Callout>
+</div>
+
+## Charges fixes et charges variables : la distinction essentielle
+
+Le calcul du seuil de rentabilité repose entièrement sur la bonne classification de vos charges.
+
+Les **charges fixes** restent stables quel que soit votre niveau d'activité : loyer d'un bureau ou d'un coworking, assurance responsabilité civile professionnelle, abonnements logiciels, honoraires d'expert-comptable, cotisations sociales minimales. Que vous facturiez 2 000 € ou 8 000 € dans le mois, ces charges ne bougent pas.
+
+Les **charges variables** évoluent proportionnellement à votre activité : achats de matières premières, sous-traitance ponctuelle facturée à un prestataire externe, frais de déplacement liés à une mission, commissions versées sur une vente. Plus vous produisez ou vendez, plus ces charges augmentent.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de répartition des charges pour un consultant indépendant</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Type de charge</TableHead>
+        <TableHead>Poste</TableHead>
+        <TableHead>Montant annuel</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Fixe</TableCell>
+        <TableCell>Coworking</TableCell>
+        <TableCell>3 600 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fixe</TableCell>
+        <TableCell>Assurance RC professionnelle</TableCell>
+        <TableCell>480 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fixe</TableCell>
+        <TableCell>Abonnements logiciels</TableCell>
+        <TableCell>1 200 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fixe</TableCell>
+        <TableCell>Expert-comptable</TableCell>
+        <TableCell>1 800 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fixe</TableCell>
+        <TableCell>Communication et site internet</TableCell>
+        <TableCell>720 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fixe</TableCell>
+        <TableCell>Cotisations sociales minimales</TableCell>
+        <TableCell>6 600 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Variable</TableCell>
+        <TableCell>Sous-traitance ponctuelle (15 % du CA facturé)</TableCell>
+        <TableCell>Proportionnel au CA</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## La formule du seuil de rentabilité
+
+La formule se construit en deux temps. D'abord, calculez votre taux de marge sur coûts variables, c'est-à-dire la part de chaque euro de chiffre d'affaires qui reste après paiement des charges variables :
+
+**Taux de marge sur coûts variables = (Chiffre d'affaires - Charges variables) / Chiffre d'affaires**
+
+Ensuite, appliquez cette formule au seuil de rentabilité proprement dit :
+
+**Seuil de rentabilité = Charges fixes / Taux de marge sur coûts variables**
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Pourquoi diviser par le taux de marge et non par 1">
+    Si vos charges variables représentent 15 % de votre chiffre d'affaires, chaque euro facturé ne contribue qu'à hauteur de 0,85 € à la couverture de vos charges fixes. Diviser vos charges fixes par ce taux de marge donne donc le chiffre d'affaires réel nécessaire pour tout couvrir, et pas seulement les charges fixes elles-mêmes.
+  </Callout>
+</div>
+
+## Exemple chiffré pour un indépendant en prestation de services
+
+Prenons un consultant indépendant dont le chiffre d'affaires prévisionnel annuel est de 60 000 € HT. Ses charges fixes annuelles, détaillées dans le tableau ci-dessus, s'élèvent à 14 400 €. Ses charges variables, essentiellement de la sous-traitance ponctuelle, représentent 15 % de son chiffre d'affaires facturé.
+
+Le calcul se déroule ainsi :
+
+1. Taux de marge sur coûts variables = 1 - 0,15 = 0,85
+2. Seuil de rentabilité = 14 400 / 0,85 = 16 941 €, arrondi à 16 950 € HT
+
+Ce consultant doit donc facturer au minimum 16 950 € HT dans l'année pour couvrir l'ensemble de ses charges. Au-delà de ce montant, chaque mission supplémentaire contribue à son bénéfice. Avec un chiffre d'affaires prévisionnel de 60 000 €, il dépasse largement son seuil de rentabilité, ce qui lui laisse une marge de sécurité confortable même en cas de mission annulée.
+
+### Variante : l'impact d'une hausse des charges fixes
+
+Imaginons que ce même consultant décide de louer un bureau privatif plutôt qu'un poste en coworking, ce qui porte ses charges fixes annuelles de 14 400 € à 19 200 €, sans changement de ses charges variables. Son seuil de rentabilité devient alors 19 200 / 0,85 = 22 588 €, soit près de 5 650 € de plus qu'avec l'ancienne configuration. Pour absorber cette hausse sans réduire sa marge, il doit soit augmenter son tarif journalier, soit facturer davantage de jours dans l'année. Ce type de simulation, réalisé avant de signer un bail ou d'investir dans du matériel, évite bien des mauvaises surprises en cours d'exercice.
+
+## Le point mort : à quel moment de l'année le seuil est-il atteint ?
+
+Le point mort convertit le seuil de rentabilité, exprimé en euros, en une durée. Il répond à la question : à quelle date, dans l'année, mon activité devient-elle rentable si mon chiffre d'affaires se répartit régulièrement ?
+
+**Point mort (en jours) = (Seuil de rentabilité / Chiffre d'affaires annuel) x 360**
+
+Pour notre consultant : (16 950 / 60 000) x 360 = 101,7 jours, arrondis à 102 jours. En démarrant son activité le 1er janvier avec un rythme de facturation régulier, il atteint son seuil de rentabilité autour du 12 avril. À partir de cette date, tout chiffre d'affaires supplémentaire génère un bénéfice net de charges.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le point mort suppose une activité régulière">
+    Ce calcul suppose que le chiffre d'affaires se répartit uniformément sur l'année. En réalité, beaucoup d'indépendants connaissent des mois creux, notamment en été ou en fin d'année. Le point mort réel peut donc être atteint plus tard si l'activité démarre lentement, d'où l'intérêt de suivre son chiffre d'affaires cumulé mois par mois plutôt que de se fier uniquement à la moyenne annuelle.
+  </Callout>
+</div>
+
+## Comment abaisser son seuil de rentabilité
+
+Un seuil de rentabilité élevé signifie que vous devez facturer beaucoup avant de dégager le moindre bénéfice. Plusieurs leviers permettent de le réduire.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Réduire les charges fixes</strong> : renégocier un loyer, résilier des abonnements logiciels inutilisés</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Augmenter le taux de marge</strong> en revoyant votre tarif journalier moyen (TJM) à la hausse</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Limiter la sous-traitance</strong> aux missions où elle est réellement indispensable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Transformer une charge fixe en charge variable</strong> quand c'est possible, par exemple en louant du matériel à l'usage plutôt qu'en l'achetant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivre son seuil de rentabilité chaque trimestre</strong> et l'ajuster si vos charges évoluent</span>
+  </div>
+</div>
+
+## Seuil de rentabilité et tarif journalier : un lien direct
+
+Le taux de marge sur coûts variables dépend directement de votre tarif de facturation. Un tarif journalier moyen trop bas, fixé sans tenir compte de vos charges réelles, rehausse mécaniquement votre seuil de rentabilité et retarde le moment où votre activité devient bénéficiaire. Avant de fixer vos tarifs, il est donc utile de croiser votre [tarif journalier moyen (TJM)](/blog/comment-fixer-tarif-journalier-tjm) avec le calcul de votre seuil de rentabilité, pour vérifier que le nombre de jours facturables prévus dans l'année suffit à le dépasser confortablement.
+
+## Suivre son seuil de rentabilité avec Newbi
+
+Calculer un seuil de rentabilité une fois par an ne suffit pas si votre activité fluctue. Le suivi régulier de votre chiffre d'affaires encaissé et de vos charges permet de savoir, à tout moment, où vous en êtes par rapport à ce seuil. Avec la synchronisation bancaire et le suivi de trésorerie de Newbi, vous visualisez vos encaissements et vos dépenses au fil de l'eau, ce qui facilite le rapprochement entre votre chiffre d'affaires réel et vos prévisions. Ce suivi rejoint plus largement les bonnes pratiques présentées dans notre article sur [la gestion de la trésorerie d'une entreprise](/blog/comment-gerer-tresorerie-entreprise).
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un tableau de bord plutôt qu'un calcul isolé">
+    Plutôt que de recalculer votre seuil de rentabilité une fois par an sur un tableur, suivez votre chiffre d'affaires cumulé mois après mois pour savoir en temps réel si vous êtes en avance ou en retard sur votre point mort.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Suivre ma trésorerie avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Le seuil de rentabilité indique le chiffre d'affaires minimum à atteindre pour couvrir l'ensemble de vos charges fixes et variables, et le point mort traduit ce seuil en date dans l'année. Le calcul repose sur une distinction rigoureuse entre charges fixes et charges variables, puis sur l'application de la formule charges fixes divisées par le taux de marge sur coûts variables. Pour un indépendant, cet indicateur éclaire directement la fixation du tarif journalier et le suivi de trésorerie tout au long de l'année, et permet d'anticiper les mois où l'activité reste fragile.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+Ce type de calcul complète aussi une réflexion sur le [besoin en fonds de roulement](/blog/bfr-besoin-en-fonds-de-roulement-calcul), qui mesure de son côté le décalage de trésorerie entre le moment où vous engagez une dépense et celui où vous encaissez le paiement correspondant. Un seuil de rentabilité maîtrisé ne suffit pas si vos clients paient à 60 jours alors que vos charges fixes tombent chaque mois : les deux indicateurs doivent être suivis ensemble pour avoir une vision complète de la santé financière de votre activité.
+
+## Questions fréquentes sur le seuil de rentabilité
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment calculer le seuil de rentabilité simplement ?</AccordionTrigger>
+      <AccordionContent>
+        Divisez vos charges fixes annuelles par votre taux de marge sur coûts variables, obtenu en soustrayant de 1 la part de vos charges variables dans votre chiffre d'affaires. Le résultat est le chiffre d'affaires minimum à atteindre pour ne pas être déficitaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre seuil de rentabilité et point mort ?</AccordionTrigger>
+      <AccordionContent>
+        Le seuil de rentabilité est un montant en euros de chiffre d'affaires. Le point mort est la traduction de ce montant en durée, généralement en jours, indiquant à quel moment de l'année ce seuil est atteint si l'activité est régulière.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelles charges compter comme fixes pour un indépendant ?</AccordionTrigger>
+      <AccordionContent>
+        Les charges fixes regroupent tout ce qui ne varie pas avec votre niveau d'activité : loyer ou coworking, assurance professionnelle, abonnements logiciels, honoraires comptables, cotisations sociales minimales. Elles s'opposent aux charges variables comme la sous-traitance ou les achats liés à une mission précise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Pourquoi calculer son seuil de rentabilité en début d'activité ?</AccordionTrigger>
+      <AccordionContent>
+        Ce calcul permet de savoir dès le départ combien il faut facturer pour ne pas travailler à perte, et d'ajuster son tarif journalier ou son volume de missions en conséquence. C'est aussi un indicateur utile avant tout investissement qui augmenterait durablement les charges fixes.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le seuil de rentabilité change-t-il chaque année ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dès que vos charges fixes ou votre taux de marge évoluent, votre seuil de rentabilité change également. Une hausse de loyer, un nouvel abonnement logiciel ou une baisse de vos tarifs modifient directement le montant de chiffre d'affaires nécessaire pour être rentable. Il est donc recommandé de le recalculer au moins une fois par an, voire à chaque changement significatif de charges.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

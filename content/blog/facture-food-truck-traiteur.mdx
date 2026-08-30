@@ -1,0 +1,236 @@
+---
+title: 'Facture de food truck et traiteur : TVA, événements et particuliers'
+description: >-
+  TVA à 5,5 %, 10 % ou 20 % selon la prestation, acomptes pour les
+  événements, factures aux entreprises et notes aux particuliers : le
+  guide pour traiteurs et food trucks.
+date: '2026-11-13'
+category: guide
+sector: Restaurants / CHR
+keyword: facture traiteur
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-13'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facture de food truck et traiteur : TVA, événements et particuliers
+
+La **facture de traiteur** obéit à des règles de TVA parmi les plus complexes du secteur de la restauration, avec des taux qui varient selon que le repas est consommé sur place, emporté, ou livré dans le cadre d'une prestation événementielle avec service. Pour un food truck ou une activité de traiteur, bien maîtriser ces taux et les mentions obligatoires évite des erreurs de facturation qui coûtent cher en cas de contrôle.
+
+Ce guide détaille les taux de TVA applicables selon les situations, la gestion des acomptes pour les prestations événementielles, les différences entre facture aux professionnels et note aux particuliers, ainsi que les mentions spécifiques à respecter pour une activité de restauration ambulante ou de traiteur.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Les taux de TVA applicables : 5,5 %, 10 % ou 20 %
+
+La restauration et la vente de produits alimentaires appliquent trois taux de TVA différents selon la nature exacte de la prestation. C'est le point le plus source d'erreurs pour les food trucks et les traiteurs, dont l'activité mélange souvent plusieurs cas de figure dans une même journée.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Taux de TVA applicables en restauration et traiteur</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[300px]">Situation</TableHead>
+        <TableHead>Taux de TVA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Vente à emporter de produits alimentaires (hors boissons alcoolisées)</TableCell>
+        <TableCell>5,5 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Consommation sur place, avec service (restauration traditionnelle, food truck avec espace de consommation)</TableCell>
+        <TableCell>10 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Vente de boissons alcoolisées, quelle que soit la modalité</TableCell>
+        <TableCell>20 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prestation de traiteur avec service à table, mise à disposition de personnel ou de matériel</TableCell>
+        <TableCell>10 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Simple livraison de plateaux-repas sans service associé</TableCell>
+        <TableCell>5,5 %</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le critère du service fait basculer le taux">
+    Ce qui distingue le taux à 5,5 % du taux à 10 % n'est pas le lieu de consommation mais la présence ou non d'un service associé : mise à disposition de couverts réutilisables, de tables, de personnel de service, de matériel de réchauffage sur place. Un traiteur qui livre uniquement des plateaux-repas sans aucun service associé applique le taux réduit de 5,5 %, alors que la même prestation avec un service à table bascule à 10 %.
+  </Callout>
+</div>
+
+## Cas pratique : une prestation mixte pour un food truck
+
+Un food truck vend des burgers à emporter à 12 euros TTC l'unité (TVA à 5,5 % puisqu'il n'y a ni couverts réutilisables ni service), et propose également quelques places assises avec plateaux et couverts pour les clients qui souhaitent manger sur place. Sur une même journée de 300 ventes, si 250 sont à emporter et 50 consommées sur place avec service, il doit ventiler sa comptabilité entre les deux taux : 250 ventes à 5,5 % et 50 ventes à 10 %. En cas de vente de boissons alcoolisées (bière artisanale par exemple), ces ventes doivent être isolées avec un taux de TVA à 20 %, quel que soit le mode de consommation.
+
+Cette ventilation impose une caisse ou un logiciel capable de distinguer les taux applicables produit par produit, faute de quoi le calcul global de la TVA due devient rapidement source d'erreur.
+
+## La gestion des acomptes pour les prestations événementielles
+
+Contrairement à la vente directe au comptoir, une prestation de traiteur pour un mariage, un séminaire d'entreprise ou un événement privé s'organise généralement avec un devis préalable et un acompte demandé plusieurs semaines avant la date de l'événement. Cet acompte doit faire l'objet d'une facture d'acompte conforme à l'article 289 du Code général des impôts, avec la TVA exigible dès l'encaissement pour une prestation de service.
+
+Pour un traiteur, il est courant de demander un acompte représentant 30 % à 50 % du montant total, avec le solde facturé à l'issue de la prestation, une fois le nombre définitif de convives et les éventuels suppléments confirmés. Notre article sur le [pourcentage d'acompte à demander sur un devis](/blog/quel-acompte-demander-sur-un-devis) détaille les usages courants selon le secteur et le montant de la prestation, et notre [modèle de facture d'acompte gratuit](/blog/modele-facture-acompte-gratuit) fournit une trame directement utilisable.
+
+### Exemple chiffré : un mariage de 80 convives
+
+Un traiteur signe un contrat pour un mariage de 80 convives, au tarif de 65 euros TTC par personne, soit 5 200 euros TTC au total. Il demande un acompte de 40 % à la signature, soit 2 080 euros TTC, facturé immédiatement avec la TVA correspondante. Le solde de 3 120 euros TTC est facturé après l'événement, une fois le nombre définitif de convives confirmé (certains contrats prévoyant un ajustement à la hausse ou à la baisse selon les présences réelles communiquées avant une date limite).
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Prévoyez une clause de confirmation d'effectif">
+    Pour les événements, prévoyez dans votre devis une date limite de confirmation du nombre définitif de convives, généralement 5 à 10 jours avant l'événement. Cela sécurise votre approvisionnement et évite les litiges sur le montant final facturé.
+  </Callout>
+</div>
+
+## Facture aux entreprises, note aux particuliers
+
+La nature du client détermine le document à émettre. Pour un client professionnel (entreprise organisant un séminaire, une réception), une facture complète est obligatoire, avec l'ensemble des mentions légales classiques : identification du prestataire et du client, numéro de facture, date, détail des prestations, montants HT et TTC, taux de TVA appliqués et conditions de règlement.
+
+Pour un client particulier, l'émission d'une facture n'est obligatoire que dans certains cas précis, notamment lorsque le montant de la prestation dépasse 25 euros TTC et que le client la demande, ou pour les ventes à distance. En pratique, pour une prestation de traiteur événementielle facturée plusieurs centaines ou milliers d'euros, la facture est systématique quel que soit le statut du client.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vente directe au comptoir d'un food truck : <strong>ticket de caisse</strong> suffisant, facture sur demande</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Prestation événementielle pour un particulier : <strong>facture recommandée</strong> dès que le montant est significatif</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Toute prestation pour une entreprise : <strong>facture obligatoire</strong>, avec mentions complètes</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ventilation des taux de TVA <strong>par ligne de facture</strong> lorsque plusieurs taux s'appliquent</span>
+  </div>
+</div>
+
+## Les mentions spécifiques à la restauration et au traiteur
+
+Au-delà des mentions obligatoires classiques d'une facture (identification des parties, numéro, date, montants), une facture de traiteur ou de food truck gagne à préciser certains éléments propres au secteur :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Mentions utiles sur une facture de traiteur</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Mention</TableHead>
+        <TableHead>Pourquoi</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Date et lieu de l'événement</TableCell>
+        <TableCell>Distingue la prestation de la date de facturation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Nombre de convives</TableCell>
+        <TableCell>Justifie le calcul du montant total</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Détail des prestations (repas, service, matériel, boissons)</TableCell>
+        <TableCell>Permet la ventilation correcte des taux de TVA</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Référence de l'acompte déjà facturé</TableCell>
+        <TableCell>Nécessaire sur la facture de solde</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Comment Newbi facilite la facturation multi-taux
+
+La gestion de plusieurs taux de TVA sur une même activité, entre vente à emporter, consommation sur place et boissons alcoolisées, est l'un des points les plus délicats pour un food truck ou un traiteur. Newbi permet de créer un catalogue de produits et services avec un taux de TVA propre à chaque ligne, ce qui évite les erreurs de calcul lors de l'émission d'une facture ou d'un devis comportant plusieurs prestations à taux différents. La gestion des acomptes et des factures de solde s'intègre directement dans le même parcours, du devis initial jusqu'au règlement final après l'événement.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures de traiteur</Link>
+  </Button>
+</div>
+
+## Comparaison avec la restauration classique et rapide
+
+Les règles de TVA et de facturation d'un traiteur ou d'un food truck rejoignent en grande partie celles des autres acteurs de la restauration, tout en présentant des spécificités liées à la mobilité et aux événements. Notre guide sur la [facturation en restaurant, café et hôtel](/blog/facture-restaurant-cafe-hotel) détaille les règles applicables à un établissement fixe avec service en salle, tandis que notre article sur les [obligations de la restauration rapide](/blog/facture-restauration-rapide-obligations) couvre les cas de vente à emporter proches de ceux d'un food truck sans espace de consommation sur place.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un food truck reste soumis aux règles d'hygiène et de traçabilité">
+    Au-delà de la facturation, un food truck et une activité de traiteur restent soumis aux obligations d'hygiène alimentaire et de traçabilité des denrées, indépendantes des règles de TVA évoquées ici. Ces obligations relèvent d'une réglementation distincte, à vérifier auprès des services vétérinaires ou de votre chambre de métiers.
+  </Callout>
+</div>
+
+## Archivage et conservation des factures
+
+Comme tout professionnel, un traiteur ou un exploitant de food truck doit conserver ses factures pendant 10 ans conformément au Code de commerce, et pendant 6 ans au titre du Livre des procédures fiscales pour les besoins d'un éventuel contrôle. Cette obligation vaut aussi bien pour les factures émises aux entreprises que pour les tickets de caisse conservés en archive de vente directe. Un classement clair entre ventes à emporter, ventes sur place et prestations événementielles facilite grandement la justification des taux de TVA appliqués en cas de vérification.
+
+## En résumé
+
+La facturation d'un food truck ou d'une activité de traiteur repose sur une distinction précise entre trois taux de TVA : 5,5 % pour la vente à emporter sans service, 10 % pour la consommation sur place ou avec service, et 20 % pour les boissons alcoolisées. Pour les prestations événementielles, un acompte facturé conformément à l'article 289 du CGI sécurise l'engagement du client, avec un solde facturé après confirmation du nombre définitif de convives. La facture complète reste obligatoire pour tout client professionnel, tandis que la note ou le ticket de caisse suffit pour la vente directe aux particuliers en dessous de certains montants. Une gestion rigoureuse des taux de TVA par ligne de facture, appuyée sur un outil adapté, évite les erreurs de calcul qui coûtent cher lors d'un contrôle fiscal.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de traiteur et food truck
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel taux de TVA appliquer pour un plateau-repas livré en entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Si le plateau-repas est simplement livré sans service associé (pas de mise à disposition de personnel, de matériel de réchauffage ou de couverts réutilisables), le taux réduit de 5,5 % s'applique. Dès qu'un service est ajouté, comme la mise en place sur place ou du personnel de service, le taux passe à 10 %.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il facturer un acompte pour un mariage ou un événement privé ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est une pratique fortement recommandée et, dès lors qu'un acompte est effectivement encaissé, il devient une obligation légale d'émettre une facture d'acompte conforme à l'article 289 du Code général des impôts. Cela sécurise l'engagement du client et permet au traiteur de couvrir une partie de ses achats avant la prestation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Un food truck doit-il toujours émettre une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Pour la vente directe au comptoir à des particuliers, un simple ticket de caisse suffit dans la plupart des cas, sauf demande explicite du client ou montant dépassant certains seuils. En revanche, toute prestation facturée à une entreprise (traiteur pour un événement professionnel par exemple) doit donner lieu à une facture complète avec toutes les mentions obligatoires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment gérer la TVA sur les boissons alcoolisées vendues avec un repas ?</AccordionTrigger>
+      <AccordionContent>
+        Les boissons alcoolisées sont systématiquement soumises au taux de TVA de 20 %, quel que soit le mode de consommation (sur place ou à emporter) et indépendamment du taux appliqué au reste du repas. Elles doivent apparaître sur une ligne distincte de la facture pour permettre cette ventilation correcte des taux.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que faire si le nombre de convives change à la dernière minute ?</AccordionTrigger>
+      <AccordionContent>
+        Il est recommandé de prévoir contractuellement une date limite de confirmation d'effectif, généralement 5 à 10 jours avant l'événement, au-delà de laquelle le nombre facturé ne peut plus être révisé à la baisse. Cette clause protège le traiteur contre les approvisionnements déjà engagés et doit être clairement mentionnée dans le devis initial.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

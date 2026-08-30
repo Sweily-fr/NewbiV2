@@ -1,0 +1,243 @@
+---
+title: 'DSO : calculer son délai moyen de paiement clients et le réduire'
+description: >-
+  Le DSO mesure le nombre de jours pour encaisser vos factures. Formule,
+  exemple, benchmark par secteur et 5 actions pour le faire baisser.
+date: '2026-09-24'
+category: glossaire
+sector: null
+keyword: dso délai moyen de paiement
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-24'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# DSO : calculer son délai moyen de paiement clients et le réduire
+
+Le **DSO délai moyen de paiement**, ou Days Sales Outstanding, mesure le nombre moyen de jours qui s'écoulent entre l'émission d'une facture et son encaissement effectif. C'est l'un des indicateurs les plus révélateurs de la santé financière d'une entreprise : un DSO élevé signifie que votre trésorerie est immobilisée chez vos clients plutôt que disponible pour vos propres besoins. Ce guide vous donne la formule de calcul, un exemple chiffré complet, des repères par secteur et cinq leviers concrets pour le réduire.
+
+Comprendre et suivre son DSO n'est pas réservé aux grandes entreprises. Un indépendant ou une TPE qui facture plusieurs clients par mois a tout intérêt à surveiller cet indicateur pour anticiper ses besoins de trésorerie et détecter rapidement une dérive des délais de paiement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que le DSO exactement ?
+
+Le DSO (Days Sales Outstanding) traduit en français par « délai moyen de paiement clients » ou « délai moyen de recouvrement », est un indicateur financier qui exprime en nombre de jours le temps moyen que met une entreprise à encaisser le paiement de ses factures après leur émission.
+
+Il ne faut pas confondre le DSO avec le délai de paiement contractuel fixé sur vos factures. Le délai contractuel est ce que vous demandez à votre client (par exemple 30 jours). Le DSO est ce qui se passe réellement en moyenne, en tenant compte des retards, des relances et des paiements anticipés. L'écart entre les deux est souvent révélateur de la qualité de votre processus de facturation et de relance.
+
+Un DSO qui augmente d'un mois sur l'autre est un signal d'alerte : il peut indiquer un relâchement dans le suivi des impayés, une dégradation de la solvabilité de vos clients, ou un processus de relance insuffisamment structuré.
+
+## La formule de calcul du DSO
+
+La formule la plus courante, dite méthode du solde ou « count-back method » simplifiée, est la suivante :
+
+**DSO = (Créances clients TTC / Chiffre d'affaires TTC sur la période) x Nombre de jours de la période**
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Bien choisir sa période de calcul">
+    Le DSO peut être calculé mensuellement, trimestriellement ou annuellement. Plus la période est courte, plus l'indicateur réagit vite à un changement de comportement de paiement, mais il devient aussi plus sensible aux variations ponctuelles de chiffre d'affaires. Un suivi mensuel est un bon compromis pour la plupart des TPE.
+  </Callout>
+</div>
+
+## Exemple de calcul complet
+
+Prenons le cas d'une agence de communication qui réalise un chiffre d'affaires TTC de 90 000 € sur un trimestre (90 jours), et dont l'encours de créances clients (factures émises non encore payées) s'élève à 27 000 € à la fin de la période.
+
+Le calcul est le suivant :
+
+DSO = (27 000 / 90 000) x 90 = 27 jours
+
+Cette agence facture ses clients à 30 jours, mais encaisse en moyenne en 27 jours : son processus de recouvrement fonctionne bien. Si le même calcul donnait un encours de 45 000 € pour le même chiffre d'affaires, le DSO grimperait à 45 jours, soit 15 jours de plus que le délai contractuel affiché, révélant un problème réel de retards de paiement.
+
+## Benchmark : quel DSO est considéré comme bon ?
+
+Le DSO « normal » varie fortement selon le secteur d'activité, la taille des clients et les usages du marché. Voici des repères indicatifs pour situer votre propre indicateur.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Repères de DSO par secteur d'activité en France</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Secteur</TableHead>
+        <TableHead>DSO moyen indicatif</TableHead>
+        <TableHead>Commentaire</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Services aux entreprises (conseil, communication)</TableCell>
+        <TableCell>30 à 45 jours</TableCell>
+        <TableCell>Dépend fortement de la taille des clients B2B</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">BTP et artisanat</TableCell>
+        <TableCell>45 à 60 jours</TableCell>
+        <TableCell>Situations de travaux et retenues de garantie allongent le délai</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Commerce de détail</TableCell>
+        <TableCell>0 à 15 jours</TableCell>
+        <TableCell>Paiement souvent immédiat ou par carte</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Professions libérales</TableCell>
+        <TableCell>20 à 35 jours</TableCell>
+        <TableCell>Facturation directe au particulier plus rapide</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Vente à l'international</TableCell>
+        <TableCell>50 à 70 jours</TableCell>
+        <TableCell>Délais de paiement contractuels souvent plus longs</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+En France, le [délai de paiement](/blog/quest-ce-que-delai-paiement-facture) légal maximal entre professionnels est encadré par l'article L441-10 du Code de commerce : 30 jours à réception de la facture par défaut, ou 60 jours nets à compter de la date d'émission si les parties en conviennent, voire 45 jours fin de mois. Un DSO durablement supérieur à ces plafonds signale un problème de recouvrement, pas seulement des conditions contractuelles longues.
+
+## Pourquoi un DSO élevé est un vrai risque pour une TPE
+
+Un DSO qui dérive n'est pas qu'un chiffre abstrait. Il a des conséquences directes et concrètes sur votre activité.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Il immobilise de la trésorerie que vous ne pouvez pas utiliser pour payer vos charges, vos fournisseurs ou investir.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Il augmente votre [besoin en fonds de roulement](/blog/bfr-besoin-en-fonds-de-roulement-calcul), qu'il faut alors financer, parfois par un découvert coûteux.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Il peut masquer des impayés en cours de dégradation, jusqu'à ce qu'ils deviennent des créances irrécouvrables.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Il fragilise votre capacité à honorer vos propres échéances (URSSAF, TVA, fournisseurs) dans les délais.</span>
+  </div>
+</div>
+
+<Callout type="warning" title="Le DSO n'est pas qu'un problème de gros clients">
+  Beaucoup d'indépendants pensent que les retards de paiement viennent uniquement des grands comptes. En réalité, les petites structures clientes sont souvent à l'origine des délais les plus longs, faute de processus de paiement structuré en interne.
+</Callout>
+
+## 5 actions concrètes pour réduire son DSO
+
+### 1. Facturer immédiatement après la prestation
+
+Chaque jour de retard dans l'émission de la facture s'ajoute mécaniquement au délai d'encaissement. Émettez la facture le jour même de la livraison ou de la fin de prestation, pas en fin de mois.
+
+### 2. Relancer avant l'échéance, pas seulement après
+
+Un rappel amical envoyé quelques jours avant la date d'échéance réduit sensiblement le taux de retard. Consultez les [meilleures pratiques de relance client](/blog/meilleures-pratiques-relance-client) pour structurer un calendrier de relance efficace, de la relance préventive jusqu'à la mise en demeure.
+
+### 3. Proposer plusieurs moyens de paiement
+
+Plus il est simple de payer, plus vite le client le fait. Prélèvement, virement, carte bancaire en ligne : réduisez la friction entre la réception de la facture et l'action de payer.
+
+### 4. Demander un acompte sur les projets longs
+
+Sur les prestations de plusieurs semaines, un acompte à la signature réduit mécaniquement l'encours moyen de créances et améliore votre trésorerie en cours de mission.
+
+### 5. Appliquer systématiquement les pénalités de retard
+
+La loi vous autorise à appliquer des pénalités de retard dès le premier jour suivant l'échéance, à un taux au moins égal à trois fois le taux d'intérêt légal, ainsi qu'une indemnité forfaitaire de recouvrement de 40 € par facture en retard. Les appliquer systématiquement, même sans les réclamer immédiatement, envoie un signal clair à vos clients. Le guide sur les [délais de paiement à réduire](/blog/conseils-reduire-delais-paiement) détaille l'ensemble de ces leviers.
+
+## Comment Newbi vous aide à suivre et réduire votre DSO
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un tableau de bord pour ne plus subir vos délais de paiement">
+    Newbi centralise le statut de chaque facture (émise, envoyée, payée, en retard) et suit votre trésorerie en temps réel. Vous visualisez immédiatement l'encours de créances clients, sans avoir à recalculer votre DSO manuellement chaque mois.
+  </Callout>
+</div>
+
+En connectant votre compte bancaire au module de rapprochement automatique, chaque paiement reçu est associé à la facture correspondante, ce qui vous donne une vision fiable de vos délais réels sans ressaisie. Le suivi de trésorerie intégré vous permet aussi d'anticiper les tensions de trésorerie avant qu'elles ne deviennent critiques.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Suivre ma trésorerie avec Newbi</Link>
+  </Button>
+</div>
+
+## DSO et facturation électronique : un lien à ne pas négliger
+
+La généralisation de la facturation électronique change progressivement la donne sur les délais de paiement. Avec la réception obligatoire des factures électroniques pour toutes les entreprises depuis le 1er septembre 2026, et l'émission obligatoire pour les grandes entreprises et ETI depuis la même date, les flux de facturation deviennent plus traçables. Les PME, TPE et micro-entreprises basculeront en émission à partir du 1er septembre 2027.
+
+Cette traçabilité accrue, via les plateformes de dématérialisation partenaires (PDP), devrait à terme faciliter le suivi des statuts de paiement et réduire les délais liés aux erreurs de traitement ou aux factures égarées. En attendant la généralisation complète, un suivi rigoureux de votre DSO reste le meilleur outil pour piloter votre trésorerie.
+
+## Les erreurs fréquentes dans le calcul du DSO
+
+Plusieurs erreurs faussent régulièrement le calcul du DSO chez les indépendants et les TPE. La première consiste à inclure la TVA dans le chiffre d'affaires mais pas dans les créances, ou l'inverse : le calcul doit rester cohérent, en TTC des deux côtés ou en HT des deux côtés, sans mélanger les deux bases.
+
+La deuxième erreur est de calculer le DSO sur une période trop courte, par exemple une semaine, ce qui rend l'indicateur très volatil et peu exploitable pour prendre des décisions. Privilégiez un calcul mensuel ou trimestriel, avec un suivi de la tendance sur plusieurs périodes plutôt qu'une lecture isolée.
+
+La troisième erreur est d'oublier les factures litigieuses ou contestées dans le calcul des créances. Une facture bloquée pour désaccord sur la prestation gonfle artificiellement votre DSO alors que le problème n'est pas un simple retard de paiement mais un différend commercial à traiter séparément.
+
+Enfin, certains confondent le DSO global de l'entreprise avec le DSO par client. Pour un pilotage fin, il est utile de calculer un DSO par grand client ou par typologie de client (particuliers, PME, grands comptes), car les comportements de paiement varient fortement d'un profil à l'autre.
+
+## En résumé
+
+Le DSO mesure concrètement le temps que met votre entreprise à transformer une vente en argent disponible sur votre compte. Calculé simplement à partir de vos créances clients et de votre chiffre d'affaires, il révèle des dérives que le simple délai de paiement contractuel ne montre pas. Un DSO élevé immobilise votre trésorerie et fragilise votre capacité à faire face à vos propres charges. En facturant rapidement, en relançant de façon structurée, en diversifiant les moyens de paiement, en demandant des acomptes et en appliquant vos pénalités de retard, vous pouvez réduire durablement ce délai et sécuriser votre activité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le DSO
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment calculer le DSO simplement ?</AccordionTrigger>
+      <AccordionContent>
+        Divisez le montant total de vos créances clients TTC en cours par votre chiffre d'affaires TTC sur la période étudiée, puis multipliez le résultat par le nombre de jours de cette période. Par exemple, pour un trimestre de 90 jours avec 27 000 € de créances et 90 000 € de chiffre d'affaires, le DSO est de 27 jours.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel est un bon DSO pour une TPE ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend du secteur. Pour des services aux entreprises, un DSO entre 30 et 45 jours est courant. Le plus important n'est pas la valeur absolue mais l'écart avec votre délai de paiement contractuel : si votre DSO dépasse nettement le délai que vous accordez à vos clients, c'est le signe d'un problème de recouvrement à traiter.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle différence entre DSO et délai de paiement ?</AccordionTrigger>
+      <AccordionContent>
+        Le délai de paiement est ce que vous demandez contractuellement à vos clients sur vos factures, par exemple 30 jours. Le DSO est ce qui se passe réellement en moyenne, en tenant compte des retards et des relances. Un écart important entre les deux indique que vos clients ne respectent pas les conditions convenues.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment réduire rapidement son DSO ?</AccordionTrigger>
+      <AccordionContent>
+        Facturez immédiatement après chaque prestation, mettez en place des relances préventives avant l'échéance, proposez plusieurs moyens de paiement simples, demandez des acomptes sur les projets longs, et appliquez systématiquement les pénalités de retard prévues par la loi. Ces actions combinées produisent des résultats visibles en quelques mois.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le DSO est-il utile pour un auto-entrepreneur ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, même avec un petit volume de factures, suivre son DSO permet de détecter rapidement si un client type paie systématiquement en retard, et d'ajuster ses conditions de paiement ou d'exiger un acompte pour ce profil de client à l'avenir. C'est un indicateur simple à calculer, même manuellement, à partir de quelques factures par mois.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

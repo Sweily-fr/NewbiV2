@@ -1,0 +1,244 @@
+---
+title: 'Signature électronique de devis : valeur juridique et outils'
+description: >-
+  Un devis signé électroniquement a-t-il la même valeur qu'une signature
+  manuscrite ? Niveaux eIDAS, preuve, outils gratuits et intégration au
+  logiciel de devis.
+date: '2026-11-12'
+category: guide
+sector: null
+keyword: signature électronique devis
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-12'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Signature électronique de devis : valeur juridique et outils
+
+La **signature électronique d'un devis** intrigue encore de nombreux indépendants et dirigeants de TPE, qui se demandent si un simple clic engage réellement leur client au même titre qu'une signature manuscrite sur papier. La réponse est oui, à condition de respecter certaines règles, et cette solution accélère considérablement le passage du devis à la facture.
+
+Ce guide explique la valeur juridique de la signature électronique en droit français et européen, les différents niveaux de fiabilité définis par le règlement eIDAS, les moyens de preuve à conserver, ainsi que les outils disponibles pour intégrer la signature électronique à votre processus de devis.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## La signature électronique a-t-elle la même valeur que la signature manuscrite ?
+
+En droit français, l'article 1367 du Code civil pose le principe d'équivalence entre la signature électronique et la signature manuscrite, à condition qu'elle permette d'identifier son auteur et qu'elle garantisse le lien entre la signature et l'acte auquel elle se rattache. Ce principe est complété par le règlement européen eIDAS (règlement UE n° 910/2014), qui encadre les différents niveaux de signature électronique reconnus dans l'ensemble de l'Union européenne.
+
+Un devis signé électroniquement, dans les bonnes conditions, engage donc juridiquement le client exactement comme une signature manuscrite sur papier. Cette équivalence est essentielle pour sécuriser vos ventes : dès l'acceptation du devis, vous pouvez lancer la prestation, demander un acompte et vous appuyer sur ce document en cas de litige. Pour comprendre ce que signifie concrètement l'acceptation d'un devis, consultez notre article sur la [valeur juridique et l'engagement d'un devis signé](/blog/devis-signe-valeur-juridique-engagement).
+
+## Les trois niveaux de signature électronique selon eIDAS
+
+Le règlement eIDAS distingue trois niveaux de signature électronique, avec un degré de sécurité et de force probante croissant.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les trois niveaux de signature électronique selon eIDAS</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Niveau</TableHead>
+        <TableHead>Description</TableHead>
+        <TableHead>Usage recommandé</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Simple</TableCell>
+        <TableCell>Identification basique (case à cocher, clic, code reçu par e-mail)</TableCell>
+        <TableCell>Devis et contrats de faible enjeu financier</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Avancée</TableCell>
+        <TableCell>Identité du signataire vérifiée, signature liée de façon unique au document</TableCell>
+        <TableCell>Devis et contrats commerciaux courants</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Qualifiée</TableCell>
+        <TableCell>Certificat qualifié délivré par un prestataire agréé, dispositif de création sécurisé</TableCell>
+        <TableCell>Actes à forte valeur juridique ou montants élevés</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour la grande majorité des devis commerciaux d'un indépendant, d'un artisan ou d'une TPE, une signature électronique de niveau simple ou avancé suffit largement. Le niveau qualifié, plus contraignant et coûteux, est surtout réservé aux actes notariés ou aux contrats à très fort enjeu.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le niveau de signature n'est pas figé par la loi">
+    Aucun texte n'impose un niveau de signature électronique précis pour un devis commercial standard. Le choix du niveau dépend du risque associé à la transaction : plus le montant est élevé ou le litige potentiel important, plus il est prudent d'opter pour un niveau de signature avancé plutôt que simple.
+  </Callout>
+</div>
+
+## Ce qui fait la valeur de preuve d'une signature électronique
+
+En cas de litige, ce n'est pas la signature elle-même qui compte le plus, mais l'ensemble des éléments de preuve qui l'entourent. Un outil de signature électronique sérieux doit conserver :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>identité du signataire</strong> (adresse e-mail vérifiée, numéro de téléphone ou code de confirmation)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>horodatage précis</strong> de la signature (date et heure exactes)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>intégrité du document</strong> signé, garantissant qu'il n'a pas été modifié après signature</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>adresse IP</strong> et les informations techniques de connexion au moment de la signature</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>certificat de signature</strong> ou un journal de preuve (audit trail) archivable</span>
+  </div>
+</div>
+
+Ce dossier de preuve constitue l'élément déterminant si le client conteste un jour avoir accepté le devis. C'est pourquoi il est préférable d'utiliser un outil dédié plutôt qu'une simple signature scannée collée sur un PDF, qui n'apporte quasiment aucune garantie d'identification ni d'intégrité.
+
+## Cas pratique : un devis de travaux signé électroniquement
+
+Un artisan électricien envoie un devis de 4 800 euros TTC à un particulier pour la rénovation d'un tableau électrique. Le client reçoit le lien par e-mail, consulte le devis en ligne, coche une case d'acceptation et confirme avec un code reçu par SMS. Le document signé, horodaté, est automatiquement archivé avec la trace de la validation. Trois semaines plus tard, si le client tentait de contester avoir validé le devis, l'artisan dispose d'un dossier de preuve complet : adresse e-mail vérifiée, code de confirmation, horodatage et intégrité du fichier signé.
+
+Ce cas illustre l'intérêt direct de la signature électronique pour sécuriser des interventions engageant des montants significatifs, en particulier dans le bâtiment où les devis signés servent aussi de référence pour les éventuelles réserves ou litiges liés aux travaux.
+
+## Signature électronique et durée de validité du devis
+
+La signature électronique ne dispense pas de fixer une durée de validité claire sur le devis. Sans engagement daté du client, un devis reste une simple offre commerciale que vous pouvez retirer ou modifier à tout moment. Notre article sur la [durée de validité d'un devis](/blog/duree-validite-devis-regles) explique comment fixer et faire respecter cette date limite d'acceptation, un point souvent négligé alors qu'il conditionne directement la force juridique du document signé.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un devis expiré ne peut plus être accepté tel quel">
+    Si le client tente de signer électroniquement un devis après sa date de validité, l'acceptation n'a plus la même portée juridique automatique : les prix ou conditions peuvent avoir changé entre-temps. Il est recommandé de désactiver la possibilité de signature au-delà de la date de validité indiquée.
+  </Callout>
+</div>
+
+## Les outils disponibles pour signer un devis en ligne
+
+Plusieurs catégories d'outils permettent d'intégrer la signature électronique à un processus de devis :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Catégories d'outils de signature électronique</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Type d'outil</TableHead>
+        <TableHead>Caractéristiques</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Plateformes de signature dédiées</TableCell>
+        <TableCell>Solutions spécialisées, souvent payantes à l'usage, avec certificat qualifié disponible</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Signature intégrée au logiciel de devis</TableCell>
+        <TableCell>Signature directement dans le parcours devis, sans outil tiers à connecter</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Solutions gratuites basiques</TableCell>
+        <TableCell>Fonctionnalités limitées, dossier de preuve parfois sommaire</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour un devis commercial standard, l'option la plus efficace reste une signature intégrée directement au logiciel qui a généré le devis : le client accepte en un clic depuis le lien reçu, sans créer de compte sur une plateforme tierce, et le devis accepté se transforme immédiatement en base de travail pour la facturation.
+
+## Comment Newbi intègre la signature au parcours de devis
+
+Newbi permet de créer un devis professionnel et de l'envoyer directement au client avec un lien de consultation et d'acceptation en ligne. Le client peut accepter le devis depuis son ordinateur ou son mobile, sans logiciel à installer, et le document accepté reste horodaté et archivé dans votre espace. Cette intégration évite l'allongement du cycle de vente qui survient souvent lorsqu'il faut imprimer, signer à la main et renvoyer un devis par courrier ou scan.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer et faire signer mes devis</Link>
+  </Button>
+</div>
+
+## Conservation et archivage du devis signé
+
+L'article 1366 du Code civil précise qu'un écrit électronique a la même force probante qu'un écrit papier, à condition qu'il puisse être dûment identifié et conservé dans des conditions garantissant son intégrité. Cela signifie qu'un devis signé électroniquement doit être archivé de façon fiable, dans un format qui ne peut plus être modifié après signature, et rester accessible en cas de besoin.
+
+En pratique, il est recommandé de conserver le devis signé pendant la durée de la relation commerciale, puis au-delà pour couvrir les délais de prescription applicables aux litiges contractuels, qui peuvent atteindre cinq ans entre professionnels. Un devis mal archivé, par exemple perdu dans une boîte e-mail sans sauvegarde centralisée, perd une grande partie de son intérêt probatoire le jour où il en aurait le plus besoin.
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un archivage centralisé plutôt qu'éclaté">
+    Évitez de disperser vos devis signés entre plusieurs boîtes e-mail, dossiers personnels ou outils différents. Un espace centralisé, accessible à tout moment et partageable avec votre expert-comptable si besoin, facilite la gestion des litiges et des relances commerciales sur les devis en attente.
+  </Callout>
+</div>
+
+## Signature électronique et bon de commande
+
+Dans certains secteurs, le client final valide sa commande via un bon de commande plutôt que par la signature directe du devis, notamment lorsque plusieurs validations internes sont nécessaires côté client (achats, direction financière). Les deux documents n'ont pas exactement la même portée juridique : le devis engage sur la base d'une offre, tandis que le bon de commande formalise une décision d'achat, parfois après plusieurs allers-retours de négociation. Notre comparatif entre [devis, bon de commande et facture proforma](/blog/devis-bon-de-commande-proforma-differences) détaille ces différences et le moment où utiliser chaque document. Quel que soit le document utilisé, le principe de la signature électronique et de son dossier de preuve reste identique.
+
+## L'impact de la signature électronique sur votre taux de transformation
+
+Au-delà de la sécurité juridique, la signature électronique a un effet direct sur la vitesse de conclusion des ventes. Un client qui doit imprimer, signer à la main, scanner et renvoyer un devis met souvent plusieurs jours de plus à valider, avec un risque réel d'abandon en cours de route. Un devis signable en un clic depuis un e-mail ou un lien réduit ce délai à quelques minutes dans de nombreux cas.
+
+Ce gain de rapidité rejoint les leviers présentés dans notre article dédié à l'[amélioration du taux de conversion des devis](/blog/taux-de-conversion-devis-ameliorer), qui détaille d'autres facteurs comme la clarté de la présentation, la rapidité d'envoi après le premier contact ou la relance des devis sans réponse.
+
+## En résumé
+
+La signature électronique d'un devis a la même valeur juridique qu'une signature manuscrite, dès lors qu'elle permet d'identifier le signataire et garantit l'intégrité du document, conformément à l'article 1367 du Code civil et au règlement eIDAS. Pour la majorité des devis commerciaux, un niveau de signature simple ou avancé suffit, à condition que l'outil utilisé conserve un véritable dossier de preuve : identité, horodatage, intégrité du document et traçabilité de la validation. Au-delà de la sécurité juridique, la signature électronique accélère le cycle de vente en supprimant les allers-retours papier, ce qui améliore directement le taux de transformation de vos devis en factures.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la signature électronique de devis
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Une signature électronique simple est-elle valable pour un devis ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, pour la grande majorité des devis commerciaux, une signature électronique de niveau simple, comme un clic d'acceptation associé à une vérification par e-mail, suffit à engager juridiquement les deux parties. Un niveau plus élevé n'est utile que pour des transactions à enjeu financier important ou un risque de contestation élevé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Que se passe-t-il si le client conteste avoir signé le devis ?</AccordionTrigger>
+      <AccordionContent>
+        C'est le dossier de preuve associé à la signature qui permet de trancher : identité vérifiée, horodatage, adresse IP et intégrité du document signé. Si ces éléments sont correctement conservés par l'outil utilisé, la signature électronique fait foi au même titre qu'une signature manuscrite, sauf preuve contraire apportée par le client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Faut-il un certificat qualifié pour signer un devis ?</AccordionTrigger>
+      <AccordionContent>
+        Non, un certificat qualifié n'est pas obligatoire pour un devis commercial standard. Il est surtout recommandé pour des actes à très forte valeur juridique. Pour la plupart des indépendants, artisans et TPE, un niveau de signature simple ou avancé, correctement documenté, est amplement suffisant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>La signature électronique fonctionne-t-elle aussi pour les factures ?</AccordionTrigger>
+      <AccordionContent>
+        La signature électronique est surtout utilisée pour les devis et contrats, qui nécessitent un accord explicite du client avant exécution. Une facture, une fois émise, n'a pas besoin d'être signée pour être valable : elle doit en revanche respecter l'ensemble de ses mentions obligatoires et, à terme, transiter par une plateforme de dématérialisation partenaire dans le cadre de la facturation électronique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Peut-on signer électroniquement un devis depuis un smartphone ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est même l'un des principaux avantages de la signature électronique : le client reçoit un lien par e-mail ou SMS et peut consulter puis accepter le devis directement depuis son téléphone, sans imprimante ni scanner. Cette accessibilité réduit fortement le délai entre l'envoi du devis et son acceptation.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

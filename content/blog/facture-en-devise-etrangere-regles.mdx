@@ -1,0 +1,220 @@
+---
+title: 'Facturer en devise étrangère (USD, CHF, GBP) : règles et conversion'
+description: >-
+  Une facture peut être libellée en devise, mais la TVA doit apparaître en
+  euros. Taux de conversion à utiliser, mentions et comptabilisation des
+  écarts de change.
+date: '2026-09-29'
+category: guide
+sector: null
+keyword: facture en devise étrangère
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-29'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturer en devise étrangère (USD, CHF, GBP) : règles et conversion
+
+Emettre une **facture en devise étrangère** est parfaitement légal pour une entreprise française, que votre client soit basé aux Etats-Unis, en Suisse ou au Royaume-Uni. La règle centrale à retenir est simple à énoncer mais souvent mal appliquée : vous pouvez libeller le montant total dans la devise de votre choix, mais la TVA, lorsqu'elle est due, doit impérativement figurer en euros sur le document. Ce guide détaille les règles de conversion, les mentions à ajouter et le traitement comptable des écarts de change.
+
+Vous saurez comment choisir le taux de conversion applicable, quelles mentions ajouter à une facture en devise, comment traiter les écarts de change en comptabilité, et dans quels cas la TVA française s'applique réellement à une facture en monnaie étrangère.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Peut-on légalement facturer en devise étrangère ?
+
+Oui, une entreprise française peut émettre une facture libellée en dollars américains, en francs suisses, en livres sterling ou dans toute autre devise, sans autorisation particulière. Cette pratique est courante pour les entreprises qui [facturent des clients étrangers](/blog/facturer-client-etranger-ue-hors-ue), en dehors de la zone euro, afin de faciliter la lecture du montant pour leur client et d'éviter à ce dernier de gérer une conversion.
+
+La seule contrainte imposée par l'article 289 du Code général des impôts concerne la TVA lorsqu'elle est due sur l'opération : son montant doit obligatoirement être exprimé en euros sur la facture, même si le montant total de la prestation ou de la vente est libellé dans une autre devise. Cette règle garantit que l'administration fiscale française peut contrôler la TVA collectée sans avoir à effectuer elle-même une conversion.
+
+## Le taux de conversion à utiliser
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un seul taux de référence pour la conversion">
+    Le taux de change à utiliser pour convertir le montant de la TVA en euros est le dernier taux de change publié par la Banque centrale européenne, connu au moment où la taxe devient exigible. Il ne s'agit ni du taux du jour de paiement, ni d'un taux moyen sur la période, mais bien du taux applicable au fait générateur de la TVA.
+  </Callout>
+</div>
+
+Pour une prestation de services, la TVA devient généralement exigible à l'encaissement ou à la réalisation de la prestation selon le régime choisi. Pour une livraison de biens, c'est en principe la date de livraison qui fait foi. C'est cette date qui détermine le taux de change à retenir pour convertir en euros le montant de TVA à faire figurer sur la facture.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identifiez la <strong>date d'exigibilité de la TVA</strong> sur l'opération concernée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Récupérez le <strong>taux de change BCE</strong> publié pour cette date</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Convertissez <strong>uniquement le montant de TVA</strong> en euros, pas nécessairement le montant total</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquez le <strong>taux de change utilisé</strong> sur la facture, pour la traçabilité du calcul</span>
+  </div>
+</div>
+
+## Les mentions à ajouter sur une facture en devise
+
+Une facture en devise étrangère doit comporter l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique, avec des précisions supplémentaires propres à la conversion monétaire.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Mentions spécifiques d'une facture en devise étrangère</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Mention</TableHead>
+        <TableHead>Précision attendue</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Devise du montant total</TableCell>
+        <TableCell>Code ISO clairement indiqué (USD, CHF, GBP)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Montant de TVA en euros</TableCell>
+        <TableCell>Obligatoire dès lors qu'une TVA est due sur l'opération</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Taux de change appliqué</TableCell>
+        <TableCell>Taux BCE, avec la date de référence utilisée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Montant total HT en euros</TableCell>
+        <TableCell>Recommandé pour faciliter le rapprochement comptable, non obligatoire si aucune TVA n'est due</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Quand la TVA française s'applique-t-elle réellement ?
+
+Facturer en devise ne signifie pas systématiquement que la TVA française est due. Tout dépend de la localisation de l'opération au regard des règles de territorialité de la TVA.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="La devise ne détermine jamais le régime de TVA">
+    Ce n'est pas la monnaie utilisée sur la facture qui détermine si la TVA française s'applique, mais la nature de l'opération et le lieu où le client est établi. Une facture en euros à un client suisse peut être hors TVA française, tandis qu'une facture en dollars à un client français reste normalement soumise à la TVA française.
+  </Callout>
+</div>
+
+Pour une prestation de services à un professionnel établi hors de l'Union européenne, la TVA n'est en général pas due en France : c'est le principe de l'autoliquidation par le client, ou l'absence pure et simple de TVA selon la nature de la prestation. Dans ce cas, la facture doit tout de même mentionner le motif de l'exonération, mais elle n'a pas besoin de faire apparaître un montant de TVA en euros, puisqu'aucune TVA n'est due.
+
+## Exemple chiffré : une facture en dollars pour un client américain
+
+Une agence de développement web française facture une prestation de 12 000 USD à un client basé à New York. Le client est un professionnel, la prestation de services est réputée se situer au lieu d'établissement du preneur, donc hors du champ de la TVA française. La facture peut être établie ainsi :
+
+- Montant total : 12 000 USD HT
+- TVA : non applicable, article 259-1 du CGI (prestation de services entre professionnels, preneur établi hors UE)
+- Mention obligatoire : "TVA non applicable, article 259-1 du CGI"
+
+Dans cet exemple, aucune conversion en euros du montant de TVA n'est nécessaire, puisqu'aucune TVA n'est due sur cette opération. L'entreprise convertira cependant le montant en euros pour ses propres besoins comptables, au taux de change du jour de la facturation ou de l'encaissement selon sa méthode comptable.
+
+## Exemple chiffré : une facture en francs suisses avec TVA due
+
+A l'inverse, prenons un consultant français qui facture 8 000 CHF HT à une entreprise suisse pour une prestation exceptionnellement soumise à la TVA française (cas rare, mais possible selon la nature exacte de la prestation et les règles de territorialité applicables). Au taux de change BCE du jour de l'exigibilité, 1 CHF équivaut par exemple à 1,05 €.
+
+- Montant HT : 8 000 CHF, soit environ 8 400 €
+- TVA (20 %) : 1 680 €, montant obligatoirement indiqué en euros sur la facture
+- Montant TTC : 9 680 CHF (montant total resté en devise)
+
+Le professionnel indique alors clairement les deux valeurs : le montant global en francs suisses, et le montant de TVA converti en euros avec le taux et la date utilisés pour le calcul.
+
+## Le traitement comptable des écarts de change
+
+Lorsqu'une facture est émise en devise puis payée à une date ultérieure, le taux de change a souvent varié entre les deux dates. Cet écart doit être comptabilisé, en gain ou en perte de change, selon le sens de la variation.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Ecart de change : un compte dédié en comptabilité">
+    Un écart de change positif (le montant encaissé en euros est supérieur au montant facturé converti au jour de la facture) se comptabilise en produit financier. Un écart négatif se comptabilise en charge financière. Ces écritures sont distinctes de la TVA, qui reste figée au taux de change retenu au moment de l'exigibilité.
+  </Callout>
+</div>
+
+Concrètement, si la facture de 12 000 USD de l'exemple précédent est émise quand 1 USD vaut 0,92 € (soit 11 040 €), puis encaissée un mois plus tard quand 1 USD vaut 0,95 € (soit 11 400 €), l'entreprise enregistre un gain de change de 360 € au moment de l'encaissement. Ce mécanisme concerne uniquement la comptabilisation interne : il n'a pas d'incidence sur le montant facturé initialement au client, ni sur la TVA déjà déclarée le cas échéant. Lorsque de la TVA française reste due sur une opération en devise, son montant en euros doit être reporté dans votre [déclaration de TVA (CA3 ou CA12)](/blog/declaration-tva-ca3-ca12-guide) au titre de la période d'exigibilité, indépendamment de l'écart de change constaté ultérieurement.
+
+## Facturer en devise à un client de l'Union européenne
+
+La question se pose différemment lorsque votre client, bien qu'établi dans un pays utilisant une autre devise que l'euro comme la Suède, la Pologne ou la Hongrie, reste situé dans l'Union européenne. Les règles de TVA intracommunautaire s'appliquent alors normalement : pour une prestation de services entre professionnels assujettis, c'est en général le mécanisme de l'autoliquidation qui joue, avec une facture mentionnant le numéro de TVA intracommunautaire du client et l'absence de TVA française. Vous pouvez tout de même libeller le montant en couronne suédoise ou en zloty polonais si cela facilite la lecture pour votre client, tout en respectant les mêmes règles de conversion si un montant de TVA doit malgré tout apparaître en euros dans certains cas particuliers, par exemple lorsque le client est un particulier non assujetti.
+
+Cette distinction entre clients professionnels et particuliers, et entre pays de l'Union européenne et pays tiers, reste déterminante pour savoir quelle mention de TVA faire figurer sur votre facture en devise, indépendamment de la monnaie choisie pour l'affichage du montant total.
+
+## Facturer en devise avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Des factures multi-devises sans calcul manuel">
+    Newbi vous permet d'établir vos [factures](/produits/factures) dans la devise de votre choix pour vos clients internationaux, tout en respectant les mentions requises pour la partie française de l'opération. Vous conservez une vision claire de vos créances en devise, sans jongler avec des tableurs de conversion.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes clients internationaux</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Facturer en devise étrangère est autorisé sans démarche particulière, à condition de respecter une règle centrale : la TVA, lorsqu'elle est due, doit toujours être exprimée en euros sur la facture, convertie au taux de change de la Banque centrale européenne applicable à la date d'exigibilité de la taxe. La territorialité de l'opération, et non la devise choisie, détermine si la TVA française s'applique. Les écarts de change constatés entre la date de facturation et la date d'encaissement se comptabilisent séparément, en produit ou en charge financière, sans jamais modifier le montant de TVA déjà déterminé. Une bonne organisation de ces conversions évite les erreurs de déclaration et facilite le suivi de votre trésorerie en devise.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture en devise étrangère
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Peut-on établir une facture entièrement en dollars sans montant en euros ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si aucune TVA n'est due sur l'opération, par exemple pour une prestation de services à un client professionnel établi hors de l'Union européenne. Dans ce cas, aucun montant en euros n'est obligatoire sur la facture, seule la mention du régime de TVA applicable est requise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel taux de change utiliser pour convertir la TVA en euros ?</AccordionTrigger>
+      <AccordionContent>
+        Il s'agit du dernier taux de change publié par la Banque centrale européenne, connu à la date à laquelle la TVA devient exigible sur l'opération. Ce taux doit être indiqué sur la facture pour assurer la traçabilité du calcul en cas de contrôle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment comptabiliser un écart de change sur une facture en devise ?</AccordionTrigger>
+      <AccordionContent>
+        L'écart entre le montant facturé converti au taux du jour de la facture et le montant réellement encaissé au taux du jour du paiement se comptabilise en gain ou en perte de change, selon le sens de la variation. Cet écart n'a pas d'impact sur le montant de TVA déjà déterminé lors de la facturation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Une facture en livres sterling doit-elle mentionner la TVA anglaise ou française ?</AccordionTrigger>
+      <AccordionContent>
+        Ni l'une ni l'autre par défaut : ce qui détermine le régime de TVA applicable est la localisation de l'opération selon les règles de territorialité, pas la devise choisie. Une prestation de services à un client britannique professionnel est généralement hors du champ de la TVA française, avec une mention spécifique sur la facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il un compte bancaire en devise pour facturer en dollars ou en francs suisses ?</AccordionTrigger>
+      <AccordionContent>
+        Ce n'est pas une obligation légale liée à la facturation, mais un choix pratique. Vous pouvez tout à fait facturer en devise étrangère tout en demandant un règlement converti en euros au moment du paiement, ou disposer d'un compte en devise pour limiter les frais de conversion répétés.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

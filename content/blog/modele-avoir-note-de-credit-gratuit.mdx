@@ -1,0 +1,259 @@
+---
+title: 'Modèle d''avoir (note de crédit) gratuit : exemple et mentions'
+description: >-
+  Modèle d'avoir à télécharger avec la référence de la facture d'origine, la
+  TVA et la numérotation dédiée. Exemple rempli pour un remboursement
+  partiel.
+date: '2026-09-28'
+category: modele
+sector: null
+keyword: modèle avoir
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-28'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Modèle d'avoir (note de crédit) gratuit : exemple et mentions
+
+Un **modèle d'avoir** bien construit vous évite de perdre du temps chaque fois qu'un remboursement, une erreur de facturation ou une remise commerciale doit être formalisé. L'avoir, aussi appelé note de crédit, est un document comptable à part entière : il doit respecter des mentions précises et une numérotation propre, faute de quoi il peut être remis en cause lors d'un contrôle fiscal. Ce guide vous propose une trame complète, un exemple chiffré et les erreurs à éviter.
+
+Vous y trouverez la structure exacte d'un avoir conforme, un tableau des mentions obligatoires, un exemple rempli pour un remboursement partiel, et les réponses aux questions les plus posées sur ce document.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon premier avoir gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce qu'un avoir et quand faut-il en émettre un ?
+
+Un [avoir](/blog/quest-ce-que-avoir-credit) est un document comptable qui annule ou réduit tout ou partie du montant d'une facture déjà émise. Il matérialise une créance du client envers le fournisseur, à l'inverse d'une facture classique. Il est nécessaire d'émettre un avoir dans plusieurs situations courantes : une erreur de tarif ou de quantité découverte après l'envoi de la facture, une remise commerciale accordée a posteriori, un retour de marchandise, ou une prestation partiellement non réalisée.
+
+L'avoir n'est jamais un document facultatif dès lors qu'une facture doit être corrigée à la baisse : selon l'article 289 du Code général des impôts, toute modification du montant facturé doit donner lieu à un document rectificatif traçable, qui référence explicitement la facture d'origine. Un simple mail d'excuse ou un virement de remboursement sans document associé ne suffit pas à justifier l'opération devant l'administration fiscale.
+
+## Les mentions obligatoires d'un modèle d'avoir
+
+Un avoir reprend une grande partie des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique, avec quelques ajouts spécifiques liés à son rôle rectificatif.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention explicite <strong>"Avoir"</strong> ou <strong>"Note de crédit"</strong> en en-tête du document</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>numéro unique</strong>, dans une séquence de numérotation dédiée et continue</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date d'émission</strong> de l'avoir</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence exacte de la facture d'origine</strong> (numéro et date)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>coordonnées complètes</strong> du prestataire et du client, SIRET compris</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>motif de l'avoir</strong> (erreur, remise, retour, annulation partielle)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant HT, le taux et le montant de TVA, et le montant TTC</strong>, présentés en négatif ou clairement identifiés comme un crédit</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>modalités de règlement</strong> du crédit : remboursement, déduction sur une prochaine facture, ou avoir utilisable sur un compte client</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La numérotation ne doit jamais interrompre celle des factures">
+    L'avoir doit suivre sa propre séquence chronologique et continue, distincte ou clairement identifiable dans votre numérotation globale (par exemple un préfixe "AV-"). Il ne doit jamais réutiliser ni annuler le numéro de la facture d'origine, qui doit rester intacte dans votre comptabilité.
+  </Callout>
+</div>
+
+## Structure du modèle d'avoir : les blocs indispensables
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Structure d'un modèle d'avoir conforme</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Bloc</TableHead>
+        <TableHead>Contenu</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">En-tête</TableCell>
+        <TableCell>Logo ou raison sociale, mention "Avoir", numéro, date d'émission</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Parties</TableCell>
+        <TableCell>Identité et SIRET du prestataire, identité et adresse du client</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Référence</TableCell>
+        <TableCell>Numéro et date de la facture d'origine concernée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Détail</TableCell>
+        <TableCell>Ligne(s) créditées avec libellé, quantité, montant unitaire, motif</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Totaux</TableCell>
+        <TableCell>Montant HT crédité, TVA correspondante, montant TTC crédité</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Modalités</TableCell>
+        <TableCell>Remboursement, imputation sur facture future ou solde créditeur</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Exemple rempli : avoir pour un remboursement partiel
+
+Voici un exemple concret pour visualiser un avoir correctement rédigé.
+
+**Contexte** : l'agence Studio Pixel a facturé à son client Boutique Verte SARL une prestation de refonte de site web pour 4 200 € HT (facture n° F-2026-0187 du 3 septembre 2026). Après livraison, le client signale qu'une fonctionnalité prévue au devis n'a pas été développée. Les deux parties s'accordent sur une réduction de 600 € HT.
+
+**Avoir n° AV-2026-0042, émis le 20 septembre 2026**
+
+- Référence facture d'origine : F-2026-0187 du 3 septembre 2026
+- Motif : fonctionnalité non livrée, réduction accordée
+- Montant HT crédité : 600,00 €
+- TVA (20 %) : 120,00 €
+- Montant TTC crédité : 720,00 €
+- Modalité : déduction sur la prochaine facture émise à Boutique Verte SARL
+
+Ce document permet à Studio Pixel de régulariser sa TVA collectée (120 € en moins à reverser) et donne à Boutique Verte SARL une pièce justificative claire pour sa propre comptabilité.
+
+## Avoir total ou avoir partiel : quelle différence sur le modèle ?
+
+Le modèle d'avoir reste le même dans sa structure, mais le contenu diffère selon que vous annulez l'intégralité ou seulement une partie de la facture d'origine.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Avoir total : reprenez chaque ligne de la facture">
+    En cas d'annulation complète, l'avoir doit reprendre l'ensemble des lignes de la facture initiale, avec les mêmes montants, pour un crédit égal au montant total TTC facturé. C'est le cas typique lorsqu'une prestation est finalement annulée après facturation, ou lorsqu'une facture a été émise par erreur au mauvais client.
+  </Callout>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Avoir partiel : détaillez la ligne concernée">
+    Pour un avoir partiel, ne créditez que la ligne ou le montant réellement concerné. Indiquez précisément le motif pour que le lien avec la facture d'origine soit incontestable en cas de contrôle : remise commerciale négociée, retour d'une partie de la commande, ou correction d'une erreur de quantité.
+  </Callout>
+</div>
+
+## Avoir et TVA : ce qu'il faut vérifier
+
+L'avoir entraîne une régularisation de la TVA collectée par le fournisseur, et de la TVA déductible côté client si celui-ci est assujetti. Le taux de TVA appliqué sur l'avoir doit être identique à celui appliqué sur la facture d'origine, même si le taux légal a changé entretemps. Si votre entreprise relève de la franchise en base de TVA (seuils 2026 : 37 500 € pour les prestations de services, 85 000 € pour les ventes), votre avoir ne mentionne pas de TVA, comme votre facture d'origine.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne changez jamais le taux de TVA sur un avoir">
+    Même si un taux de TVA a évolué entre la date de la facture d'origine et celle de l'avoir, vous devez appliquer le taux qui figurait sur la facture initiale, pour que la régularisation soit cohérente avec la déclaration déjà effectuée.
+  </Callout>
+</div>
+
+## Combien de temps conserver un modèle d'avoir ?
+
+Comme toute pièce comptable, l'avoir doit être conservé pendant les mêmes durées légales qu'une facture : 10 ans au titre du Code de commerce, et 6 ans au titre du Livre des procédures fiscales pour les documents justifiant vos déclarations. Cette conservation doit permettre, à tout moment, de retrouver le lien entre l'avoir et la facture d'origine qu'il corrige. En pratique, un archivage numérique organisé par client et par facture facilite grandement cette traçabilité, en particulier lorsqu'un même client fait l'objet de plusieurs avoirs successifs sur des périodes différentes.
+
+## Les erreurs les plus fréquentes sur un avoir
+
+Certaines erreurs reviennent régulièrement dans les avoirs rédigés à la main ou à partir d'un modèle générique mal adapté :
+
+- **Oublier la référence à la facture d'origine**, ce qui rend l'avoir inutilisable en cas de contrôle fiscal.
+- **Indiquer un montant positif** au lieu d'un montant clairement identifié comme un crédit, ce qui prête à confusion pour le client comme pour votre propre comptabilité.
+- **Modifier le taux de TVA** par rapport à celui appliqué sur la facture initiale, alors qu'il doit rester identique.
+- **Ne pas préciser le motif** de l'avoir, ce qui complique la justification de l'opération plusieurs mois ou années après son émission.
+- **Réutiliser un numéro de facture existant** au lieu de créer un numéro dédié dans une séquence propre aux avoirs.
+
+Un modèle structuré, réutilisé systématiquement, permet d'éviter ces oublis, surtout lorsque l'avoir est émis dans l'urgence pour répondre rapidement à une réclamation client.
+
+## Que faire si la facture d'origine a déjà été transmise en facturation électronique ?
+
+Depuis la généralisation de la facturation électronique, un avoir constitue une facture rectificative à part entière : il doit être transmis via votre plateforme de dématérialisation partenaire, au même titre qu'une facture classique, et référencer explicitement la facture d'origine par son identifiant. Cette exigence s'applique progressivement selon votre statut : réception obligatoire pour toutes les entreprises depuis le 1er septembre 2026, émission obligatoire pour les grandes entreprises et ETI à la même date, puis pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+
+Si vous devez annuler une facture déjà transmise sur ce circuit plutôt que la corriger partiellement, la démarche est légèrement différente : consultez notre guide sur comment [annuler une facture déjà émise](/blog/annuler-une-facture-deja-emise) pour connaître la procédure adaptée à chaque situation.
+
+## Créer un avoir conforme avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un avoir généré directement depuis votre facture">
+    Avec Newbi, l'avoir se crée à partir de la facture d'origine : la référence, les coordonnées client et le taux de TVA sont repris automatiquement. Vous ajustez uniquement le montant crédité et le motif, ce qui limite le risque d'erreur et garantit une numérotation dédiée et continue.
+  </Callout>
+</div>
+
+Newbi gère l'ensemble du cycle de vos [factures](/produits/factures), avoirs compris, avec un archivage conforme et un suivi de chaque document rectificatif lié à sa facture d'origine.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes avoirs avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Le modèle d'avoir doit reprendre les mentions obligatoires d'une facture classique, tout en ajoutant systématiquement la référence exacte de la facture d'origine et le motif de la correction. Une numérotation dédiée et continue, un taux de TVA identique à celui de la facture initiale et des modalités de règlement claires (remboursement ou déduction sur une prochaine facture) suffisent à sécuriser ce document, qu'il s'agisse d'un avoir total ou partiel. Avec la généralisation de la facturation électronique, l'avoir doit désormais transiter comme n'importe quelle facture rectificative sur votre plateforme partenaire, ce qui renforce l'intérêt d'un outil qui génère ce document automatiquement à partir de la facture concernée.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le modèle d'avoir
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un avoir doit-il obligatoirement référencer la facture d'origine ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est une mention indispensable. L'avoir doit indiquer clairement le numéro et la date de la facture qu'il corrige, faute de quoi le lien entre les deux documents ne peut pas être établi lors d'un contrôle. Sans cette référence, l'avoir risque d'être requalifié en document non probant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on utiliser la même numérotation pour les factures et les avoirs ?</AccordionTrigger>
+      <AccordionContent>
+        Il est recommandé d'utiliser une séquence de numérotation dédiée aux avoirs, distincte de celle des factures, par exemple avec un préfixe spécifique. L'important est que cette séquence reste chronologique et sans rupture, comme l'exige la réglementation applicable à tout document de facturation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle est la différence entre un avoir et une facture rectificative ?</AccordionTrigger>
+      <AccordionContent>
+        Dans la pratique, l'avoir est la forme la plus courante de facture rectificative lorsqu'il s'agit de créditer un montant. Le terme facture rectificative est plus large et couvre aussi des corrections qui ne réduisent pas le montant, par exemple la correction d'une adresse ou d'un SIRET erroné.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment un client utilise-t-il un avoir reçu ?</AccordionTrigger>
+      <AccordionContent>
+        Le client peut demander le remboursement du montant crédité, l'imputer sur le règlement d'une prochaine facture du même fournisseur, ou le conserver comme solde créditeur sur son compte fournisseur. Les modalités doivent être précisées sur l'avoir ou convenues entre les deux parties.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Un avoir a-t-il un impact sur ma déclaration de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Le montant de TVA figurant sur l'avoir vient réduire la TVA collectée que vous avez déclarée sur la facture d'origine, au titre de la période durant laquelle vous émettez l'avoir. Côté client assujetti, cela réduit symétriquement sa TVA déductible.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,249 @@
+---
+title: "Modèle de facture d'acompte gratuit : exemple et règles de TVA"
+description: >-
+  Modèle de facture d'acompte à télécharger, avec l'exemple du solde qui
+  déduit l'acompte. Règles de TVA sur les acomptes et numérotation.
+date: '2026-09-21'
+category: modele
+sector: null
+keyword: modèle facture acompte
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-21'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Modèle de facture d'acompte gratuit : exemple et règles de TVA
+
+Trouver un **modèle de facture d'acompte** fiable évite bien des erreurs : mention manquante, TVA mal calculée, numérotation incohérente avec la facture de solde. Un acompte encaissé doit obligatoirement donner lieu à une facture, conforme aux mêmes règles qu'une facture classique, avec quelques particularités propres à ce document intermédiaire.
+
+Ce guide vous donne la structure complète d'un modèle de facture d'acompte, un exemple chiffré détaillé du calcul du solde, et les règles de TVA à respecter selon que vous vendez des prestations de services ou des biens.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer ma facture d'acompte gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi utiliser un modèle de facture d'acompte
+
+Un acompte n'est jamais une simple ligne ajoutée à un devis : c'est un document comptable et fiscal à part entière. L'article 289 du Code général des impôts impose l'émission d'une facture dès l'encaissement d'une somme, y compris lorsqu'il ne s'agit que d'un pourcentage du montant total. Partir d'un modèle structuré vous garantit de ne pas oublier de mention et de respecter la chronologie de numérotation exigée entre la facture d'acompte et la facture de solde.
+
+Utiliser un modèle standardisé est particulièrement utile lorsque vous démarrez une activité ou que vous facturez encore sur un tableur. C'est aussi l'occasion de revoir la structure de votre [devis professionnel](/blog/comment-faire-devis-professionnel), puisque c'est souvent lui qui fixe le pourcentage d'acompte demandé avant le début de la prestation.
+
+## Les mentions obligatoires du modèle
+
+Une facture d'acompte reprend les mêmes [mentions obligatoires qu'une facture classique](/blog/mentions-obligatoires-facture), avec quelques ajouts spécifiques liés à sa nature de document intermédiaire.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention explicite <strong>"Facture d'acompte"</strong> en haut du document</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>numéro de facture</strong> unique, dans la même séquence que vos autres factures</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date d'émission</strong> et la date d'encaissement de l'acompte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'identité complète de l'émetteur et du client (raison sociale, adresse, SIRET)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence au devis</strong> ou au bon de commande d'origine</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant total</strong> de la prestation, le pourcentage ou montant de l'acompte, en HT et en TTC</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>taux et le montant de la TVA</strong> applicable à l'acompte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>description</strong> précise de la prestation ou du bien concerné</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un acompte n'est pas une avance libre">
+    Rappelez toujours sur le document que la somme versée est un [acompte](/blog/quest-ce-que-acompte-facture), et non des arrhes. La différence est fondamentale : l'acompte engage fermement les deux parties, tandis que les arrhes autorisent une rétractation. En l'absence de mention explicite, le droit de la consommation présume qu'il s'agit d'arrhes.
+  </Callout>
+</div>
+
+## Structure du modèle : en-tête, corps, pied de page
+
+Un modèle de facture d'acompte bien construit s'organise en trois blocs.
+
+### En-tête
+
+L'en-tête regroupe l'identité de votre entreprise (nom, forme juridique, SIRET, adresse), les coordonnées du client, le numéro et la date de la facture, ainsi que la mention "Facture d'acompte" affichée de façon visible pour éviter toute confusion avec une facture de solde.
+
+### Corps du document
+
+Le corps détaille le montant total de la prestation ou de la commande, le pourcentage ou le montant fixe de l'acompte demandé, le montant HT, le taux de TVA applicable, le montant de TVA et le montant TTC réellement encaissé.
+
+### Pied de page
+
+Le pied de page rappelle les conditions de règlement du solde, le [délai de paiement](/blog/quest-ce-que-delai-paiement-facture) attendu, vos coordonnées bancaires si le paiement se fait par virement, et vos mentions légales habituelles (assurance professionnelle, conditions générales de vente le cas échéant).
+
+## Exemple chiffré : du devis à la facture de solde
+
+Prenons l'exemple d'un artisan qui réalise une prestation de rénovation facturée 8 000 € HT, avec une TVA à 20 %, soit 9 600 € TTC. Le client verse un acompte de 30 % à la signature du devis. Pour des chantiers plus longs, ce schéma en deux temps se prolonge parfois en plusieurs étapes de facturation à l'avancement, comme le décrit notre article sur la [facture de situation dans le BTP](/blog/facture-situation-travaux-btp).
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de calcul entre facture d'acompte et facture de solde</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Étape</TableHead>
+        <TableHead>Montant HT</TableHead>
+        <TableHead>TVA (20 %)</TableHead>
+        <TableHead>Montant TTC</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Montant total du devis</TableCell>
+        <TableCell>8 000 €</TableCell>
+        <TableCell>1 600 €</TableCell>
+        <TableCell>9 600 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture d'acompte (30 %)</TableCell>
+        <TableCell>2 400 €</TableCell>
+        <TableCell>480 €</TableCell>
+        <TableCell>2 880 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture de solde</TableCell>
+        <TableCell>5 600 €</TableCell>
+        <TableCell>1 120 €</TableCell>
+        <TableCell>6 720 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+La facture de solde doit obligatoirement mentionner le numéro de la facture d'acompte n° FA-2026-014 émise précédemment, et afficher clairement le calcul : montant total de 9 600 € TTC, moins l'acompte déjà réglé de 2 880 € TTC, soit un solde restant dû de 6 720 € TTC.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne réémettez jamais la TVA de l'acompte sur le solde">
+    La TVA de 480 € déjà déclarée au titre de l'acompte ne doit pas être comptée une seconde fois sur la facture de solde. Seule la TVA sur le montant restant, ici 1 120 €, doit être collectée à cette étape. Une erreur fréquente consiste à recalculer la TVA sur le montant total sans déduire ce qui a déjà été déclaré.
+  </Callout>
+</div>
+
+## Les règles de TVA à respecter sur l'acompte
+
+Les règles de TVA diffèrent selon la nature de l'opération. Pour les **prestations de services**, la TVA est exigible dès l'encaissement de l'acompte : vous devez la déclarer au titre de la période durant laquelle vous avez perçu la somme, même si la prestation n'a pas encore commencé. Pour les **livraisons de biens**, depuis le 1er janvier 2023, la TVA est également exigible dès l'encaissement de l'acompte, et non plus seulement au moment de la livraison comme c'était le cas auparavant.
+
+Ce point est essentiel pour votre trésorerie : si vous facturez un acompte de 2 400 € HT en avril, la TVA correspondante de 480 € doit figurer dans votre déclaration de TVA du mois d'avril, et non dans celle du mois où la prestation sera achevée.
+
+## Facture d'acompte et facturation électronique
+
+À partir du déploiement complet de la réforme, les factures d'acompte suivent les mêmes règles que les autres factures dans le cadre de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026). Elles doivent respecter les formats du socle, Factur-X, UBL ou CII, et transiter par une plateforme de dématérialisation partenaire immatriculée. La numérotation doit rester cohérente entre la facture d'acompte, les éventuelles factures d'acompte complémentaires et la facture de solde, pour permettre à l'administration de reconstituer l'intégralité de la transaction.
+
+## Plusieurs acomptes échelonnés : comment les enchaîner
+
+Pour les projets de grande envergure, un seul acompte ne suffit pas toujours à sécuriser la trésorerie du prestataire. Il est courant de prévoir deux ou trois acomptes échelonnés, par exemple 30 % à la signature, 30 % à mi-parcours, puis le solde à la livraison. Dans ce cas, chaque acompte fait l'objet d'une facture d'acompte distincte, avec son propre numéro dans la séquence continue, et chacune doit être référencée sur la facture de solde finale.
+
+Reprenons l'exemple précédent avec deux acomptes de 30 % chacun au lieu d'un seul. Le premier acompte de 2 400 € HT est facturé à la signature. Le second acompte, du même montant, est facturé au démarrage des travaux. La facture de solde finale s'élève alors à 3 200 € HT, soit 3 840 € TTC, et doit mentionner les deux factures d'acompte précédentes pour que le client puisse vérifier le calcul du montant restant dû. Cette pratique répartit le risque financier tout au long du projet, plutôt que de le concentrer sur un seul versement initial.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Formalisez le nombre d'acomptes dès le devis">
+    Indiquez dès le devis le nombre d'acomptes prévus, leur pourcentage respectif et leur déclencheur (signature, livraison partielle, avancement du chantier). Cela évite toute contestation ultérieure sur le calendrier de paiement et facilite la génération automatique des factures d'acompte successives.
+  </Callout>
+</div>
+
+## Numérotation : la règle à ne jamais enfreindre
+
+La facture d'acompte et la facture de solde doivent obligatoirement s'inscrire dans la même séquence de numérotation continue que vos autres factures. Vous ne pouvez pas créer une numérotation séparée réservée aux acomptes : ce serait contraire à l'exigence de chronologie et de continuité des numéros de facture. Consultez notre article sur le [numéro de facture](/blog/quest-ce-que-numero-facture) pour éviter les erreurs les plus fréquentes sur ce point.
+
+## Générer vos factures d'acompte avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Du devis signé à la facture d'acompte en un clic">
+    Newbi transforme automatiquement votre devis accepté en facture d'acompte conforme, avec calcul automatique de la TVA et numérotation séquentielle respectée. La facture de solde déduit ensuite l'acompte déjà réglé, sans ressaisie manuelle.
+  </Callout>
+</div>
+
+Utiliser un modèle figé, sur un tableur ou un document Word, expose à des oublis de mention et à des erreurs de calcul de TVA, surtout lorsque plusieurs acomptes sont échelonnés sur un même projet. Un outil qui automatise le passage du devis à la facture d'acompte, puis de l'acompte au solde, réduit fortement ce risque.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Générer mes factures d'acompte</Link>
+  </Button>
+</div>
+
+## Bonnes pratiques avant de télécharger votre modèle
+
+1. Vérifiez que votre modèle affiche clairement la mention "Facture d'acompte" pour ne pas la confondre avec une facture finale.
+2. Assurez-vous que le pourcentage ou le montant de l'acompte figure noir sur blanc dans le devis signé.
+3. Calculez la TVA sur le seul montant de l'acompte encaissé, jamais sur le montant total du projet.
+4. Conservez vos factures d'acompte et de solde pendant 10 ans, conformément au Code de commerce.
+5. Vérifiez la cohérence de la numérotation entre acompte et solde avant chaque envoi.
+
+## En résumé
+
+Un modèle de facture d'acompte fiable doit comporter la mention explicite "Facture d'acompte", un numéro de facture inscrit dans votre séquence continue, la référence au devis d'origine, et le détail HT, TVA et TTC de la somme encaissée. La TVA est exigible dès l'encaissement, pour les services comme pour les biens depuis 2023, ce qui impose une déclaration immédiate. La facture de solde reprend ensuite le montant total, déduit les acomptes déjà versés et affiche le solde restant dû. Utiliser un modèle standardisé, ou mieux, un outil qui automatise ce calcul, évite les erreurs de TVA et les incohérences de numérotation entre les deux documents.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le modèle de facture d'acompte
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelles sont les mentions obligatoires d'une facture d'acompte ?</AccordionTrigger>
+      <AccordionContent>
+        La facture d'acompte doit comporter la mention "Facture d'acompte", un numéro unique dans votre séquence de numérotation, la date d'émission, l'identité complète de l'émetteur et du client, la référence au devis, le montant HT et TTC de l'acompte et le taux de TVA applicable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Comment calculer la facture de solde après un acompte ?</AccordionTrigger>
+      <AccordionContent>
+        La facture de solde reprend le montant total de la prestation, mentionne la référence de la facture d'acompte déjà émise, et déduit le montant TTC de cet acompte pour afficher le solde restant dû. La TVA déjà déclarée sur l'acompte ne doit jamais être recalculée une seconde fois sur le solde.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quand faut-il déclarer la TVA sur un acompte ?</AccordionTrigger>
+      <AccordionContent>
+        Pour les prestations de services, la TVA est exigible dès l'encaissement de l'acompte et doit être déclarée au titre de cette période. Pour les livraisons de biens, la règle est identique depuis le 1er janvier 2023 : la TVA est exigible dès l'encaissement, et non plus seulement à la livraison.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on utiliser un modèle Word ou Excel pour une facture d'acompte ?</AccordionTrigger>
+      <AccordionContent>
+        Techniquement oui, tant que le document comporte toutes les mentions obligatoires. Mais ce format manuel augmente le risque d'erreur sur le calcul de la TVA et sur la cohérence de numérotation avec la facture de solde. Un logiciel de facturation limite ces risques en automatisant les calculs.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>La facture d'acompte doit-elle suivre la même numérotation que les autres factures ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, la facture d'acompte s'inscrit obligatoirement dans la même séquence de numérotation continue et chronologique que l'ensemble de vos factures. Il n'est pas possible de créer une numérotation séparée réservée aux acomptes.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

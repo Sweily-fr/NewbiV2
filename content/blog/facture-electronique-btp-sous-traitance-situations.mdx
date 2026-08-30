@@ -1,0 +1,245 @@
+---
+title: 'Facturation électronique dans le BTP : sous-traitance, situations et retenues'
+description: >-
+  Factures de situation, autoliquidation en sous-traitance, retenue de
+  garantie : comment ces spécificités du bâtiment se traduisent dans la
+  facture électronique.
+date: '2026-10-05'
+category: guide
+sector: BTP / Artisans
+keyword: facturation électronique btp
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-05'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">BTP / Artisans</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturation électronique dans le BTP : sous-traitance, situations et retenues
+
+La **facturation électronique dans le BTP** doit respecter le même socle réglementaire que les autres secteurs, mais le bâtiment cumule des pratiques qui compliquent sa mise en œuvre : facturation par situations d'avancement, sous-traitance en cascade avec autoliquidation de la TVA, retenue de garantie sur chaque situation. Ces trois spécificités ne disparaissent pas avec la réforme, elles doivent simplement se traduire correctement dans une facture électronique structurée.
+
+Ce guide explique comment la facture de situation, l'autoliquidation en sous-traitance et la retenue de garantie s'intègrent dans les formats du socle commun (Factur-X, UBL, CII), avec des exemples chiffrés pour un chantier type. Vous verrez aussi les mentions à ne jamais oublier et la manière dont un logiciel de facturation adapté au BTP absorbe cette complexité sans multiplier les manipulations.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Le calendrier de la facturation électronique s'applique aussi au BTP
+
+Aucune dérogation sectorielle n'existe pour le bâtiment. Le calendrier fixé par l'ordonnance sur la facturation électronique s'applique à l'identique aux artisans, entreprises générales et maîtres d'œuvre.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Calendrier de la facturation électronique obligatoire dans le BTP</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Taille d'entreprise</TableHead>
+        <TableHead>Réception obligatoire</TableHead>
+        <TableHead>Émission obligatoire</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Toutes les entreprises du BTP</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>-</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Grandes entreprises et ETI du bâtiment</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">PME et TPE du bâtiment</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2027</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Artisans et micro-entreprises du BTP</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2027</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Concrètement, un artisan plaquiste en micro-entreprise devra pouvoir **recevoir** des factures électroniques dès le 1er septembre 2026, même s'il n'émettra les siennes au format électronique qu'à partir du 1er septembre 2027. Une entreprise générale de construction classée ETI, elle, devra émettre au format électronique dès septembre 2026, y compris vers ses sous-traitants. Ce guide sur [la facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026) détaille le calendrier complet et les sanctions applicables en cas de retard.
+
+## La facture de situation face à la structuration des données électroniques
+
+Sur un chantier, la facturation ne se fait presque jamais en une seule fois. Elle suit l'avancement des travaux via des **factures de situation** : situation n° 1 à 20 % d'avancement, situation n° 2 à 45 %, et ainsi de suite jusqu'au décompte général définitif. Chaque situation reprend le montant total du marché, l'avancement cumulé, les situations déjà facturées et le montant restant à facturer.
+
+Dans une facture électronique structurée (Factur-X, UBL ou CII), cette logique se traduit par des champs spécifiques : référence au marché ou au devis initial, période de facturation, et surtout un lien explicite avec les situations précédentes pour permettre à la plateforme de dématérialisation partenaire (PDP) de reconstituer l'historique du chantier. Le format Factur-X est particulièrement adapté ici car il combine un PDF lisible par le client (souvent un maître d'ouvrage peu familier des flux XML purs) et des données structurées exploitables par les systèmes comptables. Le fonctionnement détaillé de ce type de document est décrit dans notre [guide de la facture de situation de travaux BTP](/blog/facture-situation-travaux-btp).
+
+### Exemple chiffré : chantier de rénovation à 120 000 € HT
+
+Un artisan général intervient sur un chantier dont le marché total s'élève à 120 000 € HT. La troisième situation correspond à un avancement de 30 % :
+
+- Montant de la situation n° 3 : 36 000 € HT
+- TVA à 20 % : 7 200 €
+- Montant TTC de la situation : 43 200 €
+- Cumul déjà facturé (situations 1 et 2) : 48 000 € HT
+
+Chacune de ces situations doit faire l'objet d'une facture électronique distincte, numérotée séquentiellement, avec un renvoi clair vers le marché et les situations antérieures.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Une situation reste une facture à part entière">
+    Chaque facture de situation est une facture au sens de l'article 289 du Code général des impôts. Elle doit comporter l'ensemble des mentions obligatoires, un numéro dans votre séquence unique, et être transmise via une PDP dès que l'émission électronique deviendra obligatoire pour votre entreprise.
+  </Callout>
+</div>
+
+## L'autoliquidation de la TVA en sous-traitance BTP
+
+Le secteur du bâtiment applique un régime de TVA particulier depuis 2014 : lorsqu'un sous-traitant intervient pour le compte d'un entrepreneur principal sur des travaux de construction, de rénovation ou de réparation d'un immeuble, la TVA est **autoliquidée** par le donneur d'ordre, en application de l'article 283-2 nonies du CGI.
+
+Concrètement, le sous-traitant facture son intervention **hors taxe**, sans mentionner de TVA à payer, et porte sur sa facture la mention « Autoliquidation - article 283-2 nonies du CGI ». C'est l'entrepreneur principal, destinataire de la facture, qui déclare et reverse lui-même la TVA correspondante, tout en la déduisant dans le même temps s'il y est éligible.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La mention d'autoliquidation reste obligatoire en facture électronique">
+    Le passage au format électronique ne dispense pas le sous-traitant de faire figurer la mention d'autoliquidation. Elle doit apparaître dans les données structurées de la facture, au même titre que sur une facture papier ou PDF classique. Une facture de sous-traitance BTP sans cette mention, ou avec une TVA facturée à tort, expose l'entrepreneur principal à un redressement.
+  </Callout>
+</div>
+
+### Exemple chiffré : sous-traitance en autoliquidation
+
+Un sous-traitant plombier facture 15 000 € HT de travaux à une entreprise générale sur un chantier de rénovation. Sa facture indique :
+
+- Montant HT : 15 000 €
+- TVA : 0 € (autoliquidation par le preneur, article 283-2 nonies du CGI)
+- Montant net à payer : 15 000 €
+
+L'entrepreneur principal, de son côté, déclare 3 000 € de TVA collectée (taux de 20 %) sur sa propre déclaration, et la déduit s'il exerce une activité imposable ouvrant droit à déduction.
+
+## La retenue de garantie sur une facture électronique
+
+La retenue de garantie permet au maître d'ouvrage ou à l'entrepreneur principal de conserver une partie du montant dû, généralement pour couvrir d'éventuelles malfaçons constatées après réception des travaux. Elle est encadrée par la loi n° 71-584 du 16 juillet 1971 pour les marchés privés et plafonnée à **5 % du montant du marché**.
+
+Dans une facture de situation, la retenue de garantie apparaît comme une ligne de déduction clairement identifiée : elle réduit le montant net à payer, sans modifier le montant HT ni la TVA due, qui restent calculés sur le montant brut de la situation. Le sous-traitant ou l'entrepreneur peut aussi proposer une caution bancaire ou une garantie à première demande pour éviter cette retenue en trésorerie.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Négociez une garantie à première demande">
+    Si la retenue de garantie pèse trop lourdement sur votre trésorerie de chantier, vous pouvez proposer au maître d'ouvrage une garantie à première demande souscrite auprès de votre banque ou d'un assureur-caution. Le montant de la situation vous est alors versé intégralement, sans retenue.
+  </Callout>
+</div>
+
+### Exemple chiffré : situation avec retenue de garantie
+
+Reprenons la situation n° 3 de 36 000 € HT (43 200 € TTC) avec une retenue de garantie de 5 % :
+
+- Montant TTC de la situation : 43 200 €
+- Retenue de garantie (5 % du montant HT) : 1 800 €
+- Net à payer sur cette situation : 41 400 €
+
+Cette retenue sera restituée, en tout ou partie, à la levée des réserves ou à l'expiration du délai contractuel, généralement un an après la réception des travaux.
+
+## Les formats Factur-X, UBL et CII pour les factures de chantier
+
+Le socle de la facturation électronique française repose sur trois formats : **Factur-X** (PDF enrichi de données XML, lisible par l'humain et la machine), **UBL** et **CII** (formats XML purs, plus adaptés aux échanges automatisés entre grands systèmes). Pour une entreprise du BTP qui échange encore beaucoup avec des maîtres d'ouvrage particuliers ou des architectes peu équipés en logiciels comptables, Factur-X présente l'avantage de rester lisible tel quel, tout en portant les données structurées nécessaires à la PDP.
+
+Le choix du format dépend surtout de votre PDP et de celle de vos partenaires : la plateforme se charge de la conversion entre formats si nécessaire, ce qui vous évite de vous en soucier au quotidien. Le point important reste que votre logiciel de facturation soit capable de générer un fichier conforme au socle, avec l'ensemble des champs BTP correctement renseignés.
+
+## Les mentions spécifiques à vérifier sur une facture BTP électronique
+
+Au-delà des mentions obligatoires classiques, une facture de chantier comporte des informations propres au secteur :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence au marché ou au devis</strong> signé, avec son numéro</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>numéro de situation</strong> et le pourcentage d'avancement des travaux</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>cumul des situations précédentes</strong> déjà facturées</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>« Autoliquidation - article 283-2 nonies du CGI »</strong> en cas de sous-traitance</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>taux et le montant de la retenue de garantie</strong>, si applicable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>références d'assurance décennale</strong> de l'entreprise, exigées sur les devis et souvent reprises sur facture</span>
+  </div>
+</div>
+
+Ces mentions s'ajoutent aux [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique et à celles imposées par le contrat de sous-traitance ou le cahier des charges du marché. L'obligation d'assurance décennale, propre au secteur, est détaillée dans notre article sur [l'assurance décennale des artisans](/blog/obligation-assurance-decennale-artisan).
+
+## Comment Newbi simplifie la facturation dans le BTP
+
+Newbi permet de créer des factures conformes au socle de la facturation électronique, avec numérotation séquentielle automatique et mentions obligatoires préremplies. Pour un artisan ou une entreprise du bâtiment qui facture par situations, le logiciel garde en mémoire le montant total du marché et les situations déjà émises, ce qui évite les erreurs de cumul d'une situation à l'autre. La gestion des achats intégrée permet aussi de centraliser les factures reçues des sous-traitants, y compris celles soumises à autoliquidation.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facturation électronique btp ne modifie pas les règles de fond du secteur : les factures de situation, l'autoliquidation de la TVA en sous-traitance et la retenue de garantie continuent de s'appliquer exactement comme avant. Ce qui change, c'est leur mode de transmission et de structuration : chaque situation doit être une facture électronique conforme au socle commun, avec un lien clair vers le marché et les situations antérieures, la mention d'autoliquidation quand elle s'applique, et le détail de la retenue de garantie. Anticiper cette transition avec un logiciel adapté évite les blocages de trésorerie liés à des factures mal formées ou rejetées par une PDP.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation électronique dans le BTP
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>La facturation électronique dans le BTP suit-elle un calendrier différent des autres secteurs ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le bâtiment suit le même calendrier national : réception obligatoire pour toutes les entreprises depuis le 1er septembre 2026, émission obligatoire pour les grandes entreprises et ETI depuis cette même date, et émission obligatoire pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027. Aucune dérogation sectorielle n'a été prévue pour le BTP.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Comment facturer une situation de travaux au format électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Chaque situation reste une facture à part entière, numérotée dans votre séquence unique, avec un lien explicite vers le marché initial et le cumul des situations déjà émises. Le format Factur-X est particulièrement adapté car il reste lisible par le client tout en portant les données structurées attendues par la plateforme de dématérialisation partenaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Faut-il toujours mentionner l'autoliquidation sur une facture de sous-traitance BTP électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. La mention « Autoliquidation - article 283-2 nonies du CGI » reste obligatoire dans une facture électronique, comme sur une facture classique. L'absence de cette mention ou une TVA facturée à tort peut entraîner un redressement pour l'entrepreneur principal comme pour le sous-traitant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment la retenue de garantie apparaît-elle sur une facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Elle figure comme une ligne de déduction sur le montant net à payer, généralement plafonnée à 5 % du montant du marché. Le montant HT et la TVA restent calculés sur le montant brut de la situation, la retenue ne réduisant que la somme effectivement versée à cette étape.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Un artisan du bâtiment doit-il déjà émettre ses factures au format électronique en 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        Pas nécessairement pour l'émission : les artisans et micro-entreprises du BTP doivent émettre leurs factures au format électronique à partir du 1er septembre 2027. En revanche, dès le 1er septembre 2026, ils doivent être en mesure de recevoir des factures électroniques envoyées par leurs fournisseurs ou donneurs d'ordre.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

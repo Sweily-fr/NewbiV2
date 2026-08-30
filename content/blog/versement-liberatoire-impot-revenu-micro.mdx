@@ -1,0 +1,200 @@
+---
+title: "Versement libératoire de l'impôt sur le revenu : est-ce intéressant ?"
+description: >-
+  Le versement libératoire remplace l'impôt sur le revenu par un prélèvement
+  sur le CA. Taux, conditions de revenu fiscal, simulation et comment
+  l'activer ou en sortir.
+date: '2026-10-23'
+category: reglementaire
+sector: Particuliers / Micro-entreprise
+keyword: versement libératoire
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-23'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Versement libératoire de l'impôt sur le revenu : est-ce intéressant ?
+
+Le **versement libératoire** est une option fiscale réservée aux micro-entrepreneurs qui permet de payer l'impôt sur le revenu en même temps que les cotisations sociales, sous la forme d'un pourcentage prélevé directement sur le chiffre d'affaires. Contrairement au régime classique de la micro-entreprise, où l'impôt est calculé après application d'un abattement forfaitaire sur le barème progressif, le versement libératoire fige un taux fixe dès l'encaissement. Ce guide explique les taux applicables en 2026, les conditions de revenu fiscal de référence à respecter, et comment évaluer si l'option est réellement avantageuse pour votre situation.
+
+Beaucoup de créateurs de micro-entreprise activent cette option par défaut, sans avoir comparé son impact réel avec le régime classique. Or, selon votre niveau de revenu et votre situation familiale, le versement libératoire peut se révéler plus coûteux que le barème progressif classique. Voici comment faire le calcul correctement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Comment fonctionne le versement libératoire
+
+En régime micro-entreprise classique, l'impôt sur le revenu est calculé chaque année sur la base du chiffre d'affaires déclaré, après application d'un abattement forfaitaire pour frais professionnels (34 % pour les prestations de services relevant des BNC, 50 % pour les prestations de services BIC, 71 % pour les activités de vente). Le montant obtenu est ensuite soumis au barème progressif de l'impôt sur le revenu, avec le reste des revenus du foyer fiscal.
+
+Avec le versement libératoire, ce mécanisme est remplacé par un prélèvement mensuel ou trimestriel appliqué directement sur le chiffre d'affaires encaissé, en même temps que les cotisations sociales URSSAF. Ce prélèvement est **libératoire**, c'est-à-dire qu'il solde définitivement l'impôt dû sur ces revenus : il n'y a pas de régularisation en fin d'année sur cette part de revenus, contrairement au régime classique où le montant final dépend du barème et peut varier.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un mécanisme distinct de la franchise en base de TVA">
+    Le versement libératoire concerne uniquement l'impôt sur le revenu. Il n'a aucun lien avec la franchise en base de TVA, qui reste régie par ses propres seuils. Vous pouvez très bien opter pour le versement libératoire tout en restant, ou non, sous le seuil de franchise en base de TVA.
+  </Callout>
+</div>
+
+## Les taux applicables en 2026
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Taux du versement libératoire de l'impôt sur le revenu par type d'activité</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Type d'activité</TableHead>
+        <TableHead>Taux du versement libératoire</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Vente de marchandises, restauration, hébergement</TableCell>
+        <TableCell>1 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prestations de services commerciales et artisanales (BIC)</TableCell>
+        <TableCell>1,7 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Activités libérales (BNC)</TableCell>
+        <TableCell>2,2 %</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ce taux s'ajoute au taux de cotisations sociales, lui-même variable selon l'activité (autour de 12,3 % pour la vente, 21,2 % pour les prestations de services BIC, 23,1 % pour les professions libérales relevant de la Cipav ou du régime général, ces taux évoluant chaque année). Au total, un prestataire de services BNC ayant opté pour le versement libératoire reverse donc environ 23,1 % de cotisations plus 2,2 % d'impôt, soit un prélèvement global proche de 25,3 % de son chiffre d'affaires encaissé.
+
+## Les conditions pour opter : le revenu fiscal de référence
+
+L'option pour le versement libératoire n'est pas ouverte à tous les micro-entrepreneurs. Elle est conditionnée au **revenu fiscal de référence (RFR)** du foyer, apprécié au titre de l'avant-dernière année précédant celle au titre de laquelle l'option s'applique. Le seuil est fixé par part de quotient familial : pour être éligible, le revenu fiscal de référence du foyer ne doit pas dépasser un plafond actualisé chaque année, multiplié par le nombre de parts.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Vérifiez votre éligibilité avant d'opter">
+    Le respect du seuil de revenu fiscal de référence s'apprécie chaque année. Si votre foyer dépasse le plafond une année donnée, vous perdez le bénéfice du versement libératoire pour l'année suivante et basculez automatiquement sur le barème progressif classique pour les revenus concernés.
+  </Callout>
+</div>
+
+## Exemple chiffré : comparer les deux régimes
+
+Prenons un consultant indépendant en BNC, célibataire (1 part fiscale), qui réalise 45 000 € de chiffre d'affaires annuel.
+
+**Avec le régime classique (barème progressif)** : après abattement forfaitaire de 34 %, le revenu imposable retenu est de 45 000 x 0,66 = 29 700 €. Ce montant est ensuite intégré au revenu global du foyer et soumis au barème progressif par tranches. Si ce consultant se situe déjà dans la tranche à 30 %, l'impôt marginal sur cette part de revenu peut être significatif.
+
+**Avec le versement libératoire (taux BNC de 2,2 %)** : l'impôt est de 45 000 x 0,022 = 990 €, prélevé au fil de l'eau, sans lien avec la tranche marginale d'imposition du foyer.
+
+Dans cet exemple, si le foyer est déjà imposé dans une tranche élevée (30 % ou plus), le versement libératoire est nettement plus avantageux. En revanche, pour un foyer faiblement imposé, voire non imposable (tranche à 0 %), le versement libératoire fait payer un impôt de 990 € alors que le régime classique n'aurait donné lieu à aucune imposition sur cette part de revenu : l'option devient alors défavorable.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le versement libératoire est avantageux si votre foyer est imposé dans une tranche marginale élevée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Il est défavorable si votre foyer est peu ou pas imposable, car vous payez un impôt qui n'aurait pas été dû</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Il simplifie la trésorerie en lissant l'impôt sur l'année plutôt qu'un paiement en une ou plusieurs fois</span>
+  </div>
+</div>
+
+## Comment activer ou renoncer à l'option
+
+L'option pour le versement libératoire se déclare auprès de l'URSSAF, en principe au moment de la création de l'activité (dans les 3 mois suivant le début d'activité pour une application immédiate) ou avant le 30 septembre de l'année pour une application l'année suivante. La demande se fait directement en ligne depuis l'espace du micro-entrepreneur. Si vous démarrez tout juste votre activité, pensez aussi à vérifier votre éligibilité à l'[ACRE et à l'exonération de charges en début d'activité](/blog/acre-exoneration-charges-debut-activite), qui réduit temporairement vos cotisations sociales indépendamment du choix fiscal retenu pour l'impôt sur le revenu.
+
+Pour renoncer à l'option, la démarche est symétrique : la renonciation doit être adressée avant le 30 septembre pour une prise d'effet l'année suivante. Il n'est pas possible de changer d'option en cours d'année.
+
+### Cas pratique de renonciation
+
+Une graphiste freelance a opté pour le versement libératoire à la création de son activité, alors que ses revenus étaient faibles et son foyer non imposable. Deux ans plus tard, son activité se développe, son chiffre d'affaires double et son foyer entre dans la tranche à 11 %. Elle a intérêt à simuler les deux régimes avant le 30 septembre pour décider si elle conserve l'option ou si elle bascule sur le régime classique, plus avantageux si son taux d'imposition réel reste inférieur au taux forfaitaire du versement libératoire.
+
+## Versement libératoire et déclaration annuelle
+
+Même en optant pour le versement libératoire, la déclaration annuelle de revenus reste obligatoire. Le chiffre d'affaires réalisé doit être reporté sur la déclaration complémentaire de revenus, dans une case dédiée. Il sert au calcul du revenu fiscal de référence du foyer, utilisé notamment pour l'éligibilité à certaines aides ou exonérations, mais n'est pas réintégré dans le calcul de l'impôt progressif puisque celui-ci a déjà été soldé par les prélèvements mensuels ou trimestriels.
+
+## Comment Newbi vous aide à suivre votre trésorerie fiscale
+
+Que vous soyez au régime classique ou au versement libératoire, anticiper le montant des cotisations et de l'impôt à prélever sur votre chiffre d'affaires est essentiel pour ne pas être pris de court en fin de mois. Newbi centralise vos factures encaissées et votre suivi de trésorerie, ce qui facilite le calcul du montant à mettre de côté pour vos échéances URSSAF.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Provisionnez systématiquement vos charges">
+    Quel que soit le régime choisi, mettez de côté chaque mois le pourcentage correspondant à vos cotisations et, le cas échéant, à votre versement libératoire, dès l'encaissement d'une facture. Cela évite les mauvaises surprises de trésorerie au moment de la déclaration URSSAF.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/tresorerie">Suivre ma trésorerie avec Newbi</Link>
+  </Button>
+</div>
+
+## Versement libératoire et TVA : deux sujets distincts
+
+Il est fréquent de confondre le versement libératoire avec les seuils de la franchise en base de TVA, alors qu'il s'agit de deux régimes indépendants. En 2026, les seuils de la franchise en base de TVA sont fixés à 37 500 € pour les prestations de services (seuil majoré 41 250 €) et 85 000 € pour les activités de vente (seuil majoré 93 500 €). Le détail de ces seuils et leur articulation avec le régime micro-entrepreneur sont expliqués dans notre article sur la [TVA et les seuils de franchise pour l'auto-entrepreneur](/blog/tva-auto-entrepreneur-seuils-franchise). Un micro-entrepreneur peut donc être au versement libératoire pour l'impôt sur le revenu tout en dépassant, ou non, les seuils de TVA, ces deux régimes s'appréciant indépendamment.
+
+Pour une vue plus large des obligations comptables et déclaratives qui s'imposent au régime micro-entreprise au-delà de la seule question fiscale, consultez notre guide des [obligations comptables de la micro-entreprise](/blog/obligations-comptables-micro-entreprise).
+
+## En résumé
+
+Le versement libératoire de l'impôt sur le revenu permet aux micro-entrepreneurs éligibles, sous condition de revenu fiscal de référence, de remplacer le barème progressif par un taux fixe (1 %, 1,7 % ou 2,2 % selon l'activité) prélevé directement sur le chiffre d'affaires encaissé, en même temps que les cotisations sociales. Cette option est avantageuse pour les foyers imposés dans une tranche marginale élevée, mais défavorable pour les foyers faiblement ou non imposables. La décision doit se prendre après simulation des deux régimes, en tenant compte de l'évolution prévisible de vos revenus, et peut être révisée chaque année avant le 30 septembre.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le versement libératoire
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Qui peut opter pour le versement libératoire de l'impôt sur le revenu ?</AccordionTrigger>
+      <AccordionContent>
+        Seuls les micro-entrepreneurs dont le revenu fiscal de référence du foyer, apprécié au titre de l'avant-dernière année, ne dépasse pas un plafond fixé par part de quotient familial peuvent opter pour le versement libératoire. Ce plafond est actualisé chaque année et l'éligibilité est réévaluée annuellement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel est le taux du versement libératoire en 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux varie selon l'activité : 1 % pour la vente de marchandises, restauration et hébergement, 1,7 % pour les prestations de services commerciales et artisanales relevant des BIC, et 2,2 % pour les activités libérales relevant des BNC. Ce taux s'applique directement sur le chiffre d'affaires encaissé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Le versement libératoire est-il toujours avantageux ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Il est avantageux pour les foyers imposés dans une tranche marginale élevée du barème progressif, car le taux forfaitaire reste alors inférieur à l'imposition classique. Pour les foyers faiblement ou non imposables, le versement libératoire peut au contraire faire payer un impôt qui n'aurait pas été dû en régime classique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment renoncer au versement libératoire ?</AccordionTrigger>
+      <AccordionContent>
+        La renonciation doit être adressée à l'URSSAF avant le 30 septembre de l'année en cours pour prendre effet à compter du 1er janvier de l'année suivante. Il n'est pas possible de changer de régime en cours d'année civile.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le versement libératoire remplace-t-il la déclaration annuelle de revenus ?</AccordionTrigger>
+      <AccordionContent>
+        Non, la déclaration annuelle reste obligatoire même en cas d'option pour le versement libératoire. Le chiffre d'affaires doit être reporté sur la déclaration complémentaire de revenus, notamment pour le calcul du revenu fiscal de référence, mais il n'est pas réintégré dans le calcul de l'impôt progressif puisque celui-ci a déjà été soldé.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

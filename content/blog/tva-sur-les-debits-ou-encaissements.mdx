@@ -1,0 +1,253 @@
+---
+title: 'TVA sur les débits ou sur les encaissements : quelle option choisir ?'
+description: >-
+  Prestations de services : la TVA est due à l'encaissement, sauf option pour
+  les débits. Différences, mention obligatoire sur la facture et impact sur
+  la trésorerie.
+date: '2026-10-20'
+category: glossaire
+sector: null
+keyword: tva sur les débits
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-20'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# TVA sur les débits ou sur les encaissements : quelle option choisir ?
+
+La **TVA sur les débits** est un régime optionnel qui modifie la date à laquelle vous devez déclarer et reverser la TVA collectée sur vos prestations de services. Par défaut, les prestataires de services relèvent du régime de la TVA sur les encaissements : la taxe devient exigible lorsque le client paie, et non lorsque la facture est émise. L'option pour les débits inverse cette logique, en rattachant l'exigibilité à la facturation elle-même.
+
+Ce choix a des conséquences directes sur votre trésorerie et sur votre gestion administrative. Ce guide vous explique les deux régimes, leurs implications pratiques, et comment déterminer l'option la plus adaptée à votre activité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Le principe : encaissements par défaut, débits sur option
+
+Pour les prestations de services, l'article 269 du Code général des impôts (CGI) fixe comme principe que la TVA est exigible **à l'encaissement** : au moment où vous recevez effectivement le paiement de votre client, en tout ou partie. C'est le régime par défaut, applicable automatiquement à tout prestataire de services assujetti à la TVA, sans démarche particulière.
+
+L'option pour les débits permet de rattacher l'exigibilité de la TVA à la date de facturation, c'est-à-dire à l'émission de la facture, indépendamment de la date effective de paiement par le client. Cette option est ouverte à tout prestataire de services qui en fait la demande auprès de son service des impôts des entreprises (SIE).
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un régime qui ne concerne que les prestations de services">
+    Les livraisons de biens obéissent à une règle différente : la TVA y est exigible à la livraison, et non à l'encaissement, sauf en cas d'acompte encaissé avant la livraison. La distinction entre débits et encaissements ne concerne donc que les prestataires de services : consultants, artisans du service, professions libérales, agences.
+  </Callout>
+</div>
+
+## Comparatif des deux régimes
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>TVA sur les encaissements et TVA sur les débits</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>Encaissements (par défaut)</TableHead>
+        <TableHead>Débits (sur option)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Fait générateur d'exigibilité</TableCell>
+        <TableCell>Réception du paiement du client</TableCell>
+        <TableCell>Émission de la facture</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Démarche</TableCell>
+        <TableCell>Aucune, régime par défaut</TableCell>
+        <TableCell>Option formelle auprès du SIE</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Impact trésorerie</TableCell>
+        <TableCell>TVA reversée uniquement une fois le paiement reçu</TableCell>
+        <TableCell>TVA reversée dès la facturation, même si le client n'a pas payé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mention sur la facture</TableCell>
+        <TableCell>Recommandée : "TVA acquittée sur les encaissements"</TableCell>
+        <TableCell>Aucune mention spécifique requise</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Simplicité de suivi</TableCell>
+        <TableCell>Nécessite un suivi précis des encaissements par facture</TableCell>
+        <TableCell>Plus simple : la déclaration suit directement la facturation</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Pourquoi la mention sur la facture compte
+
+Lorsque vous relevez du régime des encaissements, il est recommandé de porter sur vos factures la mention "TVA acquittée sur les encaissements". Cette mention informe votre client, notamment s'il est lui-même assujetti à la TVA, du moment où il pourra exercer son droit à déduction : en principe, dès l'émission de la facture pour un prestataire au régime des débits, mais seulement après le paiement pour un prestataire resté au régime des encaissements sans option.
+
+Cette mention s'ajoute aux [mentions obligatoires classiques d'une facture](/blog/mentions-obligatoires-facture) et, dans le cadre de la facturation électronique, aux [nouvelles mentions obligatoires attendues sur la facture électronique](/blog/nouvelles-mentions-obligatoires-facture-electronique), qui précisent notamment la catégorie d'opération concernée.
+
+## Exemple chiffré : l'impact sur votre trésorerie
+
+Prenons le cas d'un consultant en système d'information qui facture une mission de 12 000 € HT (2 400 € de TVA à 20 %) le 5 mars, avec un paiement prévu à 45 jours, soit le 19 avril.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Impact du régime choisi sur la déclaration de TVA</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Régime</TableHead>
+        <TableHead>Mois de déclaration de la TVA collectée</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Encaissements (par défaut)</TableCell>
+        <TableCell>Avril, au moment du paiement effectif par le client</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Débits (sur option)</TableCell>
+        <TableCell>Mars, dès l'émission de la facture</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Au régime des encaissements, le consultant ne reverse les 2 400 € de TVA collectée qu'en avril, une fois le client ayant payé. Au régime des débits, il doit déclarer et reverser cette même somme dès sa déclaration de mars, avant même d'avoir reçu le règlement de son client. Le régime des encaissements est donc, dans la grande majorité des cas, plus favorable à la trésorerie du prestataire de services.
+
+## Pourquoi certains prestataires optent malgré tout pour les débits
+
+L'option pour les débits peut sembler contre-intuitive puisqu'elle avance la date de reversement de la TVA. Elle présente néanmoins un intérêt dans certaines situations.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Simplification administrative</strong> : la déclaration suit directement la facturation, sans suivi séparé des encaissements</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Clients grands comptes</strong> qui exigent une facture leur permettant de déduire la TVA dès réception, sans attendre le paiement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Cohérence comptable</strong> pour les structures qui facturent peu et encaissent rapidement, où l'écart entre les deux régimes reste marginal</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Une option qui engage sur la durée">
+    L'option pour les débits s'applique à l'ensemble de votre activité de prestations de services, elle ne peut pas être choisie facture par facture. Une fois exercée, elle reste valable tant que vous ne la dénoncez pas explicitement auprès de votre service des impôts des entreprises. Réfléchissez à l'impact sur votre trésorerie avant de vous engager, en particulier si vos clients paient avec des délais longs.
+  </Callout>
+</div>
+
+## Le cas des activités mixtes : biens et services
+
+De nombreux indépendants exercent une activité mixte, combinant vente de biens et prestations de services : un artisan qui vend du matériel et facture sa pose, un consultant qui revend des licences logicielles en plus de son accompagnement. Dans ce cas, il est essentiel de distinguer les deux types d'opérations sur votre facture, car elles ne suivent pas la même règle d'exigibilité.
+
+### Cas pratique : un électricien qui vend et installe du matériel
+
+Un électricien facture à un client professionnel une prestation combinant la fourniture d'un tableau électrique pour 800 € HT et sa pose pour 600 € HT, soit un total de 1 400 € HT (1 680 € TTC avec 20 % de TVA). Si l'électricien reste au régime des encaissements sur sa part de prestation de service, seule la partie "pose" suit ce régime : la TVA sur la fourniture du matériel, considérée comme une livraison de bien, devient exigible à la livraison du tableau électrique, tandis que la TVA sur la pose ne devient exigible qu'au paiement effectif du client.
+
+En pratique, beaucoup d'entreprises artisanales choisissent l'option pour les débits précisément pour éviter d'avoir à distinguer, facture par facture, la part "bien" et la part "service" dans le calcul de l'exigibilité de la TVA. Cela simplifie sensiblement la tenue de leur comptabilité, au prix d'un léger désavantage de trésorerie.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Demandez conseil à votre expert-comptable en cas d'activité mixte">
+    Si votre activité combine régulièrement vente de biens et prestations de services, la question du régime de TVA applicable mérite d'être posée directement à votre expert-comptable. Le choix entre débits et encaissements a un impact réel sur votre trésorerie et sur la complexité de votre suivi comptable au quotidien.
+  </Callout>
+</div>
+
+## Le lien avec votre déclaration de TVA
+
+Que vous soyez au régime des débits ou des encaissements, le montant de TVA collectée que vous reportez sur votre [déclaration de TVA CA3 ou CA12](/blog/declaration-tva-ca3-ca12-guide) dépend directement de l'exigibilité déterminée par votre régime. Une erreur de rattachement entre les deux régimes, par exemple en déclarant une facture au moment de son émission alors que vous êtes resté au régime des encaissements, figure d'ailleurs parmi les [erreurs fréquentes à éviter lors de la déclaration de TVA](/blog/erreurs-declaration-tva-eviter).
+
+Un suivi rigoureux de vos factures, de leur date d'émission et de leur date effective de paiement, reste indispensable pour ne pas commettre d'erreur de déclaration, quel que soit le régime choisi.
+
+## Sortir de la franchise en base et choisir son régime
+
+La question du régime d'exigibilité ne se pose qu'à partir du moment où vous êtes effectivement redevable de la TVA. Tant que vous relevez de la [franchise en base de TVA](/blog/tva-auto-entrepreneur-seuils-franchise), avec des seuils fixés en 2026 à 37 500 € pour les prestations de services et 85 000 € pour les activités de vente, la question des débits ou des encaissements ne se pose pas : vous ne facturez pas de TVA.
+
+Dès que vous dépassez ces seuils, ou que vous optez volontairement pour l'assujettissement à la TVA, la question du régime d'exigibilité devient concrète dès votre première déclaration. Il est alors utile d'anticiper ce choix avec votre expert-comptable, en tenant compte de vos délais de paiement clients habituels et de la nature de votre activité, avant même d'atteindre les seuils de la franchise.
+
+## Comment Newbi vous aide à suivre l'exigibilité de la TVA
+
+Newbi enregistre pour chaque facture sa date d'émission et son statut de paiement, ce qui vous permet de retrouver facilement les informations nécessaires à votre déclaration de TVA, quel que soit votre régime d'exigibilité.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivi du statut de paiement</strong> de chaque facture émise</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Historique complet</strong> des dates d'émission et d'encaissement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Export des données</strong> pour faciliter le travail de votre expert-comptable</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Suivre mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Le régime de TVA sur les encaissements s'applique par défaut aux prestataires de services : la TVA devient exigible au moment du paiement effectif par le client. L'option pour les débits, sur demande auprès du service des impôts des entreprises, rattache l'exigibilité à la date de facturation, ce qui simplifie le suivi administratif mais peut peser sur votre trésorerie si vos clients paient avec des délais longs. Le choix entre les deux régimes dépend de votre profil d'activité, de vos délais de paiement clients et des attentes de vos partenaires commerciaux en matière de déduction de TVA.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la TVA sur les débits
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre la TVA sur les débits et la TVA sur les encaissements ?</AccordionTrigger>
+      <AccordionContent>
+        La TVA sur les encaissements, régime par défaut pour les prestations de services, rend la taxe exigible au moment du paiement effectif par le client. La TVA sur les débits, sur option, rattache l'exigibilité à la date d'émission de la facture, indépendamment du paiement effectif.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Comment opter pour la TVA sur les débits ?</AccordionTrigger>
+      <AccordionContent>
+        L'option se fait par une demande formelle auprès de votre service des impôts des entreprises (SIE). Elle s'applique à l'ensemble de votre activité de prestations de services et reste valable tant que vous ne la dénoncez pas explicitement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>La TVA sur les débits s'applique-t-elle aussi aux livraisons de biens ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Les livraisons de biens obéissent à une règle propre : la TVA y est exigible à la livraison, sauf en cas d'acompte encaissé avant, auquel cas la TVA devient exigible dès l'encaissement de l'acompte. La distinction débits ou encaissements ne concerne que les prestations de services.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Faut-il mentionner le régime de TVA sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Il est recommandé, pour un prestataire resté au régime des encaissements, de porter la mention "TVA acquittée sur les encaissements" sur ses factures. Cette mention informe le client, notamment s'il est lui-même assujetti, du moment où il pourra déduire la TVA correspondante.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quel régime est le plus avantageux pour la trésorerie d'un indépendant ?</AccordionTrigger>
+      <AccordionContent>
+        Dans la majorité des cas, le régime des encaissements est plus favorable à la trésorerie, puisque vous ne reversez la TVA collectée qu'une fois le paiement reçu de votre client. L'option pour les débits vous oblige à avancer la TVA dès la facturation, même si le client n'a pas encore payé.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

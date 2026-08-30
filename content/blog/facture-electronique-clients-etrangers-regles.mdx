@@ -1,0 +1,220 @@
+---
+title: "Facture électronique et clients étrangers : quelles règles s'appliquent ?"
+description: >-
+  Les factures aux clients hors de France ne passent pas par la plateforme
+  mais relèvent de l'e-reporting. Ce qu'il faut transmettre, quand et dans
+  quel format.
+date: '2026-11-23'
+category: guide
+sector: null
+keyword: facture électronique client étranger
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-23'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">11 min de lecture</Badge>
+</div>
+
+# Facture électronique et clients étrangers : quelles règles s'appliquent ?
+
+Vous facturez des clients situés hors de France et vous vous demandez si la réforme de la **facture électronique pour les clients étrangers** vous concerne de la même façon que vos ventes en France ? La réponse est non : la facturation électronique obligatoire, avec passage par une plateforme de dématérialisation partenaire, ne s'applique qu'aux transactions entre entreprises établies en France. Pour vos clients étrangers, qu'ils soient dans l'Union européenne ou hors UE, un autre mécanisme prend le relais, celui de l'e-reporting. Ce guide vous détaille précisément ce qui change, ce qui reste identique, et les mentions de TVA à respecter selon la localisation de votre client.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Le périmètre de la réforme de facturation électronique
+
+La réforme française de facturation électronique repose sur un principe simple à retenir : elle concerne exclusivement les opérations **B2B domestiques**, c'est-à-dire les transactions entre deux entreprises assujetties à la TVA et établies en France. Le calendrier fixé par l'administration prévoit la réception obligatoire des factures électroniques pour toutes les entreprises depuis le 1er septembre 2026, l'émission obligatoire pour les grandes entreprises et les ETI depuis cette même date, puis pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+
+Dès lors qu'un de vos deux partenaires commerciaux, vous-même ou votre client, est établi hors de France, la facture ne relève plus de ce circuit domestique. Vous n'êtes donc pas tenu de transmettre cette facture via une plateforme de dématérialisation partenaire (PDP) au sens strict de l'obligation d'émission B2B. En revanche, une autre obligation s'applique : celle de transmettre les données de la transaction à l'administration fiscale via l'e-reporting, afin qu'elle conserve une visibilité sur l'ensemble de votre activité commerciale, y compris à l'international.
+
+## E-invoicing et e-reporting : deux obligations différentes
+
+La confusion la plus fréquente consiste à croire que toute facture doit désormais transiter par une plateforme. En réalité, la réforme distingue deux flux bien séparés.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>E-invoicing versus e-reporting selon le type de client</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Type de client</TableHead>
+        <TableHead>Obligation applicable</TableHead>
+        <TableHead>Format de la facture</TableHead>
+        <TableHead>Transmission à l'administration</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Entreprise en France (B2B)</TableCell>
+        <TableCell>E-invoicing (facture électronique structurée)</TableCell>
+        <TableCell>Factur-X, UBL ou CII</TableCell>
+        <TableCell>Automatique via la PDP</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Client dans l'UE (B2B ou B2C)</TableCell>
+        <TableCell>E-reporting</TableCell>
+        <TableCell>Libre, mentions obligatoires classiques</TableCell>
+        <TableCell>Données transmises séparément</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Client hors UE (export)</TableCell>
+        <TableCell>E-reporting</TableCell>
+        <TableCell>Libre, mentions obligatoires classiques</TableCell>
+        <TableCell>Données transmises séparément</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Particulier en France (B2C)</TableCell>
+        <TableCell>E-reporting</TableCell>
+        <TableCell>Libre, mentions obligatoires classiques</TableCell>
+        <TableCell>Données transmises séparément</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+L'e-invoicing suppose l'échange d'un fichier structuré, lisible par les systèmes, entre deux plateformes. L'e-reporting, lui, consiste simplement à transmettre à l'administration les données essentielles de la transaction : montant, TVA, identification du client, date. Vous conservez donc pour vos clients étrangers le format de facture habituel, dès lors qu'il respecte les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture), tout en assurant la remontée de ces données via e-reporting.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le rôle du PPF a changé">
+    Le portail public de facturation (PPF) ne joue plus le rôle de plateforme d'échange gratuite de factures. Depuis la bascule vers les PDP, il agit comme annuaire des entreprises et concentrateur qui centralise les données destinées à l'administration, notamment celles issues de l'e-reporting. Retrouvez le détail du calendrier et des obligations sur notre page consacrée à [l'e-reporting](/blog/e-reporting-definition-obligations-calendrier).
+  </Callout>
+</div>
+
+## Facturer un client dans l'Union européenne
+
+Pour vos clients professionnels établis dans un autre État membre de l'Union européenne, les règles de TVA intracommunautaire s'appliquent en plus de l'e-reporting. Si votre client vous communique un numéro de TVA intracommunautaire valide et que la prestation ou la livraison entre dans le champ de l'autoliquidation, votre facture doit être émise hors taxes avec la mention appropriée.
+
+Pour une prestation de services B2B, la mention à porter est généralement "TVA due par le preneur - article 283-2 du Code général des impôts" ou la référence à l'article 44 de la directive TVA. Pour une livraison de biens intracommunautaire, la mention devient "Exonération de TVA, article 262 ter I du Code général des impôts". Dans les deux cas, vous devez également déclarer l'opération dans votre déclaration de TVA et, selon les seuils, dans une déclaration européenne de services (DES) ou un état récapitulatif.
+
+Pour un client européen non assujetti, c'est-à-dire un particulier, la TVA française s'applique par défaut sur les ventes à distance de biens, sauf si vous dépassez le seuil européen unique de 10 000 € de ventes à distance annuelles, auquel cas vous basculez sur la TVA du pays de destination via le guichet unique OSS.
+
+## Facturer un client hors Union européenne
+
+Pour vos clients établis en dehors de l'UE, la logique change encore. Les livraisons de biens vers un pays tiers relèvent du régime de l'exportation, exonéré de TVA française en application de l'article 262, I du Code général des impôts, sous réserve de disposer d'un justificatif douanier de sortie du territoire de l'Union.
+
+Pour les prestations de services, le lieu de taxation dépend généralement du lieu d'établissement du preneur : pour un client professionnel établi hors UE, la prestation est en principe hors du champ de la TVA française, avec la mention "TVA non applicable, article 259-1 du CGI". Certaines prestations (immobilières, culturelles, de transport) suivent des règles de territorialité spécifiques qu'il convient de vérifier au cas par cas.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne confondez pas exonération et absence d'obligation">
+    Exonérer une opération de TVA ou la placer hors du champ d'application ne vous dispense jamais de facturer, ni de l'obligation d'e-reporting. La mention exacte de TVA doit figurer sur la facture, faute de quoi vous vous exposez à un redressement, même si aucune TVA n'était effectivement due.
+  </Callout>
+</div>
+
+## Cas pratique : vente à un client allemand et à un client suisse
+
+Prenons l'exemple d'une agence de conseil française qui facture deux clients le même mois.
+
+Le premier client est une entreprise basée à Munich, en Allemagne, assujettie à la TVA et disposant d'un numéro de TVA intracommunautaire valide. La prestation de conseil facturée 8 000 € est émise hors taxes, avec la mention "TVA due par le preneur - article 283-2 du CGI". L'agence transmet ensuite les données de cette transaction via l'e-reporting et reporte l'opération dans sa déclaration de TVA.
+
+Le second client est une société suisse, donc hors Union européenne. La prestation de conseil facturée 5 000 € est également émise hors taxes, cette fois avec la mention "TVA non applicable, article 259-1 du CGI". Les données de cette seconde vente sont aussi transmises via e-reporting, au même titre que la première.
+
+Dans les deux cas, aucune des deux factures ne transite par une PDP au titre de l'obligation d'e-invoicing B2B domestique : seules les données de la transaction remontent à l'administration.
+
+## Le calendrier et les sanctions applicables à l'e-reporting
+
+L'e-reporting existe déjà et continue de monter en puissance avec la réforme. Les données doivent être transmises selon une périodicité qui dépend de votre régime de TVA, le plus souvent mensuellement ou trimestriellement pour les opérations de vente, dans des délais resserrés par rapport à votre échéance de déclaration de TVA habituelle.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identifier, pour chaque facture, si le client est établi en France, dans l'UE ou hors UE</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier le numéro de TVA intracommunautaire de vos clients européens professionnels</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Appliquer la mention de TVA correcte selon la nature de l'opération et la localisation du client</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Transmettre les données d'e-reporting dans les délais impartis</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conserver les justificatifs d'export ou de prestation hors du champ pendant 10 ans</span>
+  </div>
+</div>
+
+Le défaut de transmission de l'e-reporting est sanctionné par une amende de 250 € par transmission manquante, plafonnée à 15 000 € par année civile. Cette sanction s'ajoute, le cas échéant, à celle applicable en cas de facture électronique domestique non conforme, fixée à 15 € par facture avec un plafond de 15 000 € par an.
+
+## Comment Newbi gère vos factures pour l'international
+
+Newbi vous permet d'émettre vos factures selon le format adapté à chaque client, qu'il soit établi en France, dans l'Union européenne ou hors UE. L'outil applique automatiquement les mentions de TVA appropriées lorsque vous renseignez le pays et le statut de votre client, et conserve l'historique de vos factures pendant toute la durée légale de conservation.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+Pour les clients établis en dehors de France, en Union européenne ou non, retrouvez également notre guide détaillé sur la façon de [facturer un client étranger, en UE ou hors UE](/blog/facturer-client-etranger-ue-hors-ue), qui reprend les mentions à appliquer selon chaque situation.
+
+## Faut-il quand même utiliser le format Factur-X pour ses clients étrangers ?
+
+Rien ne vous l'interdit, mais rien ne vous y oblige non plus pour les ventes hors du périmètre domestique. Le socle de formats structurés, [Factur-X, UBL ou CII](/blog/facturx-format-facture-electronique), a été pensé pour l'échange normalisé entre plateformes françaises. Pour un client étranger, un PDF classique respectant les mentions obligatoires reste parfaitement valable, tant que les données de la transaction sont bien transmises via e-reporting de votre côté.
+
+Certaines entreprises choisissent malgré tout de conserver un format structuré unique pour l'ensemble de leur facturation, française et internationale, afin de simplifier leur comptabilité et faciliter les échanges avec leur expert-comptable.
+
+## En résumé
+
+La réforme de la facturation électronique ne s'applique qu'aux transactions B2B entre entreprises établies en France, avec passage obligatoire par une plateforme de dématérialisation partenaire selon le calendrier 2026-2027. Vos clients étrangers, qu'ils soient dans l'Union européenne ou hors UE, ne sont pas concernés par cette obligation d'e-invoicing mais relèvent de l'e-reporting, qui impose de transmettre les données de chaque transaction à l'administration. Les mentions de TVA à porter sur la facture varient selon la localisation et le statut du client : autoliquidation intracommunautaire, exonération pour l'export, ou opération hors du champ pour certaines prestations de services. Bien identifier le statut de chaque client reste la clé pour appliquer la bonne mention et sécuriser votre facturation à l'international.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture électronique et les clients étrangers
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Dois-je envoyer mes factures via une PDP à un client étranger ?</AccordionTrigger>
+      <AccordionContent>
+        Non. L'obligation de transmission via une plateforme de dématérialisation partenaire ne concerne que les transactions B2B entre entreprises établies en France. Pour un client étranger, vous restez soumis à l'e-reporting, qui consiste à transmettre séparément les données de la transaction à l'administration.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qu'est-ce que l'e-reporting exactement ?</AccordionTrigger>
+      <AccordionContent>
+        L'e-reporting est l'obligation de transmettre à l'administration fiscale les données essentielles de vos transactions qui ne passent pas par le circuit de facturation électronique domestique, notamment les ventes aux clients étrangers et aux particuliers. Il permet à l'administration de conserver une vision complète de votre chiffre d'affaires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle mention de TVA indiquer sur une facture à un client de l'Union européenne ?</AccordionTrigger>
+      <AccordionContent>
+        Pour une prestation de services B2B avec un client européen assujetti disposant d'un numéro de TVA intracommunautaire valide, la mention est "TVA due par le preneur - article 283-2 du CGI". Pour une livraison de biens intracommunautaire, la mention devient "Exonération de TVA, article 262 ter I du CGI".
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que risque-t-on en cas d'e-reporting non transmis ?</AccordionTrigger>
+      <AccordionContent>
+        L'absence de transmission des données d'e-reporting est sanctionnée par une amende de 250 € par transmission manquante, plafonnée à 15 000 € par année civile. Il est donc important de suivre rigoureusement les échéances propres à ce dispositif, distinctes de celles de la TVA classique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>La réforme de la facture électronique s'applique-t-elle aux clients hors UE ?</AccordionTrigger>
+      <AccordionContent>
+        Non, les clients établis hors de l'Union européenne ne sont pas concernés par l'obligation d'émission de factures électroniques structurées. Vos ventes à l'export restent soumises à l'e-reporting et aux règles de TVA propres à l'exportation, avec exonération sous réserve d'un justificatif douanier.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

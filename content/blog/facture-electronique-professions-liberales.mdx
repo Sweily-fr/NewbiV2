@@ -1,0 +1,252 @@
+---
+title: 'Professions libérales et facturation électronique : ce qui change vraiment'
+description: >-
+  Médecins, avocats, consultants : activités exonérées de TVA, clients
+  particuliers, e-reporting et secret professionnel. Ce que la réforme change
+  pour les libéraux.
+date: '2026-11-16'
+category: guide
+sector: Professions médicales
+keyword: facturation électronique professions libérales
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-16'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Professions libérales et facturation électronique : ce qui change vraiment
+
+La **facturation électronique des professions libérales** soulève des questions différentes de celles des artisans ou des commerçants. Médecins, avocats, consultants, experts, architectes : la plupart de ces professionnels facturent des particuliers, exercent parfois une activité exonérée de TVA, et manient des informations couvertes par le secret professionnel. Ce guide fait le point sur ce qui change réellement pour ces métiers, sans confondre ce qui relève de la réforme et ce qui reste inchangé.
+
+Vous découvrirez qui est concerné selon votre clientèle, comment la réforme traite les activités exonérées de TVA, ce que signifie l'e-reporting pour vos ventes aux particuliers, et comment le secret professionnel est préservé dans les échanges avec l'administration.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qui, parmi les professions libérales, est concerné ?
+
+Toute profession libérale exerçant en France est concernée par la réforme, quelle que soit sa forme juridique (entreprise individuelle, société civile professionnelle, société d'exercice libéral) et son régime de TVA. Ce qui varie, c'est **la nature de l'obligation** selon le profil de la clientèle.
+
+Trois grandes situations se dessinent :
+
+- Le professionnel qui facture uniquement des **entreprises** (consultant en système d'information, expert-comptable, architecte travaillant pour des promoteurs) : il entre pleinement dans le champ de la facturation électronique B2B, avec émission et réception via une plateforme de dématérialisation partenaire (PDP).
+- Le professionnel qui facture uniquement des **particuliers** (médecin généraliste, kinésithérapeute, psychologue en cabinet) : ses opérations ne sont pas soumises à la facture électronique mais à **l'e-reporting**, un envoi de données de transaction à l'administration.
+- Le professionnel qui facture les deux (avocat conseillant des entreprises et des particuliers, ostéopathe intervenant aussi pour des clubs sportifs) : il cumule les deux régimes selon chaque client.
+
+Dans tous les cas, la réception de factures fournisseurs au format électronique est déjà obligatoire pour toutes les entreprises, y compris les professions libérales, depuis le 1er septembre 2026. C'est un point souvent sous-estimé : même un médecin qui ne facture que des particuliers doit être en mesure de **recevoir** des factures électroniques de ses propres fournisseurs (loyer professionnel, matériel médical, logiciels). Pour les règles de facturation qui s'appliquent au quotidien, en dehors de la réforme elle-même, notre [guide de la facture pour les professions libérales](/blog/facture-profession-liberale-guide) reste la référence à consulter.
+
+## Le calendrier applicable aux professions libérales
+
+Le calendrier de la réforme ne distingue pas les professions libérales des autres formes d'entreprises : il se fonde sur la taille de la structure.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Calendrier de la facture électronique pour les professions libérales</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Obligation</TableHead>
+        <TableHead>Grandes entreprises et ETI</TableHead>
+        <TableHead>PME, TPE, micro-entreprises</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Réception des factures électroniques</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Émission des factures électroniques (B2B)</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2027</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">E-reporting des ventes aux particuliers</TableCell>
+        <TableCell>Selon la taille de la structure</TableCell>
+        <TableCell>Même calendrier que l'émission</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+La quasi-totalité des professions libérales installées en cabinet individuel ou en petite structure relèvent de la catégorie PME, TPE ou micro-entreprise. Elles ont donc jusqu'au 1er septembre 2027 pour émettre leurs factures B2B au format électronique, mais doivent déjà pouvoir en recevoir depuis le 1er septembre 2026. Ce point est détaillé dans notre article sur la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026).
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le rôle du PPF a changé">
+    Depuis la réforme, le portail public de facturation (PPF) n'est plus une plateforme d'échange gratuite pour les entreprises. Il joue désormais le rôle d'annuaire des entreprises et de concentrateur : il centralise les données transmises par les [PDP](/blog/quest-ce-que-pdp-plateforme-dematerialisation) vers l'administration fiscale. L'émission et la réception des factures passent obligatoirement par une PDP immatriculée.
+  </Callout>
+</div>
+
+## Les activités exonérées de TVA : un cas particulier fréquent
+
+C'est ici que se concentre l'essentiel des questions des professions médicales. De nombreux actes de soins réalisés par les médecins, chirurgiens-dentistes, sages-femmes et auxiliaires médicaux sont **exonérés de TVA** en application de l'article 261-4-1° du Code général des impôts. Cette exonération ne dispense pourtant pas de la réforme.
+
+Un professionnel exonéré de TVA reste un **assujetti**, au sens fiscal du terme, même s'il ne facture jamais de TVA à ses clients. La distinction entre facture électronique et e-reporting ne dépend pas du régime de TVA, mais de la nature du client :
+
+- Si votre client est une **entreprise** (une clinique, un laboratoire, une mutuelle, un autre professionnel de santé qui vous refacture une garde), vous entrez dans le champ de la facture électronique B2B, exonération de TVA ou non.
+- Si votre client est un **particulier** (un patient), l'opération relève de l'e-reporting, que la prestation soit soumise à la TVA ou exonérée.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne confondez pas exonération de TVA et absence d'obligation">
+    Être exonéré de TVA au titre de l'article 261-4-1° du CGI (actes médicaux) ou de la franchise en base ne dispense jamais de la réforme de la facturation électronique. Cela dispense uniquement de facturer la TVA elle-même. La mention obligatoire à faire figurer reste "TVA non applicable, article 261-4-1° du CGI" ou "TVA non applicable, article 293 B du CGI" selon le cas.
+  </Callout>
+</div>
+
+### Exemple chiffré : un médecin généraliste en secteur 1
+
+Un médecin généraliste conventionné en secteur 1 facture ses consultations 26,50 €, exonérées de TVA. Sur une année, il réalise 4 200 consultations pour des patients particuliers et facture ponctuellement des expertises pour une compagnie d'assurance, pour un montant de 3 800 € HT.
+
+- Les 4 200 consultations aux patients relèvent de l'e-reporting : aucune facture électronique individuelle à transmettre à une PDP, mais des données agrégées de chiffre d'affaires à transmettre périodiquement.
+- Les expertises facturées à la compagnie d'assurance relèvent, elles, de la facture électronique B2B classique dès lors que l'obligation d'émission s'appliquera à sa catégorie d'entreprise, soit le 1er septembre 2027 pour une micro-entreprise ou une entreprise individuelle.
+
+## L'e-reporting pour les ventes aux particuliers
+
+L'e-reporting concerne toutes les opérations qui ne donnent pas lieu à une facture électronique transmise via une PDP : ventes et prestations à des particuliers (B2C) et, pour partie, opérations internationales. Il s'agit de transmettre à l'administration fiscale des données de transaction (montant, TVA le cas échéant, période), sans passer par l'échange facture par facture entre professionnels.
+
+Pour approfondir le fonctionnement, les données concernées et le calendrier précis, notre article dédié à l'[e-reporting : définition, obligations et calendrier](/blog/e-reporting-definition-obligations-calendrier) détaille chaque cas. Pour une profession libérale majoritairement tournée vers les particuliers, comme un ostéopathe, un psychologue ou un médecin généraliste, l'e-reporting est en pratique l'obligation la plus structurante de la réforme.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'e-reporting s'applique aux ventes et prestations réalisées avec des <strong>particuliers</strong>, y compris pour les actes exonérés de TVA</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les données transmises sont <strong>agrégées</strong> par période, pas facture par facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le rythme de transmission dépend de votre régime de TVA (mensuel, trimestriel ou selon votre situation de franchise)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un logiciel de facturation à jour peut préparer ces données automatiquement à partir de votre historique</span>
+  </div>
+</div>
+
+## Secret professionnel : ce que la réforme ne change pas
+
+C'est la préoccupation la plus légitime des avocats, médecins et autres professions soumises au secret professionnel. La crainte est de voir des informations sensibles, comme la nature d'une consultation médicale ou l'objet d'un dossier juridique, transiter vers l'administration fiscale.
+
+En réalité, la réforme repose sur une distinction stricte entre deux catégories de données :
+
+- Les **données de facturation** proprement dites (identité des parties, montants, TVA, dates, numéro de facture) sont celles qui transitent par la PDP puis vers l'administration.
+- Le **libellé détaillé** de la prestation reste sous votre contrôle. Vous n'êtes jamais tenu de faire apparaître le détail d'un acte médical ou la nature d'un dossier juridique sur une facture transmise électroniquement : une description générique ("consultation", "prestation de conseil juridique", "acte du 14 novembre 2026") suffit à répondre aux mentions obligatoires de la facture.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Adaptez le libellé de vos prestations">
+    Pour un avocat ou un médecin, il est recommandé d'utiliser des libellés génériques sur les factures et de conserver le détail confidentiel dans le dossier client, en dehors du flux transmis à la PDP. Cette pratique, déjà courante avant la réforme, reste pleinement compatible avec les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture).
+  </Callout>
+</div>
+
+## Cas concret : un avocat avec une clientèle mixte
+
+Prenons un avocat exerçant en entreprise individuelle, avec un chiffre d'affaires annuel de 95 000 € HT, réparti entre des clients entreprises (60 %) et des clients particuliers (40 %). Il est assujetti à la TVA au taux normal de 20 % car son activité dépasse le seuil de la franchise en base de 37 500 € pour les prestations de services.
+
+- Pour ses honoraires facturés à des entreprises, il devra émettre des factures électroniques via une PDP à compter du 1er septembre 2027, et pourra déjà recevoir les factures de ses propres fournisseurs sous ce format depuis le 1er septembre 2026.
+- Pour ses honoraires facturés à des particuliers, il relève de l'e-reporting selon le même calendrier que son émission de factures.
+- Il doit dans tous les cas continuer à respecter les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) et le [numéro de facture](/blog/quest-ce-que-numero-facture) séquentiel, indépendamment du format électronique.
+
+## Comment Newbi accompagne les professions libérales
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un outil pensé pour les indépendants">
+    Newbi permet de créer des factures conformes aux mentions obligatoires, de gérer une numérotation séquentielle propre à votre activité, et de suivre vos encaissements, que votre clientèle soit composée de particuliers, d'entreprises ou des deux. La plateforme évolue avec le calendrier de la réforme pour accompagner l'émission électronique des factures B2B.
+  </Callout>
+</div>
+
+Pour un professionnel libéral, la difficulté n'est pas seulement de se conformer à la réforme : c'est de gérer au quotidien une facturation avec des règles différentes selon le client. Newbi centralise la création de factures, le suivi des paiements et le partage des documents avec votre expert-comptable, pour que la conformité ne devienne pas un fardeau administratif supplémentaire.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## Ce qu'il faut vérifier avant l'échéance
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identifier la part de votre chiffre d'affaires réalisée avec des entreprises et celle réalisée avec des particuliers</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier que votre logiciel de facturation peut recevoir des factures électroniques depuis le 1er septembre 2026</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Choisir une PDP immatriculée avant votre date d'obligation d'émission</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Adapter vos libellés de prestations si vous êtes soumis au secret professionnel</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier avec votre expert-comptable le rythme de transmission applicable à votre e-reporting</span>
+  </div>
+</div>
+
+## En résumé
+
+Pour les professions libérales, la facturation électronique n'est pas un régime uniforme : elle dépend avant tout du type de client facturé, entreprise ou particulier, indépendamment du régime de TVA applicable à l'activité. Les professions médicales exonérées de TVA au titre de l'article 261-4-1° du CGI restent concernées par la réforme dès qu'elles facturent une entreprise, et par l'e-reporting pour leurs patients. Le secret professionnel n'est pas menacé par la réforme, qui ne transmet que des données de facturation et non le détail des actes ou des dossiers. Anticiper la réception dès le 1er septembre 2026 et préparer l'émission avant le 1er septembre 2027 pour la plupart des structures libérales permet d'aborder ce changement sereinement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation électronique des professions libérales
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un médecin exonéré de TVA doit-il émettre des factures électroniques ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si ses clients sont des entreprises (clinique, mutuelle, assurance). L'exonération de TVA prévue par l'article 261-4-1° du CGI ne dispense pas de la réforme de la facturation électronique, qui dépend du statut du client et non du régime de TVA. Pour les patients particuliers, c'est l'e-reporting qui s'applique, pas la facture électronique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quand un avocat ou un consultant doit-il émettre ses premières factures électroniques ?</AccordionTrigger>
+      <AccordionContent>
+        Pour la grande majorité des professions libérales, classées en PME, TPE ou micro-entreprise, l'obligation d'émission de factures électroniques B2B démarre le 1er septembre 2027. La réception de factures électroniques est en revanche déjà obligatoire depuis le 1er septembre 2026, quelle que soit la taille de la structure.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>La réforme menace-t-elle le secret professionnel des médecins et avocats ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Seules les données de facturation (montants, dates, identité des parties, TVA) transitent par la plateforme de dématérialisation partenaire vers l'administration. Le détail des actes médicaux ou des dossiers juridiques n'a pas à figurer sur la facture : un libellé générique suffit et reste compatible avec les mentions obligatoires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Qu'est-ce que l'e-reporting pour une profession libérale ?</AccordionTrigger>
+      <AccordionContent>
+        L'e-reporting est la transmission à l'administration fiscale de données agrégées sur les ventes et prestations réalisées avec des particuliers, qui ne passent pas par l'échange de factures électroniques entre professionnels. Il concerne la majorité des professions médicales et paramédicales, dont la clientèle est principalement composée de patients.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il choisir une PDP même pour une petite activité libérale ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dès lors que vous facturez au moins une entreprise, vous devrez passer par une plateforme de dématérialisation partenaire immatriculée pour émettre vos factures électroniques. Le portail public de facturation ne joue plus le rôle d'échange gratuit entre entreprises : il sert désormais d'annuaire et de concentrateur de données vers l'administration.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,240 @@
+---
+title: 'Les statuts de la facture électronique : déposée, rejetée, refusée, encaissée'
+description: >-
+  Le cycle de vie d'une facture électronique et ses statuts obligatoires et
+  facultatifs. Ce que signifie chaque statut et ce qu'il faut faire à chaque
+  étape.
+date: '2026-09-21'
+category: glossaire
+sector: null
+keyword: statut facture électronique
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-21'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Les statuts de la facture électronique : déposée, rejetée, refusée, encaissée
+
+Le **statut de la facture électronique** est la pièce centrale du nouveau système de facturation en France. Depuis qu'une facture ne circule plus par email ou courrier mais transite par une plateforme, chaque étape de son parcours est tracée : dépôt, transmission, rejet éventuel, refus éventuel, puis encaissement. Ce suivi n'est pas une simple option de confort, c'est une obligation qui conditionne la conformité de votre facturation et, in fine, votre droit à déduction de la TVA côté client.
+
+Ce guide détaille les quatre statuts obligatoires du cycle de vie d'une facture électronique, les statuts facultatifs que certaines plateformes proposent en complément, et ce que vous devez faire concrètement à chaque étape pour rester en règle.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi la facture électronique a besoin d'un cycle de vie
+
+Une facture papier ou PDF envoyée par email n'a pas de statut : elle est envoyée, un point c'est tout. Vous ne savez pas si votre client l'a reçue, s'il l'a validée, s'il compte la payer ou s'il conteste un montant. Cette absence de traçabilité est justement l'un des problèmes que la réforme de la facturation électronique cherche à résoudre.
+
+Dans le nouveau dispositif, chaque facture qui transite par une [plateforme de dématérialisation partenaire (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation) reçoit un statut à chaque étape de son parcours. Ce statut est ensuite transmis à l'administration fiscale, via le portail public de facturation qui joue désormais le rôle d'annuaire et de concentrateur de données plutôt que de plateforme d'échange gratuite. L'objectif est double : donner à l'administration une vision en temps réel de l'activité économique des entreprises, et donner aux entreprises elles-mêmes un outil de suivi fiable de leurs encaissements.
+
+Cette obligation de suivi des statuts s'inscrit dans le calendrier de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026) : réception obligatoire pour toutes les entreprises depuis le 1er septembre 2026, émission obligatoire pour les grandes entreprises et les ETI depuis cette même date, puis pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027.
+
+## Les quatre statuts obligatoires du cycle de vie
+
+Le cadre réglementaire impose la transmission d'un socle minimal de statuts, quel que soit le secteur d'activité ou la taille de l'entreprise. Ces statuts obligatoires racontent l'histoire complète d'une facture, de son dépôt jusqu'à son paiement.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les quatre statuts obligatoires du cycle de vie d'une facture électronique</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[140px]">Statut</TableHead>
+        <TableHead>Qui le déclenche</TableHead>
+        <TableHead>Ce qu'il signifie</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Déposée</TableCell>
+        <TableCell>La plateforme de l'émetteur</TableCell>
+        <TableCell>La facture a été transmise avec succès à la plateforme et est en cours d'acheminement vers le destinataire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Rejetée</TableCell>
+        <TableCell>La plateforme (contrôle automatique)</TableCell>
+        <TableCell>La facture ne respecte pas les exigences techniques : format non conforme, mention obligatoire manquante, SIRET invalide</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Refusée</TableCell>
+        <TableCell>Le destinataire (action manuelle)</TableCell>
+        <TableCell>La facture est techniquement valide mais le client conteste son bien-fondé : erreur de montant, prestation non conforme, commande non reconnue</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Encaissée</TableCell>
+        <TableCell>L'émetteur (ou sa banque)</TableCell>
+        <TableCell>Le paiement, total ou partiel, a été perçu. Ce statut est particulièrement suivi pour les prestations de services soumises à la TVA sur les encaissements</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Rejet et refus : ne confondez pas les deux">
+    Le rejet est un contrôle automatique et technique effectué par la plateforme avant même que le destinataire ne voie la facture. Le refus, lui, suppose que la facture est arrivée intacte chez le client, mais que ce dernier conteste son contenu pour un motif commercial ou contractuel. Un rejet se corrige côté émetteur, un refus se négocie avec le client.
+  </Callout>
+</div>
+
+### Le statut "Déposée" : le point de départ du suivi
+
+Dès que vous transmettez votre facture à votre plateforme de dématérialisation partenaire, celle-ci accuse réception et attribue le statut "Déposée". Ce statut technique confirme uniquement que le fichier a été reçu par la plateforme, pas encore qu'il a été validé sur le fond ni transmis au destinataire. C'est l'équivalent d'un accusé de dépôt postal : la lettre est partie, mais rien ne garantit encore qu'elle arrivera intacte.
+
+### Le statut "Rejetée" : une erreur bloque la transmission
+
+Une facture est rejetée lorsqu'elle échoue à un contrôle technique automatique. Les causes les plus fréquentes sont un format non conforme aux standards du socle (Factur-X, UBL ou CII), l'absence d'une mention obligatoire, un numéro de SIRET erroné ou une incohérence entre le montant HT, le taux de TVA et le montant TTC. Une facture rejetée n'est jamais parvenue au destinataire : elle doit être corrigée puis redéposée par l'émetteur.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un rejet n'est pas une facture rectificative">
+    Si votre facture est rejetée avant d'avoir atteint votre client, vous n'avez pas besoin d'émettre un [avoir](/blog/quest-ce-que-avoir-credit). Vous corrigez le document et le redéposez sous le même numéro logique de dossier, tant qu'il n'a jamais été considéré comme émis vis-à-vis du destinataire.
+  </Callout>
+</div>
+
+### Le statut "Refusée" : le client conteste la facture
+
+Le refus intervient après que la facture a bien été transmise et reçue. Le client peut la refuser dans un délai fixé par les conditions générales de vente ou par un usage raisonnable, généralement quelques jours ouvrés. Les motifs de refus les plus courants sont une quantité livrée différente de la commande, un tarif ne correspondant pas au devis signé, ou une prestation jugée non conforme. Contrairement au rejet, le refus ouvre une discussion commerciale : il peut déboucher sur une facture rectificative, un avoir partiel, ou une simple régularisation amiable.
+
+### Le statut "Encaissée" : la boucle du paiement
+
+Le statut "Encaissée" clôture le cycle de vie obligatoire. Il est renseigné lorsque le paiement, intégral ou partiel, a été reçu par l'émetteur. Ce statut a une importance particulière pour les prestataires de services soumis à la TVA sur les encaissements, puisque l'exigibilité de la taxe dépend précisément de la date d'encaissement, et non de la date d'émission de la facture.
+
+## Cas pratique : le parcours complet d'une facture de 3 500 €
+
+Prenons l'exemple d'une entreprise de conseil qui facture une mission de 3 500 € HT, soit 4 200 € TTC avec une TVA à 20 %.
+
+- **Jour 1** : la facture est transmise à la plateforme. Statut "Déposée".
+- **Jour 1**, quelques minutes plus tard : le contrôle automatique détecte un numéro de SIRET du client mal renseigné. Statut "Rejetée". L'émetteur corrige le SIRET et redépose le fichier, qui repasse au statut "Déposée" puis est transmis avec succès au destinataire.
+- **Jour 3** : le client, au vu du montant, considère qu'une remise contractuelle de 5 % n'a pas été appliquée. Il passe la facture au statut "Refusée" et signale le motif.
+- **Jour 4** : après vérification, l'émetteur reconnaît l'erreur et émet une facture rectificative de 3 325 € HT, soit 3 990 € TTC.
+- **Jour 32** : le client règle la nouvelle facture. Statut "Encaissée" pour 3 990 €.
+
+Ce fil conducteur montre pourquoi le suivi des statuts n'est pas un simple gadget administratif : il documente objectivement chaque désaccord et sécurise la relance en cas d'impayé.
+
+## Les statuts facultatifs du cycle de vie
+
+Au-delà des quatre statuts obligatoires, les plateformes peuvent proposer des statuts complémentaires, plus fins, pour affiner le suivi commercial. Ces statuts ne sont pas exigés par la réglementation mais sont utiles à la gestion quotidienne :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Mise à disposition</strong> : la facture est accessible au destinataire mais celui-ci ne l'a pas encore consultée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Approuvée</strong> : le destinataire valide explicitement la facture, sans attendre le paiement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Approuvée partiellement</strong> : seule une partie du montant est validée, le reste fait l'objet d'une contestation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Litige</strong> : un désaccord formel est ouvert entre les deux parties, souvent après un refus non résolu</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Paiement transmis</strong> : l'émetteur a envoyé l'ordre de virement, avant l'encaissement effectif</span>
+  </div>
+</div>
+
+## Qui transmet les statuts et à qui
+
+La transmission des statuts obligatoires ne repose pas sur vous directement : c'est votre plateforme de dématérialisation partenaire qui s'en charge, en agrégeant les informations de dépôt, de rejet, de refus et d'encaissement, puis en les faisant remonter vers l'administration. Le [PPF](/blog/quest-ce-que-ppf-portail-public-facturation) centralise ces données pour constituer l'annuaire national des entreprises et alimenter les contrôles fiscaux, mais il n'a plus vocation à servir de canal d'échange gratuit entre entreprises comme cela avait été envisagé initialement.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Le statut, un outil de preuve en cas de litige">
+    En cas de désaccord avec un client sur une date de paiement ou une contestation de facture, l'historique des statuts constitue une preuve horodatée précieuse. Conservez cet historique au même titre que vos factures, pendant la durée légale de conservation de 10 ans prévue par le Code de commerce.
+  </Callout>
+</div>
+
+## Que faire en cas de rejet ou de refus
+
+Face à un rejet, la marche à suivre est mécanique : identifiez l'erreur signalée par le contrôle automatique, corrigez le fichier source (souvent une mention obligatoire ou un format non conforme au [Factur-X, à l'UBL ou au CII](/blog/facturx-format-facture-electronique)), puis redéposez la facture sur la plateforme. Le compteur repart de zéro sur le cycle de vie, sans conséquence fiscale si la correction intervient rapidement.
+
+Face à un refus, la démarche est différente et davantage commerciale :
+
+1. Contactez le client pour comprendre précisément le motif du refus.
+2. Vérifiez le devis, le bon de commande ou le contrat initial pour objectiver le désaccord.
+3. Selon le résultat, émettez une facture rectificative si l'erreur vous incombe, ou fournissez les justificatifs nécessaires si la facture était correcte.
+4. Documentez l'échange pour conserver une trace en cas de contentieux ultérieur.
+
+Un rejet ou un refus non traité dans un délai raisonnable peut retarder l'encaissement et, dans les situations les plus tendues, nécessiter une procédure de relance formelle.
+
+## Suivre le cycle de vie de vos factures avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Un tableau de bord unique pour tous vos statuts">
+    Newbi centralise le suivi de vos factures, de leur création à leur encaissement, avec un statut clair pour chaque document. Vous visualisez en un coup d'oeil les factures en attente, celles qui nécessitent une action et celles qui sont réglées, sans jongler entre plusieurs outils.
+  </Callout>
+</div>
+
+L'enjeu du cycle de vie de la facture électronique n'est pas seulement réglementaire : il touche directement votre trésorerie. Savoir en temps réel quelles factures sont en attente, rejetées ou en litige vous permet de relancer plus vite et d'anticiper vos encaissements.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Le cycle de vie d'une facture électronique s'articule autour de quatre statuts obligatoires : déposée au moment de la transmission à la plateforme, rejetée en cas d'erreur technique détectée automatiquement, refusée lorsque le destinataire conteste le fond du document, et encaissée quand le paiement est perçu. Des statuts facultatifs comme la mise à disposition, l'approbation ou le litige viennent affiner ce suivi selon les plateformes. Comprendre la différence entre un rejet, qui se corrige côté émetteur, et un refus, qui se négocie avec le client, vous permet de réagir vite et de sécuriser vos encaissements dans le nouveau cadre de la facturation électronique.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le statut de la facture électronique
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre une facture rejetée et une facture refusée ?</AccordionTrigger>
+      <AccordionContent>
+        Une facture rejetée n'a jamais atteint le destinataire : elle échoue à un contrôle technique automatique (format, mention manquante, SIRET erroné) effectué par la plateforme. Une facture refusée, elle, est arrivée intacte chez le client, qui conteste ensuite son contenu pour un motif commercial, comme une quantité ou un tarif erroné.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qui attribue le statut à une facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Les statuts "Déposée" et "Rejetée" sont attribués automatiquement par la plateforme de dématérialisation partenaire lors de la transmission et du contrôle technique. Le statut "Refusée" résulte d'une action manuelle du destinataire, et le statut "Encaissée" est renseigné par l'émetteur ou sa banque au moment du paiement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Le statut encaissée est-il obligatoire pour toutes les factures ?</AccordionTrigger>
+      <AccordionContent>
+        Le statut encaissée fait partie des quatre statuts obligatoires du cycle de vie, mais son suivi est particulièrement déterminant pour les prestataires de services soumis à la TVA sur les encaissements, puisque l'exigibilité de la taxe dépend de la date de paiement effectif et non de la date d'émission de la facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que faire si ma facture reste bloquée au statut rejetée ?</AccordionTrigger>
+      <AccordionContent>
+        Consultez le motif de rejet transmis par votre plateforme, corrigez l'erreur identifiée, généralement une mention obligatoire manquante ou un format non conforme, puis redéposez le fichier corrigé. Tant que la facture n'a pas été transmise avec succès au destinataire, aucune démarche fiscale supplémentaire n'est nécessaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le portail public de facturation gère-t-il lui-même les statuts ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Depuis l'évolution du dispositif, le portail public de facturation joue le rôle d'annuaire des entreprises et de concentrateur des données transmises à l'administration, mais ce sont les plateformes de dématérialisation partenaires qui gèrent la transmission des factures et le suivi des statuts entre émetteurs et destinataires.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

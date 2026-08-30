@@ -1,0 +1,235 @@
+---
+title: 'Facture de traducteur indépendant : tarif au mot, clients étrangers et TVA'
+description: >-
+  Facturer au mot, à la page ou à l'heure, gérer les clients hors de France
+  et l'autoliquidation : le guide de la facturation pour traducteurs et
+  interprètes.
+date: '2026-10-07'
+category: guide
+sector: Services / Indépendants
+keyword: facture traducteur
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-07'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">Services / Indépendants</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facture de traducteur indépendant : tarif au mot, clients étrangers et TVA
+
+La **facture de traducteur** obéit aux mêmes règles générales que toute facture de prestation de service, mais elle présente deux particularités fortes : une unité de tarification propre au métier, souvent au mot ou à la page, et une clientèle fréquemment installée hors de France, ce qui change radicalement le traitement de la TVA.
+
+Ce guide détaille comment structurer une facture de traduction, choisir son unité de facturation, appliquer les bonnes règles de TVA selon la localisation du client, et éviter les erreurs les plus fréquentes chez les traducteurs et interprètes indépendants.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Choisir son unité de facturation : mot, page, heure ou forfait
+
+Contrairement à de nombreuses prestations de service facturées à l'heure ou à la journée, la traduction dispose de ses propres unités de mesure, héritées des habitudes du secteur de l'édition et de la localisation.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les unités de facturation courantes en traduction</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Unité</TableHead>
+        <TableHead>Usage typique</TableHead>
+        <TableHead>Fourchette indicative</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Au mot source</TableCell>
+        <TableCell>Documents techniques, juridiques, marketing</TableCell>
+        <TableCell>0,08 à 0,20 € par mot</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">À la page (250 ou 300 mots)</TableCell>
+        <TableCell>Traduction littéraire, documents administratifs</TableCell>
+        <TableCell>25 à 60 € par page</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">À l'heure</TableCell>
+        <TableCell>Relecture, post-édition, révision</TableCell>
+        <TableCell>35 à 70 € de l'heure</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Au forfait</TableCell>
+        <TableCell>Projets récurrents, gros volumes négociés</TableCell>
+        <TableCell>Variable selon le projet</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le choix de l'unité doit être précisé dès le devis, avec le nombre de mots ou de pages estimé, pour éviter toute contestation au moment de la facturation. Un devis clair et accepté par le client sécurise la relation, comme le rappelle notre guide pour [élaborer un devis professionnel](/blog/comment-faire-devis-professionnel).
+
+### Exemple chiffré : traduction technique au mot
+
+Un traducteur indépendant traduit un manuel technique de 8 000 mots pour un client français, au tarif de 0,12 € par mot :
+
+- Nombre de mots : 8 000
+- Tarif au mot : 0,12 €
+- Montant HT : 960 €
+- TVA à 20 % (client français) : 192 €
+- Montant TTC : 1 152 €
+
+## Facturer un client interprète ou une agence : mêmes règles, volumes différents
+
+Qu'il s'agisse d'un client direct (entreprise, éditeur, particulier) ou d'une agence de traduction qui sous-traite une partie de ses volumes, les règles de facturation restent identiques sur le fond. Seule la fréquence change : les agences envoient souvent des commandes régulières, ce qui justifie la mise en place d'une [facturation récurrente](/blog/automatiser-facturation-recurrente) ou d'un tarif dégressif au-delà d'un certain volume mensuel.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Fixez un tarif minimum de facturation">
+    Pour les très petites missions (quelques dizaines de mots), fixez un montant minimum de facturation, par exemple 30 ou 50 €, plutôt que d'appliquer strictement le tarif au mot. Cela couvre le temps administratif incompressible lié à chaque mission, quelle que soit sa taille.
+  </Callout>
+</div>
+
+## La TVA selon la localisation du client : le point clé du métier
+
+C'est ici que la facturation d'un traducteur diffère le plus d'une prestation de service classique facturée uniquement à des clients français. Les traducteurs travaillent très fréquemment avec des clients situés dans un autre pays de l'Union européenne ou hors de l'Union européenne, ce qui change complètement le traitement de la TVA.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le principe : la TVA suit le lieu d'établissement du preneur">
+    Pour une prestation de service immatérielle comme la traduction, rendue à un client professionnel (B2B), la TVA est en principe due dans le pays où le client est établi, et non dans celui du prestataire. Ce principe, posé par l'article 259-1 du CGI, s'applique que le client soit dans l'Union européenne ou en dehors.
+  </Callout>
+</div>
+
+### Client professionnel dans un autre pays de l'Union européenne
+
+Le traducteur facture **hors taxe**, sans TVA française, et porte la mention « Autoliquidation » sur sa facture. C'est le client qui autoliquide la TVA dans son propre pays. Cette opération doit également être déclarée dans la déclaration européenne de services (DES) auprès de la douane française.
+
+### Client professionnel hors de l'Union européenne
+
+La prestation est **hors du champ d'application de la TVA française**. Le traducteur facture sans TVA, avec une mention telle que « TVA non applicable, article 259-1 du CGI, prestation hors Union européenne ».
+
+### Client particulier en France ou dans l'Union européenne
+
+Lorsque le client est un particulier, les règles changent : la TVA reste en principe due dans le pays du prestataire pour de nombreuses prestations immatérielles, sauf régimes particuliers. Un traducteur en franchise en base facturant un particulier français appliquera simplement la mention « TVA non applicable, article 293 B du CGI », tant qu'il reste sous les seuils de la franchise.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier le <strong>statut du client</strong> (professionnel ou particulier) avant d'établir la facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vérifier le <strong>numéro de TVA intracommunautaire</strong> du client professionnel européen</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Appliquer la <strong>mention d'autoliquidation</strong> pour les clients professionnels étrangers</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Déclarer les prestations intracommunautaires dans la <strong>déclaration européenne de services</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Facturer dans la <strong>devise appropriée</strong> lorsque le client le demande, en précisant le taux de change utilisé</span>
+  </div>
+</div>
+
+L'ensemble des règles applicables selon la localisation exacte du client, y compris les particuliers, est détaillé dans notre guide pour [facturer un client étranger, dans l'Union européenne ou hors de l'Union européenne](/blog/facturer-client-etranger-ue-hors-ue).
+
+### Exemple chiffré : client professionnel allemand
+
+Un traducteur facture 3 000 mots de traduction marketing à une agence établie en Allemagne, assujettie à la TVA, au tarif de 0,15 € par mot :
+
+- Montant HT : 450 €
+- TVA : autoliquidée par le client en Allemagne
+- Montant net facturé : 450 €
+- Mention portée sur la facture : « Autoliquidation, article 283-2 du CGI »
+
+## Les mentions à ne pas oublier sur une facture de traducteur
+
+Au-delà des règles de TVA, une facture de traduction doit reprendre l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) : identité complète du traducteur et du client, numéro de facture, date, description précise de la prestation (langue source, langue cible, domaine, nombre de mots ou de pages), montant et conditions de paiement. Il est également utile de préciser le nom du fichier ou du projet livré, pour faciliter le suivi côté client, notamment lorsque plusieurs missions sont facturées la même période.
+
+## Anticiper les délais de paiement avec des clients à l'étranger
+
+Facturer des clients situés hors de France ajoute une contrainte pratique souvent sous-estimée : le délai et le coût des virements internationaux. Un virement SEPA classique, valable pour tout client de la zone euro, arrive généralement en 1 à 2 jours ouvrés sans frais notables. En revanche, un virement en provenance d'un pays hors zone SEPA (Royaume-Uni, Suisse, États-Unis, ou plus largement hors Union européenne) peut prendre plusieurs jours et générer des frais bancaires, parfois répercutés sur le montant reçu par le traducteur si cela n'a pas été précisé au préalable.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Précisez qui supporte les frais bancaires">
+    Sur vos factures internationales, indiquez explicitement que les frais de virement restent à la charge du client, ou intégrez une clause en ce sens dans vos conditions générales de vente. Sans cette précision, vous risquez de recevoir un montant net inférieur à celui facturé, la banque du client ou une banque intermédiaire prélevant ses frais sur la somme transférée.
+  </Callout>
+</div>
+
+Il est également recommandé de fixer un délai de paiement légèrement plus long pour les clients hors zone euro (30 à 45 jours plutôt que 15 à 30 jours), afin de tenir compte des délais administratifs propres aux grandes structures étrangères, tout en gardant à l'esprit que ce délai reste négociable et doit figurer clairement sur le devis comme sur la facture.
+
+## Traducteur, rédacteur : des logiques de facturation proches
+
+Le traducteur partage de nombreux points communs avec d'autres métiers de l'écrit facturés au volume, comme le rédacteur web. La logique de tarification à l'unité de texte, la gestion de clients récurrents et la question de la propriété intellectuelle sur les textes livrés se retrouvent d'ailleurs dans notre guide sur la [facture de rédacteur web freelance](/blog/facture-redacteur-web-freelance), utile si vous combinez traduction et rédaction dans votre activité.
+
+## Comment Newbi simplifie la facturation des traducteurs indépendants
+
+Newbi permet de créer des factures avec des lignes personnalisées, adaptées à une tarification au mot, à la page ou à l'heure, et gère automatiquement les mentions de TVA selon que le client est français, situé dans l'Union européenne ou hors de l'Union européenne. Pour les traducteurs qui travaillent avec des clients à l'étranger, la facturation en devise étrangère et le suivi des paiements internationaux sont directement intégrés au tableau de bord.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer ma facture de traduction</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Facturer en tant que traducteur indépendant demande de choisir une unité de facturation adaptée au type de mission (mot, page, heure ou forfait) et surtout de maîtriser les règles de TVA selon la localisation du client. Pour un client professionnel dans l'Union européenne, la facture est émise hors taxe avec autoliquidation. Pour un client professionnel hors de l'Union européenne, la prestation sort du champ d'application de la TVA française. Pour un particulier, les règles de la franchise en base ou de la TVA française classique continuent de s'appliquer. Bien identifier le statut et la localisation de chaque client avant l'émission de la facture évite la grande majorité des erreurs de TVA rencontrées dans ce métier.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de traducteur indépendant
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment facturer une traduction à un client professionnel dans l'Union européenne ?</AccordionTrigger>
+      <AccordionContent>
+        Vous facturez hors taxe, sans TVA française, en portant la mention « Autoliquidation » sur votre facture. C'est le client qui déclare et reverse la TVA dans son propre pays. Vous devez aussi vérifier son numéro de TVA intracommunautaire et déclarer l'opération dans la déclaration européenne de services.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Faut-il facturer la TVA à un client situé hors de l'Union européenne ?</AccordionTrigger>
+      <AccordionContent>
+        Non, en principe. Une prestation de traduction rendue à un client professionnel établi hors de l'Union européenne est hors du champ d'application de la TVA française, en application de l'article 259-1 du CGI. La facture est émise sans TVA, avec une mention le précisant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle unité choisir pour facturer une traduction : le mot ou la page ?</AccordionTrigger>
+      <AccordionContent>
+        Le tarif au mot est le plus courant pour les documents techniques, juridiques ou marketing, car il permet une estimation précise dès le devis. Le tarif à la page reste utilisé pour la traduction littéraire ou certains documents administratifs. L'important est d'annoncer clairement l'unité choisie et le volume estimé dans le devis avant d'accepter la mission.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un traducteur en franchise en base doit-il quand même vérifier la TVA de ses clients étrangers ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Le régime de la franchise en base concerne la TVA française sur les prestations facturées à des clients situés en France. Pour les clients professionnels étrangers, les règles de territorialité de la TVA s'appliquent indépendamment du régime de franchise, ce qui peut nécessiter une déclaration européenne de services même sans TVA à facturer.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment facturer une mission d'interprétariat, différente d'une traduction écrite ?</AccordionTrigger>
+      <AccordionContent>
+        L'interprétariat se facture généralement à l'heure, à la demi-journée ou à la journée plutôt qu'au mot, puisqu'il s'agit d'une prestation orale et non d'un volume de texte. Les règles de TVA selon la localisation du client restent identiques à celles applicables à la traduction écrite.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

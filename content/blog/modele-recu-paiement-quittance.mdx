@@ -1,0 +1,241 @@
+---
+title: 'Reçu de paiement et quittance : modèle gratuit et différence avec la facture'
+description: >-
+  Un reçu prouve l'encaissement, il ne remplace pas la facture. Modèle de reçu
+  à télécharger, mentions, cas des espèces et acquittement d'une facture.
+date: '2026-11-23'
+category: modele
+sector: null
+keyword: modèle reçu de paiement
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-23'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Reçu de paiement et quittance : modèle gratuit et différence avec la facture
+
+Vous cherchez un **modèle reçu de paiement** à remettre à un client après un règlement, sans savoir si ce document suffit sur le plan légal ? Un reçu de paiement atteste qu'une somme a bien été encaissée, mais il ne remplace jamais une facture lorsque celle-ci est obligatoire. Ce guide vous donne un modèle de reçu prêt à l'emploi, les mentions à y faire figurer, la différence avec la quittance, et les règles à respecter lorsque le paiement a lieu en espèces.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce qu'un reçu de paiement ?
+
+Un reçu de paiement est un document simple qui atteste qu'une somme d'argent a été remise et encaissée par son destinataire, à une date donnée et pour un motif précis. Il sert de preuve matérielle de l'encaissement, notamment utile en cas de litige ultérieur sur le fait qu'un règlement a bien eu lieu.
+
+Contrairement à la facture, le reçu n'a aucune valeur fiscale : il ne détaille pas la TVA, ne suit pas de numérotation légale obligatoire et n'a pas à respecter les mentions prévues par l'article 242 nonies A de l'annexe II du Code général des impôts. C'est un document de confort, complémentaire, jamais un substitut.
+
+## Reçu, quittance et facture : ne pas confondre
+
+Ces trois documents sont souvent utilisés indifféremment dans le langage courant, alors qu'ils recouvrent des réalités différentes.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre reçu, quittance et facture</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[150px]">Critère</TableHead>
+        <TableHead>Reçu</TableHead>
+        <TableHead>Quittance</TableHead>
+        <TableHead>Facture</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Objet</TableCell>
+        <TableCell>Prouver qu'un paiement a été reçu</TableCell>
+        <TableCell>Attester qu'une dette est éteinte (souvent le loyer)</TableCell>
+        <TableCell>Documenter une vente ou une prestation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Obligation légale</TableCell>
+        <TableCell>Facultative, sauf demande du client</TableCell>
+        <TableCell>Obligatoire pour un bailleur si le locataire la demande</TableCell>
+        <TableCell>Obligatoire entre professionnels, article 289 du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mentions TVA</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Taux et montant de TVA obligatoires</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numérotation légale</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Oui, séquence continue et chronologique</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+La quittance est en réalité une forme particulière de reçu, utilisée le plus souvent dans le cadre locatif : elle atteste que le locataire est à jour de ses loyers et charges. En dehors de ce contexte, le terme "reçu" est généralement préféré.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le reçu ne dispense jamais de facturer">
+    Si vous vendez un bien ou réalisez une prestation dans le cadre de votre activité professionnelle, vous restez tenu d'émettre une facture conforme, que le client vous demande ou non un reçu. Le reçu ne remplace en aucun cas cette obligation, prévue par l'article 289 du Code général des impôts.
+  </Callout>
+</div>
+
+## Les mentions à faire figurer sur un reçu de paiement
+
+Même s'il n'existe pas de mentions légales imposées pour un simple reçu, certaines informations sont indispensables pour qu'il ait une réelle valeur probante.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'identité de l'émetteur : <strong>nom ou raison sociale, adresse</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'identité du <strong>payeur</strong> (nom, adresse si pertinent)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date</strong> du paiement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant</strong> reçu, en chiffres et idéalement en lettres</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>mode de règlement</strong> (espèces, chèque, virement, carte)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>motif</strong> du paiement (référence de la facture ou du devis concerné)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>signature</strong> de l'émetteur</span>
+  </div>
+</div>
+
+## Modèle de reçu de paiement à reprendre
+
+Voici un exemple de structure que vous pouvez adapter à votre activité :
+
+"Je soussigné(e) [nom du professionnel ou de l'entreprise], reconnais avoir reçu de [nom du client] la somme de [montant en chiffres] EUR ([montant en lettres] euros), le [date], par [mode de règlement], en paiement de [référence de la facture ou motif]. Fait à [ville], le [date]. Signature."
+
+Ce modèle convient aussi bien pour un professionnel remettant un reçu à un client que pour un particulier. Dans un contexte professionnel, il est recommandé de l'imprimer sur un support mentionnant votre numéro SIRET, même si ce n'est pas une obligation stricte pour un reçu.
+
+## Le cas particulier du paiement en espèces
+
+Le paiement en espèces reste autorisé en France, mais il est encadré. Entre professionnels, ou d'un professionnel vers un particulier pour une activité commerciale, le règlement en espèces d'une dette supérieure à 1 000 € est interdit, en application de l'article L112-6 du Code monétaire et financier. Ce seuil est porté à 15 000 € lorsque le débiteur justifie qu'il n'a pas son domicile fiscal en France et n'agit pas pour les besoins d'une activité professionnelle.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Pourquoi le reçu est particulièrement utile en espèces">
+    Contrairement à un virement ou un paiement par carte, un règlement en espèces ne laisse pas de trace bancaire automatique. Le reçu devient alors la seule preuve matérielle de l'encaissement, à conserver précieusement des deux côtés, en complément de la facture qui reste obligatoire.
+  </Callout>
+</div>
+
+### Exemple chiffré
+
+Un artisan plombier réalise une intervention facturée 450 € TTC et le client règle en espèces sur place. L'artisan émet une facture conforme aux mentions obligatoires, incluant son numéro SIRET, le détail de la prestation et la TVA applicable. Il remet en plus un reçu mentionnant "Reçu la somme de 450 € en espèces, le 12 novembre 2026, en paiement de la facture n° F-2026-0342". Ce document protège les deux parties en cas de contestation ultérieure.
+
+## L'acquittement d'une facture, une alternative au reçu séparé
+
+Plutôt que d'établir un document distinct, vous pouvez faire figurer la mention "Facture acquittée" ou "Payée le [date]" directement sur la facture déjà émise, une fois le règlement reçu. Cette pratique est courante et évite de multiplier les documents. Elle suppose toutefois de conserver une trace de cette modification, sans altérer les mentions obligatoires d'origine de la [facture](/blog/mentions-obligatoires-facture).
+
+Cette solution est particulièrement adaptée lorsque le client règle immédiatement, par exemple lors d'un [acompte sur facture](/blog/quest-ce-que-acompte-facture) versé à la commande : la facture d'acompte porte alors la mention de son propre règlement, sans besoin d'un reçu séparé.
+
+Dans le cas d'un règlement partiel, il est préférable de préciser sur la facture le montant déjà réglé et le solde restant dû, plutôt que de se contenter d'une simple mention "acquittée" qui laisserait penser que la totalité de la somme a été perçue. Cette précision évite toute ambiguïté, aussi bien pour votre comptabilité que pour votre client, notamment s'il doit justifier ce paiement partiel auprès d'un tiers.
+
+## Combien de temps conserver vos reçus de paiement ?
+
+Même s'il n'est pas soumis aux mêmes règles qu'une facture, le reçu de paiement doit être conservé avec soin, car il constitue une pièce justificative en cas de contrôle ou de litige. Pour un professionnel, il est recommandé d'aligner la conservation des reçus sur celle des factures auxquelles ils se rattachent, soit 10 ans au titre du Code de commerce pour les documents commerciaux, et 6 ans au titre du livre des procédures fiscales pour les pièces justifiant vos déclarations.
+
+En pratique, le plus simple consiste à classer chaque reçu avec la facture correspondante, plutôt que de les archiver séparément. Cela facilite le travail de votre expert-comptable lors de la clôture de l'exercice et évite de perdre la trace d'un paiement en espèces qui ne figure dans aucun relevé bancaire.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un reçu numérique a la même valeur qu'un reçu papier">
+    Un reçu de paiement établi et signé électroniquement, puis conservé sous forme de fichier PDF, a la même valeur probante qu'un reçu papier, à condition de pouvoir en garantir l'intégrité dans le temps. Il n'est pas nécessaire de le faire viser ou tamponner pour qu'il soit valable entre les parties.
+  </Callout>
+</div>
+
+## Le reçu de paiement dans le cadre associatif
+
+Les associations reçoivent fréquemment des paiements en espèces ou par chèque, notamment pour des cotisations, des inscriptions à des événements ou des dons. Dans ce contexte, le reçu de paiement joue un rôle particulier : il permet au trésorier de justifier chaque entrée d'argent dans la comptabilité de l'association, même en l'absence d'obligation de facturation classique.
+
+Pour les dons ouvrant droit à une réduction d'impôt, un document spécifique est requis : le reçu fiscal Cerfa n° 11580, distinct du simple reçu de paiement. Ce document, encadré par l'administration fiscale, ne doit pas être confondu avec un reçu de cotisation ou d'inscription, qui reste libre dans sa forme dès lors qu'il comporte les mentions essentielles présentées plus haut.
+
+## Comment Newbi simplifie le suivi de vos encaissements
+
+Avec Newbi, chaque facture peut être marquée comme payée dès réception du règlement, avec la date et le mode de paiement enregistrés automatiquement. Vous conservez ainsi un historique complet de vos encaissements sans avoir à générer un document séparé pour chaque paiement, tout en gardant la possibilité d'exporter un justificatif si votre client en fait la demande.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mes factures et paiements</Link>
+  </Button>
+</div>
+
+Si votre client tarde à régler malgré un premier rappel, notre article sur la [relance de facture impayée](/blog/relance-facture-impayee-modele) vous propose des modèles de courriers adaptés à chaque étape.
+
+## Quand privilégier un devis, une facture proforma ou un reçu ?
+
+Ces trois documents interviennent à des moments différents du cycle commercial et ne doivent pas être confondus avec le reçu de paiement. Un devis engage sur un prix avant réalisation. Une [facture proforma](/blog/facture-proforma-guide-utilisation) permet d'annoncer les conditions d'une vente avant la facturation définitive, souvent utilisée à l'international ou pour une demande de financement. Le reçu, lui, n'intervient qu'après l'encaissement effectif, en complément d'une facture déjà émise ou à émettre.
+
+## En résumé
+
+Le reçu de paiement atteste qu'une somme a été effectivement encaissée, mais il ne dispense jamais un professionnel d'émettre une facture conforme lorsque celle-ci est obligatoire. Il reste particulièrement utile pour les règlements en espèces, encadrés par un plafond de 1 000 € entre professionnels, où il constitue la seule preuve matérielle de la transaction. Vous pouvez aussi choisir d'acquitter directement votre facture plutôt que d'établir un document séparé. Dans tous les cas, un modèle simple et complet, mentionnant l'identité des parties, le montant, la date et le motif du paiement, suffit à sécuriser vos échanges commerciaux.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le reçu de paiement
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un reçu de paiement remplace-t-il une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le reçu prouve qu'un paiement a été encaissé mais n'a aucune valeur fiscale. Si vous vendez un bien ou réalisez une prestation dans le cadre professionnel, vous devez émettre une facture conforme aux mentions obligatoires, en plus ou à la place du reçu.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre un reçu et une quittance ?</AccordionTrigger>
+      <AccordionContent>
+        La quittance est une forme de reçu utilisée le plus souvent dans le cadre locatif, pour attester que le locataire est à jour de son loyer et de ses charges. En dehors de ce contexte spécifique, le terme "reçu" est utilisé de manière plus générale pour tout encaissement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Dois-je établir un reçu pour un paiement en espèces ?</AccordionTrigger>
+      <AccordionContent>
+        Ce n'est pas une obligation légale, mais c'est fortement recommandé. Un paiement en espèces ne laisse pas de trace bancaire, contrairement à un virement ou une carte. Le reçu devient alors le seul document prouvant que la somme a bien été versée et encaissée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment indiquer qu'une facture a été payée ?</AccordionTrigger>
+      <AccordionContent>
+        Vous pouvez ajouter la mention "Facture acquittée" ou "Payée le [date]" directement sur la facture, une fois le règlement reçu, sans modifier les mentions obligatoires d'origine. C'est une alternative simple à l'émission d'un reçu séparé pour chaque paiement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Un reçu de paiement a-t-il une valeur légale en cas de litige ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, il constitue un commencement de preuve par écrit de l'encaissement, utile en cas de contestation sur la réalité d'un paiement. Sa valeur probante dépend toutefois de sa précision : identité des parties, montant, date et motif clairement indiqués, et signature de l'émetteur.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

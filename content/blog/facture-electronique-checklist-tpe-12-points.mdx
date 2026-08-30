@@ -1,0 +1,280 @@
+---
+title: 'Passer à la facture électronique : la checklist en 12 points pour une TPE'
+description: >-
+  Une checklist opérationnelle pour être prêt avant septembre 2027 : données
+  clients, SIREN, logiciel, PDP, formats, e-reporting, formation et archivage.
+date: '2026-10-19'
+category: conseils
+sector: null
+keyword: checklist facturation électronique
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-19'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Conseils</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+# Passer à la facture électronique : la checklist en 12 points pour une TPE
+
+Cette **checklist de la facturation électronique** vous permet de vérifier, point par point, si votre TPE est prête pour la réforme. La réception des factures électroniques est obligatoire pour toutes les entreprises depuis le 1er septembre 2026, et l'émission le devient pour les PME, TPE et micro-entreprises à partir du 1er septembre 2027. Un an peut sembler confortable, mais entre le choix du logiciel, la mise à jour du fichier clients et la formation de vos équipes, mieux vaut anticiper que subir.
+
+Dans ce guide, vous trouverez les 12 étapes concrètes à cocher avant l'échéance, des explications sur les formats et les plateformes concernées, et des repères chiffrés pour ne rien laisser au hasard.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi une checklist maintenant, même si l'échéance est en 2027
+
+La date du 1er septembre 2027 concerne l'obligation d'**émission** pour les PME, TPE et micro-entreprises. Mais l'obligation de **réception**, elle, s'applique à toutes les entreprises depuis le 1er septembre 2026, y compris aux plus petites structures. Concrètement, si vous n'avez encore rien fait, vous êtes déjà en retard sur un volet de la réforme.
+
+Attendre le dernier trimestre 2027 pour s'organiser est risqué : les prestataires informatiques et les plateformes de dématérialisation partenaires (PDP) connaîtront un afflux de demandes à l'approche de l'échéance, les délais d'intégration s'allongeront, et vos équipes n'auront pas le temps de se former sereinement. Une TPE qui commence sa transition dès maintenant répartit l'effort sur plusieurs mois, plutôt que de tout faire dans l'urgence.
+
+## Les 12 points de la checklist
+
+Voici les 12 actions à mener, dans un ordre logique, pour être prêt sans stress.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>1. Vérifier votre capacité de réception</strong> dès maintenant, si ce n'est pas déjà fait depuis septembre 2026</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>2. Recenser vos flux de facturation</strong> : nombre de factures émises et reçues par mois, clients professionnels et particuliers, clients français et étrangers</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>3. Mettre à jour votre fichier clients</strong> : SIREN, adresse de facturation, statut (professionnel ou particulier) pour chaque contact</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>4. Choisir une plateforme de dématérialisation partenaire</strong> immatriculée, en fonction de vos besoins et de votre volume</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>5. Vérifier que votre logiciel de facturation gère les formats du socle</strong> : Factur-X, UBL et CII</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>6. Contrôler la conformité de vos mentions obligatoires</strong>, y compris les nouvelles mentions attendues par la réforme</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>7. Identifier vos opérations soumises à l'e-reporting</strong> : ventes à des particuliers (B2C) et opérations internationales</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>8. Tester l'envoi et la réception</strong> d'une facture électronique avec un client ou un fournisseur pilote</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>9. Former les personnes qui émettent et traitent les factures</strong> dans votre structure</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>10. Vérifier vos capacités d'archivage</strong> : 10 ans au titre du Code de commerce, 6 ans au titre du Livre des procédures fiscales</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>11. Prévenir vos clients et fournisseurs</strong> du changement de format et des coordonnées de réception</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>12. Planifier une bascule progressive</strong>, avant la date butoir plutôt que le jour même</span>
+  </div>
+</div>
+
+## Comprendre le calendrier et les acteurs de la réforme
+
+Trois échéances structurent la réforme de la facturation électronique. Depuis le 1er septembre 2026, toutes les entreprises doivent être en mesure de recevoir des factures électroniques. À la même date, les grandes entreprises et les ETI doivent émettre leurs factures au format électronique. Enfin, à partir du 1er septembre 2027, cette obligation d'émission s'étend aux PME, TPE et micro-entreprises.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le rôle du PPF a changé">
+    Le portail public de facturation (PPF) ne joue plus le rôle de plateforme d'échange gratuite pour l'ensemble des entreprises. Il agit désormais comme un annuaire et un concentrateur qui transmet les données de facturation à l'administration fiscale. Pour émettre et recevoir vos factures, vous devez passer par une plateforme de dématérialisation partenaire (PDP), immatriculée par l'administration.
+  </Callout>
+</div>
+
+Pour bien choisir votre prestataire, consultez notre guide sur [comment choisir sa PDP](/blog/comment-choisir-sa-pdp-plateforme-dematerialisation). Le choix de cette plateforme conditionne une grande partie de votre organisation future : format d'échange, intégration avec votre logiciel de gestion, tarification, accompagnement.
+
+## Les formats et les données à préparer
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les trois formats du socle de la facturation électronique</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[150px]">Format</TableHead>
+        <TableHead>Nature</TableHead>
+        <TableHead>Usage recommandé</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Factur-X</TableCell>
+        <TableCell>Format mixte, PDF lisible avec données structurées XML intégrées</TableCell>
+        <TableCell>TPE et PME avec des flux limités, besoin de lisibilité humaine</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">UBL</TableCell>
+        <TableCell>Format XML structuré d'origine internationale</TableCell>
+        <TableCell>Entreprises avec des échanges internationaux ou des systèmes déjà intégrés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">CII</TableCell>
+        <TableCell>Format XML structuré normé UN/CEFACT</TableCell>
+        <TableCell>Grands groupes, filières avec des standards imposés</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour une TPE, le Factur-X est en général le format le plus adapté : il conserve un rendu lisible pour vos clients tout en intégrant les données structurées exigées par la réforme. C'est aussi le format le plus fréquemment proposé par défaut par les logiciels de facturation grand public.
+
+Au-delà du format, vérifiez également que vos mentions obligatoires sont à jour. La réforme introduit de [nouvelles mentions obligatoires sur la facture électronique](/blog/nouvelles-mentions-obligatoires-facture-electronique), notamment liées au type d'opération et à l'identification des parties. Une facture non conforme sur ce point, même émise au bon format, reste une source de rejet ou de sanction.
+
+## Cas pratique : la checklist appliquée à un artisan plombier
+
+Prenons l'exemple d'un artisan plombier en société, avec un chiffre d'affaires annuel de 95 000 euros. Il facture 40 clients particuliers par mois et 5 syndics de copropriété (des professionnels).
+
+Sa checklist se traduit ainsi : il doit d'abord vérifier sa capacité de réception, déjà active depuis septembre 2026 pour recevoir les factures de ses fournisseurs de matériel. Il doit ensuite identifier que ses ventes aux particuliers relèvent de l'**e-reporting**, puisque les clients B2C ne sont pas équipés pour recevoir une facture électronique via une PDP. Ses factures aux syndics, en revanche, entreront dans le circuit classique de facturation électronique entre professionnels à partir de septembre 2027.
+
+Concrètement, avant l'échéance, il doit budgéter le coût de sa PDP, qui varie généralement entre 10 et 30 euros par mois pour un volume de son ordre, et prévoir une demi-journée de formation pour lui et son assistante administrative.
+
+## L'e-reporting : ce que la checklist ne doit pas oublier
+
+L'e-reporting concerne les opérations qui ne sont pas couvertes par la facturation électronique classique entre entreprises assujetties en France : les ventes à des particuliers (B2C) et les opérations avec des clients ou fournisseurs situés à l'étranger. Ces données de transaction doivent être transmises à l'administration fiscale, généralement via votre PDP.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Des sanctions distinctes pour la facture et pour l'e-reporting">
+    Le défaut de facturation électronique conforme expose à une amende de 15 euros par facture, plafonnée à 15 000 euros par an. Le défaut de transmission des données d'e-reporting expose à une amende de 250 euros par transmission manquante, également plafonnée à 15 000 euros par an. Ces deux plafonds ne se cumulent pas de la même façon selon le type de manquement, d'où l'intérêt d'anticiper les deux volets de la réforme.
+  </Callout>
+</div>
+
+## Le budget à prévoir pour la transition
+
+Contrairement à une idée reçue, passer à la facture électronique ne représente pas un investissement lourd pour une TPE. Le coût principal réside dans l'abonnement à votre PDP et, le cas échéant, dans la mise à jour de votre logiciel de facturation.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Ordre de grandeur du budget annuel pour une TPE</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Poste de dépense</TableHead>
+        <TableHead>Fourchette indicative</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Abonnement PDP ou logiciel intégré</TableCell>
+        <TableCell>120 à 400 euros par an selon le volume de factures</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Archivage à valeur probante</TableCell>
+        <TableCell>Souvent inclus dans l'abonnement PDP, sinon 5 à 15 euros par mois</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Temps de formation</TableCell>
+        <TableCell>Une demi-journée à une journée par personne concernée</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ce budget reste modeste comparé au risque financier d'une non-conformité : entre les amendes potentielles et le temps perdu à corriger des factures rejetées, l'anticipation est largement rentable. Pour situer cette dépense dans votre planification annuelle, consultez notre [calendrier fiscal de l'indépendant pour 2026](/blog/calendrier-fiscal-independant-2026), qui reprend l'ensemble des échéances déclaratives à ne pas manquer.
+
+## L'archivage : un point souvent sous-estimé
+
+Une facture électronique doit être conservée dans son format d'origine, avec sa piste d'audit, pour rester opposable en cas de contrôle. Deux durées de conservation coexistent : 10 ans au titre de l'obligation comptable prévue par le Code de commerce, et 6 ans au titre du délai de reprise de l'administration fiscale prévu par le Livre des procédures fiscales (LPF). En pratique, retenez la durée la plus longue, soit 10 ans, pour être couvert dans tous les cas.
+
+Vérifiez que votre solution de facturation ou votre PDP propose un archivage à valeur probante intégré. Sans cela, vous devrez mettre en place une solution d'archivage électronique dédiée, ce qui ajoute une étape et un coût à votre transition.
+
+## Comment Newbi vous aide à cocher chaque case
+
+Newbi accompagne les indépendants et les TPE dans leur transition vers la facturation électronique. La plateforme génère vos factures au format Factur-X, tient à jour les mentions obligatoires en fonction de l'évolution de la réglementation, et centralise l'ensemble de vos documents commerciaux : devis, factures, avoirs, bons de commande.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Génération de factures</strong> conformes au socle de la facturation électronique</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Fichier clients centralisé</strong> avec SIREN et statut pour chaque contact</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivi des mentions obligatoires</strong> mis à jour selon la réglementation en vigueur</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Partage simplifié</strong> avec votre expert-comptable pour préparer la transition</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La checklist facturation électronique pour une TPE repose sur douze actions concrètes : vérifier votre capacité de réception, recenser vos flux, mettre à jour votre fichier clients, choisir une PDP immatriculée, vérifier vos formats et vos mentions obligatoires, identifier vos opérations d'e-reporting, tester le dispositif, former vos équipes, sécuriser votre archivage, informer vos partenaires commerciaux et planifier une bascule progressive avant le 1er septembre 2027. Plus vous démarrez tôt, moins la transition pèsera sur votre activité au moment de l'échéance.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation électronique en TPE
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quand une TPE doit-elle émettre ses factures au format électronique ?</AccordionTrigger>
+      <AccordionContent>
+        L'obligation d'émission s'applique aux PME, TPE et micro-entreprises à partir du 1er septembre 2027. En revanche, l'obligation de réception des factures électroniques concerne déjà toutes les entreprises, y compris les TPE, depuis le 1er septembre 2026.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qu'est-ce qu'une PDP et pourquoi en choisir une dès maintenant ?</AccordionTrigger>
+      <AccordionContent>
+        Une plateforme de dématérialisation partenaire (PDP) est un opérateur immatriculé par l'administration, chargé de transmettre vos factures électroniques et vos données d'e-reporting. Choisir une PDP en avance vous laisse le temps de tester l'intégration avec votre logiciel de gestion avant l'échéance obligatoire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Que risque une TPE qui n'est pas prête à temps ?</AccordionTrigger>
+      <AccordionContent>
+        Une facture non conforme au format électronique exigé expose à une amende de 15 euros par facture, plafonnée à 15 000 euros par an. Le défaut de transmission des données d'e-reporting expose à une amende de 250 euros par manquement, plafonnée également à 15 000 euros par an.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Faut-il un logiciel spécifique pour la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Il faut un logiciel ou une plateforme capable de générer vos factures dans un des formats du socle, Factur-X, UBL ou CII, et de les transmettre via une PDP. La plupart des logiciels de facturation en ligne intègrent progressivement ces formats dans leurs fonctionnalités.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Combien de temps faut-il conserver les factures électroniques ?</AccordionTrigger>
+      <AccordionContent>
+        Le Code de commerce impose une conservation de 10 ans pour les documents comptables, tandis que le Livre des procédures fiscales impose 6 ans pour le délai de reprise de l'administration. Dans la pratique, il est recommandé de conserver vos factures pendant 10 ans pour couvrir l'ensemble des situations.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

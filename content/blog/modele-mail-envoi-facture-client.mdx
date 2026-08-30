@@ -1,0 +1,357 @@
+---
+title: "Mail d'envoi de facture : 5 modèles à copier-coller"
+description: >-
+  Cinq modèles de mail pour envoyer une facture (première facture, acompte,
+  solde, récurrente, client étranger) avec objet, corps et pièce jointe
+  conforme.
+date: '2026-10-12'
+category: modele
+sector: null
+keyword: mail envoi facture
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-12'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Mail d'envoi de facture : 5 modèles à copier-coller
+
+Rédiger un **mail d'envoi de facture** paraît anodin, mais un message mal formulé peut retarder un paiement de plusieurs jours, voire semer le doute chez un client sur le montant dû. Un bon mail d'accompagnement rappelle les informations essentielles, précise le délai de paiement et donne le ton professionnel attendu par votre interlocuteur.
+
+Cet article vous propose cinq modèles prêts à copier-coller : première facture à un nouveau client, facture d'acompte, facture de solde, facture récurrente et facture pour un client à l'étranger. Chaque modèle inclut un objet, un corps de message et les précisions à ne pas oublier en pièce jointe.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi le mail qui accompagne la facture compte autant que la facture elle-même
+
+Un client reçoit en moyenne des dizaines d'e-mails par jour. Un mail de facture flou, sans objet clair ni rappel du montant, augmente le risque qu'il soit repoussé, mal classé, voire ignoré jusqu'à la relance. A l'inverse, un mail structuré, avec un objet explicite et les informations clés reprises dans le corps du message, facilite le traitement côté client, notamment si la facture passe par un service comptable distinct du contact commercial.
+
+Un mail de facture réussi reprend toujours certains éléments constants, quel que soit le modèle utilisé.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>objet précis</strong> mentionnant le numéro de facture et votre nom d'entreprise</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant TTC et le délai de paiement</strong> rappelés directement dans le corps du texte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>pièce jointe au format PDF</strong> (ou format électronique structuré selon votre statut) nommée clairement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vos <strong>coordonnées de paiement</strong> ou un lien de règlement en ligne si vous en proposez un</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>formule de politesse professionnelle</strong>, ni trop froide ni trop familière</span>
+  </div>
+</div>
+
+## Modèle 1 : première facture à un nouveau client
+
+Ce premier envoi conditionne la suite de la relation commerciale. Il doit rassurer le client sur le sérieux de votre organisation administrative.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Objet suggéré">
+    Facture n° F-2026-042 - [Nom de votre entreprise]
+  </Callout>
+</div>
+
+**Corps du message :**
+
+Bonjour [Prénom],
+
+Merci pour votre confiance sur ce premier projet. Vous trouverez ci-joint la facture n° F-2026-042 d'un montant de 1 800 € TTC, correspondant à la prestation réalisée du [date] au [date], conformément au [devis](/blog/comment-faire-devis-professionnel) validé le [date].
+
+Le règlement est attendu sous 30 jours, soit avant le [date d'échéance]. Vous pouvez régler par virement aux coordonnées bancaires indiquées sur la facture.
+
+N'hésitez pas à revenir vers moi pour toute question.
+
+Cordialement,
+[Signature]
+
+## Modèle 2 : facture d'acompte
+
+L'acompte engage fermement les deux parties. Le mail doit préciser clairement qu'il ne s'agit que d'une partie du montant total, pour éviter toute confusion sur le solde à venir.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Objet suggéré">
+    Facture d'acompte n° FA-2026-015 - Projet [nom du projet]
+  </Callout>
+</div>
+
+**Corps du message :**
+
+Bonjour [Prénom],
+
+Suite à votre accord sur le devis du [date], vous trouverez ci-joint la facture d'acompte n° FA-2026-015 d'un montant de 1 200 € TTC, correspondant à 30 % du montant total du projet (4 000 € HT).
+
+Cet acompte permet de démarrer la mission dès réception du règlement, sous 8 jours. La facture de solde vous sera adressée à l'issue de la prestation, avec déduction de ce montant.
+
+Bien cordialement,
+[Signature]
+
+## Modèle 3 : facture de solde
+
+La facture de solde doit impérativement rappeler la ou les factures d'acompte déjà émises, pour que le client comprenne le montant restant dû sans avoir à recalculer lui-même.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Objet suggéré">
+    Facture de solde n° F-2026-051 - Solde du projet [nom du projet]
+  </Callout>
+</div>
+
+**Corps du message :**
+
+Bonjour [Prénom],
+
+La prestation étant maintenant achevée, voici la facture de solde n° F-2026-051. Le montant total du projet s'élève à 4 000 € HT (4 800 € TTC). Après déduction de l'acompte de 1 200 € TTC déjà réglé, le solde restant dû est de 3 600 € TTC.
+
+Ce montant est à régler sous 30 jours, avant le [date]. Je reste disponible si vous avez des questions sur cette facture.
+
+Cordialement,
+[Signature]
+
+## Modèle 4 : facture récurrente (abonnement ou prestation mensuelle)
+
+Pour une prestation facturée chaque mois, un mail plus court, presque automatique dans le ton, évite d'alourdir inutilement une relation déjà installée.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Objet suggéré">
+    Facture n° F-2026-089 - [Mois concerné]
+  </Callout>
+</div>
+
+**Corps du message :**
+
+Bonjour [Prénom],
+
+Voici la facture du mois de [mois], d'un montant de 650 € TTC, correspondant à l'abonnement [nom de l'offre]. Le prélèvement ou virement est attendu sous 15 jours, conformément à nos conditions habituelles.
+
+A bientôt,
+[Signature]
+
+## Modèle 5 : facture pour un client à l'étranger
+
+Un client étranger, dans l'Union européenne ou hors UE, nécessite des précisions supplémentaires sur la TVA et la devise appliquées à la facture.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Objet suggéré">
+    Invoice No. F-2026-102 - [Company Name] / Facture n° F-2026-102
+  </Callout>
+</div>
+
+**Corps du message :**
+
+Bonjour [Prénom] / Dear [Name],
+
+Veuillez trouver ci-joint la facture n° F-2026-102 d'un montant de 2 500 € HT, émise en exonération de TVA au titre d'une prestation intracommunautaire (article 283-2 du Code général des impôts, autoliquidation par le preneur).
+
+Please find attached invoice No. F-2026-102 for 2,500 € excl. VAT.
+
+Le règlement est attendu sous 30 jours par virement SEPA ou international. Pour les précisions sur les mentions attendues, consultez notre article sur la [facturation à l'étranger](/blog/facture-en-devise-etrangere-regles).
+
+Cordialement / Best regards,
+[Signature]
+
+## Tableau récapitulatif des 5 modèles
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Choisir le bon modèle de mail selon le type de facture</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Type de facture</TableHead>
+        <TableHead>Ton recommandé</TableHead>
+        <TableHead>Point d'attention</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Première facture</TableCell>
+        <TableCell>Chaleureux, rassurant</TableCell>
+        <TableCell>Rappeler la référence au devis accepté</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Acompte</TableCell>
+        <TableCell>Clair sur le pourcentage</TableCell>
+        <TableCell>Préciser que le solde suivra</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Solde</TableCell>
+        <TableCell>Précis sur le calcul</TableCell>
+        <TableCell>Rappeler le numéro de la facture d'acompte</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Récurrente</TableCell>
+        <TableCell>Court, routinier</TableCell>
+        <TableCell>Uniformiser l'objet d'un mois sur l'autre</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Client étranger</TableCell>
+        <TableCell>Bilingue si besoin</TableCell>
+        <TableCell>Justifier le régime de TVA appliqué</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Ce que doit toujours contenir la pièce jointe
+
+Le mail n'est que l'enveloppe : la facture jointe doit, elle, respecter les mentions obligatoires prévues par le Code de commerce et le Code général des impôts. Un mail parfaitement rédigé ne compense pas une facture incomplète. Retrouvez le détail exhaustif dans notre article sur les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture).
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Nom de fichier et format">
+    Nommez votre pièce jointe de façon lisible, par exemple « Facture-F2026-042-NomEntreprise.pdf », plutôt qu'un nom générique comme « scan001.pdf ». Cela facilite le classement côté client et limite les demandes de renvoi.
+  </Callout>
+</div>
+
+## Exemple chiffré : impact d'un mail bien rédigé sur le délai de paiement
+
+Une graphiste freelance envoyait historiquement ses factures avec un objet vague (« Facture ») et un corps de message d'une ligne. Son délai moyen de paiement constaté était de 42 jours, alors que ses conditions générales prévoyaient un règlement à 30 jours.
+
+Après avoir adopté un objet précis reprenant le numéro de facture et le montant, ainsi qu'un rappel explicite de la date d'échéance dans le corps du mail, son délai moyen de paiement est descendu à 33 jours sur le trimestre suivant, soit un gain de trésorerie appréciable sur un chiffre d'affaires mensuel de 6 000 €. Ce type d'amélioration se combine utilement avec de [bonnes pratiques de relance client](/blog/meilleures-pratiques-relance-client) pour les factures qui dépassent malgré tout l'échéance.
+
+## Comment Newbi simplifie l'envoi de vos factures
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Envoi de facture automatisé depuis Newbi">
+    Avec Newbi, chaque facture générée peut être envoyée directement par e-mail au client, avec un objet et un message pré-remplis que vous pouvez personnaliser. La facture est jointe automatiquement au format PDF, avec un suivi du statut d'envoi et de règlement centralisé sur votre tableau de bord.
+  </Callout>
+</div>
+
+Vous n'avez plus besoin de rédiger chaque mail manuellement ni de vérifier que la bonne pièce jointe est attachée : Newbi structure l'ensemble du processus, de la création de la facture à son envoi.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer et envoyer mes factures</Link>
+  </Button>
+</div>
+
+## Erreurs fréquentes à éviter dans un mail de facture
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas indiquer le <strong>montant</strong> dans le corps du mail, obligeant le client à ouvrir la pièce jointe pour vérifier</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Oublier de préciser le <strong>délai de paiement</strong> ou la date d'échéance exacte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Envoyer la facture depuis une <strong>adresse e-mail générique</strong> non identifiée à votre entreprise</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Multiplier les <strong>pièces jointes</strong> sans distinguer clairement la facture des autres documents (devis, CGV)</span>
+  </div>
+</div>
+
+## Faut-il personnaliser chaque mail ou utiliser un modèle figé
+
+Un modèle sert de base, pas de texte définitif. Les cinq exemples présentés ci-dessus doivent être adaptés à votre secteur d'activité, à la relation que vous entretenez avec le client, et à la culture de votre entreprise. Un artisan qui facture des particuliers n'emploiera pas le même registre qu'un consultant qui facture des grands comptes.
+
+Certains éléments méritent en revanche d'être fixés une bonne fois pour toutes, pour gagner du temps sans perdre en qualité.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>structure de l'objet</strong> : numéro de facture suivi du nom de votre entreprise, toujours dans le même ordre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>formule de politesse d'ouverture et de clôture</strong>, homogène d'un client à l'autre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>signature</strong>, avec vos coordonnées complètes et votre numéro SIRET si vous facturez des professionnels</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>rappel des modalités de paiement</strong> acceptées (virement, prélèvement, carte)</span>
+  </div>
+</div>
+
+En revanche, la partie personnalisée, référence au projet, ton employé, précision sur un point particulier de la prestation, doit rester variable pour éviter l'effet de mail automatisé et impersonnel, surtout pour une première facture ou une relation client encore récente.
+
+## Quand envoyer le mail de facture : le bon timing
+
+Le moment d'envoi compte presque autant que le contenu du message. Pour une prestation de service, l'usage veut que la facture soit émise dès la fin de la prestation, ou à la date convenue contractuellement pour les prestations récurrentes. Un envoi tardif retarde mécaniquement le début du délai de paiement, et donc l'encaissement.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un envoi tardif coûte cher en trésorerie">
+    Si vous facturez systématiquement avec une semaine de retard sur la fin de la prestation, vous décalez d'autant votre encaissement, mois après mois. Sur une activité facturant 8 000 € par mois avec un délai de paiement de 30 jours, une semaine de retard à l'émission représente environ 1 850 € de trésorerie immobilisée en permanence.
+  </Callout>
+</div>
+
+Privilégiez un envoi en matinée en semaine, entre le mardi et le jeudi, pour maximiser les chances que le mail soit traité rapidement plutôt que noyé dans les messages du lundi ou oublié avant le week-end.
+
+## En résumé
+
+Un mail d'envoi de facture efficace reprend systématiquement le numéro de facture, le montant et le délai de paiement dans l'objet et le corps du message, quel que soit le type de facture concerné. Les cinq modèles présentés, première facture, acompte, solde, facture récurrente et client étranger, couvrent la quasi-totalité des situations rencontrées par un indépendant ou une TPE. Adopter des objets clairs et cohérents dans le temps facilite le classement côté client et contribue, concrètement, à réduire vos délais de paiement moyens.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le mail d'envoi de facture
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il toujours mettre le montant de la facture dans le mail ?</AccordionTrigger>
+      <AccordionContent>
+        Ce n'est pas une obligation légale, mais c'est fortement recommandé. Rappeler le montant TTC directement dans le corps du message évite au client d'avoir à ouvrir la pièce jointe pour vérifier le total, ce qui accélère le traitement de la facture côté comptabilité fournisseurs.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel format utiliser pour la pièce jointe d'une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Le PDF reste le format standard pour la plupart des factures actuelles. A partir de l'entrée en vigueur de l'obligation d'émission électronique pour votre catégorie d'entreprise (2026 pour les grandes entreprises et ETI, 2027 pour les PME, TPE et micro-entreprises), la facture devra être générée dans un format structuré du socle : Factur-X, UBL ou CII, et transmise via une plateforme de dématérialisation partenaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment relancer un client qui n'a pas répondu au mail de facture ?</AccordionTrigger>
+      <AccordionContent>
+        Attendez l'échéance de paiement avant une première relance courtoise, puis adoptez un ton progressivement plus ferme si le retard persiste. Les bonnes pratiques de relance, avec des modèles de mail adaptés à chaque étape, sont détaillées dans un article dédié à la relance client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on automatiser l'envoi des factures récurrentes ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, de nombreux outils de facturation, dont Newbi, permettent de programmer l'envoi automatique d'une facture chaque mois pour un abonnement ou une prestation régulière, avec un objet et un corps de message réutilisables que vous personnalisez une seule fois.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment adapter le mail de facture pour un client hors de France ?</AccordionTrigger>
+      <AccordionContent>
+        Pour un client dans l'Union européenne, précisez le régime de TVA appliqué, souvent une exonération avec autoliquidation par le preneur. Pour un client hors UE, la facture est généralement hors du champ de la TVA française. Un mail bilingue, avec la devise clairement indiquée, facilite la compréhension et le paiement.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

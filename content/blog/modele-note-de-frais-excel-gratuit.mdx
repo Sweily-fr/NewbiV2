@@ -1,0 +1,237 @@
+---
+title: 'Modèle de note de frais Excel gratuit (avec barème kilométrique 2026)'
+description: >-
+  Un modèle de note de frais Excel à télécharger : déplacements, repas, hébergement, barème kilométrique 2026 intégré, TVA récupérable et justificatifs à joindre.
+date: '2026-10-26'
+category: modele
+sector: null
+keyword: modèle note de frais excel
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-26'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Modèle de note de frais Excel gratuit (avec barème kilométrique 2026)
+
+Un **modèle de note de frais Excel** bien construit vous fait gagner un temps précieux et évite les erreurs de calcul qui retardent vos remboursements. Que vous soyez indépendant, salarié en déplacement ou dirigeant de petite structure, ce modèle intègre les catégories de dépenses courantes, le barème kilométrique en vigueur et le calcul automatique de la TVA récupérable.
+
+Dans cet article, vous trouverez la structure exacte du tableau à construire dans Excel ou Google Sheets, les règles fiscales applicables en 2026, et les erreurs à éviter pour que vos notes de frais soient acceptées sans discussion par votre comptable ou votre administration fiscale.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Ce que doit contenir un modèle de note de frais complet
+
+Une note de frais n'est pas un simple récapitulatif de dépenses : c'est un document qui doit permettre à votre comptable, à votre expert-comptable ou à l'administration fiscale de vérifier la nature, le montant et la justification de chaque dépense professionnelle. Un modèle Excel bien conçu doit donc comporter plusieurs colonnes indispensables.
+
+Votre tableau doit inclure, pour chaque ligne de dépense, la date, la nature de la dépense (repas, déplacement, hébergement, fournitures), le nom du fournisseur ou de l'établissement, le montant HT, le taux de TVA applicable, le montant de TVA, le montant TTC, et une case pour indiquer si le justificatif est joint. Une colonne dédiée au motif professionnel de la dépense est également recommandée, car elle facilite la justification en cas de contrôle.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>ligne par dépense</strong>, avec date, nature, montant HT, TVA et montant TTC</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une <strong>colonne kilométrage</strong> avec calcul automatique selon le barème en vigueur</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>total par catégorie</strong> (repas, transport, hébergement, divers)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Une case <strong>justificatif joint</strong> pour chaque ligne</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>récapitulatif mensuel</strong> avec total HT, TVA récupérable et total TTC</span>
+  </div>
+</div>
+
+## Le barème kilométrique 2026 à intégrer dans votre modèle
+
+Le barème kilométrique permet de calculer le remboursement des frais de déplacement effectués avec un véhicule personnel à des fins professionnelles. Pour 2026, le barème reprend celui applicable en 2025, sauf publication contraire par l'administration fiscale. Il varie selon la puissance fiscale du véhicule et la distance annuelle parcourue.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Barème kilométrique 2026 pour véhicules automobiles (extrait, jusqu'à 5 000 km)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Puissance fiscale</TableHead>
+        <TableHead>Jusqu'à 5 000 km</TableHead>
+        <TableHead>De 5 001 à 20 000 km</TableHead>
+        <TableHead>Au-delà de 20 000 km</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">3 CV et moins</TableCell>
+        <TableCell>d x 0,529</TableCell>
+        <TableCell>(d x 0,316) + 1 065</TableCell>
+        <TableCell>d x 0,370</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">4 CV</TableCell>
+        <TableCell>d x 0,606</TableCell>
+        <TableCell>(d x 0,340) + 1 330</TableCell>
+        <TableCell>d x 0,407</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">5 CV</TableCell>
+        <TableCell>d x 0,636</TableCell>
+        <TableCell>(d x 0,357) + 1 395</TableCell>
+        <TableCell>d x 0,427</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">6 CV</TableCell>
+        <TableCell>d x 0,665</TableCell>
+        <TableCell>(d x 0,374) + 1 457</TableCell>
+        <TableCell>d x 0,447</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">7 CV et plus</TableCell>
+        <TableCell>d x 0,697</TableCell>
+        <TableCell>(d x 0,394) + 1 515</TableCell>
+        <TableCell>d x 0,470</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Dans votre modèle Excel, créez une formule qui applique automatiquement le bon taux selon la puissance fiscale renseignée et le cumul kilométrique de l'année. Cela évite les erreurs de calcul manuel, fréquentes lorsque plusieurs tranches se combinent au cours de l'année.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Formule Excel pour le calcul kilométrique">
+    Utilisez une formule conditionnelle du type SI imbriquée, qui teste la puissance fiscale du véhicule puis la tranche de distance cumulée, pour appliquer automatiquement le bon coefficient. Cela sécurise le calcul même lorsque plusieurs déplacements interviennent au cours du mois.
+  </Callout>
+</div>
+
+## Exemple chiffré : note de frais d'un consultant en déplacement
+
+Prenons le cas d'un consultant indépendant qui se déplace chez un client situé à 180 kilomètres de son domicile, avec un véhicule de 6 CV. Sur le mois, il cumule 720 kilomètres parcourus dans le cadre professionnel, ce qui reste dans la première tranche du barème.
+
+Son calcul est le suivant : 720 km x 0,665 € = 478,80 € de frais kilométriques. Il ajoute deux nuits d'hôtel à 95 € HT chacune, soit 190 € HT (TVA à 10 %, soit 19 €), et cinq repas professionnels facturés en moyenne 28 € HT chacun, soit 140 € HT (TVA à 10 %, soit 14 €). Sa note de frais du mois totalise donc 478,80 € de kilomètres, plus 209 € TTC d'hébergement, plus 154 € TTC de repas, soit un total de 841,80 €, dont 33 € de TVA récupérable sur les dépenses hors kilométrage.
+
+## La TVA récupérable sur les notes de frais : ce qui est déductible
+
+Toutes les dépenses ne donnent pas droit à récupération de TVA. Les frais kilométriques, par nature forfaitaires, n'ouvrent aucun droit à récupération de TVA puisqu'ils ne correspondent pas à une facture avec TVA identifiée. En revanche, les dépenses d'hébergement, de repas professionnels et de transport en commun peuvent ouvrir droit à récupération, sous réserve de disposer d'une facture conforme, et non d'un simple ticket de carte bancaire.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le carburant fait exception">
+    Si vous optez pour le remboursement au barème kilométrique, vous ne pouvez pas déduire séparément la TVA sur le carburant : le barème couvre déjà l'ensemble des frais liés au véhicule, y compris le carburant, l'assurance et l'entretien. Ne cumulez jamais les deux modes de calcul pour un même déplacement.
+  </Callout>
+</div>
+
+## Les justificatifs à conserver pour chaque dépense
+
+Chaque ligne de votre modèle de note de frais doit pouvoir être associée à un justificatif : facture, ticket de caisse détaillé ou reçu de paiement. Un simple relevé de carte bancaire ne suffit jamais, car il ne mentionne ni la nature de la dépense ni le taux de TVA appliqué.
+
+Pour les frais de repas, conservez le ticket de caisse détaillé, pas seulement le ticket de carte bancaire. Pour l'hébergement, la facture de l'hôtel doit mentionner votre nom et, idéalement, votre numéro SIRET si vous êtes indépendant. Pour les péages et le stationnement, le ticket horodaté fait office de justificatif suffisant.
+
+### Durée de conservation des justificatifs
+
+Les justificatifs de notes de frais doivent être conservés au même titre que les autres pièces comptables : 10 ans au titre du Code de commerce et 6 ans au titre du livre des procédures fiscales (LPF). En pratique, mieux vaut appliquer la durée la plus longue et conserver l'ensemble de vos notes de frais et justificatifs pendant 10 ans.
+
+## Organiser son modèle Excel par catégorie de dépense
+
+Pour faciliter la relecture et l'export comptable, structurez votre fichier Excel en plusieurs onglets ou sections : un onglet par mois, avec des sous-totaux automatiques par catégorie (transport, repas, hébergement, fournitures, divers). Ajoutez une feuille de synthèse annuelle qui reprend les totaux mensuels, utile pour anticiper votre trésorerie et préparer votre déclaration.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Verrouillez les cellules de formule pour éviter les erreurs de saisie accidentelles</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Utilisez une liste déroulante pour la colonne « catégorie » afin d'uniformiser la saisie</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Nommez vos fichiers de justificatifs selon la ligne correspondante pour retrouver facilement chaque pièce</span>
+  </div>
+</div>
+
+## Les limites d'un modèle Excel face au volume de déplacements
+
+Un tableau Excel convient parfaitement lorsque vous avez peu de déplacements par mois. Dès que le volume augmente, ou que plusieurs collaborateurs doivent remplir leurs propres notes de frais, les limites apparaissent rapidement : absence de scan automatique des tickets, risque d'erreur de saisie manuelle, difficulté à centraliser les justificatifs, et export comptable qui demande une mise en forme supplémentaire avant transmission à votre expert-comptable.
+
+C'est à ce stade que beaucoup d'indépendants et de petites structures se tournent vers un outil dédié à la [gestion des notes de frais et déplacements](/blog/gestion-notes-frais-deplacement), qui automatise la lecture des tickets et centralise les justificatifs sans ressaisie.
+
+## Comment Newbi simplifie le suivi de vos notes de frais
+
+Newbi propose une gestion des achats qui inclut la lecture automatique des justificatifs par OCR : vous photographiez ou importez votre ticket, et les informations essentielles (montant, TVA, date, fournisseur) sont extraites automatiquement, sans ressaisie manuelle. Cette approche, détaillée dans notre article sur l'[OCR des justificatifs comptables](/blog/ocr-justificatifs-comptables), réduit fortement les erreurs constatées avec un modèle Excel classique, tout en conservant l'historique complet de vos justificatifs au même endroit que vos factures et vos achats.
+
+Contrairement à un tableau Excel où chaque ligne doit être saisie et chaque justificatif classé manuellement dans un dossier séparé, l'outil rapproche automatiquement le ticket scanné de la dépense correspondante et calcule la TVA récupérable sans intervention. Vous gardez ainsi une vision consolidée de vos frais professionnels, mois après mois, sans avoir à reconstituer un fichier à chaque clôture comptable.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/gestion-des-achats">Découvrir la gestion des achats Newbi</Link>
+  </Button>
+</div>
+
+Pour comparer les solutions existantes sur le marché, notre sélection des [meilleurs outils de scan de tickets pour les notes de frais](/blog/top-outils-scan-tickets-caisse-notes-frais) présente les alternatives disponibles, du modèle Excel manuel jusqu'aux outils entièrement automatisés.
+
+## En résumé
+
+Un modèle de note de frais Excel gratuit reste un bon point de départ pour un indépendant ou une petite structure avec peu de déplacements, à condition d'intégrer le barème kilométrique en vigueur, une colonne de TVA récupérable clairement identifiée, et une organisation par catégorie qui facilite l'export comptable. Conservez systématiquement vos justificatifs pendant 10 ans, distinguez les dépenses forfaitaires des dépenses avec TVA identifiée, et n'oubliez jamais qu'un ticket de carte bancaire seul ne constitue pas un justificatif recevable. Dès que le volume de dépenses augmente, un outil automatisé de gestion des achats devient plus efficace qu'un tableau manuel.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le modèle de note de frais Excel
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel est le barème kilométrique applicable en 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        Le barème kilométrique 2026 reprend celui applicable en 2025, sauf publication contraire de l'administration fiscale. Il varie selon la puissance fiscale du véhicule et la distance annuelle parcourue, avec trois tranches : jusqu'à 5 000 km, de 5 001 à 20 000 km, et au-delà de 20 000 km.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on récupérer la TVA sur les frais kilométriques ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le barème kilométrique est un montant forfaitaire qui ne correspond à aucune facture avec TVA identifiée. Il n'ouvre donc aucun droit à récupération de TVA. En revanche, les dépenses d'hébergement, de repas professionnels ou de transport en commun peuvent ouvrir ce droit, à condition de disposer d'une facture conforme.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Combien de temps faut-il conserver les justificatifs de notes de frais ?</AccordionTrigger>
+      <AccordionContent>
+        Les justificatifs doivent être conservés 10 ans au titre du Code de commerce et 6 ans au titre du livre des procédures fiscales. En pratique, il est recommandé de conserver l'ensemble de ses notes de frais et justificatifs pendant 10 ans pour couvrir toutes les obligations applicables.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un ticket de carte bancaire suffit-il comme justificatif de note de frais ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Un simple ticket de carte bancaire ne mentionne ni la nature détaillée de la dépense ni le taux de TVA appliqué. Il faut conserver la facture ou le ticket de caisse détaillé émis par le fournisseur pour que la dépense soit recevable en comptabilité et déductible fiscalement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quelle différence entre le remboursement au barème kilométrique et au réel ?</AccordionTrigger>
+      <AccordionContent>
+        Le barème kilométrique applique un montant forfaitaire par kilomètre selon la puissance fiscale du véhicule, sans justificatif détaillé de chaque dépense liée au véhicule. Le remboursement au réel exige de justifier chaque frais (carburant, entretien, assurance, amortissement) avec ses factures. Les deux méthodes ne peuvent pas se cumuler pour un même véhicule sur une même période.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

@@ -1,0 +1,287 @@
+---
+title: 'Modèle de facture sans TVA (franchise en base) : mention exacte et exemple'
+description: >-
+  Modèle de facture sans TVA pour les entreprises en franchise en base :
+  mention article 293 B, présentation des montants et erreurs à éviter.
+date: '2026-09-14'
+category: modele
+sector: null
+keyword: modèle facture sans tva
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-14'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Modèle</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Modèle de facture sans TVA (franchise en base) : mention exacte et exemple
+
+Un **modèle de facture sans TVA** n'est pas une facture classique à laquelle on retirerait simplement une ligne. La franchise en base de TVA impose une mention légale précise, une présentation particulière des montants et le respect de seuils de chiffre d'affaires. Une erreur sur ce document expose à un redressement fiscal, même pour une petite structure.
+
+Ce guide vous donne la mention exacte à porter sur votre facture, un exemple chiffré complet et la liste des erreurs les plus fréquentes commises par les auto-entrepreneurs et les petites entreprises en franchise en base.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer ma facture sans TVA gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que la franchise en base de TVA
+
+La franchise en base de TVA est un régime qui dispense certaines entreprises de facturer et de reverser la TVA à l'administration fiscale, tant que leur chiffre d'affaires reste sous certains seuils. Ce régime concerne la grande majorité des auto-entrepreneurs et de nombreuses petites entreprises individuelles ou sociétés au démarrage de leur activité.
+
+En 2026, les seuils de la franchise en base sont les suivants :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Seuils de la franchise en base de TVA en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Nature de l'activité</TableHead>
+        <TableHead>Seuil de base</TableHead>
+        <TableHead>Seuil majoré (tolérance)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Prestations de services</TableCell>
+        <TableCell>37 500 €</TableCell>
+        <TableCell>41 250 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Ventes de marchandises</TableCell>
+        <TableCell>85 000 €</TableCell>
+        <TableCell>93 500 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Tant que votre chiffre d'affaires reste sous le seuil de base, vous restez en franchise l'année suivante. Si vous le dépassez sans franchir le seuil majoré, vous restez en franchise jusqu'à la fin de l'année en cours mais basculez au régime réel l'année suivante. Si vous franchissez le seuil majoré en cours d'année, vous devenez redevable de la TVA dès le premier jour du mois du dépassement.
+
+Si votre activité mêle prestations de services et ventes de marchandises, par exemple un artisan qui fabrique et vend ses propres produits tout en facturant des heures d'intervention, deux seuils s'appliquent simultanément : celui des ventes pour la partie marchandises, celui des services pour la partie prestation, avec un plafond global qui ne peut pas dépasser le seuil le plus élevé des deux. Il est recommandé de suivre séparément chaque type de recette pour éviter tout dépassement non anticipé.
+
+## La mention obligatoire : article 293 B du CGI
+
+Toute facture émise par une entreprise en franchise en base doit impérativement porter la mention suivante, prévue à l'article 293 B du Code général des impôts :
+
+<div className="not-prose my-8">
+  <Callout type="info" title="La mention exacte à recopier">
+    « TVA non applicable, article 293 B du CGI »
+  </Callout>
+</div>
+
+Cette formulation ne doit pas être modifiée ni raccourcie. Des variantes comme « TVA non applicable » seule, sans référence à l'article, sont parfois tolérées dans la pratique mais exposent à des remarques lors d'un contrôle. Mieux vaut reprendre la formule complète telle quelle, dans une police lisible, généralement en bas de facture près des mentions légales ou juste sous le tableau des montants.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne jamais faire apparaître de taux ou de montant de TVA">
+    Une entreprise en franchise en base ne doit indiquer aucun taux de TVA, ni aucune colonne « TVA » avec un montant, même à zéro. La seule TVA autorisée à figurer sur le document est son absence, via la mention légale. Faire apparaître une ligne de TVA, même nulle, peut être interprété comme une TVA facturée à tort, que vous devriez alors reverser au Trésor public sans pouvoir la récupérer.
+  </Callout>
+</div>
+
+## Structure d'un modèle de facture sans TVA
+
+Une facture sans TVA reprend l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique, à l'exception des lignes liées à la TVA. Voici les éléments qui doivent y figurer :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Numéro de facture unique et séquentiel</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Date d'émission de la facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identité complète du vendeur : nom ou raison sociale, adresse, numéro SIREN ou SIRET</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identité complète du client (nom, adresse, et numéro SIRET si professionnel)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Désignation précise des produits ou prestations, quantité, prix unitaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Montant total à payer, qui correspond ici au montant HT puisqu'il n'y a pas de TVA</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mention « TVA non applicable, article 293 B du CGI »</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conditions de règlement et délai de paiement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mention de la pénalité de retard et de l'indemnité forfaitaire de recouvrement de 40 €</span>
+  </div>
+</div>
+
+## Exemple chiffré de facture sans TVA
+
+Prenons le cas d'une graphiste indépendante en micro-entreprise, en franchise en base, qui facture la création d'une identité visuelle à un client professionnel.
+
+- Désignation : création d'un logo et d'une charte graphique
+- Quantité : 1 prestation forfaitaire
+- Prix unitaire HT : 1 200 €
+- **Total à payer : 1 200 €**
+- Mention : « TVA non applicable, article 293 B du CGI »
+
+Il n'y a ici ni ligne « TVA 20 % », ni colonne « montant TTC » distincte du montant HT, puisque le montant facturé est identique en HT et en net à payer. C'est l'une des différences les plus visibles avec une facture classique.
+
+### Comparaison avec une facture assujettie à la TVA
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Facture sans TVA (franchise en base) versus facture avec TVA, pour une prestation à 1 200 € HT</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Élément</TableHead>
+        <TableHead>Entreprise en franchise en base</TableHead>
+        <TableHead>Entreprise assujettie (TVA 20 %)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Montant HT</TableCell>
+        <TableCell>1 200 €</TableCell>
+        <TableCell>1 200 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA</TableCell>
+        <TableCell>Aucune ligne, mention légale uniquement</TableCell>
+        <TableCell>240 € (20 %)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Montant total à payer</TableCell>
+        <TableCell>1 200 €</TableCell>
+        <TableCell>1 440 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## La franchise en base a aussi des conséquences sur vos achats
+
+Être en franchise en base ne concerne pas seulement vos factures de vente : cela concerne aussi vos achats professionnels. N'étant pas assujettie à la TVA, votre entreprise ne peut pas récupérer la TVA payée sur ses achats de matériel, de logiciels ou de fournitures. Cette TVA reste à votre charge et vient s'ajouter au coût réel de vos dépenses professionnelles.
+
+Ce point mérite d'être intégré dans votre calcul de rentabilité, en particulier si votre activité nécessite des achats d'équipement importants. Un consultant qui investit 3 000 € HT dans du matériel informatique paiera en réalité 3 600 € TTC, TVA comprise, sans possibilité de récupérer les 600 € de TVA auprès de l'administration, contrairement à une entreprise assujettie.
+
+## Que se passe-t-il en cas de dépassement des seuils
+
+Si vous dépassez le seuil majoré de la [franchise en base de TVA](/blog/tva-auto-entrepreneur-seuils-franchise) en cours d'année, vous devenez redevable de la TVA dès le premier jour du mois de dépassement. Concrètement, toute facture émise à partir de cette date doit faire apparaître la TVA, et vous devez retirer la mention de l'article 293 B. Les factures émises avant le dépassement, elles, restent valides telles quelles.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticipez le changement de régime">
+    Suivez votre chiffre d'affaires cumulé tout au long de l'année. Dès que vous approchez du seuil de base, préparez le passage à la facturation avec TVA : mise à jour de votre numéro de TVA intracommunautaire, adaptation de vos tarifs si vous ne voulez pas répercuter la hausse sur vos clients, et paramétrage de votre logiciel de facturation.
+  </Callout>
+</div>
+
+## Les erreurs les plus fréquentes à éviter
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Oublier la mention légale ou la reformuler de façon incomplète</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Laisser apparaître une colonne TVA à 0 % au lieu de la supprimer entièrement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Confondre le régime micro-fiscal, avec ses propres [obligations comptables de la micro-entreprise](/blog/obligations-comptables-micro-entreprise), et la franchise en base de TVA, qui sont deux dispositifs distincts avec des seuils différents</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Continuer à facturer sans TVA après avoir dépassé le seuil majoré de dépassement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Oublier les autres [mentions obligatoires de la facture](/blog/mentions-obligatoires-facture), qui restent toutes exigées même sans TVA</span>
+  </div>
+</div>
+
+## Générer une facture sans TVA avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="La mention légale ajoutée automatiquement">
+    Avec Newbi, il suffit d'indiquer que votre entreprise est en franchise en base de TVA dans vos paramètres. La mention « TVA non applicable, article 293 B du CGI » est alors ajoutée automatiquement sur chaque facture, sans ligne de TVA parasite, et le montant total correspond directement au montant HT saisi.
+  </Callout>
+</div>
+
+Newbi vous permet également de basculer facilement vers un régime avec TVA le jour où vous dépassez les seuils, sans avoir à reconstruire vos modèles de facture depuis zéro.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## Conservation et archivage des factures sans TVA
+
+Comme toute facture, une facture sans TVA doit être conservée pendant 10 ans au titre du Code de commerce, et pendant 6 ans au titre du livre des procédures fiscales pour les besoins d'un éventuel contrôle. L'absence de TVA ne réduit en rien cette obligation d'archivage : l'administration peut vérifier a posteriori que vous étiez effectivement éligible à la franchise en base au moment de l'émission de chaque facture, en comparant vos factures à votre chiffre d'affaires cumulé sur l'année.
+
+## En résumé
+
+Une facture sans TVA en franchise en base doit obligatoirement porter la mention « TVA non applicable, article 293 B du CGI », ne comporter aucune ligne ni aucun montant de TVA, et respecter par ailleurs toutes les mentions obligatoires classiques. Le montant total à payer correspond simplement au montant HT. Cette situation reste valable tant que vous ne dépassez pas les seuils de chiffre d'affaires fixés pour 2026, soit 37 500 € pour les prestations de services et 85 000 € pour les ventes, avec des seuils majorés respectifs de 41 250 € et 93 500 €. Dès le dépassement du seuil majoré, la TVA doit apparaître dès le mois concerné.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture sans TVA
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle mention écrire sur une facture sans TVA ?</AccordionTrigger>
+      <AccordionContent>
+        La mention exacte à porter est « TVA non applicable, article 293 B du CGI ». Elle doit apparaître clairement sur la facture, sans être raccourcie, et remplace toute ligne ou colonne de TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Un auto-entrepreneur doit-il toujours facturer sans TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Un auto-entrepreneur facture sans TVA uniquement s'il est en franchise en base, c'est-à-dire tant que son chiffre d'affaires reste sous les seuils de 37 500 € pour les services ou 85 000 € pour les ventes. Au-delà du seuil majoré, il devient redevable de la TVA et doit la facturer.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Peut-on indiquer une TVA à 0 % au lieu de la mention légale ?</AccordionTrigger>
+      <AccordionContent>
+        Non, ce n'est pas correct. Une entreprise en franchise en base ne doit faire apparaître aucune ligne de TVA, même à 0 %. La seule formulation admise est la mention légale complète prévue par l'article 293 B du Code général des impôts.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que se passe-t-il si je facture avec la mention alors que j'ai dépassé le seuil ?</AccordionTrigger>
+      <AccordionContent>
+        Si vous continuez à facturer sans TVA après avoir dépassé le seuil majoré, vous êtes tout de même redevable de la TVA sur ces factures auprès de l'administration, sans pouvoir la réclamer rétroactivement à vos clients. Il est donc essentiel de suivre votre chiffre d'affaires cumulé en continu.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>La facture sans TVA doit-elle respecter les autres mentions obligatoires ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, toutes les mentions obligatoires classiques restent exigées : identité des parties, numéro de facture, date, désignation de la prestation, conditions de paiement et pénalités de retard. Seule la partie relative à la TVA est remplacée par la mention légale de franchise en base.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

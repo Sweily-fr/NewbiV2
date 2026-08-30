@@ -1,0 +1,223 @@
+---
+title: 'Pénalités de retard et indemnité forfaitaire de 40 € : calcul et mentions'
+description: >-
+  Taux légal, formule de calcul, indemnité forfaitaire de 40 € pour frais de recouvrement : tout sur les pénalités de retard à mentionner sur vos factures.
+date: '2026-09-04'
+category: reglementaire
+sector: null
+keyword: pénalités de retard facture
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-04'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Pénalités de retard et indemnité forfaitaire de 40 € : calcul et mentions
+
+Les **pénalités de retard facture** sont une mention obligatoire trop souvent négligée, alors qu'elles constituent un levier réel pour limiter les retards de paiement. Entre le taux d'intérêt applicable, l'indemnité forfaitaire de 40 € pour frais de recouvrement et les mentions à faire figurer sur chaque facture, les règles méritent d'être clarifiées.
+
+Ce guide détaille le mode de calcul des pénalités de retard, les modalités de l'indemnité forfaitaire de 40 €, les mentions obligatoires correspondantes, et les recours possibles lorsqu'un client tarde à régler ses factures.
+
+Les retards de paiement représentent l'une des principales causes de difficultés de trésorerie pour les indépendants et les petites entreprises françaises. Bien connaître ces mécanismes ne sert pas seulement à se conformer à la loi : c'est aussi un levier concret pour dissuader vos clients de traiter votre entreprise comme une variable d'ajustement de leur propre trésorerie.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi les pénalités de retard doivent figurer sur la facture
+
+L'article L441-10 du Code de commerce impose que toute facture entre professionnels mentionne les conditions d'application des pénalités de retard, y compris le taux d'intérêt applicable et les conditions de l'indemnité forfaitaire pour frais de recouvrement. L'absence de cette mention constitue une infraction, indépendamment du fait que le client paie ou non en retard.
+
+Cette obligation vise à responsabiliser les deux parties dès la conclusion du contrat commercial : le client sait par avance ce qu'il encourt en cas de retard, et le fournisseur dispose d'une base contractuelle claire pour réclamer ces sommes le cas échéant. Le [délai de paiement d'une facture](/blog/quest-ce-que-delai-paiement-facture) et les pénalités qui s'y rattachent forment ainsi un couple indissociable dans la rédaction de vos conditions générales de vente.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Sanction en cas de mention absente">
+    L'absence des mentions relatives aux pénalités de retard sur une facture entre professionnels est punie d'une amende administrative pouvant atteindre 75 000 € pour une personne physique et 375 000 € pour une personne morale, en application de l'article L441-10 et de l'article L441-16 du Code de commerce.
+  </Callout>
+</div>
+
+## Le taux des pénalités de retard : comment le déterminer
+
+Le taux des pénalités de retard doit être précisé dans les conditions générales de vente et sur la facture. À défaut d'accord entre les parties, le taux applicable est celui de l'intérêt légal majoré de 10 points. Les parties peuvent convenir d'un taux différent dans leur contrat ou leurs conditions générales de vente, mais ce taux ne peut jamais être inférieur à 3 fois le taux d'intérêt légal, ce plancher étant fixé par la loi pour éviter les clauses trop favorables au débiteur.
+
+Le taux d'intérêt légal est révisé chaque semestre par la Banque de France et publié par arrêté, avec une distinction entre le taux applicable aux particuliers et celui applicable aux professionnels. Il est donc recommandé de vérifier sa valeur actualisée avant de rédiger vos conditions générales de vente, plutôt que de reprendre un chiffre figé d'une année sur l'autre, au risque d'appliquer un taux inférieur au plancher légal sans le savoir.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Modalités de calcul des pénalités de retard sur facture</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Élément</TableHead>
+        <TableHead>Règle applicable</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Taux par défaut (sans clause contractuelle)</TableCell>
+        <TableCell>Taux d'intérêt légal majoré de 10 points</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Taux minimum autorisé si fixé contractuellement</TableCell>
+        <TableCell>3 fois le taux d'intérêt légal</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Point de départ du calcul</TableCell>
+        <TableCell>Jour suivant la date d'échéance figurant sur la facture</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Exigibilité</TableCell>
+        <TableCell>Sans qu'un rappel soit nécessaire, dès le lendemain de l'échéance</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Formule de calcul et exemple chiffré
+
+Le calcul des pénalités de retard s'effectue selon la formule suivante : montant TTC de la facture x taux annuel de pénalité x nombre de jours de retard / 365.
+
+### Exemple concret
+
+Une entreprise émet une facture de 3 500 € TTC avec une échéance à 30 jours, restée impayée 45 jours après cette échéance. Les conditions générales de vente prévoient un taux de pénalité de 12 % par an (soit environ 3 fois le taux d'intérêt légal, plancher légal).
+
+Calcul : 3 500 € x 12 % x 45 / 365 = **51,78 €** de pénalités de retard dues, en plus du montant principal de la facture.
+
+À cela s'ajoute l'indemnité forfaitaire de 40 € pour frais de recouvrement, due automatiquement dès le premier jour de retard. Le montant total réclamé au client s'élève donc à 3 500 € (montant principal) + 51,78 € (pénalités) + 40 € (indemnité forfaitaire), soit 3 591,78 € au total. Ce calcul doit être actualisé chaque jour supplémentaire de retard tant que la facture reste impayée, ce qui incite le client à régulariser rapidement sa situation plutôt que de laisser la somme continuer à augmenter.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Les pénalités s'appliquent de plein droit">
+    Contrairement à une idée reçue, les pénalités de retard ne nécessitent aucune mise en demeure préalable pour être exigibles. Elles courent automatiquement dès le lendemain de la date d'échéance mentionnée sur la facture, à condition que cette mention ait bien été prévue au contrat ou sur la facture elle-même.
+  </Callout>
+</div>
+
+## L'indemnité forfaitaire de 40 € pour frais de recouvrement
+
+En complément des pénalités de retard, tout professionnel en retard de paiement envers un autre professionnel est redevable d'une indemnité forfaitaire pour frais de recouvrement fixée à 40 €, prévue par l'article D441-5 du Code de commerce. Cette indemnité est due automatiquement, sans qu'il soit nécessaire de la réclamer expressément, dès lors que le paiement intervient après l'échéance.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'indemnité de 40 € s'applique par facture payée en retard, pas par relance envoyée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Elle se cumule avec les pénalités de retard calculées au taux contractuel ou légal</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Si les frais de recouvrement réels dépassent 40 €, une indemnisation complémentaire peut être demandée sur justificatifs</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Elle ne s'applique pas aux transactions avec des particuliers, uniquement entre professionnels</span>
+  </div>
+</div>
+
+## Cas particulier : les relations avec les particuliers
+
+Les règles présentées ci-dessus concernent les relations entre professionnels. Lorsqu'un professionnel facture un particulier, l'indemnité forfaitaire de 40 € ne s'applique pas automatiquement, et les pénalités de retard doivent être expressément prévues dans les conditions générales de vente acceptées par le consommateur, avec un formalisme renforcé issu du droit de la consommation. Il est donc essentiel d'adapter vos mentions selon la nature de votre clientèle.
+
+Cette distinction a des conséquences pratiques importantes pour les entreprises qui facturent à la fois des professionnels et des particuliers, comme les artisans ou les professions libérales à clientèle mixte. Il est recommandé de prévoir deux jeux de conditions générales distincts, l'un pour les ventes B2B et l'autre pour les ventes B2C, afin d'éviter d'appliquer par erreur une clause non conforme au droit de la consommation à un client particulier.
+
+## Où et comment mentionner les pénalités sur la facture
+
+La mention doit figurer clairement sur la facture, généralement dans le pied de page ou une section dédiée aux conditions de règlement. Une formulation courante est la suivante : « En cas de retard de paiement, une pénalité au taux de X % par an sera appliquée, ainsi qu'une indemnité forfaitaire de 40 € pour frais de recouvrement, conformément à l'article L441-10 du Code de commerce. »
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticipez plutôt que de subir le retard">
+    Mentionner clairement vos pénalités de retard dès le devis dissuade souvent le client de payer en retard. Combinez cette mention avec des [conseils pour réduire les délais de paiement](/blog/conseils-reduire-delais-paiement) dès la négociation commerciale, avant même l'émission de la facture.
+  </Callout>
+</div>
+
+## Que faire en cas de facture impayée malgré la mention des pénalités
+
+Si malgré ces mentions le client ne règle pas sa facture, la première étape consiste généralement à envoyer une relance amiable, en rappelant les pénalités et l'indemnité forfaitaire déjà dues. Notre [modèle de relance de facture impayée](/blog/relance-facture-impayee-modele) détaille les étapes à suivre, de la première relance jusqu'à la mise en demeure formelle, avant d'envisager un recouvrement judiciaire si nécessaire.
+
+Dans la pratique, une relance amiable bien formulée, qui rappelle précisément le montant des pénalités et de l'indemnité forfaitaire déjà courues, suffit à débloquer la majorité des situations. Les clients professionnels savent que ces sommes sont dues de plein droit et préfèrent généralement régulariser rapidement plutôt que de voir le montant total continuer à augmenter avec les jours de retard supplémentaires. La mise en demeure formelle, envoyée par lettre recommandée avec accusé de réception, reste l'étape suivante en l'absence de réponse à la relance amiable, avant d'envisager une procédure d'injonction de payer devant le tribunal de commerce.
+
+## Comment Newbi automatise le calcul de vos pénalités
+
+Newbi intègre les mentions de pénalités de retard et d'indemnité forfaitaire directement dans vos modèles de facture, et permet de suivre l'état de règlement de chaque document depuis un tableau de bord centralisé. Vous visualisez immédiatement les factures en retard et pouvez déclencher une relance sans recalculer manuellement les montants dus.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mentions de pénalités et indemnité forfaitaire intégrées à vos modèles de facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Suivi en temps réel des factures en attente de règlement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Relances facilitées dès le dépassement de l'échéance</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Suivre mes factures avec Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Les pénalités de retard et l'indemnité forfaitaire de 40 € sont des mécanismes prévus par le Code de commerce pour responsabiliser les relations commerciales entre professionnels. Le taux applicable, à défaut de clause contractuelle, correspond au taux d'intérêt légal majoré de 10 points, avec un plancher légal de 3 fois le taux d'intérêt légal si un taux différent est fixé au contrat. L'indemnité de 40 € se cumule automatiquement avec ces pénalités dès le premier jour de retard, sans mise en demeure préalable. Mentionner ces règles clairement sur vos factures n'est pas seulement une obligation légale, c'est aussi un outil concret pour réduire vos délais de paiement moyens.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les pénalités de retard
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel est le taux minimum des pénalités de retard sur une facture ?</AccordionTrigger>
+      <AccordionContent>
+        À défaut de clause contractuelle spécifique, le taux applicable est celui de l'intérêt légal majoré de 10 points. Si les parties fixent un taux différent dans leurs conditions générales de vente, ce taux ne peut jamais être inférieur à 3 fois le taux d'intérêt légal.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>L'indemnité forfaitaire de 40 € est-elle automatique ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, elle est due de plein droit dès qu'un professionnel paie une facture après son échéance, sans qu'il soit nécessaire de la réclamer expressément ni d'envoyer une mise en demeure. Elle se cumule avec les pénalités de retard calculées au taux applicable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Peut-on réclamer plus que 40 € de frais de recouvrement ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si les frais de recouvrement réellement engagés (relance par voie d'huissier, procédure de recouvrement) dépassent 40 €, le créancier peut demander une indemnisation complémentaire, à condition de présenter les justificatifs correspondants.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Les pénalités de retard s'appliquent-elles aux factures adressées à des particuliers ?</AccordionTrigger>
+      <AccordionContent>
+        L'indemnité forfaitaire de 40 € ne s'applique pas aux relations avec les consommateurs. Des pénalités de retard peuvent néanmoins être prévues dans les conditions générales de vente destinées aux particuliers, sous réserve de respecter le formalisme du droit de la consommation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que risque une entreprise qui n'indique pas les pénalités de retard sur ses factures ?</AccordionTrigger>
+      <AccordionContent>
+        L'absence de cette mention obligatoire, prévue par l'article L441-10 du Code de commerce, expose à une amende administrative pouvant atteindre 75 000 € pour une personne physique et 375 000 € pour une personne morale, indépendamment de tout retard de paiement effectif.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

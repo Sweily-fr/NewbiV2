@@ -1,0 +1,214 @@
+---
+title: "L'annuaire de la facturation électronique : à quoi sert-il et comment s'y inscrire ?"
+description: >-
+  L'annuaire central permet d'adresser une facture électronique à la bonne
+  plateforme. Fonctionnement, inscription via votre PDP et erreurs
+  d'adressage à éviter.
+date: '2026-09-28'
+category: glossaire
+sector: null
+keyword: annuaire facturation électronique
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-28'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# L'annuaire de la facturation électronique : à quoi sert-il et comment s'y inscrire ?
+
+L'**annuaire de la facturation électronique** est la pièce centrale qui rend possible l'échange automatisé de factures entre entreprises françaises. Sans lui, une facture émise depuis une plateforme ne saurait jamais où aller : chaque entreprise choisit sa propre PDP, et il faut un système commun pour faire circuler l'information entre des dizaines d'opérateurs différents. Ce guide vous explique à quoi sert précisément cet annuaire, comment votre entreprise y est inscrite, et quelles erreurs d'adressage éviter pour ne pas voir vos factures perdues dans la nature.
+
+Vous découvrirez le rôle exact de l'annuaire dans la réforme de la facturation électronique, la différence avec le portail public de facturation, les données qui y figurent, et la marche à suivre pour vérifier ou corriger votre inscription.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que l'annuaire de la facturation électronique ?
+
+L'annuaire est un registre national qui associe chaque entreprise identifiée par son numéro SIREN à la ou les plateformes de dématérialisation partenaires (PDP) qu'elle a choisies pour émettre et recevoir ses factures électroniques. Il fonctionne comme un service de résolution d'adresse : quand une PDP doit transmettre une facture à un client, elle interroge l'annuaire pour savoir sur quelle plateforme ce client est enregistré, puis lui envoie le document.
+
+Ce mécanisme est indispensable dans un système décentralisé où chaque entreprise n'est pas obligée d'utiliser la même plateforme que ses fournisseurs ou ses clients. Depuis la réforme, il n'existe plus de plateforme d'échange unique et gratuite gérée par l'État : c'est le portail public de facturation (PPF) qui héberge et alimente cet annuaire, en lien avec les [PDP](/blog/quest-ce-que-pdp-plateforme-dematerialisation) immatriculées. Pour comprendre le rôle exact du PPF dans ce nouveau schéma, vous pouvez consulter notre article sur [le portail public de facturation](/blog/quest-ce-que-ppf-portail-public-facturation).
+
+L'annuaire ne se limite pas à un simple carnet d'adresses techniques. Il porte aussi des métadonnées utiles au routage : le format accepté par l'entreprise destinataire (Factur-X, UBL ou CII), et éventuellement des adresses de facturation multiples pour les groupes ou les entités ayant plusieurs points de facturation.
+
+## Pourquoi l'annuaire est-il indispensable à la réforme ?
+
+La facturation électronique obligatoire repose sur le principe de l'interopérabilité : une entreprise cliente de la PDP A doit pouvoir recevoir sans friction une facture émise par un fournisseur client de la PDP B. Sans registre central faisant autorité, chaque PDP devrait connaître individuellement les adresses de toutes les autres, ce qui serait ingérable à l'échelle de plusieurs millions d'entreprises françaises.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Un rôle qui a changé avec la réforme">
+    Dans la version initiale du projet, le PPF devait aussi jouer le rôle de plateforme d'échange gratuite, concurrente des opérateurs privés. Ce n'est plus le cas : le PPF conserve uniquement les fonctions d'annuaire, de concentrateur des données vers l'administration fiscale et de solution de secours pour les très petites structures. La transmission des factures passe désormais exclusivement par les PDP.
+  </Callout>
+</div>
+
+L'annuaire remplit ainsi trois fonctions concrètes pour votre entreprise :
+
+- Il permet à vos fournisseurs de savoir où vous adresser vos factures électroniques.
+- Il garantit que vos propres factures émises arrivent bien chez le bon destinataire, sur la bonne plateforme.
+- Il transmet à l'administration fiscale les données nécessaires à l'e-reporting, sans que vous ayez à effectuer une déclaration séparée pour chaque transaction B2B.
+
+## Comment mon entreprise est-elle inscrite dans l'annuaire ?
+
+L'inscription à l'annuaire n'est pas une démarche que vous effectuez vous-même sur un site dédié. Elle se fait automatiquement au moment où vous choisissez et activez votre PDP. C'est votre plateforme partenaire qui déclare votre SIREN, vos coordonnées de facturation et les formats que vous acceptez auprès de l'annuaire central hébergé par le PPF.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous choisissez une <strong>PDP immatriculée</strong> auprès de l'administration fiscale.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous <strong>activez votre compte</strong> et renseignez votre numéro SIREN ainsi que vos coordonnées de facturation.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La PDP <strong>déclare automatiquement</strong> votre entreprise dans l'annuaire, avec les formats de facture que vous acceptez.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vos <strong>fournisseurs peuvent alors vous adresser</strong> des factures électroniques dès l'activation confirmée.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>En cas de <strong>changement de PDP</strong>, la mise à jour de l'annuaire est prise en charge par la nouvelle plateforme lors de la migration.</span>
+  </div>
+</div>
+
+Si vous ne choisissez aucune PDP avant l'échéance qui vous concerne, le PPF assure un service minimal de réception pour continuer à recevoir vos factures, mais il ne vous permet pas d'émettre. C'est pourquoi le choix d'une plateforme reste une priorité, y compris pour les structures qui ne sont concernées que par la réception obligatoire à partir du 1er septembre 2026.
+
+## Le calendrier d'inscription selon la taille de votre entreprise
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Échéances de la réforme et rôle de l'annuaire</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Échéance</TableHead>
+        <TableHead>Entreprises concernées</TableHead>
+        <TableHead>Obligation</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">1er septembre 2026</TableCell>
+        <TableCell>Toutes les entreprises, quelle que soit leur taille</TableCell>
+        <TableCell>Réception obligatoire des factures électroniques via une PDP inscrite à l'annuaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">1er septembre 2026</TableCell>
+        <TableCell>Grandes entreprises et ETI</TableCell>
+        <TableCell>Émission obligatoire, adressage via l'annuaire pour chaque facture sortante</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">1er septembre 2027</TableCell>
+        <TableCell>PME, TPE et micro-entreprises</TableCell>
+        <TableCell>Émission obligatoire, même mécanisme d'adressage via l'annuaire</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Concrètement, même une micro-entreprise qui n'émettra ses factures électroniques qu'à partir de septembre 2027 doit déjà être inscrite dans l'annuaire dès septembre 2026, puisque la réception obligatoire s'applique à toutes les entreprises sans exception de taille. Autant s'y prendre en avance pour [choisir sa PDP](/blog/comment-choisir-sa-pdp-plateforme-dematerialisation) sans précipitation.
+
+## Exemple concret : une facture qui traverse l'annuaire
+
+Prenons le cas d'une société de conseil, Atelier Conseil SAS, qui facture 3 600 € HT de prestations à un client industriel, Mecafab SAS. Atelier Conseil utilise la PDP Alpha, tandis que Mecafab a choisi la PDP Beta pour recevoir ses factures fournisseurs.
+
+Au moment de l'émission, la PDP Alpha interroge l'annuaire avec le numéro SIREN de Mecafab. L'annuaire répond que Mecafab est rattachée à la PDP Beta et qu'elle accepte le format Factur-X. La PDP Alpha transforme alors la facture au format attendu et la transmet à la PDP Beta, qui la dépose dans le compte de Mecafab. Simultanément, les données essentielles de la transaction (montant HT, TVA à 20 % soit 720 €, identifiants des deux entreprises) remontent au PPF au titre de l'obligation de transmission des données fiscales, sans démarche supplémentaire de la part d'Atelier Conseil.
+
+Ce parcours entier se déroule en quelques secondes et reste invisible pour les deux entreprises : elles voient simplement la facture partir d'un côté et arriver de l'autre.
+
+## Les erreurs d'adressage les plus fréquentes
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Une facture mal adressée n'est pas une facture perdue, mais elle est bloquée">
+    Si votre client n'apparaît pas dans l'annuaire ou si son SIREN est mal renseigné, la transmission échoue et votre plateforme vous alerte. La facture reste en attente : elle ne part jamais dans le vide, mais son émission est retardée jusqu'à correction de l'adressage.
+  </Callout>
+</div>
+
+Trois situations expliquent la majorité des échecs d'adressage constatés par les entreprises :
+
+1. **Un SIREN erroné ou obsolète** dans la fiche client, par exemple après un changement de forme juridique ou une fusion. Vérifiez systématiquement ce numéro avant la première facturation.
+2. **Un client non encore inscrit dans l'annuaire**, en particulier durant la période transitoire précédant septembre 2027 pour les petites structures. La facture ne peut alors être acheminée que via le canal minimal du PPF, en attendant que le client active sa PDP.
+3. **Une confusion entre numéro SIREN et numéro SIRET** dans les paramètres de facturation. L'annuaire fonctionne au niveau du SIREN (l'entreprise), tandis que le SIRET identifie un établissement précis : une mauvaise saisie peut empêcher la résolution de l'adresse.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Vérifiez vos données client en amont">
+    Avant l'échéance de réception obligatoire, prenez l'habitude de vérifier le SIREN de vos clients récurrents directement dans votre outil de facturation. Cela évite les blocages au moment où l'obligation d'émission s'appliquera à votre tour.
+  </Callout>
+</div>
+
+## Comment Newbi gère l'adressage de vos factures
+
+Newbi couvre la [facturation électronique](/produits/facturation-electronique) avec les formats du socle (Factur-X, UBL, CII) et s'appuie sur une PDP partenaire pour la transmission de vos documents. Vous n'avez pas à interroger l'annuaire vous-même : lorsque vous créez une facture pour un client déjà renseigné dans votre fichier clients, Newbi prépare l'adressage à partir des informations que vous avez enregistrées, ce qui limite les erreurs de SIREN au moment de l'émission.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+Pour vos [factures classiques](/produits/factures) comme pour vos documents électroniques, l'objectif reste le même : des mentions correctes, une numérotation conforme et un envoi sans accroc, avec la possibilité de suivre l'état de chaque document jusqu'à sa réception.
+
+## En résumé
+
+L'annuaire de la facturation électronique est le registre qui relie chaque entreprise française, identifiée par son SIREN, à la plateforme de dématérialisation partenaire qu'elle a choisie pour émettre et recevoir ses factures. Géré par le portail public de facturation, il ne remplace pas les PDP mais leur permet de communiquer entre elles de façon fiable. Votre inscription y est automatique dès l'activation de votre PDP, mais elle dépend de la qualité des données que vous transmettez : un SIREN exact et un client bien identifié évitent la quasi-totalité des blocages d'adressage. Avec la réception obligatoire pour toutes les entreprises dès le 1er septembre 2026, mieux vaut vérifier votre inscription et celle de vos principaux partenaires commerciaux sans attendre la dernière minute.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'annuaire de la facturation électronique
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Dois-je m'inscrire moi-même à l'annuaire de facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Non, aucune démarche manuelle n'est nécessaire. Votre inscription se fait automatiquement lorsque vous activez votre compte auprès d'une plateforme de dématérialisation partenaire (PDP). C'est elle qui déclare votre numéro SIREN et vos coordonnées de facturation auprès de l'annuaire central.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Que se passe-t-il si mon client n'est pas encore dans l'annuaire ?</AccordionTrigger>
+      <AccordionContent>
+        Tant que la réception obligatoire de septembre 2026 n'est pas généralisée à tous les partenaires, il peut arriver qu'un client n'ait pas encore activé de PDP. Dans ce cas, la transmission de la facture peut passer par le circuit minimal assuré par le portail public de facturation, en attendant que le client s'inscrive à son tour.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>L'annuaire remplace-t-il le portail public de facturation ?</AccordionTrigger>
+      <AccordionContent>
+        Non, l'annuaire est l'une des fonctions du portail public de facturation, mais pas la seule. Le PPF héberge l'annuaire, sert de concentrateur des données transmises à l'administration fiscale et propose un service minimal pour les entreprises n'ayant pas choisi de PDP. Il n'agit plus comme plateforme d'échange principale des factures.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que faire en cas d'erreur d'adressage vers un client ?</AccordionTrigger>
+      <AccordionContent>
+        Vérifiez d'abord le numéro SIREN saisi dans votre fiche client, puis confirmez que votre client a bien activé une PDP. Si l'erreur persiste, contactez le support de votre plateforme : elle peut consulter le statut d'inscription de votre client dans l'annuaire et vous indiquer la cause exacte du blocage.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Peut-on changer de PDP sans perdre son inscription dans l'annuaire ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Lors d'un changement de plateforme, la nouvelle PDP met à jour votre fiche dans l'annuaire pour indiquer qu'elle est désormais votre point de réception et d'émission. Il est recommandé de prévoir une période de transition pour s'assurer que vos fournisseurs adressent bien leurs factures à la nouvelle plateforme.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

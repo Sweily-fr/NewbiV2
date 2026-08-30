@@ -1,0 +1,240 @@
+---
+title: 'Facture de psychologue libéral : honoraires, TVA et mentions'
+description: >-
+  Facturer des consultations de psychologue : exonération de TVA, note
+  d'honoraires, dispositif Mon soutien psy, séances annulées et facturation
+  aux entreprises.
+date: '2026-09-30'
+category: guide
+sector: Professions médicales
+keyword: facture psychologue
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-09-30'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">Professions médicales</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facture de psychologue libéral : honoraires, TVA et mentions
+
+La **facture de psychologue** obéit à des règles particulières qui la distinguent d'une facture classique de prestation de service. Contrairement à un consultant ou un formateur, le psychologue exerçant en libéral bénéficie d'une exonération de TVA propre aux professions de santé, mais doit néanmoins respecter des mentions précises sur ses documents, qu'il s'agisse d'une note d'honoraires classique ou d'une facturation dans le cadre du dispositif Mon soutien psy. Ce guide fait le point sur l'ensemble de ces règles.
+
+Vous saurez comment établir une note d'honoraires conforme, dans quels cas la TVA s'applique malgré tout, comment traiter une séance annulée, et comment facturer une intervention auprès d'une entreprise.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes notes d'honoraires gratuitement</Link>
+  </Button>
+</div>
+
+## Note d'honoraires ou facture : quel document pour un psychologue ?
+
+En pratique, le document remis par un psychologue à ses patients est le plus souvent appelé "note d'honoraires" plutôt que "facture", une terminologie héritée des usages des professions de santé. Sur le plan juridique et fiscal, ce document reste soumis aux mêmes exigences qu'une facture au sens de l'article 289 du Code général des impôts, dès lors que le psychologue exerce en libéral et facture une prestation professionnelle. Comme pour toute [profession libérale](/blog/facture-profession-liberale-guide), la note d'honoraires doit être numérotée, datée, et comporter l'identité complète du praticien et du patient.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>numéro de note d'honoraires</strong> suivant une séquence continue et chronologique</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date de la consultation</strong> ou de la séance</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'<strong>identité et l'adresse professionnelle</strong> du psychologue, avec son numéro SIRET</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>numéro ADELI ou RPPS</strong> attestant de l'enregistrement en tant que psychologue</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant de la consultation</strong> et le mode de règlement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention de l'<strong>exonération de TVA</strong> lorsqu'elle s'applique, avec sa référence légale</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Le numéro ADELI, une mention propre aux professions de santé">
+    Contrairement à un consultant classique, le psychologue titulaire du titre professionnel doit être enregistré auprès de l'Agence régionale de santé et disposer d'un numéro ADELI (ou RPPS selon les cas). Ce numéro renforce la crédibilité de la note d'honoraires et peut être demandé par certains organismes de remboursement ou mutuelles.
+  </Callout>
+</div>
+
+## L'exonération de TVA sur les soins psychologiques
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Une exonération encadrée, pas automatique">
+    L'article 261-4-1° du Code général des impôts exonère de TVA les prestations de soins dispensées par les membres des professions médicales et paramédicales réglementées. Les psychologues titulaires du titre, inscrits sur la liste ADELI, bénéficient de cette exonération pour leurs actes de consultation, de suivi thérapeutique et de bilan psychologique.
+  </Callout>
+</div>
+
+Cette exonération s'applique aux prestations qui ont une finalité thérapeutique ou de soins, c'est-à-dire les consultations classiques, le suivi psychothérapeutique et les bilans psychologiques réalisés dans un but de diagnostic ou de prise en charge. Elle ne dispense pas le psychologue de facturer un document, mais dispense simplement d'appliquer et de collecter la TVA sur ce document.
+
+## Dans quels cas la TVA peut-elle s'appliquer à un psychologue ?
+
+L'exonération n'est pas absolue. Certaines activités connexes exercées par un psychologue restent en dehors du champ de l'exonération de soins et peuvent être soumises à la TVA dans les conditions de droit commun.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Régime de TVA selon le type de prestation d'un psychologue</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Prestation</TableHead>
+        <TableHead>Régime de TVA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Consultation individuelle de suivi thérapeutique</TableCell>
+        <TableCell>Exonérée (art. 261-4-1° du CGI)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Bilan psychologique à visée diagnostique</TableCell>
+        <TableCell>Exonérée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Formation professionnelle dispensée à des tiers</TableCell>
+        <TableCell>Soumise à TVA (sauf franchise en base applicable)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Supervision de professionnels (hors soins directs)</TableCell>
+        <TableCell>Généralement soumise à TVA</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Expertise judiciaire ou évaluation sans visée de soin</TableCell>
+        <TableCell>Peut être soumise à TVA selon la nature exacte de la mission</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Lorsque le psychologue exerce plusieurs de ces activités, il doit distinguer clairement, dans sa comptabilité et sur ses documents, la part exonérée liée aux soins et la part éventuellement soumise à TVA. Pour les activités non exonérées, si le chiffre d'affaires correspondant reste sous les seuils de la franchise en base de TVA (37 500 € pour les prestations de services en 2026, seuil majoré à 41 250 €), aucune TVA n'est due tant que ce plafond n'est pas dépassé.
+
+## Le dispositif Mon soutien psy et la facturation
+
+Le dispositif Mon soutien psy permet à certains patients de bénéficier de séances remboursées par l'Assurance maladie, sur prescription médicale, auprès de psychologues conventionnés. La facturation dans ce cadre suit un circuit spécifique : le psychologue conventionné télétransmet les séances réalisées via son espace professionnel dédié, et le remboursement s'effectue directement selon un tarif fixé par la convention, sans avance de frais pour le patient dans la plupart des cas.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Une note d'honoraires reste due, même sans avance de frais">
+    Même lorsque le patient ne paie rien directement grâce au dispositif Mon soutien psy, le psychologue doit conserver une trace de chaque séance réalisée, avec la date et l'identité du patient, à des fins de justification comptable et de contrôle par l'Assurance maladie. Cette pratique s'ajoute à la télétransmission propre au dispositif conventionné.
+  </Callout>
+</div>
+
+## Facturer une séance annulée ou non honorée
+
+La question des séances annulées revient fréquemment chez les psychologues, qui appliquent souvent une politique de facturation en cas d'annulation tardive ou d'absence non prévenue.
+
+Sur le plan légal, rien n'empêche un praticien de facturer une séance non honorée si les conditions ont été clairement annoncées au patient au préalable, par exemple un délai de prévenance de 24 ou 48 heures. Dans ce cas, la note d'honoraires doit mentionner explicitement qu'il s'agit d'une facturation pour rendez-vous non honoré, et non d'une consultation réalisée, pour éviter toute confusion avec un acte de soin effectif. Le régime de TVA applicable reste identique à celui d'une consultation classique, puisqu'il s'agit toujours d'une prestation liée à l'activité de soin exercée par le praticien.
+
+## Exemple chiffré : une note d'honoraires classique
+
+Un psychologue reçoit un patient pour une séance de suivi thérapeutique facturée 60 €. La note d'honoraires n° NH-2026-0145, datée du jour de la consultation, indique :
+
+- Prestation : consultation de suivi psychologique
+- Montant : 60,00 €
+- TVA : non applicable, article 261-4-1° du CGI
+- Mode de règlement : carte bancaire
+
+Aucune ligne de TVA n'apparaît, puisque la prestation relève de l'exonération applicable aux soins. Le patient peut utiliser cette note d'honoraires pour une éventuelle demande de remboursement partiel auprès de sa mutuelle, certaines complémentaires santé prenant en charge un forfait de séances de psychologie.
+
+## Facturer une intervention auprès d'une entreprise
+
+Un psychologue peut aussi intervenir auprès d'entreprises, par exemple pour des actions de prévention des risques psychosociaux, de la supervision d'équipe, ou des formations sur la gestion du stress. Ces prestations, dès lors qu'elles ne relèvent pas directement d'un acte de soin individuel, sortent généralement du champ de l'exonération de TVA prévue pour les professions de santé.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Distinguez soin individuel et prestation d'entreprise">
+    Une intervention collective en entreprise, une formation ou une mission de conseil en organisation ne bénéficie pas systématiquement de l'exonération de TVA applicable aux soins. Vérifiez la nature exacte de votre prestation avant d'établir votre facture, et appliquez la TVA au taux normal de 20 % si votre chiffre d'affaires sur cette activité dépasse les seuils de la franchise en base.
+  </Callout>
+</div>
+
+Dans ce cas, la facture doit ressembler à celle d'un [consultant classique](/blog/facturer-prestation-service-consultant), avec un taux horaire ou forfaitaire, une TVA le cas échéant, et les coordonnées complètes de l'entreprise cliente, y compris son numéro SIRET.
+
+## Psychologue en cabinet partagé : quelles particularités ?
+
+De nombreux psychologues exercent en cabinet partagé avec d'autres professionnels de santé, comme des ostéopathes, des kinésithérapeutes ou des orthophonistes. Cette organisation n'a pas d'incidence directe sur les règles de facturation du psychologue lui-même : chaque praticien libéral reste responsable de sa propre note d'honoraires, de sa propre numérotation et de sa propre comptabilité, même si les frais de local sont partagés entre les occupants du cabinet. Les règles d'exonération de TVA propres aux professions de santé s'appliquent de la même manière à chaque praticien selon son propre titre professionnel, comme c'est le cas par exemple pour la [facturation d'un ostéopathe](/blog/facture-osteopathe-guide), qui suit une logique similaire d'exonération pour ses actes de soins.
+
+Sur le plan pratique, la répartition du loyer, des charges communes ou d'une éventuelle secrétaire partagée fait l'objet d'une facturation distincte, souvent via une convention de mise à disposition de moyens entre les praticiens du cabinet. Cette facturation de moyens partagés est en principe soumise à la TVA de droit commun, puisqu'elle ne constitue pas elle-même un acte de soin, ce qui la distingue nettement de la note d'honoraires remise aux patients.
+
+## Le statut du psychologue libéral et ses obligations déclaratives
+
+Le psychologue qui exerce en libéral relève le plus souvent du régime des bénéfices non commerciaux (BNC), qu'il ait opté pour le régime micro-BNC ou pour une déclaration contrôlée. Sous le régime micro-BNC, le plafond de chiffre d'affaires applicable en 2026 est de 77 700 €, avec un abattement forfaitaire pour frais professionnels appliqué automatiquement lors de la déclaration de revenus. Au-delà de ce seuil, ou sur option, le psychologue bascule vers la déclaration contrôlée, qui impose la tenue d'un livre-journal détaillant chaque recette et chaque dépense professionnelle.
+
+Cette distinction de régime n'a pas d'incidence sur l'exonération de TVA propre aux actes de soins, qui reste acquise indépendamment du régime fiscal choisi pour l'imposition des revenus. En revanche, elle détermine les obligations comptables du praticien, en particulier la nécessité de conserver chaque note d'honoraires émise pendant les durées légales applicables, soit 6 ans au titre fiscal et 10 ans par prudence au titre comptable.
+
+## Gérer sa facturation de psychologue avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="success" title="Une facturation adaptée à votre exercice">
+    Newbi permet aux psychologues libéraux de générer leurs notes d'honoraires avec une numérotation conforme, en distinguant facilement les prestations exonérées de soins et les prestations éventuellement soumises à TVA pour vos interventions en entreprise. Vous gagnez du temps entre deux consultations, sans sacrifier la conformité de vos documents.
+  </Callout>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes notes d'honoraires</Link>
+  </Button>
+</div>
+
+## En résumé
+
+La facture de psychologue, généralement appelée note d'honoraires, bénéficie d'une exonération de TVA pour les actes de soins individuels au titre de l'article 261-4-1° du Code général des impôts, à condition que le praticien soit inscrit sur la liste ADELI. Cette exonération ne s'étend pas automatiquement aux activités connexes comme la formation, la supervision ou les interventions en entreprise, qui peuvent relever du régime de TVA de droit commun selon les seuils de la franchise en base. Le dispositif Mon soutien psy ajoute un circuit de télétransmission spécifique sans supprimer l'obligation de tracer chaque séance réalisée. Une facturation claire et conforme, distinguant précisément le type de prestation, sécurise à la fois le praticien et ses patients ou clients professionnels.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facture de psychologue
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un psychologue doit-il facturer avec ou sans TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Un psychologue exerçant des actes de soins individuels, inscrit sur la liste ADELI, est exonéré de TVA sur ces prestations au titre de l'article 261-4-1° du Code général des impôts. En revanche, des activités connexes comme la formation ou la supervision d'équipe peuvent être soumises à la TVA de droit commun selon les seuils de la franchise en base.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on facturer une séance de psychologie annulée ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, à condition que la politique d'annulation ait été clairement communiquée au patient au préalable, par exemple un délai de prévenance de 24 ou 48 heures. La note d'honoraires doit alors préciser qu'il s'agit d'une facturation pour rendez-vous non honoré, et non d'une consultation réalisée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Faut-il un numéro ADELI pour facturer en tant que psychologue ?</AccordionTrigger>
+      <AccordionContent>
+        Le numéro ADELI atteste de l'inscription du psychologue auprès de l'Agence régionale de santé et conditionne notamment l'exonération de TVA sur les actes de soins. Il est recommandé de le faire figurer sur la note d'honoraires, en complément du numéro SIRET, pour renforcer la conformité du document.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment fonctionne la facturation avec le dispositif Mon soutien psy ?</AccordionTrigger>
+      <AccordionContent>
+        Le psychologue conventionné télétransmet les séances réalisées via son espace professionnel, et le remboursement s'effectue directement par l'Assurance maladie selon le tarif conventionné, sans avance de frais pour le patient dans la plupart des situations. Le praticien conserve néanmoins une trace de chaque séance pour ses obligations comptables.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Un psychologue qui intervient en entreprise doit-il appliquer la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        En général, oui, dès lors que l'intervention (formation, prévention des risques psychosociaux, supervision) ne constitue pas un acte de soin individuel au sens de l'exonération. La TVA s'applique alors dans les conditions de droit commun, sauf si le chiffre d'affaires correspondant reste sous le seuil de la franchise en base.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
