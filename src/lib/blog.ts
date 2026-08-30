@@ -82,6 +82,19 @@ function stripImports(content: string): string {
 }
 
 /**
+ * La page article affiche déjà le titre en H1 : un « # Titre » en tête du
+ * MDX (présent dans la plupart des articles générés) produisait un second H1.
+ * On retire ce premier titre de niveau 1 s'il précède le premier « ## ».
+ */
+function stripLeadingH1(content: string): string {
+  const firstH2 = content.search(/^## /m);
+  const head = firstH2 === -1 ? content : content.slice(0, firstH2);
+  const m = head.match(/^# .+\n?/m);
+  if (!m || m.index === undefined) return content;
+  return content.slice(0, m.index) + content.slice(m.index + m[0].length);
+}
+
+/**
  * Les articles générés embarquent leurs propres blocs
  * <script type="application/ld+json" dangerouslySetInnerHTML={{...}} />.
  * La page article génère désormais un JSON-LD unique et cohérent (BlogPosting,
@@ -122,7 +135,9 @@ function parsePost(slug: string): BlogPost | null {
   const raw = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(raw);
 
-  const strippedContent = stripInlineJsonLd(stripImports(content));
+  const strippedContent = stripLeadingH1(
+    stripInlineJsonLd(stripImports(content)),
+  );
 
   return {
     slug,
