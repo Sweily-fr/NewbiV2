@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
+import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 import { SynchronisationAnimation } from "./SynchronisationAnimation";
 import { ConnectionBancaireIphone } from "./ConnectionBancaireIphone";
 
@@ -29,11 +30,12 @@ export function HeroSection() {
                   <Link href="/auth/signup" className="w-full sm:w-auto">
                     <Button
                       size="lg"
-                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal rounded-lg px-6 w-full sm:w-auto"
+                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal text-base rounded-lg px-6 w-full sm:w-auto"
                     >
                       Connectez vos comptes bancaires
                     </Button>
                   </Link>
+                  <WhatsAppContactButton />
                 </div>
                 <div className="flex flex-col gap-1">
                   <p className="text-gray-500 text-xs sm:text-sm pt-2">

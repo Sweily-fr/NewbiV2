@@ -8,6 +8,8 @@ import {
   PLAN_FEATURES_SECTIONS,
   getPlanPricingStrings,
 } from "@/src/lib/plans-display";
+import { WHATSAPP_CONTACT_URL } from "@/src/lib/whatsapp";
+import { WhatsAppIcon } from "@/src/components/whatsapp-contact-button";
 
 // Icônes SVG
 const CheckIcon = () => (
@@ -43,33 +45,50 @@ const XIcon = () => (
 // dérivés du module central (plans-display.js).
 // Le `annualTotal` est calculé via getPlanPricingStrings — fini le bug
 // historique 157,56 € (qui était mathématiquement faux : 16,19 × 12 = 194,28).
+// Highlight cliquable : ouvre la conversation WhatsApp avec un conseiller.
+const EXPERT_HIGHLIGHT = {
+  label: "Accompagnement par un expert",
+  href: WHATSAPP_CONTACT_URL,
+};
+
 const PLAN_UI_EXTRA = {
   freelance: {
     cta: "Essayer gratuitement",
     highlighted: false,
     highlights: [
       "Facturation & Devis illimités",
-      "CRM client",
+      "Facturation électronique 2026 incluse",
+      "Connexion bancaire · 1 compte",
+      "CRM client & catalogue produits",
       "Un accès comptable gratuit",
+      "50 Go de stockage",
     ],
   },
   pme: {
     cta: "Essayer gratuitement",
     highlighted: true,
     badge: "Populaire",
+    expertSupport: true,
     highlights: [
-      "Jusqu'à 10 utilisateurs",
-      "E-signature & automatisations",
       "Support prioritaire",
+      "Jusqu'à 10 utilisateurs · 3 accès comptables",
+      "Facturation électronique 2026 incluse",
+      "Connexion bancaire · 3 comptes",
+      "E-signature & automatisations illimitées",
+      "200 Go de stockage",
     ],
   },
   entreprise: {
     cta: "Essayer gratuitement",
     highlighted: false,
+    expertSupport: true,
     highlights: [
-      "Jusqu'à 25 utilisateurs",
-      "Permissions avancées",
-      "Archivage légal & API",
+      "Support prioritaire",
+      "Jusqu'à 25 utilisateurs · 5 accès comptables",
+      "Facturation électronique 2026 incluse",
+      "Connexion bancaire · 5 comptes",
+      "Exports comptables tous formats",
+      "500 Go de stockage",
     ],
   },
 };
@@ -108,6 +127,60 @@ function FeatureValue({ value }) {
   );
 }
 
+// Lien externe discret (utilisé pour "Accompagnement par un expert" → WhatsApp)
+function ExternalLabel({ href, children, className = "" }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`!text-[#5A50FF] font-medium underline underline-offset-4 decoration-[#5A50FF]/30 hover:decoration-[#5A50FF] dark:!text-[#8b7fff] transition-colors ${className}`}
+    >
+      {children}
+    </a>
+  );
+}
+
+// Lien "Accompagnement par un expert" (icône WhatsApp + violet), affiché en
+// tête des offres TPE / Entreprise sur desktop et mobile.
+function ExpertLink({ className = "" }) {
+  return (
+    <a
+      href={EXPERT_HIGHLIGHT.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center gap-1.5 text-[13px] font-medium text-[#5A50FF] dark:text-[#8b7fff] underline underline-offset-4 decoration-[#5A50FF]/30 hover:decoration-[#5A50FF] transition-colors ${className}`}
+    >
+      <WhatsAppIcon className="size-4 text-[#25D366]" />
+      {EXPERT_HIGHLIGHT.label}
+    </a>
+  );
+}
+
+// Nom d'une feature de la matrice, cliquable si `href` est défini
+function FeatureLabel({ feature, className = "" }) {
+  if (feature.href) {
+    return (
+      <ExternalLabel href={feature.href} className={className}>
+        {feature.name}
+      </ExternalLabel>
+    );
+  }
+  return <span className={className}>{feature.name}</span>;
+}
+
+// Highlight d'une carte : string simple ou { label, href }
+function HighlightLabel({ highlight, className = "" }) {
+  if (typeof highlight === "string") {
+    return <span className={className}>{highlight}</span>;
+  }
+  return (
+    <ExternalLabel href={highlight.href} className={className}>
+      {highlight.label}
+    </ExternalLabel>
+  );
+}
+
 function InfoTooltip({ text }) {
   return (
     <span className="group relative inline-flex ml-1.5 cursor-help">
@@ -116,6 +189,76 @@ function InfoTooltip({ text }) {
         {text}
       </span>
     </span>
+  );
+}
+
+// Mobile : détail complet d'une offre, groupé par section (même matrice que le desktop)
+function MobilePlanDetails({ plan }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mt-5 border-t border-gray-100 dark:border-gray-800 pt-4">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <span className="text-[13px] font-medium text-gray-900 dark:text-gray-100 underline underline-offset-4 decoration-gray-300">
+          {open ? "Masquer le détail" : "Voir tout ce qui est inclus"}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="mt-1">
+          {featureSections.map((section) => (
+            <div key={section.title} className="mt-4">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400 mb-1.5">
+                {section.title}
+              </p>
+              <div className="flex flex-col">
+                {section.features.map((feature) => {
+                  const value = feature[plan.id];
+                  const included = value !== false;
+                  return (
+                    <div
+                      key={feature.name}
+                      className="flex items-start gap-2.5 py-1.5"
+                    >
+                      <span className="mt-0.5 shrink-0">
+                        {included ? <CheckIcon /> : <XIcon />}
+                      </span>
+                      <span
+                        className={`text-[13px] leading-snug ${
+                          included
+                            ? "text-gray-600 dark:text-gray-400"
+                            : "text-gray-400 dark:text-gray-600 line-through decoration-gray-300"
+                        }`}
+                      >
+                        {included ? (
+                          <FeatureLabel feature={feature} />
+                        ) : (
+                          feature.name
+                        )}
+                        {typeof value === "string" && (
+                          <span className="text-gray-900 dark:text-gray-100 font-medium">
+                            {" "}
+                            · {value}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -141,7 +284,7 @@ function MobileSection({ section }) {
           {section.features.map((feature, i) => (
             <div key={i} className="space-y-2">
               <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 flex items-center">
-                {feature.name}
+                <FeatureLabel feature={feature} />
                 {feature.tooltip && <InfoTooltip text={feature.tooltip} />}
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -269,6 +412,11 @@ export default function PricingSection({ variant = "home" }) {
                   >
                     {plan.cta}
                   </Link>
+
+                  {/* Accompagnement par un expert (TPE / Entreprise) */}
+                  <div className="h-6 mt-3 flex items-center justify-center">
+                    {plan.expertSupport && <ExpertLink />}
+                  </div>
                 </div>
               ))}
             </div>
@@ -297,9 +445,10 @@ export default function PricingSection({ variant = "home" }) {
                   <div className="grid grid-cols-[220px_1fr_1fr_1fr] items-stretch">
                     {/* Label */}
                     <div className="flex items-center py-3">
-                      <span className="text-[13px] text-gray-700 dark:text-gray-300">
-                        {feature.name}
-                      </span>
+                      <FeatureLabel
+                        feature={feature}
+                        className="text-[13px] text-gray-700 dark:text-gray-300"
+                      />
                       {feature.tooltip && (
                         <InfoTooltip text={feature.tooltip} />
                       )}
@@ -386,6 +535,13 @@ export default function PricingSection({ variant = "home" }) {
                   {isAnnual && `, facturé ${plan.annualTotal}`}
                 </p>
 
+                {/* Accompagnement par un expert (TPE / Entreprise) */}
+                {plan.expertSupport && (
+                  <div className="mt-3">
+                    <ExpertLink />
+                  </div>
+                )}
+
                 {/* Description + highlights */}
                 <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mt-5">
                   {plan.description}
@@ -394,12 +550,16 @@ export default function PricingSection({ variant = "home" }) {
                   {plan.highlights.map((h, i) => (
                     <div key={i} className="flex items-center gap-2.5">
                       <CheckIcon />
-                      <span className="text-[13px] text-gray-600 dark:text-gray-400">
-                        {h}
-                      </span>
+                      <HighlightLabel
+                        highlight={h}
+                        className="text-[13px] text-gray-600 dark:text-gray-400"
+                      />
                     </div>
                   ))}
                 </div>
+
+                {/* Détail complet de l'offre */}
+                <MobilePlanDetails plan={plan} />
 
                 {/* CTA */}
                 <Link
