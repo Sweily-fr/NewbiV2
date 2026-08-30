@@ -52,19 +52,15 @@ jobs:
           node-version: "22"
           cache: "npm"
 
+      # Python n'est utile qu'avec une clé OpenAI, mais l'installation coûte
+      # quelques secondes : on la garde inconditionnelle pour rester simple.
       - name: Setup Python
-        if: ${{ env.OPENAI_API_KEY != '' }}
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Install Python dependencies
-        if: ${{ env.OPENAI_API_KEY != '' }}
         run: pip install openai Pillow
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Install Node dependencies
         run: npm ci
