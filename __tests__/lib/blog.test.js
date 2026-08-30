@@ -187,6 +187,16 @@ describe("getPostBySlug", () => {
     expect(post.content).toContain("Real content.");
   });
 
+  it("strips the leading badges block (category and hand-written read time)", () => {
+    fsState.files = {
+      "x.mdx": `---\ntitle: "X"\npublished: true\n---\n<div className="not-prose flex gap-2">\n  <Badge>Guide</Badge>\n  <Badge variant="outline">8 min de lecture</Badge>\n</div>\n\nIntro.\n\n## Section\n\n<div className="not-prose"><Badge>Garde-moi</Badge></div>`,
+    };
+    const post = getPostBySlug("x");
+    expect(post.content).not.toContain("8 min de lecture");
+    expect(post.content).toContain("Intro.");
+    expect(post.content).toContain("Garde-moi");
+  });
+
   it("strips the leading markdown H1 (the page renders the title itself)", () => {
     fsState.files = {
       "x.mdx": `---\ntitle: "X"\npublished: true\n---\n<div>badges</div>\n\n# Mon titre\n\nIntro.\n\n## Section\n\n# pas un titre de page`,
