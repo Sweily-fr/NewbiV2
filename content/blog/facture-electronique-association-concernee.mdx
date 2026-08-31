@@ -1,0 +1,201 @@
+---
+title: >-
+  Les associations sont-elles concernées par la facturation électronique ?
+description: >-
+  Une association est concernée par la facturation électronique dès lors
+  qu'elle est assujettie à la TVA. Critères d'assujettissement, cas de la
+  franchise et obligations pratiques.
+date: '2026-11-20'
+category: reglementaire
+sector: null
+keyword: association facturation électronique
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-20'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Les associations sont-elles concernées par la facturation électronique ?
+
+L'**association et la facturation électronique**, voilà un sujet qui suscite beaucoup d'interrogations chez les trésoriers et les dirigeants bénévoles. La réforme de la facturation électronique vise les entreprises assujetties à la TVA établies en France, et une association loi 1901 n'est pas une entreprise au sens courant du terme. Pourtant, la réponse n'est pas un simple non : tout dépend du rapport de votre association à la TVA, et ce rapport varie selon la nature de ses activités.
+
+Si votre association exerce des activités lucratives qui la rendent assujettie à la TVA, elle entre dans le champ de la réforme, avec les mêmes échéances que les entreprises. Si elle est intégralement non lucrative et hors du champ de la TVA, elle échappe à l'obligation d'émission entre professionnels, mais elle a tout de même intérêt à savoir recevoir des factures électroniques de ses fournisseurs. Ce guide vous aide à situer votre association parmi ces cas de figure et à identifier concrètement ce que vous avez à faire.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Le critère qui compte : le rapport de l'association à la TVA
+
+La réforme de la facturation électronique ne raisonne pas en termes de statut juridique mais d'assujettissement à la TVA. Le calendrier est le même pour tous les assujettis établis en France : depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA doivent pouvoir recevoir des factures électroniques, comme nous l'expliquons dans notre guide sur la [réception des factures électroniques depuis le 1er septembre 2026](/blog/facture-electronique-reception-1er-septembre-2026). L'obligation d'émission, déjà applicable aux grandes entreprises et aux ETI depuis cette date, s'étendra aux PME, TPE et micro-entreprises le 1er septembre 2027.
+
+Une association peut parfaitement être assujettie à la TVA. C'est le cas lorsqu'elle exerce des activités lucratives : ventes de biens ou de services dans des conditions comparables à celles d'une entreprise, prestations facturées à des professionnels, recettes commerciales qui dépassent le cadre de la gestion désintéressée. À l'inverse, une association dont l'activité est intégralement non lucrative et désintéressée reste hors du champ de la TVA. Entre les deux, beaucoup d'associations combinent les deux types d'activités, et c'est la partie lucrative qui détermine leur entrée dans le champ de la réforme.
+
+Pour un rappel complet des règles de facturation propres au monde associatif, indépendamment de la réforme, consultez notre guide sur la [facturation d'une association loi 1901](/blog/facturation-association-loi-1901).
+
+## Les trois situations possibles pour une association
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Facturation électronique : les obligations selon la situation de l'association</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[240px]">Situation de l'association</TableHead>
+        <TableHead>Réception</TableHead>
+        <TableHead>Émission B2B</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Activités lucratives, assujettie et redevable de la TVA</TableCell>
+        <TableCell>Obligatoire depuis le 1er septembre 2026</TableCell>
+        <TableCell>Obligatoire à partir du 1er septembre 2027</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Activités lucratives sous franchise de TVA (assujettie non redevable)</TableCell>
+        <TableCell>Obligatoire depuis le 1er septembre 2026</TableCell>
+        <TableCell>Obligatoire à partir du 1er septembre 2027</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">100 % non lucrative, hors du champ de la TVA</TableCell>
+        <TableCell>Pas d'obligation, mais utile en pratique</TableCell>
+        <TableCell>Non concernée</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### Cas 1 : l'association assujettie et redevable de la TVA
+
+Si votre association exerce des activités lucratives et facture de la TVA, elle est traitée comme n'importe quelle entreprise assujettie. Elle doit pouvoir recevoir des factures électroniques depuis le 1er septembre 2026, et elle devra émettre ses factures entre professionnels au format électronique à partir du 1er septembre 2027, comme les autres structures de sa taille. Ses factures transiteront alors par une plateforme de dématérialisation partenaire (PDP), dans les formats admis par la réforme : Factur-X, UBL ou CII.
+
+### Cas 2 : l'association en franchise de TVA
+
+Beaucoup d'associations exercent des activités lucratives modestes et bénéficient d'une franchise de TVA : elles ne facturent pas la taxe et ne la déclarent pas. Attention au raccourci trompeur : la franchise ne fait pas sortir du champ de la réforme. Une structure en franchise reste assujettie à la TVA ; elle est simplement non redevable. Elle est donc concernée par la facturation électronique au même titre que les autres assujettis : réception depuis 2026, émission de ses factures B2B à partir de 2027. Nous consacrons un article complet à ce point souvent mal compris : [franchise de TVA et facturation électronique](/blog/franchise-tva-facturation-electronique).
+
+### Cas 3 : l'association intégralement non lucrative
+
+Une association dont l'activité est entièrement non lucrative et qui se situe hors du champ de la TVA n'est pas soumise à l'obligation d'émission de factures électroniques entre professionnels. Elle peut continuer à fonctionner comme aujourd'hui pour ses appels de cotisations, ses reçus de dons ou ses conventions de subvention, qui ne relèvent de toute façon pas de la facturation commerciale.
+
+En revanche, cette association reste cliente d'entreprises bien réelles : assureur, imprimeur, fournisseur de matériel, prestataire informatique. Ces fournisseurs basculent progressivement vers l'émission électronique, et pouvoir recevoir et traiter leurs factures au format électronique reste très utile en pratique, même sans obligation. C'est aussi une manière de simplifier la vie du trésorier, qui centralise les pièces comptables au lieu de courir après des PDF éparpillés dans les boîtes mail.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La franchise de TVA ne vous exonère pas de la réforme">
+    C'est l'erreur la plus répandue dans le monde associatif : croire que l'absence de TVA facturée signifie l'absence d'obligation. Une association en franchise est assujettie non redevable : elle entre bien dans le champ de la facturation électronique pour ses activités lucratives, avec les mêmes échéances que les autres structures.
+  </Callout>
+</div>
+
+## Comment savoir où se situe votre association
+
+Pour situer votre association, posez-vous les questions suivantes dans l'ordre.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Votre association encaisse-t-elle des recettes commerciales ?</strong> Ventes de biens ou de services, prestations facturées, activités comparables à celles d'une entreprise du secteur : ce sont des indices d'activité lucrative.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Facture-t-elle des professionnels ?</strong> Sponsoring, prestations de services à des entreprises, mise à disposition d'espaces publicitaires : ces opérations B2B sont au cœur de la réforme.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Bénéficie-t-elle d'une franchise de TVA ?</strong> Si oui, elle est assujettie non redevable : elle reste dans le champ de la réforme pour ses activités lucratives.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Son activité est-elle intégralement désintéressée et non lucrative ?</strong> Dans ce cas, elle est hors du champ de la TVA et n'est pas soumise à l'obligation d'émission B2B.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>En cas de doute, faites-vous accompagner</strong> : la frontière entre lucratif et non lucratif repose sur une analyse au cas par cas ; votre expert-comptable ou votre service des impôts peut confirmer votre situation.</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Anticiper coûte moins cher que subir">
+    Même si votre association n'est concernée par l'émission qu'à partir de septembre 2027, ne découvrez pas la facturation électronique à la dernière minute. Mettre en place dès maintenant un outil capable de recevoir les factures électroniques de vos fournisseurs et d'émettre des factures conformes vous fait franchir l'échéance sans stress, avec des bénévoles formés en douceur.
+  </Callout>
+</div>
+
+## Cas pratique : une association sportive entre sponsoring et cotisations
+
+Prenons l'exemple d'un club de basket associatif d'une ville moyenne. Son activité se répartit en deux volets bien distincts. D'un côté, les cotisations des adhérents, les stages pour les jeunes licenciés et les subventions municipales : c'est le cœur non lucratif du club, hors du champ de la TVA. De l'autre, le club facture chaque saison des prestations de sponsoring à plusieurs entreprises locales : panneaux dans le gymnase, logo sur les maillots, visibilité sur les supports de communication. Ces prestations de publicité rendues à des entreprises relèvent d'une activité lucrative.
+
+Conséquence : pour son volet sponsoring, le club entre dans le champ de la facturation électronique. Ses factures de sponsoring adressées aux entreprises partenaires devront être émises au format électronique à partir du 1er septembre 2027, via une plateforme de dématérialisation partenaire, que le club soit redevable de la TVA sur ces recettes ou qu'il bénéficie d'une franchise. Les appels de cotisations aux adhérents, eux, ne sont pas concernés : ce ne sont pas des factures entre professionnels.
+
+Le trésorier bénévole du club a donc intérêt à s'équiper d'un outil qui gère les deux mondes : des factures de sponsoring conformes au circuit électronique d'un côté, et un suivi simple des encaissements de cotisations de l'autre. Il pourra aussi recevoir au format électronique les factures de ses fournisseurs (équipementier, transporteur pour les déplacements, imprimeur des affiches), ce qui simplifie la tenue des comptes présentés en assemblée générale.
+
+## Comment Newbi accompagne les associations dans la facturation électronique
+
+Newbi permet à une association d'émettre des factures, des devis et des avoirs conformes pour ses activités facturées, en s'appuyant sur une plateforme de dématérialisation partenaire pour le circuit électronique. Le trésorier dispose d'une interface simple, accessible sans compétence comptable particulière, ce qui compte quand les rôles tournent d'un bureau à l'autre.
+
+Au-delà de l'émission, Newbi centralise la gestion des achats de l'association : les factures fournisseurs reçues, qu'elles soient électroniques ou en PDF classique, sont intégrées au suivi grâce à l'OCR des justificatifs, et la synchronisation bancaire facilite le rapprochement entre les factures et les mouvements du compte. De quoi présenter des comptes clairs en assemblée générale sans y passer ses soirées.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Une association est concernée par la facturation électronique dès lors qu'elle est assujettie à la TVA au titre d'activités lucratives : elle doit pouvoir recevoir des factures électroniques depuis le 1er septembre 2026 et devra émettre ses factures entre professionnels au format électronique à partir du 1er septembre 2027. La franchise de TVA ne change rien à ce principe : une association en franchise est assujettie non redevable, donc dans le champ de la réforme. Seule l'association intégralement non lucrative, hors du champ de la TVA, échappe à l'obligation d'émission B2B ; savoir recevoir les factures électroniques de ses fournisseurs reste néanmoins un vrai atout pratique. Dans tous les cas, la clé est d'identifier précisément la nature de vos activités, au besoin avec votre expert-comptable, et de vous équiper sans attendre l'échéance.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les associations et la facturation électronique
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Une association loi 1901 est-elle obligée de passer à la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de son rapport à la TVA. Si l'association est assujettie au titre d'activités lucratives, elle est concernée comme une entreprise : réception des factures électroniques depuis le 1er septembre 2026, émission de ses factures B2B à partir du 1er septembre 2027. Si elle est intégralement non lucrative et hors du champ de la TVA, elle n'est pas soumise à l'obligation d'émission entre professionnels.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Notre association ne facture pas de TVA : sommes-nous quand même concernés ?</AccordionTrigger>
+      <AccordionContent>
+        Probablement, si cette absence de TVA vient d'une franchise. Une association en franchise de TVA est assujettie non redevable : elle ne collecte pas la taxe, mais elle reste dans le champ de la réforme pour ses activités lucratives, avec les mêmes échéances que les autres structures. Seule une association hors du champ de la TVA, car intégralement non lucrative, échappe à l'obligation d'émission B2B.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Les cotisations et les dons doivent-ils passer par la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Les appels de cotisations aux adhérents et les reçus de dons ne sont pas des factures entre professionnels et ne relèvent pas du circuit de la facturation électronique interentreprises. La réforme concerne les factures émises dans le cadre d'activités lucratives, notamment celles adressées à des entreprises, comme des prestations de sponsoring.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Notre association est 100 % non lucrative : devons-nous quand même nous préparer ?</AccordionTrigger>
+      <AccordionContent>
+        Vous n'avez pas d'obligation d'émission de factures électroniques entre professionnels. En pratique, vos fournisseurs basculent néanmoins vers l'émission électronique, et pouvoir recevoir et traiter leurs factures au format électronique simplifie la comptabilité de l'association. S'équiper d'un outil compatible reste donc une bonne idée, sans caractère obligatoire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment savoir si les activités de notre association sont lucratives ?</AccordionTrigger>
+      <AccordionContent>
+        L'analyse porte sur la nature des activités : recettes commerciales, prestations facturées dans des conditions comparables à celles d'une entreprise, services rendus à des professionnels comme le sponsoring. Beaucoup d'associations combinent un volet non lucratif (cotisations, subventions) et un volet lucratif. La frontière s'apprécie au cas par cas : en cas de doute, rapprochez-vous de votre expert-comptable ou de votre service des impôts.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

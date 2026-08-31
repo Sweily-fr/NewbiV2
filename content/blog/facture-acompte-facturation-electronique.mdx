@@ -1,0 +1,216 @@
+---
+title: >-
+  Factures d'acompte et facturation électronique : comment ça marche ?
+description: >-
+  Les factures d'acompte suivent aussi le circuit de la facturation
+  électronique. Règles, formats, lien avec la facture finale et cas pratiques
+  pour bien gérer vos acomptes dès 2026.
+date: '2026-10-30'
+category: guide
+sector: null
+keyword: facture acompte facturation électronique
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-30'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Factures d'acompte et facturation électronique : comment ça marche ?
+
+La **facture d'acompte dans la facturation électronique** soulève beaucoup de questions chez les artisans, les prestataires de services et toutes les entreprises qui encaissent une partie du prix avant de livrer. Faut-il faire transiter les acomptes par le circuit électronique ? Comment la facture finale doit-elle mentionner les acomptes déjà facturés ? Les formats structurés changent-ils quelque chose à vos habitudes ? La réponse tient en une phrase : une facture d'acompte est une vraie facture, et elle suit donc exactement le même circuit que les autres.
+
+Ce guide reprend les fondamentaux de la facture d'acompte, explique pourquoi elle entre pleinement dans le périmètre de la réforme, détaille le lien obligatoire entre les acomptes et la facture finale, et passe en revue les erreurs les plus courantes. Un cas pratique d'artisan avec un acompte de 30 % vous montre concrètement comment enchaîner les documents sans erreur.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Rappel : qu'est-ce qu'une facture d'acompte ?
+
+Avant de parler de circuit électronique, il faut être au clair sur la nature du document. Une facture d'acompte est une véritable facture, émise avant la facture finale, lorsque vous encaissez une partie du prix avant la livraison du bien ou l'achèvement de la prestation. Elle comporte les mentions obligatoires d'une facture et s'insère dans votre numérotation habituelle : ce n'est ni un reçu informel, ni un document optionnel.
+
+Autre règle structurante : la facture finale, parfois appelée facture de solde, doit faire référence aux factures d'acompte déjà émises et en déduire les montants, afin que le client ne paie que le solde restant dû. Nous détaillons l'ensemble de ces règles dans notre article dédié : [qu'est-ce qu'un acompte sur facture](/blog/quest-ce-que-acompte-facture).
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un devis accepté n'est pas une facture d'acompte">
+    C'est l'erreur la plus fréquente : encaisser un acompte sur la seule base d'un devis signé, sans émettre de facture d'acompte. Le devis formalise l'accord commercial, mais il ne remplace pas la facture. Chaque encaissement d'acompte doit donner lieu à une facture d'acompte en bonne et due forme, numérotée et conservée comme les autres.
+  </Callout>
+</div>
+
+## Pourquoi les acomptes entrent dans le circuit électronique
+
+La réforme de la facturation électronique ne distingue pas les factures « principales » des autres : dès lors qu'un document est une facture, il est concerné. La facture d'acompte étant une facture à part entière, elle suit le même chemin que votre facturation classique.
+
+Concrètement, le calendrier s'applique de la même manière. Depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA établies en France doivent pouvoir recevoir des factures électroniques, y compris des factures d'acompte envoyées par leurs fournisseurs, et les grandes entreprises comme les ETI doivent déjà émettre au format électronique. Au 1er septembre 2027, l'obligation d'émission s'étendra aux PME, TPE et micro-entreprises.
+
+Le circuit est lui aussi identique : la facture d'acompte transite par une plateforme de dématérialisation partenaire (PDP), immatriculée par l'administration fiscale, le Portail public de facturation jouant le rôle d'annuaire des entreprises et de concentrateur des données pour l'administration. Vos factures d'acompte à destination de clients professionnels ne s'envoient donc pas « à part », par email, pendant que la facture finale passerait par la plateforme : toutes empruntent le même canal.
+
+## Acomptes et formats structurés : ce qui change concrètement
+
+Les formats admis pour la facturation électronique sont Factur-X (hybride associant un PDF lisible et des données XML), UBL et CII. Leur point commun : les informations de la facture ne sont plus seulement affichées pour un lecteur humain, elles sont encodées dans des champs structurés, lisibles par les machines. Pour comprendre les différences entre ces trois formats, consultez notre [comparatif UBL, CII et Factur-X](/blog/formats-ubl-cii-facturx-comparatif).
+
+Pour vos acomptes, cela a deux conséquences pratiques.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>La nature du document doit être explicite</strong> : dans un format structuré, une facture d'acompte est identifiée comme telle par les données du fichier, pas seulement par un titre écrit sur le PDF. Un document ambigu ou mal qualifié peut être mal interprété par la plateforme ou par le système de votre client.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Les références entre documents deviennent des données</strong> : la mention des acomptes déjà facturés sur la facture finale ne relève plus du simple texte libre. Dans un fichier structuré, la référence aux factures d'acompte et les montants déduits occupent des champs dédiés, que le système du client lit automatiquement.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>La cohérence des montants est vérifiable</strong> : total de la prestation, acomptes déduits, solde à payer : ces montants sont désormais des données que les systèmes peuvent contrôler. Une incohérence qui passait inaperçue sur un PDF peut entraîner un rejet ou une demande de correction.</span>
+  </div>
+</div>
+
+La bonne nouvelle : vous n'avez pas à manipuler ces champs vous-même. Un logiciel de facturation conforme génère automatiquement le bon type de document et les bonnes références, à condition que vous enchaîniez correctement devis, factures d'acompte et facture finale dans l'outil. Les mentions attendues sur les factures évoluent d'ailleurs avec la réforme, comme l'explique notre article sur les [nouvelles mentions obligatoires de la facture électronique](/blog/nouvelles-mentions-obligatoires-facture-electronique).
+
+## La facture finale doit référencer les acomptes
+
+C'est le point de vigilance central. La facture finale ne repart pas de zéro : elle récapitule la prestation ou la vente, fait référence aux factures d'acompte émises en amont, déduit les montants déjà facturés et fait apparaître le solde restant dû. Ce chaînage, déjà obligatoire aujourd'hui, devient d'autant plus important dans le circuit électronique que les systèmes des clients rapprochent automatiquement les documents entre eux.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>L'enchaînement des documents dans un projet avec acompte</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Document</TableHead>
+        <TableHead>Quand l'émettre</TableHead>
+        <TableHead>Points clés</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Devis</TableCell>
+        <TableCell>Avant l'accord du client</TableCell>
+        <TableCell>Formalise l'offre ; sa signature vaut accord, pas facturation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture d'acompte</TableCell>
+        <TableCell>Au moment de demander l'acompte</TableCell>
+        <TableCell>Vraie facture : mentions obligatoires, numérotation, circuit électronique</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facture finale (solde)</TableCell>
+        <TableCell>À la livraison ou à l'achèvement</TableCell>
+        <TableCell>Référence les acomptes, déduit leurs montants, affiche le solde dû</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Cas pratique : un artisan et un acompte de 30 %
+
+Prenons l'exemple d'un menuisier qui signe un chantier d'agencement de 10 000 € HT avec une PME cliente. Le devis prévoit un acompte de 30 % à la commande, soit 3 000 € HT, le solde étant dû à la réception du chantier.
+
+À la signature du devis, le menuisier n'encaisse rien sur la seule base du document signé : il émet une facture d'acompte de 3 000 € HT, avec la TVA correspondante, numérotée dans la continuité de ses autres factures. Sa cliente étant une entreprise, cette facture transite par le circuit électronique via sa plateforme, comme n'importe quelle autre facture, et la PME la reçoit directement dans son propre outil.
+
+À la réception du chantier, il émet la facture finale. Celle-ci récapitule la prestation complète de 10 000 € HT, fait référence à la facture d'acompte émise à la commande, déduit les 3 000 € HT déjà facturés et fait apparaître le solde de 7 000 € HT à régler. Son logiciel reporte automatiquement la référence de la facture d'acompte dans les données structurées du document final : le système comptable de la cliente rapproche les deux factures sans intervention manuelle, et le règlement du solde part sans demande de clarification.
+
+Sans ce chaînage, le scénario classique est connu de tous les artisans : une facture finale de 10 000 € envoyée par erreur sans déduction, un client qui s'étonne, un avoir à établir, une nouvelle facture à émettre, et un paiement retardé de plusieurs semaines.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Faites générer vos factures d'acompte depuis le devis">
+    Le moyen le plus sûr d'éviter les incohérences est de ne jamais créer une facture d'acompte « à la main » : générez-la depuis le devis accepté dans votre logiciel. Le pourcentage s'applique automatiquement, la facture finale déduit les acomptes sans oubli, et les références entre documents sont posées correctement dans les données structurées.
+  </Callout>
+</div>
+
+## Les erreurs courantes à éviter avec les acomptes
+
+Quelques pièges reviennent systématiquement dans la gestion des acomptes, et le passage au circuit électronique les rend plus visibles.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Confondre devis accepté et facture d'acompte</strong> : encaisser un acompte sans facture est une erreur. Le devis signé déclenche la demande d'acompte, mais c'est la facture d'acompte qui la formalise.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Oublier de déduire l'acompte sur la facture finale</strong> : la facture de solde doit référencer les acomptes et n'appeler en paiement que le montant restant dû.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Sortir les acomptes du circuit électronique</strong> : envoyer la facture d'acompte par email en PDF et la facture finale par la plateforme casse la cohérence du dossier chez votre client et vous expose aux mêmes sanctions que pour toute facture non conforme, soit 15 € par facture, plafonnés à 15 000 € par an.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Négliger la numérotation</strong> : les factures d'acompte s'insèrent dans votre séquence de numérotation normale. Une numérotation parallèle ou improvisée crée des trous et des doublons difficiles à justifier.</span>
+  </div>
+</div>
+
+## Comment Newbi gère vos factures d'acompte de bout en bout
+
+Newbi intègre la gestion des acomptes dans le parcours naturel de vos documents. Depuis un devis accepté, vous générez une facture d'acompte en indiquant simplement un pourcentage ou un montant : la facture est créée avec les mentions attendues, numérotée dans votre séquence, et la facture finale déduit automatiquement les acomptes déjà facturés en y faisant référence.
+
+Côté conformité, Newbi s'appuie sur une plateforme de dématérialisation partenaire : vos factures d'acompte comme vos factures de solde empruntent le circuit électronique officiel, dans un format structuré, sans manipulation technique de votre part. Et pour le reste de votre gestion, l'OCR des justificatifs, la synchronisation bancaire et la gestion des achats vous permettent de suivre les encaissements d'acomptes et de rapprocher chaque paiement de la bonne facture.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Une facture d'acompte est une vraie facture : mentions obligatoires, numérotation continue, et désormais circuit électronique identique à celui de vos autres factures, via une plateforme de dématérialisation partenaire et dans un format structuré (Factur-X, UBL ou CII). La facture finale doit référencer les acomptes émis et en déduire les montants pour n'appeler que le solde, un chaînage que les formats structurés transforment en données vérifiables par les systèmes de vos clients. Les erreurs classiques, comme confondre devis accepté et facture d'acompte ou oublier la déduction sur la facture de solde, deviennent plus coûteuses dans ce nouveau cadre. Un logiciel qui enchaîne devis, factures d'acompte et facture finale automatiquement reste la meilleure protection contre ces pièges.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les factures d'acompte électroniques
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Une facture d'acompte doit-elle passer par le circuit de facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Une facture d'acompte est une facture à part entière : dès lors que votre entreprise est soumise à l'obligation d'émission et que le client est un professionnel, elle doit être émise dans un format structuré et transiter par une plateforme de dématérialisation partenaire, exactement comme la facture finale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Un devis signé suffit-il pour encaisser un acompte ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le devis signé formalise l'accord du client et déclenche la demande d'acompte, mais l'encaissement doit s'appuyer sur une facture d'acompte en bonne et due forme, avec les mentions obligatoires et une numérotation continue. C'est ce document qui matérialise l'acompte dans votre facturation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment la facture finale doit-elle traiter les acomptes déjà facturés ?</AccordionTrigger>
+      <AccordionContent>
+        La facture finale doit faire référence aux factures d'acompte émises en amont, déduire les montants déjà facturés et faire apparaître le solde restant dû. Dans les formats structurés comme Factur-X, UBL ou CII, ces références et ces montants sont portés par des champs de données que le système de votre client peut contrôler automatiquement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quel format utiliser pour une facture d'acompte électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Les mêmes formats que pour toute facture électronique : Factur-X, qui associe un PDF lisible et des données XML, UBL ou CII. Le choix dépend surtout de votre logiciel et de votre plateforme, qui génèrent le format adapté sans intervention de votre part.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que risque-t-on à envoyer ses factures d'acompte en simple PDF par email ?</AccordionTrigger>
+      <AccordionContent>
+        Une fois votre obligation d'émission en vigueur, une facture d'acompte adressée à un professionnel hors du circuit électronique n'est pas conforme. Le défaut de facturation électronique est sanctionné par une amende de 15 € par facture, plafonnée à 15 000 € par an, sans compter les incohérences créées dans le dossier de votre client entre acomptes et facture finale.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

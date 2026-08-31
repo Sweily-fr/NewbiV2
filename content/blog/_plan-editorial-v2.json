@@ -147,7 +147,10 @@
     "cluster": "Comparatifs & alternatives",
     "publishDate": "2026-09-04",
     "week": 1,
-    "linksTo": ["tiime-vs-newbi-comparatif", "logiciel-gestion-tout-en-un-tpe"]
+    "linksTo": [
+      "tiime-vs-newbi-comparatif",
+      "logiciel-gestion-tout-en-un-tpe"
+    ]
   },
   {
     "id": 110,
@@ -501,7 +504,10 @@
     "cluster": "Facturation par métier",
     "publishDate": "2026-09-18",
     "week": 3,
-    "linksTo": ["devis-travaux-btp-guide", "automatiser-facturation-recurrente"]
+    "linksTo": [
+      "devis-travaux-btp-guide",
+      "automatiser-facturation-recurrente"
+    ]
   },
   {
     "id": 131,
@@ -532,7 +538,10 @@
     "cluster": "Modèles à télécharger",
     "publishDate": "2026-09-21",
     "week": 4,
-    "linksTo": ["quest-ce-que-acompte-facture", "facture-situation-travaux-btp"]
+    "linksTo": [
+      "quest-ce-que-acompte-facture",
+      "facture-situation-travaux-btp"
+    ]
   },
   {
     "id": 133,
@@ -546,7 +555,10 @@
     "cluster": "Questions pratiques facturation",
     "publishDate": "2026-09-22",
     "week": 4,
-    "linksTo": ["quest-ce-que-avoir-credit", "quest-ce-que-numero-facture"]
+    "linksTo": [
+      "quest-ce-que-avoir-credit",
+      "quest-ce-que-numero-facture"
+    ]
   },
   {
     "id": 134,
@@ -651,6 +663,24 @@
     ]
   },
   {
+    "id": 231,
+    "slug": "facture-pdf-email-jusqu-a-quand",
+    "title": "Facture PDF par email : jusqu'à quand est-ce encore valable ?",
+    "metaDescription": "Le PDF envoyé par email reste valable jusqu'au 1er septembre 2027 pour les TPE et PME, mais plus pour tout le monde. Calendrier, exceptions et transition expliqués simplement.",
+    "keyword": "facture pdf email valable jusqu'à quand",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-09-25",
+    "week": 4,
+    "linksTo": [
+      "facturation-electronique-obligatoire-2026",
+      "facture-electronique-reception-1er-septembre-2026",
+      "mentions-obligatoires-facture"
+    ]
+  },
+  {
     "id": 140,
     "slug": "facture-vtc-chauffeur-guide",
     "title": "Facture de chauffeur VTC : plateformes, clients directs et TVA",
@@ -660,8 +690,8 @@
     "sector": "Transport / Mobilité",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-09-25",
-    "week": 4,
+    "publishDate": "2026-09-28",
+    "week": 5,
     "linksTo": [
       "comment-creer-facture-auto-entrepreneur",
       "tva-auto-entrepreneur-seuils-franchise"
@@ -694,9 +724,12 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-09-28",
+    "publishDate": "2026-09-29",
     "week": 5,
-    "linksTo": ["quest-ce-que-avoir-credit", "annuler-une-facture-deja-emise"]
+    "linksTo": [
+      "quest-ce-que-avoir-credit",
+      "annuler-une-facture-deja-emise"
+    ]
   },
   {
     "id": 143,
@@ -725,7 +758,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-09-29",
+    "publishDate": "2026-09-30",
     "week": 5,
     "linksTo": [
       "facturer-client-etranger-ue-hors-ue",
@@ -744,7 +777,10 @@
     "cluster": "Facturation par métier",
     "publishDate": "2026-09-30",
     "week": 5,
-    "linksTo": ["facture-profession-liberale-guide", "facture-osteopathe-guide"]
+    "linksTo": [
+      "facture-profession-liberale-guide",
+      "facture-osteopathe-guide"
+    ]
   },
   {
     "id": 146,
@@ -756,9 +792,12 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-09-30",
+    "publishDate": "2026-10-01",
     "week": 5,
-    "linksTo": ["pennylane-vs-newbi-comparatif", "tiime-vs-newbi-comparatif"]
+    "linksTo": [
+      "pennylane-vs-newbi-comparatif",
+      "tiime-vs-newbi-comparatif"
+    ]
   },
   {
     "id": 147,
@@ -787,11 +826,29 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Devis",
-    "publishDate": "2026-10-01",
+    "publishDate": "2026-10-02",
     "week": 5,
     "linksTo": [
       "erreurs-devis-perdre-clients",
       "conseils-convertir-devis-facture"
+    ]
+  },
+  {
+    "id": 232,
+    "slug": "facture-electronique-b2g-chorus-pro-difference",
+    "title": "Chorus Pro et facturation électronique B2B : quelle différence ?",
+    "metaDescription": "Chorus Pro concerne les factures adressées au secteur public (B2G), la réforme 2026-2027 vise les échanges entre entreprises (B2B). Deux circuits distincts à ne pas confondre.",
+    "keyword": "chorus pro facture électronique différence",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-02",
+    "week": 5,
+    "linksTo": [
+      "facturation-electronique-obligatoire-2026",
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "quest-ce-que-ppf-portail-public-facturation"
     ]
   },
   {
@@ -804,8 +861,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-10-02",
-    "week": 5,
+    "publishDate": "2026-10-05",
+    "week": 6,
     "linksTo": [
       "tva-deductible-quelles-depenses",
       "declaration-tva-ca3-ca12-guide"
@@ -821,8 +878,8 @@
     "sector": "Commerces / Retail",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-02",
-    "week": 5,
+    "publishDate": "2026-10-05",
+    "week": 6,
     "linksTo": [
       "facturer-prestation-service-consultant",
       "mentions-obligatoires-facture"
@@ -838,7 +895,7 @@
     "sector": "BTP / Artisans",
     "priority": "high",
     "cluster": "Facturation électronique 2026-2027",
-    "publishDate": "2026-10-05",
+    "publishDate": "2026-10-06",
     "week": 6,
     "linksTo": [
       "facture-situation-travaux-btp",
@@ -855,7 +912,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-10-05",
+    "publishDate": "2026-10-06",
     "week": 6,
     "linksTo": [
       "relance-facture-impayee-modele",
@@ -872,7 +929,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-06",
+    "publishDate": "2026-10-07",
     "week": 6,
     "linksTo": [
       "mentions-obligatoires-facture",
@@ -889,7 +946,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-06",
+    "publishDate": "2026-10-07",
     "week": 6,
     "linksTo": [
       "modele-facture-sans-tva-franchise-en-base",
@@ -906,7 +963,7 @@
     "sector": "Services / Indépendants",
     "priority": "low",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-07",
+    "publishDate": "2026-10-08",
     "week": 6,
     "linksTo": [
       "facturer-client-etranger-ue-hors-ue",
@@ -923,7 +980,7 @@
     "sector": "Particuliers / Micro-entreprise",
     "priority": "medium",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-10-07",
+    "publishDate": "2026-10-08",
     "week": 6,
     "linksTo": [
       "abby-vs-newbi-comparatif",
@@ -940,11 +997,29 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Trésorerie & achats",
-    "publishDate": "2026-10-08",
+    "publishDate": "2026-10-09",
     "week": 6,
     "linksTo": [
       "comment-fixer-tarif-journalier-tjm",
       "comment-gerer-tresorerie-entreprise"
+    ]
+  },
+  {
+    "id": 233,
+    "slug": "franchise-tva-facturation-electronique",
+    "title": "Franchise en base de TVA : êtes-vous concerné par la facturation électronique ?",
+    "metaDescription": "Oui, les entreprises en franchise en base de TVA sont concernées par la facturation électronique : assujetties mais non redevables, elles doivent recevoir dès 2026 et émettre dès 2027.",
+    "keyword": "franchise en base tva facturation électronique",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-09",
+    "week": 6,
+    "linksTo": [
+      "facture-electronique-auto-entrepreneur-2027",
+      "facture-electronique-reception-1er-septembre-2026",
+      "facturation-electronique-obligatoire-2026"
     ]
   },
   {
@@ -957,8 +1032,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Devis",
-    "publishDate": "2026-10-08",
-    "week": 6,
+    "publishDate": "2026-10-12",
+    "week": 7,
     "linksTo": [
       "quest-ce-que-bon-commande",
       "facture-proforma-guide-utilisation"
@@ -974,8 +1049,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-10-09",
-    "week": 6,
+    "publishDate": "2026-10-12",
+    "week": 7,
     "linksTo": [
       "calendrier-fiscal-independant-2026",
       "obligations-comptables-micro-entreprise"
@@ -991,8 +1066,8 @@
     "sector": "Agences / Marketing",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-09",
-    "week": 6,
+    "publishDate": "2026-10-13",
+    "week": 7,
     "linksTo": [
       "automatiser-facturation-recurrente",
       "facture-createur-contenu-influenceur"
@@ -1008,7 +1083,7 @@
     "sector": "Comptables / Experts-comptables",
     "priority": "medium",
     "cluster": "Facturation électronique 2026-2027",
-    "publishDate": "2026-10-12",
+    "publishDate": "2026-10-13",
     "week": 7,
     "linksTo": [
       "comment-partager-documents-expert-comptable",
@@ -1025,7 +1100,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-10-12",
+    "publishDate": "2026-10-14",
     "week": 7,
     "linksTo": [
       "mentions-obligatoires-facture",
@@ -1042,7 +1117,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-13",
+    "publishDate": "2026-10-14",
     "week": 7,
     "linksTo": [
       "autoliquidation-tva-facture-mention",
@@ -1059,7 +1134,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-13",
+    "publishDate": "2026-10-15",
     "week": 7,
     "linksTo": [
       "gestion-notes-frais-deplacement",
@@ -1076,7 +1151,7 @@
     "sector": "BTP / Artisans",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-14",
+    "publishDate": "2026-10-15",
     "week": 7,
     "linksTo": [
       "facture-situation-travaux-btp",
@@ -1093,9 +1168,30 @@
     "sector": "Particuliers / Micro-entreprise",
     "priority": "medium",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-10-14",
+    "publishDate": "2026-10-16",
     "week": 7,
-    "linksTo": ["abby-vs-newbi-comparatif", "freebe-vs-newbi-comparatif"]
+    "linksTo": [
+      "abby-vs-newbi-comparatif",
+      "freebe-vs-newbi-comparatif"
+    ]
+  },
+  {
+    "id": 234,
+    "slug": "combien-coute-facturation-electronique",
+    "title": "Combien coûte la facturation électronique pour une TPE ou une PME ?",
+    "metaDescription": "PDP, logiciel de facturation, accompagnement : le vrai coût du passage à la facturation électronique pour une petite entreprise, et comment le réduire sans risque.",
+    "keyword": "coût facturation électronique tpe pme",
+    "category": "guide",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-16",
+    "week": 7,
+    "linksTo": [
+      "comment-choisir-sa-pdp-plateforme-dematerialisation",
+      "facturation-electronique-obligatoire-2026",
+      "quest-ce-que-pdp-plateforme-dematerialisation"
+    ]
   },
   {
     "id": 167,
@@ -1107,8 +1203,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Trésorerie & achats",
-    "publishDate": "2026-10-15",
-    "week": 7,
+    "publishDate": "2026-10-19",
+    "week": 8,
     "linksTo": [
       "connexion-bancaire-rapprochement-automatique",
       "ocr-justificatifs-comptables"
@@ -1124,8 +1220,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "Devis",
-    "publishDate": "2026-10-15",
-    "week": 7,
+    "publishDate": "2026-10-19",
+    "week": 8,
     "linksTo": [
       "taux-de-conversion-devis-ameliorer",
       "erreurs-devis-perdre-clients"
@@ -1141,8 +1237,8 @@
     "sector": "Particuliers / Micro-entreprise",
     "priority": "high",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-10-16",
-    "week": 7,
+    "publishDate": "2026-10-20",
+    "week": 8,
     "linksTo": [
       "erreurs-creation-micro-entreprise",
       "obligations-comptables-micro-entreprise"
@@ -1158,8 +1254,8 @@
     "sector": "Services / Indépendants",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-16",
-    "week": 7,
+    "publishDate": "2026-10-20",
+    "week": 8,
     "linksTo": [
       "facturer-un-particulier-regles-mentions",
       "comment-creer-facture-auto-entrepreneur"
@@ -1175,7 +1271,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Facturation électronique 2026-2027",
-    "publishDate": "2026-10-19",
+    "publishDate": "2026-10-21",
     "week": 8,
     "linksTo": [
       "comment-choisir-sa-pdp-plateforme-dematerialisation",
@@ -1192,7 +1288,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-10-19",
+    "publishDate": "2026-10-21",
     "week": 8,
     "linksTo": [
       "facturer-client-etranger-ue-hors-ue",
@@ -1209,7 +1305,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-20",
+    "publishDate": "2026-10-22",
     "week": 8,
     "linksTo": [
       "modele-mise-en-demeure-facture-impayee",
@@ -1226,7 +1322,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-20",
+    "publishDate": "2026-10-22",
     "week": 8,
     "linksTo": [
       "declaration-tva-ca3-ca12-guide",
@@ -1243,11 +1339,29 @@
     "sector": "Professions médicales",
     "priority": "low",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-21",
+    "publishDate": "2026-10-23",
     "week": 8,
     "linksTo": [
       "facture-psychologue-liberal-guide",
       "facture-profession-liberale-guide"
+    ]
+  },
+  {
+    "id": 235,
+    "slug": "facturation-electronique-sans-logiciel-possible",
+    "title": "Peut-on gérer la facturation électronique sans logiciel ?",
+    "metaDescription": "Sans portail public gratuit d'échange, difficile d'échapper à un outil : ce qui est réellement possible sans logiciel, les limites, et les solutions simples pour les petites structures.",
+    "keyword": "facturation électronique sans logiciel",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-23",
+    "week": 8,
+    "linksTo": [
+      "quest-ce-que-ppf-portail-public-facturation",
+      "comment-choisir-sa-pdp-plateforme-dematerialisation",
+      "combien-coute-facturation-electronique"
     ]
   },
   {
@@ -1260,8 +1374,8 @@
     "sector": "Consultants / Freelances IT",
     "priority": "medium",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-10-21",
-    "week": 8,
+    "publishDate": "2026-10-26",
+    "week": 9,
     "linksTo": [
       "freebe-vs-newbi-comparatif",
       "meilleur-logiciel-facturation-freelance"
@@ -1277,8 +1391,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Trésorerie & achats",
-    "publishDate": "2026-10-22",
-    "week": 8,
+    "publishDate": "2026-10-26",
+    "week": 9,
     "linksTo": [
       "dso-delai-moyen-paiement-clients-calcul",
       "seuil-de-rentabilite-calcul-exemple"
@@ -1294,8 +1408,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Devis",
-    "publishDate": "2026-10-22",
-    "week": 8,
+    "publishDate": "2026-10-27",
+    "week": 9,
     "linksTo": [
       "devis-signe-valeur-juridique-engagement",
       "devis-travaux-btp-guide"
@@ -1311,8 +1425,8 @@
     "sector": "Particuliers / Micro-entreprise",
     "priority": "medium",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-10-23",
-    "week": 8,
+    "publishDate": "2026-10-27",
+    "week": 9,
     "linksTo": [
       "tva-auto-entrepreneur-seuils-franchise",
       "obligations-comptables-micro-entreprise"
@@ -1328,8 +1442,8 @@
     "sector": "Coachs / Formateurs",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-23",
-    "week": 8,
+    "publishDate": "2026-10-28",
+    "week": 9,
     "linksTo": [
       "facture-formateur-independant",
       "facturer-un-particulier-regles-mentions"
@@ -1345,7 +1459,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Facturation électronique 2026-2027",
-    "publishDate": "2026-10-26",
+    "publishDate": "2026-10-28",
     "week": 9,
     "linksTo": [
       "quest-ce-que-pdp-plateforme-dematerialisation",
@@ -1362,7 +1476,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-10-26",
+    "publishDate": "2026-10-29",
     "week": 9,
     "linksTo": [
       "gestion-notes-frais-deplacement",
@@ -1379,7 +1493,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-27",
+    "publishDate": "2026-10-29",
     "week": 9,
     "linksTo": [
       "peut-on-facturer-sans-siret",
@@ -1396,9 +1510,30 @@
     "sector": null,
     "priority": "low",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-10-27",
+    "publishDate": "2026-10-30",
     "week": 9,
-    "linksTo": ["mentions-obligatoires-facture", "facture-en-ligne-vs-excel"]
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "facture-en-ligne-vs-excel"
+    ]
+  },
+  {
+    "id": 236,
+    "slug": "facture-acompte-facturation-electronique",
+    "title": "Factures d'acompte et facturation électronique : comment ça marche ?",
+    "metaDescription": "Les factures d'acompte suivent aussi le circuit de la facturation électronique. Règles, formats, lien avec la facture finale et cas pratiques pour bien gérer vos acomptes dès 2026.",
+    "keyword": "facture acompte facturation électronique",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-10-30",
+    "week": 9,
+    "linksTo": [
+      "quest-ce-que-acompte-facture",
+      "nouvelles-mentions-obligatoires-facture-electronique",
+      "formats-ubl-cii-facturx-comparatif"
+    ]
   },
   {
     "id": 185,
@@ -1410,8 +1545,8 @@
     "sector": "Événementiel",
     "priority": "low",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-28",
-    "week": 9,
+    "publishDate": "2026-11-02",
+    "week": 10,
     "linksTo": [
       "quest-ce-que-acompte-facture",
       "quest-ce-que-conditions-generales-vente"
@@ -1427,8 +1562,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-10-28",
-    "week": 9,
+    "publishDate": "2026-11-02",
+    "week": 10,
     "linksTo": [
       "shine-vs-newbi-comparatif",
       "connexion-bancaire-rapprochement-automatique"
@@ -1444,8 +1579,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "Trésorerie & achats",
-    "publishDate": "2026-10-29",
-    "week": 9,
+    "publishDate": "2026-11-03",
+    "week": 10,
     "linksTo": [
       "erreurs-creation-micro-entreprise",
       "connexion-bancaire-rapprochement-automatique"
@@ -1461,8 +1596,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Devis",
-    "publishDate": "2026-10-29",
-    "week": 9,
+    "publishDate": "2026-11-03",
+    "week": 10,
     "linksTo": [
       "quest-ce-que-acompte-facture",
       "modele-facture-acompte-gratuit"
@@ -1478,8 +1613,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-10-30",
-    "week": 9,
+    "publishDate": "2026-11-04",
+    "week": 10,
     "linksTo": [
       "tva-deductible-quelles-depenses",
       "gestion-notes-frais-deplacement"
@@ -1495,8 +1630,8 @@
     "sector": "Agences / Marketing",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-10-30",
-    "week": 9,
+    "publishDate": "2026-11-04",
+    "week": 10,
     "linksTo": [
       "facture-community-manager-freelance",
       "automatiser-facturation-recurrente"
@@ -1512,7 +1647,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Facturation électronique 2026-2027",
-    "publishDate": "2026-11-02",
+    "publishDate": "2026-11-05",
     "week": 10,
     "linksTo": [
       "e-reporting-definition-obligations-calendrier",
@@ -1529,7 +1664,7 @@
     "sector": null,
     "priority": "high",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-11-02",
+    "publishDate": "2026-11-05",
     "week": 10,
     "linksTo": [
       "plan-de-tresorerie-previsionnel-comment-faire",
@@ -1546,11 +1681,29 @@
     "sector": "BTP / Artisans",
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-11-03",
+    "publishDate": "2026-11-06",
     "week": 10,
     "linksTo": [
       "facture-situation-travaux-btp",
       "facture-electronique-btp-sous-traitance-situations"
+    ]
+  },
+  {
+    "id": 237,
+    "slug": "avoir-facture-electronique-regles",
+    "title": "Avoirs et factures d'annulation dans la facturation électronique",
+    "metaDescription": "Comment émettre un avoir dans le circuit de la facturation électronique : format, transmission via PDP, lien avec la facture d'origine et impact sur la TVA pré-remplie.",
+    "keyword": "avoir facture électronique",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-06",
+    "week": 10,
+    "linksTo": [
+      "quest-ce-que-avoir-credit",
+      "statuts-cycle-de-vie-facture-electronique",
+      "declaration-tva-pre-remplie-facture-electronique"
     ]
   },
   {
@@ -1563,8 +1716,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-11-03",
-    "week": 10,
+    "publishDate": "2026-11-09",
+    "week": 11,
     "linksTo": [
       "quest-ce-que-tva-intracommunautaire",
       "facturer-client-etranger-ue-hors-ue"
@@ -1580,8 +1733,8 @@
     "sector": "BTP / Artisans",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-11-04",
-    "week": 10,
+    "publishDate": "2026-11-09",
+    "week": 11,
     "linksTo": [
       "facture-btp-artisan-mentions-specifiques",
       "devis-travaux-btp-guide"
@@ -1597,9 +1750,12 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-11-04",
-    "week": 10,
-    "linksTo": ["tiime-vs-newbi-comparatif", "pennylane-vs-tiime-comparatif"]
+    "publishDate": "2026-11-10",
+    "week": 11,
+    "linksTo": [
+      "tiime-vs-newbi-comparatif",
+      "pennylane-vs-tiime-comparatif"
+    ]
   },
   {
     "id": 197,
@@ -1611,8 +1767,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Trésorerie & achats",
-    "publishDate": "2026-11-05",
-    "week": 10,
+    "publishDate": "2026-11-10",
+    "week": 11,
     "linksTo": [
       "conseils-reduire-delais-paiement",
       "dso-delai-moyen-paiement-clients-calcul"
@@ -1628,8 +1784,8 @@
     "sector": null,
     "priority": "low",
     "cluster": "Devis",
-    "publishDate": "2026-11-05",
-    "week": 10,
+    "publishDate": "2026-11-11",
+    "week": 11,
     "linksTo": [
       "taux-de-conversion-devis-ameliorer",
       "comment-faire-devis-professionnel"
@@ -1645,8 +1801,8 @@
     "sector": "Particuliers / Micro-entreprise",
     "priority": "high",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-11-06",
-    "week": 10,
+    "publishDate": "2026-11-11",
+    "week": 11,
     "linksTo": [
       "obligations-comptables-micro-entreprise",
       "acre-exoneration-charges-debut-activite"
@@ -1662,8 +1818,8 @@
     "sector": "Services / Indépendants",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-11-06",
-    "week": 10,
+    "publishDate": "2026-11-12",
+    "week": 11,
     "linksTo": [
       "facture-professeur-particulier-cours",
       "facture-paysagiste-jardinier-guide"
@@ -1679,7 +1835,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Facturation électronique 2026-2027",
-    "publishDate": "2026-11-09",
+    "publishDate": "2026-11-12",
     "week": 11,
     "linksTo": [
       "facturation-electronique-obligatoire-2026",
@@ -1696,7 +1852,7 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-11-09",
+    "publishDate": "2026-11-13",
     "week": 11,
     "linksTo": [
       "facture-en-ligne-vs-excel",
@@ -1704,20 +1860,21 @@
     ]
   },
   {
-    "id": 203,
-    "slug": "note-honoraires-vs-facture-differences",
-    "title": "Note d'honoraires ou facture : quelles différences et qui doit l'utiliser ?",
-    "metaDescription": "La note d'honoraires est une facture pour les professions libérales. Mentions identiques ou non, TVA, numérotation et modèles selon la profession.",
-    "keyword": "note d'honoraires",
-    "category": "glossaire",
+    "id": 238,
+    "slug": "rejet-facture-electronique-que-faire",
+    "title": "Facture électronique rejetée ou refusée : que faire ?",
+    "metaDescription": "Rejet technique par la plateforme ou refus par le client : les causes les plus fréquentes, la marche à suivre pour corriger, et comment éviter les rejets de factures électroniques.",
+    "keyword": "facture électronique rejetée refusée",
+    "category": "guide",
     "sector": null,
     "priority": "medium",
-    "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-11-10",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-13",
     "week": 11,
     "linksTo": [
-      "facture-profession-liberale-guide",
-      "facturation-avocat-honoraires-guide"
+      "statuts-cycle-de-vie-facture-electronique",
+      "nouvelles-mentions-obligatoires-facture-electronique",
+      "annuaire-facturation-electronique-a-quoi-sert"
     ]
   },
   {
@@ -1730,110 +1887,11 @@
     "sector": "BTP / Artisans",
     "priority": "medium",
     "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-11-10",
-    "week": 11,
+    "publishDate": "2026-11-16",
+    "week": 12,
     "linksTo": [
       "retenue-de-garantie-btp-facture",
       "facture-situation-travaux-btp"
-    ]
-  },
-  {
-    "id": 205,
-    "slug": "facture-garage-mecanicien-auto",
-    "title": "Facture de garage et mécanicien : pièces, main-d'œuvre et mentions obligatoires",
-    "metaDescription": "Ordre de réparation, devis obligatoire, détail pièces et main-d'œuvre, pièces d'occasion, TVA : ce qu'une facture de garage doit contenir pour être conforme.",
-    "keyword": "facture garage automobile",
-    "category": "guide",
-    "sector": "Commerces / Retail",
-    "priority": "medium",
-    "cluster": "Facturation par métier",
-    "publishDate": "2026-11-11",
-    "week": 11,
-    "linksTo": [
-      "facturer-un-particulier-regles-mentions",
-      "obligations-legales-devis-consommateur"
-    ]
-  },
-  {
-    "id": 206,
-    "slug": "ebp-vs-newbi-comparatif",
-    "title": "EBP vs Newbi : logiciel installé historique ou solution en ligne ?",
-    "metaDescription": "EBP équipe les TPE depuis des décennies. Comparatif avec une solution cloud : facturation, achats, banque, mobilité, e-invoicing et coût total.",
-    "keyword": "ebp vs newbi",
-    "category": "comparaison",
-    "sector": null,
-    "priority": "medium",
-    "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-11-11",
-    "week": 11,
-    "linksTo": ["logiciel-gestion-tout-en-un-tpe", "facture-en-ligne-vs-excel"]
-  },
-  {
-    "id": 207,
-    "slug": "recouvrement-amiable-vs-judiciaire",
-    "title": "Recouvrement amiable ou judiciaire : quelle voie pour une facture impayée ?",
-    "metaDescription": "Relance, mise en demeure, société de recouvrement, injonction de payer, référé : le parcours complet, les coûts et le bon moment pour passer à l'étape suivante.",
-    "keyword": "recouvrement de créances",
-    "category": "guide",
-    "sector": null,
-    "priority": "medium",
-    "cluster": "Trésorerie & achats",
-    "publishDate": "2026-11-12",
-    "week": 11,
-    "linksTo": [
-      "injonction-de-payer-procedure-facture-impayee",
-      "modele-mise-en-demeure-facture-impayee"
-    ]
-  },
-  {
-    "id": 208,
-    "slug": "signature-electronique-devis-valeur-outils",
-    "title": "Signature électronique de devis : valeur juridique et outils",
-    "metaDescription": "Un devis signé électroniquement a-t-il la même valeur qu'une signature manuscrite ? Niveaux eIDAS, preuve, outils gratuits et intégration au logiciel de devis.",
-    "keyword": "signature électronique devis",
-    "category": "guide",
-    "sector": null,
-    "priority": "medium",
-    "cluster": "Devis",
-    "publishDate": "2026-11-12",
-    "week": 11,
-    "linksTo": [
-      "devis-signe-valeur-juridique-engagement",
-      "taux-de-conversion-devis-ameliorer"
-    ]
-  },
-  {
-    "id": 209,
-    "slug": "depassement-seuil-micro-entreprise-consequences",
-    "title": "Dépassement des seuils de la micro-entreprise : conséquences et transition",
-    "metaDescription": "CA au-dessus de 77 700 € ou 188 700 € : quand perd-on le régime micro, tolérance sur deux ans, passage au réel, TVA et démarches à anticiper.",
-    "keyword": "dépassement seuil micro-entreprise",
-    "category": "reglementaire",
-    "sector": "Particuliers / Micro-entreprise",
-    "priority": "high",
-    "cluster": "TVA & fiscal",
-    "publishDate": "2026-11-13",
-    "week": 11,
-    "linksTo": [
-      "tva-auto-entrepreneur-seuils-franchise",
-      "obligations-comptables-micro-entreprise"
-    ]
-  },
-  {
-    "id": 210,
-    "slug": "facture-food-truck-traiteur",
-    "title": "Facture de food truck et traiteur : TVA, événements et particuliers",
-    "metaDescription": "TVA à 5,5 %, 10 % ou 20 % selon la prestation, acomptes pour les événements, factures aux entreprises et notes aux particuliers : le guide pour traiteurs et food trucks.",
-    "keyword": "facture traiteur",
-    "category": "guide",
-    "sector": "Restaurants / CHR",
-    "priority": "low",
-    "cluster": "Facturation par métier",
-    "publishDate": "2026-11-13",
-    "week": 11,
-    "linksTo": [
-      "facture-restaurant-cafe-hotel",
-      "facture-restauration-rapide-obligations"
     ]
   },
   {
@@ -1854,20 +1912,140 @@
     ]
   },
   {
-    "id": 212,
-    "slug": "modele-contrat-prestation-de-services",
-    "title": "Modèle de contrat de prestation de services : clauses essentielles",
-    "metaDescription": "Un modèle de contrat de prestation de services à reprendre clause par clause : objet, prix, délais, propriété intellectuelle, résiliation, pénalités.",
-    "keyword": "modèle contrat prestation de services",
-    "category": "modele",
-    "sector": null,
-    "priority": "high",
-    "cluster": "Modèles à télécharger",
-    "publishDate": "2026-11-16",
+    "id": 205,
+    "slug": "facture-garage-mecanicien-auto",
+    "title": "Facture de garage et mécanicien : pièces, main-d'œuvre et mentions obligatoires",
+    "metaDescription": "Ordre de réparation, devis obligatoire, détail pièces et main-d'œuvre, pièces d'occasion, TVA : ce qu'une facture de garage doit contenir pour être conforme.",
+    "keyword": "facture garage automobile",
+    "category": "guide",
+    "sector": "Commerces / Retail",
+    "priority": "medium",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-17",
     "week": 12,
     "linksTo": [
-      "quest-ce-que-conditions-generales-vente",
-      "facturer-prestation-service-consultant"
+      "facturer-un-particulier-regles-mentions",
+      "obligations-legales-devis-consommateur"
+    ]
+  },
+  {
+    "id": 206,
+    "slug": "ebp-vs-newbi-comparatif",
+    "title": "EBP vs Newbi : logiciel installé historique ou solution en ligne ?",
+    "metaDescription": "EBP équipe les TPE depuis des décennies. Comparatif avec une solution cloud : facturation, achats, banque, mobilité, e-invoicing et coût total.",
+    "keyword": "ebp vs newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Comparatifs & alternatives",
+    "publishDate": "2026-11-17",
+    "week": 12,
+    "linksTo": [
+      "logiciel-gestion-tout-en-un-tpe",
+      "facture-en-ligne-vs-excel"
+    ]
+  },
+  {
+    "id": 207,
+    "slug": "recouvrement-amiable-vs-judiciaire",
+    "title": "Recouvrement amiable ou judiciaire : quelle voie pour une facture impayée ?",
+    "metaDescription": "Relance, mise en demeure, société de recouvrement, injonction de payer, référé : le parcours complet, les coûts et le bon moment pour passer à l'étape suivante.",
+    "keyword": "recouvrement de créances",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Trésorerie & achats",
+    "publishDate": "2026-11-18",
+    "week": 12,
+    "linksTo": [
+      "injonction-de-payer-procedure-facture-impayee",
+      "modele-mise-en-demeure-facture-impayee"
+    ]
+  },
+  {
+    "id": 208,
+    "slug": "signature-electronique-devis-valeur-outils",
+    "title": "Signature électronique de devis : valeur juridique et outils",
+    "metaDescription": "Un devis signé électroniquement a-t-il la même valeur qu'une signature manuscrite ? Niveaux eIDAS, preuve, outils gratuits et intégration au logiciel de devis.",
+    "keyword": "signature électronique devis",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Devis",
+    "publishDate": "2026-11-18",
+    "week": 12,
+    "linksTo": [
+      "devis-signe-valeur-juridique-engagement",
+      "taux-de-conversion-devis-ameliorer"
+    ]
+  },
+  {
+    "id": 209,
+    "slug": "depassement-seuil-micro-entreprise-consequences",
+    "title": "Dépassement des seuils de la micro-entreprise : conséquences et transition",
+    "metaDescription": "CA au-dessus de 77 700 € ou 188 700 € : quand perd-on le régime micro, tolérance sur deux ans, passage au réel, TVA et démarches à anticiper.",
+    "keyword": "dépassement seuil micro-entreprise",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high",
+    "cluster": "TVA & fiscal",
+    "publishDate": "2026-11-19",
+    "week": 12,
+    "linksTo": [
+      "tva-auto-entrepreneur-seuils-franchise",
+      "obligations-comptables-micro-entreprise"
+    ]
+  },
+  {
+    "id": 210,
+    "slug": "facture-food-truck-traiteur",
+    "title": "Facture de food truck et traiteur : TVA, événements et particuliers",
+    "metaDescription": "TVA à 5,5 %, 10 % ou 20 % selon la prestation, acomptes pour les événements, factures aux entreprises et notes aux particuliers : le guide pour traiteurs et food trucks.",
+    "keyword": "facture traiteur",
+    "category": "guide",
+    "sector": "Restaurants / CHR",
+    "priority": "low",
+    "cluster": "Facturation par métier",
+    "publishDate": "2026-11-19",
+    "week": 12,
+    "linksTo": [
+      "facture-restaurant-cafe-hotel",
+      "facture-restauration-rapide-obligations"
+    ]
+  },
+  {
+    "id": 203,
+    "slug": "note-honoraires-vs-facture-differences",
+    "title": "Note d'honoraires ou facture : quelles différences et qui doit l'utiliser ?",
+    "metaDescription": "La note d'honoraires est une facture pour les professions libérales. Mentions identiques ou non, TVA, numérotation et modèles selon la profession.",
+    "keyword": "note d'honoraires",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Questions pratiques facturation",
+    "publishDate": "2026-11-20",
+    "week": 12,
+    "linksTo": [
+      "facture-profession-liberale-guide",
+      "facturation-avocat-honoraires-guide"
+    ]
+  },
+  {
+    "id": 239,
+    "slug": "facture-electronique-association-concernee",
+    "title": "Les associations sont-elles concernées par la facturation électronique ?",
+    "metaDescription": "Une association est concernée par la facturation électronique dès lors qu'elle est assujettie à la TVA. Critères d'assujettissement, cas de la franchise et obligations pratiques.",
+    "keyword": "association facturation électronique",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-20",
+    "week": 12,
+    "linksTo": [
+      "facturation-association-loi-1901",
+      "franchise-tva-facturation-electronique",
+      "facture-electronique-reception-1er-septembre-2026"
     ]
   },
   {
@@ -1880,11 +2058,29 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Conformité & outils",
-    "publishDate": "2026-11-17",
-    "week": 12,
+    "publishDate": "2026-11-23",
+    "week": 13,
     "linksTo": [
       "delai-conservation-factures-documents-comptables",
       "facture-en-ligne-vs-excel"
+    ]
+  },
+  {
+    "id": 240,
+    "slug": "autofacturation-mandat-facturation-electronique",
+    "title": "Autofacturation et mandat de facturation : quelles règles avec la réforme ?",
+    "metaDescription": "L'autofacturation et le mandat de facturation restent possibles avec la facturation électronique, mais le circuit change : rôle des PDP, responsabilités et mentions à respecter.",
+    "keyword": "autofacturation mandat facturation électronique",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "low",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-23",
+    "week": 13,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "facture-electronique-expert-comptable-role"
     ]
   },
   {
@@ -1897,8 +2093,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Conformité & outils",
-    "publishDate": "2026-11-17",
-    "week": 12,
+    "publishDate": "2026-11-24",
+    "week": 13,
     "linksTo": [
       "archivage-factures-valeur-probante",
       "facturation-electronique-obligatoire-2026"
@@ -1914,8 +2110,8 @@
     "sector": "Photographes / Créatifs",
     "priority": "low",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-11-18",
-    "week": 12,
+    "publishDate": "2026-11-24",
+    "week": 13,
     "linksTo": [
       "facture-photographe-droits-auteur",
       "facture-graphiste-designer-freelance"
@@ -1931,8 +2127,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-11-18",
-    "week": 12,
+    "publishDate": "2026-11-25",
+    "week": 13,
     "linksTo": [
       "axonaut-vs-newbi-comparatif",
       "logiciel-gestion-tout-en-un-tpe"
@@ -1948,8 +2144,8 @@
     "sector": null,
     "priority": "low",
     "cluster": "Trésorerie & achats",
-    "publishDate": "2026-11-19",
-    "week": 12,
+    "publishDate": "2026-11-25",
+    "week": 13,
     "linksTo": [
       "automatiser-facturation-recurrente",
       "lien-de-paiement-facture-en-ligne"
@@ -1965,8 +2161,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-11-19",
-    "week": 12,
+    "publishDate": "2026-11-26",
+    "week": 13,
     "linksTo": [
       "calendrier-fiscal-independant-2026",
       "facture-electronique-auto-entrepreneur-2027"
@@ -1982,11 +2178,46 @@
     "sector": "Particuliers / Micro-entreprise",
     "priority": "high",
     "cluster": "TVA & fiscal",
-    "publishDate": "2026-11-20",
-    "week": 12,
+    "publishDate": "2026-11-26",
+    "week": 13,
     "linksTo": [
       "tva-auto-entrepreneur-seuils-franchise",
       "depassement-seuil-micro-entreprise-consequences"
+    ]
+  },
+  {
+    "id": 212,
+    "slug": "modele-contrat-prestation-de-services",
+    "title": "Modèle de contrat de prestation de services : clauses essentielles",
+    "metaDescription": "Un modèle de contrat de prestation de services à reprendre clause par clause : objet, prix, délais, propriété intellectuelle, résiliation, pénalités.",
+    "keyword": "modèle contrat prestation de services",
+    "category": "modele",
+    "sector": null,
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
+    "publishDate": "2026-11-27",
+    "week": 13,
+    "linksTo": [
+      "quest-ce-que-conditions-generales-vente",
+      "facturer-prestation-service-consultant"
+    ]
+  },
+  {
+    "id": 241,
+    "slug": "facture-electronique-donnees-transmises-administration",
+    "title": "Facturation électronique : quelles données l'administration fiscale voit-elle ?",
+    "metaDescription": "Montants, TVA, identités des parties : la liste exacte des données de facturation transmises au fisc, ce qui reste confidentiel, et ce que cela change pour les contrôles fiscaux.",
+    "keyword": "facturation électronique données transmises administration",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-27",
+    "week": 13,
+    "linksTo": [
+      "declaration-tva-pre-remplie-facture-electronique",
+      "e-reporting-definition-obligations-calendrier",
+      "quest-ce-que-ppf-portail-public-facturation"
     ]
   },
   {
@@ -1999,8 +2230,8 @@
     "sector": "Immobilier",
     "priority": "medium",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-11-20",
-    "week": 12,
+    "publishDate": "2026-11-30",
+    "week": 14,
     "linksTo": [
       "facture-agent-immobilier-honoraires",
       "debours-refacturation-frais-clients"
@@ -2016,8 +2247,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Facturation électronique 2026-2027",
-    "publishDate": "2026-11-23",
-    "week": 13,
+    "publishDate": "2026-11-30",
+    "week": 14,
     "linksTo": [
       "e-reporting-definition-obligations-calendrier",
       "facturer-client-etranger-ue-hors-ue"
@@ -2033,9 +2264,12 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Modèles à télécharger",
-    "publishDate": "2026-11-23",
-    "week": 13,
-    "linksTo": ["mentions-obligatoires-facture", "quest-ce-que-acompte-facture"]
+    "publishDate": "2026-12-01",
+    "week": 14,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "quest-ce-que-acompte-facture"
+    ]
   },
   {
     "id": 223,
@@ -2047,8 +2281,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Conformité & outils",
-    "publishDate": "2026-11-24",
-    "week": 13,
+    "publishDate": "2026-12-01",
+    "week": 14,
     "linksTo": [
       "piste-audit-fiable-paf-definition",
       "facture-en-ligne-vs-excel"
@@ -2064,8 +2298,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "Conformité & outils",
-    "publishDate": "2026-11-24",
-    "week": 13,
+    "publishDate": "2026-12-02",
+    "week": 14,
     "linksTo": [
       "transfert-fichiers-securise-professionnel",
       "comment-partager-documents-expert-comptable"
@@ -2081,8 +2315,8 @@
     "sector": "Office managers",
     "priority": "low",
     "cluster": "Facturation par métier",
-    "publishDate": "2026-11-25",
-    "week": 13,
+    "publishDate": "2026-12-02",
+    "week": 14,
     "linksTo": [
       "gestion-administrative-office-manager-guide",
       "facturer-prestation-service-consultant"
@@ -2098,8 +2332,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "Comparatifs & alternatives",
-    "publishDate": "2026-11-25",
-    "week": 13,
+    "publishDate": "2026-12-03",
+    "week": 14,
     "linksTo": [
       "top-6-logiciels-facturation-artisan",
       "logiciel-devis-facture-gratuit"
@@ -2115,8 +2349,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "Création & gestion",
-    "publishDate": "2026-11-26",
-    "week": 13,
+    "publishDate": "2026-12-03",
+    "week": 14,
     "linksTo": [
       "erreurs-creation-micro-entreprise",
       "depassement-seuil-micro-entreprise-consequences"
@@ -2132,11 +2366,29 @@
     "sector": "Comptables / Experts-comptables",
     "priority": "medium",
     "cluster": "Création & gestion",
-    "publishDate": "2026-11-26",
-    "week": 13,
+    "publishDate": "2026-12-04",
+    "week": 14,
     "linksTo": [
       "comment-partager-documents-expert-comptable",
       "conseils-organiser-comptabilite-debut-activite"
+    ]
+  },
+  {
+    "id": 242,
+    "slug": "changer-de-pdp-portabilite-resiliation",
+    "title": "Peut-on changer de PDP ? Portabilité, résiliation et bonnes pratiques",
+    "metaDescription": "Changer de plateforme de dématérialisation partenaire est possible à tout moment : préavis, mise à jour de l'annuaire, récupération des factures et pièges à éviter.",
+    "keyword": "changer de pdp plateforme dématérialisation",
+    "category": "guide",
+    "sector": null,
+    "priority": "low",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-12-04",
+    "week": 14,
+    "linksTo": [
+      "comment-choisir-sa-pdp-plateforme-dematerialisation",
+      "annuaire-facturation-electronique-a-quoi-sert",
+      "od-vs-pdp-operateur-dematerialisation-difference"
     ]
   },
   {
@@ -2149,8 +2401,8 @@
     "sector": null,
     "priority": "high",
     "cluster": "Conformité & outils",
-    "publishDate": "2026-11-27",
-    "week": 13,
+    "publishDate": "2026-12-07",
+    "week": 15,
     "linksTo": [
       "signature-mail-professionnelle-guide",
       "conseils-ameliorer-signature-email"
@@ -2166,8 +2418,8 @@
     "sector": null,
     "priority": "medium",
     "cluster": "Création & gestion",
-    "publishDate": "2026-11-27",
-    "week": 13,
+    "publishDate": "2026-12-07",
+    "week": 15,
     "linksTo": [
       "comment-fixer-tarif-journalier-tjm",
       "quest-ce-que-conditions-generales-vente"

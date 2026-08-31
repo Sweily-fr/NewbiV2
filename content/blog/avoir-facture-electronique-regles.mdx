@@ -1,0 +1,194 @@
+---
+title: >-
+  Avoirs et factures d'annulation dans la facturation électronique
+description: >-
+  Comment émettre un avoir dans le circuit de la facturation électronique :
+  format, transmission via PDP, lien avec la facture d'origine et impact sur la
+  TVA pré-remplie.
+date: '2026-11-06'
+category: guide
+sector: null
+keyword: avoir facture électronique
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-06'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Avoirs et factures d'annulation dans la facturation électronique
+
+L'**avoir dans la facturation électronique** obéit à une règle simple mais essentielle : dans le circuit électronique, on ne supprime jamais une facture déjà transmise, on la corrige en émettant un document rectificatif. Une remise accordée après coup, une erreur de montant, une prestation finalement annulée : dans tous ces cas, l'avoir est le seul moyen conforme de rectifier une facture qui a déjà quitté votre plateforme de dématérialisation.
+
+Si vous êtes indépendant ou dirigeant de TPE, vous avez peut-être l'habitude de corriger une facture en la modifiant directement dans votre logiciel, voire en la supprimant pour la refaire. Avec la généralisation de la facturation électronique, ces réflexes deviennent impossibles, et c'est une bonne nouvelle pour la fiabilité de votre comptabilité. Ce guide explique comment fonctionne un avoir dans le circuit électronique, quelles règles respecter et quelles erreurs éviter.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Rappel : qu'est-ce qu'un avoir ?
+
+Un avoir, aussi appelé facture d'avoir ou note de crédit, est un document comptable qui vient annuler ou réduire une facture émise précédemment. Il constate une créance de votre client sur votre entreprise : vous lui devez soit un remboursement, soit une déduction sur une prochaine facture. Nous détaillons la définition, les mentions et les cas d'usage de ce document dans notre article dédié : [qu'est-ce qu'un avoir ou note de crédit](/blog/quest-ce-que-avoir-credit).
+
+Pour la suite de ce guide, retenez l'essentiel : l'avoir est le miroir de la facture. Il reprend les mêmes informations, mais en sens inverse, et il fait toujours référence à la facture qu'il corrige. C'est précisément ce lien avec la facture d'origine qui prend une importance nouvelle dans le circuit de la facturation électronique.
+
+## Pourquoi on ne supprime jamais une facture transmise
+
+Dans un fonctionnement papier ou PDF classique, une facture erronée pouvait parfois être discrètement remplacée avant l'envoi. Dans le circuit électronique, ce n'est plus envisageable : dès que votre facture est déposée sur votre plateforme de dématérialisation partenaire (PDP), elle entre dans un cycle de vie officiel, avec des statuts qui jalonnent son parcours (déposée, rejetée, refusée, encaissée...). Nous décrivons ce mécanisme en détail dans notre guide sur les [statuts et le cycle de vie d'une facture électronique](/blog/statuts-cycle-de-vie-facture-electronique).
+
+Une fois la facture transmise, ses données sont acheminées vers votre client, et les informations utiles à l'administration fiscale sont concentrées via le circuit officiel. La facture existe donc juridiquement et techniquement chez plusieurs acteurs à la fois : chez vous, chez votre client et dans les données transmises à l'administration. La supprimer de votre seul logiciel ne la ferait pas disparaître ailleurs. Elle créerait au contraire une incohérence entre votre comptabilité et les données dont dispose l'administration.
+
+La seule façon conforme de revenir sur une facture transmise est donc d'émettre un avoir, qui annule ou réduit la facture d'origine tout en laissant une trace complète et cohérente de l'opération.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Modifier une facture transmise n'est pas une option">
+    Rééditer une facture déjà transmise en changeant son montant ou son contenu, même pour corriger une simple erreur, crée un écart entre ce que votre client et l'administration ont reçu et ce que votre comptabilité affiche. La règle est simple : facture transmise = facture figée. Toute correction passe par un avoir.
+  </Callout>
+</div>
+
+## Comment un avoir circule dans le circuit électronique
+
+La bonne nouvelle, c'est qu'un avoir n'emprunte pas un chemin à part : il transite par le même circuit électronique que vos factures, dans les mêmes conditions.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Mêmes formats</strong> : l'avoir est émis dans l'un des formats admis par la réforme, Factur-X (hybride PDF + XML), UBL ou CII, exactement comme une facture.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Même canal de transmission</strong> : l'avoir est déposé sur votre plateforme de dématérialisation partenaire, qui le route vers la plateforme de votre client, les PDP étant interopérables entre elles.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Même cycle de vie</strong> : comme une facture, un avoir peut être déposé, rejeté en cas d'anomalie technique ou refusé par le destinataire, et son parcours est suivi par des statuts.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Une exigence en plus</strong> : l'avoir doit référencer la facture d'origine qu'il corrige, afin que le rapprochement entre les deux documents soit possible de bout en bout.</span>
+  </div>
+</div>
+
+Cette référence à la facture d'origine n'est pas une formalité décorative. C'est elle qui permet à votre client de rapprocher l'avoir de la facture concernée dans sa propre comptabilité, et c'est elle qui garantit la cohérence des données transmises à l'administration. Un avoir orphelin, sans lien identifiable avec une facture, est une source de confusion pour tout le monde et un signal d'alerte en cas de contrôle.
+
+## Quel impact sur la TVA et les données transmises à l'administration
+
+L'un des objectifs de la réforme de la facturation électronique est de permettre à l'administration de disposer de données de facturation fiables et à jour. Chaque facture transmise alimente ces données, et chaque avoir vient les corriger dans l'autre sens.
+
+Concrètement, lorsque vous émettez un avoir, la réduction de votre chiffre d'affaires facturé et de la TVA correspondante est portée à la connaissance de l'administration par le circuit électronique, au même titre que la facture initiale l'avait été. C'est ce mécanisme qui rend possible, à terme, le pré-remplissage des déclarations de TVA à partir des données de facturation, un sujet que nous détaillons dans notre article sur la [déclaration de TVA pré-remplie grâce à la facturation électronique](/blog/declaration-tva-pre-remplie-facture-electronique).
+
+Voyez-y une raison supplémentaire de soigner vos avoirs : si un avoir n'est pas émis dans le circuit électronique, ou s'il ne référence pas correctement la facture d'origine, les données dont dispose l'administration ne reflètent plus la réalité de votre activité. Vous pourriez alors vous retrouver avec une base pré-remplie surévaluée, à corriger manuellement, ce qui va exactement à l'inverse de la simplification promise par la réforme.
+
+## Les erreurs courantes à éviter
+
+Certains réflexes hérités de la facturation papier ou PDF deviennent des pièges dans le circuit électronique. Voici les plus fréquents.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Modifier une facture déjà transmise</strong> : c'est l'erreur numéro un. Une facture partie dans le circuit est figée ; toute correction, même minime, passe par un avoir suivi si nécessaire d'une nouvelle facture.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Émettre un avoir sans référence à la facture d'origine</strong> : sans ce lien, votre client ne peut pas rapprocher les documents et la cohérence des données transmises à l'administration est rompue.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Envoyer l'avoir hors du circuit électronique</strong> : un avoir transmis par simple email en PDF, alors que la facture d'origine est passée par la PDP, crée un décalage entre les deux canaux.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Confondre avoir et remise sur une future facture</strong> : une remise accordée avant facturation se traduit simplement sur la facture ; l'avoir n'intervient que pour corriger une facture déjà émise.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Oublier de suivre le statut de l'avoir</strong> : comme une facture, un avoir peut être rejeté pour un motif technique. Un avoir rejeté et jamais réémis laisse la correction en suspens.</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un avoir bien fait se prépare dès la facture">
+    Plus vos factures sont propres (données client exactes, montants vérifiés, conditions commerciales claires), moins vous aurez d'avoirs à émettre. Et quand un avoir est nécessaire, émettez-le depuis le même outil que la facture d'origine : la référence entre les deux documents est alors créée automatiquement.
+  </Callout>
+</div>
+
+## Cas pratique : une remise commerciale accordée après facturation
+
+Prenons l'exemple d'une consultante en marketing qui facture 4 800 € HT à un client pour une mission d'accompagnement. La facture est émise dans le circuit électronique via sa plateforme de dématérialisation et parvient au client. Quelques jours plus tard, à la suite d'un échange commercial, la consultante accepte d'accorder une remise de 10 % pour tenir compte d'un périmètre légèrement réduit par rapport au devis initial.
+
+Elle ne peut pas reprendre sa facture pour y appliquer la remise : le document est déjà transmis et figé. La marche à suivre est la suivante : elle émet un avoir de 480 € HT, avec la TVA correspondante, en référençant le numéro de la facture d'origine. L'avoir est généré dans le même format structuré que la facture, transite par sa PDP et parvient au client par le même canal.
+
+Côté client, l'avoir est rapproché de la facture initiale : le montant net à régler devient 4 320 € HT plus la TVA. Côté administration, les données de facturation sont corrigées à due proportion, ce qui garantit une base cohérente pour la TVA. Et côté consultante, sa comptabilité reflète fidèlement l'opération : une facture de 4 800 €, un avoir de 480 €, et un lien clair entre les deux. Personne n'a effacé quoi que ce soit, et pourtant la correction est complète.
+
+## Comment Newbi gère les avoirs dans la facturation électronique
+
+Newbi permet d'émettre vos factures, devis et avoirs conformes depuis une interface unique, en s'appuyant sur une plateforme de dématérialisation partenaire pour la transmission dans le circuit électronique. Lorsque vous créez un avoir depuis une facture existante, la référence à la facture d'origine est reprise automatiquement : vous n'avez pas à ressaisir les informations ni à vérifier manuellement le lien entre les deux documents.
+
+L'avoir suit ensuite le même parcours que vos factures : transmission via la plateforme partenaire, suivi du statut, et intégration dans votre suivi comptable. Avec la synchronisation bancaire et la gestion des achats, vous gardez également une vision claire de l'impact de vos avoirs sur votre trésorerie, sans tableur ni double saisie.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Dans le circuit de la facturation électronique, une facture transmise ne se modifie pas et ne se supprime pas : elle se corrige par un avoir. Ce document rectificatif transite par la même plateforme de dématérialisation partenaire que vos factures, dans les mêmes formats structurés (Factur-X, UBL, CII), et il doit impérativement référencer la facture d'origine. Cette rigueur n'est pas une contrainte gratuite : elle garantit la cohérence entre votre comptabilité, celle de votre client et les données transmises à l'administration, qui serviront notamment au pré-remplissage de la TVA. En évitant les erreurs classiques, comme la modification d'une facture transmise ou l'avoir sans référence, vous sécurisez vos corrections et vous gagnez du temps sur toute la chaîne.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les avoirs en facturation électronique
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Puis-je supprimer une facture électronique envoyée par erreur ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Une fois transmise dans le circuit électronique, une facture est figée : elle existe chez votre client et dans les données transmises à l'administration. La seule façon conforme de l'annuler est d'émettre un avoir du même montant, référençant la facture d'origine, puis d'émettre une nouvelle facture correcte si nécessaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Un avoir doit-il être au même format qu'une facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. L'avoir transite par le même circuit que les factures, via votre plateforme de dématérialisation partenaire, et dans les mêmes formats structurés admis par la réforme : Factur-X, UBL ou CII. Il suit également un cycle de vie avec des statuts, comme n'importe quelle facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Que se passe-t-il si mon avoir ne référence pas la facture d'origine ?</AccordionTrigger>
+      <AccordionContent>
+        Votre client aura du mal à rapprocher l'avoir de la facture concernée, et la cohérence des données transmises à l'administration ne sera plus assurée. Un avoir doit toujours mentionner la facture qu'il corrige. Avec un logiciel qui génère l'avoir depuis la facture d'origine, cette référence est créée automatiquement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un avoir a-t-il un impact sur ma déclaration de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. L'avoir réduit le chiffre d'affaires facturé et la TVA correspondante, et cette correction est portée à la connaissance de l'administration via le circuit électronique. C'est ce qui permet de conserver une base fiable, notamment dans la perspective du pré-remplissage des déclarations de TVA à partir des données de facturation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Mon client peut-il refuser un avoir électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Comme une facture, un avoir suit un cycle de vie dans le circuit électronique : il peut être rejeté pour un motif technique (format invalide, destinataire introuvable) ou refusé par le destinataire en cas de désaccord. Dans ce cas, échangez avec votre client pour comprendre le motif, puis corrigez et réémettez le document.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
