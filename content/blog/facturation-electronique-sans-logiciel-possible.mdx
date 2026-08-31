@@ -1,0 +1,209 @@
+---
+title: >-
+  Peut-on gérer la facturation électronique sans logiciel ?
+description: >-
+  Sans portail public gratuit d'échange, difficile d'échapper à un outil : ce
+  qui est réellement possible sans logiciel, les limites, et les solutions
+  simples pour les petites structures.
+date: '2026-10-23'
+category: guide
+sector: null
+keyword: facturation électronique sans logiciel
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-23'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Peut-on gérer la facturation électronique sans logiciel ?
+
+Gérer la **facturation électronique sans logiciel** : la question revient sans cesse chez les indépendants et les dirigeants de petites structures, attachés à leurs habitudes et soucieux de ne pas multiplier les abonnements. Beaucoup facturent encore avec Word, Excel ou un simple modèle PDF, et espéraient pouvoir continuer ainsi grâce à un portail public gratuit. La réforme a changé la donne : ce portail gratuit d'échange n'existera pas sous la forme initialement prévue, et les factures électroniques doivent transiter par des plateformes immatriculées.
+
+Cet article répond honnêtement à la question. Oui, il existe des façons de se conformer sans acheter un logiciel de facturation complet. Mais ces solutions ont des limites concrètes, en temps passé comme en confort, qu'il faut connaître avant de choisir. Nous passons en revue ce qui reste possible sans logiciel dédié, ce qui ne l'est plus, et les options les plus simples pour les petites structures.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi la question se pose : la fin du portail gratuit d'échange
+
+À l'origine de la réforme, un scénario rassurait les petites entreprises : le [Portail public de facturation](/blog/quest-ce-que-ppf-portail-public-facturation) (PPF) devait offrir un service d'échange gratuit, permettant à chacun de déposer et de recevoir ses factures sans rien payer. Ce scénario a été abandonné. Le rôle du PPF a été recentré sur deux missions : tenir l'annuaire des entreprises, qui permet de router chaque facture vers la bonne destination, et concentrer les données transmises à l'administration fiscale.
+
+Conséquence directe : les factures électroniques transitent exclusivement par des plateformes de dématérialisation partenaires (PDP), immatriculées par l'administration fiscale et interopérables entre elles. Pour émettre une facture électronique à un client professionnel, il faut donc obligatoirement passer par une PDP, directement ou indirectement. Il n'existe pas de canal public et gratuit qui en tienne lieu.
+
+Le calendrier, lui, est connu : depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA établies en France doivent pouvoir recevoir des factures électroniques, et les grandes entreprises comme les ETI doivent aussi les émettre. Au 1er septembre 2027, l'obligation d'émission s'étendra aux PME, TPE et micro-entreprises.
+
+## Pourquoi Word, Excel et le PDF ne suffisent plus
+
+Une facture électronique au sens de la réforme n'est pas une facture envoyée par email. C'est un document dans un format structuré, lisible par une machine, transmis par le circuit des plateformes immatriculées. Les formats admis sont Factur-X (hybride associant un PDF lisible et des données XML), UBL et CII.
+
+Or Word, Excel ou un générateur de PDF classique produisent des documents destinés à des humains, pas des données structurées. Ils ne créent ni le fichier XML attendu, ni la connexion au circuit de transmission, ni le suivi des statuts de la facture. Vous pourrez toujours utiliser ces outils pour préparer vos montants ou vos brouillons, mais le document qui circule officiellement devra être produit et transmis autrement.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un PDF envoyé par email ne sera plus une facture conforme">
+    À partir de votre échéance d'émission, adresser un simple PDF par email à un client professionnel ne répondra plus à l'obligation. La facture doit être émise dans un format structuré admis (Factur-X, UBL ou CII) et transiter par une plateforme de dématérialisation partenaire. Le défaut de facturation électronique est sanctionné par une amende de 15 € par facture, plafonnée à 15 000 € par an.
+  </Callout>
+</div>
+
+## Ce qui reste possible sans logiciel de facturation dédié
+
+Faut-il pour autant obligatoirement s'abonner à un logiciel complet ? Pas nécessairement. Trois voies permettent de se conformer sans installer d'outil de facturation à part entière.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Passer par la plateforme de son expert-comptable</strong> : beaucoup de cabinets sont raccordés à une PDP et proposent à leurs clients d'émettre et de recevoir leurs factures via ce canal. Vous transmettez les éléments de facturation, le circuit électronique est géré par le cabinet.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Utiliser le portail web d'une PDP</strong> : certaines plateformes proposent une interface en ligne où l'on saisit ses factures manuellement, champ par champ. La plateforme génère le format structuré et transmet la facture. C'est fonctionnel, mais entièrement manuel.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>S'appuyer sur l'outil imposé par un grand client</strong> : certains donneurs d'ordre invitent leurs fournisseurs à saisir leurs factures sur leur propre plateforme. Cela peut dépanner pour un client donné, mais ne couvre pas le reste de votre activité.</span>
+  </div>
+</div>
+
+Dans les trois cas, notez un point important : vous utilisez quand même un outil, celui de quelqu'un d'autre. La question n'est donc pas vraiment « avec ou sans logiciel », mais plutôt « quel outil, géré par qui, avec quel niveau de confort et de dépendance ».
+
+## Les limites concrètes d'une gestion sans logiciel dédié
+
+Se passer d'un logiciel de facturation est possible sur le papier, mais le quotidien révèle vite les frictions.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Gérer sa facturation électronique avec ou sans logiciel dédié</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Aspect</TableHead>
+        <TableHead>Sans logiciel dédié</TableHead>
+        <TableHead>Avec un logiciel de facturation</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Création des factures</TableCell>
+        <TableCell>Saisie manuelle champ par champ, ou transmission au cabinet</TableCell>
+        <TableCell>Modèles, clients enregistrés, devis transformés en factures</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Suivi des statuts</TableCell>
+        <TableCell>Consultation dispersée, plateforme par plateforme</TableCell>
+        <TableCell>Vue centralisée : émise, reçue, rejetée, payée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Factures reçues</TableCell>
+        <TableCell>Ressaisie manuelle dans son suivi comptable</TableCell>
+        <TableCell>Intégration automatique des données</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">E-reporting (B2C, international)</TableCell>
+        <TableCell>À organiser soi-même ou via le cabinet</TableCell>
+        <TableCell>Géré dans le même outil</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Dépendance</TableCell>
+        <TableCell>Forte : cabinet ou plateforme d'un tiers</TableCell>
+        <TableCell>Faible : vous gardez la main sur vos données</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Trois limites méritent d'être soulignées. D'abord, la ressaisie : sans outil connecté, chaque facture émise ou reçue implique une saisie manuelle, source d'erreurs et de temps perdu. Ensuite, le suivi des statuts : le circuit électronique génère des statuts de traitement (facture déposée, rejetée, encaissée) qu'il faut surveiller ; sans tableau de bord, ce suivi devient vite artisanal. Enfin, l'e-reporting : si vous vendez à des particuliers ou à l'international, vous devez transmettre des données de transactions à l'administration, et chaque transmission manquante est sanctionnée par une amende de 250 €, plafonnée à 15 000 € par an. Organiser cela à la main, durablement, est rarement réaliste.
+
+## Cas pratique : un micro-entrepreneur consultant
+
+Prenons l'exemple d'un consultant en micro-entreprise, qui facture chaque mois cinq à six clients professionnels. Jusqu'ici, il crée ses factures dans un tableur, les exporte en PDF et les envoie par email. Son obligation d'émission arrive au 1er septembre 2027.
+
+Première option : il confie sa facturation à son expert-comptable, raccordé à une PDP. Chaque fin de mois, il transmet les informations de ses prestations, le cabinet établit et transmet les factures. C'est conforme, mais il perd en réactivité : impossible d'envoyer une facture le jour même d'une fin de mission, et chaque modification passe par un aller-retour avec le cabinet, qui facture ce service.
+
+Deuxième option : il saisit ses factures sur le portail web d'une PDP. C'est conforme aussi, mais il ressaisit à chaque fois les coordonnées de ses clients et les lignes de prestation, sans lien avec ses devis ni son suivi d'encaissement.
+
+Troisième option : il adopte un logiciel de facturation simple incluant l'accès à une PDP. Ses clients sont enregistrés une fois, ses devis se transforment en factures en un clic, la transmission et les statuts sont gérés automatiquement. Pour un volume même modeste, c'est l'option qui lui coûte le moins de temps chaque mois. Pour comparer précisément ces scénarios en euros et en heures, consultez notre analyse du [coût de la facturation électronique](/blog/combien-coute-facturation-electronique).
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Le bon critère : le temps passé par facture">
+    Pour choisir entre ces options, calculez le temps que chaque facture vous coûte de bout en bout : création, transmission, suivi, encaissement. Une solution « gratuite » qui demande vingt minutes par facture revient plus cher qu'un abonnement qui ramène ce temps à deux minutes.
+  </Callout>
+</div>
+
+## Comment choisir sa porte d'entrée vers le circuit électronique
+
+Que vous passiez par votre expert-comptable, par le portail d'une plateforme ou par un logiciel, vous devrez de toute façon être relié à une PDP. Les critères de choix (interopérabilité, fonctionnalités incluses, adaptation à la taille de votre entreprise, tarification) sont détaillés dans notre guide pour [choisir sa plateforme de dématérialisation](/blog/comment-choisir-sa-pdp-plateforme-dematerialisation).
+
+Pour une petite structure, le raisonnement se résume souvent ainsi : si votre volume de factures est très faible et que votre cabinet propose un service clef en main à un tarif raisonnable, déléguer peut suffire. Dès que vous émettez régulièrement des factures, que vous faites des devis, ou que vous voulez suivre vos paiements, un logiciel simple devient l'option la plus économique en temps comme en argent.
+
+## Comment Newbi rend la facturation électronique aussi simple que sans logiciel
+
+L'objection principale au logiciel, c'est la complexité. Newbi a précisément été conçu pour les indépendants et les TPE qui veulent la simplicité du « sans logiciel » avec la conformité en plus. La solution s'appuie sur une plateforme de dématérialisation partenaire : vous créez vos factures et vos devis dans une interface simple, et leur transmission par le circuit officiel est gérée automatiquement, sans paramétrage technique de votre côté.
+
+Newbi va plus loin que la seule émission : l'OCR des justificatifs extrait les données de vos factures d'achats sans ressaisie, la synchronisation bancaire rapproche vos paiements de vos factures, et la gestion des achats centralise vos documents fournisseurs. Autrement dit, l'outil absorbe justement les tâches manuelles qui rendent la gestion « sans logiciel » si coûteuse en temps.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Gérer la facturation électronique totalement sans outil n'est pas possible : le Portail public de facturation ne joue pas le rôle de plateforme d'échange gratuite, et toute facture électronique doit transiter par une plateforme de dématérialisation partenaire, dans un format structuré (Factur-X, UBL ou CII) que Word, Excel ou un PDF classique ne produisent pas. Il reste possible de se conformer sans logiciel de facturation dédié, en passant par la PDP de son expert-comptable ou par le portail web d'une plateforme, mais au prix d'une ressaisie systématique, d'un suivi des statuts dispersé et d'une gestion de l'e-reporting à organiser soi-même. Pour la plupart des petites structures, un logiciel simple incluant l'accès à une PDP reste la voie la plus économique en temps, et la plus sûre face aux sanctions.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur la facturation électronique sans logiciel
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Existe-t-il un portail public gratuit pour envoyer ses factures électroniques ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le Portail public de facturation n'est plus une plateforme d'échange gratuite comme initialement prévu. Son rôle a été recentré sur l'annuaire des entreprises et la concentration des données pour l'administration fiscale. L'échange des factures passe par des plateformes de dématérialisation partenaires, immatriculées et interopérables entre elles.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Puis-je continuer à facturer avec Word ou Excel ?</AccordionTrigger>
+      <AccordionContent>
+        Vous pouvez continuer à les utiliser pour préparer vos montants ou vos brouillons, mais pas pour émettre la facture officielle à un client professionnel à partir de votre échéance. La facture doit être produite dans un format structuré admis (Factur-X, UBL ou CII) et transmise via une plateforme de dématérialisation partenaire, ce que ces outils bureautiques ne font pas.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Mon expert-comptable peut-il gérer ma facturation électronique à ma place ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est l'une des options possibles : de nombreux cabinets sont raccordés à une PDP et proposent d'émettre et de recevoir les factures de leurs clients. Cette délégation a toutefois un coût et réduit votre réactivité, chaque facture ou modification passant par le cabinet. Elle convient surtout aux très faibles volumes.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un micro-entrepreneur est-il concerné par ces obligations ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Comme toutes les entreprises assujetties à la TVA établies en France, un micro-entrepreneur doit pouvoir recevoir des factures électroniques depuis le 1er septembre 2026, et devra en émettre pour ses clients professionnels à partir du 1er septembre 2027. Les ventes aux particuliers relèvent quant à elles de l'e-reporting.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que risque-t-on à ne rien mettre en place ?</AccordionTrigger>
+      <AccordionContent>
+        Le défaut de facturation électronique est sanctionné par une amende de 15 € par facture, plafonnée à 15 000 € par année civile. Le non-respect de l'e-reporting entraîne une amende de 250 € par transmission manquante, avec le même plafond annuel. S'y ajoutent des risques opérationnels : factures rejetées, retards de paiement et tensions de trésorerie.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

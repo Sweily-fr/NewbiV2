@@ -1,0 +1,176 @@
+---
+title: >-
+  Facturation électronique : quelles données l'administration fiscale
+  voit-elle ?
+description: >-
+  Montants, TVA, identités des parties : la liste exacte des données de
+  facturation transmises au fisc, ce qui reste confidentiel, et ce que cela
+  change pour les contrôles fiscaux.
+date: '2026-11-27'
+category: guide
+sector: null
+keyword: facturation électronique données transmises administration
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-27'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturation électronique : quelles données l'administration fiscale voit-elle ?
+
+Avec la **facturation électronique, les données transmises à l'administration** fiscale sont au coeur des interrogations des dirigeants. Beaucoup imaginent que le fisc va désormais lire chaque facture dans le détail, connaître le contenu précis de chaque prestation vendue et surveiller l'activité de l'entreprise en temps réel. La réalité est plus mesurée : la réforme organise la remontée d'un socle de données de facturation bien défini, à des fins précises, sans transformer chaque facture en dossier ouvert.
+
+Ce guide fait le point de manière factuelle : quelles données remontent réellement vers l'administration, par quel circuit, à quoi elles servent, et ce qui ne fait pas partie du coeur des données exploitées. Vous verrez aussi ce que cette transparence nouvelle implique concrètement pour la cohérence entre votre facturation, votre comptabilité et vos déclarations de TVA.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Le circuit de transmission : qui envoie quoi à qui
+
+Pour comprendre ce que voit l'administration, il faut d'abord comprendre le chemin des factures. Depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA établies en France doivent pouvoir recevoir des factures électroniques, et les grandes entreprises et ETI doivent aussi les émettre. Les PME, TPE et micro-entreprises seront soumises à l'obligation d'émission le 1er septembre 2027.
+
+Les factures ne transitent pas directement par les serveurs de l'administration. Elles circulent entre des plateformes de dématérialisation partenaires (PDP), immatriculées par l'administration fiscale et interopérables entre elles. Ce sont ces plateformes qui extraient les données de facturation pertinentes et les transmettent à l'administration.
+
+Le [Portail public de facturation](/blog/quest-ce-que-ppf-portail-public-facturation) (PPF) joue ici un rôle central mais recentré : il n'est plus la plateforme d'échange gratuite initialement envisagée. Son rôle se concentre sur deux missions : tenir l'annuaire des entreprises, qui permet de router chaque facture vers la bonne plateforme, et concentrer les données transmises par les PDP pour le compte de l'administration fiscale.
+
+## La liste des données qui remontent à l'administration
+
+Le socle de données transmises via le circuit électronique porte sur les éléments d'identification et les agrégats financiers de chaque facture. Voici ce qui remonte concrètement :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>L'identification des parties</strong> : le fournisseur et le client sont identifiés, notamment par leur numéro SIREN.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Les montants</strong> : montant hors taxes, montant de la TVA et montant toutes taxes comprises de la facture.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Les taux de TVA</strong> : les taux appliqués aux opérations facturées.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Les dates</strong> : les dates portées sur la facture, qui permettent de rattacher les opérations aux bonnes périodes de déclaration.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Le numéro de facture</strong> : la référence unique du document, indispensable au suivi et aux recoupements.</span>
+  </div>
+</div>
+
+Un point mérite d'être souligné : le détail des lignes de facture, c'est-à-dire les désignations précises des produits vendus ou des prestations réalisées, n'est pas au coeur des données exploitées par l'administration pour le pré-remplissage de la TVA. Ce qui intéresse le fisc, ce sont les agrégats : qui a facturé qui, pour quels montants, avec quels taux de TVA et à quelles dates.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Votre savoir-faire commercial n'est pas l'objet de la collecte">
+    Les conditions négociées avec un client, le contenu détaillé de vos prestations ou la structure fine de vos offres ne constituent pas le coeur des données exploitées par l'administration. La collecte vise les éléments nécessaires au contrôle de la TVA et au pré-remplissage des déclarations, pas l'analyse de votre stratégie commerciale.
+  </Callout>
+</div>
+
+## À quoi servent ces données : deux objectifs affichés
+
+L'administration fiscale poursuit deux objectifs clairement affichés avec cette collecte.
+
+Le premier est la lutte contre la fraude à la TVA. En croisant les données d'émission et de réception des factures entre entreprises, l'administration peut détecter beaucoup plus vite les incohérences : TVA facturée mais jamais reversée, circuits de facturation fictifs, écarts entre ce qu'un fournisseur déclare avoir vendu et ce que ses clients déclarent avoir acheté. La transmission systématique des montants et des identités des parties rend ces recoupements automatisables.
+
+Le second objectif est le pré-remplissage des déclarations de TVA. Puisque l'administration reçoit les montants HT, la TVA et les taux appliqués sur les factures émises et reçues, elle peut proposer aux entreprises des déclarations pré-remplies, sur le modèle de ce qui existe déjà pour l'impôt sur le revenu des particuliers. Ce chantier, détaillé dans notre article sur la [déclaration de TVA pré-remplie](/blog/declaration-tva-pre-remplie-facture-electronique), est l'une des contreparties concrètes de la réforme pour les entreprises : moins de ressaisie, moins d'erreurs de report.
+
+Il faut ajouter un troisième canal de collecte : l'e-reporting. Les opérations qui ne passent pas par le circuit des factures électroniques interentreprises, c'est-à-dire les ventes aux particuliers (B2C) et les opérations internationales, font l'objet d'une transmission de données spécifique. Le fonctionnement, le périmètre et le calendrier de cette obligation sont détaillés dans notre guide sur [l'e-reporting](/blog/e-reporting-definition-obligations-calendrier). L'objectif est le même : donner à l'administration une vision cohérente de l'activité soumise à TVA, y compris hors factures B2B domestiques.
+
+## Ce que cela change pour les contrôles fiscaux
+
+Faut-il craindre une surveillance permanente ? La réponse honnête est nuancée. L'administration ne lira pas chaque facture au fil de l'eau, mais elle disposera d'une matière première considérable pour cibler ses contrôles. Les écarts entre les données de facturation transmises et les déclarations de TVA déposées seront visibles beaucoup plus tôt et beaucoup plus facilement qu'aujourd'hui.
+
+La conséquence pratique pour votre entreprise tient en un mot : cohérence. Vos factures, votre comptabilité et vos déclarations de TVA doivent raconter la même histoire, avec les mêmes chiffres, sur les mêmes périodes. Les pratiques approximatives qui passaient inaperçues, comme une facture comptabilisée sur la mauvaise période ou une TVA déclarée avec retard, deviendront détectables par simple recoupement automatique.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="La cohérence devient vérifiable automatiquement">
+    Puisque l'administration reçoit les montants et les dates de vos factures par le circuit électronique, tout écart durable entre vos factures émises et votre TVA déclarée peut déclencher une demande d'explication. Le meilleur réflexe est de tenir sa facturation et sa comptabilité dans un même outil, ou dans des outils synchronisés, pour éliminer les divergences à la source.
+  </Callout>
+</div>
+
+Vu autrement, c'est aussi une protection pour les entreprises rigoureuses : un dossier cohérent, alimenté automatiquement par les données de facturation, se défend beaucoup plus facilement en cas de contrôle qu'une comptabilité reconstituée a posteriori.
+
+## Cas pratique : une consultante indépendante face à la remontée de données
+
+Prenons l'exemple d'une consultante en ressources humaines, en entreprise individuelle, qui facture des missions à des PME et à quelques grands comptes. À partir du moment où ses factures passent par le circuit électronique, voici ce qui se passe concrètement.
+
+Quand elle facture 4 500 € HT une mission d'accompagnement à une PME, sa plateforme de dématérialisation transmet la facture à celle de son client et fait remonter à l'administration les données du socle : son SIREN et celui de son client, le montant HT de 4 500 €, la TVA de 900 €, le montant TTC de 5 400 €, le taux de 20 %, la date et le numéro de la facture. Le contenu détaillé de sa mission, le nombre de jours vendus ou son taux journalier ne font pas partie du coeur des données exploitées pour le pré-remplissage.
+
+Au moment de sa déclaration de TVA, l'administration connaît déjà, par agrégation, le total de la TVA qu'elle a facturée sur la période. Si sa déclaration correspond, tout est cohérent. Si elle oublie une facture ou décale une période, l'écart est mécaniquement visible. Pour elle, le vrai changement n'est pas une surveillance nouvelle, mais l'obligation d'une rigueur continue : facturer proprement, dans un outil qui garde tout aligné, plutôt que de reconstituer ses chiffres en fin de trimestre.
+
+## Comment Newbi vous aide à garder des données propres et cohérentes
+
+Newbi accompagne les indépendants et les TPE dans cette nouvelle exigence de cohérence. La solution s'appuie sur une plateforme de dématérialisation partenaire pour émettre des factures et des devis conformes au circuit électronique : les données qui remontent à l'administration sont exactement celles de vos factures, sans ressaisie ni divergence possible.
+
+Au-delà de l'émission, Newbi centralise ce qui fait la cohérence de votre dossier : la gestion de vos achats, l'OCR de vos justificatifs pour intégrer vos factures fournisseurs sans saisie manuelle, et la synchronisation bancaire pour rapprocher vos factures de vos encaissements réels. Résultat : vos factures, vos justificatifs et vos mouvements bancaires restent alignés, ce qui simplifie vos déclarations et sécurise votre position en cas de contrôle.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Avec la facturation électronique, l'administration fiscale reçoit un socle de données bien défini pour chaque facture : identification des parties par leur SIREN, montants HT, TVA et TTC, taux de TVA, dates et numéro de facture. Ces données transitent par les plateformes de dématérialisation partenaires et sont concentrées par le Portail public de facturation, dont le rôle a été recentré sur l'annuaire des entreprises et la collecte pour l'administration. Le détail des lignes de facture, lui, n'est pas au coeur des données exploitées pour le pré-remplissage de la TVA. Les objectifs affichés sont la lutte contre la fraude à la TVA et le pré-remplissage des déclarations, complétés par l'e-reporting pour les ventes aux particuliers et l'international. Pour votre entreprise, l'enjeu principal est la cohérence entre facturation, comptabilité et déclarations : un bon outil de facturation la garantit à la source.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les données transmises à l'administration
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>L'administration fiscale lit-elle le contenu détaillé de mes factures ?</AccordionTrigger>
+      <AccordionContent>
+        Le circuit de la facturation électronique fait remonter un socle de données : identification des parties par leur SIREN, montants HT, TVA et TTC, taux de TVA, dates et numéro de facture. Le détail des lignes, c'est-à-dire les désignations précises de vos produits ou prestations, n'est pas au coeur des données exploitées par l'administration pour le pré-remplissage de la TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>À quoi servent les données de facturation transmises au fisc ?</AccordionTrigger>
+      <AccordionContent>
+        Deux objectifs sont affichés : la lutte contre la fraude à la TVA, grâce au recoupement automatique des factures émises et reçues entre entreprises, et le pré-remplissage des déclarations de TVA, rendu possible par la remontée des montants et des taux appliqués sur chaque facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Mes ventes aux particuliers remontent-elles aussi à l'administration ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, mais par un autre canal : l'e-reporting. Les opérations avec les particuliers (B2C) et les opérations internationales ne passent pas par le circuit des factures électroniques interentreprises, mais font l'objet d'une transmission de données spécifique à l'administration. Le non-respect de cette obligation est sanctionné par une amende de 250 € par transmission manquante, plafonnée à 15 000 € par an.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quel est le rôle du Portail public de facturation dans la collecte des données ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF n'est plus une plateforme d'échange gratuite de factures. Son rôle a été recentré sur deux missions : tenir l'annuaire des entreprises, qui permet de router les factures vers la bonne plateforme, et concentrer les données de facturation transmises par les plateformes de dématérialisation partenaires pour le compte de l'administration fiscale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>La transmission des données augmente-t-elle mon risque de contrôle fiscal ?</AccordionTrigger>
+      <AccordionContent>
+        Elle rend surtout les incohérences plus visibles : un écart entre vos factures et vos déclarations de TVA peut être détecté par recoupement automatique. Pour une entreprise rigoureuse, dont la facturation, la comptabilité et les déclarations sont alignées, c'est plutôt une protection : le dossier est cohérent et vérifiable. Le bon réflexe est d'utiliser un outil qui garde ces trois éléments synchronisés.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
