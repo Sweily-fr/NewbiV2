@@ -1,0 +1,175 @@
+---
+title: >-
+  Peut-on changer de PDP ? Portabilité, résiliation et bonnes pratiques
+description: >-
+  Changer de plateforme de dématérialisation partenaire est possible à tout
+  moment : préavis, mise à jour de l'annuaire, récupération des factures et
+  pièges à éviter.
+date: '2026-12-04'
+category: guide
+sector: null
+keyword: changer de pdp plateforme dématérialisation
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-12-04'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Peut-on changer de PDP ? Portabilité, résiliation et bonnes pratiques
+
+**Changer de PDP**, c'est-à-dire de plateforme de dématérialisation partenaire, est une question que beaucoup de dirigeants se posent au moment de s'engager dans la facturation électronique. Le choix d'une plateforme peut donner l'impression d'un engagement définitif : si mes factures passent par cet acteur, suis-je lié à lui pour toujours ? La réponse est non. Le dispositif a été pensé pour que les entreprises puissent changer de plateforme, et l'annuaire central garantit que les factures suivent l'entreprise, pas la plateforme.
+
+Changer de PDP reste néanmoins une opération à préparer : conditions contractuelles de l'ancienne plateforme, mise à jour de l'annuaire, récupération et archivage des factures, période de transition. Ce guide détaille les étapes d'un changement réussi, les pièges classiques à éviter, et illustre le tout avec le cas concret d'une PME qui change d'outil de facturation.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Oui, changer de PDP est possible : ce que prévoit le dispositif
+
+Le circuit de la facturation électronique repose sur des plateformes de dématérialisation partenaires immatriculées par l'administration fiscale et interopérables entre elles. Aucune entreprise n'est captive d'une plateforme : le lien entre une entreprise et sa PDP est un lien contractuel classique, que l'on peut résilier et remplacer.
+
+La clé de cette liberté, c'est l'annuaire des entreprises, tenu par le Portail public de facturation. Cet annuaire indique, pour chaque entreprise, la plateforme qui reçoit ses factures. Quand vous changez de PDP, l'annuaire est mis à jour : vos fournisseurs n'ont rien à faire, leurs plateformes routent automatiquement les factures vers votre nouvelle destination. Le fonctionnement détaillé de ce mécanisme est expliqué dans notre article sur [l'annuaire de la facturation électronique](/blog/annuaire-facturation-electronique-a-quoi-sert).
+
+Autrement dit, la portabilité est intégrée au dispositif : votre identité dans le circuit, c'est votre entreprise, identifiée notamment par son SIREN, pas votre plateforme. Celle-ci n'est qu'un prestataire technique que vous pouvez remplacer.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Choisir ne veut pas dire s'enfermer">
+    Le choix initial d'une plateforme est important, mais il n'est pas irréversible. Si votre outil ne vous convient plus, si ses tarifs évoluent ou si vos besoins changent, vous pouvez migrer. Cela doit vous encourager à choisir sereinement, sur la base de vos besoins actuels, plutôt que de retarder votre mise en conformité par peur de vous tromper.
+  </Callout>
+</div>
+
+## Les étapes d'un changement de PDP réussi
+
+Un changement de plateforme se déroule en cinq étapes, à mener dans le bon ordre.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>1. Choisissez votre nouvelle plateforme</strong> : comparez les fonctionnalités, les tarifs et l'intégration avec vos outils avant de résilier quoi que ce soit. Notre guide pour [choisir sa plateforme de dématérialisation](/blog/comment-choisir-sa-pdp-plateforme-dematerialisation) détaille les critères à examiner.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>2. Relisez le contrat de votre plateforme actuelle</strong> : durée d'engagement, préavis de résiliation, frais éventuels, et surtout modalités de restitution de vos données et de vos factures.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>3. Récupérez et archivez vos factures</strong> : exportez l'ensemble de vos factures émises et reçues, avec leurs données, avant toute résiliation. C'est l'étape la plus critique du processus.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>4. Faites mettre à jour l'annuaire</strong> : votre rattachement à la nouvelle plateforme doit être enregistré pour que les factures de vos fournisseurs soient routées vers elle.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>5. Organisez une période de transition</strong> : gardez un accès à l'ancienne plateforme pendant quelques semaines si possible, le temps de vérifier que tout arrive bien au nouvel endroit et que rien ne s'est perdu en route.</span>
+  </div>
+</div>
+
+L'ordre de ces étapes n'est pas un détail. Résilier d'abord et récupérer ses factures ensuite est le scénario à éviter absolument : une fois le contrat clos, l'accès à vos archives peut devenir compliqué, voire payant.
+
+## Les pièges à éviter lors d'un changement de plateforme
+
+Trois pièges reviennent régulièrement dans les changements de plateforme mal préparés.
+
+Le premier, on vient de le voir, est la résiliation prématurée. Vos factures sont des documents comptables et fiscaux que vous devez conserver : elles doivent être exportées, vérifiées et archivées de votre côté avant que le contrat avec l'ancienne plateforme ne prenne fin. Anticipez ce chantier, surtout si vous avez plusieurs années de factures sur la plateforme.
+
+Le deuxième piège est le chevauchement de routage pendant la transition. Entre le moment où vous activez la nouvelle plateforme et celui où l'annuaire est effectivement à jour, une facture peut encore être routée vers l'ancienne destination. Si vous n'y avez plus accès, elle reste en souffrance sans que vous le sachiez, avec à la clé des relances fournisseurs et des retards de paiement. D'où l'intérêt de maintenir les deux accès en parallèle pendant la bascule et de surveiller les deux boîtes de réception.
+
+Le troisième piège est de confondre les rôles des différents acteurs. Si vous passez par un opérateur de dématérialisation adossé à une PDP, ce qui est un montage courant, identifiez précisément qui détient votre rattachement dans l'annuaire et qui détient vos archives. La distinction entre ces deux types d'acteurs est expliquée dans notre article sur la [différence entre opérateur de dématérialisation et PDP](/blog/od-vs-pdp-operateur-dematerialisation-difference). Sans cette clarté, vous risquez de résilier le mauvais contrat ou d'oublier une brique du dispositif.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Ne résiliez jamais avant d'avoir récupéré vos archives">
+    C'est l'erreur la plus coûteuse d'un changement de plateforme. Vos factures émises et reçues doivent être exportées et archivées de votre côté avant la fin du contrat. Vérifiez que l'export est complet, lisible et exploitable, puis seulement, résiliez.
+  </Callout>
+</div>
+
+## Le calendrier joue pour vous : anticipez plutôt que subir
+
+Le contexte réglementaire rend la question de la portabilité d'autant plus concrète. Depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA établies en France doivent pouvoir recevoir des factures électroniques, et les grandes entreprises et ETI doivent aussi les émettre. Le 1er septembre 2027, l'obligation d'émission s'étendra aux PME, TPE et micro-entreprises.
+
+Beaucoup d'entreprises ont fait un premier choix de plateforme dans l'urgence de la première échéance. C'est normal, et c'est même la meilleure preuve que la portabilité a du sens : un premier choix rapide n'est pas une condamnation. Si votre solution actuelle se révèle mal adaptée, la période qui précède l'échéance de 2027 est un bon moment pour migrer, tant que votre volume de factures électroniques reste maîtrisé.
+
+À l'inverse, changer de plateforme au pire moment, par exemple en pleine clôture comptable ou dans les semaines qui précédent une échéance réglementaire, multiplie les risques. Programmez votre migration sur une période calme de votre activité, et prévoyez quelques semaines de marge.
+
+## Cas pratique : une PME de négoce change d'outil de facturation
+
+Prenons l'exemple d'une PME de négoce de matériel professionnel, une quinzaine de salariés, qui utilise depuis 2026 une plateforme choisie rapidement pour être prête à l'échéance de réception. Un an plus tard, le constat est mitigé : l'outil gère la réception des factures fournisseurs, mais il est mal intégré au logiciel de gestion commerciale et oblige à des ressaisies.
+
+La PME décide de migrer vers une solution plus intégrée. Voici comment elle procède. En septembre, elle sélectionne sa nouvelle solution et vérifie le contrat de l'ancienne : préavis de trois mois, restitution des données prévue sur demande. Elle pose sa résiliation pour la fin de l'année, ce qui lui laisse tout le trimestre pour organiser la bascule. En octobre, elle exporte l'intégralité de ses factures émises et reçues depuis 2026, contrôle les exports avec son expert-comptable et les archive. En novembre, le rattachement à la nouvelle plateforme est enregistré et l'annuaire mis à jour : les factures fournisseurs arrivent désormais au nouvel endroit. Pendant six semaines, une personne de l'équipe comptable surveille l'ancienne plateforme pour repérer d'éventuelles factures encore routées vers elle. Début janvier, la résiliation prend effet : les archives sont en sécurité, le routage est stabilisé, et la migration s'est faite sans perdre une seule facture.
+
+Ce scénario n'a rien d'exceptionnel : c'est simplement l'application des cinq étapes, dans le bon ordre, avec un calendrier réaliste.
+
+## Comment Newbi simplifie la question de la plateforme
+
+Newbi a fait le choix de masquer cette complexité pour les indépendants et les TPE : la solution s'appuie sur une plateforme de dématérialisation partenaire, et c'est Newbi qui gère l'intégration technique. Vous émettez vos factures et vos devis conformes depuis une interface simple, vous recevez vos factures fournisseurs, et le circuit électronique fonctionne sans que vous ayez à piloter vous-même une relation contractuelle avec une plateforme.
+
+Si vous envisagez de quitter votre solution actuelle, Newbi facilite aussi l'atterrissage : vos factures et devis sont créés et conservés dans l'outil, la gestion des achats et l'OCR des justificatifs centralisent vos documents entrants, et la synchronisation bancaire vous permet de suivre les paiements associés. Vous repartez sur une base propre, avec un historique consultable et exportable à tout moment, ce qui est précisément la bonne pratique numéro un de la portabilité.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Changer de plateforme de dématérialisation partenaire est possible : le dispositif a été conçu pour cela, et l'annuaire tenu par le Portail public de facturation garantit que les factures suivent l'entreprise quand son rattachement change. Un changement réussi suit cinq étapes dans l'ordre : choisir la nouvelle plateforme, relire les conditions contractuelles de l'ancienne, récupérer et archiver toutes ses factures, faire mettre à jour l'annuaire, puis organiser une période de transition avec surveillance des deux plateformes. Les deux pièges majeurs sont la résiliation avant récupération des archives et le chevauchement de routage pendant la bascule. Bien préparée, une migration se déroule en quelques semaines sans perte de factures ni rupture du circuit électronique.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le changement de PDP
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Peut-on changer de plateforme de dématérialisation à tout moment ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, sous réserve des conditions contractuelles de votre plateforme actuelle : durée d'engagement et préavis éventuels s'appliquent comme pour tout contrat de prestation. Le dispositif de la facturation électronique lui-même ne vous enferme pas : l'annuaire est mis à jour lors du changement et les factures sont routées vers votre nouvelle plateforme.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Mes fournisseurs doivent-ils faire quelque chose quand je change de PDP ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Vos fournisseurs adressent leurs factures à votre entreprise, pas à votre plateforme. Quand l'annuaire est mis à jour avec votre nouveau rattachement, leurs plateformes routent automatiquement les factures vers la nouvelle destination. C'est tout l'intérêt de l'annuaire central : la portabilité est transparente pour vos partenaires commerciaux.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Que deviennent mes anciennes factures quand je résilie ma plateforme ?</AccordionTrigger>
+      <AccordionContent>
+        C'est le point de vigilance principal. Vos factures sont des documents comptables et fiscaux à conserver : vous devez les exporter et les archiver de votre côté avant la résiliation. Relisez les modalités de restitution des données prévues dans votre contrat, faites un export complet, vérifiez-le, et ne résiliez qu'ensuite.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Combien de temps faut-il prévoir pour changer de plateforme ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend du préavis de votre contrat actuel et du volume de factures à récupérer, mais un calendrier de quelques semaines à un trimestre est réaliste pour une PME : sélection de la nouvelle solution, export et archivage des factures, mise à jour de l'annuaire, puis période de transition avec surveillance des deux plateformes. Évitez de migrer en période de clôture comptable ou juste avant une échéance réglementaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quel est le risque principal pendant la période de transition ?</AccordionTrigger>
+      <AccordionContent>
+        Le chevauchement de routage : tant que la mise à jour de l'annuaire n'est pas pleinement effective, une facture peut encore être routée vers votre ancienne plateforme. Si vous n'y avez plus accès, elle reste en souffrance sans que vous le sachiez. La parade est simple : conservez l'accès aux deux plateformes pendant la bascule et vérifiez régulièrement l'ancienne jusqu'à ce que plus rien n'y arrive.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

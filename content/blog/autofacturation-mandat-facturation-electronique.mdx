@@ -1,0 +1,219 @@
+---
+title: >-
+  Autofacturation et mandat de facturation : quelles règles avec la réforme ?
+description: >-
+  L'autofacturation et le mandat de facturation restent possibles avec la
+  facturation électronique, mais le circuit change : rôle des PDP,
+  responsabilités et mentions à respecter.
+date: '2026-11-23'
+category: glossaire
+sector: null
+keyword: autofacturation mandat facturation électronique
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-23'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Autofacturation et mandat de facturation : quelles règles avec la réforme ?
+
+L'**autofacturation et le mandat de facturation** sont deux pratiques bien installées dans la vie des entreprises : dans le premier cas, c'est le client qui établit la facture à la place de son fournisseur ; dans le second, c'est un tiers, par exemple un expert-comptable ou un logiciel de facturation, qui émet les factures au nom de l'entreprise. Avec la généralisation de la facturation électronique, beaucoup de dirigeants se demandent si ces mécanismes restent autorisés et comment ils s'articulent avec le nouveau circuit de transmission.
+
+La réponse est rassurante : l'autofacturation et le mandat de facturation restent parfaitement possibles dans le cadre de la réforme. Mais le chemin emprunté par les factures change, puisqu'elles transitent désormais par des plateformes de dématérialisation partenaires (PDP). Ce guide définit précisément chaque notion, explique ce qui change concrètement, ce qui ne change pas, et illustre le tout avec un cas pratique de sous-traitance.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Autofacturation : définition et cas d'usage
+
+L'autofacturation désigne la situation dans laquelle le client établit lui-même la facture pour le compte de son fournisseur. Ce n'est pas le vendeur qui rédige et envoie le document, mais l'acheteur, qui connaît souvent mieux que quiconque les quantités livrées, les prestations réalisées ou les conditions tarifaires négociées. Cette pratique repose sur un accord préalable entre les deux parties, généralement formalisé par un mandat : le fournisseur autorise expressément son client à facturer à sa place.
+
+L'autofacturation est courante dans plusieurs secteurs où le client centralise l'information nécessaire à la facturation :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>La grande distribution</strong> : les enseignes établissent souvent les factures de leurs fournisseurs à partir des livraisons effectivement reçues en entrepôt, ce qui limite les écarts et les litiges.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>La sous-traitance industrielle ou du bâtiment</strong> : le donneur d'ordre valide les travaux réalisés et génère la facture correspondante pour le compte de son sous-traitant.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Les plateformes et places de marché</strong> : la plateforme connaît le détail des ventes réalisées par chaque vendeur et peut facturer en son nom les commissions ou les prestations.</span>
+  </div>
+</div>
+
+Dans tous ces cas, un point essentiel demeure : même si c'est le client qui rédige le document, la facture reste juridiquement une facture du fournisseur. C'est lui qui vend, c'est lui qui collecte la TVA le cas échéant, et c'est lui qui doit s'assurer que le document est conforme.
+
+## Mandat de facturation : définition et différence avec l'autofacturation
+
+Le mandat de facturation est une notion voisine mais distincte. Ici, ce n'est pas le client qui facture, mais un tiers mandaté par le fournisseur : un expert-comptable, un centre de gestion, ou tout simplement un logiciel de facturation qui émet les documents au nom et pour le compte de l'entreprise. Le fournisseur délègue la matérialisation de ses factures, mais il en reste l'émetteur juridique.
+
+La différence entre les deux mécanismes tient donc à l'identité de celui qui établit la facture : le client dans l'autofacturation, un tiers mandaté dans le mandat de facturation. Dans les deux cas, la logique est la même : une délégation de la production du document, jamais une délégation de la responsabilité.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Autofacturation et mandat de facturation en un coup d'oeil</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Critère</TableHead>
+        <TableHead>Autofacturation</TableHead>
+        <TableHead>Mandat de facturation</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Qui établit la facture ?</TableCell>
+        <TableCell>Le client, à la place du fournisseur</TableCell>
+        <TableCell>Un tiers (expert-comptable, logiciel) au nom du fournisseur</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Base de la délégation</TableCell>
+        <TableCell>Mandat donné par le fournisseur à son client</TableCell>
+        <TableCell>Mandat donné par le fournisseur au tiers</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Responsabilité juridique</TableCell>
+        <TableCell>Le fournisseur reste responsable</TableCell>
+        <TableCell>Le fournisseur reste responsable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Compatible avec la réforme ?</TableCell>
+        <TableCell>Oui, via le circuit des PDP</TableCell>
+        <TableCell>Oui, via le circuit des PDP</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Ce que la réforme change pour ces deux mécanismes
+
+La réforme de la facturation électronique ne supprime ni l'autofacturation ni le mandat de facturation. En revanche, elle transforme le circuit par lequel les factures circulent. Depuis le 1er septembre 2026, toutes les entreprises assujetties à la TVA établies en France doivent pouvoir recevoir des factures électroniques, et les grandes entreprises et ETI doivent aussi les émettre au format électronique. Les PME, TPE et micro-entreprises seront à leur tour soumises à l'obligation d'émission le 1er septembre 2027.
+
+Concrètement, une facture établie en autofacturation ou via un mandat ne peut plus être un simple PDF échangé par email entre les parties : elle doit emprunter le circuit électronique, c'est-à-dire transiter par une [plateforme de dématérialisation partenaire](/blog/quest-ce-que-pdp-plateforme-dematerialisation) immatriculée par l'administration fiscale. Ces plateformes sont interopérables entre elles, et l'annuaire des entreprises, tenu par le Portail public de facturation, permet de router chaque facture vers la plateforme du destinataire.
+
+Le document lui-même doit respecter les formats admis par la réforme : Factur-X (hybride PDF et XML), UBL ou CII. Celui qui établit la facture, qu'il s'agisse du client autofacturant ou du tiers mandaté, doit donc être en mesure de produire un fichier structuré conforme et de le déposer dans le circuit des PDP.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Le circuit électronique s'impose aussi aux factures déléguées">
+    Une facture établie par votre client ou par votre expert-comptable suit exactement les mêmes règles qu'une facture que vous émettez vous-même : format structuré admis, transmission via une plateforme de dématérialisation partenaire, et transmission des données de facturation à l'administration. La délégation ne crée aucune exemption.
+  </Callout>
+</div>
+
+## Ce qui ne change pas : responsabilité et mentions
+
+Deux principes fondamentaux traversent la réforme sans être modifiés.
+
+Le premier concerne la responsabilité : le fournisseur reste juridiquement responsable de ses factures, même lorsqu'il ne les établit pas lui-même. Si une facture émise en son nom comporte une erreur de TVA, une mention manquante ou un montant inexact, c'est bien le fournisseur qui devra en répondre vis-à-vis de l'administration. D'où l'importance de bien choisir son mandataire et de garder un droit de regard sur les documents émis en son nom, par exemple via une procédure de validation ou de contestation prévue dans le mandat.
+
+Le second principe concerne le contenu du document. Une facture établie en autofacturation doit porter la mention « autofacturation », afin que le destinataire du document et l'administration sachent immédiatement que c'est le client qui l'a établie. Et comme toute facture, elle doit comporter l'ensemble des [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) : identification des parties, numéro de facture, dates, montants HT, TVA et TTC, taux de TVA applicables. Le passage au format électronique structuré ne réduit en rien ces exigences, il en facilite plutôt le contrôle automatique.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Un mandat écrit et préalable</strong> : la délégation de facturation doit être formalisée avant l'émission des premières factures concernées.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>La mention « autofacturation »</strong> : elle doit figurer sur chaque facture établie par le client à la place du fournisseur.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Toutes les mentions obligatoires habituelles</strong> : identification des parties, numérotation, dates, montants et taux de TVA restent exigés.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>La responsabilité du fournisseur</strong> : elle demeure entière, quel que soit celui qui établit matériellement le document.</span>
+  </div>
+</div>
+
+## Cas pratique : un sous-traitant du bâtiment autofacturé par son donneur d'ordre
+
+Prenons l'exemple d'un artisan plaquiste qui travaille en sous-traitance pour une entreprise générale du bâtiment. Depuis plusieurs années, les deux parties ont mis en place une autofacturation : à la fin de chaque mois, le donneur d'ordre valide les situations de travaux et établit lui-même la facture correspondante, au nom du plaquiste, sur la base d'un mandat signé.
+
+Avec la réforme, le fonctionnement de fond ne change pas : le mandat reste valable et le donneur d'ordre continue d'établir les factures. Ce qui change, c'est le circuit. Le donneur d'ordre, s'il est une grande entreprise ou une ETI, doit depuis le 1er septembre 2026 produire ces factures au format électronique structuré et les déposer sur sa plateforme de dématérialisation partenaire. La facture est ensuite routée, via l'annuaire, vers la plateforme du plaquiste, qui la reçoit dans son outil de facturation ou de comptabilité.
+
+Le plaquiste, de son côté, a deux points de vigilance. D'abord, vérifier que chaque facture établie en son nom porte bien la mention « autofacturation » et l'ensemble des mentions obligatoires, car c'est lui qui reste responsable en cas de manquement. Ensuite, s'assurer que ces factures remontent correctement dans sa propre comptabilité et dans ses déclarations de TVA : une facture qu'il n'a pas rédigée reste un chiffre d'affaires qu'il doit déclarer. Un point de contrôle mensuel avec son expert-comptable, dont le rôle est détaillé dans notre article sur [l'expert-comptable et la facturation électronique](/blog/facture-electronique-expert-comptable-role), suffit généralement à sécuriser le dispositif.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Relisez vos mandats avant les échéances">
+    Si vous êtes autofacturé par un client ou si un tiers facture en votre nom, profitez de la période de transition pour relire le mandat : prévoit-il le passage au circuit électronique, le format utilisé, la plateforme de dépôt, et une procédure de contestation des factures émises en votre nom ? Une mise à jour du document évite bien des ambiguïtés.
+  </Callout>
+</div>
+
+## Comment Newbi accompagne les entreprises dans le circuit électronique
+
+Newbi aide les indépendants et les TPE à s'insérer dans le nouveau circuit de facturation sans complexité technique. La solution s'appuie sur une plateforme de dématérialisation partenaire, ce qui permet d'émettre des factures et des devis conformes aux exigences de la réforme et de recevoir les factures de vos fournisseurs au format structuré, y compris celles établies en autofacturation par un client ou via un mandat.
+
+Pour les entreprises qui délèguent leur facturation, Newbi joue précisément le rôle du tiers qui émet en votre nom : vous gardez la main sur vos documents et leur validation, pendant que l'outil se charge de la conformité des formats et de la transmission. La gestion des achats, l'OCR des justificatifs et la synchronisation bancaire complètent le dispositif pour garder une comptabilité cohérente, même quand plusieurs acteurs interviennent dans l'établissement de vos factures.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+L'autofacturation, dans laquelle le client établit la facture à la place de son fournisseur, et le mandat de facturation, dans lequel un tiers comme un expert-comptable ou un logiciel émet au nom de l'entreprise, restent pleinement possibles avec la réforme de la facturation électronique. Ce qui change, c'est le circuit : les factures doivent être produites dans un format admis (Factur-X, UBL ou CII) et transiter par des plateformes de dématérialisation partenaires immatriculées et interopérables. Ce qui ne change pas, c'est l'essentiel : le fournisseur reste juridiquement responsable de ses factures, la mention « autofacturation » demeure exigée quand le client facture, et toutes les mentions obligatoires continuent de s'appliquer. Relire ses mandats et choisir un outil compatible sont les deux meilleurs réflexes pour aborder sereinement les échéances de 2026 et 2027.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'autofacturation et le mandat de facturation
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>L'autofacturation reste-t-elle autorisée avec la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. La réforme ne supprime pas l'autofacturation : le client peut toujours établir la facture à la place de son fournisseur, sur la base d'un mandat. La facture doit simplement être produite dans un format électronique admis et transiter par une plateforme de dématérialisation partenaire, comme n'importe quelle autre facture interentreprises.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Qui est responsable en cas d'erreur sur une facture établie par un tiers ?</AccordionTrigger>
+      <AccordionContent>
+        Le fournisseur. Que la facture soit établie par son client en autofacturation ou par un tiers mandaté comme un expert-comptable ou un logiciel, le fournisseur reste juridiquement responsable de ses factures. Il a donc tout intérêt à prévoir dans le mandat une procédure de validation ou de contestation des documents émis en son nom.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle est la différence entre autofacturation et mandat de facturation ?</AccordionTrigger>
+      <AccordionContent>
+        Dans l'autofacturation, c'est le client qui établit la facture à la place du fournisseur, avec son accord. Dans le mandat de facturation, c'est un tiers, par exemple un expert-comptable ou un logiciel de facturation, qui émet les factures au nom et pour le compte de l'entreprise. Dans les deux cas, la délégation porte sur l'établissement du document, jamais sur la responsabilité juridique, qui reste au fournisseur.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Une facture en autofacturation doit-elle porter une mention particulière ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Une facture établie par le client à la place du fournisseur doit porter la mention « autofacturation », en plus de l'ensemble des mentions obligatoires habituelles : identification des parties, numéro de facture, dates, montants HT, TVA et TTC, taux de TVA. Le passage au format électronique structuré ne modifie pas ces exigences.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Mon logiciel de facturation peut-il émettre mes factures à ma place dans le circuit électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est précisément le principe du mandat de facturation. Un logiciel comme Newbi, adossé à une plateforme de dématérialisation partenaire, peut produire vos factures au format structuré et les transmettre dans le circuit électronique en votre nom. Vous restez l'émetteur juridique des documents et vous conservez la validation et le suivi de vos factures.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

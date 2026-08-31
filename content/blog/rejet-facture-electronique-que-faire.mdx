@@ -1,0 +1,234 @@
+---
+title: >-
+  Facture électronique rejetée ou refusée : que faire ?
+description: >-
+  Rejet technique par la plateforme ou refus par le client : les causes les
+  plus fréquentes, la marche à suivre pour corriger, et comment éviter les
+  rejets de factures électroniques.
+date: '2026-11-13'
+category: guide
+sector: null
+keyword: facture électronique rejetée refusée
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-11-13'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture électronique rejetée ou refusée : que faire ?
+
+Une **facture électronique rejetée ou refusée** n'est pas une catastrophe, mais elle demande une réaction rapide et adaptée. Dans le circuit de la facturation électronique, chaque facture suit un cycle de vie avec des statuts précis, et deux d'entre eux signalent qu'un problème est survenu : le rejet, qui est un blocage technique avant que la facture n'atteigne votre client, et le refus, qui est une décision de votre client après réception. Deux situations très différentes, qui appellent deux réponses très différentes.
+
+Si vous êtes indépendant ou dirigeant de TPE, comprendre cette distinction vous évitera bien des pertes de temps : on ne traite pas un SIREN introuvable dans l'annuaire comme on traite un désaccord commercial sur un montant. Ce guide passe en revue les causes les plus fréquentes de rejet et de refus, la marche à suivre dans chaque cas, et surtout les bons réflexes pour que vos factures passent du premier coup.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Rejet et refus : deux situations à ne pas confondre
+
+Dans le circuit électronique, votre facture est déposée sur votre plateforme de dématérialisation partenaire (PDP), qui la contrôle puis l'achemine vers la plateforme de votre client. À chaque étape, la facture change de statut : déposée, rejetée, refusée, encaissée... Nous détaillons l'ensemble de ce parcours dans notre guide sur les [statuts et le cycle de vie d'une facture électronique](/blog/statuts-cycle-de-vie-facture-electronique). Pour bien réagir, il faut d'abord identifier lequel de ces deux statuts d'anomalie votre facture a reçu.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Rejet et refus d'une facture électronique : les différences essentielles</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[160px]">Critère</TableHead>
+        <TableHead>Rejet</TableHead>
+        <TableHead>Refus</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Nature</TableCell>
+        <TableCell>Blocage technique</TableCell>
+        <TableCell>Décision du client</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Moment</TableCell>
+        <TableCell>Avant la mise à disposition au client</TableCell>
+        <TableCell>Après réception par le client</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Qui en est à l'origine</TableCell>
+        <TableCell>La plateforme, lors des contrôles</TableCell>
+        <TableCell>Le destinataire de la facture</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Causes typiques</TableCell>
+        <TableCell>Format invalide, destinataire introuvable, mentions manquantes</TableCell>
+        <TableCell>Désaccord commercial : montant, prestation, commande contestée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Réponse adaptée</TableCell>
+        <TableCell>Corriger l'anomalie et réémettre</TableCell>
+        <TableCell>Dialoguer, puis émettre un avoir si nécessaire</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Retenez la règle simple : un rejet signifie que votre facture n'est jamais vraiment arrivée à destination, tandis qu'un refus signifie qu'elle est bien arrivée mais que votre client n'est pas d'accord avec son contenu.
+
+## Les causes de rejet les plus fréquentes
+
+Le rejet intervient lors des contrôles effectués par les plateformes. Il est purement technique : personne n'a jugé votre prestation ni votre montant, c'est le document lui-même ou son adressage qui pose problème. Voici les causes que l'on rencontre le plus souvent.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Format invalide</strong> : la facture ne respecte pas les formats admis (Factur-X, UBL, CII) ou son fichier structuré comporte des erreurs qui empêchent sa lecture par la plateforme.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Destinataire introuvable dans l'annuaire</strong> : le SIREN ou les informations d'adressage de votre client ne correspondent à aucune entrée valide de l'annuaire, et la facture ne peut pas être routée vers sa plateforme.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Mentions obligatoires manquantes</strong> : une donnée attendue sur la facture est absente ou incohérente, ce qui bloque les contrôles automatiques.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Données client obsolètes</strong> : votre fiche client contient un ancien SIREN, une raison sociale périmée après un changement de structure, ou des informations qui ne correspondent plus à l'annuaire.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Incohérences internes au document</strong> : totaux qui ne correspondent pas au détail des lignes, TVA mal ventilée, références contradictoires entre la partie lisible et les données structurées.</span>
+  </div>
+</div>
+
+L'annuaire joue un rôle central dans plusieurs de ces causes : c'est lui qui permet de savoir vers quelle plateforme router chaque facture. Pour comprendre son fonctionnement et pourquoi des données d'adressage à jour sont indispensables, consultez notre article sur [l'annuaire de la facturation électronique et son rôle](/blog/annuaire-facturation-electronique-a-quoi-sert).
+
+## Que faire en cas de rejet technique
+
+Face à un rejet, la démarche est méthodique et ne nécessite aucune discussion avec votre client, puisque la facture ne lui est jamais parvenue.
+
+Commencez par consulter le motif du rejet communiqué par votre plateforme : il indique généralement la nature précise de l'anomalie. Corrigez ensuite la cause : mettez à jour la fiche client si l'adressage est en cause, complétez la mention manquante, ou régénérez le fichier si le format était invalide. Enfin, réémettez la facture dans le circuit. Comme la facture rejetée n'a jamais été mise à disposition de votre client, vous n'avez pas besoin d'émettre un avoir : vous corrigez et vous renvoyez.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Un rejet non traité est une facture qui n'existe pas">
+    Tant qu'une facture rejetée n'est pas corrigée et réémise, votre client ne l'a tout simplement jamais reçue. Le délai de paiement ne court pas, votre trésorerie attend, et votre relance client tombera à plat puisqu'il n'a rien à payer de son côté. Surveillez vos statuts et traitez les rejets dès qu'ils apparaissent.
+  </Callout>
+</div>
+
+## Que faire en cas de refus par le client
+
+Le refus est d'une toute autre nature : votre facture est techniquement valide, elle est bien arrivée, mais votre client la conteste. Les motifs sont commerciaux : montant différent de ce qui était convenu, prestation jugée incomplète, commande que le client ne reconnaît pas, conditions de facturation non conformes à l'accord.
+
+La première étape est donc le dialogue. Contactez votre client pour comprendre précisément ce qui est contesté. Trois issues sont possibles. Si le refus repose sur un malentendu, votre client peut revenir sur sa décision après vos explications, et la facture reprend son cours. Si la contestation est fondée en partie, vous émettez un avoir pour corriger la facture, par exemple pour ajuster le montant, puis une nouvelle facture si nécessaire. Si la facture est intégralement erronée, vous l'annulez par un avoir du même montant et vous réémettez une facture correcte.
+
+Dans tous les cas, gardez une trace écrite des échanges : en cas de litige persistant, l'historique des statuts de la facture et vos échanges avec le client constituent des éléments précieux.
+
+## Prévenir les rejets : les bons réflexes
+
+La meilleure gestion des rejets reste celle que vous n'avez pas à faire. Quelques habitudes simples éliminent la grande majorité des anomalies.
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Tenez vos fiches clients à jour</strong> : vérifiez le SIREN, la raison sociale et les informations d'adressage de chaque client, surtout après un déménagement, une fusion ou un changement de forme juridique.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Complétez toutes les mentions attendues</strong> : la réforme s'accompagne d'exigences renforcées sur le contenu des factures, détaillées dans notre article sur les [nouvelles mentions obligatoires de la facture électronique](/blog/nouvelles-mentions-obligatoires-facture-electronique).</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Utilisez un outil qui génère des formats valides</strong> : un logiciel de facturation conforme produit directement des fichiers Factur-X, UBL ou CII corrects, ce qui élimine les rejets liés au format.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Validez le devis en amont</strong> : un devis accepté et précis limite fortement les refus, car la facture ne fait que reprendre ce qui a déjà été convenu.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Surveillez les statuts de vos factures</strong> : plus un rejet ou un refus est détecté tôt, plus la correction est rapide et moins l'impact sur votre trésorerie est important.</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Traitez le motif, pas seulement le symptôme">
+    Si un même client génère des rejets à répétition, ne vous contentez pas de réémettre : cherchez la cause de fond. Une fiche client mal renseignée ou un référentiel obsolète produira le même rejet à chaque facture. Une correction à la source vous épargne toutes les suivantes.
+  </Callout>
+</div>
+
+## Cas pratique : un graphiste face à un rejet puis un refus
+
+Prenons l'exemple d'un graphiste indépendant qui facture deux clients la même semaine. La première facture, adressée à une PME récemment rachetée, revient avec un statut de rejet : le SIREN enregistré dans sa fiche client ne correspond plus à aucune entrée valide de l'annuaire, car la société a changé de structure juridique lors du rachat. Le graphiste demande à son client son SIREN actuel, met à jour la fiche, réémet la facture : elle passe sans encombre. Aucun avoir n'a été nécessaire, puisque la première version n'était jamais parvenue au client.
+
+La seconde facture, adressée à une agence, est bien reçue mais revient refusée quelques jours plus tard. Motif indiqué par le client : la facture mentionne trois déclinaisons de logo alors que le bon de commande n'en prévoyait que deux, la troisième ayant été discutée oralement sans validation formelle. Après échange, le graphiste et l'agence conviennent que la troisième déclinaison fera l'objet d'un devis séparé. Le graphiste émet donc un avoir annulant la facture refusée, puis une nouvelle facture limitée aux deux déclinaisons commandées. L'agence l'accepte et la règle. Deux anomalies, deux traitements différents, et dans les deux cas une résolution en quelques jours parce que le statut a été détecté et traité rapidement.
+
+## Comment Newbi vous aide à éviter et gérer les rejets
+
+Newbi s'appuie sur une plateforme de dématérialisation partenaire pour transmettre vos factures dans le circuit électronique, et génère directement des documents conformes aux formats admis : les rejets liés à un format invalide disparaissent à la source. Vos fiches clients centralisées limitent les erreurs d'adressage, et le suivi des statuts vous permet de repérer immédiatement une facture rejetée ou refusée pour agir sans délai.
+
+En cas de refus nécessitant une correction, vous émettez un avoir référençant la facture d'origine en quelques clics, puis une nouvelle facture si besoin. Et avec l'OCR des justificatifs, la synchronisation bancaire et la gestion des achats, vous gardez une vision complète de vos flux, y compris lorsque des corrections interviennent en cours de route.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Un rejet et un refus n'ont ni la même cause ni la même solution. Le rejet est technique : la plateforme bloque la facture avant qu'elle n'atteigne votre client, généralement pour un format invalide, un destinataire introuvable dans l'annuaire ou une mention manquante ; la réponse est de corriger l'anomalie et de réémettre, sans avoir. Le refus est une décision de votre client après réception, pour un motif commercial ; la réponse est le dialogue, suivi si nécessaire d'un avoir et d'une nouvelle facture. Dans les deux cas, la clé est la réactivité : surveillez les statuts de vos factures, traitez les anomalies dès leur apparition, et prévenez-les en tenant vos données clients à jour et en utilisant un outil qui produit des factures conformes du premier coup.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les factures électroniques rejetées ou refusées
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre une facture rejetée et une facture refusée ?</AccordionTrigger>
+      <AccordionContent>
+        Le rejet est un blocage technique qui intervient avant que la facture n'atteigne votre client : format invalide, destinataire introuvable dans l'annuaire, mentions manquantes. Le refus est une décision de votre client après réception de la facture, pour un motif commercial comme un désaccord sur le montant ou la prestation. Le premier se règle par une correction et une réémission, le second par le dialogue et, si nécessaire, un avoir.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Dois-je émettre un avoir quand ma facture est rejetée ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Une facture rejetée n'a jamais été mise à disposition de votre client : elle a été bloquée en amont par les contrôles techniques. Vous corrigez la cause du rejet, par exemple une donnée d'adressage erronée, puis vous réémettez la facture. L'avoir est réservé aux factures qui ont bien été transmises et qu'il faut corriger ou annuler.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Mon client peut-il refuser une facture sans motif ?</AccordionTrigger>
+      <AccordionContent>
+        Le refus est une décision du client, généralement motivée par un désaccord commercial : montant contesté, prestation jugée non conforme, commande non reconnue. Face à un refus, la première étape est toujours de contacter votre client pour comprendre le motif. Si la contestation est infondée, expliquez et documentez ; si elle est fondée, corrigez par un avoir puis réémettez une facture conforme à l'accord.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment savoir si ma facture a été rejetée ou refusée ?</AccordionTrigger>
+      <AccordionContent>
+        Chaque facture transmise dans le circuit électronique suit un cycle de vie avec des statuts (déposée, rejetée, refusée, encaissée...), consultables via votre plateforme ou votre logiciel de facturation. C'est ce suivi qui vous alerte en cas d'anomalie. Prenez l'habitude de vérifier régulièrement les statuts de vos factures en attente de paiement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment éviter les rejets de factures électroniques ?</AccordionTrigger>
+      <AccordionContent>
+        Trois réflexes couvrent la grande majorité des cas : tenir vos fiches clients à jour (SIREN, raison sociale, adressage) pour que le routage via l'annuaire fonctionne, renseigner toutes les mentions attendues sur vos factures, et utiliser un logiciel qui génère nativement des formats conformes comme Factur-X, UBL ou CII. Un devis clair et validé en amont limite par ailleurs les refus côté client.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>

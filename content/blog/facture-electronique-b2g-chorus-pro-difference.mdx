@@ -1,0 +1,220 @@
+---
+title: >-
+  Chorus Pro et facturation électronique B2B : quelle différence ?
+description: >-
+  Chorus Pro concerne les factures adressées au secteur public (B2G), la
+  réforme 2026-2027 vise les échanges entre entreprises (B2B). Deux circuits
+  distincts à ne pas confondre.
+date: '2026-10-02'
+category: glossaire
+sector: null
+keyword: chorus pro facture électronique différence
+author: Newbi
+image: ''
+published: false
+publishDate: '2026-10-02'
+---
+
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Chorus Pro et facturation électronique B2B : quelle différence ?
+
+Avec la généralisation de la facturation électronique entre entreprises, une confusion revient très souvent chez les indépendants et les dirigeants de TPE : quelle est la différence entre **Chorus Pro et la facturation électronique** issue de la réforme 2026-2027 ? Beaucoup pensent qu'il s'agit du même dispositif, ou que le fait de facturer déjà une administration via Chorus Pro les met en conformité avec la nouvelle réglementation. C'est une erreur qui peut coûter cher en temps et en organisation.
+
+En réalité, il s'agit de deux circuits distincts, qui répondent à deux logiques différentes. Chorus Pro est le portail de l'État dédié aux factures adressées au secteur public, ce que l'on appelle le B2G (business to government). La réforme de la facturation électronique, elle, vise les échanges entre entreprises privées, le B2B (business to business), et repose sur un réseau de plateformes de dématérialisation partenaires. Cet article de glossaire pose les définitions, compare les deux circuits point par point et montre, à travers un cas pratique, comment une même entreprise peut être concernée par les deux.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Chorus Pro : le portail des factures adressées au secteur public
+
+Chorus Pro est la plateforme mise en place par l'État pour recevoir les factures destinées à la sphère publique : services de l'État, collectivités territoriales, établissements publics, hôpitaux publics, et plus largement toutes les entités du secteur public. On parle de facturation B2G, pour business to government.
+
+Depuis 2020, toute entreprise qui fournit une administration, quelle que soit sa taille, doit déposer ou transmettre ses factures via Chorus Pro. Un auto-entrepreneur qui réalise une prestation pour une mairie, un artisan qui rénove une école, une PME qui vend des fournitures à un hôpital public : tous passent par ce portail pour être payés. Le papier et le PDF par email ne sont plus acceptés par les acheteurs publics depuis cette date.
+
+Chorus Pro n'est donc pas une nouveauté de la réforme actuelle : c'est un dispositif déjà en place, rodé, et qui reste le point de passage des factures à destination du secteur public.
+
+## La réforme 2026-2027 : la facturation électronique entre entreprises
+
+La réforme qui entre en application entre 2026 et 2027 concerne un tout autre périmètre : les factures échangées entre entreprises assujetties à la TVA établies en France, c'est-à-dire le B2B domestique. Son calendrier est progressif, comme le détaille notre guide sur la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026) :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>1er septembre 2026</strong> : toutes les entreprises doivent pouvoir recevoir des factures électroniques ; les grandes entreprises et les ETI doivent aussi en émettre.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>1er septembre 2027</strong> : l'obligation d'émission s'étend aux PME, aux TPE et aux micro-entreprises.</span>
+  </div>
+</div>
+
+Contrairement au circuit B2G, la réforme B2B ne repose pas sur un portail unique de l'État. Les factures transitent par des [plateformes de dématérialisation partenaires](/blog/quest-ce-que-pdp-plateforme-dematerialisation) (PDP), des opérateurs privés immatriculés par l'administration fiscale et interopérables entre eux. Chaque entreprise choisit sa plateforme, et les PDP se chargent d'acheminer les factures de l'émetteur au destinataire, dans des formats structurés admis par la réforme : Factur-X, UBL ou CII.
+
+Quant au [Portail public de facturation](/blog/quest-ce-que-ppf-portail-public-facturation) (PPF), il ne joue pas dans le circuit B2B le rôle que Chorus Pro joue dans le B2G. Initialement envisagé comme une plateforme d'échange gratuite, son rôle a été recentré : il sert d'annuaire des entreprises, pour router correctement les factures, et de concentrateur des données transmises à l'administration fiscale.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="Être sur Chorus Pro ne vous met pas en conformité B2B">
+    Si vous facturez déjà des administrations via Chorus Pro, vous maîtrisez le circuit B2G, mais cela ne couvre pas vos obligations issues de la réforme. Pour vos factures adressées à des entreprises privées, vous devrez passer par une plateforme de dématérialisation partenaire, selon le calendrier 2026-2027. Les deux dispositifs ne se substituent pas l'un à l'autre.
+  </Callout>
+</div>
+
+## B2G vs B2B : le tableau comparatif
+
+Pour y voir clair, voici les deux circuits mis côte à côte.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparaison entre le circuit Chorus Pro (B2G) et le circuit de la réforme (B2B)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>Chorus Pro (B2G)</TableHead>
+        <TableHead>Réforme facturation électronique (B2B)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Destinataires</TableCell>
+        <TableCell>Secteur public : État, collectivités, établissements publics</TableCell>
+        <TableCell>Entreprises privées assujetties à la TVA établies en France</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Plateforme</TableCell>
+        <TableCell>Portail unique de l'État : Chorus Pro</TableCell>
+        <TableCell>Plateformes de dématérialisation partenaires (PDP), privées et interopérables</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Calendrier</TableCell>
+        <TableCell>Obligatoire depuis 2020 pour toutes les entreprises fournissant l'administration</TableCell>
+        <TableCell>Réception pour tous dès le 1er septembre 2026, émission en 2026 (grandes entreprises, ETI) puis 2027 (PME, TPE, micro-entreprises)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Formats</TableCell>
+        <TableCell>Dépôt ou transmission selon les modalités du portail</TableCell>
+        <TableCell>Formats structurés admis : Factur-X, UBL, CII</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Rôle de l'État</TableCell>
+        <TableCell>Opérateur du portail de réception</TableCell>
+        <TableCell>Immatriculation des PDP ; le PPF sert d'annuaire et de concentrateur de données</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ce tableau met en évidence la différence de philosophie : dans le B2G, l'État est le destinataire des factures et opère lui-même le portail de réception. Dans le B2B, l'État n'est pas partie prenante de la transaction : il encadre le dispositif, immatricule les plateformes et collecte les données, mais l'échange se fait entre acteurs privés via les PDP.
+
+## Cas pratique : un artisan qui facture une mairie et des entreprises
+
+Prenons l'exemple de Karim, électricien à la tête d'une petite entreprise de trois salariés. Son activité est variée : il intervient pour la mairie de sa commune, pour plusieurs entreprises locales et pour des particuliers.
+
+Pour ses chantiers avec la mairie, rien de nouveau : Karim dépose ses factures sur Chorus Pro, comme il le fait depuis des années. Ce circuit B2G continue de fonctionner exactement de la même manière, la réforme ne le remplace pas.
+
+Pour ses clients entreprises, la situation évolue. Depuis le 1er septembre 2026, Karim doit pouvoir recevoir les factures électroniques de ses fournisseurs, par exemple son grossiste en matériel électrique s'il s'agit d'une grande entreprise. Et à partir du 1er septembre 2027, il devra émettre ses propres factures B2B au format électronique structuré, via une plateforme de dématérialisation partenaire. Son PDF par email ne suffira plus pour ces clients.
+
+Pour ses clients particuliers, enfin, Karim n'émettra pas de factures électroniques au sens de la réforme, mais ses ventes B2C relèveront de l'e-reporting : certaines données de transactions devront être transmises à l'administration.
+
+Une même entreprise peut donc parfaitement vivre avec les deux circuits en parallèle, et c'est même le cas général pour tous ceux qui travaillent à la fois avec le public et le privé. L'enjeu est d'avoir une organisation, et idéalement un outil, qui gère les deux sans double saisie.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Un seul logiciel pour deux circuits">
+    Le plus simple est de créer toutes vos factures dans un même logiciel de facturation, puis de laisser chaque facture partir dans le bon circuit selon son destinataire : dépôt côté Chorus Pro pour le secteur public, transmission via une PDP pour vos clients entreprises. Vous gardez ainsi une numérotation unique et un suivi centralisé de vos encaissements.
+  </Callout>
+</div>
+
+## Pourquoi cette distinction compte pour votre mise en conformité
+
+Comprendre la différence entre les deux circuits n'est pas qu'une question de vocabulaire. Elle conditionne vos choix pratiques :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Votre équipement</strong> : un compte Chorus Pro ne vous dispense pas de choisir une plateforme de dématérialisation partenaire pour vos factures B2B, et inversement.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Votre calendrier</strong> : le B2G est déjà obligatoire depuis 2020 ; le B2B suit le calendrier 2026-2027 selon la taille de votre entreprise.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Vos risques</strong> : côté B2B, le défaut de facturation électronique est sanctionné par une amende de 15 € par facture, plafonnée à 15 000 € par an, et le manquement à l'e-reporting par 250 € par transmission manquante, avec le même plafond annuel.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Votre organisation</strong> : mieux vaut anticiper la cohabitation des deux circuits plutôt que de gérer deux outils et deux processus déconnectés.</span>
+  </div>
+</div>
+
+## Comment Newbi vous aide à gérer la facturation électronique B2B
+
+Newbi accompagne les indépendants et les TPE sur le volet B2B de la facturation électronique. La solution s'appuie sur une plateforme de dématérialisation partenaire, ce qui vous permet d'émettre des factures et des devis conformes à la réforme et de recevoir les factures électroniques de vos fournisseurs, sans expertise technique de votre côté.
+
+Au-delà de la conformité, Newbi centralise votre gestion au quotidien : OCR de vos justificatifs pour éviter la ressaisie, gestion de vos achats et synchronisation bancaire pour rapprocher vos factures de vos encaissements. Vous gardez ainsi une vision unique de votre activité, quel que soit le type de client que vous facturez.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/facturation-electronique">Découvrir la facturation électronique Newbi</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Chorus Pro et la réforme de la facturation électronique répondent à deux logiques distinctes. Chorus Pro est le portail de l'État pour les factures adressées au secteur public : il est obligatoire depuis 2020 pour toutes les entreprises qui fournissent une administration, et il continue de fonctionner comme avant. La réforme 2026-2027, elle, concerne les factures échangées entre entreprises privées : réception obligatoire pour tous depuis le 1er septembre 2026, émission obligatoire dès 2026 pour les grandes entreprises et les ETI, puis à partir du 1er septembre 2027 pour les PME, TPE et micro-entreprises, le tout via des plateformes de dématérialisation partenaires et dans des formats structurés. Une même entreprise peut être concernée par les deux circuits : facturer déjà via Chorus Pro ne vous met pas en conformité avec la réforme B2B, et il faut préparer les deux en parallèle.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur Chorus Pro et la facturation électronique B2B
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Chorus Pro et la facturation électronique 2026, est-ce la même chose ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Chorus Pro est le portail de l'État dédié aux factures adressées au secteur public (B2G), obligatoire depuis 2020 pour toutes les entreprises fournissant l'administration. La réforme 2026-2027 concerne les factures échangées entre entreprises privées (B2B) et repose sur des plateformes de dématérialisation partenaires, pas sur Chorus Pro.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Je facture déjà une mairie via Chorus Pro : suis-je en règle pour la réforme ?</AccordionTrigger>
+      <AccordionContent>
+        Pas automatiquement. Votre pratique de Chorus Pro couvre uniquement vos factures au secteur public. Pour vos factures adressées à des entreprises, vous devez suivre le calendrier de la réforme : pouvoir recevoir des factures électroniques depuis le 1er septembre 2026, et les émettre via une plateforme de dématérialisation partenaire à partir du 1er septembre 2027 si vous êtes une PME, une TPE ou une micro-entreprise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Le Portail public de facturation remplace-t-il Chorus Pro ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Chorus Pro reste le portail de réception des factures du secteur public. Le Portail public de facturation (PPF) intervient dans le circuit B2B, mais son rôle a été recentré : il n'est pas une plateforme d'échange gratuite et sert d'annuaire des entreprises et de concentrateur des données pour l'administration fiscale. Les factures B2B transitent par les plateformes de dématérialisation partenaires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Une entreprise peut-elle utiliser les deux circuits en même temps ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, et c'est même le cas courant. Une entreprise qui travaille à la fois avec des administrations et des entreprises privées transmet ses factures publiques via Chorus Pro et ses factures B2B via une plateforme de dématérialisation partenaire. Les deux circuits coexistent sans se remplacer, d'où l'intérêt d'un outil de facturation qui centralise l'ensemble.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quels formats de facture sont admis dans le circuit B2B ?</AccordionTrigger>
+      <AccordionContent>
+        La réforme retient trois formats structurés : Factur-X, un format hybride associant un PDF lisible et des données XML, ainsi que les formats UBL et CII, deux standards XML utilisés pour les échanges interentreprises. Ces factures transitent par les plateformes de dématérialisation partenaires, immatriculées par l'administration fiscale et interopérables entre elles.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
