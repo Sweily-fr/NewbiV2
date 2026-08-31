@@ -227,5 +227,12 @@
   {
     "date": "2026-08-17",
     "articles": ["abby-vs-newbi-comparatif"]
+  },
+  {
+    "date": "2026-08-31",
+    "articles": [
+      "facture-electronique-reception-1er-septembre-2026",
+      "modele-facture-gratuit-word-excel-pdf"
+    ]
   }
 ]
