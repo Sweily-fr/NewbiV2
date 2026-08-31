@@ -1878,23 +1878,6 @@
     ]
   },
   {
-    "id": 203,
-    "slug": "note-honoraires-vs-facture-differences",
-    "title": "Note d'honoraires ou facture : quelles différences et qui doit l'utiliser ?",
-    "metaDescription": "La note d'honoraires est une facture pour les professions libérales. Mentions identiques ou non, TVA, numérotation et modèles selon la profession.",
-    "keyword": "note d'honoraires",
-    "category": "glossaire",
-    "sector": null,
-    "priority": "medium",
-    "cluster": "Questions pratiques facturation",
-    "publishDate": "2026-11-16",
-    "week": 12,
-    "linksTo": [
-      "facture-profession-liberale-guide",
-      "facturation-avocat-honoraires-guide"
-    ]
-  },
-  {
     "id": 204,
     "slug": "pv-reception-travaux-modele",
     "title": "PV de réception de travaux : modèle, réserves et lien avec la facture finale",
@@ -1909,6 +1892,23 @@
     "linksTo": [
       "retenue-de-garantie-btp-facture",
       "facture-situation-travaux-btp"
+    ]
+  },
+  {
+    "id": 211,
+    "slug": "facture-electronique-professions-liberales",
+    "title": "Professions libérales et facturation électronique : ce qui change vraiment",
+    "metaDescription": "Médecins, avocats, consultants : activités exonérées de TVA, clients particuliers, e-reporting et secret professionnel. Ce que la réforme change pour les libéraux.",
+    "keyword": "facturation électronique professions libérales",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "medium",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-16",
+    "week": 12,
+    "linksTo": [
+      "facture-profession-liberale-guide",
+      "e-reporting-definition-obligations-calendrier"
     ]
   },
   {
@@ -2014,20 +2014,20 @@
     ]
   },
   {
-    "id": 211,
-    "slug": "facture-electronique-professions-liberales",
-    "title": "Professions libérales et facturation électronique : ce qui change vraiment",
-    "metaDescription": "Médecins, avocats, consultants : activités exonérées de TVA, clients particuliers, e-reporting et secret professionnel. Ce que la réforme change pour les libéraux.",
-    "keyword": "facturation électronique professions libérales",
-    "category": "guide",
-    "sector": "Professions médicales",
+    "id": 203,
+    "slug": "note-honoraires-vs-facture-differences",
+    "title": "Note d'honoraires ou facture : quelles différences et qui doit l'utiliser ?",
+    "metaDescription": "La note d'honoraires est une facture pour les professions libérales. Mentions identiques ou non, TVA, numérotation et modèles selon la profession.",
+    "keyword": "note d'honoraires",
+    "category": "glossaire",
+    "sector": null,
     "priority": "medium",
-    "cluster": "Facturation électronique 2026-2027",
+    "cluster": "Questions pratiques facturation",
     "publishDate": "2026-11-20",
     "week": 12,
     "linksTo": [
       "facture-profession-liberale-guide",
-      "e-reporting-definition-obligations-calendrier"
+      "facturation-avocat-honoraires-guide"
     ]
   },
   {
@@ -2049,23 +2049,6 @@
     ]
   },
   {
-    "id": 212,
-    "slug": "modele-contrat-prestation-de-services",
-    "title": "Modèle de contrat de prestation de services : clauses essentielles",
-    "metaDescription": "Un modèle de contrat de prestation de services à reprendre clause par clause : objet, prix, délais, propriété intellectuelle, résiliation, pénalités.",
-    "keyword": "modèle contrat prestation de services",
-    "category": "modele",
-    "sector": null,
-    "priority": "high",
-    "cluster": "Modèles à télécharger",
-    "publishDate": "2026-11-23",
-    "week": 13,
-    "linksTo": [
-      "quest-ce-que-conditions-generales-vente",
-      "facturer-prestation-service-consultant"
-    ]
-  },
-  {
     "id": 213,
     "slug": "archivage-factures-valeur-probante",
     "title": "Archivage des factures à valeur probante : obligations et solutions",
@@ -2080,6 +2063,24 @@
     "linksTo": [
       "delai-conservation-factures-documents-comptables",
       "facture-en-ligne-vs-excel"
+    ]
+  },
+  {
+    "id": 240,
+    "slug": "autofacturation-mandat-facturation-electronique",
+    "title": "Autofacturation et mandat de facturation : quelles règles avec la réforme ?",
+    "metaDescription": "L'autofacturation et le mandat de facturation restent possibles avec la facturation électronique, mais le circuit change : rôle des PDP, responsabilités et mentions à respecter.",
+    "keyword": "autofacturation mandat facturation électronique",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "low",
+    "cluster": "Facturation électronique 2026-2027",
+    "publishDate": "2026-11-23",
+    "week": 13,
+    "linksTo": [
+      "mentions-obligatoires-facture",
+      "quest-ce-que-pdp-plateforme-dematerialisation",
+      "facture-electronique-expert-comptable-role"
     ]
   },
   {
@@ -2185,21 +2186,20 @@
     ]
   },
   {
-    "id": 240,
-    "slug": "autofacturation-mandat-facturation-electronique",
-    "title": "Autofacturation et mandat de facturation : quelles règles avec la réforme ?",
-    "metaDescription": "L'autofacturation et le mandat de facturation restent possibles avec la facturation électronique, mais le circuit change : rôle des PDP, responsabilités et mentions à respecter.",
-    "keyword": "autofacturation mandat facturation électronique",
-    "category": "glossaire",
+    "id": 212,
+    "slug": "modele-contrat-prestation-de-services",
+    "title": "Modèle de contrat de prestation de services : clauses essentielles",
+    "metaDescription": "Un modèle de contrat de prestation de services à reprendre clause par clause : objet, prix, délais, propriété intellectuelle, résiliation, pénalités.",
+    "keyword": "modèle contrat prestation de services",
+    "category": "modele",
     "sector": null,
-    "priority": "low",
-    "cluster": "Facturation électronique 2026-2027",
+    "priority": "high",
+    "cluster": "Modèles à télécharger",
     "publishDate": "2026-11-27",
     "week": 13,
     "linksTo": [
-      "mentions-obligatoires-facture",
-      "quest-ce-que-pdp-plateforme-dematerialisation",
-      "facture-electronique-expert-comptable-role"
+      "quest-ce-que-conditions-generales-vente",
+      "facturer-prestation-service-consultant"
     ]
   },
   {
