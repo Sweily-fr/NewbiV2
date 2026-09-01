@@ -9,6 +9,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { usePennylane } from "@/src/hooks/usePennylane";
+import { useQonto } from "@/src/hooks/useQonto";
 import { useInstalledApps } from "@/src/hooks/useInstalledApps";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useActiveOrganization } from "@/src/lib/organization-client";
@@ -52,6 +53,9 @@ import {
 } from "lucide-react";
 
 const BRANDFETCH_CDN = "https://cdn.brandfetch.io";
+
+// Affiche le choix sandbox Qonto (test avec le Developer Portal), jamais en prod
+const QONTO_SANDBOX_ENABLED = process.env.NEXT_PUBLIC_QONTO_SANDBOX === "true";
 
 // Catégories d'applications disponibles
 const CATEGORIES = [
@@ -111,23 +115,21 @@ const APPLICATIONS = [
     docs: "https://pennylane.readme.io",
     support: "https://pennylane.com/contact",
   },
-  // ── À venir ──
   {
     id: "qonto",
     name: "Qonto",
     author: "Qonto",
     description:
-      "Connectez votre compte Qonto pour synchroniser vos transactions.",
+      "Envoyez automatiquement vos factures clients et factures fournisseurs dans Qonto.",
     category: "banking",
     logoBg: "#2E1065",
     logo: `${BRANDFETCH_CDN}/qonto.com/w/400/h/400`,
-    installed: false,
     verified: true,
-    comingSoon: true,
     website: "https://qonto.com",
-    docs: "https://api-doc.qonto.com",
+    docs: "https://docs.qonto.com",
     support: "https://qonto.com/contact",
   },
+  // ── À venir ──
   {
     id: "paypal",
     name: "PayPal",
@@ -734,6 +736,450 @@ function PennylaneConnectionPanel({
   );
 }
 
+// ── Panneau de connexion Qonto ──
+
+function QontoBankAccountSelect({ accounts, value, onChange, disabled }) {
+  const options = (accounts || []).filter((a) => a.status !== "closed");
+  if (options.length === 0) return null;
+  return (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className="w-full h-9 rounded-lg border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#141414] px-3 text-[13px] text-[#505154] dark:text-gray-300 disabled:opacity-60"
+    >
+      {options.map((a) => {
+        const masked = /X{4,}/i.test(a.iban || "");
+        return (
+          <option key={a.qontoId} value={a.qontoId} disabled={masked}>
+            {a.name || a.slug || "Compte"}
+            {a.main ? " (principal)" : ""}
+            {masked ? " - IBAN masqué" : a.iban ? ` - ${a.iban}` : ""}
+          </option>
+        );
+      })}
+    </select>
+  );
+}
+
+function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
+  const [login, setLogin] = useState("");
+  const [secretKey, setSecretKey] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [bankAccountId, setBankAccountId] = useState("");
+  const [useSandbox, setUseSandbox] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+
+  const canSubmit = login.trim() && secretKey.trim();
+
+  const handleTest = async () => {
+    if (!canSubmit) return;
+    setIsTesting(true);
+    setTestResult(null);
+    const result = await actions.onTestConnection(
+      login.trim(),
+      secretKey.trim(),
+      { environment: useSandbox ? "sandbox" : "production" },
+    );
+    setTestResult(result);
+    if (result?.success) {
+      const main =
+        result.bankAccounts?.find((a) => a.main) || result.bankAccounts?.[0];
+      setBankAccountId(main?.qontoId || "");
+    }
+    setIsTesting(false);
+  };
+
+  const handleConnect = async () => {
+    if (!canSubmit) return;
+    const result = await actions.onConnect(login.trim(), secretKey.trim(), {
+      bankAccountId: bankAccountId || undefined,
+      environment: useSandbox ? "sandbox" : "production",
+    });
+    if (result.success) {
+      setLogin("");
+      setSecretKey("");
+      setTestResult(null);
+      setBankAccountId("");
+    }
+  };
+
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    const result = await actions.onSyncAll();
+    setSyncResult(result);
+    setIsSyncing(false);
+  };
+
+  if (isConnected) {
+    return (
+      <div className="space-y-4">
+        {/* Statut connexion */}
+        <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+          <div className="flex items-center gap-3">
+            <AppLogo
+              src={app.logo}
+              name={app.name}
+              size="xs"
+              bgColor={app.logoBg}
+            />
+            <div>
+              <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                {connectionDetail || "Qonto connecté"}
+              </p>
+              {actions.lastSyncAt && (
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Dernière sync :{" "}
+                  {new Date(actions.lastSyncAt).toLocaleString("fr-FR")}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {actions.syncStatus === "IN_PROGRESS" && (
+              <span className="px-2 py-0.5 text-[10px] font-medium bg-blue-50 border border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 rounded-md flex-shrink-0 flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Sync en cours
+              </span>
+            )}
+            {actions.syncStatus === "ERROR" && (
+              <span className="px-2 py-0.5 text-[10px] font-medium bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 rounded-md flex-shrink-0">
+                Erreur
+              </span>
+            )}
+            <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+              Active
+            </span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        {actions.account?.stats && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Factures clients envoyées
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.invoicesSynced}
+              </p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Factures fournisseurs envoyées
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.expensesSynced}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Compte bancaire utilisé sur les factures */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-medium text-gray-500">
+              Compte pour l'encaissement des factures
+            </h4>
+            <button
+              type="button"
+              onClick={actions.onRefreshBankAccounts}
+              disabled={actions.isLoading || !actions.canManage}
+              className="text-[11px] text-gray-400 hover:text-gray-600 flex items-center gap-1 disabled:opacity-50"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Rafraîchir
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400">
+            L'IBAN de ce compte est affiché comme moyen de paiement sur les
+            factures créées dans Qonto.
+          </p>
+          <QontoBankAccountSelect
+            accounts={actions.account?.bankAccounts}
+            value={actions.account?.selectedBankAccountId}
+            onChange={actions.onUpdateBankAccount}
+            disabled={!actions.canManage || actions.isReadOnly}
+          />
+        </div>
+
+        {/* Sync automatique */}
+        {actions.account?.autoSync && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-medium text-gray-500">
+              Synchronisation automatique
+            </h4>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
+              <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323]">
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                  Documents
+                </span>
+              </div>
+              <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
+                {[
+                  {
+                    key: "invoices",
+                    label: "Factures clients",
+                    hint: "Créées dans Qonto avec le PDF Newbi dès l'envoi",
+                  },
+                  {
+                    key: "supplierInvoices",
+                    label: "Factures fournisseurs et dépenses",
+                    hint: "Le justificatif PDF est déposé dans Qonto",
+                  },
+                ].map(({ key, label, hint }) => (
+                  <label
+                    key={key}
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
+                  >
+                    <span className="flex flex-col">
+                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
+                        {label}
+                      </span>
+                      <span className="text-[11px] text-gray-400">{hint}</span>
+                    </span>
+                    <Checkbox
+                      checked={actions.account.autoSync[key]}
+                      onCheckedChange={(checked) =>
+                        actions.onUpdateAutoSync({ [key]: !!checked })
+                      }
+                      disabled={!actions.canManage}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Erreur de sync */}
+        {actions.account?.syncError && (
+          <p className="text-[11px] text-red-500 dark:text-red-400">
+            {actions.account.syncError}
+          </p>
+        )}
+        {actions.error && (
+          <p className="text-[11px] text-red-500 dark:text-red-400">
+            {actions.error}
+          </p>
+        )}
+
+        {/* Résultat sync */}
+        {syncResult && (
+          <p
+            className={`text-[11px] ${syncResult.success ? "text-gray-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"}`}
+          >
+            {syncResult.success
+              ? syncResult.invoicesSynced != null
+                ? `${syncResult.invoicesSynced} facture${syncResult.invoicesSynced > 1 ? "s" : ""} client${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.expensesSynced} facture${syncResult.expensesSynced > 1 ? "s" : ""} fournisseur${syncResult.expensesSynced > 1 ? "s" : ""} envoyée${syncResult.expensesSynced > 1 ? "s" : ""}${syncResult.invoicesErrors + syncResult.expensesErrors > 0 ? ` - ${syncResult.invoicesErrors + syncResult.expensesErrors} erreur${syncResult.invoicesErrors + syncResult.expensesErrors > 1 ? "s" : ""}` : ""}`
+                : "Synchronisation terminée"
+              : syncResult.message}
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSyncAll}
+            disabled={
+              actions.isReadOnly ||
+              isSyncing ||
+              actions.syncStatus === "IN_PROGRESS" ||
+              !actions.canManage
+            }
+            title={actions.readOnlyTooltip}
+            className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
+          >
+            {isSyncing ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {isSyncing ? "Synchronisation..." : "Synchroniser maintenant"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={actions.onDisconnect}
+            disabled={actions.isLoading || !actions.canManage}
+            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+          >
+            {actions.isLoading ? "..." : "Déconnecter"}
+          </Button>
+        </div>
+
+        {!actions.canManage && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Seuls les propriétaires et administrateurs peuvent gérer Qonto
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Non connecté — formulaire de connexion
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-gray-500">
+          Identifiants API Qonto
+        </label>
+        <p className="text-[11px] text-gray-400">
+          Dans Qonto → Paramètres → Intégrations et partenariats → Clé API :
+          copiez l'identifiant (login) et générez une clé secrète.
+        </p>
+        <Input
+          type="text"
+          placeholder="Identifiant (ex : ma-societe-1234)"
+          value={login}
+          onChange={(e) => {
+            setLogin(e.target.value);
+            setTestResult(null);
+          }}
+          disabled={!actions.canManage}
+          className="font-mono text-xs"
+          autoComplete="off"
+        />
+        <div className="relative">
+          <Input
+            type={showSecret ? "text" : "password"}
+            placeholder="Clé secrète"
+            value={secretKey}
+            onChange={(e) => {
+              setSecretKey(e.target.value);
+              setTestResult(null);
+            }}
+            disabled={!actions.canManage}
+            className="pr-10 font-mono text-xs"
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowSecret(!showSecret)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            {showSecret ? (
+              <EyeOff className="w-3.5 h-3.5" />
+            ) : (
+              <Eye className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {QONTO_SANDBOX_ENABLED && (
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Checkbox
+            checked={useSandbox}
+            onCheckedChange={(checked) => {
+              setUseSandbox(!!checked);
+              setTestResult(null);
+            }}
+            disabled={!actions.canManage}
+          />
+          <span className="text-[12px] text-[#505154] dark:text-gray-400">
+            Sandbox Qonto (identifiants du Developer Portal)
+          </span>
+        </label>
+      )}
+
+      {/* Résultat du test */}
+      {testResult && (
+        <div
+          className={`px-3 py-2 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"}`}
+        >
+          <p
+            className={`text-xs ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+          >
+            {testResult.success
+              ? `Connexion réussie${testResult.organizationName ? ` - ${testResult.organizationName}` : ""}`
+              : testResult.message}
+          </p>
+        </div>
+      )}
+
+      {/* Choix du compte bancaire après test réussi */}
+      {testResult?.success && testResult.bankAccounts?.length > 0 && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-gray-500">
+            Compte pour l'encaissement des factures
+          </label>
+          <QontoBankAccountSelect
+            accounts={testResult.bankAccounts}
+            value={bankAccountId}
+            onChange={setBankAccountId}
+            disabled={!actions.canManage}
+          />
+        </div>
+      )}
+
+      {/* Erreur */}
+      {actions.error && !testResult && (
+        <div className="px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-xs text-red-600 dark:text-red-400">
+            {actions.error}
+          </p>
+        </div>
+      )}
+
+      {/* Boutons */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleTest}
+          disabled={
+            actions.isReadOnly || !canSubmit || isTesting || !actions.canManage
+          }
+          title={actions.readOnlyTooltip}
+          className="cursor-pointer"
+        >
+          {isTesting ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+          )}
+          {isTesting ? "Test..." : "Tester"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleConnect}
+          disabled={
+            actions.isReadOnly ||
+            !canSubmit ||
+            actions.isLoading ||
+            !actions.canManage
+          }
+          title={actions.readOnlyTooltip}
+          className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
+        >
+          {actions.isLoading ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+          )}
+          {actions.isLoading ? "Connexion..." : "Connecter"}
+        </Button>
+      </div>
+
+      {!actions.canManage && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Seuls les propriétaires et administrateurs peuvent connecter Qonto
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Vue détail d'une app installée ──
 
 function AppDetailView({
@@ -744,6 +1190,7 @@ function AppDetailView({
   stripeActions,
   bankingActions,
   pennylaneActions,
+  qontoActions,
   isInstalled,
   onInstall,
   onUninstall,
@@ -1052,10 +1499,21 @@ function AppDetailView({
                 />
               )}
 
+              {/* ── Qonto ── */}
+              {app.id === "qonto" && qontoActions && (
+                <QontoConnectionPanel
+                  app={app}
+                  isConnected={isConnected}
+                  connectionDetail={connectionDetail}
+                  actions={qontoActions}
+                />
+              )}
+
               {/* ── Autres apps (générique) ── */}
               {app.id !== "stripe" &&
                 app.id !== "bridge" &&
-                app.id !== "pennylane" && (
+                app.id !== "pennylane" &&
+                app.id !== "qonto" && (
                   <>
                     {isConnected ? (
                       <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
@@ -1368,6 +1826,23 @@ export function ApplicationsSection() {
     clearError: clearPennylaneError,
   } = usePennylane(activeOrganization?.id || organizationId);
 
+  const {
+    isConnected: isQontoConnected,
+    syncStatus: qontoSyncStatus,
+    lastSyncAt: qontoLastSyncAt,
+    isLoading: isQontoLoading,
+    account: qontoAccount,
+    testConnection: testQontoConnection,
+    connect: connectQonto,
+    disconnect: disconnectQonto,
+    updateAutoSync: updateQontoAutoSync,
+    updateBankAccount: updateQontoBankAccount,
+    refreshBankAccounts: refreshQontoBankAccounts,
+    syncAll: syncAllToQonto,
+    error: qontoError,
+    clearError: clearQontoError,
+  } = useQonto(activeOrganization?.id || organizationId);
+
   // Écouter l'événement de configuration Stripe complète
   useEffect(() => {
     const handleStripeConfigComplete = async () => {
@@ -1443,6 +1918,16 @@ export function ApplicationsSection() {
             : null,
         };
       }
+      if (app.id === "qonto") {
+        return {
+          ...app,
+          installed,
+          connected: isQontoConnected,
+          connectionDetail: isQontoConnected
+            ? qontoAccount?.organizationName || "Compte connecté"
+            : null,
+        };
+      }
       return { ...app, installed, connected: false };
     });
   }, [
@@ -1452,6 +1937,8 @@ export function ApplicationsSection() {
     bankingAccountsCount,
     isPennylaneConnected,
     pennylaneAccount,
+    isQontoConnected,
+    qontoAccount,
     isAppInstalled,
   ]);
 
@@ -1531,6 +2018,26 @@ export function ApplicationsSection() {
     onSyncAll: syncAllToPennylane,
   };
 
+  // Actions Qonto pour la vue détail
+  const qontoActions = {
+    canManage: canManageStripeConnect, // même permission owner/admin
+    isReadOnly,
+    readOnlyTooltip,
+    isLoading: isQontoLoading,
+    account: qontoAccount,
+    syncStatus: qontoSyncStatus,
+    lastSyncAt: qontoLastSyncAt,
+    error: qontoError,
+    clearError: clearQontoError,
+    onTestConnection: testQontoConnection,
+    onConnect: connectQonto,
+    onDisconnect: disconnectQonto,
+    onUpdateAutoSync: updateQontoAutoSync,
+    onUpdateBankAccount: updateQontoBankAccount,
+    onRefreshBankAccounts: refreshQontoBankAccounts,
+    onSyncAll: syncAllToQonto,
+  };
+
   // Toujours récupérer l'app fraîche depuis appsWithStatus (pour refléter install/uninstall)
   const currentApp = selectedApp
     ? appsWithStatus.find((a) => a.id === selectedApp.id) || selectedApp
@@ -1555,6 +2062,7 @@ export function ApplicationsSection() {
           stripeActions={stripeActions}
           bankingActions={bankingActions}
           pennylaneActions={pennylaneActions}
+          qontoActions={qontoActions}
           onBack={() => {
             setSelectedApp(null);
             setView("main");
