@@ -234,5 +234,12 @@
       "facture-electronique-reception-1er-septembre-2026",
       "modele-facture-gratuit-word-excel-pdf"
     ]
+  },
+  {
+    "date": "2026-09-01",
+    "articles": [
+      "e-reporting-definition-obligations-calendrier",
+      "modele-devis-gratuit-word-excel-pdf"
+    ]
   }
 ]
