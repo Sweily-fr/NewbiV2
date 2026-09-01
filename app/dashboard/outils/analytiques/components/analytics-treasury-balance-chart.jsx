@@ -42,9 +42,10 @@ const formatCurrency = (value) =>
 export function AnalyticsTreasuryBalanceChart({
   bankTransactions = [],
   initialBalance = 0,
+  dateRange = null,
   loading = false,
 }) {
-  const [timeRange, setTimeRange] = useState("90d");
+  const [timeRange, setTimeRange] = useState(dateRange ? "period" : "90d");
   const chartColors = useChartColors();
   const { remap } = chartColors;
   const chartConfig = {
@@ -61,12 +62,23 @@ export function AnalyticsTreasuryBalanceChart({
 
   const treasuryData = useMemo(() => {
     const now = new Date();
-    const daysMap = { "30d": 30, "90d": 90, "365d": 365 };
-    const days = daysMap[timeRange] || 90;
-    const startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - days);
+    let startDate;
+    let endDate = now;
+    if (timeRange === "period" && dateRange?.startDate && dateRange?.endDate) {
+      startDate = new Date(dateRange.startDate);
+      const periodEnd = new Date(dateRange.endDate);
+      periodEnd.setHours(23, 59, 59, 999);
+      // Pas de point dans le futur : le solde y serait une ligne plate
+      if (periodEnd < now) endDate = periodEnd;
+    } else {
+      const daysMap = { "30d": 30, "90d": 90, "365d": 365 };
+      const days = daysMap[timeRange] || 90;
+      startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - days);
+    }
 
-    const daysDiff = Math.ceil((now - startDate) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    if (daysDiff < 0) return [];
 
     const getTransactionDate = (t) => {
       const rawDate = t.date || t.processedAt || t.createdAt;
@@ -82,40 +94,50 @@ export function AnalyticsTreasuryBalanceChart({
       return `${y}-${m}-${dy}`;
     };
 
+    // Mouvements groupés par jour ; les transactions postérieures à la fin de
+    // fenêtre sont cumulées à part pour retrouver le solde à cette date
+    const movementsByDay = {};
+    let netAfterEnd = 0;
+    bankTransactions.forEach((t) => {
+      const tDate = getTransactionDate(t);
+      if (!tDate) return;
+      const amount = t.amount || 0;
+      if (tDate > endDate) {
+        netAfterEnd += amount;
+        return;
+      }
+      const key = toLocalDateKey(tDate);
+      if (!movementsByDay[key])
+        movementsByDay[key] = { income: 0, expenses: 0 };
+      if (amount > 0) movementsByDay[key].income += amount;
+      else movementsByDay[key].expenses += Math.abs(amount);
+    });
+
     const dailyMovements = [];
     for (let i = 0; i <= daysDiff; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
       const dateStr = toLocalDateKey(date);
-
-      const dayTx = bankTransactions.filter((t) => {
-        const tDate = getTransactionDate(t);
-        return tDate && toLocalDateKey(tDate) === dateStr;
-      });
-
-      const dayIncome = dayTx
-        .filter((t) => t.amount > 0)
-        .reduce((sum, t) => sum + t.amount, 0);
-      const dayExpenses = Math.abs(
-        dayTx.filter((t) => t.amount < 0).reduce((sum, t) => sum + t.amount, 0),
-      );
+      const day = movementsByDay[dateStr] || { income: 0, expenses: 0 };
 
       dailyMovements.push({
         date: dateStr,
-        income: dayIncome,
-        expenses: dayExpenses,
-        netMovement: dayIncome - dayExpenses,
+        income: day.income,
+        expenses: day.expenses,
+        netMovement: day.income - day.expenses,
       });
     }
 
-    let treasury = effectiveBalance;
+    // Le solde connu est le solde ACTUEL : si la fenêtre se termine dans le
+    // passé, on retranche d'abord les mouvements survenus après sa fin
+    let treasury = effectiveBalance - netAfterEnd;
     for (let i = dailyMovements.length - 1; i >= 0; i--) {
       dailyMovements[i].treasury = treasury;
       treasury -= dailyMovements[i].netMovement;
     }
 
     return dailyMovements;
-  }, [bankTransactions, effectiveBalance, timeRange]);
+  }, [bankTransactions, effectiveBalance, timeRange, dateRange]);
 
   const treasuryConsumption = useMemo(() => {
     if (treasuryData.length === 0) return 0;
@@ -131,6 +153,7 @@ export function AnalyticsTreasuryBalanceChart({
 
   const timeRangeLabel =
     {
+      period: "Période sélectionnée",
       "30d": "Dernier mois",
       "90d": "Derniers 3 mois",
       "365d": "Dernière année",
@@ -186,6 +209,14 @@ export function AnalyticsTreasuryBalanceChart({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="rounded-xl">
+            {dateRange && (
+              <DropdownMenuItem
+                className="rounded-lg text-xs"
+                onClick={() => setTimeRange("period")}
+              >
+                Période sélectionnée
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               className="rounded-lg text-xs"
               onClick={() => setTimeRange("365d")}
