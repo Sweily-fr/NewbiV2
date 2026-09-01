@@ -39,6 +39,10 @@ export function usePermissions() {
     cachedEntry?.org || null,
   );
   const [isLoadingMembers, setIsLoadingMembers] = useState(!cachedEntry);
+  // Échec du chargement des membres (réseau/session) sans cache exploitable :
+  // à distinguer d'un vrai refus de permission par les gardes de page
+  const [membersLoadFailed, setMembersLoadFailed] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const hasLoadedRef = useRef(false);
   const permissionCacheRef = useRef(new Map()); // Cache des permissions
 
@@ -51,6 +55,7 @@ export function usePermissions() {
     const cached = peekFullOrganization(activeOrganization?.id);
     setOrgWithMembers(cached?.org || null);
     setIsLoadingMembers(!cached);
+    setMembersLoadFailed(false);
   }, [activeOrganization?.id]);
 
   // Charger l'organisation complète avec les membres
@@ -81,19 +86,33 @@ export function usePermissions() {
       .then((data) => {
         if (data) {
           setOrgWithMembers(data);
+          setMembersLoadFailed(false);
         } else if (!cached) {
-          setOrgWithMembers({ ...activeOrganization, members: [] });
+          // Ne PAS retomber sur une org avec members: [] — l'utilisateur
+          // n'y serait jamais trouvé et un simple échec réseau se
+          // transformerait en "Permission refusée" permanent, même pour
+          // un owner/admin. On signale l'échec pour laisser les gardes
+          // proposer un retry.
+          setMembersLoadFailed(true);
         }
       })
       .finally(() => {
         setIsLoadingMembers(false); // ✅ FIX: Toujours marquer comme terminé
       });
-  }, [activeOrganization?.id]);
+  }, [activeOrganization?.id, retryNonce]);
 
   // Nettoyer le cache quand l'organisation change
   useEffect(() => {
     permissionCacheRef.current.clear();
   }, [activeOrganization?.id]);
+
+  // Relancer le chargement des membres après un échec (membersLoadFailed)
+  const retryLoadMembers = useCallback(() => {
+    hasLoadedRef.current = false;
+    setMembersLoadFailed(false);
+    setIsLoadingMembers(true);
+    setRetryNonce((n) => n + 1);
+  }, []);
 
   /**
    * Vérifier si l'utilisateur a une permission spécifique
@@ -374,6 +393,8 @@ export function usePermissions() {
     // ✅ FIX: État de chargement pour éviter les faux "permission denied"
     isLoading,
     isReady: !isLoading && !!orgWithMembers,
+    membersLoadFailed,
+    retryLoadMembers,
 
     // Vérifications de permissions
     hasPermission,

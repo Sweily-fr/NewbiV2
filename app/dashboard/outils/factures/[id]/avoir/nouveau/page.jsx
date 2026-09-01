@@ -14,10 +14,18 @@ function NewCreditNoteContent() {
   const params = useParams();
   const router = useRouter();
   const invoiceId = params.id;
-  const { canCreate } = usePermissions();
+  const { canCreate, isLoading, membersLoadFailed, retryLoadMembers } =
+    usePermissions();
   const [hasPermission, setHasPermission] = useState(null);
 
   useEffect(() => {
+    // Ne trancher qu'une fois les membres chargés : pendant le chargement,
+    // canCreate répond false et on afficherait un faux "Permission refusée"
+    if (isLoading || membersLoadFailed) {
+      setHasPermission(null);
+      return;
+    }
+
     let isMounted = true;
 
     const checkPermission = async () => {
@@ -32,11 +40,35 @@ function NewCreditNoteContent() {
     return () => {
       isMounted = false;
     };
-  }, [canCreate]);
+  }, [canCreate, isLoading, membersLoadFailed]);
+
+  // Échec du chargement des membres (réseau) : proposer un retry plutôt
+  // qu'un refus à tort
+  if (membersLoadFailed) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="text-center max-w-md">
+          <div className="mb-4">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">
+            Vérification impossible
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Impossible de vérifier vos permissions pour le moment. Vérifiez
+            votre connexion puis réessayez.
+          </p>
+          <Button onClick={retryLoadMembers} variant="default">
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Chargement : même skeleton que l'éditeur pour éviter un flash de spinner
   // (l'ancien spinner border-gray-900 était invisible en dark mode)
-  if (hasPermission === null) {
+  if (isLoading || hasPermission === null) {
     return <InvoiceEditorSkeleton />;
   }
 
