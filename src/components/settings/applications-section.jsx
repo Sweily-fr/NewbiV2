@@ -1074,7 +1074,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
         </div>
       </div>
 
-      {QONTO_SANDBOX_ENABLED && (
+      {(QONTO_SANDBOX_ENABLED || actions.sandboxAvailable) && (
         <label className="flex items-center gap-2 cursor-pointer">
           <Checkbox
             checked={useSandbox}
@@ -1832,6 +1832,7 @@ export function ApplicationsSection() {
     lastSyncAt: qontoLastSyncAt,
     isLoading: isQontoLoading,
     account: qontoAccount,
+    sandboxAvailable: qontoSandboxAvailable,
     testConnection: testQontoConnection,
     connect: connectQonto,
     disconnect: disconnectQonto,
@@ -2025,6 +2026,7 @@ export function ApplicationsSection() {
     readOnlyTooltip,
     isLoading: isQontoLoading,
     account: qontoAccount,
+    sandboxAvailable: qontoSandboxAvailable,
     syncStatus: qontoSyncStatus,
     lastSyncAt: qontoLastSyncAt,
     error: qontoError,
