@@ -47,6 +47,13 @@ export const MY_QONTO_ACCOUNT = gql`
   }
 `;
 
+// Le sandbox Qonto est-il disponible pour cet utilisateur (admin back-office) ?
+export const QONTO_SANDBOX_AVAILABLE = gql`
+  query QontoSandboxAvailable {
+    qontoSandboxAvailable
+  }
+`;
+
 // Tester les identifiants Qonto (sans sauvegarder)
 export const TEST_QONTO_CONNECTION = gql`
   mutation TestQontoConnection(

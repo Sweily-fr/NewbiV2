@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   MY_QONTO_ACCOUNT,
+  QONTO_SANDBOX_AVAILABLE,
   TEST_QONTO_CONNECTION,
   CONNECT_QONTO,
   DISCONNECT_QONTO,
@@ -28,6 +29,11 @@ export const useQonto = (organizationId) => {
     loading: statusLoading,
     refetch: refetchStatus,
   } = useQuery(MY_QONTO_ACCOUNT, {
+    skip: !organizationId,
+    errorPolicy: "all",
+  });
+
+  const { data: sandboxData } = useQuery(QONTO_SANDBOX_AVAILABLE, {
     skip: !organizationId,
     errorPolicy: "all",
   });
@@ -175,6 +181,7 @@ export const useQonto = (organizationId) => {
   );
 
   const account = qontoData?.myQontoAccount;
+  const sandboxAvailable = !!sandboxData?.qontoSandboxAvailable;
   const isConnected = !!account?.isConnected;
   const syncStatus = account?.syncStatus || "IDLE";
   const lastSyncAt = account?.lastSyncAt;
@@ -194,6 +201,7 @@ export const useQonto = (organizationId) => {
     // Données du compte
     account,
     selectedBankAccount,
+    sandboxAvailable,
 
     // Actions
     testConnection,
