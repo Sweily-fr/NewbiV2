@@ -14,7 +14,6 @@ import { getTransactionCategory } from "@/lib/bank-categories-config";
 import { useChartColors } from "@/src/hooks/useChartColors";
 
 const CA_NAME = "Chiffre d'affaires";
-const CA_COLOR = "#5b50ff";
 
 // Labels des sous-catégories fines de revenus posées manuellement sur les
 // transactions (mêmes valeurs que le CategorySearchSelect de l'outil
@@ -39,17 +38,6 @@ const INCOME_CATEGORY_LABELS = {
   cadeaux_recus: "Cadeaux reçus",
   autre_revenu: "Autre revenu",
 };
-
-const FALLBACK_COLORS = [
-  "#10b981",
-  "#3b82f6",
-  "#f59e0b",
-  "#ef4444",
-  "#a855f7",
-  "#06b6d4",
-  "#ec4899",
-  "#84cc16",
-];
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -102,7 +90,9 @@ export function AnalyticsRevenuePieChart({
   bankTransactions,
   loading,
 }) {
-  const { remap } = useChartColors();
+  // Même palette indexée par rang que « Entrées par catégorie »
+  // de la vue d'ensemble (variantes daltoniennes incluses).
+  const { getIncomeColor } = useChartColors();
 
   // Mêmes règles que la vue d'ensemble (« Entrées par catégorie ») :
   // la part « Chiffre d'affaires » vient des factures payées (créées +
@@ -132,29 +122,15 @@ export function AnalyticsRevenuePieChart({
     // catégorisation automatique (Bridge / description).
     const totals = {};
     incomeTransactions.forEach((t) => {
-      const manualLabel = INCOME_CATEGORY_LABELS[t.category];
-      const cat = manualLabel
-        ? { name: manualLabel, color: null }
-        : getTransactionCategory(t);
-      if (!totals[cat.name]) {
-        totals[cat.name] = {
-          name: cat.name,
-          amount: 0,
-          count: 0,
-          color: cat.color,
-        };
+      const name =
+        INCOME_CATEGORY_LABELS[t.category] || getTransactionCategory(t).name;
+      if (!totals[name]) {
+        totals[name] = { name, amount: 0, count: 0 };
       }
-      totals[cat.name].amount += Math.abs(t.amount);
-      totals[cat.name].count += 1;
+      totals[name].amount += Math.abs(t.amount);
+      totals[name].count += 1;
     });
     const bankCategories = Object.values(totals);
-    let fallbackIndex = 0;
-    bankCategories.forEach((c) => {
-      if (!c.color) {
-        c.color = FALLBACK_COLORS[fallbackIndex % FALLBACK_COLORS.length];
-        fallbackIndex += 1;
-      }
-    });
 
     // La catégorie catch-all « Chiffre d'affaires » des transactions est
     // fusionnée avec la part issue des factures (montants TTC).
@@ -173,7 +149,6 @@ export function AnalyticsRevenuePieChart({
           amount: c.amount,
           count: c.count,
           isCA: false,
-          fill: remap(c.color),
         });
       }
     });
@@ -184,15 +159,18 @@ export function AnalyticsRevenuePieChart({
         amountHT: ca.amountHT,
         count: ca.count,
         isCA: true,
-        fill: remap(CA_COLOR),
       });
     }
 
     return slices
       .filter((s) => s.amount > 0)
       .sort((a, b) => b.amount - a.amount)
-      .map((s) => ({ ...s, amount: Math.round(s.amount * 100) / 100 }));
-  }, [monthlyRevenue, bankTransactions, remap]);
+      .map((s, i) => ({
+        ...s,
+        amount: Math.round(s.amount * 100) / 100,
+        fill: getIncomeColor(i),
+      }));
+  }, [monthlyRevenue, bankTransactions, getIncomeColor]);
 
   const chartConfig = useMemo(() => {
     const cfg = { amount: { label: "Montant" } };
