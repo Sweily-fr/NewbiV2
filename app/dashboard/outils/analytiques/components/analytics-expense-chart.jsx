@@ -73,27 +73,6 @@ const BANK_NAME_TO_CATEGORY = {
   "Non catégorisé": "OTHER",
 };
 
-// Couleurs par catégorie (identiques au dashboard)
-const CATEGORY_COLORS_MAP_BASE = {
-  OFFICE_SUPPLIES: "#eab308",
-  TRAVEL: "rgba(90, 80, 255, 0.60)",
-  MEALS: "#f97316",
-  ACCOMMODATION: "#06b6d4",
-  SOFTWARE: "#3b82f6",
-  HARDWARE: "#64748b",
-  SERVICES: "#8b5cf6",
-  MARKETING: "#ec4899",
-  TAXES: "#a855f7",
-  RENT: "#ef4444",
-  UTILITIES: "#14b8a6",
-  SALARIES: "#f59e0b",
-  INSURANCE: "#6366f1",
-  MAINTENANCE: "#84cc16",
-  TRAINING: "#10b981",
-  SUBSCRIPTIONS: "#0ea5e9",
-  OTHER: "#A585DB",
-};
-
 const PAYMENT_COLORS_BASE = [
   "#5b50ff",
   "#10b981",
@@ -148,14 +127,9 @@ export function AnalyticsExpenseCategoryChart({
   bankTransactions,
   loading,
 }) {
-  const { remap } = useChartColors();
-  const CATEGORY_COLORS_MAP = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(CATEGORY_COLORS_MAP_BASE).map(([k, v]) => [k, remap(v)]),
-      ),
-    [remap],
-  );
+  // Même palette indexée par rang que « Sorties par catégorie »
+  // de la vue d'ensemble (variantes daltoniennes incluses).
+  const { getExpenseColor } = useChartColors();
   const chartData = useMemo(() => {
     // Aggregate bank transactions by mapped internal category
     const bankByCategory = {};
@@ -226,13 +200,13 @@ export function AnalyticsExpenseCategoryChart({
       .filter((c) => c.amount > 0)
       .sort((a, b) => b.amount - a.amount);
 
-    return result.map((c) => ({
+    return result.map((c, i) => ({
       ...c,
       amount: Math.round(c.amount * 100) / 100,
       label: CATEGORY_LABELS[c.category] || c.category,
-      fill: CATEGORY_COLORS_MAP[c.category] || CATEGORY_COLORS_MAP.OTHER,
+      fill: getExpenseColor(i),
     }));
-  }, [expenseByCategory, bankTransactions, CATEGORY_COLORS_MAP]);
+  }, [expenseByCategory, bankTransactions, getExpenseColor]);
 
   const chartConfig = useMemo(() => {
     const cfg = { amount: { label: "Montant" } };

@@ -473,7 +473,7 @@ export default function AnalytiquesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
-                bankTransactions={bankTransactions}
+                bankTransactions={filteredBankTransactions}
                 loading={loading || bankLoading}
               />
               <AnalyticsMarginChart
@@ -506,7 +506,7 @@ export default function AnalytiquesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
-                bankTransactions={bankTransactions}
+                bankTransactions={filteredBankTransactions}
                 loading={loading || bankLoading}
               />
               <AnalyticsCumulativeRevenueChart
@@ -565,6 +565,7 @@ export default function AnalytiquesPage() {
               <AnalyticsTreasuryBalanceChart
                 bankTransactions={bankTransactions || []}
                 initialBalance={bankBalance || 0}
+                dateRange={dateRange}
                 loading={bankLoading}
               />
             </div>
@@ -582,7 +583,7 @@ export default function AnalytiquesPage() {
               <AnalyticsBankFlowChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
                 monthlyCollection={analyticsData?.collection?.monthlyCollection}
-                bankTransactions={bankTransactions}
+                bankTransactions={filteredBankTransactions}
                 loading={loading || bankLoading}
               />
               <AnalyticsCollectionChart
