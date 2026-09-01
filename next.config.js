@@ -50,11 +50,16 @@ const cspValue = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
-  `font-src 'self' data:${isVercelToolbar ? " https://vercel.live https://assets.vercel.com" : ""}`,
+  // analytics.tiktok.com : polices de l'overlay « Test Events » du pixel TikTok
+  // (violations font-src constatées en prod le 01/09/2026).
+  `font-src 'self' data: https://analytics.tiktok.com${isVercelToolbar ? " https://vercel.live https://assets.vercel.com" : ""}`,
   // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
   // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
   // *.pusher.com : temps réel de la barre de feedback Vercel (non-production).
-  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://analytics.tiktok.com https://analytics-ipv6.tiktokw.us https://www.googleapis.com https://challenges.cloudflare.com`,
+  // TikTok : *.tiktok.com + wss (mode « Test Events » d'Events Manager, overlay +
+  // websocket de debug), *.tiktokw.us / *.tiktokv.us (endpoints régionaux US,
+  // enrich_ipv6…). En CSP, https:// ne couvre pas wss://, d'où l'entrée dédiée.
+  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr
