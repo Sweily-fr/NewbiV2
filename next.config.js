@@ -47,14 +47,14 @@ const cspHeaderKey = isDev
   : "Content-Security-Policy";
 const cspValue = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://challenges.cloudflare.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   `font-src 'self' data:${isVercelToolbar ? " https://vercel.live https://assets.vercel.com" : ""}`,
   // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
   // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
   // *.pusher.com : temps réel de la barre de feedback Vercel (non-production).
-  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://www.googleapis.com https://challenges.cloudflare.com`,
+  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://analytics.tiktok.com https://www.googleapis.com https://challenges.cloudflare.com`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr
