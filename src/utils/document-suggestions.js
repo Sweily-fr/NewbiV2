@@ -168,8 +168,8 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
     addressZipCode = "",
     vatNumber = "",
     fiscalRegime = "",
-    // Franchise en base de TVA (art. 293 B du CGI) : source de vérité de la
-    // mention légale en pied de page.
+    // Franchise en base de TVA (art. L. 223-3 du CIBS, ex-293 B du CGI) :
+    // source de vérité de la mention légale en pied de page.
     vatFranchise,
     // Support pour l'adresse en format objet ou string
     address,
@@ -222,10 +222,10 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
         return `${name}${legalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
 
       case "micro-compact":
-        return `${name}${legalForm === "EI" ? " • EI" : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""} • TVA non applicable, art. 293 B du CGI`;
+        return `${name}${legalForm === "EI" ? " • EI" : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""} • TVA non applicable, art. L. 223-3 du CIBS`;
 
       case "micro-lisible":
-        return `${name}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}\nTVA non applicable, art. 293 B du CGI`;
+        return `${name}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}\nTVA non applicable, art. L. 223-3 du CIBS`;
 
       case "autoliquidation-compact":
         return `${name}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""} • Autoliquidation TVA, art. 283-2 CGI: TVA due par le client`;
@@ -267,7 +267,7 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
       return `${name}${legalInfoMain}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • Siège: ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}`;
 
     case "micro-compact":
-      return `${name}${legalForm === "EI" ? " • EI" : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""} • TVA non applicable, art. 293 B du CGI`;
+      return `${name}${legalForm === "EI" ? " • EI" : ""}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""} • TVA non applicable, art. L. 223-3 du CIBS`;
 
     case "micro-lisible":
       // Construire la partie forme juridique + capital pour micro-entreprises
@@ -279,10 +279,10 @@ export const generateDynamicFooter = (companyInfo, variant = "standard") => {
       } else if (capitalSocial) {
         microLegalInfo = ` • Capital: ${capitalSocial}€`;
       }
-      // La mention 293 B est le seul intérêt de cette variante : sans elle,
+      // La mention franchise en base est le seul intérêt de cette variante : sans elle,
       // le rendu était identique à "standard-lisible" et la franchise en base
       // n'apparaissait nulle part sur les documents à adresse structurée.
-      return `${name}${microLegalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nTVA non applicable, art. 293 B du CGI`;
+      return `${name}${microLegalInfo}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""}\nTVA non applicable, art. L. 223-3 du CIBS`;
 
     case "autoliquidation-compact":
       return `${name}${siretNumber ? ` • SIRET ${siretNumber}` : ""}${villeRCS ? ` • RCS ${villeRCS}` : ""}${adresseComplete ? ` • ${adresseComplete}` : ""}${vatNumber ? ` • TVA intracom: ${vatNumber}` : ""} • Autoliquidation TVA, art. 283-2 CGI: TVA due par le client`;

@@ -11,17 +11,17 @@ const base = {
   address: { street: "1 rue A", city: "Paris", postalCode: "75001" },
 };
 
-describe("franchise en base de TVA — mention 293 B", () => {
+describe("franchise en base de TVA — mention franchise en base (CIBS)", () => {
   it("affiche la mention quand vatFranchise est vrai (adresse structurée)", () => {
     expect(generateDynamicFooter({ ...base, vatFranchise: true })).toContain(
-      "TVA non applicable, art. 293 B du CGI",
+      "TVA non applicable, art. L. 223-3 du CIBS",
     );
   });
 
   it("n'affiche pas la mention quand vatFranchise est faux", () => {
     expect(
       generateDynamicFooter({ ...base, vatFranchise: false }),
-    ).not.toContain("293 B");
+    ).not.toContain("TVA non applicable");
   });
 
   it("vatFranchise=false l'emporte sur un régime fiscal micro", () => {
@@ -31,13 +31,13 @@ describe("franchise en base de TVA — mention 293 B", () => {
         vatFranchise: false,
         fiscalRegime: "micro-bic",
       }),
-    ).not.toContain("293 B");
+    ).not.toContain("TVA non applicable");
   });
 
   it("repli sur le régime micro pour les documents antérieurs", () => {
     expect(
       generateDynamicFooter({ ...base, fiscalRegime: "micro-bic" }),
-    ).toContain("TVA non applicable, art. 293 B du CGI");
+    ).toContain("TVA non applicable, art. L. 223-3 du CIBS");
   });
 });
 
