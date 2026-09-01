@@ -286,9 +286,11 @@ export default function TransferPage() {
     zipUrl: zipPreviewUrl,
   });
 
-  // displayFiles: entrées extraites du ZIP, sinon fichiers réels du transfert
+  // displayFiles: entrées extraites du ZIP, sinon fichiers réels du transfert.
+  // Archive trop grosse pour être parsée : on retombe sur le ZIP lui-même,
+  // qui garde ainsi une ligne téléchargeable avec sa progression.
   const displayFiles = useMemo(() => {
-    if (!zipContainer) return transferFiles;
+    if (!zipContainer || zipTooLarge) return transferFiles;
     return zipEntries.map((e) => ({
       id: e.path,
       path: e.path,
@@ -297,7 +299,7 @@ export default function TransferPage() {
       size: e.size,
       isZipEntry: true,
     }));
-  }, [zipContainer, zipEntries, transferFiles]);
+  }, [zipContainer, zipTooLarge, zipEntries, transferFiles]);
 
   // Fonction pour annuler le téléchargement
   const cancelDownload = () => {
@@ -1167,48 +1169,51 @@ export default function TransferPage() {
                         }
                         return placeholder;
                       })()}
-                      {/* Bouton preview au centre */}
-                      <button
-                        onClick={() => {
-                          // Ouvre le premier fichier prévisualisable
-                          let idx = 0;
-                          if (zipContainer) {
-                            const found = displayFiles.findIndex((f) => {
-                              const ext = f?.originalName
-                                ?.split(".")
-                                ?.pop()
-                                ?.toLowerCase();
-                              return [
-                                "jpg",
-                                "jpeg",
-                                "png",
-                                "gif",
-                                "webp",
-                                "heic",
-                                "heif",
-                                "bmp",
-                                "svg",
-                                "tiff",
-                                "pdf",
-                                "mp4",
-                                "webm",
-                                "ogg",
-                                "ogv",
-                                "mov",
-                                "m4v",
-                                "mkv",
-                              ].includes(ext);
-                            });
-                            if (found >= 0) idx = found;
-                          }
-                          openPreview(displayFiles?.[idx], idx);
-                        }}
-                        className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group cursor-pointer"
-                      >
-                        <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center">
-                          <Eye className="w-5 h-5 text-gray-700" />
-                        </div>
-                      </button>
+                      {/* Bouton preview au centre (pas d'aperçu possible
+                          quand l'archive est trop grosse pour être parsée) */}
+                      {!(zipContainer && zipTooLarge) && (
+                        <button
+                          onClick={() => {
+                            // Ouvre le premier fichier prévisualisable
+                            let idx = 0;
+                            if (zipContainer) {
+                              const found = displayFiles.findIndex((f) => {
+                                const ext = f?.originalName
+                                  ?.split(".")
+                                  ?.pop()
+                                  ?.toLowerCase();
+                                return [
+                                  "jpg",
+                                  "jpeg",
+                                  "png",
+                                  "gif",
+                                  "webp",
+                                  "heic",
+                                  "heif",
+                                  "bmp",
+                                  "svg",
+                                  "tiff",
+                                  "pdf",
+                                  "mp4",
+                                  "webm",
+                                  "ogg",
+                                  "ogv",
+                                  "mov",
+                                  "m4v",
+                                  "mkv",
+                                ].includes(ext);
+                              });
+                              if (found >= 0) idx = found;
+                            }
+                            openPreview(displayFiles?.[idx], idx);
+                          }}
+                          className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors group cursor-pointer"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center">
+                            <Eye className="w-5 h-5 text-gray-700" />
+                          </div>
+                        </button>
+                      )}
                     </>
                   }
                 </div>
@@ -1249,81 +1254,89 @@ export default function TransferPage() {
                 <div className="w-full px-5 py-3 text-xs text-red-500">
                   Impossible de lire l'archive : {zipError}
                 </div>
-              ) : zipContainer && zipTooLarge ? (
-                <div className="w-full px-5 py-3 text-xs text-gray-500">
-                  Archive trop volumineuse pour la prévisualisation.
-                </div>
               ) : (
-                <ul className="max-h-40 overflow-y-auto">
-                  {displayFiles.map((file, index) => (
-                    <li
-                      key={file.id || file.path || index}
-                      className="w-full px-5 py-3 border-b border-gray-200 last:border-b-0"
-                    >
-                      <div className="w-full flex items-center">
-                        <div className="flex-grow min-w-0">
-                          <h3 className="text-sm text-gray-800 truncate">
-                            {file.originalName}
-                          </h3>
-                          <p className="text-xs text-gray-500">
-                            {formatSize(file.size)}
-                            {file.mimeType &&
-                              !file.mimeType.includes("octet-stream") && (
-                                <> • {file.mimeType?.split("/")[1]}</>
-                              )}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 ml-2">
-                          {canPreview(file) && (
-                            <button
-                              onClick={() => openPreview(file, index)}
-                              className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          )}
-                          {!isDownloadBlocked(file) &&
-                            (() => {
-                              const rowFileId =
-                                file.id || file.fileId || file.path;
-                              const rowProgress =
-                                downloadProgressMap[rowFileId];
-                              const rowDownloading = rowProgress !== undefined;
-                              return (
-                                <button
-                                  onClick={() => {
-                                    if (file.isZipEntry) {
-                                      downloadSingleFile(file);
-                                    } else {
-                                      downloadFile(
-                                        file.id || file.fileId,
-                                        file.originalName,
-                                        file.size,
-                                      );
+                <>
+                  {/* Archive trop grosse pour être parsée : simple note, la
+                      ligne du ZIP reste téléchargeable avec sa progression */}
+                  {zipContainer && zipTooLarge && (
+                    <p className="w-full px-5 pb-2 text-xs text-gray-500">
+                      Archive trop volumineuse pour la prévisualisation.
+                    </p>
+                  )}
+                  <ul className="max-h-40 overflow-y-auto">
+                    {displayFiles.map((file, index) => (
+                      <li
+                        key={file.id || file.path || index}
+                        className="w-full px-5 py-3 border-b border-gray-200 last:border-b-0"
+                      >
+                        <div className="w-full flex items-center">
+                          <div className="flex-grow min-w-0">
+                            <h3 className="text-sm text-gray-800 truncate">
+                              {file.originalName}
+                            </h3>
+                            <p className="text-xs text-gray-500">
+                              {formatSize(file.size)}
+                              {file.mimeType &&
+                                !file.mimeType.includes("octet-stream") && (
+                                  <> • {file.mimeType?.split("/")[1]}</>
+                                )}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 ml-2">
+                            {canPreview(file) && (
+                              <button
+                                onClick={() => openPreview(file, index)}
+                                className="p-2 text-gray-400 hover:text-[#5a50ff] transition-colors cursor-pointer"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            )}
+                            {!isDownloadBlocked(file) &&
+                              (() => {
+                                const rowFileId =
+                                  file.id || file.fileId || file.path;
+                                const rowProgress =
+                                  downloadProgressMap[rowFileId];
+                                const rowDownloading =
+                                  rowProgress !== undefined;
+                                return (
+                                  <button
+                                    onClick={() => {
+                                      if (file.isZipEntry) {
+                                        downloadSingleFile(file);
+                                      } else {
+                                        downloadFile(
+                                          file.id || file.fileId,
+                                          file.originalName,
+                                          file.size,
+                                        );
+                                      }
+                                    }}
+                                    disabled={
+                                      rowDownloading || isBulkDownloading
                                     }
-                                  }}
-                                  disabled={rowDownloading || isBulkDownloading}
-                                  className={`p-2 transition-colors cursor-pointer ${
-                                    rowDownloading || isBulkDownloading
-                                      ? "text-gray-300 cursor-not-allowed"
-                                      : "text-gray-400 hover:text-[#5a50ff]"
-                                  }`}
-                                >
-                                  {rowDownloading ? (
-                                    <span className="text-[10px] font-semibold text-[#5a50ff] tabular-nums">
-                                      {Math.round(rowProgress)}%
-                                    </span>
-                                  ) : (
-                                    <Download className="w-4 h-4" />
-                                  )}
-                                </button>
-                              );
-                            })()}
+                                    className={`p-2 transition-colors cursor-pointer ${
+                                      rowDownloading || isBulkDownloading
+                                        ? "text-gray-300 cursor-not-allowed"
+                                        : "text-gray-400 hover:text-[#5a50ff]"
+                                    }`}
+                                  >
+                                    {rowDownloading ? (
+                                      <span className="text-[10px] font-semibold text-[#5a50ff] tabular-nums">
+                                        {Math.round(rowProgress)}%
+                                      </span>
+                                    ) : (
+                                      <Download className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                );
+                              })()}
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
 
               {/* Message filigrane */}
