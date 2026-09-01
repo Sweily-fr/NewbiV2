@@ -76,7 +76,7 @@ export default function LegalInfoSettingsSection({ organization }) {
         setValue("companyInfo.vatPaymentCondition", detail.vatMode, opts);
       }
       if (detail.vatFranchise !== undefined) {
-        // Pilote la mention « TVA non applicable, art. 293 B du CGI » du
+        // Pilote la mention « TVA non applicable, art. L. 223-3 du CIBS » du
         // pied de page : l'aperçu doit suivre sans recharger.
         setValue("companyInfo.vatFranchise", detail.vatFranchise, opts);
       }

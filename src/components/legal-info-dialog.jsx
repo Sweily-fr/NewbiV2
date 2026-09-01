@@ -392,7 +392,7 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
               </div>
 
               {/* Franchise en base de TVA : pilote la mention « TVA non
-                  applicable, art. 293 B du CGI » en pied de page des documents */}
+                  applicable, art. L. 223-3 du CIBS » en pied de page des documents */}
               {!isVatSubject && (
                 <div className="flex items-center justify-between gap-4 p-3 rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
                   <div className="grid gap-1.5 leading-none">
@@ -403,8 +403,8 @@ export function LegalInfoDialog({ open, onOpenChange, organization }) {
                       Êtes-vous en franchise en base de TVA ?
                     </label>
                     <p className="text-xs text-muted-foreground">
-                      Ajoute la mention « TVA non applicable, art. 293 B du CGI
-                      » en pied de page de vos documents.
+                      Ajoute la mention « TVA non applicable, art. L. 223-3 du
+                      CIBS » en pied de page de vos documents.
                     </p>
                   </div>
                   <Switch

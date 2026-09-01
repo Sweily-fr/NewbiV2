@@ -185,7 +185,7 @@ const UniversalPreviewPDF = ({
       : data.companyInfo?.name || "";
   })();
 
-  // Franchise en base de TVA (mention « art. 293 B du CGI » en pied de page).
+  // Franchise en base de TVA (mention « art. L. 223-3 du CIBS » en pied de page).
   // La valeur du document prime : elle est mise à jour explicitement quand on
   // enregistre depuis les paramètres du document, alors que l'organisation de
   // useWorkspace est mémoïsée sur l'id et reste figée après un changement de
@@ -2823,7 +2823,7 @@ const UniversalPreviewPDF = ({
 
           {/* Régime de TVA. Affiché sur factures, devis et bons de commande :
               obligatoire sur les factures, et cohérent avec la mention de
-              franchise en base (art. 293 B) qui sort déjà sur les trois. */}
+              franchise en base (art. L. 223-3 du CIBS) qui sort déjà sur les trois. */}
           {!isCreditNote && vatPaymentMention && (
             <div className="text-[10px] dark:text-[#0A0A0A]">
               {vatPaymentMention}
