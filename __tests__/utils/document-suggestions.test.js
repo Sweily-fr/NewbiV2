@@ -76,9 +76,9 @@ describe("generateDynamicFooter", () => {
     expect(out).toContain("12345678901234");
   });
 
-  it("'micro-compact' variant includes the CGI mention", () => {
+  it("'micro-compact' variant includes the CIBS mention", () => {
     const out = generateDynamicFooter(microCompany, "micro-compact");
-    expect(out).toContain("TVA non applicable, art. 293 B du CGI");
+    expect(out).toContain("TVA non applicable, art. L. 223-3 du CIBS");
   });
 
   it("'autoliquidation-compact' includes the article 283-2 mention", () => {

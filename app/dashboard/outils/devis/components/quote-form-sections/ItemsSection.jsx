@@ -991,8 +991,8 @@ export default function ItemsSection({
                                               <SelectItem value="Article 283-2 du CGI">
                                                 Article 283-2 du CGI
                                               </SelectItem>
-                                              <SelectItem value="Article 293 B du CGI">
-                                                Article 293 B du CGI
+                                              <SelectItem value="Article L. 223-3 du CIBS">
+                                                Article L. 223-3 du CIBS
                                               </SelectItem>
                                               <SelectItem value="Article 298 sexies du CGI">
                                                 Article 298 sexies du CGI

@@ -4,7 +4,7 @@
  * d'envoi e-reporting au PPF côté SuperPDP.
  *
  * Retourne null quand la situation TVA n'est pas explicitement déclarée :
- * la franchise en base (art. 293 B du CGI) doit être cochée, un simple
+ * la franchise en base (art. L. 223-3 du CIBS) doit être cochée, un simple
  * « non assujetti » ne suffit pas.
  */
 export function deriveVatRegime(org) {
