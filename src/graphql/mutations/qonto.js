@@ -29,14 +29,18 @@ const QONTO_ACCOUNT_FIELDS = gql`
       invoicesSynced
       expensesSynced
       clientsSynced
+      quotesSynced
       clientInvoicesImported
       supplierInvoicesImported
+      quotesImported
     }
     autoSync {
       invoices
       supplierInvoices
+      quotes
       importClientInvoices
       importSupplierInvoices
+      importQuotes
     }
     createdAt
     updatedAt
@@ -135,8 +139,10 @@ export const UPDATE_QONTO_AUTO_SYNC = gql`
         autoSync {
           invoices
           supplierInvoices
+          quotes
           importClientInvoices
           importSupplierInvoices
+          importQuotes
         }
       }
     }
@@ -214,6 +220,8 @@ export const SYNC_ALL_TO_QONTO = gql`
       invoicesErrors
       expensesSynced
       expensesErrors
+      quotesSynced
+      quotesErrors
     }
   }
 `;
@@ -230,6 +238,20 @@ export const IMPORT_FROM_QONTO = gql`
       supplierInvoicesImported
       supplierInvoicesUpdated
       supplierInvoicesErrors
+      quotesImported
+      quotesUpdated
+      quotesErrors
+    }
+  }
+`;
+
+// Synchroniser un devis vers Qonto
+export const SYNC_QUOTE_TO_QONTO = gql`
+  mutation SyncQuoteToQonto($quoteId: ID!) {
+    syncQuoteToQonto(quoteId: $quoteId) {
+      success
+      message
+      qontoId
     }
   }
 `;
