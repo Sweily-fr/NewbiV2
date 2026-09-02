@@ -772,6 +772,8 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
   const [isTesting, setIsTesting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   const canSubmit = login.trim() && secretKey.trim();
 
@@ -813,6 +815,14 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
     const result = await actions.onSyncAll();
     setSyncResult(result);
     setIsSyncing(false);
+  };
+
+  const handleImport = async () => {
+    setIsImporting(true);
+    setImportResult(null);
+    const result = await actions.onImportFromQonto();
+    setImportResult(result);
+    setIsImporting(false);
   };
 
   if (isConnected) {
@@ -876,6 +886,22 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                 {actions.account.stats.expensesSynced}
               </p>
             </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Factures clients reçues de Qonto
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.clientInvoicesImported ?? 0}
+              </p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Factures fournisseurs reçues de Qonto
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.supplierInvoicesImported ?? 0}
+              </p>
+            </div>
           </div>
         )}
 
@@ -916,7 +942,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
               <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323]">
                 <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
-                  Documents
+                  Newbi vers Qonto
                 </span>
               </div>
               <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
@@ -953,7 +979,70 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                 ))}
               </div>
             </div>
+
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
+              <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323] flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                  Qonto vers Newbi
+                </span>
+                <span className="text-[11px] text-gray-400 text-right">
+                  toutes les 15 min
+                  {actions.account.lastImportAt
+                    ? ` - dernier : ${new Date(actions.account.lastImportAt).toLocaleString("fr-FR")}`
+                    : ""}
+                </span>
+              </div>
+              <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
+                {[
+                  {
+                    key: "importClientInvoices",
+                    label: "Factures clients créées dans Qonto",
+                    hint: "Ajoutées dans vos factures importées avec le PDF",
+                  },
+                  {
+                    key: "importSupplierInvoices",
+                    label: "Factures fournisseurs déposées dans Qonto",
+                    hint: "Ajoutées dans vos factures d'achat avec le PDF",
+                  },
+                ].map(({ key, label, hint }) => (
+                  <label
+                    key={key}
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
+                  >
+                    <span className="flex flex-col">
+                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
+                        {label}
+                      </span>
+                      <span className="text-[11px] text-gray-400">{hint}</span>
+                    </span>
+                    <Checkbox
+                      checked={!!actions.account.autoSync[key]}
+                      onCheckedChange={(checked) =>
+                        actions.onUpdateAutoSync({ [key]: !!checked })
+                      }
+                      disabled={!actions.canManage}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Erreur d'import */}
+        {actions.account?.importError && (
+          <p className="text-[11px] text-red-500 dark:text-red-400">
+            Import Qonto : {actions.account.importError}
+          </p>
+        )}
+
+        {/* Résultat import */}
+        {importResult && (
+          <p
+            className={`text-[11px] ${importResult.success ? "text-gray-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"}`}
+          >
+            {importResult.message}
+          </p>
         )}
 
         {/* Erreur de sync */}
@@ -1001,7 +1090,23 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             ) : (
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             )}
-            {isSyncing ? "Synchronisation..." : "Synchroniser maintenant"}
+            {isSyncing ? "Synchronisation..." : "Envoyer vers Qonto"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleImport}
+            disabled={actions.isReadOnly || isImporting || !actions.canManage}
+            title={actions.readOnlyTooltip}
+            className="cursor-pointer"
+          >
+            {isImporting ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {isImporting ? "Import..." : "Importer depuis Qonto"}
           </Button>
           <Button
             type="button"
@@ -1840,6 +1945,7 @@ export function ApplicationsSection() {
     updateBankAccount: updateQontoBankAccount,
     refreshBankAccounts: refreshQontoBankAccounts,
     syncAll: syncAllToQonto,
+    importFromQonto: importFromQontoAction,
     error: qontoError,
     clearError: clearQontoError,
   } = useQonto(activeOrganization?.id || organizationId);
@@ -2038,6 +2144,7 @@ export function ApplicationsSection() {
     onUpdateBankAccount: updateQontoBankAccount,
     onRefreshBankAccounts: refreshQontoBankAccounts,
     onSyncAll: syncAllToQonto,
+    onImportFromQonto: importFromQontoAction,
   };
 
   // Toujours récupérer l'app fraîche depuis appsWithStatus (pour refléter install/uninstall)
