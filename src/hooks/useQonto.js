@@ -11,7 +11,6 @@ import {
   REFRESH_QONTO_BANK_ACCOUNTS,
   SYNC_INVOICE_TO_QONTO,
   SYNC_PURCHASE_INVOICE_TO_QONTO,
-  SYNC_EXPENSE_TO_QONTO,
   SYNC_ALL_TO_QONTO,
   IMPORT_FROM_QONTO,
   SYNC_QUOTE_TO_QONTO,
@@ -52,7 +51,6 @@ export const useQonto = (organizationId) => {
   const [syncPurchaseInvoiceMutation] = useMutation(
     SYNC_PURCHASE_INVOICE_TO_QONTO,
   );
-  const [syncExpenseMutation] = useMutation(SYNC_EXPENSE_TO_QONTO);
   const [syncAllMutation] = useMutation(SYNC_ALL_TO_QONTO);
   const [importFromQontoMutation] = useMutation(IMPORT_FROM_QONTO);
   const [syncQuoteMutation] = useMutation(SYNC_QUOTE_TO_QONTO);
@@ -169,12 +167,6 @@ export const useQonto = (organizationId) => {
     [run, syncPurchaseInvoiceMutation],
   );
 
-  const syncExpense = useCallback(
-    (expenseId) =>
-      run(syncExpenseMutation, { expenseId }, (d) => d.syncExpenseToQonto),
-    [run, syncExpenseMutation],
-  );
-
   const syncAll = useCallback(
     () =>
       run(syncAllMutation, null, (d) => d.syncAllToQonto, {
@@ -231,7 +223,6 @@ export const useQonto = (organizationId) => {
     refreshBankAccounts,
     syncInvoice,
     syncPurchaseInvoice,
-    syncExpense,
     syncQuote,
     syncAll,
     importFromQonto,
