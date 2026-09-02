@@ -15,6 +15,10 @@ import {
   Tag,
 } from "lucide-react";
 import {
+  DocumentSourceBadge,
+  isExternalSource,
+} from "@/src/components/document-source-badge";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -265,12 +269,17 @@ export const getColumns = ({
     cell: ({ row }) => {
       const name = row.getValue("supplierName");
       const merchant = findMerchant(name || "");
+      const source = row.original?.source;
       return (
         <div className="flex items-center gap-3">
           <MerchantLogo merchant={merchant} fallbackText={name} size="sm" />
           <div className="font-normal truncate max-w-[200px]" title={name}>
             {merchant?.name || name || "Fournisseur"}
           </div>
+          {/* Origine externe uniquement (Qonto, PDP) : rien pour un ajout Newbi */}
+          {isExternalSource(source) && (
+            <DocumentSourceBadge source={source} docLabel="Facture" />
+          )}
         </div>
       );
     },

@@ -22,9 +22,10 @@ import {
   Send,
   XCircle,
   Archive,
-  Upload,
   CircleAlert,
 } from "lucide-react";
+import { DocumentSourceBadge } from "@/src/components/document-source-badge";
+import { dateSortingFn } from "@/src/lib/document-dates";
 import { cn } from "@/src/lib/utils";
 import {
   INVOICE_STATUS_LABELS,
@@ -355,19 +356,11 @@ export function useInvoiceTable({
                 )}
               </div>
               {isImported && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
-                      <Upload className="w-3 h-3" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="bg-[#202020] text-white border-none text-xs"
-                  >
-                    Facture importée
-                  </TooltipContent>
-                </Tooltip>
+                <DocumentSourceBadge
+                  source={invoice.source}
+                  docLabel="Facture"
+                  fallbackLabel="Facture importée"
+                />
               )}
             </div>
           );
@@ -560,6 +553,7 @@ export function useInvoiceTable({
       },
       {
         accessorKey: "issueDate",
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div
             className="flex items-center cursor-pointer font-normal"
@@ -619,6 +613,7 @@ export function useInvoiceTable({
       },
       {
         accessorKey: "dueDate",
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div
             className="flex items-center cursor-pointer font-normal"

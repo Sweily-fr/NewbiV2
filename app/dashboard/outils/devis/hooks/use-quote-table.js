@@ -23,6 +23,8 @@ import {
   CircleAlert,
   Upload,
 } from "lucide-react";
+import { DocumentSourceBadge } from "@/src/components/document-source-badge";
+import { dateSortingFn } from "@/src/lib/document-dates";
 import { cn } from "@/src/lib/utils";
 import {
   QUOTE_STATUS_LABELS,
@@ -322,6 +324,9 @@ export function useQuoteTable({
           // devis accepté ou refusé (le statut change, l'origine reste).
           const isImportedOrigin =
             isImported || (!quote.prefix && Boolean(quote.number));
+          // Origine externe : champ `source` d'un devis importé, ou identifiant
+          // Qonto conservé sur un devis converti depuis Qonto.
+          const quoteSource = quote.source || (quote.qontoId ? "QONTO" : null);
           const clientName = client?.name || "Non défini";
           return (
             <div className="min-h-[40px] flex items-center gap-2">
@@ -349,19 +354,11 @@ export function useQuoteTable({
                 </div>
               </div>
               {isImportedOrigin && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
-                      <Upload className="w-3 h-3" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="bg-[#202020] text-white border-none text-xs"
-                  >
-                    Devis importé
-                  </TooltipContent>
-                </Tooltip>
+                <DocumentSourceBadge
+                  source={quoteSource}
+                  docLabel="Devis"
+                  fallbackLabel="Devis importé"
+                />
               )}
             </div>
           );
@@ -400,6 +397,7 @@ export function useQuoteTable({
       },
       {
         accessorKey: "issueDate",
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
             <div
@@ -425,6 +423,7 @@ export function useQuoteTable({
       },
       {
         accessorKey: "validUntil",
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
             <div

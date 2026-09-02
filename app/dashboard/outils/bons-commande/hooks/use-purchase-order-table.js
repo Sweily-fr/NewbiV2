@@ -17,7 +17,6 @@ import {
 import {
   ArrowUpDown,
   CircleAlert,
-  Upload,
   Clock,
   CheckCircle,
   FileText,
@@ -25,6 +24,8 @@ import {
   Play,
   Truck,
 } from "lucide-react";
+import { DocumentSourceBadge } from "@/src/components/document-source-badge";
+import { dateSortingFn } from "@/src/lib/document-dates";
 import { cn } from "@/src/lib/utils";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
@@ -279,19 +280,11 @@ export function usePurchaseOrderTable({
                 </div>
               </div>
               {isImported && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400 cursor-default">
-                      <Upload className="w-3 h-3" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="top"
-                    className="bg-[#202020] text-white border-none text-xs"
-                  >
-                    Bon de commande importé
-                  </TooltipContent>
-                </Tooltip>
+                <DocumentSourceBadge
+                  source={purchaseOrder.source}
+                  docLabel="Bon de commande"
+                  fallbackLabel="Bon de commande importé"
+                />
               )}
             </div>
           );
@@ -336,6 +329,7 @@ export function usePurchaseOrderTable({
       },
       {
         accessorKey: "issueDate",
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
             <div
@@ -361,6 +355,7 @@ export function usePurchaseOrderTable({
       },
       {
         accessorKey: "validUntil",
+        sortingFn: dateSortingFn,
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
             <div

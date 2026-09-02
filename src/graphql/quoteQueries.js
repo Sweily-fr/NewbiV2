@@ -9,6 +9,7 @@ export const QUOTE_FRAGMENT = gql`
     prefix
     projectReference
     status
+    qontoId
     issueDate
     validUntil
     headerNotes
@@ -199,6 +200,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
     number
     prefix
     status
+    qontoId
     issueDate
     validUntil
     retenueGarantie
