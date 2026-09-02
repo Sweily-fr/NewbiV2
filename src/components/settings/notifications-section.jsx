@@ -750,7 +750,8 @@ export function NotificationsSection({ onClose }) {
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
-                      {notification.type === "PURCHASE_INVOICE_RECEIVED" ? (
+                      {notification.type === "PURCHASE_INVOICE_RECEIVED" ||
+                      notification.type === "DOCUMENT_IMPORTED" ? (
                         <>
                           <p className="text-sm truncate max-w-[600px] font-medium">
                             {notification.title || "Nouvelle facture reçue"}
