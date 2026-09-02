@@ -968,8 +968,8 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                   },
                   {
                     key: "supplierInvoices",
-                    label: "Factures fournisseurs et dépenses",
-                    hint: "Le justificatif PDF est déposé dans Qonto",
+                    label: "Factures d'achat",
+                    hint: "Le PDF de la facture est déposé dans Qonto (jamais les transactions)",
                   },
                   {
                     key: "quotes",

@@ -199,17 +199,6 @@ export const SYNC_PURCHASE_INVOICE_TO_QONTO = gql`
   }
 `;
 
-// Synchroniser une dépense vers Qonto
-export const SYNC_EXPENSE_TO_QONTO = gql`
-  mutation SyncExpenseToQonto($expenseId: ID!) {
-    syncExpenseToQonto(expenseId: $expenseId) {
-      success
-      message
-      qontoId
-    }
-  }
-`;
-
 // Lancer une synchronisation complète
 export const SYNC_ALL_TO_QONTO = gql`
   mutation SyncAllToQonto {
