@@ -1,4 +1,18 @@
-import { useQuery, useMutation, useSubscription } from "@apollo/client";
+import {
+  useQuery,
+  useMutation,
+  useSubscription,
+  useApolloClient,
+} from "@apollo/client";
+import { toast } from "sonner";
+
+// Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
+// rafraîchir sans recharger la page, par nom d'opération GraphQL.
+const IMPORTED_DOCUMENT_QUERIES = {
+  INVOICE: ["GetImportedInvoices", "GetInvoices", "GetImportedInvoiceStats"],
+  QUOTE: ["GetImportedQuotes", "GetQuotes", "GetImportedQuoteStats"],
+  PURCHASE_INVOICE: ["GetPurchaseInvoices", "GetPurchaseInvoiceStats"],
+};
 import { useCallback, useEffect, useState } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -64,13 +78,41 @@ export const useActivityNotifications = (options = {}) => {
     },
   );
 
+  const apolloClient = useApolloClient();
+
   // Rafraîchir quand une nouvelle notification arrive via WebSocket
   useEffect(() => {
-    if (subscriptionData?.notificationReceived) {
-      refetch();
-      refetchUnreadCount();
+    const incoming = subscriptionData?.notificationReceived;
+    if (!incoming) return;
+    refetch();
+    refetchUnreadCount();
+
+    // Document importé (Qonto…) ou reçu via la PDP : la liste concernée se
+    // met à jour toute seule, avec un toast cliquable.
+    const documentType =
+      incoming.type === "DOCUMENT_IMPORTED"
+        ? incoming.data?.documentType
+        : incoming.type === "PURCHASE_INVOICE_RECEIVED"
+          ? "PURCHASE_INVOICE"
+          : null;
+    if (!documentType) return;
+
+    const include = IMPORTED_DOCUMENT_QUERIES[documentType] || [];
+    if (include.length > 0) {
+      apolloClient
+        .refetchQueries({ include })
+        .catch((err) =>
+          console.warn("Rafraîchissement après import impossible:", err),
+        );
     }
-  }, [subscriptionData, refetch, refetchUnreadCount]);
+    const url = incoming.data?.url;
+    toast.info(incoming.title || "Nouveau document reçu", {
+      description: incoming.message,
+      action: url
+        ? { label: "Voir", onClick: () => window.location.assign(url) }
+        : undefined,
+    });
+  }, [subscriptionData, refetch, refetchUnreadCount, apolloClient]);
 
   // Marquer une notification comme lue
   const markAsRead = useCallback(

@@ -32,6 +32,10 @@ export const GET_NOTIFICATIONS = gql`
           url
           purchaseInvoiceId
           supplierName
+          documentType
+          documentId
+          documentNumber
+          source
           amountTTC
         }
         read
@@ -99,6 +103,10 @@ export const NOTIFICATION_RECEIVED_SUBSCRIPTION = gql`
         url
         purchaseInvoiceId
         supplierName
+        documentType
+        documentId
+        documentNumber
+        source
         amountTTC
       }
       read
