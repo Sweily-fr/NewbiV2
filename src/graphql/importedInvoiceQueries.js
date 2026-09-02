@@ -8,6 +8,7 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
     importedBy
     status
     originalInvoiceNumber
+    source
     vendor {
       name
       address
