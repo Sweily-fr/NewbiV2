@@ -869,7 +869,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
 
         {/* Stats */}
         {actions.account?.stats && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
               <p className="text-[11px] text-gray-400 mb-0.5">
                 Factures clients envoyées
@@ -887,6 +887,12 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
               </p>
             </div>
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">Devis envoyés</p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.quotesSynced ?? 0}
+              </p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
               <p className="text-[11px] text-gray-400 mb-0.5">
                 Factures clients reçues de Qonto
               </p>
@@ -900,6 +906,14 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
               </p>
               <p className="text-lg font-semibold">
                 {actions.account.stats.supplierInvoicesImported ?? 0}
+              </p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Devis reçus de Qonto
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.quotesImported ?? 0}
               </p>
             </div>
           </div>
@@ -957,6 +971,11 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                     label: "Factures fournisseurs et dépenses",
                     hint: "Le justificatif PDF est déposé dans Qonto",
                   },
+                  {
+                    key: "quotes",
+                    label: "Devis",
+                    hint: "Créés dans Qonto avec le PDF Newbi dès l'envoi",
+                  },
                 ].map(({ key, label, hint }) => (
                   <label
                     key={key}
@@ -1003,6 +1022,11 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                     key: "importSupplierInvoices",
                     label: "Factures fournisseurs déposées dans Qonto",
                     hint: "Ajoutées dans vos factures d'achat avec le PDF",
+                  },
+                  {
+                    key: "importQuotes",
+                    label: "Devis créés dans Qonto",
+                    hint: "Ajoutés dans vos devis importés avec le PDF",
                   },
                 ].map(({ key, label, hint }) => (
                   <label
@@ -1064,7 +1088,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           >
             {syncResult.success
               ? syncResult.invoicesSynced != null
-                ? `${syncResult.invoicesSynced} facture${syncResult.invoicesSynced > 1 ? "s" : ""} client${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.expensesSynced} facture${syncResult.expensesSynced > 1 ? "s" : ""} fournisseur${syncResult.expensesSynced > 1 ? "s" : ""} envoyée${syncResult.expensesSynced > 1 ? "s" : ""}${syncResult.invoicesErrors + syncResult.expensesErrors > 0 ? ` - ${syncResult.invoicesErrors + syncResult.expensesErrors} erreur${syncResult.invoicesErrors + syncResult.expensesErrors > 1 ? "s" : ""}` : ""}`
+                ? `${syncResult.invoicesSynced} facture${syncResult.invoicesSynced > 1 ? "s" : ""} client${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.expensesSynced} facture${syncResult.expensesSynced > 1 ? "s" : ""} fournisseur${syncResult.expensesSynced > 1 ? "s" : ""} envoyée${syncResult.expensesSynced > 1 ? "s" : ""}${syncResult.quotesSynced ? `, ${syncResult.quotesSynced} devis` : ""}${syncResult.invoicesErrors + syncResult.expensesErrors + (syncResult.quotesErrors || 0) > 0 ? ` - ${syncResult.invoicesErrors + syncResult.expensesErrors + (syncResult.quotesErrors || 0)} erreur${syncResult.invoicesErrors + syncResult.expensesErrors + (syncResult.quotesErrors || 0) > 1 ? "s" : ""}` : ""}`
                 : "Synchronisation terminée"
               : syncResult.message}
           </p>
