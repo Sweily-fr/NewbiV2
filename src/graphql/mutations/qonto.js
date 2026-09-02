@@ -23,14 +23,20 @@ const QONTO_ACCOUNT_FIELDS = gql`
     lastSyncAt
     syncStatus
     syncError
+    lastImportAt
+    importError
     stats {
       invoicesSynced
       expensesSynced
       clientsSynced
+      clientInvoicesImported
+      supplierInvoicesImported
     }
     autoSync {
       invoices
       supplierInvoices
+      importClientInvoices
+      importSupplierInvoices
     }
     createdAt
     updatedAt
@@ -129,6 +135,8 @@ export const UPDATE_QONTO_AUTO_SYNC = gql`
         autoSync {
           invoices
           supplierInvoices
+          importClientInvoices
+          importSupplierInvoices
         }
       }
     }
@@ -206,6 +214,22 @@ export const SYNC_ALL_TO_QONTO = gql`
       invoicesErrors
       expensesSynced
       expensesErrors
+    }
+  }
+`;
+
+// Importer maintenant les documents créés dans Qonto vers Newbi
+export const IMPORT_FROM_QONTO = gql`
+  mutation ImportFromQonto {
+    importFromQonto {
+      success
+      message
+      clientInvoicesImported
+      clientInvoicesUpdated
+      clientInvoicesErrors
+      supplierInvoicesImported
+      supplierInvoicesUpdated
+      supplierInvoicesErrors
     }
   }
 `;
