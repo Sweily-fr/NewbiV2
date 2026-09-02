@@ -8,6 +8,7 @@ const IMPORTED_QUOTE_FRAGMENT = gql`
     importedBy
     status
     originalQuoteNumber
+    source
     vendor {
       name
       address

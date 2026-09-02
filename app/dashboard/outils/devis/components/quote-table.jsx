@@ -1,5 +1,7 @@
 "use client";
 
+import { sortByDateDesc } from "@/src/lib/document-dates";
+
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
@@ -181,11 +183,9 @@ export default function QuoteTable({
         finalTotalVAT: q.totalVAT,
         finalTotalTTC: q.totalTTC,
       }));
-    return [...normalQuotes, ...imported].sort((a, b) => {
-      const dateA = new Date(a.issueDate || a.createdAt || 0);
-      const dateB = new Date(b.issueDate || b.createdAt || 0);
-      return dateB - dateA;
-    });
+    // Tri par date d'émission (puis création) quel que soit le type : les
+    // dates peuvent être des timestamps en chaîne, sortByDateDesc les gère.
+    return sortByDateDesc([...normalQuotes, ...imported]);
   }, [quotes, importedQuotes]);
 
   const {

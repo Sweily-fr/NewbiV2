@@ -1,5 +1,7 @@
 "use client";
 
+import { sortByDateDesc } from "@/src/lib/document-dates";
+
 import { useEffect, useMemo, useState, useRef } from "react";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import {
@@ -142,11 +144,9 @@ export default function PurchaseOrderTable({
       finalTotalVAT: po.totalVAT,
       finalTotalTTC: po.totalTTC,
     }));
-    return [...normalPos, ...imported].sort((a, b) => {
-      const dateA = new Date(a.issueDate || a.createdAt || 0);
-      const dateB = new Date(b.issueDate || b.createdAt || 0);
-      return dateB - dateA;
-    });
+    // Tri par date d'émission (puis création) quel que soit le type : les
+    // dates peuvent être des timestamps en chaîne, sortByDateDesc les gère.
+    return sortByDateDesc([...normalPos, ...imported]);
   }, [purchaseOrders, importedPurchaseOrders]);
 
   const {

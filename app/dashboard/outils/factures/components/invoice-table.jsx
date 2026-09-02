@@ -1,5 +1,7 @@
 "use client";
 
+import { sortByDateDesc } from "@/src/lib/document-dates";
+
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
@@ -211,11 +213,9 @@ export default function InvoiceTable({
     }));
 
     // Combiner et trier par date (plus récent en premier)
-    return [...normalInvoices, ...imported].sort((a, b) => {
-      const dateA = new Date(a.issueDate || a.createdAt || 0);
-      const dateB = new Date(b.issueDate || b.createdAt || 0);
-      return dateB - dateA;
-    });
+    // Tri par date d'émission (puis création) quel que soit le type : les
+    // dates peuvent être des timestamps en chaîne, sortByDateDesc les gère.
+    return sortByDateDesc([...normalInvoices, ...imported]);
   }, [invoices, importedInvoices]);
 
   // État pour les tabs de filtre rapide
