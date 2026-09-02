@@ -14,6 +14,7 @@ import {
   SYNC_EXPENSE_TO_QONTO,
   SYNC_ALL_TO_QONTO,
   IMPORT_FROM_QONTO,
+  SYNC_QUOTE_TO_QONTO,
 } from "@/src/graphql/mutations/qonto";
 
 /**
@@ -54,6 +55,7 @@ export const useQonto = (organizationId) => {
   const [syncExpenseMutation] = useMutation(SYNC_EXPENSE_TO_QONTO);
   const [syncAllMutation] = useMutation(SYNC_ALL_TO_QONTO);
   const [importFromQontoMutation] = useMutation(IMPORT_FROM_QONTO);
+  const [syncQuoteMutation] = useMutation(SYNC_QUOTE_TO_QONTO);
 
   // Exécute une mutation et normalise le résultat { success, message, ... }
   const run = useCallback(
@@ -182,6 +184,11 @@ export const useQonto = (organizationId) => {
     [run, syncAllMutation],
   );
 
+  const syncQuote = useCallback(
+    (quoteId) => run(syncQuoteMutation, { quoteId }, (d) => d.syncQuoteToQonto),
+    [run, syncQuoteMutation],
+  );
+
   // Import Qonto → Newbi
   const importFromQonto = useCallback(
     () =>
@@ -225,6 +232,7 @@ export const useQonto = (organizationId) => {
     syncInvoice,
     syncPurchaseInvoice,
     syncExpense,
+    syncQuote,
     syncAll,
     importFromQonto,
     refetchStatus,
