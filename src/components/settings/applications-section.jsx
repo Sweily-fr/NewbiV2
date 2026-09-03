@@ -122,6 +122,7 @@ const APPLICATIONS = [
     description:
       "Envoyez automatiquement vos factures clients et factures fournisseurs dans Qonto.",
     category: "banking",
+    beta: true,
     logoBg: "#2E1065",
     logo: `${BRANDFETCH_CDN}/qonto.com/w/400/h/400`,
     verified: true,
@@ -341,6 +342,11 @@ function AppCard({ app, onClick }) {
             {app.verified && (
               <BadgeCheck className="w-3.5 h-3.5 text-[#5A50FF] fill-[#5A50FF] stroke-white flex-shrink-0" />
             )}
+            {app.beta && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium leading-none bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
+                Bêta
+              </span>
+            )}
           </div>
           <p className="text-xs text-gray-400 mt-0.5">Par {app.author}</p>
         </div>
@@ -388,6 +394,11 @@ function InstalledAppRow({ app, onClick }) {
             <h4 className="text-sm font-medium">{app.name}</h4>
             {app.verified && (
               <BadgeCheck className="w-3.5 h-3.5 text-[#5A50FF] fill-[#5A50FF] stroke-white flex-shrink-0" />
+            )}
+            {app.beta && (
+              <span className="px-1.5 py-0.5 text-[10px] font-medium leading-none bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
+                Bêta
+              </span>
             )}
           </div>
           <p className="text-xs text-gray-400 mt-0.5 truncate">
@@ -1357,6 +1368,11 @@ function AppDetailView({
               <h2 className="text-xl font-semibold">{app.name}</h2>
               {app.verified && (
                 <BadgeCheck className="w-4 h-4 text-[#5A50FF] fill-[#5A50FF] stroke-white" />
+              )}
+              {app.beta && (
+                <span className="px-1.5 py-0.5 text-[10px] font-medium leading-none bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
+                  Bêta
+                </span>
               )}
               {isInstalled ? (
                 isConnected ? (
