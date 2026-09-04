@@ -7,7 +7,9 @@ import { PROCESS_DOCUMENT_OCR } from "@/src/graphql/mutations/ocr";
 import {
   useCreatePurchaseInvoice,
   useAddPurchaseInvoiceFile,
+  useCheckPurchaseInvoiceDuplicates,
 } from "@/src/hooks/usePurchaseInvoices";
+import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -123,6 +125,9 @@ export function PurchaseInvoiceUploadDrawer({
 
   const [processOcr] = useMutation(PROCESS_DOCUMENT_OCR);
   const { createInvoice } = useCreatePurchaseInvoice();
+  const { checkDuplicates } = useCheckPurchaseInvoiceDuplicates();
+  // Doublons probables détectés avant création : { duplicates } ou null
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
   const { addFile } = useAddPurchaseInvoiceFile();
 
   const defaultEditableData = {
@@ -328,10 +333,24 @@ export function PurchaseInvoiceUploadDrawer({
   const totalToReview = successResults.length;
   const currentResult = ocrResults[currentReviewIndex];
 
-  const handleCreate = async () => {
+  const handleCreate = async ({ skipDuplicateCheck = false } = {}) => {
     if (!editableData.supplierName || !editableData.amountTTC) {
       toast.error("Fournisseur et montant TTC requis");
       return;
+    }
+    // Avertissement non bloquant : une facture identique existe peut-être
+    // déjà (saisie manuelle, OCR depuis une transaction, import Qonto...).
+    if (!skipDuplicateCheck) {
+      const duplicates = await checkDuplicates({
+        supplierName: editableData.supplierName,
+        invoiceNumber: editableData.invoiceNumber,
+        amountTTC: parseFloat(editableData.amountTTC),
+        issueDate: normalizeDate(editableData.issueDate),
+      });
+      if (duplicates.length > 0) {
+        setDuplicateWarning({ duplicates });
+        return;
+      }
     }
     try {
       const result = currentResult;
@@ -1151,7 +1170,7 @@ export function PurchaseInvoiceUploadDrawer({
             </Button>
             <Button
               className="flex-1 font-normal bg-primary hover:bg-primary/90"
-              onClick={handleCreate}
+              onClick={() => handleCreate()}
               disabled={!editableData.supplierName || !editableData.amountTTC}
             >
               {totalToReview > 1
@@ -1174,8 +1193,25 @@ export function PurchaseInvoiceUploadDrawer({
     </>
   );
 
+  const duplicateDialog = (
+    <DuplicateWarningDialog
+      open={!!duplicateWarning}
+      duplicates={duplicateWarning?.duplicates || []}
+      onCancel={() => setDuplicateWarning(null)}
+      onConfirm={() => {
+        setDuplicateWarning(null);
+        handleCreate({ skipDuplicateCheck: true });
+      }}
+    />
+  );
+
   if (embedded) {
-    return <div className="flex flex-col h-full">{body}</div>;
+    return (
+      <div className="flex flex-col h-full">
+        {body}
+        {duplicateDialog}
+      </div>
+    );
   }
 
   return (
@@ -1186,6 +1222,7 @@ export function PurchaseInvoiceUploadDrawer({
       >
         {header}
         {body}
+        {duplicateDialog}
       </DrawerContent>
     </Drawer>
   );

@@ -1430,6 +1430,13 @@ export default function InvoiceSidebar({
                                   tx.fromAccount ||
                                   "Transaction"}
                               </p>
+                              {String(
+                                tx.reconciliationStatus || "",
+                              ).toLowerCase() === "matched" && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                  Déjà rapprochée
+                                </span>
+                              )}
                               <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                                 <span>
                                   {tx.date
@@ -1557,6 +1564,13 @@ export default function InvoiceSidebar({
                                     <div className="text-xs text-muted-foreground truncate">
                                       {tx.description}
                                     </div>
+                                    {String(
+                                      tx.reconciliationStatus || "",
+                                    ).toLowerCase() === "matched" && (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                        Déjà rapprochée
+                                      </span>
+                                    )}
                                     <div className="text-xs text-muted-foreground">
                                       {formatDate(tx.date)}
                                     </div>
