@@ -347,12 +347,20 @@ export default function EnhancedCreditNoteForm({
     return true; // Allow navigation without strict validation
   };
 
+  // Une ligne à 0 € (article offert repris de la facture) ne doit pas
+  // bloquer l'avoir : on exige une valeur numérique, pas une valeur non nulle.
+  const hasNumericValue = (value) =>
+    value !== undefined && value !== null && value !== "" && !isNaN(value);
+
   const isStep2Valid = () => {
     return (
       formData.items &&
       formData.items.length > 0 &&
       formData.items.every(
-        (item) => item.description && item.quantity && item.unitPrice,
+        (item) =>
+          item.description &&
+          hasNumericValue(item.quantity) &&
+          hasNumericValue(item.unitPrice),
       )
     );
   };
