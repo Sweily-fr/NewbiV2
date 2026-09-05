@@ -18,6 +18,11 @@ import { useCreditNoteNumber } from "./use-credit-note-number";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { mapOrganizationToCompanyInfo } from "@/src/utils/organizationCompanyInfo";
 
+// Vrai si le champ porte une valeur numérique, zéro compris. Une ligne à 0 €
+// (article offert repris de la facture) est un avoir valide.
+const hasNumericValue = (value) =>
+  value !== undefined && value !== null && value !== "" && !isNaN(value);
+
 export function useCreditNoteEditor({
   mode,
   creditNoteId,
@@ -254,9 +259,11 @@ export function useCreditNoteEditor({
       data.items.forEach((item, index) => {
         const errors = [];
 
+        // Une quantité ou un prix unitaire à 0 sont acceptés (ligne offerte
+        // reprise de la facture) : seule l'absence de valeur est bloquante.
         if (!item.description) errors.push("description");
-        if (!item.quantity) errors.push("quantité");
-        if (!item.unitPrice) errors.push("prix unitaire");
+        if (!hasNumericValue(item.quantity)) errors.push("quantité");
+        if (!hasNumericValue(item.unitPrice)) errors.push("prix unitaire");
 
         // Vérifier le texte d'exonération de TVA si la TVA est à 0%
         const vatRate = parseFloat(item.vatRate) || 0;
@@ -562,15 +569,15 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     if (isNaN(quantity)) {
       throw new Error("La quantité doit être un nombre valide");
     }
-    cleanedItem.quantity = -Math.abs(quantity);
+    cleanedItem.quantity = -Math.abs(quantity) || 0;
 
+    // Un prix unitaire à 0 est autorisé (article offert repris de la facture).
+    // `|| 0` évite de stocker -0 pour une ligne à zéro.
     const unitPrice = parseFloat(cleanedItem.unitPrice);
-    if (isNaN(unitPrice) || unitPrice === 0) {
-      throw new Error(
-        "Le prix unitaire doit être un nombre valide différent de zéro",
-      );
+    if (isNaN(unitPrice)) {
+      throw new Error("Le prix unitaire doit être un nombre valide");
     }
-    cleanedItem.unitPrice = -Math.abs(unitPrice);
+    cleanedItem.unitPrice = -Math.abs(unitPrice) || 0;
 
     // Ensure vatRate is a valid number
     const vatRate = parseFloat(cleanedItem.vatRate);
