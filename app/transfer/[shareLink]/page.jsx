@@ -88,9 +88,36 @@ const crc32Append = (crc, bytes) => {
   return (c ^ 0xffffffff) >>> 0;
 };
 
+// Des fichiers distincts portant le même nom sont valides dans un ZIP mais
+// s'écrasent à l'extraction (macOS ne garde que le dernier, sans prévenir) :
+// on suffixe les doublons « nom (2).ext », sans tenir compte de la casse.
+const makeUniqueFileNames = (names) => {
+  const taken = new Set();
+  return names.map((raw) => {
+    const name = typeof raw === "string" && raw.trim() ? raw : "fichier";
+    let candidate = name;
+    if (taken.has(candidate.toLowerCase())) {
+      const dot = name.lastIndexOf(".");
+      const hasExt = dot > 0 && dot < name.length - 1;
+      const base = hasExt ? name.slice(0, dot) : name;
+      const ext = hasExt ? name.slice(dot) : "";
+      let i = 2;
+      candidate = `${base} (${i})${ext}`;
+      while (taken.has(candidate.toLowerCase())) {
+        i += 1;
+        candidate = `${base} (${i})${ext}`;
+      }
+    }
+    taken.add(candidate.toLowerCase());
+    return candidate;
+  });
+};
+
 // entries: [{ name, size, crc, blob }] → Blob ZIP (limites zip32 vérifiées
 // par l'appelant : < 4 Go par fichier et au total, < 65535 entrées)
-const buildStoreZip = (entries) => {
+const buildStoreZip = (rawEntries) => {
+  const uniqueNames = makeUniqueFileNames(rawEntries.map((e) => e.name));
+  const entries = rawEntries.map((e, i) => ({ ...e, name: uniqueNames[i] }));
   const encoder = new TextEncoder();
   const parts = [];
   const central = [];
@@ -181,6 +208,24 @@ export default function TransferPage() {
   // Progression par fichier : { [fileId]: pourcentage } — chaque bouton de
   // ligne affiche la sienne, plusieurs téléchargements peuvent coexister
   const [downloadProgressMap, setDownloadProgressMap] = useState({});
+  // « Tout télécharger » : fichiers terminés / total, affiché sur le bouton.
+  // Sur un gros lot, les % par ligne sont hors du cadre défilant : sans ce
+  // compteur, rien ne bouge à l'écran pendant tout le téléchargement.
+  const [bulkProgress, setBulkProgress] = useState(null);
+  // Liste des fichiers (cadre défilant) : on la fait suivre les fichiers en cours
+  const fileListRef = useRef(null);
+  const scrollFileRowIntoView = (fileId) => {
+    const list = fileListRef.current;
+    const row = list?.querySelector?.(`[data-file-id="${fileId}"]`);
+    if (!list || !row) return;
+    const listRect = list.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    if (rowRect.top < listRect.top) {
+      list.scrollTop += rowRect.top - listRect.top;
+    } else if (rowRect.bottom > listRect.bottom) {
+      list.scrollTop += rowRect.bottom - listRect.bottom;
+    }
+  };
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   // Mot de passe vérifié, conservé pour autoriser les téléchargements côté API
   // (le backend exige désormais link + key + mot de passe éventuel).
@@ -609,6 +654,8 @@ export default function TransferPage() {
       // confirmation d'enregistrement, une seule notification de fin.
       const zipEntries = new Array(filteredDownloads.length);
       let nextIndex = 0;
+      let doneCount = 0;
+      setBulkProgress({ done: 0, total: filteredDownloads.length });
 
       const worker = async () => {
         while (true) {
@@ -621,6 +668,7 @@ export default function TransferPage() {
 
           startedFileIds.push(downloadInfo.fileId);
           setFileProgress(downloadInfo.fileId, 0);
+          scrollFileRowIntoView(downloadInfo.fileId);
 
           try {
             const { blob, size, crc } = await streamFileWithProgress(
@@ -649,6 +697,12 @@ export default function TransferPage() {
               fileError,
             );
             clearFileProgress(downloadInfo.fileId);
+          } finally {
+            doneCount += 1;
+            setBulkProgress({
+              done: doneCount,
+              total: filteredDownloads.length,
+            });
           }
         }
       };
@@ -690,6 +744,7 @@ export default function TransferPage() {
       );
     } finally {
       startedFileIds.forEach(clearFileProgress);
+      setBulkProgress(null);
       setIsBulkDownloading(false);
       endDownloadActivity();
     }
@@ -1263,10 +1318,11 @@ export default function TransferPage() {
                       Archive trop volumineuse pour la prévisualisation.
                     </p>
                   )}
-                  <ul className="max-h-40 overflow-y-auto">
+                  <ul ref={fileListRef} className="max-h-40 overflow-y-auto">
                     {displayFiles.map((file, index) => (
                       <li
                         key={file.id || file.path || index}
+                        data-file-id={file.id || file.fileId || file.path}
                         className="w-full px-5 py-3 border-b border-gray-200 last:border-b-0"
                       >
                         <div className="w-full flex items-center">
@@ -1360,9 +1416,11 @@ export default function TransferPage() {
                     disabled={isBulkDownloading}
                     className="text-white px-10 w-full rounded-xl"
                   >
-                    {(transfer?.fileTransfer?.files?.length || 0) > 1
-                      ? "Tout télécharger"
-                      : "Télécharger"}
+                    {bulkProgress
+                      ? `Téléchargement ${bulkProgress.done} / ${bulkProgress.total}`
+                      : (transfer?.fileTransfer?.files?.length || 0) > 1
+                        ? "Tout télécharger"
+                        : "Télécharger"}
                   </Button>
                   {isDownloading && (
                     <button
