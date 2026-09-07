@@ -228,6 +228,10 @@ export function TransactionDetailDrawer({
     unignoreTransaction,
     isUnignoring,
     fetchInvoicesForTransaction,
+    fetchImportedInvoicesForTransaction,
+    linkImportedInvoice,
+    unlinkImportedInvoice,
+    isLinkingImported,
   } = useReconciliationGraphQL();
   const matchingInvoices =
     reconciliationSuggestions?.find(
@@ -246,9 +250,22 @@ export function TransactionDetailDrawer({
     if (!showInvoicePicker || !transaction?.id) return;
     let cancelled = false;
     setLoadingInvoices(true);
-    fetchInvoicesForTransaction(transaction.id, debouncedInvoiceSearch)
-      .then(({ invoices }) => {
-        if (!cancelled) setAvailableInvoices(invoices);
+    // Factures Newbi et factures clients importées dans un même sélecteur,
+    // triées par score (kind distingue la mutation à appeler).
+    Promise.all([
+      fetchInvoicesForTransaction(transaction.id, debouncedInvoiceSearch),
+      fetchImportedInvoicesForTransaction(
+        transaction.id,
+        debouncedInvoiceSearch,
+      ),
+    ])
+      .then(([{ invoices }, importedInvoices]) => {
+        if (cancelled) return;
+        const merged = [
+          ...invoices.map((inv) => ({ ...inv, kind: "newbi" })),
+          ...importedInvoices.map((inv) => ({ ...inv, kind: "imported" })),
+        ].sort((a, b) => (b.score || 0) - (a.score || 0));
+        setAvailableInvoices(merged);
       })
       .finally(() => {
         if (!cancelled) setLoadingInvoices(false);
@@ -261,6 +278,7 @@ export function TransactionDetailDrawer({
     debouncedInvoiceSearch,
     transaction?.id,
     fetchInvoicesForTransaction,
+    fetchImportedInvoicesForTransaction,
   ]);
 
   // Rattachement manuel côté dépense : sélecteur de factures d'achat
@@ -328,6 +346,24 @@ export function TransactionDetailDrawer({
     }
   };
 
+  // Facture client importée (Qonto, OCR, Gmail) : même geste que pour une
+  // facture Newbi, mutation dédiée.
+  const handleReconcileImportedInvoice = async (importedInvoiceId) => {
+    if (!transaction?.id || !importedInvoiceId) return;
+    const result = await linkImportedInvoice(transaction.id, importedInvoiceId);
+    if (result?.success) {
+      setShowInvoicePicker(false);
+      setInvoiceSearch("");
+      onRefresh?.();
+    }
+  };
+
+  const handlePickInvoice = (invoice) => {
+    if (isLinking || isLinkingImported) return;
+    if (invoice.kind === "imported") handleReconcileImportedInvoice(invoice.id);
+    else handleReconcileInvoice(invoice.id);
+  };
+
   // Rattacher une facture d'achat existante (additif : la facture peut déjà
   // porter d'autres transactions, la transaction d'autres factures).
   const handleReconcilePurchaseInvoice = async (purchaseInvoiceId) => {
@@ -366,7 +402,10 @@ export function TransactionDetailDrawer({
   // groupé) et plusieurs factures d'achat (plusieurs justificatifs, ou une
   // facture Qonto mensuelle couvrant plusieurs prélèvements). Les factures
   // de vente liées sont listées dans la section Justificatif.
-  const hasLinkedInvoices = (transaction?.linkedInvoices?.length || 0) > 0;
+  const linkedImportedInvoices = transaction?.linkedImportedInvoices || [];
+  const hasLinkedInvoices =
+    (transaction?.linkedInvoices?.length || 0) > 0 ||
+    linkedImportedInvoices.length > 0;
   // Factures d'achat liées (lien par référence — le justificatif est sur la
   // facture, accessible via ce lien).
   const linkedPurchaseInvoices = transaction?.linkedPurchaseInvoices || [];
@@ -1521,6 +1560,59 @@ export function TransactionDetailDrawer({
                     )}
                   </div>
                 )}
+
+              {/* Factures clients importées liées (Qonto, OCR, Gmail) : même
+                  rendu que les factures Newbi, badge « Importée ». */}
+              {!isCreateMode && linkedImportedInvoices.length > 0 && (
+                <div className="space-y-1.5">
+                  {linkedImportedInvoices.map((inv) => (
+                    <div
+                      key={`linked-imported-${inv.id}`}
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/outils/factures?id=${inv.id}&returnTo=transactions`,
+                        );
+                        onOpenChange(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms]"
+                    >
+                      <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                        <FileText className="h-4 w-4 text-[#5A50FF]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          Facture {inv.number || "importée"}
+                          {inv.clientName ? ` — ${inv.clientName}` : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {inv.totalTTC != null
+                            ? formatAmount(inv.totalTTC)
+                            : ""}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        Importée
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const result = await unlinkImportedInvoice(
+                            transaction.id,
+                            inv.id,
+                          );
+                          if (result?.success) onRefresh?.();
+                        }}
+                        title="Détacher la facture importée"
+                      >
+                        <Unlink className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Notes (seulement en visualisation) */}
@@ -1914,14 +2006,17 @@ export function TransactionDetailDrawer({
                                   ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
                                   : ""
                               }`}
-                              onClick={() =>
-                                !isLinking && handleReconcileInvoice(invoice.id)
-                              }
+                              onClick={() => handlePickInvoice(invoice)}
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">
                                     Facture {invoice.number || "N/A"}
+                                    {invoice.kind === "imported" && (
+                                      <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground align-middle">
+                                        Importée
+                                      </span>
+                                    )}
                                   </p>
                                   <p className="text-xs text-muted-foreground truncate">
                                     {invoice.clientName}

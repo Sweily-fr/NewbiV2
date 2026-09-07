@@ -47,6 +47,9 @@ import {
   Eye,
   Paperclip,
   StickyNote,
+  Landmark,
+  Link2,
+  Unlink,
 } from "lucide-react";
 import {
   ClipboardTickIcon,
@@ -65,6 +68,8 @@ import {
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { ClientCombobox } from "./client-combobox";
+import { useReconciliationForSidebar } from "@/src/hooks/useReconciliationGraphQL";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 
 const formatDateForInput = (dateValue) => {
   if (!dateValue) return "";
@@ -125,6 +130,69 @@ export function ImportedInvoiceSidebar({
     useValidateImportedInvoice();
 
   const isLoading = updateLoading || deleteLoading || validateLoading;
+
+  // Rapprochement bancaire (N↔N) : transactions liées, recherche manuelle.
+  const {
+    linkImportedInvoice,
+    unlinkImportedInvoice,
+    fetchTransactionsForImportedInvoice,
+    isLinkingImported,
+    isUnlinkingImported,
+  } = useReconciliationForSidebar();
+  const [showTransactionPicker, setShowTransactionPicker] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const debouncedTransactionSearch = useDebouncedValue(transactionSearch, 300);
+  const [availableTransactions, setAvailableTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  useEffect(() => {
+    if (!showTransactionPicker || !invoice?.id) return;
+    let cancelled = false;
+    setLoadingTransactions(true);
+    fetchTransactionsForImportedInvoice(invoice.id, debouncedTransactionSearch)
+      .then(({ transactions }) => {
+        if (!cancelled) setAvailableTransactions(transactions);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTransactions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showTransactionPicker,
+    debouncedTransactionSearch,
+    invoice?.id,
+    fetchTransactionsForImportedInvoice,
+  ]);
+
+  useEffect(() => {
+    if (!open) {
+      setShowTransactionPicker(false);
+      setTransactionSearch("");
+      setAvailableTransactions([]);
+    }
+  }, [open]);
+
+  const handleLinkTransaction = async (transactionId) => {
+    if (!invoice?.id || !transactionId) return;
+    const result = await linkImportedInvoice(transactionId, invoice.id);
+    if (result?.success) {
+      setShowTransactionPicker(false);
+      setTransactionSearch("");
+      onUpdate?.();
+    }
+  };
+
+  const handleUnlinkTransaction = async (transactionId) => {
+    if (!invoice?.id || !transactionId) return;
+    const result = await unlinkImportedInvoice(transactionId, invoice.id);
+    if (result?.success) onUpdate?.();
+  };
+
+  const linkedTransactions = invoice?.linkedTransactions || [];
+  const canReconcile =
+    !isEditing && !["REJECTED", "ARCHIVED"].includes(invoice?.status);
 
   if (!invoice) return null;
 
@@ -650,6 +718,167 @@ export function ImportedInvoiceSidebar({
                   )}
                 </div>
               </div>
+
+              {/* Paiement bancaire : encaissements liés (N↔N), recherche
+                  manuelle de transaction. */}
+              {canReconcile && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Landmark className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                          Paiement bancaire
+                        </p>
+                      </div>
+                      {linkedTransactions.length > 0 ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#5A50FF]/20">
+                          <CheckCircle className="w-3 h-3" />
+                          Rapprochée
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {linkedTransactions.length > 0 && (
+                      <div className="space-y-2">
+                        {linkedTransactions.map((tx) => (
+                          <div
+                            key={tx.id}
+                            className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium">
+                                {new Intl.NumberFormat("fr-FR", {
+                                  style: "currency",
+                                  currency: "EUR",
+                                }).format(tx.amount || 0)}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {tx.description || "Transaction"}
+                                {tx.date
+                                  ? ` - ${formatDateToFrench(tx.date)}`
+                                  : ""}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                              disabled={isUnlinkingImported}
+                              onClick={() => handleUnlinkTransaction(tx.id)}
+                              title="Détacher cette transaction"
+                            >
+                              <Unlink className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {!showTransactionPicker ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setShowTransactionPicker(true)}
+                      >
+                        <Link2 className="h-3.5 w-3.5 mr-1.5" />
+                        {linkedTransactions.length > 0
+                          ? "Rattacher une autre transaction"
+                          : "Rattacher une transaction"}
+                      </Button>
+                    ) : (
+                      <div className="border rounded-lg p-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            Sélectionner une transaction
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => {
+                              setShowTransactionPicker(false);
+                              setTransactionSearch("");
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <Input
+                          value={transactionSearch}
+                          onChange={(e) => setTransactionSearch(e.target.value)}
+                          placeholder="Libellé, référence, montant..."
+                          className="h-8 text-sm"
+                          autoFocus
+                        />
+                        {loadingTransactions ? (
+                          <div className="flex items-center justify-center py-4">
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                          </div>
+                        ) : availableTransactions.length > 0 ? (
+                          <div className="max-h-[240px] overflow-y-auto space-y-2">
+                            {availableTransactions.map((tx) => (
+                              <div
+                                key={tx.id}
+                                className={`p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors ${
+                                  tx.score >= 80
+                                    ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
+                                    : ""
+                                }`}
+                                onClick={() =>
+                                  !isLinkingImported &&
+                                  handleLinkTransaction(tx.id)
+                                }
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">
+                                      {new Intl.NumberFormat("fr-FR", {
+                                        style: "currency",
+                                        currency: "EUR",
+                                      }).format(tx.amount || 0)}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {tx.description || "Transaction"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {tx.date
+                                        ? formatDateToFrench(tx.date)
+                                        : ""}
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-1 shrink-0">
+                                    {tx.score >= 80 && (
+                                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#5a50ff]/10 text-[#5a50ff] border border-[#5a50ff]/30">
+                                        Correspondance
+                                      </span>
+                                    )}
+                                    {String(
+                                      tx.reconciliationStatus || "",
+                                    ).toLowerCase() === "matched" && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                        Déjà rapprochée
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-center py-4 text-xs text-muted-foreground">
+                            {transactionSearch.trim()
+                              ? "Aucune transaction ne correspond à cette recherche."
+                              : "Aucune entrée d'argent à rapprocher depuis la date de la facture. Saisissez un libellé ou un montant pour élargir la recherche."}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
 
               {/* Fichier joint */}
               {invoice.file && (

@@ -204,7 +204,10 @@ export default function InvoiceTable({
       ...inv,
       _type: "imported",
       // Mapper les champs pour compatibilité avec le tableau
+      // On conserve les champs client (id = client Newbi associé) : la
+      // sidebar importée en a besoin pour afficher l'association.
       client: {
+        ...(inv.client || {}),
         name: inv.client?.name || inv.vendor?.name || "Client inconnu",
       },
       issueDate: inv.invoiceDate,
@@ -469,9 +472,18 @@ export default function InvoiceTable({
       if (invoice) {
         sidebarAutoOpenedRef.current = true;
         setInvoiceToOpen(invoice);
+        return;
       }
     }
-  }, [invoiceIdToOpen, invoices]);
+    // Même paramètre ?id= pour une facture importée (navigation depuis une
+    // transaction rapprochée)
+    if (invoiceIdToOpen && combinedInvoices.length > 0) {
+      const imported = combinedInvoices.find(
+        (inv) => inv._type === "imported" && inv.id === invoiceIdToOpen,
+      );
+      if (imported) setSelectedImportedInvoice(imported);
+    }
+  }, [invoiceIdToOpen, invoices, combinedInvoices]);
 
   // Skeleton uniquement au premier chargement : si le cache Apollo a déjà des
   // factures (retour sur la page), on les affiche pendant le refetch silencieux

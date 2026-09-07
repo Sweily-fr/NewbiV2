@@ -158,6 +158,18 @@ export const GET_TRANSACTIONS = gql`
           mimetype
         }
       }
+      # Factures clients importées (Qonto, OCR, Gmail) liées
+      linkedImportedInvoiceIds
+      linkedImportedInvoices {
+        id
+        number
+        status
+        clientName
+        totalTTC
+        issueDate
+        dueDate
+        source
+      }
       reconciliationStatus
       reconciliationDate
       createdAt
@@ -259,6 +271,18 @@ export const GET_TRANSACTIONS_PAGE = gql`
             mimetype
           }
         }
+        # Factures clients importées (Qonto, OCR, Gmail) liées
+        linkedImportedInvoiceIds
+        linkedImportedInvoices {
+          id
+          number
+          status
+          clientName
+          totalTTC
+          issueDate
+          dueDate
+          source
+        }
         reconciliationStatus
         reconciliationDate
         createdAt
@@ -337,6 +361,18 @@ export const GET_TRANSACTION = gql`
           filename
           mimetype
         }
+      }
+      # Factures clients importées (Qonto, OCR, Gmail) liées
+      linkedImportedInvoiceIds
+      linkedImportedInvoices {
+        id
+        number
+        status
+        clientName
+        totalTTC
+        issueDate
+        dueDate
+        source
       }
       reconciliationStatus
       reconciliationDate

@@ -23,6 +23,7 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
     client {
       id
       name
+      email
       address
       city
       postalCode
@@ -32,6 +33,14 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
     invoiceDate
     dueDate
     paymentDate
+    linkedTransactionIds
+    linkedTransactions {
+      id
+      amount
+      description
+      date
+      reconciliationStatus
+    }
     totalHT
     totalVAT
     totalTTC
