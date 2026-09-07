@@ -86,7 +86,11 @@ import {
   useUnlinkTransactionFromInvoice,
   useReconciliationGraphQL,
 } from "@/src/hooks/useReconciliationGraphQL";
-import { useUnreconcilePurchaseInvoice } from "@/src/hooks/usePurchaseInvoices";
+import {
+  useReconcilePurchaseInvoice,
+  useUnlinkPurchaseInvoiceFromTransaction,
+  usePurchaseInvoiceReconciliationPicker,
+} from "@/src/hooks/usePurchaseInvoices";
 import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -161,8 +165,9 @@ export function TransactionDetailDrawer({
   const [pendingFiles, setPendingFiles] = useState([]);
   // Index du justificatif actif dans le pane preview gauche (navigation prev/next)
   const [activeReceiptIndex, setActiveReceiptIndex] = useState(0);
-  const [isUnlinking, setIsUnlinking] = useState(false);
-  const [isUnlinkingPI, setIsUnlinkingPI] = useState(false);
+  // Id de la facture d'achat en cours de détachement (liste N↔N)
+  const [unlinkingPurchaseInvoiceId, setUnlinkingPurchaseInvoiceId] =
+    useState(null);
   const [calendarContainer, setCalendarContainer] = useState(null);
   const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
   const [receiptViewerUrl, setReceiptViewerUrl] = useState(null);
@@ -206,9 +211,13 @@ export function TransactionDetailDrawer({
 
   // Hook pour délier une transaction d'une facture
   const { unlinkTransaction } = useUnlinkTransactionFromInvoice();
-  // Hook pour détacher la facture d'achat liée
-  const { unreconcile: unreconcilePurchaseInvoice } =
-    useUnreconcilePurchaseInvoice();
+  // Factures d'achat : rattachement (additif) et détachement unitaire
+  const { reconcile: reconcilePurchaseInvoice, loading: isLinkingPI } =
+    useReconcilePurchaseInvoice();
+  const { unlink: unlinkPurchaseInvoice } =
+    useUnlinkPurchaseInvoiceFromTransaction();
+  const { fetchPurchaseInvoicesForTransaction } =
+    usePurchaseInvoiceReconciliationPicker();
 
   // Suggestions de rapprochement : on affiche la/les facture(s) rapprochable(s)
   // pour cette transaction (au lieu d'un statut "ignoré"/"suggéré").
@@ -219,6 +228,10 @@ export function TransactionDetailDrawer({
     unignoreTransaction,
     isUnignoring,
     fetchInvoicesForTransaction,
+    fetchImportedInvoicesForTransaction,
+    linkImportedInvoice,
+    unlinkImportedInvoice,
+    isLinkingImported,
   } = useReconciliationGraphQL();
   const matchingInvoices =
     reconciliationSuggestions?.find(
@@ -237,9 +250,22 @@ export function TransactionDetailDrawer({
     if (!showInvoicePicker || !transaction?.id) return;
     let cancelled = false;
     setLoadingInvoices(true);
-    fetchInvoicesForTransaction(transaction.id, debouncedInvoiceSearch)
-      .then(({ invoices }) => {
-        if (!cancelled) setAvailableInvoices(invoices);
+    // Factures Newbi et factures clients importées dans un même sélecteur,
+    // triées par score (kind distingue la mutation à appeler).
+    Promise.all([
+      fetchInvoicesForTransaction(transaction.id, debouncedInvoiceSearch),
+      fetchImportedInvoicesForTransaction(
+        transaction.id,
+        debouncedInvoiceSearch,
+      ),
+    ])
+      .then(([{ invoices }, importedInvoices]) => {
+        if (cancelled) return;
+        const merged = [
+          ...invoices.map((inv) => ({ ...inv, kind: "newbi" })),
+          ...importedInvoices.map((inv) => ({ ...inv, kind: "imported" })),
+        ].sort((a, b) => (b.score || 0) - (a.score || 0));
+        setAvailableInvoices(merged);
       })
       .finally(() => {
         if (!cancelled) setLoadingInvoices(false);
@@ -252,14 +278,60 @@ export function TransactionDetailDrawer({
     debouncedInvoiceSearch,
     transaction?.id,
     fetchInvoicesForTransaction,
+    fetchImportedInvoicesForTransaction,
   ]);
 
-  // Reset du sélecteur à la fermeture du drawer
+  // Rattachement manuel côté dépense : sélecteur de factures d'achat
+  // existantes (évite de re-déposer un justificatif qui recréerait une
+  // facture ; une facture Qonto mensuelle couvre plusieurs prélèvements).
+  const [showPurchaseInvoicePicker, setShowPurchaseInvoicePicker] =
+    useState(false);
+  const [purchaseInvoiceSearch, setPurchaseInvoiceSearch] = useState("");
+  const debouncedPurchaseInvoiceSearch = useDebouncedValue(
+    purchaseInvoiceSearch,
+    300,
+  );
+  const [availablePurchaseInvoices, setAvailablePurchaseInvoices] = useState(
+    [],
+  );
+  const [loadingPurchaseInvoices, setLoadingPurchaseInvoices] = useState(false);
+
+  useEffect(() => {
+    if (!showPurchaseInvoicePicker || !transaction?.id) return;
+    let cancelled = false;
+    setLoadingPurchaseInvoices(true);
+    fetchPurchaseInvoicesForTransaction(
+      transaction.id,
+      debouncedPurchaseInvoiceSearch,
+    )
+      .then((invoices) => {
+        if (!cancelled) setAvailablePurchaseInvoices(invoices);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailablePurchaseInvoices([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPurchaseInvoices(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showPurchaseInvoicePicker,
+    debouncedPurchaseInvoiceSearch,
+    transaction?.id,
+    fetchPurchaseInvoicesForTransaction,
+  ]);
+
+  // Reset des sélecteurs à la fermeture du drawer
   useEffect(() => {
     if (!open) {
       setShowInvoicePicker(false);
       setInvoiceSearch("");
       setAvailableInvoices([]);
+      setShowPurchaseInvoicePicker(false);
+      setPurchaseInvoiceSearch("");
+      setAvailablePurchaseInvoices([]);
     }
   }, [open]);
 
@@ -271,6 +343,38 @@ export function TransactionDetailDrawer({
     if (result?.success) {
       setShowInvoicePicker(false);
       setInvoiceSearch("");
+    }
+  };
+
+  // Facture client importée (Qonto, OCR, Gmail) : même geste que pour une
+  // facture Newbi, mutation dédiée.
+  const handleReconcileImportedInvoice = async (importedInvoiceId) => {
+    if (!transaction?.id || !importedInvoiceId) return;
+    const result = await linkImportedInvoice(transaction.id, importedInvoiceId);
+    if (result?.success) {
+      setShowInvoicePicker(false);
+      setInvoiceSearch("");
+      onRefresh?.();
+    }
+  };
+
+  const handlePickInvoice = (invoice) => {
+    if (isLinking || isLinkingImported) return;
+    if (invoice.kind === "imported") handleReconcileImportedInvoice(invoice.id);
+    else handleReconcileInvoice(invoice.id);
+  };
+
+  // Rattacher une facture d'achat existante (additif : la facture peut déjà
+  // porter d'autres transactions, la transaction d'autres factures).
+  const handleReconcilePurchaseInvoice = async (purchaseInvoiceId) => {
+    if (!transaction?.id || !purchaseInvoiceId) return;
+    const result = await reconcilePurchaseInvoice(purchaseInvoiceId, [
+      transaction.id,
+    ]);
+    if (result) {
+      setShowPurchaseInvoicePicker(false);
+      setPurchaseInvoiceSearch("");
+      onRefresh?.();
     }
   };
 
@@ -294,19 +398,27 @@ export function TransactionDetailDrawer({
       transaction.source === "BANK_TRANSACTION" ||
       transaction.type === "BANK_TRANSACTION");
   const isManualTransaction = transaction && !isBankTransaction;
-  // N↔N : la transaction peut avoir plusieurs factures liées. L'UI historique
-  // n'en affiche qu'une → on prend la 1re. À faire évoluer si on veut lister
-  // toutes les factures liées dans le drawer.
-  const linkedInvoice = transaction?.linkedInvoices?.[0] || null;
-  // Facture d'achat liée (lien par référence — le justificatif est sur la
+  // N↔N : la transaction peut porter plusieurs factures de vente (paiement
+  // groupé) et plusieurs factures d'achat (plusieurs justificatifs, ou une
+  // facture Qonto mensuelle couvrant plusieurs prélèvements). Les factures
+  // de vente liées sont listées dans la section Justificatif.
+  const linkedImportedInvoices = transaction?.linkedImportedInvoices || [];
+  const hasLinkedInvoices =
+    (transaction?.linkedInvoices?.length || 0) > 0 ||
+    linkedImportedInvoices.length > 0;
+  // Factures d'achat liées (lien par référence — le justificatif est sur la
   // facture, accessible via ce lien).
-  const linkedPurchaseInvoice =
-    transaction?.linkedPurchaseInvoices?.[0] || null;
-  // Rattachement manuel possible : entrée d'argent non liée. Les transactions
+  const linkedPurchaseInvoices = transaction?.linkedPurchaseInvoices || [];
+  // Rattachement manuel possible : entrée d'argent. Les transactions
   // manuelles de type EXPENSE (montant positif possible) sont exclues.
   const canPickInvoice =
     transaction?.amount > 0 &&
     (!isManualTransaction || transaction?.type === "INCOME");
+  // Rattachement d'une facture d'achat existante : dépenses uniquement.
+  const canPickPurchaseInvoice =
+    !isCreateMode &&
+    (transaction?.amount < 0 ||
+      (isManualTransaction && transaction?.type === "EXPENSE"));
   // Transaction exclue du rapprochement par une action "ignorer" : proposer
   // d'annuler ce choix (le statut n'était pas réversible dans l'UI avant).
   const isIgnoredReconciliation =
@@ -627,29 +739,6 @@ export function TransactionDetailDrawer({
   };
 
   // Délier la transaction de la facture.
-  // N↔N : la mutation exige transactionId ET invoiceId. Tant que l'UI affiche
-  // une seule facture liée (la 1re), on cible celle-là. À faire évoluer si on
-  // affiche toutes les factures liées et qu'on veut choisir laquelle délier.
-  const handleUnlinkInvoice = async () => {
-    const linkedInvoiceId = transaction?.linkedInvoiceIds?.[0];
-    if (!linkedInvoiceId) return;
-    setIsUnlinking(true);
-    try {
-      const result = await unlinkTransaction(transaction.id, linkedInvoiceId);
-      if (result.success) {
-        toast.success("Facture détachée avec succès");
-        onRefresh?.();
-      } else {
-        toast.error(result.error || "Erreur lors du détachement");
-      }
-    } catch (error) {
-      console.error("Erreur lors du détachement:", error);
-      toast.error("Erreur lors du détachement de la facture");
-    } finally {
-      setIsUnlinking(false);
-    }
-  };
-
   // Ouvrir le viewer de justificatif
   const openReceiptViewer = (url, mimetype) => {
     setReceiptViewerUrl(url);
@@ -659,47 +748,39 @@ export function TransactionDetailDrawer({
     setReceiptViewerOpen(true);
   };
 
-  // Naviguer vers la facture liée (ouvre le panneau d'aperçu, pas l'éditeur)
-  const handleViewLinkedInvoice = () => {
-    if (linkedInvoice?.id) {
-      router.push(
-        `/dashboard/outils/factures?id=${linkedInvoice.id}&returnTo=transactions`,
-      );
+  // Ouvrir une facture d'achat liée (page Factures d'achat)
+  const handleViewPurchaseInvoice = (purchaseInvoice) => {
+    if (purchaseInvoice?.id) {
+      router.push(`/dashboard/outils/factures-achat?id=${purchaseInvoice.id}`);
       onOpenChange(false);
     }
   };
 
-  // Ouvrir la facture d'achat liée (page Factures d'achat)
-  const handleViewPurchaseInvoice = () => {
-    if (linkedPurchaseInvoice?.id) {
-      router.push(
-        `/dashboard/outils/factures-achat?id=${linkedPurchaseInvoice.id}`,
-      );
-      onOpenChange(false);
-    }
-  };
-
-  // Voir le justificatif de la facture d'achat liée (via le lien, sans copie)
-  const handleViewPurchaseInvoiceReceipt = () => {
-    const file = linkedPurchaseInvoice?.files?.[0];
+  // Voir le justificatif d'une facture d'achat liée (via le lien, sans copie)
+  const handleViewPurchaseInvoiceReceipt = (purchaseInvoice) => {
+    const file = purchaseInvoice?.files?.[0];
     if (file?.url) openReceiptViewer(file.url, file.mimetype);
   };
 
-  // Détacher la facture d'achat de la transaction
-  const handleUnlinkPurchaseInvoice = async () => {
-    if (!linkedPurchaseInvoice?.id) return;
-    setIsUnlinkingPI(true);
+  // Détacher UNE facture d'achat de cette transaction (la facture garde ses
+  // autres transactions, la transaction ses autres factures).
+  const handleUnlinkPurchaseInvoice = async (purchaseInvoice) => {
+    if (!purchaseInvoice?.id || !transaction?.id) return;
+    setUnlinkingPurchaseInvoiceId(purchaseInvoice.id);
     try {
-      const result = await unreconcilePurchaseInvoice(linkedPurchaseInvoice.id);
+      const result = await unlinkPurchaseInvoice(
+        purchaseInvoice.id,
+        transaction.id,
+      );
       if (result) {
-        toast.success("Facture d'achat détachée avec succès");
+        toast.success("Facture d'achat détachée");
         onRefresh?.();
       }
     } catch (error) {
       console.error("Erreur lors du détachement (facture d'achat):", error);
       toast.error("Erreur lors du détachement de la facture d'achat");
     } finally {
-      setIsUnlinkingPI(false);
+      setUnlinkingPurchaseInvoiceId(null);
     }
   };
 
@@ -838,6 +919,7 @@ export function TransactionDetailDrawer({
       {/* Semi-transparent overlay (dim léger sur toute la page) */}
       <motion.div
         className="fixed inset-0 z-40 bg-black/30"
+        data-app-overlay=""
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
@@ -1470,8 +1552,67 @@ export function TransactionDetailDrawer({
                         </Button>
                       </div>
                     ))}
+                    {transaction.reconciliationDate && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        Rapprochée le{" "}
+                        {formatDate(transaction.reconciliationDate)}
+                      </p>
+                    )}
                   </div>
                 )}
+
+              {/* Factures clients importées liées (Qonto, OCR, Gmail) : même
+                  rendu que les factures Newbi, badge « Importée ». */}
+              {!isCreateMode && linkedImportedInvoices.length > 0 && (
+                <div className="space-y-1.5">
+                  {linkedImportedInvoices.map((inv) => (
+                    <div
+                      key={`linked-imported-${inv.id}`}
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/outils/factures?id=${inv.id}&returnTo=transactions`,
+                        );
+                        onOpenChange(false);
+                      }}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms]"
+                    >
+                      <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
+                        <FileText className="h-4 w-4 text-[#5A50FF]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          Facture {inv.number || "importée"}
+                          {inv.clientName ? ` — ${inv.clientName}` : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {inv.totalTTC != null
+                            ? formatAmount(inv.totalTTC)
+                            : ""}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                        Importée
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const result = await unlinkImportedInvoice(
+                            transaction.id,
+                            inv.id,
+                          );
+                          if (result?.success) onRefresh?.();
+                        }}
+                        title="Détacher la facture importée"
+                      >
+                        <Unlink className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Notes (seulement en visualisation) */}
@@ -1491,14 +1632,18 @@ export function TransactionDetailDrawer({
                 </div>
               )}
 
-            {/* Section Facture liée (seulement si une facture est liée) */}
-            {!isCreateMode && linkedInvoice && (
+            {/* Factures d'achat liées (lien par référence — le justificatif
+                reste sur la facture, accessible via ce lien). N↔N : plusieurs
+                factures possibles, détachement unitaire. */}
+            {!isCreateMode && linkedPurchaseInvoices.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <p className="text-sm font-normal text-muted-foreground">
-                      Facture liée
+                      {linkedPurchaseInvoices.length > 1
+                        ? "Factures d'achat liées"
+                        : "Facture d'achat liée"}
                     </p>
                   </div>
                   <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
@@ -1507,169 +1652,205 @@ export function TransactionDetailDrawer({
                   </span>
                 </div>
 
-                <div className="p-3 border rounded-lg bg-muted/30">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium">
-                          Facture {linkedInvoice.number || "N/A"}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                          {linkedInvoice.status === "COMPLETED" && (
-                            <CheckCircle2 className="w-3 h-3" />
+                {linkedPurchaseInvoices.map((pi) => (
+                  <div
+                    key={pi.id}
+                    className="p-3 border rounded-lg bg-muted/30"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium truncate">
+                            Facture d&apos;achat
+                            {pi.invoiceNumber ? ` ${pi.invoiceNumber}` : ""}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {pi.supplierName || "Fournisseur"}
+                        </p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          <span>{formatAmount(pi.amountTTC)}</span>
+                          {pi.issueDate && (
+                            <>
+                              <span>•</span>
+                              <span>{formatDate(pi.issueDate)}</span>
+                            </>
                           )}
-                          {linkedInvoice.status === "PENDING" && (
-                            <AlertCircle className="w-3 h-3" />
-                          )}
-                          {linkedInvoice.status === "COMPLETED"
-                            ? "Payée"
-                            : linkedInvoice.status === "PENDING"
-                              ? "En attente"
-                              : linkedInvoice.status}
-                        </span>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {linkedInvoice.clientName}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span>{formatAmount(linkedInvoice.totalTTC)}</span>
-                        {linkedInvoice.dueDate && (
-                          <>
-                            <span>•</span>
-                            <span>
-                              Échéance: {formatDate(linkedInvoice.dueDate)}
-                            </span>
-                          </>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {pi.files?.[0]?.url && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleViewPurchaseInvoiceReceipt(pi)}
+                            title="Voir le justificatif"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
                         )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={handleViewLinkedInvoice}
-                        title="Voir la facture"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={handleUnlinkInvoice}
-                        disabled={isReadOnly || isUnlinking}
-                        title={readOnlyTooltip || "Détacher la facture"}
-                      >
-                        {isUnlinking ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Unlink className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Date de rapprochement */}
-                {transaction.reconciliationDate && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    Rapprochée le {formatDate(transaction.reconciliationDate)}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Section Facture d'achat liée (lien par référence — le
-                justificatif reste sur la facture, accessible via ce lien) */}
-            {!isCreateMode && linkedPurchaseInvoice && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-normal text-muted-foreground">
-                      Facture d&apos;achat liée
-                    </p>
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                    <Link2 className="w-3 h-3" />
-                    Rapprochée
-                  </span>
-                </div>
-
-                <div className="p-3 border rounded-lg bg-muted/30">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium truncate">
-                          Facture d&apos;achat
-                          {linkedPurchaseInvoice.invoiceNumber
-                            ? ` ${linkedPurchaseInvoice.invoiceNumber}`
-                            : ""}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {linkedPurchaseInvoice.supplierName || "Fournisseur"}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                        <span>
-                          {formatAmount(linkedPurchaseInvoice.amountTTC)}
-                        </span>
-                        {linkedPurchaseInvoice.issueDate && (
-                          <>
-                            <span>•</span>
-                            <span>
-                              {formatDate(linkedPurchaseInvoice.issueDate)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {linkedPurchaseInvoice.files?.[0]?.url && (
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={handleViewPurchaseInvoiceReceipt}
-                          title="Voir le justificatif"
+                          onClick={() => handleViewPurchaseInvoice(pi)}
+                          title="Voir la facture d'achat"
                         >
-                          <Download className="h-4 w-4" />
+                          <ExternalLink className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={handleViewPurchaseInvoice}
-                        title="Voir la facture d'achat"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={handleUnlinkPurchaseInvoice}
-                        disabled={isReadOnly || isUnlinkingPI}
-                        title={readOnlyTooltip || "Détacher la facture d'achat"}
-                      >
-                        {isUnlinkingPI ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Unlink className="h-4 w-4" />
-                        )}
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleUnlinkPurchaseInvoice(pi)}
+                          disabled={
+                            isReadOnly || unlinkingPurchaseInvoiceId !== null
+                          }
+                          title={
+                            readOnlyTooltip || "Détacher la facture d'achat"
+                          }
+                        >
+                          {unlinkingPurchaseInvoiceId === pi.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Unlink className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+            )}
+
+            {/* Rattacher une facture d'achat existante (dépenses) : recours
+                au dépôt de justificatif quand la facture existe déjà (saisie,
+                import Qonto, ou déjà rapprochée à un autre prélèvement). */}
+            {canPickPurchaseInvoice && !isIgnoredReconciliation && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm font-normal text-muted-foreground">
+                      {linkedPurchaseInvoices.length > 0
+                        ? "Rattacher une autre facture d'achat"
+                        : "Rattacher une facture d'achat existante"}
+                    </p>
+                  </div>
+                  {!showPurchaseInvoicePicker && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setShowPurchaseInvoicePicker(true)}
+                      disabled={isReadOnly}
+                      title={
+                        readOnlyTooltip || "Rechercher une facture d'achat"
+                      }
+                    >
+                      <Link2 className="h-3 w-3 mr-1" />
+                      Rattacher
+                    </Button>
+                  )}
                 </div>
+
+                {showPurchaseInvoicePicker && (
+                  <div className="border rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Sélectionner une facture d&apos;achat
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          setShowPurchaseInvoicePicker(false);
+                          setPurchaseInvoiceSearch("");
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+
+                    <Input
+                      value={purchaseInvoiceSearch}
+                      onChange={(e) => setPurchaseInvoiceSearch(e.target.value)}
+                      placeholder="Fournisseur, n° de facture, montant..."
+                      className="h-8 text-sm"
+                      autoFocus
+                    />
+
+                    {loadingPurchaseInvoices ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : availablePurchaseInvoices.length > 0 ? (
+                      <div className="max-h-[240px] overflow-y-auto space-y-2">
+                        {availablePurchaseInvoices.map((pi) => (
+                          <div
+                            key={pi.id}
+                            className={`p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors ${
+                              pi.score >= 80
+                                ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              !isLinkingPI &&
+                              handleReconcilePurchaseInvoice(pi.id)
+                            }
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">
+                                  {pi.supplierName || "Fournisseur"}
+                                  {pi.invoiceNumber
+                                    ? ` - ${pi.invoiceNumber}`
+                                    : ""}
+                                </p>
+                                <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                                  <span>{formatAmount(pi.amountTTC)}</span>
+                                  {pi.issueDate && (
+                                    <>
+                                      <span>•</span>
+                                      <span>{formatDate(pi.issueDate)}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                {pi.score >= 80 && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#5a50ff]/10 text-[#5a50ff] border border-[#5a50ff]/30">
+                                    Correspondance
+                                  </span>
+                                )}
+                                {pi.isReconciled && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                    Déjà rapprochée
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center py-4 text-xs text-muted-foreground">
+                        {purchaseInvoiceSearch.trim()
+                          ? "Aucune facture d'achat ne correspond à cette recherche."
+                          : "Aucune facture d'achat disponible."}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Rapprochement ignoré : la transaction a été volontairement
                 exclue des suggestions (action "ignorer"). On propose d'annuler
                 ce choix, sinon le statut est irréversible côté UI. */}
-            {!isCreateMode && !linkedInvoice && isIgnoredReconciliation && (
+            {!isCreateMode && !hasLinkedInvoices && isIgnoredReconciliation && (
               <div className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30">
                 <div className="flex items-center gap-2 min-w-0">
                   <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -1700,16 +1881,18 @@ export function TransactionDetailDrawer({
                 d'argent sans suggestion, un sélecteur avec recherche permet le
                 rattachement manuel. */}
             {!isCreateMode &&
-              !linkedInvoice &&
+              !isIgnoredReconciliation &&
               (matchingInvoices.length > 0 || canPickInvoice) && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <p className="text-sm font-normal text-muted-foreground">
-                        {matchingInvoices.length > 1
-                          ? "Factures à rapprocher"
-                          : "Facture à rapprocher"}
+                        {hasLinkedInvoices
+                          ? "Rattacher une autre facture"
+                          : matchingInvoices.length > 1
+                            ? "Factures à rapprocher"
+                            : "Facture à rapprocher"}
                       </p>
                     </div>
                     {canPickInvoice && !showInvoicePicker && (
@@ -1773,12 +1956,14 @@ export function TransactionDetailDrawer({
                     </div>
                   ))}
 
-                  {matchingInvoices.length === 0 && !showInvoicePicker && (
-                    <p className="text-sm text-muted-foreground">
-                      Aucune correspondance automatique. Utilisez « Rattacher »
-                      pour rechercher une facture.
-                    </p>
-                  )}
+                  {matchingInvoices.length === 0 &&
+                    !showInvoicePicker &&
+                    !hasLinkedInvoices && (
+                      <p className="text-sm text-muted-foreground">
+                        Aucune correspondance automatique. Utilisez « Rattacher
+                        » pour rechercher une facture.
+                      </p>
+                    )}
 
                   {/* Sélecteur manuel de facture (recherche serveur) */}
                   {showInvoicePicker && (
@@ -1821,14 +2006,17 @@ export function TransactionDetailDrawer({
                                   ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
                                   : ""
                               }`}
-                              onClick={() =>
-                                !isLinking && handleReconcileInvoice(invoice.id)
-                              }
+                              onClick={() => handlePickInvoice(invoice)}
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">
                                     Facture {invoice.number || "N/A"}
+                                    {invoice.kind === "imported" && (
+                                      <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground align-middle">
+                                        Importée
+                                      </span>
+                                    )}
                                   </p>
                                   <p className="text-xs text-muted-foreground truncate">
                                     {invoice.clientName}

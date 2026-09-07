@@ -5,6 +5,10 @@ import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
 import { Landmark, X, Undo2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import {
+  useReconciliationToastVisibility,
+  RECONCILIATION_TOAST_ATTR,
+} from "./useReconciliationToastVisibility";
 import { toast as sonnerToast } from "sonner";
 import {
   getIgnoredSuggestions,
@@ -203,6 +207,7 @@ function ReconciliationDeck({
     <div
       ref={containerRef}
       className="fixed top-5 right-6 z-[100]"
+      {...{ [RECONCILIATION_TOAST_ATTR]: "" }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -436,10 +441,16 @@ export function ReconciliationToastProvider({ children }) {
     [router],
   );
 
+  // Masqués tant qu'un panneau est ouvert, et après toute interaction hors
+  // du toast (jusqu'à une suggestion jamais vue).
+  const toastVisible = useReconciliationToastVisibility(
+    activeSuggestions.map((s) => s.transaction.id),
+  );
+
   return (
     <>
       {children}
-      {activeSuggestions.length > 0 && (
+      {toastVisible && activeSuggestions.length > 0 && (
         <ReconciliationDeck
           suggestions={activeSuggestions}
           onLink={handleLink}

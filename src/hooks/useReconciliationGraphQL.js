@@ -10,6 +10,10 @@ import {
   UNLINK_TRANSACTION_FROM_INVOICE,
   IGNORE_TRANSACTION,
   UNIGNORE_TRANSACTION,
+  GET_IMPORTED_INVOICES_FOR_TRANSACTION,
+  GET_TRANSACTIONS_FOR_IMPORTED_INVOICE,
+  LINK_TRANSACTION_TO_IMPORTED_INVOICE,
+  UNLINK_TRANSACTION_FROM_IMPORTED_INVOICE,
 } from "@/src/graphql/queries/reconciliation";
 import { GET_INVOICES } from "@/src/graphql/invoiceQueries";
 import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking";
@@ -179,6 +183,104 @@ export const useUnlinkTransactionFromInvoice = () => {
   return { unlinkTransaction, loading };
 };
 
+// Factures clients importées (Qonto, OCR, Gmail) : mêmes refetchs que les
+// factures Newbi, plus la liste des importées (statut et date de paiement).
+const IMPORTED_INVOICE_REFETCH_QUERIES = [
+  "GetImportedInvoices",
+  "GetImportedInvoiceStats",
+  "GetInvoiceBalances",
+];
+
+export const useLinkTransactionToImportedInvoice = () => {
+  const [linkMutation, { loading }] = useMutation(
+    LINK_TRANSACTION_TO_IMPORTED_INVOICE,
+    {
+      refetchQueries: [
+        GET_RECONCILIATION_SUGGESTIONS,
+        ...IMPORTED_INVOICE_REFETCH_QUERIES,
+        ...TRANSACTION_LIST_REFETCH_QUERIES,
+      ],
+      awaitRefetchQueries: true,
+      onCompleted: (data) => {
+        if (data.linkTransactionToImportedInvoice.success) {
+          toast.success("Rapprochement effectué avec succès");
+        } else {
+          toast.error(
+            data.linkTransactionToImportedInvoice.message ||
+              "Erreur lors du rapprochement",
+          );
+        }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Erreur lors du rapprochement");
+      },
+    },
+  );
+
+  const linkImportedInvoice = async (transactionId, importedInvoiceId) => {
+    try {
+      const result = await linkMutation({
+        variables: { input: { transactionId, importedInvoiceId } },
+      });
+      return {
+        success:
+          result.data?.linkTransactionToImportedInvoice?.success || false,
+        data: result.data?.linkTransactionToImportedInvoice,
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  return { linkImportedInvoice, loading };
+};
+
+export const useUnlinkTransactionFromImportedInvoice = () => {
+  const [unlinkMutation, { loading }] = useMutation(
+    UNLINK_TRANSACTION_FROM_IMPORTED_INVOICE,
+    {
+      refetchQueries: [
+        GET_RECONCILIATION_SUGGESTIONS,
+        ...IMPORTED_INVOICE_REFETCH_QUERIES,
+        ...TRANSACTION_LIST_REFETCH_QUERIES,
+      ],
+      awaitRefetchQueries: true,
+      onCompleted: (data) => {
+        if (data.unlinkTransactionFromImportedInvoice.success) {
+          toast.success("Déliaison effectuée avec succès");
+          reproposeReconciliation(
+            data.unlinkTransactionFromImportedInvoice.transaction?.id,
+          );
+        } else {
+          toast.error(
+            data.unlinkTransactionFromImportedInvoice.message ||
+              "Erreur lors de la déliaison",
+          );
+        }
+      },
+      onError: (error) => {
+        toast.error(error.message || "Erreur lors de la déliaison");
+      },
+    },
+  );
+
+  const unlinkImportedInvoice = async (transactionId, importedInvoiceId) => {
+    try {
+      const result = await unlinkMutation({
+        variables: { input: { transactionId, importedInvoiceId } },
+      });
+      return {
+        success:
+          result.data?.unlinkTransactionFromImportedInvoice?.success || false,
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
+  return { unlinkImportedInvoice, loading };
+};
+
 /**
  * Hook pour ignorer une transaction
  */
@@ -286,6 +388,32 @@ export const useReconciliationGraphQL = () => {
   const { ignoreTransaction, loading: ignoreLoading } = useIgnoreTransaction();
   const { unignoreTransaction, loading: unignoreLoading } =
     useUnignoreTransaction();
+  const { linkImportedInvoice, loading: linkImportedLoading } =
+    useLinkTransactionToImportedInvoice();
+  const { unlinkImportedInvoice, loading: unlinkImportedLoading } =
+    useUnlinkTransactionFromImportedInvoice();
+
+  // Factures clients importées rattachables à une transaction (même forme
+  // que fetchInvoicesForTransaction).
+  const fetchImportedInvoicesForTransaction = useCallback(
+    async (transactionId, search) => {
+      try {
+        const { data } = await client.query({
+          query: GET_IMPORTED_INVOICES_FOR_TRANSACTION,
+          variables: { transactionId, search: search || null },
+          fetchPolicy: "network-only",
+        });
+        return data?.importedInvoicesForTransaction?.invoices || [];
+      } catch (error) {
+        console.error(
+          "[RECONCILIATION] Erreur fetchImportedInvoicesForTransaction:",
+          error,
+        );
+        return [];
+      }
+    },
+    [client],
+  );
 
   // Fonction pour récupérer les transactions pour une facture spécifique
   // (utilisée par le drawer de facture)
@@ -356,6 +484,8 @@ export const useReconciliationGraphQL = () => {
     isUnlinking: unlinkLoading,
     isIgnoring: ignoreLoading,
     isUnignoring: unignoreLoading,
+    isLinkingImported: linkImportedLoading,
+    isUnlinkingImported: unlinkImportedLoading,
 
     // Actions
     refetch: refetchSuggestions,
@@ -365,6 +495,9 @@ export const useReconciliationGraphQL = () => {
     unignoreTransaction,
     fetchTransactionsForInvoice,
     fetchInvoicesForTransaction,
+    fetchImportedInvoicesForTransaction,
+    linkImportedInvoice,
+    unlinkImportedInvoice,
   };
 };
 
@@ -402,6 +535,35 @@ export const useReconciliationForSidebar = () => {
     useLinkTransactionToInvoice();
   const { unlinkTransaction, loading: unlinkLoading } =
     useUnlinkTransactionFromInvoice();
+  const { linkImportedInvoice, loading: linkImportedLoading } =
+    useLinkTransactionToImportedInvoice();
+  const { unlinkImportedInvoice, loading: unlinkImportedLoading } =
+    useUnlinkTransactionFromImportedInvoice();
+
+  // Transactions rattachables à une facture importée (sidebar importée)
+  const fetchTransactionsForImportedInvoice = useCallback(
+    async (importedInvoiceId, search) => {
+      try {
+        const { data } = await client.query({
+          query: GET_TRANSACTIONS_FOR_IMPORTED_INVOICE,
+          variables: { importedInvoiceId, search: search || null },
+          fetchPolicy: "network-only",
+        });
+        const result = data?.transactionsForImportedInvoice;
+        return {
+          transactions: result?.transactions || [],
+          invoiceAmount: result?.invoiceAmount || 0,
+        };
+      } catch (error) {
+        console.error(
+          "[RECONCILIATION] Erreur fetchTransactionsForImportedInvoice:",
+          error,
+        );
+        return { transactions: [], invoiceAmount: 0 };
+      }
+    },
+    [client],
+  );
 
   // Fonction pour récupérer les transactions pour une facture spécifique
   // OPTIMISÉ: Utiliser useCallback pour éviter les re-renders inutiles
@@ -431,6 +593,11 @@ export const useReconciliationForSidebar = () => {
   );
 
   return {
+    linkImportedInvoice,
+    unlinkImportedInvoice,
+    fetchTransactionsForImportedInvoice,
+    isLinkingImported: linkImportedLoading,
+    isUnlinkingImported: unlinkImportedLoading,
     // États
     isLinking: linkLoading,
     isUnlinking: unlinkLoading,

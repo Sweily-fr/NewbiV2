@@ -185,6 +185,26 @@ export const RECONCILE_PURCHASE_INVOICE = gql`
   }
 `;
 
+// Retire UN lien (facture d'achat, transaction) — contrepartie du
+// rapprochement additif. UNRECONCILE_PURCHASE_INVOICE retire tous les liens.
+export const UNLINK_PURCHASE_INVOICE_FROM_TRANSACTION = gql`
+  mutation UnlinkPurchaseInvoiceFromTransaction(
+    $purchaseInvoiceId: ID!
+    $transactionId: ID!
+  ) {
+    unlinkPurchaseInvoiceFromTransaction(
+      purchaseInvoiceId: $purchaseInvoiceId
+      transactionId: $transactionId
+    ) {
+      id
+      status
+      linkedTransactionIds
+      isReconciled
+      paymentDate
+    }
+  }
+`;
+
 export const UNRECONCILE_PURCHASE_INVOICE = gql`
   mutation UnreconcilePurchaseInvoice($purchaseInvoiceId: ID!) {
     unreconcilePurchaseInvoice(purchaseInvoiceId: $purchaseInvoiceId) {
