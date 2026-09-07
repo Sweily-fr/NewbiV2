@@ -5,6 +5,10 @@ import { usePurchaseInvoiceReconciliation } from "@/src/hooks/usePurchaseInvoice
 import { useRouter } from "next/navigation";
 import { Landmark, Undo2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import {
+  useReconciliationToastVisibility,
+  RECONCILIATION_TOAST_ATTR,
+} from "./useReconciliationToastVisibility";
 import { toast as sonnerToast } from "sonner";
 import {
   getIgnoredSuggestions,
@@ -195,6 +199,7 @@ function PurchaseInvoiceReconciliationDeck({
   return (
     <div
       className="fixed bottom-5 right-6 z-[100]"
+      {...{ [RECONCILIATION_TOAST_ATTR]: "" }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -399,10 +404,16 @@ export function PurchaseInvoiceReconciliationToastProvider({ children }) {
     [router],
   );
 
+  // Masqués tant qu'un panneau est ouvert, et après toute interaction hors
+  // du toast (jusqu'à une suggestion jamais vue).
+  const toastVisible = useReconciliationToastVisibility(
+    activeSuggestions.map((s) => s.transaction.id),
+  );
+
   return (
     <>
       {children}
-      {activeSuggestions.length > 0 && (
+      {toastVisible && activeSuggestions.length > 0 && (
         <PurchaseInvoiceReconciliationDeck
           suggestions={activeSuggestions}
           onLink={handleLink}

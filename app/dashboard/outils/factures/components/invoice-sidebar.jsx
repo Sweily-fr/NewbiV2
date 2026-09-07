@@ -630,6 +630,7 @@ export default function InvoiceSidebar({
       {/* Semi-transparent overlay (dim léger sur toute la page) */}
       <motion.div
         className="fixed inset-0 z-40 bg-black/30"
+        data-app-overlay=""
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
