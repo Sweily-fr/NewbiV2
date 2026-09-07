@@ -23,6 +23,7 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
     client {
       id
       name
+      email
       address
       city
       postalCode
@@ -32,6 +33,14 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
     invoiceDate
     dueDate
     paymentDate
+    linkedTransactionIds
+    linkedTransactions {
+      id
+      amount
+      description
+      date
+      reconciliationStatus
+    }
     totalHT
     totalVAT
     totalTTC
@@ -68,6 +77,18 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
 `;
 
 // Queries
+export const GET_IMPORTED_INVOICE_CLIENT_SUGGESTION = gql`
+  query GetImportedInvoiceClientSuggestion($id: ID!) {
+    importedInvoiceClientSuggestion(id: $id) {
+      id
+      name
+      firstName
+      lastName
+      type
+    }
+  }
+`;
+
 export const GET_IMPORTED_INVOICES = gql`
   ${IMPORTED_INVOICE_FRAGMENT}
   query GetImportedInvoices(

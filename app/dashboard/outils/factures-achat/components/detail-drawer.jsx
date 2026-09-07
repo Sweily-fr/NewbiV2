@@ -61,6 +61,9 @@ import {
   Tag,
   AlertCircle,
   Upload,
+  Unlink,
+  Search,
+  Loader2,
 } from "lucide-react";
 import {
   useCreatePurchaseInvoice,
@@ -73,11 +76,17 @@ import {
   useAcknowledgePurchaseInvoiceEInvoice,
   useRefusePurchaseInvoiceEInvoice,
   useSubmitPurchaseInvoiceEInvoiceEvent,
+  useUnlinkPurchaseInvoiceFromTransaction,
+  usePurchaseInvoiceReconciliationPicker,
+  useCheckPurchaseInvoiceDuplicates,
 } from "@/src/hooks/usePurchaseInvoices";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/src/lib/utils";
+import { toast } from "@/src/components/ui/sonner";
 import { Calendar } from "@/src/components/ui/calendar";
 import {
   Popover,
@@ -171,40 +180,43 @@ function formatDate(date, withTime = false) {
 
 // Ligne cliquable vers une transaction rapprochée (ouvre le détail de la
 // transaction via ?transactionId= sur la page transactions)
-function LinkedTransactionLink({ transactionId }) {
+function LinkedTransactionLink({ transactionId, action = null }) {
   const { data, loading } = useQuery(GET_TRANSACTION, {
     variables: { id: transactionId },
   });
   const tx = data?.transaction;
 
   return (
-    <Link
-      href={`/dashboard/outils/transactions?transactionId=${transactionId}`}
-      className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
-    >
-      <div className="flex-1 min-w-0">
-        {loading ? (
-          <p className="text-xs text-muted-foreground">
-            Chargement de la transaction...
-          </p>
-        ) : tx ? (
-          <>
-            <span className="text-sm font-medium">
-              {formatAmount(Math.abs(tx.amount))} €
-            </span>
-            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-              {tx.description && (
-                <span className="truncate">{tx.description}</span>
-              )}
-              <span className="shrink-0">{formatDate(tx.date)}</span>
-            </div>
-          </>
-        ) : (
-          <p className="text-sm">Voir la transaction</p>
-        )}
-      </div>
-      <LinkIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-foreground" />
-    </Link>
+    <div className="flex items-center gap-1">
+      <Link
+        href={`/dashboard/outils/transactions?transactionId=${transactionId}`}
+        className="flex flex-1 min-w-0 items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30 hover:bg-muted/60 transition-colors group"
+      >
+        <div className="flex-1 min-w-0">
+          {loading ? (
+            <p className="text-xs text-muted-foreground">
+              Chargement de la transaction...
+            </p>
+          ) : tx ? (
+            <>
+              <span className="text-sm font-medium">
+                {formatAmount(Math.abs(tx.amount))} €
+              </span>
+              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                {tx.description && (
+                  <span className="truncate">{tx.description}</span>
+                )}
+                <span className="shrink-0">{formatDate(tx.date)}</span>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm">Voir la transaction</p>
+          )}
+        </div>
+        <LinkIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-foreground" />
+      </Link>
+      {action}
+    </div>
   );
 }
 
@@ -252,6 +264,55 @@ export function PurchaseInvoiceDetailDrawer({
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
   const { reconcile, loading: reconcileLoading } =
     useReconcilePurchaseInvoice();
+  const { unlink: unlinkTransaction, loading: unlinkLoading } =
+    useUnlinkPurchaseInvoiceFromTransaction();
+  const { fetchTransactionsForPurchaseInvoice } =
+    usePurchaseInvoiceReconciliationPicker();
+  const { checkDuplicates } = useCheckPurchaseInvoiceDuplicates();
+  // Doublons probables détectés avant création : { duplicates } ou null
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  // Rattachement manuel : sélecteur de transactions (débits) avec recherche
+  // serveur — recours quand aucune suggestion ne sort (facture créée après
+  // le paiement, écart de montant, relevé couvrant plusieurs prélèvements).
+  const [showTransactionPicker, setShowTransactionPicker] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const debouncedTransactionSearch = useDebouncedValue(transactionSearch, 300);
+  const [availableTransactions, setAvailableTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [unlinkingTransactionId, setUnlinkingTransactionId] = useState(null);
+
+  useEffect(() => {
+    if (!showTransactionPicker || !invoice?.id) return;
+    let cancelled = false;
+    setLoadingTransactions(true);
+    fetchTransactionsForPurchaseInvoice(invoice.id, debouncedTransactionSearch)
+      .then((transactions) => {
+        if (!cancelled) setAvailableTransactions(transactions);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailableTransactions([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTransactions(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    showTransactionPicker,
+    debouncedTransactionSearch,
+    invoice?.id,
+    fetchTransactionsForPurchaseInvoice,
+  ]);
+
+  useEffect(() => {
+    if (!open) {
+      setShowTransactionPicker(false);
+      setTransactionSearch("");
+      setAvailableTransactions([]);
+      setDuplicateWarning(null);
+    }
+  }, [open]);
   const { acknowledge, loading: ackLoading } =
     useAcknowledgePurchaseInvoiceEInvoice();
   const { refuse, loading: refuseLoading } = useRefusePurchaseInvoiceEInvoice();
@@ -398,7 +459,7 @@ export function PurchaseInvoiceDetailDrawer({
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = async ({ skipDuplicateCheck = false } = {}) => {
     if (!form.supplierName || !form.amountTTC) return;
     const data = {
       supplierName: form.supplierName,
@@ -416,6 +477,20 @@ export function PurchaseInvoiceDetailDrawer({
       internalReference: form.internalReference || undefined,
       paymentMethod: form.paymentMethod || undefined,
     };
+    // Avertissement non bloquant : une facture identique existe peut-être
+    // déjà (OCR depuis une transaction, import Qonto, saisie précédente).
+    if (isCreate && !skipDuplicateCheck) {
+      const duplicates = await checkDuplicates({
+        supplierName: data.supplierName,
+        invoiceNumber: data.invoiceNumber,
+        amountTTC: data.amountTTC,
+        issueDate: data.issueDate,
+      });
+      if (duplicates.length > 0) {
+        setDuplicateWarning({ duplicates });
+        return;
+      }
+    }
     try {
       // Les hooks fournissent onError à useMutation : en cas d'échec la
       // promesse se résout avec un résultat vide au lieu de throw.
@@ -475,8 +550,28 @@ export function PurchaseInvoiceDetailDrawer({
     // ne pas fermer/rafraîchir comme si le rapprochement avait réussi.
     const result = await reconcile(invoice.id, [transactionId]);
     if (!result) return;
+    setShowTransactionPicker(false);
+    setTransactionSearch("");
     onSaved?.();
   };
+
+  // Déliaison d'UNE transaction : la facture reste payée tant qu'il en reste
+  // au moins une (relevé mensuel couvrant plusieurs prélèvements).
+  const handleUnlinkTransaction = async (transactionId) => {
+    if (!invoice?.id || !transactionId) return;
+    setUnlinkingTransactionId(transactionId);
+    try {
+      const result = await unlinkTransaction(invoice.id, transactionId);
+      if (result) {
+        toast.success("Transaction détachée");
+        onSaved?.();
+      }
+    } finally {
+      setUnlinkingTransactionId(null);
+    }
+  };
+
+  const linkedTransactionIds = invoice?.linkedTransactionIds || [];
 
   const saving = createLoading || updateLoading;
 
@@ -1211,83 +1306,201 @@ export function PurchaseInvoiceDetailDrawer({
             </>
           )}
 
-          {/* Rapprochement bancaire */}
-          {!isCreate && suggestions?.length > 0 && (
+          {/* Rapprochement bancaire : transactions liées (déliaison unitaire),
+              suggestions automatiques et recherche manuelle. N↔N : une
+              facture d'achat peut couvrir plusieurs prélèvements (relevé
+              mensuel Qonto) et une transaction porter plusieurs factures. */}
+          {!isCreate && (
             <>
               <Separator />
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                       Rapprochement bancaire
                     </p>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-                    <AlertCircle className="w-3 h-3" />
-                    Suggestions
-                  </span>
+                  {linkedTransactionIds.length > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#5A50FF]/20">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Rapprochée avec {linkedTransactionIds.length} transaction
+                      {linkedTransactionIds.length > 1 ? "s" : ""}
+                    </span>
+                  ) : suggestions?.length > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                      <AlertCircle className="w-3 h-3" />
+                      Suggestions
+                    </span>
+                  ) : null}
                 </div>
-                <div className="space-y-2">
-                  {suggestions.map((s) => (
-                    <div
-                      key={s.transactionId}
-                      className="p-3 border rounded-lg bg-muted/30"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-medium">
-                            {formatAmount(s.amount)} €
-                          </span>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                            {s.description && <span>{s.description}</span>}
-                            <span>{formatDate(s.date)}</span>
-                            <span>
-                              Confiance: {Math.round(s.confidence * 100)}%
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600 border-green-200 hover:bg-green-50"
-                          disabled={reconcileLoading}
-                          onClick={() => handleReconcile(s.transactionId)}
-                        >
-                          <LinkIcon className="h-3.5 w-3.5 mr-1" />
-                          Rapprocher
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
 
-          {invoice?.isReconciled && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Rapprochement
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#5A50FF]/20">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Rapprochée avec {invoice.linkedTransactionIds?.length ||
-                      0}{" "}
-                    transaction(s)
-                  </span>
-                </div>
-                {(invoice.linkedTransactionIds || []).length > 0 && (
+                {linkedTransactionIds.length > 0 && (
                   <div className="space-y-2">
-                    {invoice.linkedTransactionIds.map((txId) => (
-                      <LinkedTransactionLink key={txId} transactionId={txId} />
+                    {linkedTransactionIds.map((txId) => (
+                      <LinkedTransactionLink
+                        key={txId}
+                        transactionId={txId}
+                        action={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                            disabled={unlinkLoading}
+                            onClick={() => handleUnlinkTransaction(txId)}
+                            title="Détacher cette transaction"
+                          >
+                            {unlinkingTransactionId === txId ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Unlink className="h-4 w-4" />
+                            )}
+                          </Button>
+                        }
+                      />
                     ))}
+                  </div>
+                )}
+
+                {suggestions?.length > 0 && !showTransactionPicker && (
+                  <div className="space-y-2">
+                    {linkedTransactionIds.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Autres transactions correspondantes
+                      </p>
+                    )}
+                    {suggestions.map((s) => (
+                      <div
+                        key={s.transactionId}
+                        className="p-3 border rounded-lg bg-muted/30"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium">
+                              {formatAmount(s.amount)} €
+                            </span>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              {s.description && <span>{s.description}</span>}
+                              <span>{formatDate(s.date)}</span>
+                              <span>
+                                Confiance: {Math.round(s.confidence * 100)}%
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 border-green-200 hover:bg-green-50"
+                            disabled={reconcileLoading}
+                            onClick={() => handleReconcile(s.transactionId)}
+                          >
+                            <LinkIcon className="h-3.5 w-3.5 mr-1" />
+                            Rapprocher
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!showTransactionPicker ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowTransactionPicker(true)}
+                  >
+                    <Search className="h-3.5 w-3.5 mr-1.5" />
+                    {linkedTransactionIds.length > 0
+                      ? "Rattacher une autre transaction"
+                      : "Rechercher une transaction"}
+                  </Button>
+                ) : (
+                  <div className="border rounded-lg p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        Sélectionner une transaction
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          setShowTransactionPicker(false);
+                          setTransactionSearch("");
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+
+                    <Input
+                      value={transactionSearch}
+                      onChange={(e) => setTransactionSearch(e.target.value)}
+                      placeholder="Libellé, référence, montant..."
+                      className="h-8 text-sm"
+                      autoFocus
+                    />
+
+                    {loadingTransactions ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : availableTransactions.length > 0 ? (
+                      <div className="max-h-[240px] overflow-y-auto space-y-2">
+                        {availableTransactions.map((tx) => {
+                          const alreadyMatched =
+                            String(
+                              tx.reconciliationStatus || "",
+                            ).toLowerCase() === "matched";
+                          return (
+                            <div
+                              key={tx.id}
+                              className={cn(
+                                "p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors",
+                                tx.score >= 80 &&
+                                  "border-[#5a50ff]/30 bg-[#5a50ff]/5",
+                              )}
+                              onClick={() =>
+                                !reconcileLoading && handleReconcile(tx.id)
+                              }
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">
+                                    {formatAmount(Math.abs(tx.amount))} €
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {tx.description || "Transaction"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatDate(tx.date)}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                  {tx.score >= 80 && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#5a50ff]/10 text-[#5a50ff] border border-[#5a50ff]/30">
+                                      Correspondance
+                                    </span>
+                                  )}
+                                  {alreadyMatched && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                      Déjà rapprochée
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-center py-4 text-xs text-muted-foreground">
+                        {transactionSearch.trim()
+                          ? "Aucune transaction ne correspond à cette recherche."
+                          : "Aucune transaction à rapprocher depuis l'émission. Saisissez un libellé ou un montant pour élargir la recherche."}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -1416,7 +1629,7 @@ export function PurchaseInvoiceDetailDrawer({
             <Button
               variant="primary"
               className="flex-1 font-normal"
-              onClick={handleSave}
+              onClick={() => handleSave()}
               disabled={saving || !form.supplierName || !form.amountTTC}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -1434,7 +1647,7 @@ export function PurchaseInvoiceDetailDrawer({
             </Button>
             <Button
               className="flex-1 font-normal bg-primary hover:bg-primary/90"
-              onClick={handleSave}
+              onClick={() => handleSave()}
               disabled={saving || !form.supplierName || !form.amountTTC}
             >
               <Save className="h-4 w-4 mr-2" />
@@ -1496,8 +1709,25 @@ export function PurchaseInvoiceDetailDrawer({
     </>
   );
 
+  const duplicateDialog = (
+    <DuplicateWarningDialog
+      open={!!duplicateWarning}
+      duplicates={duplicateWarning?.duplicates || []}
+      onCancel={() => setDuplicateWarning(null)}
+      onConfirm={() => {
+        setDuplicateWarning(null);
+        handleSave({ skipDuplicateCheck: true });
+      }}
+    />
+  );
+
   if (embedded) {
-    return <div className="flex flex-col h-full">{body}</div>;
+    return (
+      <div className="flex flex-col h-full">
+        {body}
+        {duplicateDialog}
+      </div>
+    );
   }
 
   return (
@@ -1508,6 +1738,7 @@ export function PurchaseInvoiceDetailDrawer({
       >
         {header}
         {body}
+        {duplicateDialog}
       </DrawerContent>
     </Drawer>
   );

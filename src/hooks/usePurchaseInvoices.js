@@ -1,5 +1,11 @@
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation, useApolloClient } from "@apollo/client";
+import { useCallback } from "react";
 import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking";
+import {
+  GET_TRANSACTIONS_FOR_PURCHASE_INVOICE,
+  GET_PURCHASE_INVOICES_FOR_TRANSACTION,
+  GET_PURCHASE_INVOICE_DUPLICATES,
+} from "@/src/graphql/queries/purchaseInvoiceReconciliation";
 import {
   GET_PURCHASE_INVOICES,
   GET_PURCHASE_INVOICE,
@@ -18,6 +24,7 @@ import {
   BULK_DELETE_PURCHASE_INVOICES,
   BULK_CATEGORIZE_PURCHASE_INVOICES,
   RECONCILE_PURCHASE_INVOICE,
+  UNLINK_PURCHASE_INVOICE_FROM_TRANSACTION,
   UNRECONCILE_PURCHASE_INVOICE,
   CREATE_SUPPLIER,
   DELETE_SUPPLIER,
@@ -392,6 +399,114 @@ export const useUnreconcilePurchaseInvoice = () => {
   };
 
   return { unreconcile, loading };
+};
+
+// Déliaison unitaire (facture d'achat, transaction). Mêmes refetchs que le
+// rapprochement : la transaction redevient éventuellement "à rapprocher".
+export const useUnlinkPurchaseInvoiceFromTransaction = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const [unlinkMutation, { loading }] = useMutation(
+    UNLINK_PURCHASE_INVOICE_FROM_TRANSACTION,
+    {
+      refetchQueries: [
+        { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+        "GetPurchaseInvoiceReconciliationSuggestions",
+        "GetPurchaseInvoiceReconciliationMatches",
+        "GetPurchaseInvoice",
+        ...TRANSACTION_LIST_REFETCH_QUERIES,
+      ],
+      awaitRefetchQueries: false,
+      onError: (error) =>
+        toast.error(error.message || "Erreur lors du détachement"),
+    },
+  );
+
+  const unlink = async (purchaseInvoiceId, transactionId) => {
+    const result = await unlinkMutation({
+      variables: { purchaseInvoiceId, transactionId },
+    });
+    return result?.data?.unlinkPurchaseInvoiceFromTransaction;
+  };
+
+  return { unlink, loading };
+};
+
+// Recherches serveur pour les sélecteurs de rattachement manuel (les deux
+// sens). network-only : l'état de rapprochement change à chaque action.
+export const usePurchaseInvoiceReconciliationPicker = () => {
+  const client = useApolloClient();
+
+  const fetchTransactionsForPurchaseInvoice = useCallback(
+    async (purchaseInvoiceId, search = "") => {
+      const { data } = await client.query({
+        query: GET_TRANSACTIONS_FOR_PURCHASE_INVOICE,
+        variables: { purchaseInvoiceId, search: search || undefined },
+        fetchPolicy: "network-only",
+      });
+      return data?.transactionsForPurchaseInvoice?.transactions || [];
+    },
+    [client],
+  );
+
+  const fetchPurchaseInvoicesForTransaction = useCallback(
+    async (transactionId, search = "") => {
+      const { data } = await client.query({
+        query: GET_PURCHASE_INVOICES_FOR_TRANSACTION,
+        variables: { transactionId, search: search || undefined },
+        fetchPolicy: "network-only",
+      });
+      return data?.purchaseInvoicesForTransaction?.purchaseInvoices || [];
+    },
+    [client],
+  );
+
+  return {
+    fetchTransactionsForPurchaseInvoice,
+    fetchPurchaseInvoicesForTransaction,
+  };
+};
+
+// Doublons probables avant création manuelle. Best-effort : une erreur
+// réseau ne doit pas empêcher la création (tableau vide).
+export const useCheckPurchaseInvoiceDuplicates = () => {
+  const client = useApolloClient();
+  const { workspaceId } = useRequiredWorkspace();
+
+  const checkDuplicates = useCallback(
+    async ({
+      supplierName,
+      invoiceNumber,
+      amountTTC,
+      issueDate,
+      excludeId,
+    }) => {
+      if (!workspaceId) return [];
+      try {
+        const { data } = await client.query({
+          query: GET_PURCHASE_INVOICE_DUPLICATES,
+          variables: {
+            workspaceId,
+            input: {
+              supplierName: supplierName || null,
+              invoiceNumber: invoiceNumber || null,
+              amountTTC: amountTTC != null ? Number(amountTTC) : null,
+              issueDate: issueDate || null,
+              excludeId: excludeId || null,
+            },
+          },
+          fetchPolicy: "network-only",
+        });
+        return data?.purchaseInvoiceDuplicates || [];
+      } catch (err) {
+        console.error("Vérification des doublons impossible:", err);
+        return [];
+      }
+    },
+    [client, workspaceId],
+  );
+
+  return { checkDuplicates };
 };
 
 export const useReconciliationSuggestions = (purchaseInvoiceId) => {

@@ -166,3 +166,123 @@ export const UNIGNORE_TRANSACTION = gql`
     }
   }
 `;
+
+// ==================== FACTURES CLIENTS IMPORTÉES ====================
+
+/**
+ * Factures clients importées (Qonto, OCR, Gmail) rattachables à une
+ * transaction. Même forme que GET_INVOICES_FOR_TRANSACTION (number = numéro
+ * d'origine du document).
+ */
+export const GET_IMPORTED_INVOICES_FOR_TRANSACTION = gql`
+  query GetImportedInvoicesForTransaction(
+    $transactionId: ID!
+    $search: String
+  ) {
+    importedInvoicesForTransaction(
+      transactionId: $transactionId
+      search: $search
+    ) {
+      success
+      invoices {
+        id
+        number
+        clientName
+        totalTTC
+        dueDate
+        status
+        score
+      }
+      transactionAmount
+    }
+  }
+`;
+
+/**
+ * Transactions rattachables à une facture importée (rattachement manuel
+ * depuis la sidebar facture importée).
+ */
+export const GET_TRANSACTIONS_FOR_IMPORTED_INVOICE = gql`
+  query GetTransactionsForImportedInvoice(
+    $importedInvoiceId: ID!
+    $search: String
+  ) {
+    transactionsForImportedInvoice(
+      importedInvoiceId: $importedInvoiceId
+      search: $search
+    ) {
+      success
+      transactions {
+        id
+        amount
+        description
+        date
+        reconciliationStatus
+        score
+      }
+      invoiceAmount
+    }
+  }
+`;
+
+export const LINK_TRANSACTION_TO_IMPORTED_INVOICE = gql`
+  mutation LinkTransactionToImportedInvoice(
+    $input: ReconciliationImportedLinkInput!
+  ) {
+    linkTransactionToImportedInvoice(input: $input) {
+      success
+      message
+      transaction {
+        id
+        reconciliationStatus
+        reconciliationDate
+        linkedImportedInvoiceIds
+        linkedImportedInvoices {
+          id
+          number
+          status
+          clientName
+          totalTTC
+          issueDate
+          dueDate
+          source
+        }
+      }
+      invoice {
+        id
+        number
+        clientName
+        totalTTC
+        dueDate
+        status
+      }
+    }
+  }
+`;
+
+export const UNLINK_TRANSACTION_FROM_IMPORTED_INVOICE = gql`
+  mutation UnlinkTransactionFromImportedInvoice(
+    $input: ReconciliationImportedLinkInput!
+  ) {
+    unlinkTransactionFromImportedInvoice(input: $input) {
+      success
+      message
+      transaction {
+        id
+        reconciliationStatus
+        reconciliationDate
+        linkedImportedInvoiceIds
+        linkedImportedInvoices {
+          id
+          number
+          status
+          clientName
+          totalTTC
+          issueDate
+          dueDate
+          source
+        }
+      }
+    }
+  }
+`;
