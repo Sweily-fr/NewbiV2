@@ -28,7 +28,7 @@ const clientDisplayName = (client) =>
  * value = id du client associé (ou null), onChange reçoit le client
  * sélectionné (objet) ou null pour dissocier.
  */
-export function ClientCombobox({ value, onChange, placeholder }) {
+export function ClientCombobox({ value, onChange, placeholder, selectedName }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { clients, loading } = useClients(1, 50, search);
@@ -49,7 +49,7 @@ export function ClientCombobox({ value, onChange, placeholder }) {
               {selected
                 ? clientDisplayName(selected)
                 : value
-                  ? "Client associé"
+                  ? selectedName || "Client associé"
                   : placeholder || "Associer un client existant"}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

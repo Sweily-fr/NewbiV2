@@ -77,6 +77,18 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
 `;
 
 // Queries
+export const GET_IMPORTED_INVOICE_CLIENT_SUGGESTION = gql`
+  query GetImportedInvoiceClientSuggestion($id: ID!) {
+    importedInvoiceClientSuggestion(id: $id) {
+      id
+      name
+      firstName
+      lastName
+      type
+    }
+  }
+`;
+
 export const GET_IMPORTED_INVOICES = gql`
   ${IMPORTED_INVOICE_FRAGMENT}
   query GetImportedInvoices(
