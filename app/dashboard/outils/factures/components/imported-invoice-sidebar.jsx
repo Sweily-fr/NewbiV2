@@ -81,6 +81,21 @@ const formatDateForInput = (dateValue) => {
   }
 };
 
+const buildEditData = (inv) => ({
+  originalInvoiceNumber: inv.originalInvoiceNumber || "",
+  clientId: inv.client?.id || null,
+  clientName: inv.client?.name || inv.vendor?.name || "",
+  clientSiret: inv.client?.siret || inv.vendor?.siret || "",
+  invoiceDate: formatDateForInput(inv.invoiceDate),
+  dueDate: formatDateForInput(inv.dueDate),
+  totalHT: inv.totalHT || 0,
+  totalVAT: inv.totalVAT || 0,
+  totalTTC: inv.totalTTC || 0,
+  category: inv.category || "OTHER",
+  paymentMethod: inv.paymentMethod || "UNKNOWN",
+  notes: inv.notes || "",
+});
+
 export function ImportedInvoiceSidebar({
   invoice,
   open,
@@ -93,8 +108,12 @@ export function ImportedInvoiceSidebar({
   // chaque champ est enregistré à la perte de focus (ou au choix pour les
   // listes). savedRef = dernière valeur persistée, pour ne pas renvoyer une
   // mutation inutile.
-  const [editData, setEditData] = useState({});
-  const savedRef = useRef({});
+  // Initialisé dès le premier rendu : les champs restent contrôlés
+  // (pas de passage undefined → valeur, signalé par React).
+  const [editData, setEditData] = useState(() =>
+    invoice ? buildEditData(invoice) : {},
+  );
+  const savedRef = useRef(invoice ? buildEditData(invoice) : {});
   const pendingSaveRef = useRef(Promise.resolve());
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error
   const [showMobileDetails, setShowMobileDetails] = useState(false);
@@ -205,21 +224,6 @@ export function ImportedInvoiceSidebar({
 
   const isPDF = invoice.file?.mimeType === "application/pdf";
   const isImage = invoice.file?.mimeType?.startsWith("image/");
-
-  const buildEditData = (inv) => ({
-    originalInvoiceNumber: inv.originalInvoiceNumber || "",
-    clientId: inv.client?.id || null,
-    clientName: inv.client?.name || inv.vendor?.name || "",
-    clientSiret: inv.client?.siret || inv.vendor?.siret || "",
-    invoiceDate: formatDateForInput(inv.invoiceDate),
-    dueDate: formatDateForInput(inv.dueDate),
-    totalHT: inv.totalHT || 0,
-    totalVAT: inv.totalVAT || 0,
-    totalTTC: inv.totalTTC || 0,
-    category: inv.category || "OTHER",
-    paymentMethod: inv.paymentMethod || "UNKNOWN",
-    notes: inv.notes || "",
-  });
 
   // Nouvelle facture affichée → formulaire réinitialisé depuis ses valeurs.
   useEffect(() => {
