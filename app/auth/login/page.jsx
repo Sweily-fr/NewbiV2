@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/src/components/ui/button";
 import LoginForm from "./loginForm";
 import { signIn, clearSessionStorage } from "../../../src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
 import { useAuthSEO } from "@/src/hooks/use-seo";
@@ -46,8 +47,12 @@ const AppleIcon = (props) => (
 const signInWithProvider = async (provider) => {
   try {
     clearSessionStorage();
+    // Sans errorCallbackURL, un refus OAuth (compte inconnu, e-mail non
+    // vérifié...) atterrit sur la page d'erreur par défaut de Better Auth,
+    // qui renvoie à l'accueil sans rien afficher. On revient ici avec
+    // `?error=<code>`, lu par LoginPageContent.
     await signIn.social(
-      { provider, callbackURL: "/dashboard" },
+      { provider, callbackURL: "/dashboard", errorCallbackURL: "/auth/login" },
       {
         onSuccess: () => {},
         onError: (error) => {
@@ -71,9 +76,41 @@ export default function LoginPage() {
   );
 }
 
+// Codes renvoyés par Better Auth dans `?error=` au retour OAuth.
+const OAUTH_ERROR_MESSAGES = {
+  signup_disabled:
+    "Aucun compte Newbi n'existe avec cette adresse Google. Créez d'abord un compte, puis reconnectez-vous.",
+  access_denied: "Connexion refusée par le fournisseur.",
+  state_mismatch: "La session de connexion a expiré. Réessayez.",
+  state_security_mismatch: "La session de connexion a expiré. Réessayez.",
+  unable_to_link_account: "Ce compte ne peut pas être associé à votre compte Newbi.",
+};
+
 function LoginPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const isMobileSource = searchParams.get("source") === "mobile";
+
+  // Retour OAuth en erreur (cf. errorCallbackURL dans signInWithProvider).
+  // `account_not_linked` = compte existant dont l'e-mail n'a jamais été
+  // vérifié : Better Auth refuse de lier Google (requireLocalEmailVerified).
+  // On ouvre le dialogue de renvoi du mail de vérification.
+  const oauthError = searchParams.get("error");
+  const [showNotLinkedDialog, setShowNotLinkedDialog] = useState(false);
+  useEffect(() => {
+    if (!oauthError) return;
+    if (oauthError === "account_not_linked") {
+      setShowNotLinkedDialog(true);
+    } else {
+      toast.error(OAUTH_ERROR_MESSAGES[oauthError] || "Erreur lors de la connexion");
+    }
+    // Nettoie l'URL sans perdre les autres paramètres (source=mobile...).
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("error");
+    params.delete("error_description");
+    const query = params.toString();
+    router.replace(query ? `/auth/login?${query}` : "/auth/login");
+  }, [oauthError, searchParams, router]);
 
   const seoData = {
     ...useAuthSEO("login"),
@@ -95,6 +132,12 @@ function LoginPageContent() {
     <>
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
+      <EmailVerificationDialog
+        isOpen={showNotLinkedDialog}
+        onClose={() => setShowNotLinkedDialog(false)}
+        userEmail=""
+        description="Un compte Newbi existe pour cette adresse, mais son e-mail n'a pas encore été vérifié. Pour des raisons de sécurité, la connexion avec Google n'est possible qu'après vérification. Saisissez l'adresse de votre compte pour recevoir un nouveau lien."
+      />
       <main
         className="relative flex min-h-[100dvh] flex-col items-center justify-center px-6 py-12"
         style={{ backgroundColor: "rgb(251, 251, 252)" }}
