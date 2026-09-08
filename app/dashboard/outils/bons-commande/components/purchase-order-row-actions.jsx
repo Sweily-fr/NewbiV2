@@ -268,7 +268,9 @@ export default function PurchaseOrderRowActions({
                 <BookTemplate className="mr-2 h-4 w-4" />
                 Sauv. modèle
               </DropdownMenuItem>
-              {isDraft && (
+              {/* Comme les devis en attente : un BC confirmé reste modifiable
+                  (l'API verrouille seulement préfixe/numéro et DELIVERED) */}
+              {(isDraft || isConfirmed) && (
                 <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier

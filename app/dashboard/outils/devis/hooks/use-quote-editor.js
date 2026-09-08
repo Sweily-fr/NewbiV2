@@ -924,6 +924,19 @@ export function useQuoteEditor({
         );
         quoteData.issueDate = refreshedDates.issueDate;
         quoteData.validUntil = refreshedDates.secondDate;
+      } else if (existingQuote.status === "PENDING") {
+        // Un devis en attente reste modifiable à tout moment. Sa date
+        // d'émission n'est pas recalée par le backend, donc dès le lendemain
+        // de sa création la règle « émission >= aujourd'hui » du formulaire
+        // bloquait l'étape 1 et l'enregistrement. On ramène l'émission à
+        // aujourd'hui (délai de validité conservé) ; préfixe et numéro sont
+        // verrouillés par l'API sur un devis finalisé, on n'y touche pas.
+        const refreshedDates = refreshDraftDates(
+          quoteData.issueDate,
+          quoteData.validUntil,
+        );
+        quoteData.issueDate = refreshedDates.issueDate;
+        quoteData.validUntil = refreshedDates.secondDate;
       }
 
       reset(quoteData);
@@ -1863,8 +1876,23 @@ export function useQuoteEditor({
             return false;
           }
 
+          // Devis en attente modifié : l'aperçu de la sidebar et le bouton
+          // PDF servent l'archive R2 figée à la finalisation. On la réécrit
+          // avec le contenu à jour, et on attend la fin avant de rediriger
+          // pour que la sidebar rouverte juste après montre la bonne version.
+          // (L'API a déjà oublié l'ancienne archive : en cas d'échec ici, la
+          // sidebar retombe sur le rendu HTML à jour plutôt que sur l'ancien
+          // PDF.)
+          if (input.status !== "DRAFT") {
+            await archiveDocument(result);
+          }
+
           if (!isAutoSave) {
-            toast.success("Brouillon sauvegardé");
+            toast.success(
+              input.status === "DRAFT"
+                ? "Brouillon sauvegardé"
+                : "Devis mis à jour",
+            );
             router.push("/dashboard/outils/devis");
           }
         }
@@ -1899,6 +1927,7 @@ export function useQuoteEditor({
       setValue,
       createQuote,
       updateQuote,
+      archiveDocument,
       router,
       session,
       handleError,

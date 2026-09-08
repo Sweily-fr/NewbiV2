@@ -916,6 +916,19 @@ export function usePurchaseOrderEditor({
         );
         orderData.issueDate = refreshedDates.issueDate;
         orderData.validUntil = refreshedDates.secondDate;
+      } else if (existingPurchaseOrder.status === "CONFIRMED") {
+        // Même règle que les devis en attente : un bon de commande confirmé
+        // reste modifiable à tout moment. Sa date d'émission n'est pas recalée
+        // par le backend, donc dès le lendemain la règle « émission >=
+        // aujourd'hui » du formulaire bloquait l'étape 1 et l'enregistrement.
+        // On ramène l'émission à aujourd'hui (délai de validité conservé) ;
+        // préfixe et numéro sont verrouillés par l'API, on n'y touche pas.
+        const refreshedDates = refreshDraftDates(
+          orderData.issueDate,
+          orderData.validUntil,
+        );
+        orderData.issueDate = refreshedDates.issueDate;
+        orderData.validUntil = refreshedDates.secondDate;
       }
 
       reset(orderData);
@@ -1874,8 +1887,21 @@ export function usePurchaseOrderEditor({
             return false;
           }
 
+          // Bon de commande déjà finalisé modifié : l'aperçu de la sidebar
+          // et le bouton PDF servent l'archive R2 figée à la finalisation. On
+          // la réécrit avec le contenu à jour, et on attend la fin avant de
+          // rediriger. (L'API a déjà oublié l'ancienne archive : en cas
+          // d'échec ici, la sidebar retombe sur le rendu HTML à jour.)
+          if (input.status !== "DRAFT") {
+            await archiveDocument(result);
+          }
+
           if (!isAutoSave) {
-            toast.success("Brouillon sauvegardé");
+            toast.success(
+              input.status === "DRAFT"
+                ? "Brouillon sauvegardé"
+                : "Bon de commande mis à jour",
+            );
             router.push("/dashboard/outils/bons-commande");
           }
         }
@@ -1910,6 +1936,7 @@ export function usePurchaseOrderEditor({
       setValue,
       createPurchaseOrder,
       updatePurchaseOrder,
+      archiveDocument,
       router,
       session,
       handleError,
