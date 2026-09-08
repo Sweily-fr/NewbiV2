@@ -16,6 +16,10 @@ import { NextResponse } from "next/server";
  * Même pattern que /api/shared-documents/preview-file/[documentId].
  */
 
+// Types dont l'archive PDF peut être réécrite après finalisation (cf. en-tête
+// Cache-Control plus bas).
+const MUTABLE_TYPES = new Set(["quote", "purchaseOrder"]);
+
 const UPSTREAM_PATHS = {
   invoice: (id) => `/invoices/${id}/document-pdf`,
   quote: (id) => `/documents/quote/${id}/document-pdf`,
@@ -99,10 +103,16 @@ export async function GET(request, { params }) {
       headers.set("Content-Length", response.headers.get("Content-Length"));
     }
     // Document nominatif servi sous session : jamais de cache partagé
-    // (private). Le PDF archivé étant immuable, le navigateur peut en garder
-    // une copie locale 1 h : réouvertures instantanées, y compris après un
-    // rechargement de page.
-    headers.set("Cache-Control", "private, max-age=3600");
+    // (private). Factures et avoirs sont immuables une fois finalisés : le
+    // navigateur peut en garder une copie locale 1 h (réouvertures
+    // instantanées, y compris après un rechargement de page). Devis et bons
+    // de commande restent modifiables après finalisation et leur archive est
+    // réécrite à chaque enregistrement sous la même URL : sans no-store, la
+    // sidebar et le bouton PDF resservaient l'ancien PDF pendant une heure.
+    headers.set(
+      "Cache-Control",
+      MUTABLE_TYPES.has(type) ? "private, no-store" : "private, max-age=3600",
+    );
 
     return new NextResponse(response.body, { status: 200, headers });
   } catch (error) {
