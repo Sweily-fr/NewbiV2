@@ -23,6 +23,28 @@ import { mapOrganizationToCompanyInfo } from "@/src/utils/organizationCompanyInf
 const hasNumericValue = (value) =>
   value !== undefined && value !== null && value !== "" && !isNaN(value);
 
+// Mode de remboursement garanti dans l'enum GraphQL. En prod, l'API a reçu la
+// chaîne "undefined" (rejet BAD_USER_INPUT en 400) : on retombe sur le défaut
+// plutôt que d'envoyer une valeur hors enum.
+const normalizeRefundMethod = (value) =>
+  Object.values(REFUND_METHOD).includes(value)
+    ? value
+    : REFUND_METHOD.NEXT_INVOICE;
+
+// Message d'erreur de l'API. Une erreur métier arrive en 200 dans
+// graphQLErrors ; une erreur de variables (BAD_USER_INPUT) arrive en 400 et
+// Apollo la range dans networkError.result.errors.
+const getApiErrorMessage = (error) => {
+  const graphQLMessage = error?.graphQLErrors?.[0]?.message;
+  if (graphQLMessage) return graphQLMessage;
+  const serverErrors = error?.networkError?.result?.errors;
+  const serverMessage = Array.isArray(serverErrors)
+    ? serverErrors[0]?.message
+    : null;
+  if (serverMessage) return serverMessage;
+  return error?.message || null;
+};
+
 export function useCreditNoteEditor({
   mode,
   creditNoteId,
@@ -232,7 +254,10 @@ export function useCreditNoteEditor({
           isNewCreditNote: mode === "create",
         };
       } catch (error) {
-        toast.error("Erreur lors de la sauvegarde de l'avoir");
+        // Afficher le message de l'API quand il existe (verrou e-invoicing :
+        // avoir non transmis à SuperPDP, montant dépassé, etc.)
+        const apiMessage = getApiErrorMessage(error);
+        toast.error(apiMessage || "Erreur lors de la sauvegarde de l'avoir");
         throw error;
       } finally {
         setSaving(false);
@@ -620,7 +645,7 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     items: items,
     status: "CREATED", // Use CREATED status as per CreditNoteStatus enum
     issueDate: cleanedData.issueDate,
-    refundMethod: cleanedData.refundMethod,
+    refundMethod: normalizeRefundMethod(cleanedData.refundMethod),
     headerNotes: cleanedData.headerNotes,
     footerNotes: cleanedData.footerNotes,
     termsAndConditions: cleanedData.termsAndConditions,
