@@ -551,7 +551,12 @@ const UniversalPDFDownloaderWithFacturX = ({
     const docId = data?.id || data?._id;
     if (!docId || data?.status === "DRAFT") return false;
     try {
-      const response = await fetch(`/api/document-preview/${type}/${docId}`);
+      // no-store : un téléchargement est ponctuel, on veut l'archive telle
+      // qu'elle est sur R2 (un devis / BC modifié est ré-archivé sous la
+      // même URL, le cache HTTP du navigateur resservait l'ancienne).
+      const response = await fetch(`/api/document-preview/${type}/${docId}`, {
+        cache: "no-store",
+      });
       if (!response.ok) return false;
       const contentType = response.headers.get("content-type") || "";
       if (!contentType.includes("pdf")) return false;
