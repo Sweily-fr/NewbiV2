@@ -34,6 +34,16 @@ function fetchPdfBytes(src) {
 }
 
 /**
+ * Oublie les octets mis en cache pour un document. À appeler après un
+ * ré-archivage : la clé R2 (donc l'URL du proxy) est stable pour un document
+ * donné, sans ça la sidebar continuerait d'afficher l'ancien PDF jusqu'au
+ * rechargement de la page.
+ */
+export function invalidatePdfCache(src) {
+  if (src) pdfBytesCache.delete(src);
+}
+
+/**
  * Lance le téléchargement des octets en tâche de fond (fire-and-forget).
  * À appeler dès l'ouverture d'une sidebar, en parallèle de la query GraphQL
  * qui sert de signal d'affichage : quand le signal arrive, les octets sont

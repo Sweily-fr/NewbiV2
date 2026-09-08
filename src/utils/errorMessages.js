@@ -182,6 +182,49 @@ const ERROR_PATTERNS = {
     /dans la séquence|prochain numéro doit être|numérotation automatique|numéro de (facture|devis|bon de commande|avoir)[^.!?]*?(est déjà utilisé|existe déjà)/i,
 };
 
+// Codes AppError dont le message backend est rédigé pour l'utilisateur et
+// doit être affiché tel quel (cf. getErrorMessage).
+const PASSTHROUGH_ERROR_CODES = [
+  "VALIDATION_ERROR",
+  "RESOURCE_LOCKED",
+  "DUPLICATE_DOCUMENT_NUMBER",
+];
+
+// Fragments qui trahissent un message technique (Mongoose brut, exception
+// JS, stack GraphQL) : jamais affichés tels quels.
+const TECHNICAL_MESSAGE_PATTERN =
+  /ValidationError|Path `|Cast to |Cannot read propert|is not a function|\bundefined\b|\bnull\b|\bat \w+ \(|Error:/;
+
+/**
+ * Un message est affichable s'il est court, rédigé en clair et sans
+ * fragment technique.
+ */
+function isUserFacingMessage(message) {
+  return (
+    typeof message === "string" &&
+    message.trim().length > 0 &&
+    message.length <= 400 &&
+    !TECHNICAL_MESSAGE_PATTERN.test(message)
+  );
+}
+
+/**
+ * Récupère le code d'erreur applicatif. Les appelants passent le plus souvent
+ * une ApolloError, qui n'a pas de `code` : il est dans les `extensions` de la
+ * première erreur GraphQL (code direct, ou `exception.code` quand Apollo l'a
+ * emballé en INTERNAL_SERVER_ERROR).
+ */
+function extractErrorCode(error) {
+  if (!error || typeof error !== "object") return null;
+  if (error.code) return error.code;
+  const gqlError = error.graphQLErrors?.[0] || error.cause;
+  const extensions = gqlError?.extensions;
+  if (!extensions) return null;
+  return extensions.code !== "INTERNAL_SERVER_ERROR"
+    ? extensions.code || null
+    : extensions.exception?.code || null;
+}
+
 /**
  * Analyse une erreur et retourne un message utilisateur approprié
  * @param {Error|string} error - L'erreur à analyser
@@ -192,13 +235,28 @@ export function getErrorMessage(error, context = "generic") {
   if (!error) return ERROR_MESSAGES.GENERIC.UNKNOWN_ERROR;
 
   const errorMessage = typeof error === "string" ? error : error.message || "";
-  const errorCode = typeof error === "object" ? error.code : null;
+  const errorCode = typeof error === "object" ? extractErrorCode(error) : null;
 
   // Erreurs de numérotation : le message de l'API est déjà explicite et
   // actionnable, on le laisse passer tel quel plutôt que de le remplacer par
   // un message générique. À traiter avant le code VALIDATION_ERROR, qui
   // l'écraserait.
   if (errorMessage && ERROR_PATTERNS.DOCUMENT_NUMBERING.test(errorMessage)) {
+    return errorMessage;
+  }
+
+  // Refus métier explicites de l'API (AppError VALIDATION_ERROR /
+  // RESOURCE_LOCKED / DUPLICATE_DOCUMENT_NUMBER) : le backend rédige déjà un
+  // message pour l'utilisateur (« Le préfixe d'un devis finalisé est
+  // verrouillé », « Le prénom est requis pour un client particulier »…). Le
+  // remplacer par « Veuillez vérifier les informations du devis » masquait la
+  // vraie raison du refus. On ne laisse passer que les messages propres : un
+  // message technique (Mongoose brut, TypeError) retombe sur le générique.
+  if (
+    errorMessage &&
+    PASSTHROUGH_ERROR_CODES.includes(errorCode) &&
+    isUserFacingMessage(errorMessage)
+  ) {
     return errorMessage;
   }
 
@@ -211,7 +269,10 @@ export function getErrorMessage(error, context = "generic") {
       case "COMPANY_INFO_INCOMPLETE":
         return ERROR_MESSAGES.COMPANY.INFO_INCOMPLETE;
       case "VALIDATION_ERROR":
-        return ERROR_MESSAGES.VALIDATION.INVALID_DATA;
+        // Message technique (Mongoose brut…) non affichable : générique
+        // contextuel. ERROR_MESSAGES.VALIDATION.INVALID_DATA n'existait pas,
+        // le toast affichait « undefined ».
+        return getContextualValidationMessage(context);
       case "DUPLICATE_KEY":
         return getContextualDuplicateMessage(context);
       case "NOT_FOUND":
