@@ -78,6 +78,16 @@ const AppleIcon = (props) => (
 );
 
 // Views: "signup" → "email" → "workspace"
+// Codes renvoyés par Better Auth dans `?error=` au retour OAuth.
+const OAUTH_ERROR_MESSAGES = {
+  account_not_linked:
+    "Un compte Newbi existe déjà avec cette adresse, mais son e-mail n'est pas vérifié. Connectez-vous par e-mail et vérifiez votre adresse, puis réessayez.",
+  access_denied: "Inscription refusée par le fournisseur.",
+  state_mismatch: "La session d'inscription a expiré. Réessayez.",
+  state_security_mismatch: "La session d'inscription a expiré. Réessayez.",
+  unable_to_create_user: "Impossible de créer le compte. Réessayez ou utilisez l'inscription par e-mail.",
+};
+
 export default function SignUpPage() {
   return (
     <Suspense>
@@ -99,6 +109,18 @@ function SignUpPageContent() {
 
   // Détecte si le signup vient de l'app mobile (via ?source=mobile)
   const isMobileSource = searchParams.get("source") === "mobile";
+
+  // Retour OAuth en erreur (cf. errorCallbackURL dans l'appel signIn.social).
+  const oauthError = searchParams.get("error");
+  useEffect(() => {
+    if (!oauthError) return;
+    toast.error(OAUTH_ERROR_MESSAGES[oauthError] || "Erreur lors de l'inscription");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("error");
+    params.delete("error_description");
+    const query = params.toString();
+    router.replace(query ? `/auth/signup?${query}` : "/auth/signup");
+  }, [oauthError, searchParams, router]);
 
   // View is derived from session state — no localStorage dependency
   // "null" means "not yet determined" (session still loading)
@@ -514,8 +536,16 @@ function SignUpPageContent() {
     // En revenant directement ici, l'effet d'hydratation lit onboardingStep
     // et ouvre la bonne étape. Ne pas remettre /dashboard : le détour est le
     // bug, pas la destination.
+    // errorCallbackURL : sans lui, un refus OAuth renvoie sur la page
+    // d'erreur par défaut de Better Auth, qui redirige vers l'accueil sans
+    // rien afficher. On revient ici avec `?error=<code>`, lu plus haut.
     await signIn.social(
-      { provider, callbackURL: "/auth/signup", requestSignUp: true },
+      {
+        provider,
+        callbackURL: "/auth/signup",
+        errorCallbackURL: "/auth/signup",
+        requestSignUp: true,
+      },
       {
         onSuccess: () => {},
         onError: () => {

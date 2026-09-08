@@ -13,14 +13,28 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { SubmitButton } from "@/src/components/ui/submit-button";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
 import { Mail, CheckCircle } from "lucide-react";
 
-export const EmailVerificationDialog = ({ isOpen, onClose, userEmail }) => {
+// `userEmail` vide = e-mail inconnu (retour OAuth) : l'utilisateur le saisit.
+// `description` remplace le texte par défaut selon le contexte.
+export const EmailVerificationDialog = ({
+  isOpen,
+  onClose,
+  userEmail,
+  description,
+}) => {
   const [isResending, setIsResending] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [email, setEmail] = useState(userEmail || "");
+  const isEmailEditable = !userEmail;
+
+  useEffect(() => {
+    setEmail(userEmail || "");
+  }, [userEmail]);
 
   // Le portail nécessite `document`, indisponible côté serveur (SSR Next.js)
   useEffect(() => {
@@ -28,6 +42,11 @@ export const EmailVerificationDialog = ({ isOpen, onClose, userEmail }) => {
   }, []);
 
   const handleResendVerification = async () => {
+    const target = email.trim();
+    if (!target || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) {
+      toast.error("Saisissez l'adresse e-mail de votre compte Newbi");
+      return;
+    }
     setIsResending(true);
     try {
       // Utiliser l'API Better Auth pour renvoyer l'email de vérification
@@ -37,7 +56,7 @@ export const EmailVerificationDialog = ({ isOpen, onClose, userEmail }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: userEmail,
+          email: target,
           callbackURL: `${window.location.origin}/auth/verify-email`,
         }),
       });
@@ -79,9 +98,8 @@ export const EmailVerificationDialog = ({ isOpen, onClose, userEmail }) => {
             Vérification d'email requise
           </h2>
           <p className="text-muted-foreground text-sm">
-            Votre compte n'a pas encore été vérifié. Pour des raisons de
-            sécurité, vous devez vérifier votre adresse email avant de pouvoir
-            vous connecter.
+            {description ||
+              "Votre compte n'a pas encore été vérifié. Pour des raisons de sécurité, vous devez vérifier votre adresse email avant de pouvoir vous connecter."}
           </p>
         </div>
 
@@ -89,13 +107,26 @@ export const EmailVerificationDialog = ({ isOpen, onClose, userEmail }) => {
           <div className="bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20 p-3 rounded-lg border border-[#5a50ff]/20">
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-[#5a50ff] mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-[#5a50ff] dark:text-[#5a50ff]">
+              <div className="flex-1 min-w-0 text-sm text-[#5a50ff] dark:text-[#5a50ff]">
                 <div className="font-medium mb-1">
-                  Vérifiez votre boîte email :
+                  {isEmailEditable
+                    ? "Adresse e-mail de votre compte :"
+                    : "Vérifiez votre boîte email :"}
                 </div>
-                <div className="text-[#5a50ff] dark:text-[#5a50ff] font-mono text-xs bg-[#5a50ff]/10 px-2 py-1 rounded">
-                  {userEmail}
-                </div>
+                {isEmailEditable ? (
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Adresse e-mail de votre compte"
+                    autoComplete="email"
+                    className="mt-1 bg-white dark:bg-gray-900"
+                  />
+                ) : (
+                  <div className="text-[#5a50ff] dark:text-[#5a50ff] font-mono text-xs bg-[#5a50ff]/10 px-2 py-1 rounded">
+                    {userEmail}
+                  </div>
+                )}
               </div>
             </div>
           </div>
