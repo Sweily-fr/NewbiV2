@@ -118,6 +118,7 @@ export const signInGoogle = async () => {
     const data = await authClient.signIn.social({
       provider: "google",
       callbackURL: "/dashboard",
+      errorCallbackURL: "/auth/login",
     });
     return data;
   } catch (err) {
@@ -130,6 +131,7 @@ export const signInGithub = async () => {
     const data = await authClient.signIn.social({
       provider: "github",
       callbackURL: "/dashboard",
+      errorCallbackURL: "/auth/login",
     });
     return data;
   } catch (err) {

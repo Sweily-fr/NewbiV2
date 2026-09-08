@@ -95,17 +95,21 @@ function VerifyEmailContent() {
             }, 250);
           }, 300);
 
-            // Redirection vers le dashboard
+            // Redirection vers le dashboard (ou vers l'app sur téléphone)
             setTimeout(() => {
-              window.location.href = "/dashboard";
-            }, 3000);
+              window.location.href = isPhone() ? APP_DEEP_LINK : "/dashboard";
+            }, isPhone() ? 1500 : 3000);
           } else {
             // ❌ Pas de session = autoSignInAfterVerification n'a pas fonctionné
             setVerificationStatus("error");
             setMessage("Email vérifié, veuillez vous connecter");
             toast.info("Email vérifié ! Connectez-vous pour continuer.");
             setTimeout(() => {
-              router.push("/auth/login?verified=true");
+              if (isPhone()) {
+                window.location.href = APP_DEEP_LINK;
+              } else {
+                router.push("/auth/login?verified=true");
+              }
             }, 2000);
           }
         } else {
@@ -171,20 +175,32 @@ function VerifyEmailContent() {
                 Email vérifié !
               </h1>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Redirection vers votre espace en cours...
+                {isPhone()
+                  ? "Retour vers l'application Newbi..."
+                  : "Redirection vers votre espace en cours..."}
               </p>
             </div>
             <Button
               asChild
               className="w-full bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal h-10 rounded-lg"
             >
-              <Link
-                href="/dashboard"
-                className="flex items-center justify-center gap-2"
-              >
-                Accéder au dashboard
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              {isPhone() ? (
+                <a
+                  href={APP_DEEP_LINK}
+                  className="flex items-center justify-center gap-2"
+                >
+                  Ouvrir l'application Newbi
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              ) : (
+                <Link
+                  href="/dashboard"
+                  className="flex items-center justify-center gap-2"
+                >
+                  Accéder au dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
             </Button>
           </div>
         )}
@@ -250,6 +266,15 @@ function VerifyEmailFallback() {
 }
 
 // Composant principal avec Suspense
+// Sur téléphone, le lien de vérification a presque toujours été ouvert
+// depuis l'e-mail de l'app mobile : le dashboard web y est bloqué
+// (middleware → /mobile-non-disponible). On renvoie donc vers l'app via son
+// scheme `newbi://` ; l'écran d'accueil de l'app lit `verified=1`.
+const APP_DEEP_LINK = "newbi://welcome?verified=1";
+const isPhone = () =>
+  typeof navigator !== "undefined" &&
+  /iPhone|iPod|Android.*Mobile/i.test(navigator.userAgent);
+
 export default function VerifyEmailPage() {
   return (
     <Suspense fallback={<VerifyEmailFallback />}>
