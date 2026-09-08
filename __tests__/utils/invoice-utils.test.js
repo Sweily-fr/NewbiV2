@@ -5,6 +5,7 @@ import {
   formatInvoicePrefix,
   getCurrentMonthYear,
   refreshPrefixDate,
+  formatInvoiceReference,
 } from "@/src/utils/invoiceUtils";
 
 describe("generateInvoicePrefix", () => {
@@ -178,5 +179,25 @@ describe("refreshPrefixDate", () => {
     expect(refreshPrefixDate("INV202404", may2026)).toBe("INV202605");
     expect(refreshPrefixDate("BC-202404", may2026)).toBe("BC-202605");
     expect(refreshPrefixDate("D-202404", may2026)).toBe("D-202605");
+  });
+});
+
+describe("formatInvoiceReference", () => {
+  it("assemble préfixe et numéro avec un tiret", () => {
+    expect(
+      formatInvoiceReference({ prefix: "F-2026-09", number: "000012" }),
+    ).toBe("F-2026-09-000012");
+  });
+
+  it("retombe sur le numéro seul sans préfixe (factures importées)", () => {
+    expect(formatInvoiceReference({ number: "INV-42" })).toBe("INV-42");
+    expect(formatInvoiceReference({ prefix: "", number: "7" })).toBe("7");
+  });
+
+  it("retourne le fallback sans numéro", () => {
+    expect(formatInvoiceReference(null)).toBe("N/A");
+    expect(formatInvoiceReference({ prefix: "F-2026-09" }, "importée")).toBe(
+      "importée",
+    );
   });
 });

@@ -69,6 +69,7 @@ import {
 import { findMerchant } from "@/lib/merchants-config";
 import { getCategoryConfig } from "@/lib/category-icons-config";
 import { toast } from "@/src/components/ui/sonner";
+import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import {
   UPDATE_TRANSACTION,
   REMOVE_TRANSACTION_RECEIPT_FILE,
@@ -1516,7 +1517,7 @@ export function TransactionDetailDrawer({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">
-                            Facture {inv.number || "N/A"}
+                            Facture {formatInvoiceReference(inv)}
                             {inv.clientName ? ` — ${inv.clientName}` : ""}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -1918,7 +1919,7 @@ export function TransactionDetailDrawer({
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-medium">
-                            Facture {invoice.number || "N/A"}
+                            Facture {formatInvoiceReference(invoice)}
                           </span>
                           <p className="text-sm text-muted-foreground truncate">
                             {invoice.clientName}
@@ -2011,7 +2012,7 @@ export function TransactionDetailDrawer({
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">
-                                    Facture {invoice.number || "N/A"}
+                                    Facture {formatInvoiceReference(invoice)}
                                     {invoice.kind === "imported" && (
                                       <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground align-middle">
                                         Importée

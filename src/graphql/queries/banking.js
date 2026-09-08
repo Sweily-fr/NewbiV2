@@ -138,6 +138,7 @@ export const GET_TRANSACTIONS = gql`
       linkedInvoices {
         id
         number
+        prefix
         status
         clientName
         totalTTC
@@ -251,6 +252,7 @@ export const GET_TRANSACTIONS_PAGE = gql`
         linkedInvoices {
           id
           number
+          prefix
           status
           clientName
           totalTTC
@@ -342,6 +344,7 @@ export const GET_TRANSACTION = gql`
       linkedInvoices {
         id
         number
+        prefix
         status
         clientName
         totalTTC

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link2Icon as Link2, MoneyReciveIcon } from "@/src/components/icons";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
+import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
@@ -330,7 +331,7 @@ export const columns = [
                 <div className="text-center">
                   <div className="font-medium">Facture liée</div>
                   <div className="text-xs text-muted-foreground">
-                    {linkedInvoice.number || "N/A"} -{" "}
+                    {formatInvoiceReference(linkedInvoice)} -{" "}
                     {linkedInvoice.clientName || "Client"}
                   </div>
                 </div>
