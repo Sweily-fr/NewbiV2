@@ -7,7 +7,7 @@
     "npm": ">=10"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "NODE_OPTIONS=--max-old-space-size=2048 next dev --turbopack",
     "dev:e2e": "NEXT_DIST_DIR=.next-e2e NODE_ENV=test MONGODB_URI=mongodb://localhost:27017/invoice-app-test MONGODB_DB_NAME=invoice-app-test NEXT_PUBLIC_API_URL=http://localhost:4001/ NEXT_PUBLIC_WS_URL=ws://localhost:4001/graphql NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000 next dev --turbopack",
     "build:e2e": "NEXT_DIST_DIR=.next-e2e MONGODB_URI=mongodb://localhost:27017/invoice-app-test MONGODB_DB_NAME=invoice-app-test NEXT_PUBLIC_API_URL=http://localhost:4001/ NEXT_PUBLIC_WS_URL=ws://localhost:4001/graphql NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000 next build",
     "start:e2e": "NEXT_DIST_DIR=.next-e2e MONGODB_URI=mongodb://localhost:27017/invoice-app-test MONGODB_DB_NAME=invoice-app-test NEXT_PUBLIC_API_URL=http://localhost:4001/ NEXT_PUBLIC_WS_URL=ws://localhost:4001/graphql NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000 next start",
