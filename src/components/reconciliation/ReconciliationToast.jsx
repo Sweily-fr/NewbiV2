@@ -5,6 +5,7 @@ import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
 import { Landmark, X, Undo2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import {
   useReconciliationToastVisibility,
   RECONCILIATION_TOAST_ATTR,
@@ -96,7 +97,7 @@ function ReconciliationCard({
                 </span>
                 {" - "}
                 <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  Facture {invoice.number}
+                  Facture {formatInvoiceReference(invoice)}
                 </span>
               </p>
 

@@ -107,3 +107,18 @@ export const refreshPrefixDate = (prefix, date = _getNow()) => {
 
   return prefix;
 };
+
+/**
+ * Référence complète d'une facture (préfixe + numéro), telle qu'affichée sur
+ * le document : « F-2026-09-000012 ». Retombe sur le numéro seul (factures
+ * importées, préfixe absent) puis sur le fallback fourni.
+ * @param {{ prefix?: string, number?: string }|null} invoice
+ * @param {string} fallback
+ * @returns {string}
+ */
+export const formatInvoiceReference = (invoice, fallback = "N/A") => {
+  if (!invoice?.number) return fallback;
+  return invoice.prefix
+    ? `${invoice.prefix}-${invoice.number}`
+    : invoice.number;
+};

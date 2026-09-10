@@ -94,6 +94,11 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
+import {
+  formatCurrencyAmount,
+  currencySymbol,
+  normalizeCurrencyCode,
+} from "@/src/lib/format-currency";
 import { needsReview, OCR_REVIEW_TITLE } from "./ocr-review";
 
 const STATUS_OPTIONS = [
@@ -156,11 +161,10 @@ const statusLabels = Object.fromEntries(
   STATUS_OPTIONS.map((o) => [o.value, o.label]),
 );
 
-function formatAmount(amount) {
-  return new Intl.NumberFormat("fr-FR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount || 0);
+// Montant dans la devise de la facture (ou de la transaction) : une facture
+// d'achat créée depuis un justificatif étranger n'est pas forcément en euros.
+function formatAmount(amount, currency) {
+  return formatCurrencyAmount(amount, currency);
 }
 
 function formatDate(date, withTime = false) {
@@ -201,7 +205,7 @@ function LinkedTransactionLink({ transactionId, action = null }) {
           ) : tx ? (
             <>
               <span className="text-sm font-medium">
-                {formatAmount(Math.abs(tx.amount))} €
+                {formatAmount(Math.abs(tx.amount), tx.currency)}
               </span>
               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                 {tx.description && (
@@ -576,6 +580,15 @@ export function PurchaseInvoiceDetailDrawer({
 
   const saving = createLoading || updateLoading;
 
+  // Justificatif libellé dans une autre devise que la facture (ex. USD converti
+  // en EUR par la banque) : on rappelle le montant d'origine à titre indicatif.
+  const receiptCurrencyDiffers = Boolean(
+    invoice?.ocrMetadata?.amountTTC &&
+    invoice?.ocrMetadata?.currency &&
+    normalizeCurrencyCode(invoice.ocrMetadata.currency) !==
+      normalizeCurrencyCode(invoice?.currency),
+  );
+
   const handleClose = () => {
     onOpenChange(false);
   };
@@ -697,12 +710,12 @@ export function PurchaseInvoiceDetailDrawer({
                       placeholder="0.00"
                     />
                     <span className="text-2xl font-medium text-muted-foreground">
-                      €
+                      {currencySymbol(form.currency)}
                     </span>
                   </div>
                 ) : (
                   <p className="text-2xl font-medium">
-                    {formatAmount(invoice?.amountTTC)} €
+                    {formatAmount(invoice?.amountTTC, invoice?.currency)}
                   </p>
                 )}
               </div>
@@ -985,7 +998,7 @@ export function PurchaseInvoiceDetailDrawer({
                       TVA
                     </span>
                     <span className="text-sm font-normal">
-                      {formatAmount(form.amountTVA)} €
+                      {formatAmount(form.amountTVA, form.currency)}
                     </span>
                   </div>
                 </div>
@@ -1006,7 +1019,7 @@ export function PurchaseInvoiceDetailDrawer({
                     HT
                   </span>
                   <span className="text-sm font-normal">
-                    {formatAmount(invoice?.amountHT)} €
+                    {formatAmount(invoice?.amountHT, invoice?.currency)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -1014,15 +1027,28 @@ export function PurchaseInvoiceDetailDrawer({
                     TVA ({invoice?.vatRate || 20}%)
                   </span>
                   <span className="text-sm font-normal">
-                    {formatAmount(invoice?.amountTVA)} €
+                    {formatAmount(invoice?.amountTVA, invoice?.currency)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">TTC</span>
                   <span className="text-sm font-medium">
-                    {formatAmount(invoice?.amountTTC)} €
+                    {formatAmount(invoice?.amountTTC, invoice?.currency)}
                   </span>
                 </div>
+                {receiptCurrencyDiffers && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Montant sur le justificatif
+                    </span>
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {formatAmount(
+                        invoice.ocrMetadata.amountTTC,
+                        invoice.ocrMetadata.currency,
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -1393,7 +1419,7 @@ export function PurchaseInvoiceDetailDrawer({
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <span className="text-sm font-medium">
-                              {formatAmount(s.amount)} €
+                              {formatAmount(s.amount, s.currency)}
                             </span>
                             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                               {s.description && <span>{s.description}</span>}
@@ -1484,7 +1510,10 @@ export function PurchaseInvoiceDetailDrawer({
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">
-                                    {formatAmount(Math.abs(tx.amount))} €
+                                    {formatAmount(
+                                      Math.abs(tx.amount),
+                                      tx.currency,
+                                    )}
                                   </p>
                                   <p className="text-xs text-muted-foreground truncate">
                                     {tx.description || "Transaction"}
