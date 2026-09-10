@@ -376,7 +376,6 @@ export const getColumns = ({
       );
     },
     sortingFn: dateSortingFn,
-    enableHiding: false,
   },
   {
     accessorKey: "dueDate",
@@ -396,6 +395,23 @@ export const getColumns = ({
         <div className={`font-normal ${isOverdue ? "text-red-600" : ""}`}>
           {parsed.toLocaleDateString("fr-FR")}
         </div>
+      );
+    },
+    sortingFn: dateSortingFn,
+  },
+  {
+    accessorKey: "paymentDate",
+    size: 100,
+    meta: { label: "Date de paiement" },
+    header: ({ column }) => (
+      <SortableHeader column={column}>Date de paiement</SortableHeader>
+    ),
+    cell: ({ row }) => {
+      const parsed = parseDate(row.original.paymentDate);
+      if (!parsed)
+        return <div className="font-normal text-muted-foreground">—</div>;
+      return (
+        <div className="font-normal">{parsed.toLocaleDateString("fr-FR")}</div>
       );
     },
     sortingFn: dateSortingFn,
