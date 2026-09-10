@@ -46,6 +46,7 @@ import {
   PurchaseEInvoiceStatusBadge,
   PurchaseEInvoicePaymentErrorBadge,
 } from "./einvoice-status-badge";
+import { needsReview, OCR_REVIEW_TITLE } from "./ocr-review";
 
 const STATUS_CONFIG = {
   TO_PROCESS: {
@@ -279,6 +280,14 @@ export const getColumns = ({
           {/* Origine externe uniquement (Qonto, PDP) : rien pour un ajout Newbi */}
           {isExternalSource(source) && (
             <DocumentSourceBadge source={source} docLabel="Facture" />
+          )}
+          {needsReview(row.original) && (
+            <span
+              className="inline-flex shrink-0 items-center rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+              title={OCR_REVIEW_TITLE}
+            >
+              À compléter
+            </span>
           )}
         </div>
       );

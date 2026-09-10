@@ -79,6 +79,8 @@ export const GET_PURCHASE_INVOICES = gql`
           iban
           bic
           confidenceScore
+          provider
+          extractionQuality
         }
         paymentDate
         paymentMethod
@@ -154,6 +156,8 @@ export const GET_PURCHASE_INVOICE = gql`
         iban
         bic
         confidenceScore
+        provider
+        extractionQuality
         rawExtractedText
       }
       paymentDate
