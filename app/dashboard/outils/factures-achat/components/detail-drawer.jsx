@@ -99,6 +99,7 @@ import {
   currencySymbol,
   normalizeCurrencyCode,
 } from "@/src/lib/format-currency";
+import { needsReview, OCR_REVIEW_TITLE } from "./ocr-review";
 
 const STATUS_OPTIONS = [
   { value: "TO_PROCESS", label: "À traiter" },
@@ -609,6 +610,14 @@ export function PurchaseInvoiceDetailDrawer({
             {statusLabels[invoice.status] || invoice.status}
           </span>
         )}
+        {!isCreate && needsReview(invoice) && (
+          <span
+            className="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+            title={OCR_REVIEW_TITLE}
+          >
+            À compléter
+          </span>
+        )}
       </div>
       <DrawerClose asChild>
         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -623,6 +632,13 @@ export function PurchaseInvoiceDetailDrawer({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
+          {!isCreate && needsReview(invoice) && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+              {invoice?.ocrMetadata?.extractionQuality === "none"
+                ? "Le justificatif n'a pas pu être lu : cette facture a été créée à partir de la transaction bancaire. Vérifiez et complétez le fournisseur, le numéro et les montants."
+                : "Les moteurs d'analyse habituels étaient indisponibles : les champs ont été devinés à partir du texte du justificatif. Vérifiez le fournisseur, le numéro et les montants."}
+            </p>
+          )}
           {/* Zone d'upload du justificatif (création uniquement) */}
           {isCreate && (
             <div className="space-y-2">

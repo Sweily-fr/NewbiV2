@@ -90,6 +90,8 @@ export const ADD_PURCHASE_INVOICE_FILE = gql`
         amountTTC
         iban
         confidenceScore
+        provider
+        extractionQuality
       }
     }
   }
