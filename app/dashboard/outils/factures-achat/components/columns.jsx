@@ -46,6 +46,8 @@ import {
   PurchaseEInvoiceStatusBadge,
   PurchaseEInvoicePaymentErrorBadge,
 } from "./einvoice-status-badge";
+import { formatCurrencyAmount } from "@/src/lib/format-currency";
+import { needsReview, OCR_REVIEW_TITLE } from "./ocr-review";
 
 const STATUS_CONFIG = {
   TO_PROCESS: {
@@ -280,6 +282,14 @@ export const getColumns = ({
           {isExternalSource(source) && (
             <DocumentSourceBadge source={source} docLabel="Facture" />
           )}
+          {needsReview(row.original) && (
+            <span
+              className="inline-flex shrink-0 items-center rounded-md bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+              title={OCR_REVIEW_TITLE}
+            >
+              À compléter
+            </span>
+          )}
         </div>
       );
     },
@@ -311,10 +321,7 @@ export const getColumns = ({
         return <div className="font-normal text-muted-foreground">—</div>;
       return (
         <div className="font-normal">
-          {new Intl.NumberFormat("fr-FR", {
-            minimumFractionDigits: 2,
-          }).format(amount)}{" "}
-          €
+          {formatCurrencyAmount(amount, row.original.currency)}
         </div>
       );
     },
@@ -332,10 +339,7 @@ export const getColumns = ({
         return <div className="font-normal text-muted-foreground">—</div>;
       return (
         <div className="font-normal">
-          {new Intl.NumberFormat("fr-FR", {
-            minimumFractionDigits: 2,
-          }).format(amount)}{" "}
-          €
+          {formatCurrencyAmount(amount, row.original.currency)}
         </div>
       );
     },
@@ -351,10 +355,7 @@ export const getColumns = ({
       const amount = row.getValue("amountTTC");
       return (
         <div className="font-normal">
-          {new Intl.NumberFormat("fr-FR", {
-            minimumFractionDigits: 2,
-          }).format(amount)}{" "}
-          €
+          {formatCurrencyAmount(amount, row.original.currency)}
         </div>
       );
     },
@@ -376,7 +377,6 @@ export const getColumns = ({
       );
     },
     sortingFn: dateSortingFn,
-    enableHiding: false,
   },
   {
     accessorKey: "dueDate",
@@ -396,6 +396,23 @@ export const getColumns = ({
         <div className={`font-normal ${isOverdue ? "text-red-600" : ""}`}>
           {parsed.toLocaleDateString("fr-FR")}
         </div>
+      );
+    },
+    sortingFn: dateSortingFn,
+  },
+  {
+    accessorKey: "paymentDate",
+    size: 100,
+    meta: { label: "Date de paiement" },
+    header: ({ column }) => (
+      <SortableHeader column={column}>Date de paiement</SortableHeader>
+    ),
+    cell: ({ row }) => {
+      const parsed = parseDate(row.original.paymentDate);
+      if (!parsed)
+        return <div className="font-normal text-muted-foreground">—</div>;
+      return (
+        <div className="font-normal">{parsed.toLocaleDateString("fr-FR")}</div>
       );
     },
     sortingFn: dateSortingFn,
