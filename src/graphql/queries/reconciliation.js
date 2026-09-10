@@ -20,6 +20,7 @@ export const GET_RECONCILIATION_SUGGESTIONS = gql`
         matchingInvoices {
           id
           number
+          prefix
           clientName
           totalTTC
           dueDate
@@ -65,6 +66,7 @@ export const GET_INVOICES_FOR_TRANSACTION = gql`
       invoices {
         id
         number
+        prefix
         clientName
         totalTTC
         dueDate
@@ -97,6 +99,7 @@ export const LINK_TRANSACTION_TO_INVOICE = gql`
         linkedInvoices {
           id
           number
+          prefix
           status
           clientName
           totalTTC
@@ -107,6 +110,7 @@ export const LINK_TRANSACTION_TO_INVOICE = gql`
       invoice {
         id
         number
+        prefix
         clientName
         totalTTC
         dueDate
@@ -132,6 +136,7 @@ export const UNLINK_TRANSACTION_FROM_INVOICE = gql`
         linkedInvoices {
           id
           number
+          prefix
           status
           clientName
           totalTTC
