@@ -1,4 +1,36 @@
+const fs = require("fs");
+const path = require("path");
+
 const isDev = process.env.NODE_ENV === "development";
+
+// Worktrees git (~/dev/Newbi2/.worktrees/*) : node_modules y est un lien
+// symbolique vers le checkout principal. Turbopack refuse un lien qui sort de
+// la racine du projet ("Symlink node_modules is invalid") et le dev retombait
+// silencieusement sur webpack, 3 à 4 fois plus gourmand en mémoire. On
+// remonte la racine d'un cran (dossier parent commun) uniquement dans ce cas.
+const nodeModulesIsSymlink = (() => {
+  try {
+    return fs.lstatSync(path.join(__dirname, "node_modules")).isSymbolicLink();
+  } catch {
+    return false;
+  }
+})();
+const commonAncestor = (a, b) => {
+  const pa = a.split(path.sep);
+  const pb = b.split(path.sep);
+  const common = [];
+  for (let i = 0; i < Math.min(pa.length, pb.length) && pa[i] === pb[i]; i++) {
+    common.push(pa[i]);
+  }
+  return common.join(path.sep) || path.sep;
+};
+const turbopackRoot =
+  isDev && nodeModulesIsSymlink
+    ? commonAncestor(
+        __dirname,
+        fs.realpathSync(path.join(__dirname, "node_modules")),
+      )
+    : null;
 
 // La barre de feedback Vercel (vercel.live) n'est injectée que sur les
 // déploiements non-production : elle n'existait pas lors du balayage du
@@ -111,6 +143,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  ...(turbopackRoot && { turbopack: { root: turbopackRoot } }),
 
   experimental: {
     // Transforme les imports "barrel" en imports directs pour les libs
