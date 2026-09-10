@@ -86,6 +86,7 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Badge } from "@/src/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { formatCurrencyAmount } from "@/src/lib/format-currency";
 
 const STATUS_LABELS = {
   TO_PROCESS: "À traiter",
@@ -948,10 +949,7 @@ export default function PurchaseInvoiceTable({
                       </div>
                       <div className="text-right ml-3">
                         <div className="font-medium text-sm">
-                          {new Intl.NumberFormat("fr-FR", {
-                            minimumFractionDigits: 2,
-                          }).format(inv.amountTTC)}{" "}
-                          €
+                          {formatCurrencyAmount(inv.amountTTC, inv.currency)}
                         </div>
                         <StatusBadge status={inv.status} small />
                       </div>

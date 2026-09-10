@@ -46,6 +46,7 @@ import {
   PurchaseEInvoiceStatusBadge,
   PurchaseEInvoicePaymentErrorBadge,
 } from "./einvoice-status-badge";
+import { formatCurrencyAmount } from "@/src/lib/format-currency";
 
 const STATUS_CONFIG = {
   TO_PROCESS: {
@@ -311,10 +312,7 @@ export const getColumns = ({
         return <div className="font-normal text-muted-foreground">—</div>;
       return (
         <div className="font-normal">
-          {new Intl.NumberFormat("fr-FR", {
-            minimumFractionDigits: 2,
-          }).format(amount)}{" "}
-          €
+          {formatCurrencyAmount(amount, row.original.currency)}
         </div>
       );
     },
@@ -332,10 +330,7 @@ export const getColumns = ({
         return <div className="font-normal text-muted-foreground">—</div>;
       return (
         <div className="font-normal">
-          {new Intl.NumberFormat("fr-FR", {
-            minimumFractionDigits: 2,
-          }).format(amount)}{" "}
-          €
+          {formatCurrencyAmount(amount, row.original.currency)}
         </div>
       );
     },
@@ -351,10 +346,7 @@ export const getColumns = ({
       const amount = row.getValue("amountTTC");
       return (
         <div className="font-normal">
-          {new Intl.NumberFormat("fr-FR", {
-            minimumFractionDigits: 2,
-          }).format(amount)}{" "}
-          €
+          {formatCurrencyAmount(amount, row.original.currency)}
         </div>
       );
     },
