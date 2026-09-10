@@ -15,6 +15,7 @@ import {
 } from "./auth-utils";
 // Import dynamique pour éviter le bundling Edge Runtime (Node.js only)
 const loadMetaCapi = () => import("../utils/metaCapiServer.js");
+const loadTikTokEvents = () => import("../utils/tiktokEventsServer.js");
 import {
   ac,
   owner,
@@ -750,20 +751,29 @@ export const stripePlugin = stripe({
                 }
               }
 
-              // ✅ Meta CAPI : envoyer Lead si trial démarré
+              // ✅ Meta CAPI + TikTok Events API : envoyer Lead si trial démarré
               if (subscription.status === "trialing") {
+                let leadEmail = null;
                 try {
-                  const stripeForMeta = new Stripe(
+                  const stripeForLead = new Stripe(
                     process.env.STRIPE_SECRET_KEY,
                     { apiVersion: "2024-04-10" },
                   );
-                  const metaCustomer = await stripeForMeta.customers.retrieve(
+                  const leadCustomer = await stripeForLead.customers.retrieve(
                     subscription.customer,
                   );
+                  leadEmail = leadCustomer.email;
+                } catch (customerError) {
+                  console.warn(
+                    `⚠️ [STRIPE WEBHOOK] Client introuvable pour Lead:`,
+                    customerError.message,
+                  );
+                }
+                try {
                   const { sendMetaConversion } = await loadMetaCapi();
                   await sendMetaConversion({
                     eventName: "Lead",
-                    email: metaCustomer.email,
+                    email: leadEmail,
                     value: 17.99,
                     currency: "EUR",
                   });
@@ -771,6 +781,21 @@ export const stripePlugin = stripe({
                   console.warn(
                     `⚠️ [META CAPI] Erreur Lead:`,
                     metaError.message,
+                  );
+                }
+                try {
+                  const { sendTikTokEvent } = await loadTikTokEvents();
+                  await sendTikTokEvent({
+                    eventName: "Lead",
+                    email: leadEmail,
+                    externalId: referenceId,
+                    value: 17.99,
+                    currency: "EUR",
+                  });
+                } catch (tiktokError) {
+                  console.warn(
+                    `⚠️ [TIKTOK EVENTS] Erreur Lead:`,
+                    tiktokError.message,
                   );
                 }
               }
@@ -1342,6 +1367,21 @@ export const stripePlugin = stripe({
                 console.warn(
                   `⚠️ [META CAPI] Erreur Purchase:`,
                   metaError.message,
+                );
+              }
+              // ✅ TikTok Events API : CompletePayment (équivalent Purchase)
+              try {
+                const { sendTikTokEvent } = await loadTikTokEvents();
+                await sendTikTokEvent({
+                  eventName: "Purchase",
+                  email: customer.email,
+                  value: paidInvoice.amount_paid / 100,
+                  currency: (paidInvoice.currency || "eur").toUpperCase(),
+                });
+              } catch (tiktokError) {
+                console.warn(
+                  `⚠️ [TIKTOK EVENTS] Erreur CompletePayment:`,
+                  tiktokError.message,
                 );
               }
             }
