@@ -451,17 +451,17 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                   />
                 </div>
 
-                {/* Champs personnalisés */}
-                <ProductCustomFieldsForm
-                  values={customFieldValues}
-                  onChange={handleCustomFieldChange}
-                />
-
                 {/* Produits liés */}
                 <ProductLinkedProductsForm
                   value={linkedProducts}
                   onChange={setLinkedProducts}
                   excludeId={product?.id}
+                />
+
+                {/* Champs personnalisés */}
+                <ProductCustomFieldsForm
+                  values={customFieldValues}
+                  onChange={handleCustomFieldChange}
                 />
               </div>
 

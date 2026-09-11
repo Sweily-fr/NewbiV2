@@ -169,14 +169,16 @@ export default function ProductLinkedProductsForm({
             <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
           </Button>
         </PopoverTrigger>
+        {/* Le sélecteur se retourne vers le haut et se limite à l'espace
+            disponible pour ne jamais dépasser le bas de l'écran. */}
         <PopoverContent
-          className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)]"
+          className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] flex flex-col"
+          style={{ maxHeight: "min(320px, var(--radix-popover-content-available-height))" }}
           align="start"
           side="bottom"
           sideOffset={4}
-          avoidCollisions={false}
         >
-          <div className="flex items-center gap-2.5 px-2.5 h-10 border-b border-[#e6e7ea] dark:border-[#232323]">
+          <div className="flex items-center gap-2.5 px-2.5 h-10 shrink-0 border-b border-[#e6e7ea] dark:border-[#232323]">
             <Search className="size-3.5 text-muted-foreground shrink-0" />
             <Input
               variant="ghost"
@@ -186,7 +188,7 @@ export default function ProductLinkedProductsForm({
               autoFocus
             />
           </div>
-          <div className="max-h-[240px] overflow-y-auto p-1">
+          <div className="flex-1 min-h-0 overflow-y-auto p-1">
             {loading && candidates.length === 0 ? (
               <div className="flex items-center justify-center gap-2 p-4">
                 <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
