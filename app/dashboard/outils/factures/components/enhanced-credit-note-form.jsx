@@ -282,7 +282,7 @@ function ProductSearchCombobox({
                         variant="secondary"
                         className="font-normal whitespace-normal max-w-full mt-0.5"
                       >
-                        <Link2 size={10} className="!size-2.5 shrink-0" />
+                        <Link2 size={12} className="!size-3 shrink-0 mr-1" />
                         Produits liés : {linkedNames(product)}
                       </Badge>
                     )}

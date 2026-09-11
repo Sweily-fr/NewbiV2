@@ -608,7 +608,7 @@ export default function ItemsSection({
                                         variant="secondary"
                                         className="font-normal whitespace-normal max-w-full"
                                       >
-                                        <Link2 size={10} className="!size-2.5 shrink-0" />
+                                        <Link2 size={12} className="!size-3 shrink-0 mr-1" />
                                         Produit lié à « {linkedParentName(index)} »
                                       </Badge>
                                     )}
