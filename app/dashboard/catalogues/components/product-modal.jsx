@@ -124,6 +124,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   // Observer les valeurs pour les calculs en temps réel
   const watchedUnitPrice = watch("unitPrice");
   const watchedVatRate = watch("vatRate");
+  const watchedUnit = watch("unit");
 
   // Calculer le prix TTC
   const priceWithVat = useMemo(() => {
@@ -165,6 +166,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           .map((link) => ({
             productId: link.productId,
             quantity: link.quantity,
+            per: link.per ?? 1,
+            rounding: link.rounding || "UP",
             product: link.product,
           })),
       );
@@ -192,11 +195,12 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         .map(([fieldId, value]) => ({ fieldId, value }));
 
       const invalidLink = linkedProducts.find(
-        (link) => !(parseFloat(link.quantity) > 0),
+        (link) =>
+          !(parseFloat(link.quantity) > 0) || !(parseFloat(link.per) > 0),
       );
       if (invalidLink) {
         toast.error(
-          `La quantité du produit lié « ${invalidLink.product?.name || ""} » doit être supérieure à 0`,
+          `Les quantités du produit lié « ${invalidLink.product?.name || ""} » doivent être supérieures à 0`,
         );
         return;
       }
@@ -209,6 +213,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         linkedProducts: linkedProducts.map((link) => ({
           productId: link.productId,
           quantity: parseFloat(link.quantity),
+          per: parseFloat(link.per),
+          rounding: link.rounding || "UP",
         })),
       };
 
@@ -456,6 +462,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                   value={linkedProducts}
                   onChange={setLinkedProducts}
                   excludeId={product?.id}
+                  mainUnit={watchedUnit}
                 />
 
                 {/* Champs personnalisés */}

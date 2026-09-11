@@ -15,6 +15,8 @@ export const CREATE_PRODUCT = gql`
       linkedProducts {
         productId
         quantity
+        per
+        rounding
         product {
           id
           name
@@ -46,6 +48,8 @@ export const UPDATE_PRODUCT = gql`
       linkedProducts {
         productId
         quantity
+        per
+        rounding
         product {
           id
           name

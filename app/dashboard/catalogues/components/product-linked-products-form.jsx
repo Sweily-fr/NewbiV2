@@ -11,20 +11,35 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  LINKED_ROUNDING,
+  LINKED_ROUNDING_OPTIONS,
+} from "@/src/utils/linked-products";
 
 /**
  * Section « Produits liés » de la fiche produit du catalogue.
  *
- * value : [{ productId, quantity, product: { id, name, reference, unit } }]
+ * value : [{ productId, quantity, per, rounding, product: { id, name, reference, unit } }]
+ *   « quantity » produits liés pour « per » unités du produit principal,
+ *   arrondi selon « rounding » (UP / DOWN / NONE).
  * onChange(nextValue)
  * excludeId : id du produit en cours d'édition (un produit ne peut pas se lier à lui-même)
+ * mainUnit : unité du produit principal (affichage « pour 20 m² »)
  */
 export default function ProductLinkedProductsForm({
   value = [],
   onChange,
   excludeId,
+  mainUnit,
 }) {
   const { workspaceId } = useRequiredWorkspace();
   const [open, setOpen] = useState(false);
@@ -57,6 +72,8 @@ export default function ProductLinkedProductsForm({
       {
         productId: product.id,
         quantity: 1,
+        per: 1,
+        rounding: LINKED_ROUNDING.UP,
         product: {
           id: product.id,
           name: product.name,
@@ -70,10 +87,10 @@ export default function ProductLinkedProductsForm({
     setOpen(false);
   };
 
-  const handleQuantityChange = (productId, rawValue) => {
+  const handleFieldChange = (productId, field, rawValue) => {
     onChange(
       value.map((link) =>
-        link.productId === productId ? { ...link, quantity: rawValue } : link,
+        link.productId === productId ? { ...link, [field]: rawValue } : link,
       ),
     );
   };
@@ -99,28 +116,39 @@ export default function ProductLinkedProductsForm({
         </Label>
         <p className="text-xs text-muted-foreground">
           Ajoutés automatiquement comme articles dans vos factures, devis et
-          bons de commande quand vous sélectionnez ce produit.
+          bons de commande quand vous sélectionnez ce produit. Leur quantité
+          suit celle de ce produit : « 1 pot pour 20 m² » donne 5 pots pour
+          100 m².
         </p>
       </div>
 
       {value.length > 0 && (
         <div className="rounded-lg border divide-y">
           {value.map((link) => (
-            <div
-              key={link.productId}
-              className="flex items-center gap-3 px-3 py-2"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">
-                  {link.product?.name || "Produit supprimé"}
-                </div>
-                {link.product?.reference && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    Réf : {link.product.reference}
+            <div key={link.productId} className="px-3 py-2.5 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">
+                    {link.product?.name || "Produit supprimé"}
                   </div>
-                )}
+                  {link.product?.reference && (
+                    <div className="text-xs text-muted-foreground truncate">
+                      Réf : {link.product.reference}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemove(link.productId)}
+                  aria-label="Retirer ce produit lié"
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Input
                   type="number"
                   inputMode="decimal"
@@ -128,27 +156,50 @@ export default function ProductLinkedProductsForm({
                   min="0.01"
                   value={link.quantity}
                   onChange={(e) =>
-                    handleQuantityChange(link.productId, e.target.value)
+                    handleFieldChange(link.productId, "quantity", e.target.value)
                   }
                   aria-label={`Quantité de ${link.product?.name || "produit lié"}`}
                   className="w-20 text-right"
                 />
-                {link.product?.unit && (
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {link.product.unit}
-                  </span>
-                )}
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {link.product?.unit || "unité"} pour
+                </span>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0.01"
+                  value={link.per ?? 1}
+                  onChange={(e) =>
+                    handleFieldChange(link.productId, "per", e.target.value)
+                  }
+                  aria-label={`Base de calcul pour ${link.product?.name || "produit lié"}`}
+                  className="w-20 text-right"
+                />
+                <span className="text-muted-foreground whitespace-nowrap">
+                  {mainUnit || "unité"} de ce produit
+                </span>
+                <Select
+                  value={link.rounding || LINKED_ROUNDING.UP}
+                  onValueChange={(v) =>
+                    handleFieldChange(link.productId, "rounding", v)
+                  }
+                >
+                  <SelectTrigger
+                    className="w-full sm:w-[190px]"
+                    aria-label={`Arrondi pour ${link.product?.name || "produit lié"}`}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LINKED_ROUNDING_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => handleRemove(link.productId)}
-                aria-label="Retirer ce produit lié"
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 className="size-4" />
-              </Button>
             </div>
           ))}
         </div>
