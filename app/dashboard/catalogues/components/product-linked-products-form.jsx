@@ -307,12 +307,14 @@ export default function ProductLinkedProductsForm({
             <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
           </Button>
         </PopoverTrigger>
-        {/* Le sélecteur se retourne vers le haut et se limite à l'espace
-            disponible pour ne jamais dépasser le bas de l'écran. */}
+        {/* Ouvert vers le haut par défaut : le bouton est en bas de la fiche,
+            une liste qui s'ouvrait vers le bas dépassait la fenêtre et faisait
+            sauter le contenu à la fermeture. Bascule vers le bas seulement si
+            la place manque au-dessus. La hauteur se limite à l'espace disponible. */}
         <PopoverContent
           className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] flex flex-col max-h-[min(320px,var(--radix-popover-content-available-height))]"
           align="start"
-          side="bottom"
+          side="top"
           sideOffset={4}
         >
           <div className="flex items-center gap-2.5 px-2.5 h-10 shrink-0 border-b border-[#e6e7ea] dark:border-[#232323]">
