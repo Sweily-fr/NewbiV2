@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@apollo/client";
 import {
   ChevronDownIcon,
@@ -77,6 +77,9 @@ export default function ProductLinkedProductsForm({
 }) {
   const { workspaceId } = useRequiredWorkspace();
   const [open, setOpen] = useState(false);
+  // Côté d'ouverture choisi à chaque ouverture : celui qui a le plus de place
+  const [side, setSide] = useState("bottom");
+  const triggerRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
@@ -134,6 +137,12 @@ export default function ProductLinkedProductsForm({
   };
 
   const handleOpenChange = (nextOpen) => {
+    if (nextOpen && triggerRef.current && typeof window !== "undefined") {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      setSide(spaceBelow >= spaceAbove ? "bottom" : "top");
+    }
     setOpen(nextOpen);
     if (!nextOpen) {
       setSearchTerm("");
@@ -295,6 +304,7 @@ export default function ProductLinkedProductsForm({
       <Popover open={open} onOpenChange={handleOpenChange} modal>
         <PopoverTrigger asChild>
           <Button
+            ref={triggerRef}
             type="button"
             variant="outline"
             role="combobox"
@@ -307,15 +317,15 @@ export default function ProductLinkedProductsForm({
             <ChevronDownIcon className="size-3.5 text-muted-foreground shrink-0" />
           </Button>
         </PopoverTrigger>
-        {/* Ouvert vers le haut par défaut : le bouton est en bas de la fiche,
-            une liste qui s'ouvrait vers le bas dépassait la fenêtre et faisait
-            sauter le contenu à la fermeture. Bascule vers le bas seulement si
-            la place manque au-dessus. La hauteur se limite à l'espace disponible. */}
+        {/* Côté choisi dynamiquement (le plus d'espace), marge de 48 px en
+            haut et en bas : trop collé à un bord, la liste passe de l'autre
+            côté. La hauteur se limite à l'espace disponible. */}
         <PopoverContent
           className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] flex flex-col max-h-[min(320px,var(--radix-popover-content-available-height))]"
           align="start"
-          side="top"
+          side={side}
           sideOffset={4}
+          collisionPadding={{ top: 48, bottom: 48 }}
         >
           <div className="flex items-center gap-2.5 px-2.5 h-10 shrink-0 border-b border-[#e6e7ea] dark:border-[#232323]">
             <Search className="size-3.5 text-muted-foreground shrink-0" />
