@@ -289,7 +289,10 @@ export default function ProductLinkedProductsForm({
         </div>
       )}
 
-      <Popover open={open} onOpenChange={handleOpenChange}>
+      {/* modal : la fiche produit est une Dialog dont le verrou de défilement
+          bloque la molette hors de la fenêtre ; en mode modal le popover porte
+          son propre verrou et sa liste peut défiler. */}
+      <Popover open={open} onOpenChange={handleOpenChange} modal>
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -307,8 +310,7 @@ export default function ProductLinkedProductsForm({
         {/* Le sélecteur se retourne vers le haut et se limite à l'espace
             disponible pour ne jamais dépasser le bas de l'écran. */}
         <PopoverContent
-          className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] flex flex-col"
-          style={{ maxHeight: "min(320px, var(--radix-popover-content-available-height))" }}
+          className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] flex flex-col max-h-[min(320px,var(--radix-popover-content-available-height))]"
           align="start"
           side="bottom"
           sideOffset={4}
@@ -323,7 +325,7 @@ export default function ProductLinkedProductsForm({
               autoFocus
             />
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto p-1">
+          <div className="flex-1 min-h-0 max-h-[260px] overflow-y-auto overscroll-contain p-1">
             {loading && candidates.length === 0 ? (
               <div className="flex items-center justify-center gap-2 p-4">
                 <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
