@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -9,8 +10,7 @@ import {
 } from "@/src/components/ui/popover";
 import { Calendar } from "@/src/components/ui/calendar";
 import { CalendarDays, X } from "lucide-react";
-import { cn } from "@/src/lib/utils";
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const PERIOD_PRESETS = [
@@ -19,6 +19,9 @@ const PERIOD_PRESETS = [
   { value: "current_year", label: "Année en cours" },
   { value: "last_year", label: "Année précédente" },
 ];
+
+const CUSTOM_PERIOD = "custom";
+const DEFAULT_PERIOD = "current_year";
 
 function getDateRangeForPreset(preset) {
   const now = new Date();
@@ -55,9 +58,52 @@ function formatDate(date) {
   return `${y}-${m}-${d}`;
 }
 
-export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateRangeChange }) {
+// "YYYY-MM-DD" -> Date locale (minuit), null si la chaîne est invalide
+function parseDateInput(value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = parseISO(value);
+  return isValid(date) ? date : null;
+}
+
+function rangeFromDateRange(dateRange) {
+  const from = parseDateInput(dateRange?.startDate);
+  const to = parseDateInput(dateRange?.endDate);
+  return from && to ? { from, to } : undefined;
+}
+
+function formatRangeLabel(from, to) {
+  const start = format(from, "dd MMM yyyy", { locale: fr });
+  if (!to) return start;
+  return `${start} - ${format(to, "dd MMM yyyy", { locale: fr })}`;
+}
+
+export function AnalyticsDateFilter({
+  period,
+  onPeriodChange,
+  dateRange,
+  onDateRangeChange,
+}) {
   const [open, setOpen] = useState(false);
-  const [calendarRange, setCalendarRange] = useState(undefined);
+  const isCustom = period === CUSTOM_PERIOD;
+
+  // Sélection en cours dans le calendrier (peut être incomplète : from sans to)
+  const [calendarRange, setCalendarRange] = useState(() =>
+    isCustom ? rangeFromDateRange(dateRange) : undefined,
+  );
+  // Saisie manuelle des bornes (champs Du / Au)
+  const [startInput, setStartInput] = useState(dateRange?.startDate || "");
+  const [endInput, setEndInput] = useState(dateRange?.endDate || "");
+
+  // Les champs suivent toujours la période réellement appliquée
+  useEffect(() => {
+    setStartInput(dateRange?.startDate || "");
+    setEndInput(dateRange?.endDate || "");
+  }, [dateRange?.startDate, dateRange?.endDate]);
+
+  const applyCustomRange = (from, to) => {
+    onPeriodChange(CUSTOM_PERIOD);
+    onDateRangeChange({ startDate: formatDate(from), endDate: formatDate(to) });
+  };
 
   const handlePresetClick = (preset) => {
     onPeriodChange(preset);
@@ -67,27 +113,61 @@ export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateR
     setOpen(false);
   };
 
+  // Passage en mode personnalisé : on garde la période courante comme point de
+  // départ, l'utilisateur ajuste ensuite via le calendrier ou les champs
+  const handleCustomClick = () => {
+    onPeriodChange(CUSTOM_PERIOD);
+    setCalendarRange(rangeFromDateRange(dateRange));
+  };
+
   const handleCalendarSelect = (range) => {
     setCalendarRange(range || undefined);
     if (range?.from && range?.to) {
-      onPeriodChange("custom");
-      onDateRangeChange({
-        startDate: formatDate(range.from),
-        endDate: formatDate(range.to),
-      });
+      applyCustomRange(range.from, range.to);
+      setOpen(false);
     }
   };
 
-  const handleClear = () => {
-    setCalendarRange(undefined);
-    handlePresetClick("current_year");
+  const commitInputs = (nextStart, nextEnd) => {
+    const from = parseDateInput(nextStart);
+    const to = parseDateInput(nextEnd);
+    if (!from || !to || from > to) return;
+    setCalendarRange({ from, to });
+    applyCustomRange(from, to);
   };
 
-  const currentLabel = period === "custom"
-    ? dateRange?.startDate && dateRange?.endDate
-      ? `${format(new Date(dateRange.startDate), "dd MMM yyyy", { locale: fr })} - ${format(new Date(dateRange.endDate), "dd MMM yyyy", { locale: fr })}`
-      : "Personnalisée"
+  const handleStartInputChange = (e) => {
+    const value = e.target.value;
+    setStartInput(value);
+    commitInputs(value, endInput);
+  };
+
+  const handleEndInputChange = (e) => {
+    const value = e.target.value;
+    setEndInput(value);
+    commitInputs(startInput, value);
+  };
+
+  const handleClear = () => {
+    handlePresetClick(DEFAULT_PERIOD);
+  };
+
+  const appliedRange = rangeFromDateRange(dateRange);
+  const currentLabel = isCustom
+    ? appliedRange
+      ? formatRangeLabel(appliedRange.from, appliedRange.to)
+      : "Période personnalisée"
     : PERIOD_PRESETS.find((p) => p.value === period)?.label || "Période";
+
+  const inputsInvalid =
+    isCustom &&
+    startInput &&
+    endInput &&
+    (() => {
+      const from = parseDateInput(startInput);
+      const to = parseDateInput(endInput);
+      return from && to && from > to;
+    })();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -112,8 +192,53 @@ export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateR
                 {preset.label}
               </Button>
             ))}
+            <Button
+              variant={isCustom ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs"
+              onClick={handleCustomClick}
+            >
+              Période personnalisée
+            </Button>
           </div>
         </div>
+
+        {/* Bornes saisies à la main (mode personnalisé) */}
+        {isCustom && (
+          <div className="border-t px-3 py-3 space-y-1.5">
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Du
+                <Input
+                  type="date"
+                  value={startInput}
+                  max={endInput || undefined}
+                  onChange={handleStartInputChange}
+                  className="h-8 text-xs"
+                  aria-label="Date de début"
+                  aria-invalid={inputsInvalid || undefined}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                Au
+                <Input
+                  type="date"
+                  value={endInput}
+                  min={startInput || undefined}
+                  onChange={handleEndInputChange}
+                  className="h-8 text-xs"
+                  aria-label="Date de fin"
+                  aria-invalid={inputsInvalid || undefined}
+                />
+              </label>
+            </div>
+            {inputsInvalid && (
+              <p className="text-xs text-destructive">
+                La date de fin doit être postérieure à la date de début
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Calendrier */}
         <div className="border-t pt-3 pb-5 px-5 flex justify-center">
@@ -121,6 +246,7 @@ export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateR
             mode="range"
             selected={calendarRange}
             onSelect={handleCalendarSelect}
+            defaultMonth={calendarRange?.from}
             locale={fr}
             numberOfMonths={2}
             className="p-0"
@@ -132,15 +258,14 @@ export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateR
           <div className="border-t px-3 py-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                {format(calendarRange.from, "dd MMM yyyy", { locale: fr })}
-                {calendarRange.to &&
-                  ` - ${format(calendarRange.to, "dd MMM yyyy", { locale: fr })}`}
+                {formatRangeLabel(calendarRange.from, calendarRange.to)}
               </p>
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0"
                 onClick={handleClear}
+                aria-label="Réinitialiser la période"
               >
                 <X className="h-3.5 w-3.5" />
               </Button>
