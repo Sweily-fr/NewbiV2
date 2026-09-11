@@ -262,7 +262,18 @@ function ProductSearchCombobox({
                     className="flex flex-col items-start gap-1 p-3"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-normal">{product.label}</span>
+                      <span className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="font-normal">{product.label}</span>
+                        {linkedNames(product) && (
+                          <Badge
+                            variant="secondary"
+                            className="font-normal whitespace-normal max-w-full"
+                          >
+                            <Link2 size={12} className="!size-3 shrink-0 mr-1" />
+                            Produits liés : {linkedNames(product)}
+                          </Badge>
+                        )}
+                      </span>
                       <span className="text-sm text-muted-foreground">
                         {product.price ? `${product.price}€` : ""}
                       </span>
@@ -276,15 +287,6 @@ function ProductSearchCombobox({
                       <span className="text-xs text-muted-foreground">
                         Réf: {product.reference}
                       </span>
-                    )}
-                    {linkedNames(product) && (
-                      <Badge
-                        variant="secondary"
-                        className="font-normal whitespace-normal max-w-full mt-0.5"
-                      >
-                        <Link2 size={12} className="!size-3 shrink-0 mr-1" />
-                        Produits liés : {linkedNames(product)}
-                      </Badge>
                     )}
                   </CommandItem>
                 ))}
