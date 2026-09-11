@@ -27,6 +27,7 @@ import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import {
   buildLinkedItems,
+  linkedItemExplanation,
   linkedItemsAddedMessage,
   linkedQuantityUpdates,
   newLinkKey,
@@ -324,9 +325,7 @@ export default function ItemsSection({
     const fromKey = all[index]?.linkedFromKey;
     if (!fromKey) return null;
     const parent = all.find((it) => it?.linkKey === fromKey);
-    return parent?.description
-      ? `Quantité liée à « ${parent.description} »`
-      : "Quantité liée";
+    return linkedItemExplanation(all[index], parent);
   };
 
   const appendItem = (productData = {}) => {

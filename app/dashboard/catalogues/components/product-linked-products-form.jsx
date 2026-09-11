@@ -23,6 +23,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
   LINKED_ROUNDING,
   LINKED_ROUNDING_OPTIONS,
+  linkedRuleExample,
 } from "@/src/utils/linked-products";
 
 /**
@@ -33,13 +34,14 @@ import {
  *   arrondi selon « rounding » (UP / DOWN / NONE).
  * onChange(nextValue)
  * excludeId : id du produit en cours d'édition (un produit ne peut pas se lier à lui-même)
- * mainUnit : unité du produit principal (affichage « pour 20 m² »)
+ * mainUnit / mainName : unité et nom du produit principal (phrase « Pour 20 m² de Peinture »)
  */
 export default function ProductLinkedProductsForm({
   value = [],
   onChange,
   excludeId,
   mainUnit,
+  mainName,
 }) {
   const { workspaceId } = useRequiredWorkspace();
   const [open, setOpen] = useState(false);
@@ -115,93 +117,136 @@ export default function ProductLinkedProductsForm({
           Produits liés
         </Label>
         <p className="text-xs text-muted-foreground">
-          Ajoutés automatiquement comme articles dans vos factures, devis et
-          bons de commande quand vous sélectionnez ce produit. Leur quantité
-          suit celle de ce produit : « 1 pot pour 20 m² » donne 5 pots pour
-          100 m².
+          Quand vous ajoutez ce produit dans une facture, un devis ou un bon de
+          commande, les produits liés s'ajoutent tout seuls. Leur quantité se
+          calcule à partir de la quantité saisie et se met à jour si vous la
+          changez.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Exemple : un pot de peinture couvre 20 m². Réglez « pour 20 m², ajouter
+          1 pot ». Pour 90 m² de peinture, la facture affichera 5 pots.
         </p>
       </div>
 
       {value.length > 0 && (
         <div className="rounded-lg border divide-y">
-          {value.map((link) => (
-            <div key={link.productId} className="px-3 py-2.5 space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {link.product?.name || "Produit supprimé"}
-                  </div>
-                  {link.product?.reference && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      Réf : {link.product.reference}
+          {value.map((link) => {
+            const unitLabel = link.product?.unit || "unité";
+            const mainUnitLabel = mainUnit || "unité";
+            const roundingOption =
+              LINKED_ROUNDING_OPTIONS.find(
+                (opt) => opt.value === (link.rounding || LINKED_ROUNDING.UP),
+              ) || LINKED_ROUNDING_OPTIONS[0];
+            const ruleIsValid =
+              parseFloat(link.quantity) > 0 && parseFloat(link.per) > 0;
+            return (
+              <div key={link.productId} className="px-3 py-3 space-y-2.5">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {link.product?.name || "Produit supprimé"}
                     </div>
-                  )}
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemove(link.productId)}
-                  aria-label="Retirer ce produit lié"
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min="0.01"
-                  value={link.quantity}
-                  onChange={(e) =>
-                    handleFieldChange(link.productId, "quantity", e.target.value)
-                  }
-                  aria-label={`Quantité de ${link.product?.name || "produit lié"}`}
-                  className="w-20 text-right"
-                />
-                <span className="text-muted-foreground whitespace-nowrap">
-                  {link.product?.unit || "unité"} pour
-                </span>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min="0.01"
-                  value={link.per ?? 1}
-                  onChange={(e) =>
-                    handleFieldChange(link.productId, "per", e.target.value)
-                  }
-                  aria-label={`Base de calcul pour ${link.product?.name || "produit lié"}`}
-                  className="w-20 text-right"
-                />
-                <span className="text-muted-foreground whitespace-nowrap">
-                  {mainUnit || "unité"} de ce produit
-                </span>
-                <Select
-                  value={link.rounding || LINKED_ROUNDING.UP}
-                  onValueChange={(v) =>
-                    handleFieldChange(link.productId, "rounding", v)
-                  }
-                >
-                  <SelectTrigger
-                    className="w-full sm:w-[190px]"
-                    aria-label={`Arrondi pour ${link.product?.name || "produit lié"}`}
+                    {link.product?.reference && (
+                      <div className="text-xs text-muted-foreground truncate">
+                        Réf : {link.product.reference}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemove(link.productId)}
+                    aria-label="Retirer ce produit lié"
+                    className="text-muted-foreground hover:text-destructive"
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {LINKED_ROUNDING_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+
+                {/* Règle rédigée comme une phrase : « Pour 20 m² de Peinture, ajouter 1 unité de Pot » */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-2 text-sm">
+                  <span>Pour</span>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    value={link.per ?? 1}
+                    onChange={(e) =>
+                      handleFieldChange(link.productId, "per", e.target.value)
+                    }
+                    aria-label={`Quantité de ${mainName || "ce produit"} servant de base`}
+                    className="w-20 text-right"
+                  />
+                  <span className="whitespace-nowrap">
+                    {mainUnitLabel} de{" "}
+                    <span className="font-medium">
+                      {mainName || "ce produit"}
+                    </span>
+                    , ajouter
+                  </span>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    value={link.quantity}
+                    onChange={(e) =>
+                      handleFieldChange(link.productId, "quantity", e.target.value)
+                    }
+                    aria-label={`Quantité de ${link.product?.name || "produit lié"} à ajouter`}
+                    className="w-20 text-right"
+                  />
+                  <span className="whitespace-nowrap">
+                    {unitLabel} de{" "}
+                    <span className="font-medium">
+                      {link.product?.name || "ce produit lié"}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-sm whitespace-nowrap">
+                    Si le résultat n'est pas un nombre entier
+                  </span>
+                  <Select
+                    value={link.rounding || LINKED_ROUNDING.UP}
+                    onValueChange={(v) =>
+                      handleFieldChange(link.productId, "rounding", v)
+                    }
+                  >
+                    <SelectTrigger
+                      className="w-full sm:w-[210px]"
+                      aria-label={`Arrondi pour ${link.product?.name || "produit lié"}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LINKED_ROUNDING_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {roundingOption.hint}
+                </p>
+
+                <p className="text-xs rounded-md bg-muted/50 px-2.5 py-2">
+                  {ruleIsValid
+                    ? linkedRuleExample(link, {
+                        mainName,
+                        mainUnit: mainUnitLabel,
+                        unit: unitLabel,
+                      })
+                    : "Renseignez deux quantités supérieures à 0 pour voir un exemple."}
+                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

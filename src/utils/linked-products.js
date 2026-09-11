@@ -23,10 +23,73 @@ export const LINKED_ROUNDING = {
 };
 
 export const LINKED_ROUNDING_OPTIONS = [
-  { value: LINKED_ROUNDING.UP, label: "Arrondi au supérieur" },
-  { value: LINKED_ROUNDING.DOWN, label: "Arrondi à l'inférieur" },
-  { value: LINKED_ROUNDING.NONE, label: "Sans arrondi" },
+  {
+    value: LINKED_ROUNDING.UP,
+    label: "Arrondir au supérieur",
+    hint: "4,5 devient 5. Conseillé pour un produit qu'on ne coupe pas (un pot, un sac).",
+  },
+  {
+    value: LINKED_ROUNDING.DOWN,
+    label: "Arrondir à l'inférieur",
+    hint: "4,5 devient 4, jamais moins de 1.",
+  },
+  {
+    value: LINKED_ROUNDING.NONE,
+    label: "Ne pas arrondir",
+    hint: "4,5 reste 4,5. Pour des heures ou des mètres par exemple.",
+  },
 ];
+
+/** « unité » prend un s au pluriel ; les autres unités restent telles quelles. */
+export function pluralUnit(unit, quantity) {
+  const label = unit || "unité";
+  return label === "unité" && Math.abs(Number(quantity)) > 1 ? "unités" : label;
+}
+
+export function formatQuantity(n) {
+  const value = Number(n) || 0;
+  return String(Math.round(value * 100) / 100).replace(".", ",");
+}
+
+/**
+ * Phrase d'exemple pour une règle de produit lié, calculée sur une quantité
+ * de démonstration : « Pour 90 m² de Peinture, vous obtenez 5 unités de Pot
+ * de peinture (4,5 arrondi au supérieur). »
+ */
+export function linkedRuleExample(rule, { mainName, mainUnit, unit, sampleQuantity } = {}) {
+  const per = Number(rule?.linkedPer ?? rule?.per) || 1;
+  const quantity = Number(rule?.linkedQuantity ?? rule?.quantity) || 0;
+  const rounding = rule?.linkedRounding ?? rule?.rounding ?? LINKED_ROUNDING.UP;
+  // Quantité de démonstration : 4,5 × la base quand la base vaut au moins 2
+  // (l'arrondi devient visible), sinon 10 × la base.
+  const sample =
+    sampleQuantity ?? Math.round(per * (per >= 2 ? 4.5 : 10) * 100) / 100;
+  const raw = Math.round(((sample * quantity) / per) * 100) / 100;
+  const result = computeLinkedQuantity(sample, { quantity, per, rounding });
+  const mainLabel = `${formatQuantity(sample)} ${pluralUnit(mainUnit, sample)}${mainName ? ` de ${mainName}` : ""}`;
+  const resultLabel = `${formatQuantity(result)} ${pluralUnit(unit, result)}`;
+  let roundingNote = "";
+  if (raw !== result) {
+    roundingNote =
+      rounding === LINKED_ROUNDING.UP
+        ? ` (${formatQuantity(raw)} arrondi au supérieur)`
+        : ` (${formatQuantity(raw)} arrondi à l'inférieur)`;
+  }
+  return `Pour ${mainLabel}, vous obtenez ${resultLabel}${roundingNote}.`;
+}
+
+/**
+ * Explication d'une ligne liée dans un document :
+ * « Calculée automatiquement : 1 unité pour 20 m² de Peinture ».
+ */
+export function linkedItemExplanation(item, parent) {
+  const quantity = formatQuantity(item?.linkedQuantity ?? 1);
+  const per = formatQuantity(item?.linkedPer ?? 1);
+  const unit = pluralUnit(item?.unit, item?.linkedQuantity ?? 1);
+  const mainUnit = pluralUnit(parent?.unit, item?.linkedPer ?? 1);
+  const mainName = parent?.description ? ` de ${parent.description}` : "";
+  return `Calculée automatiquement : ${quantity} ${unit} pour ${per} ${mainUnit}${mainName}`;
+}
 
 export function newLinkKey() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {

@@ -125,6 +125,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   const watchedUnitPrice = watch("unitPrice");
   const watchedVatRate = watch("vatRate");
   const watchedUnit = watch("unit");
+  const watchedName = watch("name");
 
   // Calculer le prix TTC
   const priceWithVat = useMemo(() => {
@@ -463,6 +464,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                   onChange={setLinkedProducts}
                   excludeId={product?.id}
                   mainUnit={watchedUnit}
+                  mainName={watchedName}
                 />
 
                 {/* Champs personnalisés */}
