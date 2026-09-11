@@ -67,14 +67,6 @@ import { OverdueInvoicesCard } from "@/app/dashboard/components/overdue-invoices
 import { MonthlyRevenueCard } from "@/app/dashboard/components/monthly-revenue-card";
 import { TopClientsCard } from "@/app/dashboard/components/top-clients-card";
 import { WeekCalendarCard } from "@/app/dashboard/components/week-calendar-card";
-import { useChartColors } from "@/src/hooks/useChartColors";
-import {
-  getIncomeChartConfig,
-  getExpenseChartConfig,
-} from "@/src/utils/chartDataProcessors";
-import { GET_TREASURY_CHART } from "@/src/graphql/queries/dashboardAggregation";
-import { useQuery } from "@apollo/client";
-import { useRef } from "react";
 import {
   Card,
   CardContent,
@@ -305,9 +297,6 @@ export default function AnalytiquesPage() {
     formatCurrency: dashFormatCurrency,
   } = useDashboardData();
 
-  const bankBalanceRef = useRef(null);
-  const { remap } = useChartColors();
-
   // Transactions bancaires restreintes à la période sélectionnée — le hook
   // useDashboardData renvoie l'historique complet, sans filtre de dates
   const filteredBankTransactions = useMemo(() => {
@@ -322,37 +311,6 @@ export default function AnalytiquesPage() {
       return !isNaN(d.getTime()) && d >= start && d <= end;
     });
   }, [bankTransactions, dateRange]);
-
-  const { data: flowChartData, loading: flowChartLoading } = useQuery(
-    GET_TREASURY_CHART,
-    {
-      variables: {
-        workspaceId,
-        period: { preset: "365d" },
-      },
-      fetchPolicy: "cache-and-network",
-      skip: !workspaceId,
-    },
-  );
-
-  const incomeChartData = useMemo(() => {
-    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
-    return points.map((d) => ({ date: d.date, desktop: d.income, mobile: 0 }));
-  }, [flowChartData]);
-
-  const expenseChartData = useMemo(() => {
-    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
-    return points.map((d) => ({
-      date: d.date,
-      desktop: d.expenses,
-      mobile: 0,
-    }));
-  }, [flowChartData]);
-
-  const incomeChartConfig = getIncomeChartConfig(remap);
-  const expenseChartConfig = getExpenseChartConfig(remap);
-  const cardsLoading = bankLoading;
-  const chartsLoading = flowChartLoading;
 
   // Treasury forecast (6 months: 3 past + 3 future)
   const forecastStart = useMemo(() => {
