@@ -21,7 +21,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useQuery } from "@apollo/client";
-import { buildLinkedItems } from "@/src/utils/linked-products";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -157,7 +156,7 @@ function ProductSearchCombobox({
           selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
-        linkedItems: buildLinkedItems(selectedProduct),
+        linkedProducts: selectedProduct.linkedProducts,
       });
     }
     setValue("");
