@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
-import { Package, Plus, Trash2, Percent, GripVertical } from "lucide-react";
+import {
+  Package,
+  Plus,
+  Trash2,
+  Percent,
+  GripVertical,
+  Link2,
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -23,6 +30,7 @@ import {
   restrictToParentElement,
 } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
+import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import {
@@ -319,7 +327,16 @@ export default function ItemsSection({
     );
   };
 
-  // Libellé « Quantité liée à « Peinture » » sous le champ quantité d'une ligne liée
+  // Nom de la ligne principale d'une ligne liée (tag « Produit lié à « … » »)
+  const linkedParentName = (index) => {
+    const all = watch("items") || [];
+    const fromKey = all[index]?.linkedFromKey;
+    if (!fromKey) return null;
+    const parent = all.find((it) => it?.linkKey === fromKey);
+    return parent?.description || "l'article principal";
+  };
+
+  // Explication du calcul sous le champ quantité d'une ligne liée
   const linkedParentLabel = (index) => {
     const all = watch("items") || [];
     const fromKey = all[index]?.linkedFromKey;
@@ -582,8 +599,19 @@ export default function ItemsSection({
                                       <GripVertical className="h-4 w-4" />
                                     </span>
                                   )}
-                                  <div className="font-normal break-all [overflow-wrap:anywhere]">
-                                    {description}
+                                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                    <div className="font-normal break-all [overflow-wrap:anywhere]">
+                                      {description}
+                                    </div>
+                                    {linkedParentName(index) && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="font-normal whitespace-normal max-w-full"
+                                      >
+                                        <Link2 />
+                                        Produit lié à « {linkedParentName(index)} »
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                                 <div className="text-sm mt-1 space-y-1">
