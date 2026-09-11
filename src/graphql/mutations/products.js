@@ -12,6 +12,19 @@ export const CREATE_PRODUCT = gql`
       unit
       category
       reference
+      linkedProducts {
+        productId
+        quantity
+        product {
+          id
+          name
+          description
+          unitPrice
+          vatRate
+          unit
+          reference
+        }
+      }
       createdAt
       updatedAt
     }
@@ -30,6 +43,19 @@ export const UPDATE_PRODUCT = gql`
       unit
       category
       reference
+      linkedProducts {
+        productId
+        quantity
+        product {
+          id
+          name
+          description
+          unitPrice
+          vatRate
+          unit
+          reference
+        }
+      }
       createdAt
       updatedAt
     }

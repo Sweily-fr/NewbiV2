@@ -24,6 +24,8 @@ import {
 } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/src/components/ui/button";
+import { toast } from "@/src/components/ui/sonner";
+import { linkedItemsAddedMessage } from "@/src/utils/linked-products";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Select,
@@ -312,6 +314,19 @@ export default function ItemsSection({
   };
 
   const addItem = (productData = {}) => {
+    const { linkedItems, ...itemData } = productData;
+    appendItem(itemData);
+
+    // Produits liés du catalogue : ajoutés à la suite avec leur quantité paramétrée
+    if (Array.isArray(linkedItems) && linkedItems.length > 0) {
+      linkedItems.forEach((linkedItem) => appendItem(linkedItem));
+      toast.success(
+        linkedItemsAddedMessage(linkedItems.length, itemData.description),
+      );
+    }
+  };
+
+  const appendItem = (productData = {}) => {
     // Sur un avoir la quantité vit en négatif dans le formulaire
     // (le PU reste positif, re-négativé à l'enregistrement)
     const rawQuantity = productData.quantity || 1;
