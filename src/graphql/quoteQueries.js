@@ -110,6 +110,11 @@ export const QUOTE_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
+      linkKey
+      linkedFromKey
+      linkedQuantity
+      linkedPer
+      linkedRounding
       progressPercentage
     }
     customFields {
@@ -407,6 +412,11 @@ export const GET_QUOTE_BY_NUMBER = gql`
         unitPrice
         vatRate
         vatExemptionText
+        linkKey
+        linkedFromKey
+        linkedQuantity
+        linkedPer
+        linkedRounding
         unit
         discount
         discountType
@@ -1024,6 +1034,11 @@ export const GET_QUOTE_TEMPLATES = gql`
         discountType
         details
         vatExemptionText
+        linkKey
+        linkedFromKey
+        linkedQuantity
+        linkedPer
+        linkedRounding
         progressPercentage
       }
       headerNotes

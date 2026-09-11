@@ -98,6 +98,11 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
+      linkKey
+      linkedFromKey
+      linkedQuantity
+      linkedPer
+      linkedRounding
       progressPercentage
     }
     customFields {
@@ -219,6 +224,11 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
+      linkKey
+      linkedFromKey
+      linkedQuantity
+      linkedPer
+      linkedRounding
       progressPercentage
     }
     customFields {
@@ -983,6 +993,11 @@ export const GET_PURCHASE_ORDER_TEMPLATES = gql`
         discountType
         details
         vatExemptionText
+        linkKey
+        linkedFromKey
+        linkedQuantity
+        linkedPer
+        linkedRounding
         progressPercentage
       }
       headerNotes

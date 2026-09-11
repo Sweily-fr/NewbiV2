@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useId, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { ChevronDownIcon, ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronDownIcon, ChevronRight, ChevronLeft, Link2 } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
+import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import {
   AlertDialog,
@@ -92,7 +93,16 @@ function ProductSearchCombobox({
       unit: product.unit,
       category: product.category,
       reference: product.reference,
+      linkedProducts: product.linkedProducts,
     })) || [];
+
+  // Noms des produits liés d'un produit (tag dans la liste)
+  const linkedNames = (product) => {
+    const names = (product.linkedProducts || [])
+      .map((link) => link?.product?.name)
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : null;
+  };
 
   const handleSelect = (currentValue) => {
     const selectedProduct = products.find((p) => p.value === currentValue);
@@ -105,6 +115,7 @@ function ProductSearchCombobox({
           selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité(s)",
+        linkedProducts: selectedProduct.linkedProducts,
       });
     }
     setValue("");
@@ -186,7 +197,18 @@ function ProductSearchCombobox({
                     className="flex flex-col items-start gap-1 p-3"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-normal">{product.label}</span>
+                      <span className="flex flex-wrap items-center gap-2 min-w-0">
+                        <span className="font-normal">{product.label}</span>
+                        {linkedNames(product) && (
+                          <Badge
+                            variant="secondary"
+                            className="font-normal whitespace-normal max-w-full"
+                          >
+                            <Link2 size={12} className="!size-3 shrink-0 mr-1" />
+                            Produits liés : {linkedNames(product)}
+                          </Badge>
+                        )}
+                      </span>
                       <span className="text-sm text-muted-foreground">
                         {product.price ? `${product.price}€` : ""}
                       </span>

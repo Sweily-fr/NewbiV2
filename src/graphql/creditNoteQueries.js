@@ -102,6 +102,11 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       discountType
       details
       vatExemptionText
+      linkKey
+      linkedFromKey
+      linkedQuantity
+      linkedPer
+      linkedRounding
       progressPercentage
     }
     customFields {
