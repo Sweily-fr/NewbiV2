@@ -18,8 +18,7 @@ import {
   LoaderCircle,
   Download,
   ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+  ChevronRight, Link2 } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -144,6 +143,14 @@ function ProductSearchCombobox({
       linkedProducts: product.linkedProducts,
     })) || [];
 
+  // Noms des produits liés d'un produit (tag dans la liste)
+  const linkedNames = (product) => {
+    const names = (product.linkedProducts || [])
+      .map((link) => link?.product?.name)
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : null;
+  };
+
   const handleSelect = (currentValue) => {
     const selectedProduct = products.find((p) => p.value === currentValue);
     if (selectedProduct && onSelect) {
@@ -251,6 +258,15 @@ function ProductSearchCombobox({
                   <span className="text-xs text-muted-foreground">
                     Réf: {product.reference}
                   </span>
+                )}
+                {linkedNames(product) && (
+                  <Badge
+                    variant="secondary"
+                    className="font-normal whitespace-normal max-w-full mt-0.5"
+                  >
+                    <Link2 size={10} className="!size-2.5 shrink-0" />
+                    Produits liés : {linkedNames(product)}
+                  </Badge>
                 )}
               </button>
             ))
