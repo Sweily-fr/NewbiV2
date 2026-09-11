@@ -27,6 +27,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { PackagePlusIcon } from "lucide-react";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
 import ProductCustomFieldsForm from "./product-custom-fields-form";
+import ProductLinkedProductsForm from "./product-linked-products-form";
 
 // Unités utilisées dans les devis
 const UNITS = [
@@ -98,6 +99,9 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
     setCustomFieldValues((prev) => ({ ...prev, [fieldId]: value }));
   };
 
+  // Produits liés (ajoutés automatiquement dans les documents)
+  const [linkedProducts, setLinkedProducts] = useState([]);
+
   const {
     register,
     handleSubmit,
@@ -120,6 +124,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   // Observer les valeurs pour les calculs en temps réel
   const watchedUnitPrice = watch("unitPrice");
   const watchedVatRate = watch("vatRate");
+  const watchedUnit = watch("unit");
+  const watchedName = watch("name");
 
   // Calculer le prix TTC
   const priceWithVat = useMemo(() => {
@@ -155,6 +161,17 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         });
       }
       setCustomFieldValues(cfValues);
+      setLinkedProducts(
+        (product.linkedProducts || [])
+          .filter((link) => link?.product)
+          .map((link) => ({
+            productId: link.productId,
+            quantity: link.quantity,
+            per: link.per ?? 1,
+            rounding: link.rounding || "UP",
+            product: link.product,
+          })),
+      );
     } else if (!product && open) {
       // Reset pour nouveau produit
       reset({
@@ -167,6 +184,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         description: "",
       });
       setCustomFieldValues({});
+      setLinkedProducts([]);
     }
   }, [product, open, reset]);
 
@@ -177,11 +195,28 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         .filter(([_, v]) => v !== "" && v !== null && v !== undefined)
         .map(([fieldId, value]) => ({ fieldId, value }));
 
+      const invalidLink = linkedProducts.find(
+        (link) =>
+          !(parseFloat(link.quantity) > 0) || !(parseFloat(link.per) > 0),
+      );
+      if (invalidLink) {
+        toast.error(
+          `Les quantités du produit lié « ${invalidLink.product?.name || ""} » doivent être supérieures à 0`,
+        );
+        return;
+      }
+
       const productData = {
         ...formData,
         unitPrice: parseFloat(formData.unitPrice),
         vatRate: parseFloat(formData.vatRate),
         ...(customFields.length > 0 && { customFields }),
+        linkedProducts: linkedProducts.map((link) => ({
+          productId: link.productId,
+          quantity: parseFloat(link.quantity),
+          per: parseFloat(link.per),
+          rounding: link.rounding || "UP",
+        })),
       };
 
       let result;
@@ -422,6 +457,15 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     {...register("description")}
                   />
                 </div>
+
+                {/* Produits liés */}
+                <ProductLinkedProductsForm
+                  value={linkedProducts}
+                  onChange={setLinkedProducts}
+                  excludeId={product?.id}
+                  mainUnit={watchedUnit}
+                  mainName={watchedName}
+                />
 
                 {/* Champs personnalisés */}
                 <ProductCustomFieldsForm

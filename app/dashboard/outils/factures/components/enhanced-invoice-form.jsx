@@ -18,8 +18,7 @@ import {
   LoaderCircle,
   Download,
   ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+  ChevronRight, Link2 } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -141,7 +140,16 @@ function ProductSearchCombobox({
       unit: product.unit,
       category: product.category,
       reference: product.reference,
+      linkedProducts: product.linkedProducts,
     })) || [];
+
+  // Noms des produits liés d'un produit (tag dans la liste)
+  const linkedNames = (product) => {
+    const names = (product.linkedProducts || [])
+      .map((link) => link?.product?.name)
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : null;
+  };
 
   const handleSelect = (currentValue) => {
     const selectedProduct = products.find((p) => p.value === currentValue);
@@ -155,6 +163,7 @@ function ProductSearchCombobox({
           selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
+        linkedProducts: selectedProduct.linkedProducts,
       });
     }
     setValue("");
@@ -235,7 +244,18 @@ function ProductSearchCombobox({
                 className="flex w-full flex-col items-start gap-1 rounded-md p-2.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
               >
                 <div className="flex items-center justify-between w-full">
-                  <span className="font-medium">{product.label}</span>
+                  <span className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="font-medium">{product.label}</span>
+                    {linkedNames(product) && (
+                      <Badge
+                        variant="secondary"
+                        className="font-normal whitespace-normal max-w-full"
+                      >
+                        <Link2 size={12} className="!size-3 shrink-0 mr-1" />
+                        Produits liés : {linkedNames(product)}
+                      </Badge>
+                    )}
+                  </span>
                   <span className="text-sm text-muted-foreground">
                     {product.price ? `${product.price}€` : ""}
                   </span>

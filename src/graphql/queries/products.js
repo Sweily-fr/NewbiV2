@@ -17,6 +17,21 @@ export const GET_PRODUCTS = gql`
           fieldId
           value
         }
+        linkedProducts {
+          productId
+          quantity
+          per
+          rounding
+          product {
+            id
+            name
+            description
+            unitPrice
+            vatRate
+            unit
+            reference
+          }
+        }
         createdAt
         updatedAt
       }
@@ -38,6 +53,21 @@ export const GET_PRODUCT = gql`
       unit
       category
       reference
+      linkedProducts {
+        productId
+        quantity
+        per
+        rounding
+        product {
+          id
+          name
+          description
+          unitPrice
+          vatRate
+          unit
+          reference
+        }
+      }
       createdBy {
         id
         email

@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
-import { Package, Plus, Trash2, Percent, GripVertical } from "lucide-react";
+import {
+  Package,
+  Plus,
+  Trash2,
+  Percent,
+  GripVertical,
+  Link2,
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -23,7 +30,17 @@ import {
   restrictToParentElement,
 } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
+import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { toast } from "@/src/components/ui/sonner";
+import {
+  buildLinkedItems,
+  linkedItemExplanation,
+  linkedItemsAddedMessage,
+  linkedQuantityUpdates,
+  newLinkKey,
+  pickLinkFields,
+} from "@/src/utils/linked-products";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Select,
@@ -182,6 +199,7 @@ export default function ItemsSection({
   const {
     watch,
     setValue,
+    getValues,
     register,
     formState: { errors },
   } = useFormContext();
@@ -312,6 +330,79 @@ export default function ItemsSection({
   };
 
   const addItem = (productData = {}) => {
+    const { linkedProducts, ...itemData } = productData;
+
+    // Produits liés du catalogue : ajoutés à la suite, quantité calculée à
+    // partir de celle de la ligne principale et recalculée à chaque changement
+    const linked = Array.isArray(linkedProducts)
+      ? buildLinkedItems(
+          { linkedProducts },
+          { mainQuantity: itemData.quantity || 1, parentKey: newLinkKey() },
+        )
+      : [];
+
+    appendItem(
+      linked.length > 0
+        ? { ...itemData, linkKey: linked[0].linkedFromKey }
+        : itemData,
+    );
+
+    if (linked.length > 0) {
+      linked.forEach((linkedItem) => appendItem(linkedItem));
+      toast.success(linkedItemsAddedMessage(linked.length, itemData.description));
+    }
+  };
+
+  // Quantité d'une ligne modifiée : recalcule les lignes liées ; une ligne
+  // liée modifiée à la main est détachée et n'est plus recalculée.
+  const syncLinkedQuantities = (index, newQuantity) => {
+    const all = getValues("items") || [];
+    const current = all[index];
+    if (!current) return;
+
+    if (current.linkedFromKey) {
+      setValue(`items.${index}.linkedFromKey`, "", { shouldDirty: true });
+    }
+    if (!current.linkKey) return;
+
+    linkedQuantityUpdates(all, current.linkKey, newQuantity, {
+      negative: isCreditNoteContext,
+    }).forEach(({ index: childIndex, quantity }) => {
+      const child = all[childIndex];
+      setValue(`items.${childIndex}.quantity`, quantity, { shouldDirty: true });
+      setValue(
+        `items.${childIndex}.total`,
+        calculateItemTotal(
+          quantity,
+          child.unitPrice || 0,
+          child.discount || 0,
+          child.discountType || "PERCENTAGE",
+          child.progressPercentage ?? 100,
+        ),
+        { shouldDirty: true },
+      );
+    });
+  };
+
+  // Nom de la ligne principale d'une ligne liée (tag « Produit lié à « … » »)
+  const linkedParentName = (index) => {
+    const all = watch("items") || [];
+    const fromKey = all[index]?.linkedFromKey;
+    if (!fromKey) return null;
+    const parent = all.find((it) => it?.linkKey === fromKey);
+    return parent?.description || "l'article principal";
+  };
+
+  // Explication du calcul sous le champ quantité d'une ligne liée
+  const linkedParentLabel = (index) => {
+    const all = watch("items") || [];
+    const fromKey = all[index]?.linkedFromKey;
+    if (!fromKey) return null;
+    const parent = all.find((it) => it?.linkKey === fromKey);
+    return linkedItemExplanation(all[index], parent);
+  };
+
+  const appendItem = (productData = {}) => {
     // Sur un avoir la quantité vit en négatif dans le formulaire
     // (le PU reste positif, re-négativé à l'enregistrement)
     const rawQuantity = productData.quantity || 1;
@@ -345,6 +436,7 @@ export default function ItemsSection({
       discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
       vatExemptionText: productData.vatExemptionText || "",
       progressPercentage: productData.progressPercentage ?? 100,
+      ...pickLinkFields(productData),
       total: calculateItemTotal(
         quantity,
         unitPrice,
@@ -599,8 +691,19 @@ export default function ItemsSection({
                                         <GripVertical className="h-4 w-4" />
                                       </span>
                                     )}
-                                    <div className="font-normal break-all [overflow-wrap:anywhere]">
-                                      {description}
+                                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                      <div className="font-normal break-all [overflow-wrap:anywhere]">
+                                        {description}
+                                      </div>
+                                      {linkedParentName(index) && (
+                                        <Badge
+                                          variant="secondary"
+                                          className="font-normal whitespace-normal max-w-full"
+                                        >
+                                          <Link2 size={12} className="!size-3 shrink-0 mr-1" />
+                                          Produit lié à « {linkedParentName(index)} »
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="text-sm mt-1 space-y-1">
@@ -828,6 +931,11 @@ export default function ItemsSection({
                                       >
                                         Quantité
                                       </Label>
+                                      {linkedParentLabel(index) && (
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {linkedParentLabel(index)}
+                                        </span>
+                                      )}
                                       <span
                                         className="h-4 w-4"
                                         aria-hidden="true"
@@ -883,6 +991,10 @@ export default function ItemsSection({
                                               {
                                                 shouldDirty: true,
                                               },
+                                            );
+                                            syncLinkedQuantities(
+                                              index,
+                                              newQuantity,
                                             );
                                           };
 
