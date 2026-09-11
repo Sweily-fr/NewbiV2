@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useQuery } from "@apollo/client";
-import { ChevronDownIcon, Link2, LoaderCircle, Search, Trash2 } from "lucide-react";
+import {
+  ChevronDownIcon,
+  CircleHelp,
+  Link2,
+  LoaderCircle,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -18,6 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -36,6 +48,26 @@ import {
  * excludeId : id du produit en cours d'édition (un produit ne peut pas se lier à lui-même)
  * mainUnit / mainName : unité et nom du produit principal (phrase « Pour 20 m² de Peinture »)
  */
+/** Petite icône « ? » qui affiche une explication au survol ou au focus. */
+function HelpTip({ label, children }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={label}
+          className="inline-flex items-center text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+        >
+          <CircleHelp className="size-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed">
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export default function ProductLinkedProductsForm({
   value = [],
   onChange,
@@ -111,32 +143,29 @@ export default function ProductLinkedProductsForm({
 
   return (
     <div className="space-y-3">
-      <div className="space-y-1">
-        <Label className="flex items-center gap-1.5 font-normal">
-          <Link2 className="size-3.5 text-muted-foreground" />
-          Produits liés
-        </Label>
-        <p className="text-xs text-muted-foreground">
-          Quand vous ajoutez ce produit dans une facture, un devis ou un bon de
-          commande, les produits liés s'ajoutent tout seuls. Leur quantité se
-          calcule à partir de la quantité saisie et se met à jour si vous la
-          changez.
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Exemple : un pot de peinture couvre 20 m². Réglez « pour 20 m², ajouter
-          1 pot ». Pour 90 m² de peinture, la facture affichera 5 pots.
-        </p>
-      </div>
+      <Label className="flex items-center gap-1.5 font-normal">
+        <Link2 className="size-3.5 text-muted-foreground" />
+        Produits liés
+        <HelpTip label="À quoi servent les produits liés">
+          <p>
+            Quand vous ajoutez ce produit dans une facture, un devis ou un bon
+            de commande, les produits liés s'ajoutent tout seuls. Leur quantité
+            se calcule à partir de la quantité saisie et se met à jour si vous
+            la changez.
+          </p>
+          <p className="mt-1.5">
+            Exemple : un pot de peinture couvre 20 m². Réglez « pour 20 m²,
+            ajouter 1 pot ». Pour 90 m² de peinture, la facture affichera
+            5 pots.
+          </p>
+        </HelpTip>
+      </Label>
 
       {value.length > 0 && (
         <div className="rounded-lg border divide-y">
           {value.map((link) => {
             const unitLabel = link.product?.unit || "unité";
             const mainUnitLabel = mainUnit || "unité";
-            const roundingOption =
-              LINKED_ROUNDING_OPTIONS.find(
-                (opt) => opt.value === (link.rounding || LINKED_ROUNDING.UP),
-              ) || LINKED_ROUNDING_OPTIONS[0];
             const ruleIsValid =
               parseFloat(link.quantity) > 0 && parseFloat(link.per) > 0;
             return (
@@ -207,8 +236,22 @@ export default function ProductLinkedProductsForm({
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="text-sm whitespace-nowrap">
-                    Si le résultat n'est pas un nombre entier
+                  <span className="text-sm whitespace-nowrap inline-flex items-center gap-1.5">
+                    Arrondi
+                    <HelpTip label="Comment fonctionne l'arrondi">
+                      <p>
+                        S'applique quand le calcul ne tombe pas sur un nombre
+                        entier.
+                      </p>
+                      <ul className="mt-1.5 space-y-1">
+                        {LINKED_ROUNDING_OPTIONS.map((opt) => (
+                          <li key={opt.value}>
+                            <span className="font-medium">{opt.label}</span> :{" "}
+                            {opt.hint}
+                          </li>
+                        ))}
+                      </ul>
+                    </HelpTip>
                   </span>
                   <Select
                     value={link.rounding || LINKED_ROUNDING.UP}
@@ -230,20 +273,16 @@ export default function ProductLinkedProductsForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  <HelpTip label="Exemple de calcul">
+                    {ruleIsValid
+                      ? linkedRuleExample(link, {
+                          mainName,
+                          mainUnit: mainUnitLabel,
+                          unit: unitLabel,
+                        })
+                      : "Renseignez deux quantités supérieures à 0 pour voir un exemple."}
+                  </HelpTip>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {roundingOption.hint}
-                </p>
-
-                <p className="text-xs rounded-md bg-muted/50 px-2.5 py-2">
-                  {ruleIsValid
-                    ? linkedRuleExample(link, {
-                        mainName,
-                        mainUnit: mainUnitLabel,
-                        unit: unitLabel,
-                      })
-                    : "Renseignez deux quantités supérieures à 0 pour voir un exemple."}
-                </p>
               </div>
             );
           })}
