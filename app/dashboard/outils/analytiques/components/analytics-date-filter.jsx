@@ -52,15 +52,23 @@ function getDateRangeForPreset(preset) {
 }
 
 function formatDate(date) {
-  const y = date.getFullYear();
+  const y = String(date.getFullYear()).padStart(4, "0");
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
+// Années acceptées pour une saisie manuelle. Un champ <input type="date">
+// émet des valeurs intermédiaires pendant la frappe de l'année (« 0002 »,
+// « 0020 », « 0202 »…) : sans cette borne elles partiraient à l'API.
+const MIN_INPUT_YEAR = 2000;
+const MAX_INPUT_YEAR = 2100;
+
 // "YYYY-MM-DD" -> Date locale (minuit), null si la chaîne est invalide
 function parseDateInput(value) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const year = Number(value.slice(0, 4));
+  if (year < MIN_INPUT_YEAR || year > MAX_INPUT_YEAR) return null;
   const date = parseISO(value);
   return isValid(date) ? date : null;
 }
@@ -120,11 +128,19 @@ export function AnalyticsDateFilter({
     setCalendarRange(rangeFromDateRange(dateRange));
   };
 
-  const handleCalendarSelect = (range) => {
-    setCalendarRange(range || undefined);
-    if (range?.from && range?.to) {
-      applyCustomRange(range.from, range.to);
-      setOpen(false);
+  // Sélection au calendrier : la popover reste ouverte pour que l'utilisateur
+  // puisse ajuster les deux bornes. Un clic alors qu'une plage complète est
+  // déjà sélectionnée démarre une nouvelle plage (au lieu de déplacer une
+  // seule borne). La période s'applique dès que les deux bornes sont posées.
+  const handleCalendarSelect = (range, triggerDate) => {
+    const hadCompleteRange = Boolean(calendarRange?.from && calendarRange?.to);
+    const next =
+      hadCompleteRange && triggerDate
+        ? { from: triggerDate, to: undefined }
+        : range || undefined;
+    setCalendarRange(next);
+    if (next?.from && next?.to) {
+      applyCustomRange(next.from, next.to);
     }
   };
 
@@ -249,6 +265,9 @@ export function AnalyticsDateFilter({
             defaultMonth={calendarRange?.from}
             locale={fr}
             numberOfMonths={2}
+            // Deux mois côte à côte : les jours du mois voisin apparaîtraient
+            // en double (et surlignés s'ils sont dans la plage)
+            showOutsideDays={false}
             className="p-0"
           />
         </div>
@@ -256,19 +275,34 @@ export function AnalyticsDateFilter({
         {/* Plage sélectionnée */}
         {calendarRange?.from && (
           <div className="border-t px-3 py-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
                 {formatRangeLabel(calendarRange.from, calendarRange.to)}
+                {!calendarRange.to && (
+                  <span className="ml-1 italic">
+                    (choisissez la date de fin)
+                  </span>
+                )}
               </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                onClick={handleClear}
-                aria-label="Réinitialiser la période"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={handleClear}
+                  aria-label="Réinitialiser la période"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={!calendarRange.to}
+                  onClick={() => setOpen(false)}
+                >
+                  Valider
+                </Button>
+              </div>
             </div>
           </div>
         )}
