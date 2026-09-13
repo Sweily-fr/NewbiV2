@@ -20,7 +20,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
-import { hasChartValues } from "./analytics-chart-utils";
+import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
 
 const CLIENT_COLORS = [
   "#5b50ff",
@@ -149,7 +149,7 @@ export function AnalyticsClientChart({ topClients, loading }) {
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              tickFormatter={formatAxisAmount}
               tick={{ fontSize: 11 }}
               tickLine={false}
               axisLine={false}

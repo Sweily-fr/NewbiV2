@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { hasChartValues } from "@/app/dashboard/outils/analytiques/components/analytics-chart-utils";
+import {
+  hasChartValues,
+  formatAxisAmount,
+} from "@/app/dashboard/outils/analytiques/components/analytics-chart-utils";
 
 describe("hasChartValues", () => {
   it("est faux pour un tableau vide ou absent", () => {
@@ -22,5 +25,21 @@ describe("hasChartValues", () => {
 
   it("ignore les clés non numériques", () => {
     expect(hasChartValues([{ label: "Janvier" }], ["label"])).toBe(false);
+  });
+});
+
+describe("formatAxisAmount", () => {
+  it("affiche les petits montants en euros entiers", () => {
+    expect(formatAxisAmount(43)).toBe("43 €");
+    expect(formatAxisAmount(-43)).toBe("-43 €");
+    expect(formatAxisAmount(0)).toBe("0 €");
+    expect(formatAxisAmount(-0.2)).toBe("0 €");
+  });
+
+  it("passe en k puis en M selon l'ordre de grandeur", () => {
+    expect(formatAxisAmount(1200)).toBe("1,2k");
+    expect(formatAxisAmount(12000)).toBe("12k");
+    expect(formatAxisAmount(-2500)).toBe("-2,5k");
+    expect(formatAxisAmount(1500000)).toBe("1,5M");
   });
 });

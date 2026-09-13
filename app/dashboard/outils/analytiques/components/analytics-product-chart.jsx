@@ -20,7 +20,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
-import { hasChartValues } from "./analytics-chart-utils";
+import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
 
 const BAR_COLORS = [
   "#5b50ff",
@@ -160,16 +160,7 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={(v) => {
-                if (!v) return "0";
-                if (Math.abs(v) >= 1_000_000)
-                  return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-                if (Math.abs(v) >= 1000)
-                  return `${(v / 1000).toFixed(1).replace(/\.0$/, "")}K`;
-                return new Intl.NumberFormat("fr-FR", {
-                  maximumFractionDigits: 0,
-                }).format(v);
-              }}
+              tickFormatter={formatAxisAmount}
               tick={{ fontSize: 11 }}
               tickLine={false}
               axisLine={false}

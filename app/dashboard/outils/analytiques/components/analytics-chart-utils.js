@@ -13,3 +13,22 @@ export function hasChartValues(rows, keys) {
     }),
   );
 }
+
+const AXIS_NUMBER = new Intl.NumberFormat("fr-FR", {
+  maximumFractionDigits: 1,
+});
+
+/**
+ * Libellé compact d'un montant pour les graduations d'axe : « 43 € »,
+ * « 1,2k », « 12k », « 1,5M ». Le palier s'adapte à la valeur, pour que les
+ * petits montants ne se lisent pas tous « 0k ».
+ */
+export function formatAxisAmount(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || Math.round(n) === 0) return "0 €";
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${AXIS_NUMBER.format(n / 1_000_000)}M`;
+  if (abs >= 10_000) return `${Math.round(n / 1000)}k`;
+  if (abs >= 1000) return `${AXIS_NUMBER.format(n / 1000)}k`;
+  return `${Math.round(n)} €`;
+}

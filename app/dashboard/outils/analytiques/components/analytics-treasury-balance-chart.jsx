@@ -31,6 +31,7 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { ChevronRight } from "lucide-react";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { formatAxisAmount } from "./analytics-chart-utils";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -298,11 +299,7 @@ export function AnalyticsTreasuryBalanceChart({
                     fontSize={11}
                     className="fill-muted-foreground"
                   >
-                    {Math.abs(payload.value) >= 1000000
-                      ? `${(payload.value / 1000000).toFixed(1)}M`
-                      : Math.abs(payload.value) >= 1000
-                        ? `${(payload.value / 1000).toFixed(0)}k`
-                        : `${payload.value.toFixed(0)}€`}
+                    {formatAxisAmount(payload.value)}
                   </text>
                 )}
                 tickLine={false}
