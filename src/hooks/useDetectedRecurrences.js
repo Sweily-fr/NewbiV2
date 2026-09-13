@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_DETECTED_RECURRENCES } from "../graphql/queries/treasuryForecast";
 import {
   MUTE_DETECTED_RECURRENCE,
-  SET_DETECTED_RECURRENCE_CATEGORY,
+  UPDATE_DETECTED_RECURRENCE,
   DELETE_DETECTED_RECURRENCE,
   RUN_RECURRENCE_DETECTION,
 } from "../graphql/mutations/treasuryForecast";
@@ -72,10 +72,11 @@ export const useMuteDetectedRecurrence = () => {
   return { setMuted, loading };
 };
 
-// Reclasse une récurrence détectée (null = catégorie détectée). Action de
-// Base : la catégorie est commune à tous les scénarios.
-export const useSetDetectedRecurrenceCategory = () => {
-  const [mutate, { loading }] = useMutation(SET_DETECTED_RECURRENCE_CATEGORY, {
+// « Modifier » une récurrence détectée (catégorie, montant, périodicité,
+// libellé). Action de Base : les surcharges sont communes à tous les
+// scénarios. Un input vide rétablit les valeurs détectées.
+export const useUpdateDetectedRecurrence = () => {
+  const [mutate, { loading }] = useMutation(UPDATE_DETECTED_RECURRENCE, {
     refetchQueries: [
       "GetDetectedRecurrences",
       "GetTreasuryForecastData",
@@ -85,14 +86,12 @@ export const useSetDetectedRecurrenceCategory = () => {
     awaitRefetchQueries: false,
   });
 
-  const setCategory = async (id, category) => {
+  const updateRecurrence = async (id, input, { reset = false } = {}) => {
     try {
-      const result = await mutate({
-        variables: { id, category: category || null },
-      });
-      if (result.data?.setDetectedRecurrenceCategory) {
+      const result = await mutate({ variables: { id, input } });
+      if (result.data?.updateDetectedRecurrence) {
         toast.success(
-          category ? "Catégorie modifiée" : "Catégorie détectée rétablie",
+          reset ? "Valeurs détectées rétablies" : "Récurrence modifiée",
         );
         return { success: true };
       }
@@ -107,7 +106,7 @@ export const useSetDetectedRecurrenceCategory = () => {
     }
   };
 
-  return { setCategory, loading };
+  return { updateRecurrence, loading };
 };
 
 export const useDeleteDetectedRecurrence = () => {

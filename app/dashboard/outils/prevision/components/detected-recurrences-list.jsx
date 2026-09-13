@@ -1,9 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { EyeOff, Eye, RefreshCw, Plus, Trash2, GitBranch } from "lucide-react";
+import {
+  EyeOff,
+  Eye,
+  RefreshCw,
+  Plus,
+  Pencil,
+  Trash2,
+  GitBranch,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   AlertDialog,
@@ -16,14 +23,6 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
@@ -31,11 +30,17 @@ import {
 import {
   useDetectedRecurrences,
   useMuteDetectedRecurrence,
-  useSetDetectedRecurrenceCategory,
   useDeleteDetectedRecurrence,
   useRunRecurrenceDetection,
 } from "@/src/hooks/useDetectedRecurrences";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
+import { DetectedRecurrenceDialog } from "./detected-recurrence-dialog";
+import {
+  CATEGORY_LABELS,
+  FREQUENCY_LABELS,
+  FREQUENCY_SUFFIX,
+  formatCurrency,
+} from "./detected-recurrence-labels";
 
 // Libellé d'état d'une récurrence. Dans un scénario, on distingue ce qui
 // vient de Base de ce qui a été surchargé ici.
@@ -50,142 +55,12 @@ const statusLabel = (rec, isScenario) => {
   return null;
 };
 
-const CATEGORY_LABELS = {
-  SALES: "Ventes",
-  REFUNDS_RECEIVED: "Remboursements",
-  OTHER_INCOME: "Autres revenus",
-  RENT: "Loyer",
-  SUBSCRIPTIONS: "Abonnements",
-  OFFICE_SUPPLIES: "Fournitures",
-  SERVICES: "Services",
-  TRANSPORT: "Transport",
-  MEALS: "Repas",
-  TELECOMMUNICATIONS: "Télécom",
-  INSURANCE: "Assurance",
-  ENERGY: "Énergie",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  MARKETING: "Marketing",
-  TRAINING: "Formation",
-  MAINTENANCE: "Maintenance",
-  TAXES: "Impôts & taxes",
-  UTILITIES: "Charges",
-  SALARIES: "Salaires",
-  OTHER_EXPENSE: "Autres dépenses",
-  // Catégories spécifiques aux transactions bancaires
-  OTHER: "Autres dépenses",
-  TRAVEL: "Déplacements",
-  ACCOMMODATION: "Hébergement",
-};
-
-// Catégories proposées au reclassement (même sens que la récurrence).
-const INCOME_CATEGORY_OPTIONS = ["SALES", "REFUNDS_RECEIVED", "OTHER_INCOME"];
-const EXPENSE_CATEGORY_OPTIONS = [
-  "RENT",
-  "SUBSCRIPTIONS",
-  "OFFICE_SUPPLIES",
-  "SERVICES",
-  "TRANSPORT",
-  "MEALS",
-  "TELECOMMUNICATIONS",
-  "INSURANCE",
-  "ENERGY",
-  "SOFTWARE",
-  "HARDWARE",
-  "MARKETING",
-  "TRAINING",
-  "MAINTENANCE",
-  "TAXES",
-  "UTILITIES",
-  "SALARIES",
-  "OTHER_EXPENSE",
-];
-// Valeur sentinelle de l'option « revenir à la catégorie détectée ».
-const DETECTED_CATEGORY_VALUE = "__detected__";
-
-// Sélecteur de catégorie en ligne. La catégorie est commune à tous les
-// scénarios : dans un scénario on l'affiche seulement (comme le crayon des
-// saisies de Base).
-function RecurrenceCategory({ rec, isScenario, onChange, disabled }) {
-  const effective = rec.forecastCategory || rec.category;
-  const label = CATEGORY_LABELS[effective] || effective || "—";
-  if (isScenario) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="cursor-default underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">
-            {label}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          Catégorie commune à tous les scénarios : revenez au scénario Base pour
-          la modifier.
-        </TooltipContent>
-      </Tooltip>
-    );
-  }
-  const options =
-    rec.type === "INCOME" ? INCOME_CATEGORY_OPTIONS : EXPENSE_CATEGORY_OPTIONS;
-  const detectedLabel =
-    CATEGORY_LABELS[rec.category] || rec.category || "Autres";
-  return (
-    <Select
-      value={effective}
-      disabled={disabled}
-      onValueChange={(value) =>
-        onChange(rec.id, value === DETECTED_CATEGORY_VALUE ? null : value)
-      }
-    >
-      <SelectTrigger
-        variant="ghost"
-        size="sm"
-        className="inline-flex h-5 w-auto gap-1 px-1 -ml-1 text-[11px] font-normal text-muted-foreground/60 hover:text-foreground [&_svg]:size-3"
-        title="Modifier la catégorie de prévision"
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {rec.categoryOverride && (
-          <>
-            <SelectItem value={DETECTED_CATEGORY_VALUE}>
-              Revenir à «&nbsp;{detectedLabel}&nbsp;» (détectée)
-            </SelectItem>
-            <SelectSeparator />
-          </>
-        )}
-        {options.map((value) => (
-          <SelectItem key={value} value={value}>
-            {CATEGORY_LABELS[value]}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
 const SOURCE_LABELS = {
   PURCHASE_INVOICE: "factures d'achat",
   INVOICE: "factures client",
   TRANSACTION: "transactions bancaires",
 };
 
-// Suffixe affiché après le montant (montant par occurrence).
-const FREQUENCY_SUFFIX = {
-  WEEKLY: "/sem.",
-  BIWEEKLY: "/2 sem.",
-  MONTHLY: "/mois",
-  QUARTERLY: "/trim.",
-  SEMIANNUAL: "/semestre",
-  ANNUAL: "/an",
-};
-const FREQUENCY_LABELS = {
-  WEEKLY: "Hebdomadaire",
-  BIWEEKLY: "Bi-mensuel",
-  MONTHLY: "Mensuel",
-  QUARTERLY: "Trimestriel",
-  SEMIANNUAL: "Semestriel",
-  ANNUAL: "Annuel",
-};
 // Périodicités gérées par les prévisions manuelles (CashflowFrequency).
 const FORECAST_FREQUENCY = {
   WEEKLY: "WEEKLY",
@@ -196,26 +71,56 @@ const FORECAST_FREQUENCY = {
   ANNUAL: "ANNUAL",
 };
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value || 0);
+// true si l'utilisateur a modifié au moins une valeur détectée.
+const hasUserOverride = (rec) =>
+  Boolean(
+    rec.categoryOverride ||
+    rec.amountOverride != null ||
+    rec.frequencyOverride ||
+    rec.labelOverride,
+  );
+
+// Résumé des valeurs détectées (infobulle du badge « modifiée »).
+const detectedSummary = (rec) =>
+  [
+    rec.partyName,
+    formatCurrency(rec.averageAmount),
+    FREQUENCY_LABELS[rec.frequency] || "Mensuel",
+    CATEGORY_LABELS[rec.category] || rec.category,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
 const PAGE_SIZE = 5;
+
+// Petit bouton d'action toujours visible (« Modifier », « Ajouter »).
+function RowAction({ icon: Icon, label, onClick, disabled, title, className }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed",
+        className,
+      )}
+    >
+      <Icon size={12} />
+      {label}
+    </button>
+  );
+}
 
 export function DetectedRecurrencesList({ onCreateForecast }) {
   const { isScenario, scenarioName } = useForecastScenario();
   const { recurrences, loading } = useDetectedRecurrences();
   const { setMuted, loading: muting } = useMuteDetectedRecurrence();
-  const { setCategory, loading: savingCategory } =
-    useSetDetectedRecurrenceCategory();
   const { deleteRecurrence, loading: deleting } = useDeleteDetectedRecurrence();
   const { runDetection, loading: detecting } = useRunRecurrenceDetection();
   const [expanded, setExpanded] = useState(false);
   const [toDelete, setToDelete] = useState(null);
+  const [toEdit, setToEdit] = useState(null);
 
   const confirmDelete = async () => {
     if (!toDelete) return;
@@ -235,6 +140,11 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
 
   const visible = expanded ? recurrences : recurrences.slice(0, PAGE_SIZE);
   const remaining = recurrences.length - PAGE_SIZE;
+  // Le dialogue reçoit toujours la version à jour de la récurrence éditée
+  // (refetch après enregistrement).
+  const editing = toEdit
+    ? recurrences.find((r) => r.id === toEdit.id) || toEdit
+    : null;
 
   return (
     <div>
@@ -279,6 +189,11 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
             {visible.map((rec) => {
               const isIncome = rec.type === "INCOME";
               const status = statusLabel(rec, isScenario);
+              const modified = hasUserOverride(rec);
+              const name = rec.forecastName || rec.partyName;
+              const amount = rec.forecastAmount ?? rec.averageAmount;
+              const frequency = rec.forecastFrequency || rec.frequency;
+              const category = rec.forecastCategory || rec.category;
               const muteTitle = rec.isMuted
                 ? isScenario
                   ? "Réactiver dans ce scénario"
@@ -290,14 +205,14 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                 <div
                   key={rec.id}
                   className={cn(
-                    "flex items-center justify-between py-2.5 group transition-colors",
+                    "flex items-center justify-between gap-3 py-2.5 group transition-colors",
                     rec.isMuted && "opacity-50",
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[13px] text-foreground truncate">
-                        {rec.partyName}
+                        {name}
                       </span>
                       {status && (
                         <span
@@ -311,56 +226,90 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                           {status}
                         </span>
                       )}
+                      {modified && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground cursor-default">
+                              <Pencil size={9} />
+                              modifiée
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            Détecté : {detectedSummary(rec)}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
-                    <p className="flex flex-wrap items-center text-[11px] text-muted-foreground/60 mt-0.5">
-                      <RecurrenceCategory
-                        rec={rec}
-                        isScenario={isScenario}
-                        onChange={setCategory}
-                        disabled={savingCategory}
-                      />
-                      {rec.frequency
-                        ? ` · ${FREQUENCY_LABELS[rec.frequency] || ""}`
+                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+                      {CATEGORY_LABELS[category] || category || "—"}
+                      {frequency
+                        ? ` · ${FREQUENCY_LABELS[frequency] || ""}`
                         : ""}{" "}
-                      · ~{formatCurrency(rec.averageAmount)}
-                      {FREQUENCY_SUFFIX[rec.frequency] || "/mois"}
+                      · ~{formatCurrency(amount)}
+                      {FREQUENCY_SUFFIX[frequency] || "/mois"}
                       {SOURCE_LABELS[rec.source]
                         ? ` · via ${SOURCE_LABELS[rec.source]}`
                         : ""}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span
                       className={cn(
-                        "text-[13px] font-medium tabular-nums",
+                        "text-[13px] font-medium tabular-nums mr-1",
                         isIncome ? "text-green-600" : "text-red-500",
                       )}
                     >
                       {isIncome ? "+" : "−"}
-                      {formatCurrency(rec.averageAmount)}
+                      {formatCurrency(amount)}
                     </span>
+                    {/* « Modifier » : les valeurs sont communes à tous les
+                        scénarios, donc modifiables depuis Base seulement
+                        (comme le crayon des saisies de Base). */}
+                    {isScenario ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex">
+                            <RowAction
+                              icon={Pencil}
+                              label="Modifier"
+                              disabled
+                            />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          Libellé, montant, périodicité et catégorie sont
+                          communs à tous les scénarios : revenez au scénario
+                          Base pour les modifier.
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <RowAction
+                        icon={Pencil}
+                        label="Modifier"
+                        onClick={() => setToEdit(rec)}
+                        title="Modifier le libellé, le montant, la périodicité ou la catégorie de cette récurrence"
+                      />
+                    )}
                     {onCreateForecast && !rec.isMuted && (
-                      <button
-                        type="button"
+                      <RowAction
+                        icon={Plus}
+                        label="Ajouter"
                         onClick={() =>
                           onCreateForecast({
                             type: rec.type,
-                            name: rec.partyName,
-                            amount: rec.averageAmount,
+                            name,
+                            amount,
                             frequency:
-                              FORECAST_FREQUENCY[rec.frequency] || "MONTHLY",
-                            category: rec.forecastCategory || rec.category,
+                              FORECAST_FREQUENCY[frequency] || "MONTHLY",
+                            category,
                             // La prévision créée remplace la détection, qui
                             // sera masquée à l'enregistrement (sinon le
                             // montant serait compté deux fois).
-                            fromDetection: { id: rec.id, name: rec.partyName },
+                            fromDetection: { id: rec.id, name },
                           })
                         }
-                        className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
-                        title="Remplacer par une prévision manuelle (la détection sera masquée)"
-                      >
-                        <Plus size={13} />
-                      </button>
+                        title="Ajouter une prévision manuelle à partir de cette détection (la détection sera masquée)"
+                      />
                     )}
                     <button
                       type="button"
@@ -402,6 +351,12 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
         </>
       )}
 
+      <DetectedRecurrenceDialog
+        open={Boolean(editing)}
+        onOpenChange={(open) => !open && setToEdit(null)}
+        recurrence={editing}
+      />
+
       <AlertDialog
         open={Boolean(toDelete)}
         onOpenChange={(open) => !open && setToDelete(null)}
@@ -410,11 +365,11 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer la récurrence ?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm leading-relaxed">
-              «&nbsp;{toDelete?.partyName}&nbsp;» sera retirée de la liste et de
-              vos prévisions. Si le motif réapparaît dans vos transactions ou
-              factures, elle pourra être détectée à nouveau lors d&apos;une
-              prochaine analyse. Pour la masquer durablement, utilisez plutôt
-              l&apos;option «&nbsp;Masquer&nbsp;».
+              «&nbsp;{toDelete?.forecastName || toDelete?.partyName}&nbsp;» sera
+              retirée de la liste et de vos prévisions. Si le motif réapparaît
+              dans vos transactions ou factures, elle pourra être détectée à
+              nouveau lors d&apos;une prochaine analyse. Pour la masquer
+              durablement, utilisez plutôt l&apos;option «&nbsp;Masquer&nbsp;».
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
