@@ -109,7 +109,7 @@ describe("trackGoogleAdsConversion / trackSignupConversion", () => {
     const sent = mod.trackSignupConversion("user-1");
     expect(sent).toBe(true);
     expect(window.gtag).toHaveBeenCalledWith("event", "conversion", {
-      send_to: "AW-18448267727/zQX2CM-P4PYcEM_z6NxE",
+      send_to: "AW-18448267727/9_9LCMfq2_YcEM_z6NxE",
     });
   });
 
