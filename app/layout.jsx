@@ -109,6 +109,33 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-title" content="Newbi" />
         <meta name="theme-color" content="#5b4fff" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Google tag (gtag.js) - Google Ads AW-18448267727. Chargé dans le
+            head pour que Google détecte le tag, mais en Consent Mode v2 :
+            tout est « denied » par défaut (pas de cookie publicitaire avant
+            consentement, RGPD/CNIL) et MarketingPixels passe en « granted »
+            dès que l'utilisateur accepte les cookies marketing/analytics. */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18448267727"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('consent', 'default', {
+                'ad_storage': 'denied',
+                'ad_user_data': 'denied',
+                'ad_personalization': 'denied',
+                'analytics_storage': 'denied',
+                'wait_for_update': 500
+              });
+              gtag('js', new Date());
+
+              gtag('config', 'AW-18448267727');
+            `,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
