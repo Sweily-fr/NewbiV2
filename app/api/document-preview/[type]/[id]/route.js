@@ -34,6 +34,10 @@ const UPSTREAM_PATHS = {
   // Justificatifs des factures d'achat : plusieurs fichiers par document,
   // sélection via ?fileId=<id>.
   purchaseInvoice: (id) => `/documents/imported/purchaseInvoice/${id}/file`,
+  // Justificatifs attachés à une transaction bancaire (receiptFiles) :
+  // sélection via ?fileId=<id>, ou ?index=<n> pour les anciens justificatifs
+  // sans identifiant Mongo.
+  transaction: (id) => `/documents/imported/transaction/${id}/file`,
 };
 
 const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
@@ -57,6 +61,13 @@ export async function GET(request, { params }) {
         { status: 400 },
       );
     }
+    const fileIndex = request.nextUrl.searchParams.get("index");
+    if (fileIndex && !/^\d{1,3}$/.test(fileIndex)) {
+      return NextResponse.json(
+        { error: "Index de fichier invalide" },
+        { status: 400 },
+      );
+    }
 
     const cookie = request.headers.get("cookie");
     if (!cookie) {
@@ -67,9 +78,12 @@ export async function GET(request, { params }) {
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
 
-    const upstreamUrl = `${backendUrl}${buildPath(id)}${
-      fileId ? `?fileId=${fileId}` : ""
-    }`;
+    const selector = fileId
+      ? `?fileId=${fileId}`
+      : fileIndex
+        ? `?index=${fileIndex}`
+        : "";
+    const upstreamUrl = `${backendUrl}${buildPath(id)}${selector}`;
     const response = await fetch(upstreamUrl, {
       headers: { cookie },
       signal: AbortSignal.timeout(30000),
