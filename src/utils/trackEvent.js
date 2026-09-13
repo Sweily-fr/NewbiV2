@@ -80,3 +80,48 @@ export async function trackEvent({
     }),
   ]);
 }
+
+// --- Google Ads -------------------------------------------------------------
+// Le tag gtag (AW-18448267727) est chargé dans le head par app/layout.jsx en
+// Consent Mode v2 : sans consentement, Google envoie quand même un ping de
+// conversion sans cookie (modélisé ensuite), donc pas de garde consentement ici.
+export const GOOGLE_ADS_ID = "AW-18448267727";
+export const GOOGLE_ADS_CONVERSIONS = {
+  // Conversion « Inscription » créée dans Google Ads le 13/09/2026.
+  signup: "zQX2CM-P4PYcEM_z6NxE",
+};
+
+// Envoie une conversion Google Ads une seule fois par (conversion, clé) : la
+// clé (id utilisateur en général) évite de recompter au rechargement de la
+// page ou quand l'inscription email et le retour OAuth passent tous les deux
+// par la même page.
+export function trackGoogleAdsConversion({ conversion, dedupeKey }) {
+  if (typeof window === "undefined" || typeof window.gtag !== "function") {
+    return false;
+  }
+  const label = GOOGLE_ADS_CONVERSIONS[conversion];
+  if (!label) return false;
+
+  const storageKey = `gads_conversion_${conversion}_${dedupeKey || "anon"}`;
+  try {
+    if (dedupeKey && localStorage.getItem(storageKey)) return false;
+  } catch {
+    // localStorage indisponible : on envoie quand même
+  }
+
+  window.gtag("event", "conversion", {
+    send_to: `${GOOGLE_ADS_ID}/${label}`,
+  });
+
+  try {
+    if (dedupeKey) localStorage.setItem(storageKey, String(Date.now()));
+  } catch {
+    // ignore
+  }
+  return true;
+}
+
+// Compte créé (email ou OAuth) : à appeler avec l'id du nouvel utilisateur.
+export function trackSignupConversion(userId) {
+  return trackGoogleAdsConversion({ conversion: "signup", dedupeKey: userId });
+}
