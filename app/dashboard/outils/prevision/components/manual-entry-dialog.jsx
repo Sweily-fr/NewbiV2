@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { cn } from "@/src/lib/utils";
+import { toast } from "@/src/components/ui/sonner";
 import {
   useUpsertManualCashflowEntry,
   useDeleteManualCashflowEntry,
@@ -52,6 +53,7 @@ import {
   GitBranch,
 } from "lucide-react";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
+import { useMuteDetectedRecurrence } from "@/src/hooks/useDetectedRecurrences";
 
 const FREQUENCIES = [
   { value: "WEEKLY", label: "Toutes les semaines" },
@@ -308,7 +310,12 @@ export function ManualEntryDialog({
 }) {
   const { upsertEntry, loading: saving } = useUpsertManualCashflowEntry();
   const { deleteEntry, loading: deleting } = useDeleteManualCashflowEntry();
+  const { setMuted } = useMuteDetectedRecurrence();
   const { isScenario, scenarioName } = useForecastScenario();
+  // Ouverture depuis le « + » d'une récurrence détectée : la saisie créée
+  // remplace la détection, masquée à l'enregistrement pour ne pas compter le
+  // montant deux fois (dans un scénario, masquée dans ce scénario seulement).
+  const fromDetection = !entry ? defaults?.fromDetection || null : null;
   // Rappel affiché sous le titre : une saisie créée dans un scénario lui
   // appartient ; une saisie de scénario ouverte en modification le rappelle.
   const scenarioHint =
@@ -438,7 +445,18 @@ export function ManualEntryDialog({
       amountDeltaType,
       notes: notes.trim() || null,
     });
-    if (result.success) onOpenChange(false);
+    if (!result.success) return;
+    if (fromDetection?.id) {
+      const muted = await setMuted(fromDetection.id, true, { silent: true });
+      if (muted.success) {
+        toast.success(
+          `Récurrence « ${fromDetection.name} » masquée${
+            isScenario ? " dans ce scénario" : ""
+          } : remplacée par votre prévision`,
+        );
+      }
+    }
+    onOpenChange(false);
   };
 
   const handleDelete = async () => {
@@ -475,8 +493,18 @@ export function ManualEntryDialog({
                   : "Détails des prévisions"
                 : entry
                   ? "Modifier la saisie"
-                  : "Nouvelle saisie"}
+                  : fromDetection
+                    ? `Nouvelle prévision à partir de « ${fromDetection.name} »`
+                    : "Nouvelle saisie"}
             </DialogTitle>
+            {fromDetection && activeTab !== "DETAILS" && (
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Cette prévision remplace la récurrence détectée : à
+                l&apos;enregistrement, la détection sera masquée
+                {isScenario ? " dans ce scénario" : ""} pour ne pas compter le
+                montant deux fois.
+              </p>
+            )}
             {scenarioHint && activeTab !== "DETAILS" && (
               <p className="flex items-center gap-1.5 text-[11px] text-[#5b4fff]/90 mt-1">
                 <GitBranch size={11} />

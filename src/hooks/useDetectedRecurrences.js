@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_DETECTED_RECURRENCES } from "../graphql/queries/treasuryForecast";
 import {
   MUTE_DETECTED_RECURRENCE,
+  UPDATE_DETECTED_RECURRENCE,
   DELETE_DETECTED_RECURRENCE,
   RUN_RECURRENCE_DETECTION,
 } from "../graphql/mutations/treasuryForecast";
@@ -39,18 +40,22 @@ export const useMuteDetectedRecurrence = () => {
     awaitRefetchQueries: false,
   });
 
-  const setMuted = async (id, muted) => {
+  // `silent` : pas de toast (l'appelant affiche le sien, ex. remplacement
+  // d'une détection par une prévision manuelle).
+  const setMuted = async (id, muted, { silent = false } = {}) => {
     try {
       const result = await mutate({
         variables: { id, muted, scenarioId: scenarioId || undefined },
       });
       if (result.data?.muteDetectedRecurrence) {
         const suffix = isScenario ? " dans ce scénario" : "";
-        toast.success(
-          muted
-            ? `Récurrence masquée${suffix}`
-            : `Récurrence réactivée${suffix}`,
-        );
+        if (!silent) {
+          toast.success(
+            muted
+              ? `Récurrence masquée${suffix}`
+              : `Récurrence réactivée${suffix}`,
+          );
+        }
         return { success: true };
       }
       throw new Error("Erreur lors de la mise à jour");
@@ -65,6 +70,43 @@ export const useMuteDetectedRecurrence = () => {
   };
 
   return { setMuted, loading };
+};
+
+// « Modifier » une récurrence détectée (catégorie, montant, périodicité,
+// libellé). Action de Base : les surcharges sont communes à tous les
+// scénarios. Un input vide rétablit les valeurs détectées.
+export const useUpdateDetectedRecurrence = () => {
+  const [mutate, { loading }] = useMutation(UPDATE_DETECTED_RECURRENCE, {
+    refetchQueries: [
+      "GetDetectedRecurrences",
+      "GetTreasuryForecastData",
+      "GetForecastOccurrences",
+      "GetForecastMonthDetails",
+    ],
+    awaitRefetchQueries: false,
+  });
+
+  const updateRecurrence = async (id, input, { reset = false } = {}) => {
+    try {
+      const result = await mutate({ variables: { id, input } });
+      if (result.data?.updateDetectedRecurrence) {
+        toast.success(
+          reset ? "Valeurs détectées rétablies" : "Récurrence modifiée",
+        );
+        return { success: true };
+      }
+      throw new Error("Erreur lors de la mise à jour");
+    } catch (error) {
+      toast.error(
+        error.graphQLErrors?.[0]?.message ||
+          error.message ||
+          "Erreur lors de la mise à jour",
+      );
+      return { success: false, error };
+    }
+  };
+
+  return { updateRecurrence, loading };
 };
 
 export const useDeleteDetectedRecurrence = () => {

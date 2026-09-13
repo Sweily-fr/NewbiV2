@@ -577,6 +577,7 @@ export default function PrevisionPage() {
                 frequency: seed.frequency,
                 category: seed.category,
                 hasFrequency: true,
+                fromDetection: seed.fromDetection,
               });
               setManualEntryOpen(true);
             }}
