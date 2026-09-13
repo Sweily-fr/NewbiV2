@@ -87,8 +87,9 @@ export async function trackEvent({
 // conversion sans cookie (modélisé ensuite), donc pas de garde consentement ici.
 export const GOOGLE_ADS_ID = "AW-18448267727";
 export const GOOGLE_ADS_CONVERSIONS = {
-  // Conversion « Inscription » créée dans Google Ads le 13/09/2026.
-  signup: "zQX2CM-P4PYcEM_z6NxE",
+  // Action « Inscription » (catégorie Inscription) dans Google Ads. Attention :
+  // zQX2CM-P4PYcEM_z6NxE est le libellé de l'action « Page vue », pas celui-ci.
+  signup: "9_9LCMfq2_YcEM_z6NxE",
 };
 
 // Envoie une conversion Google Ads une seule fois par (conversion, clé) : la
