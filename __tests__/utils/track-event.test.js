@@ -94,3 +94,38 @@ describe("trackEvent — consent gating", () => {
     expect(fetch).toHaveBeenCalled();
   });
 });
+
+describe("trackGoogleAdsConversion / trackSignupConversion", () => {
+  let mod;
+  beforeEach(async () => {
+    mod = await import("@/src/utils/trackEvent");
+    window.gtag = vi.fn();
+  });
+  afterEach(() => {
+    window.gtag = undefined;
+  });
+
+  it("envoie la conversion Inscription avec le bon send_to, même sans consentement", () => {
+    const sent = mod.trackSignupConversion("user-1");
+    expect(sent).toBe(true);
+    expect(window.gtag).toHaveBeenCalledWith("event", "conversion", {
+      send_to: "AW-18448267727/zQX2CM-P4PYcEM_z6NxE",
+    });
+  });
+
+  it("ne compte qu'une fois par utilisateur (rechargement, email + OAuth)", () => {
+    expect(mod.trackSignupConversion("user-1")).toBe(true);
+    expect(mod.trackSignupConversion("user-1")).toBe(false);
+    expect(window.gtag).toHaveBeenCalledTimes(1);
+    expect(mod.trackSignupConversion("user-2")).toBe(true);
+    expect(window.gtag).toHaveBeenCalledTimes(2);
+  });
+
+  it("ne fait rien si gtag n'est pas chargé ou si la conversion est inconnue", () => {
+    expect(
+      mod.trackGoogleAdsConversion({ conversion: "nope", dedupeKey: "u" }),
+    ).toBe(false);
+    window.gtag = undefined;
+    expect(mod.trackSignupConversion("user-3")).toBe(false);
+  });
+});
