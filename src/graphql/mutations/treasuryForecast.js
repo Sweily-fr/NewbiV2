@@ -34,6 +34,7 @@ const MANUAL_CASHFLOW_ENTRY_FIELDS = gql`
     name
     type
     category
+    subcategory
     amount
     amountDelta
     amountDeltaType
@@ -128,10 +129,12 @@ export const UPDATE_DETECTED_RECURRENCE = gql`
       id
       category
       categoryOverride
+      subcategoryOverride
       amountOverride
       frequencyOverride
       labelOverride
       forecastCategory
+      forecastSubcategory
       forecastAmount
       forecastFrequency
       forecastName

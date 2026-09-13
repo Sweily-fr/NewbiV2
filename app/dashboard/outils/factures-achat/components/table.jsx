@@ -87,6 +87,11 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { Badge } from "@/src/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { formatCurrencyAmount } from "@/src/lib/format-currency";
+import {
+  EXPENSE_CATEGORY_GROUPS,
+  EXPENSE_CATEGORY_OPTIONS,
+  getCategoryLabel,
+} from "@/lib/category-icons-config";
 
 const STATUS_LABELS = {
   TO_PROCESS: "À traiter",
@@ -97,25 +102,11 @@ const STATUS_LABELS = {
   ARCHIVED: "Archivée",
 };
 
-const CATEGORY_LABELS = {
-  RENT: "Loyer",
-  SUBSCRIPTIONS: "Abonnements",
-  OFFICE_SUPPLIES: "Fournitures",
-  SERVICES: "Sous-traitance",
-  TRANSPORT: "Transport",
-  MEALS: "Repas",
-  TELECOMMUNICATIONS: "Télécommunications",
-  INSURANCE: "Assurance",
-  ENERGY: "Énergie",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  MARKETING: "Marketing",
-  TRAINING: "Formation",
-  MAINTENANCE: "Maintenance",
-  TAXES: "Impôts & taxes",
-  UTILITIES: "Services publics",
-  OTHER: "Autre",
-};
+// Catégories proposées à la catégorisation : référentiel commun aux pages
+// Transactions, Factures d'achat et Prévision (sous-catégories fines).
+const CATEGORIZE_OPTIONS = Object.fromEntries(
+  EXPENSE_CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
+);
 
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const search = filterValue.toLowerCase();
@@ -197,6 +188,20 @@ export default function PurchaseInvoiceTable({
 
   const activeFiltersCount = statusFilters.length + categoryFilters.length;
 
+  // Filtre catégorie : les catégories réellement présentes dans la liste
+  // (sous-catégorie fine si renseignée, sinon catégorie large), libellées
+  // comme la colonne du tableau.
+  const categoryFilterOptions = useMemo(() => {
+    const codes = new Set();
+    (invoices || []).forEach((inv) => {
+      const code = inv.subcategory || inv.category;
+      if (code) codes.add(code);
+    });
+    return [...codes]
+      .map((code) => [code, getCategoryLabel(code) || code])
+      .sort((a, b) => a[1].localeCompare(b[1], "fr"));
+  }, [invoices]);
+
   const toggleStatusFilter = (status) => {
     setStatusFilters((prev) =>
       prev.includes(status)
@@ -231,7 +236,9 @@ export default function PurchaseInvoiceTable({
       result = result.filter((inv) => statusFilters.includes(inv.status));
     }
     if (categoryFilters.length > 0) {
-      result = result.filter((inv) => categoryFilters.includes(inv.category));
+      result = result.filter((inv) =>
+        categoryFilters.includes(inv.subcategory || inv.category),
+      );
     }
 
     const toTime = (val) => {
@@ -280,7 +287,7 @@ export default function PurchaseInvoiceTable({
         onDeleteInvoice: handleDeleteInvoice,
         onMarkStatus: handleRowStatus,
         onCategorize: handleRowCategorize,
-        categoryLabels: CATEGORY_LABELS,
+        categoryLabels: CATEGORIZE_OPTIONS,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [onRowClick],
@@ -437,7 +444,12 @@ export default function PurchaseInvoiceTable({
                     )}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="w-[220px] max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                    {categoryFilterOptions.length === 0 && (
+                      <p className="px-2 py-1.5 text-sm text-muted-foreground">
+                        Aucune catégorie
+                      </p>
+                    )}
+                    {categoryFilterOptions.map(([key, label]) => (
                       <div
                         key={key}
                         className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
@@ -541,14 +553,21 @@ export default function PurchaseInvoiceTable({
                     <Tag size={14} />
                     Catégoriser
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-52">
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <DropdownMenuItem
-                        key={key}
-                        onClick={() => handleBulkCategorize(key)}
-                      >
-                        {label}
-                      </DropdownMenuItem>
+                  <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                    {EXPENSE_CATEGORY_GROUPS.map((group) => (
+                      <div key={group.heading}>
+                        <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
+                          {group.heading}
+                        </DropdownMenuLabel>
+                        {group.options.map((opt) => (
+                          <DropdownMenuItem
+                            key={opt.value}
+                            onClick={() => handleBulkCategorize(opt.value)}
+                          >
+                            {opt.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
                     ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
@@ -1292,4 +1311,4 @@ function StatusBadge({ status, small }) {
   );
 }
 
-export { StatusBadge, STATUS_LABELS, CATEGORY_LABELS };
+export { StatusBadge, STATUS_LABELS };

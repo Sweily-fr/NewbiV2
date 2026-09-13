@@ -54,6 +54,17 @@ import {
 } from "lucide-react";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { useMuteDetectedRecurrence } from "@/src/hooks/useDetectedRecurrences";
+import CategorySearchSelect from "@/src/components/category-search-select";
+import {
+  getCategoryLabel,
+  isCategoryOfType,
+} from "@/lib/category-icons-config";
+
+// Catégorie (sous-catégorie fine ou code large hérité) gardée seulement si
+// elle est du sens demandé (une catégorie de dépense n'est pas valide pour
+// une entrée, et inversement).
+const normalizeCategory = (cat, type) =>
+  cat && isCategoryOfType(cat, type) ? cat : "";
 
 const FREQUENCIES = [
   { value: "WEEKLY", label: "Toutes les semaines" },
@@ -62,54 +73,6 @@ const FREQUENCIES = [
   { value: "SEMIANNUAL", label: "Tous les semestres" },
   { value: "ANNUAL", label: "Tous les ans" },
 ];
-
-const INCOME_CATEGORIES = [
-  { value: "SALES", label: "Ventes" },
-  { value: "REFUNDS_RECEIVED", label: "Remboursements" },
-  { value: "OTHER_INCOME", label: "Autres revenus" },
-];
-
-const EXPENSE_CATEGORIES = [
-  { value: "RENT", label: "Loyer" },
-  { value: "SUBSCRIPTIONS", label: "Abonnements" },
-  { value: "OFFICE_SUPPLIES", label: "Fournitures" },
-  { value: "SERVICES", label: "Services" },
-  { value: "TRANSPORT", label: "Transport" },
-  { value: "MEALS", label: "Repas" },
-  { value: "TELECOMMUNICATIONS", label: "Télécom" },
-  { value: "INSURANCE", label: "Assurance" },
-  { value: "ENERGY", label: "Énergie" },
-  { value: "SOFTWARE", label: "Logiciels" },
-  { value: "HARDWARE", label: "Matériel" },
-  { value: "MARKETING", label: "Marketing" },
-  { value: "TRAINING", label: "Formation" },
-  { value: "MAINTENANCE", label: "Maintenance" },
-  { value: "TAXES", label: "Impôts & taxes" },
-  { value: "UTILITIES", label: "Charges" },
-  { value: "SALARIES", label: "Salaires" },
-  { value: "OTHER_EXPENSE", label: "Autres dépenses" },
-];
-
-// La détection stocke des catégories de transactions bancaires qui ne sont
-// pas toutes dans l'enum ForecastCategory — on les rabat sur l'équivalent.
-const CATEGORY_ALIAS = {
-  TRAVEL: "TRANSPORT",
-  ACCOMMODATION: "OTHER_EXPENSE",
-  OTHER: "OTHER_EXPENSE",
-};
-
-const normalizeCategory = (cat, type) => {
-  if (!cat) return "";
-  const c = CATEGORY_ALIAS[cat] || cat;
-  const list = type === "INCOME" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-  return list.some((o) => o.value === c) ? c : "";
-};
-
-// Libellé d'affichage d'une catégorie (entrées + sorties confondues).
-const CATEGORY_LABEL = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES].reduce(
-  (acc, o) => ({ ...acc, [o.value]: o.label }),
-  {},
-);
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -228,9 +191,7 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
                     month: "short",
                     year: "numeric",
                   })}
-                  {occ.category
-                    ? ` · ${CATEGORY_LABEL[occ.category] || occ.category}`
-                    : ""}
+                  {occ.category ? ` · ${getCategoryLabel(occ.category)}` : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -354,7 +315,12 @@ export function ManualEntryDialog({
       setType(entry.type || "EXPENSE");
       setAmount(entry.amount != null ? String(entry.amount) : "");
       setName(entry.name || "");
-      setCategory(normalizeCategory(entry.category, entry.type || "EXPENSE"));
+      setCategory(
+        normalizeCategory(
+          entry.subcategory || entry.category,
+          entry.type || "EXPENSE",
+        ),
+      );
       setAmountDelta(entry.amountDelta ? String(entry.amountDelta) : "");
       setAmountDeltaType(entry.amountDeltaType || "AMOUNT");
       setStartDate(toDateInput(entry.startDate) || todayInput());
@@ -436,7 +402,9 @@ export function ManualEntryDialog({
       id: entry?.id,
       name: name.trim(),
       type,
-      category: category || null,
+      // Sous-catégorie fine (référentiel Transactions) ; la catégorie large
+      // de la prévision est dérivée côté API.
+      subcategory: category || null,
       amount: parsedAmount,
       startDate: new Date(startDate).toISOString(),
       endDate: endDate ? new Date(endDate).toISOString() : null,
@@ -613,24 +581,12 @@ export function ManualEntryDialog({
                       optionnel
                     </span>
                   </label>
-                  <Select
+                  <CategorySearchSelect
+                    type={type}
                     value={category}
                     onValueChange={(value) => setCategory(value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Sélectionner une catégorie" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(type === "INCOME"
-                        ? INCOME_CATEGORIES
-                        : EXPENSE_CATEGORIES
-                      ).map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    triggerClassName="w-full"
+                  />
                 </div>
 
                 {/* Date */}

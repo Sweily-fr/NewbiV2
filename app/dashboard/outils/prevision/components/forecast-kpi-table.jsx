@@ -8,6 +8,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
+import { getCategoryLabel } from "@/lib/category-icons-config";
 import { cn } from "@/src/lib/utils";
 
 // ─── Formatters ───
@@ -37,32 +38,6 @@ const formatMonthHeader = (monthStr) => {
     .replace(".", "")
     .toUpperCase();
   return `${label}. ${year.slice(2)}`;
-};
-
-// ─── Category labels ───
-
-const CATEGORY_LABELS = {
-  SALES: "Chiffre d'affaires",
-  REFUNDS_RECEIVED: "Remboursements",
-  OTHER_INCOME: "Autres revenus",
-  RENT: "Loyer",
-  SUBSCRIPTIONS: "Abonnements",
-  OFFICE_SUPPLIES: "Fournitures",
-  SERVICES: "Services",
-  TRANSPORT: "Transport",
-  MEALS: "Repas",
-  TELECOMMUNICATIONS: "Télécom",
-  INSURANCE: "Assurance",
-  ENERGY: "Énergie",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  MARKETING: "Marketing",
-  TRAINING: "Formation",
-  MAINTENANCE: "Maintenance",
-  TAXES: "Impôts & taxes",
-  UTILITIES: "Charges",
-  SALARIES: "Salaires",
-  OTHER_EXPENSE: "Autres dépenses",
 };
 
 // ─── Cell renderer ───
@@ -385,7 +360,7 @@ export function ForecastKpiTable({ months, kpi, loading }) {
                 incomeCategories.map((cat) => (
                   <tr key={cat} className="border-t border-border">
                     <td className="sticky left-0 bg-background z-10 py-2.5 pl-10 pr-3 text-[13px] text-muted-foreground whitespace-nowrap">
-                      {CATEGORY_LABELS[cat] || cat}
+                      {getCategoryLabel(cat)}
                     </td>
                     {safeMonths.map((m) => (
                       <td
@@ -445,7 +420,7 @@ export function ForecastKpiTable({ months, kpi, loading }) {
                 expenseCategories.map((cat) => (
                   <tr key={cat} className="border-t border-border">
                     <td className="sticky left-0 bg-background z-10 py-2.5 pl-10 pr-3 text-[13px] text-muted-foreground whitespace-nowrap">
-                      {CATEGORY_LABELS[cat] || cat}
+                      {getCategoryLabel(cat)}
                     </td>
                     {safeMonths.map((m) => (
                       <td

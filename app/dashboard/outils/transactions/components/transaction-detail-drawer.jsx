@@ -82,7 +82,7 @@ import {
   DialogTitle as RadixDialogTitle,
 } from "@/src/components/ui/dialog";
 import { VisuallyHidden } from "@/src/components/ui/visually-hidden";
-import CategorySearchSelect from "./category-search-select";
+import CategorySearchSelect from "@/src/components/category-search-select";
 import {
   useUnlinkTransactionFromInvoice,
   useReconciliationGraphQL,
