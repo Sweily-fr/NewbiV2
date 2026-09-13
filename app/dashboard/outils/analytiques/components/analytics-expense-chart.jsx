@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { getTransactionCategory } from "@/lib/bank-categories-config";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { hasChartValues } from "./analytics-chart-utils";
 
 const CATEGORY_LABELS = {
   OFFICE_SUPPLIES: "Fournitures",
@@ -372,7 +373,7 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["totalTTC", "count"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>

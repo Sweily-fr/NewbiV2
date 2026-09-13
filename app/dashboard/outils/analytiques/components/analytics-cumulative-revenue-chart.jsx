@@ -19,6 +19,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -122,7 +123,7 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["cumulativeHT", "cumulativeTTC"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
@@ -168,7 +169,7 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
                   fontSize={11}
                   className="fill-muted-foreground"
                 >
-                  {`${(payload.value / 1000).toFixed(0)}k`}
+                  {formatAxisAmount(payload.value)}
                 </text>
               )}
               tickLine={false}

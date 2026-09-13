@@ -20,6 +20,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -39,7 +40,13 @@ const formatMonthLabel = (monthStr) => {
     .toUpperCase();
 };
 
-function CustomTooltip({ active, payload, colors, invoicedColor, collectedColor }) {
+function CustomTooltip({
+  active,
+  payload,
+  colors,
+  invoicedColor,
+  collectedColor,
+}) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;
   if (!data) return null;
@@ -168,7 +175,7 @@ export function AnalyticsBankFlowChart({
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["invoiced", "collected"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
@@ -214,7 +221,7 @@ export function AnalyticsBankFlowChart({
                   fontSize={11}
                   className="fill-muted-foreground"
                 >
-                  {`${(payload.value / 1000).toFixed(0)}k`}
+                  {formatAxisAmount(payload.value)}
                 </text>
               )}
               tickLine={false}

@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
     style: "currency",
@@ -109,7 +110,7 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["revenueVAT", "expenseVAT"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
@@ -150,9 +151,7 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
                   fontSize={11}
                   className="fill-muted-foreground"
                 >
-                  {payload.value >= 1000
-                    ? `${(payload.value / 1000).toFixed(1)}k`
-                    : `${Math.round(payload.value)}€`}
+                  {formatAxisAmount(payload.value)}
                 </text>
               )}
               tickLine={false}

@@ -20,6 +20,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
 
 const CLIENT_COLORS = [
   "#5b50ff",
@@ -120,7 +121,7 @@ export function AnalyticsClientChart({ topClients, loading }) {
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["totalTTC"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>
@@ -148,7 +149,7 @@ export function AnalyticsClientChart({ topClients, loading }) {
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis
               type="number"
-              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+              tickFormatter={formatAxisAmount}
               tick={{ fontSize: 11 }}
               tickLine={false}
               axisLine={false}

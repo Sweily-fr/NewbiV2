@@ -19,6 +19,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { formatAxisAmount } from "./analytics-chart-utils";
 
 const BUCKET_COLORS = ["#fbbf24", "#f97316", "#ef4444", "#dc2626"];
 
@@ -124,7 +125,7 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
                   fontSize={11}
                   className="fill-muted-foreground"
                 >
-                  {`${(payload.value / 1000).toFixed(0)}k`}
+                  {formatAxisAmount(payload.value)}
                 </text>
               )}
               tickLine={false}
