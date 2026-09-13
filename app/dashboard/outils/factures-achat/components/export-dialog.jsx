@@ -34,31 +34,12 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
+import { getCategoryLabel } from "@/lib/category-icons-config";
 
 const toYMD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate(),
   ).padStart(2, "0")}`;
-
-const CATEGORY_LABELS = {
-  RENT: "Loyer",
-  SUBSCRIPTIONS: "Abonnements",
-  OFFICE_SUPPLIES: "Fournitures",
-  SERVICES: "Sous-traitance",
-  TRANSPORT: "Transport",
-  MEALS: "Repas",
-  TELECOMMUNICATIONS: "Télécommunications",
-  INSURANCE: "Assurance",
-  ENERGY: "Énergie",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  MARKETING: "Marketing",
-  TRAINING: "Formation",
-  MAINTENANCE: "Maintenance",
-  TAXES: "Impôts & taxes",
-  UTILITIES: "Services publics",
-  OTHER: "Autre",
-};
 
 const STATUS_LABELS = {
   TO_PROCESS: "À traiter",
@@ -126,7 +107,7 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
       inv.amountHT?.toFixed(2) || "0.00",
       inv.amountTVA?.toFixed(2) || "0.00",
       inv.amountTTC?.toFixed(2) || "0.00",
-      CATEGORY_LABELS[inv.category] || inv.category || "",
+      getCategoryLabel(inv.subcategory || inv.category) || "",
       STATUS_LABELS[inv.status] || inv.status || "",
       inv.paymentMethod || "",
       inv.paymentDate

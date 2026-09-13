@@ -331,8 +331,12 @@ export const useBulkCategorize = () => {
     },
   );
 
-  const bulkCategorize = async (ids, category) => {
-    const result = await bulkMutation({ variables: { ids, category } });
+  // `code` : sous-catégorie fine du référentiel commun (ou code large
+  // hérité) ; la catégorie large de la facture est dérivée côté API.
+  const bulkCategorize = async (ids, code) => {
+    const result = await bulkMutation({
+      variables: { ids, subcategory: code },
+    });
     return result?.data?.bulkCategorizePurchaseInvoices;
   };
 

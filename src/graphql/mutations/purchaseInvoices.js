@@ -16,6 +16,7 @@ export const CREATE_PURCHASE_INVOICE = gql`
       currency
       status
       category
+      subcategory
       source
       createdAt
     }
@@ -41,6 +42,7 @@ export const UPDATE_PURCHASE_INVOICE = gql`
       currency
       status
       category
+      subcategory
       tags
       notes
       internalReference
@@ -159,9 +161,14 @@ export const BULK_DELETE_PURCHASE_INVOICES = gql`
 export const BULK_CATEGORIZE_PURCHASE_INVOICES = gql`
   mutation BulkCategorizePurchaseInvoices(
     $ids: [ID!]!
-    $category: PurchaseInvoiceCategory!
+    $category: PurchaseInvoiceCategory
+    $subcategory: String
   ) {
-    bulkCategorizePurchaseInvoices(ids: $ids, category: $category) {
+    bulkCategorizePurchaseInvoices(
+      ids: $ids
+      category: $category
+      subcategory: $subcategory
+    ) {
       success
       updatedCount
       message

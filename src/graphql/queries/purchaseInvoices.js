@@ -51,6 +51,7 @@ export const GET_PURCHASE_INVOICES = gql`
         currency
         status
         category
+        subcategory
         tags
         notes
         internalReference
@@ -127,6 +128,7 @@ export const GET_PURCHASE_INVOICE = gql`
       currency
       status
       category
+      subcategory
       tags
       notes
       internalReference

@@ -21,6 +21,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Trash2 } from "lucide-react";
+import { getCategoryLabel } from "@/lib/category-icons-config";
 import { GET_FORECAST_MONTH_DETAILS } from "@/src/graphql/queries/treasuryForecast";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useExcludeForecastOccurrence } from "@/src/hooks/useForecastOccurrences";
@@ -51,30 +52,6 @@ const formatMonthTitle = (month) => {
   return d
     .toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
     .replace(/^./, (c) => c.toUpperCase());
-};
-
-const CATEGORY_LABELS = {
-  SALES: "Ventes",
-  REFUNDS_RECEIVED: "Remboursements",
-  OTHER_INCOME: "Autres revenus",
-  RENT: "Loyer",
-  SUBSCRIPTIONS: "Abonnements",
-  OFFICE_SUPPLIES: "Fournitures",
-  SERVICES: "Services",
-  TRANSPORT: "Transport",
-  MEALS: "Repas",
-  TELECOMMUNICATIONS: "Télécom",
-  INSURANCE: "Assurance",
-  ENERGY: "Énergie",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  MARKETING: "Marketing",
-  TRAINING: "Formation",
-  MAINTENANCE: "Maintenance",
-  TAXES: "Impôts & taxes",
-  UTILITIES: "Charges",
-  SALARIES: "Salaires",
-  OTHER_EXPENSE: "Autres dépenses",
 };
 
 const STATUS_LABELS = {
@@ -174,10 +151,7 @@ function ForecastRow({ entry, onDelete, readOnly }) {
           )}
         </div>
         <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-          {[
-            formatDate(entry.date),
-            CATEGORY_LABELS[entry.category] || entry.category,
-          ]
+          {[formatDate(entry.date), getCategoryLabel(entry.category)]
             .filter(Boolean)
             .join(" · ")}
         </p>
@@ -411,7 +385,7 @@ export function MonthDetailsDrawer({
                     <ItemRow
                       key={t.id}
                       name={t.description}
-                      meta={[formatDate(t.date), t.category]
+                      meta={[formatDate(t.date), getCategoryLabel(t.category)]
                         .filter(Boolean)
                         .join(" · ")}
                       amount={Math.abs(t.amount)}

@@ -28,7 +28,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { VisuallyHidden } from "@/src/components/ui/visually-hidden";
 import { Calendar } from "@/src/components/ui/calendar-rac";
-import CategorySearchSelect from "./category-search-select";
+import CategorySearchSelect from "@/src/components/category-search-select";
 
 /**
  * Convertit une date française (DD/MM/YY ou DD/MM/YYYY) en format ISO (YYYY-MM-DD)

@@ -1,60 +1,9 @@
-// Libellés partagés entre la liste des récurrences détectées et le dialogue
-// « Modifier la récurrence ».
+// Libellés de périodicité partagés entre la liste des récurrences détectées
+// et le dialogue « Modifier la récurrence ».
 
-export const CATEGORY_LABELS = {
-  SALES: "Ventes",
-  REFUNDS_RECEIVED: "Remboursements",
-  OTHER_INCOME: "Autres revenus",
-  RENT: "Loyer",
-  SUBSCRIPTIONS: "Abonnements",
-  OFFICE_SUPPLIES: "Fournitures",
-  SERVICES: "Services",
-  TRANSPORT: "Transport",
-  MEALS: "Repas",
-  TELECOMMUNICATIONS: "Télécom",
-  INSURANCE: "Assurance",
-  ENERGY: "Énergie",
-  SOFTWARE: "Logiciels",
-  HARDWARE: "Matériel",
-  MARKETING: "Marketing",
-  TRAINING: "Formation",
-  MAINTENANCE: "Maintenance",
-  TAXES: "Impôts & taxes",
-  UTILITIES: "Charges",
-  SALARIES: "Salaires",
-  OTHER_EXPENSE: "Autres dépenses",
-  // Catégories brutes des transactions bancaires (hors enum ForecastCategory)
-  OTHER: "Autres dépenses",
-  TRAVEL: "Déplacements",
-  ACCOMMODATION: "Hébergement",
-};
-
-// Catégories proposées à la modification (même sens que la récurrence).
-export const INCOME_CATEGORY_OPTIONS = [
-  "SALES",
-  "REFUNDS_RECEIVED",
-  "OTHER_INCOME",
-];
-export const EXPENSE_CATEGORY_OPTIONS = [
-  "RENT",
-  "SUBSCRIPTIONS",
-  "OFFICE_SUPPLIES",
-  "SERVICES",
-  "TRANSPORT",
-  "MEALS",
-  "TELECOMMUNICATIONS",
-  "INSURANCE",
-  "ENERGY",
-  "SOFTWARE",
-  "HARDWARE",
-  "MARKETING",
-  "TRAINING",
-  "MAINTENANCE",
-  "TAXES",
-  "UTILITIES",
-  "SALARIES",
-  "OTHER_EXPENSE",
-];
+// Les libellés de catégorie viennent de lib/category-icons-config.js
+// (getCategoryLabel), même source que les pages Transactions et Factures
+// d'achat.
 
 export const FREQUENCY_LABELS = {
   WEEKLY: "Hebdomadaire",
