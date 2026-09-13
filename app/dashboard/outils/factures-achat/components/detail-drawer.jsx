@@ -210,6 +210,9 @@ export function PurchaseInvoiceDetailDrawer({
   mode = "view",
   onSaved,
   onDeleted,
+  // Mode création : ouvrir la fiche d'une facture existante à la place
+  // (issue « Utiliser cette facture » de l'avertissement de doublon).
+  onOpenExisting,
   // When true, render only the content + footer (no Drawer shell / header),
   // so this can be embedded inside another drawer (e.g. the tabbed create drawer).
   embedded = false,
@@ -461,9 +464,12 @@ export function PurchaseInvoiceDetailDrawer({
       notes: form.notes || undefined,
       internalReference: form.internalReference || undefined,
       paymentMethod: form.paymentMethod || undefined,
+      // « Créer quand même » : l'API refuse sinon toute création qui
+      // ressemble à une facture existante (filet anti-doublon serveur).
+      ...(isCreate && skipDuplicateCheck ? { forceCreate: true } : {}),
     };
-    // Avertissement non bloquant : une facture identique existe peut-être
-    // déjà (OCR depuis une transaction, import Qonto, saisie précédente).
+    // Avertissement : une facture identique existe peut-être déjà (OCR
+    // depuis une transaction, import Qonto ou Gmail, saisie précédente).
     if (isCreate && !skipDuplicateCheck) {
       const duplicates = await checkDuplicates({
         supplierName: data.supplierName,
@@ -1515,7 +1521,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <p className="text-center py-4 text-xs text-muted-foreground">
                         {transactionSearch.trim()
                           ? "Aucune transaction ne correspond à cette recherche."
-                          : "Aucune transaction à rapprocher depuis l'émission. Saisissez un libellé ou un montant pour élargir la recherche."}
+                          : "Aucune transaction ne ressemble à cette facture. Saisissez un libellé ou un montant pour chercher parmi toutes les transactions."}
                       </p>
                     )}
                   </div>
@@ -1735,6 +1741,14 @@ export function PurchaseInvoiceDetailDrawer({
         setDuplicateWarning(null);
         handleSave({ skipDuplicateCheck: true });
       }}
+      onUseExisting={
+        onOpenExisting
+          ? (duplicate) => {
+              setDuplicateWarning(null);
+              onOpenExisting(duplicate.id);
+            }
+          : undefined
+      }
     />
   );
 

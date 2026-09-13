@@ -190,6 +190,31 @@ function PurchaseInvoicesContent() {
     setIsDetailDrawerOpen(true);
   };
 
+  // « Utiliser cette facture » (avertissement de doublon, création ou
+  // conversion Gmail) : fermer la création et ouvrir la fiche existante. Si
+  // elle n'est pas dans la liste chargée, on la refetch et on ouvre dès
+  // qu'elle arrive.
+  const [pendingOpenInvoiceId, setPendingOpenInvoiceId] = useState(null);
+  const handleOpenExisting = (invoiceId) => {
+    setIsCreateDrawerOpen(false);
+    const invoice = invoices?.find((inv) => inv.id === invoiceId);
+    if (invoice) {
+      setSelectedInvoice(invoice);
+      setIsDetailDrawerOpen(true);
+      return;
+    }
+    setPendingOpenInvoiceId(invoiceId);
+    refetch?.();
+  };
+  useEffect(() => {
+    if (!pendingOpenInvoiceId) return;
+    const invoice = invoices?.find((inv) => inv.id === pendingOpenInvoiceId);
+    if (!invoice) return;
+    setPendingOpenInvoiceId(null);
+    setSelectedInvoice(invoice);
+    setIsDetailDrawerOpen(true);
+  }, [pendingOpenInvoiceId, invoices]);
+
   const handleAddManual = () => {
     setCreateInitialTab("manual");
     setIsCreateDrawerOpen(true);
@@ -373,6 +398,7 @@ function PurchaseInvoicesContent() {
                 importedInvoices={importedInvoices}
                 importedLoading={importedLoading}
                 onImportedConverted={handleImportedConverted}
+                onOpenExisting={handleOpenExisting}
               />
             </Suspense>
           </div>
@@ -454,6 +480,7 @@ function PurchaseInvoicesContent() {
             importedInvoices={importedInvoices}
             importedLoading={importedLoading}
             onImportedConverted={handleImportedConverted}
+            onOpenExisting={handleOpenExisting}
           />
         </Suspense>
       </div>
@@ -498,6 +525,7 @@ function PurchaseInvoicesContent() {
           refetch?.();
           refetchStats?.();
         }}
+        onOpenExisting={handleOpenExisting}
       />
       <ExportDialog
         open={isExportOpen}

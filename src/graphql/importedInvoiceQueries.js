@@ -540,8 +540,14 @@ export function usePurchaseExtraOcrImports() {
 // === Conversion ImportedInvoice → PurchaseInvoice ===
 
 export const CONVERT_IMPORTED_INVOICE = gql`
-  mutation ConvertImportedInvoiceToPurchaseInvoice($id: ID!) {
-    convertImportedInvoiceToPurchaseInvoice(id: $id) {
+  mutation ConvertImportedInvoiceToPurchaseInvoice(
+    $id: ID!
+    $forceCreate: Boolean
+  ) {
+    convertImportedInvoiceToPurchaseInvoice(
+      id: $id
+      forceCreate: $forceCreate
+    ) {
       id
       supplierName
       invoiceNumber
