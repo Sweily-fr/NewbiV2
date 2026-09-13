@@ -3,15 +3,35 @@
 import { useEffect, useState } from "react";
 import Script from "next/script";
 
-function getMarketingConsent() {
+function getConsent() {
   try {
     const consent = localStorage.getItem("cookie_consent");
-    if (!consent) return false;
-    const parsed = JSON.parse(consent);
-    return parsed.marketing === true;
+    if (!consent) return null;
+    return JSON.parse(consent);
   } catch {
-    return false;
+    return null;
   }
+}
+
+function getMarketingConsent() {
+  const consent = getConsent();
+  return consent?.marketing === true;
+}
+
+// Google Consent Mode v2 : le tag Google Ads (AW-18448267727, chargé dans le
+// head par app/layout.jsx) démarre en « denied » ; on relaie ici le choix de
+// l'utilisateur pour qu'il puisse poser ses cookies et mesurer les conversions.
+function syncGoogleConsent() {
+  const consent = getConsent();
+  if (!consent || typeof window.gtag !== "function") return;
+  const ads = consent.marketing === true ? "granted" : "denied";
+  const analytics = consent.analytics === true ? "granted" : "denied";
+  window.gtag("consent", "update", {
+    ad_storage: ads,
+    ad_user_data: ads,
+    ad_personalization: ads,
+    analytics_storage: analytics,
+  });
 }
 
 export default function MarketingPixels() {
@@ -20,17 +40,20 @@ export default function MarketingPixels() {
   useEffect(() => {
     // Check initial consent
     setHasConsent(getMarketingConsent());
+    syncGoogleConsent();
 
     // Listen for consent changes (when user accepts/saves preferences)
     const handleStorage = (e) => {
       if (e.key === "cookie_consent") {
         setHasConsent(getMarketingConsent());
+        syncGoogleConsent();
       }
     };
 
     // Listen for localStorage changes from same tab (custom event)
     const handleConsentUpdate = () => {
       setHasConsent(getMarketingConsent());
+      syncGoogleConsent();
     };
 
     window.addEventListener("storage", handleStorage);
