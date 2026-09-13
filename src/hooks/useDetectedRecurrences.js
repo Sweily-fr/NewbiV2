@@ -2,6 +2,7 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_DETECTED_RECURRENCES } from "../graphql/queries/treasuryForecast";
 import {
   MUTE_DETECTED_RECURRENCE,
+  SET_DETECTED_RECURRENCE_CATEGORY,
   DELETE_DETECTED_RECURRENCE,
   RUN_RECURRENCE_DETECTION,
 } from "../graphql/mutations/treasuryForecast";
@@ -65,6 +66,44 @@ export const useMuteDetectedRecurrence = () => {
   };
 
   return { setMuted, loading };
+};
+
+// Reclasse une récurrence détectée (null = catégorie détectée). Action de
+// Base : la catégorie est commune à tous les scénarios.
+export const useSetDetectedRecurrenceCategory = () => {
+  const [mutate, { loading }] = useMutation(SET_DETECTED_RECURRENCE_CATEGORY, {
+    refetchQueries: [
+      "GetDetectedRecurrences",
+      "GetTreasuryForecastData",
+      "GetForecastOccurrences",
+      "GetForecastMonthDetails",
+    ],
+    awaitRefetchQueries: false,
+  });
+
+  const setCategory = async (id, category) => {
+    try {
+      const result = await mutate({
+        variables: { id, category: category || null },
+      });
+      if (result.data?.setDetectedRecurrenceCategory) {
+        toast.success(
+          category ? "Catégorie modifiée" : "Catégorie détectée rétablie",
+        );
+        return { success: true };
+      }
+      throw new Error("Erreur lors de la mise à jour");
+    } catch (error) {
+      toast.error(
+        error.graphQLErrors?.[0]?.message ||
+          error.message ||
+          "Erreur lors de la mise à jour",
+      );
+      return { success: false, error };
+    }
+  };
+
+  return { setCategory, loading };
 };
 
 export const useDeleteDetectedRecurrence = () => {

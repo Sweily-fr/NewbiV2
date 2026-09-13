@@ -16,8 +16,22 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/src/components/ui/tooltip";
+import {
   useDetectedRecurrences,
   useMuteDetectedRecurrence,
+  useSetDetectedRecurrenceCategory,
   useDeleteDetectedRecurrence,
   useRunRecurrenceDetection,
 } from "@/src/hooks/useDetectedRecurrences";
@@ -63,6 +77,91 @@ const CATEGORY_LABELS = {
   TRAVEL: "Déplacements",
   ACCOMMODATION: "Hébergement",
 };
+
+// Catégories proposées au reclassement (même sens que la récurrence).
+const INCOME_CATEGORY_OPTIONS = ["SALES", "REFUNDS_RECEIVED", "OTHER_INCOME"];
+const EXPENSE_CATEGORY_OPTIONS = [
+  "RENT",
+  "SUBSCRIPTIONS",
+  "OFFICE_SUPPLIES",
+  "SERVICES",
+  "TRANSPORT",
+  "MEALS",
+  "TELECOMMUNICATIONS",
+  "INSURANCE",
+  "ENERGY",
+  "SOFTWARE",
+  "HARDWARE",
+  "MARKETING",
+  "TRAINING",
+  "MAINTENANCE",
+  "TAXES",
+  "UTILITIES",
+  "SALARIES",
+  "OTHER_EXPENSE",
+];
+// Valeur sentinelle de l'option « revenir à la catégorie détectée ».
+const DETECTED_CATEGORY_VALUE = "__detected__";
+
+// Sélecteur de catégorie en ligne. La catégorie est commune à tous les
+// scénarios : dans un scénario on l'affiche seulement (comme le crayon des
+// saisies de Base).
+function RecurrenceCategory({ rec, isScenario, onChange, disabled }) {
+  const effective = rec.forecastCategory || rec.category;
+  const label = CATEGORY_LABELS[effective] || effective || "—";
+  if (isScenario) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="cursor-default underline decoration-dotted decoration-muted-foreground/40 underline-offset-2">
+            {label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          Catégorie commune à tous les scénarios : revenez au scénario Base pour
+          la modifier.
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+  const options =
+    rec.type === "INCOME" ? INCOME_CATEGORY_OPTIONS : EXPENSE_CATEGORY_OPTIONS;
+  const detectedLabel =
+    CATEGORY_LABELS[rec.category] || rec.category || "Autres";
+  return (
+    <Select
+      value={effective}
+      disabled={disabled}
+      onValueChange={(value) =>
+        onChange(rec.id, value === DETECTED_CATEGORY_VALUE ? null : value)
+      }
+    >
+      <SelectTrigger
+        variant="ghost"
+        size="sm"
+        className="inline-flex h-5 w-auto gap-1 px-1 -ml-1 text-[11px] font-normal text-muted-foreground/60 hover:text-foreground [&_svg]:size-3"
+        title="Modifier la catégorie de prévision"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {rec.categoryOverride && (
+          <>
+            <SelectItem value={DETECTED_CATEGORY_VALUE}>
+              Revenir à «&nbsp;{detectedLabel}&nbsp;» (détectée)
+            </SelectItem>
+            <SelectSeparator />
+          </>
+        )}
+        {options.map((value) => (
+          <SelectItem key={value} value={value}>
+            {CATEGORY_LABELS[value]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 const SOURCE_LABELS = {
   PURCHASE_INVOICE: "factures d'achat",
@@ -111,6 +210,8 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
   const { isScenario, scenarioName } = useForecastScenario();
   const { recurrences, loading } = useDetectedRecurrences();
   const { setMuted, loading: muting } = useMuteDetectedRecurrence();
+  const { setCategory, loading: savingCategory } =
+    useSetDetectedRecurrenceCategory();
   const { deleteRecurrence, loading: deleting } = useDeleteDetectedRecurrence();
   const { runDetection, loading: detecting } = useRunRecurrenceDetection();
   const [expanded, setExpanded] = useState(false);
@@ -211,8 +312,13 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {CATEGORY_LABELS[rec.category] || rec.category || "—"}
+                    <p className="flex flex-wrap items-center text-[11px] text-muted-foreground/60 mt-0.5">
+                      <RecurrenceCategory
+                        rec={rec}
+                        isScenario={isScenario}
+                        onChange={setCategory}
+                        disabled={savingCategory}
+                      />
                       {rec.frequency
                         ? ` · ${FREQUENCY_LABELS[rec.frequency] || ""}`
                         : ""}{" "}
@@ -243,7 +349,7 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                             amount: rec.averageAmount,
                             frequency:
                               FORECAST_FREQUENCY[rec.frequency] || "MONTHLY",
-                            category: rec.category,
+                            category: rec.forecastCategory || rec.category,
                           })
                         }
                         className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"

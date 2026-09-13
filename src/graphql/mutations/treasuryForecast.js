@@ -116,6 +116,22 @@ export const HIDE_MANUAL_CASHFLOW_ENTRY_IN_SCENARIO = gql`
   }
 `;
 
+// Catégorie de prévision choisie pour une récurrence détectée (null = revenir
+// à la catégorie détectée). Commune à tous les scénarios.
+export const SET_DETECTED_RECURRENCE_CATEGORY = gql`
+  mutation SetDetectedRecurrenceCategory(
+    $id: ID!
+    $category: ForecastCategory
+  ) {
+    setDetectedRecurrenceCategory(id: $id, category: $category) {
+      id
+      category
+      categoryOverride
+      forecastCategory
+    }
+  }
+`;
+
 export const DELETE_DETECTED_RECURRENCE = gql`
   mutation DeleteDetectedRecurrence($id: ID!) {
     deleteDetectedRecurrence(id: $id) {
