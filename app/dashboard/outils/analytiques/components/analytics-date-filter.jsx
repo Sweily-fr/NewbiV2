@@ -52,15 +52,23 @@ function getDateRangeForPreset(preset) {
 }
 
 function formatDate(date) {
-  const y = date.getFullYear();
+  const y = String(date.getFullYear()).padStart(4, "0");
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
+// Années acceptées pour une saisie manuelle. Un champ <input type="date">
+// émet des valeurs intermédiaires pendant la frappe de l'année (« 0002 »,
+// « 0020 », « 0202 »…) : sans cette borne elles partiraient à l'API.
+const MIN_INPUT_YEAR = 2000;
+const MAX_INPUT_YEAR = 2100;
+
 // "YYYY-MM-DD" -> Date locale (minuit), null si la chaîne est invalide
 function parseDateInput(value) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const year = Number(value.slice(0, 4));
+  if (year < MIN_INPUT_YEAR || year > MAX_INPUT_YEAR) return null;
   const date = parseISO(value);
   return isValid(date) ? date : null;
 }

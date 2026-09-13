@@ -157,3 +157,28 @@ describe("AnalyticsDateFilter - sélection au calendrier", () => {
     expect(screen.queryByLabelText("Date de début")).not.toBeInTheDocument();
   });
 });
+
+describe("AnalyticsDateFilter - saisie clavier", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("ignore les années intermédiaires émises pendant la frappe", () => {
+    const { props } = renderFilter({
+      period: "custom",
+      dateRange: { startDate: "2026-03-01", endDate: "2026-03-31" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /01 mars 2026/ }));
+    const start = screen.getByLabelText("Date de début");
+    for (const value of ["0002-03-10", "0020-03-10", "0202-03-10"]) {
+      fireEvent.change(start, { target: { value } });
+    }
+    expect(props.onDateRangeChange).not.toHaveBeenCalled();
+
+    fireEvent.change(start, { target: { value: "2026-03-10" } });
+    expect(props.onDateRangeChange).toHaveBeenLastCalledWith({
+      startDate: "2026-03-10",
+      endDate: "2026-03-31",
+    });
+  });
+});
