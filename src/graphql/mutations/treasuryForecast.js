@@ -116,6 +116,29 @@ export const HIDE_MANUAL_CASHFLOW_ENTRY_IN_SCENARIO = gql`
   }
 `;
 
+// « Modifier » une récurrence détectée : surcharges de catégorie, montant,
+// périodicité et libellé (null = valeur détectée ; input vide = revenir aux
+// valeurs détectées). Communes à tous les scénarios.
+export const UPDATE_DETECTED_RECURRENCE = gql`
+  mutation UpdateDetectedRecurrence(
+    $id: ID!
+    $input: UpdateDetectedRecurrenceInput!
+  ) {
+    updateDetectedRecurrence(id: $id, input: $input) {
+      id
+      category
+      categoryOverride
+      amountOverride
+      frequencyOverride
+      labelOverride
+      forecastCategory
+      forecastAmount
+      forecastFrequency
+      forecastName
+    }
+  }
+`;
+
 export const DELETE_DETECTED_RECURRENCE = gql`
   mutation DeleteDetectedRecurrence($id: ID!) {
     deleteDetectedRecurrence(id: $id) {

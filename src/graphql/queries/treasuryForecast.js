@@ -133,6 +133,14 @@ export const GET_DETECTED_RECURRENCES = gql`
       type
       partyName
       category
+      categoryOverride
+      amountOverride
+      frequencyOverride
+      labelOverride
+      forecastCategory
+      forecastAmount
+      forecastFrequency
+      forecastName
       averageAmount
       frequency
       intervalDays
