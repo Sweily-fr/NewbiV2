@@ -79,26 +79,30 @@ const cspHeaderKey = isDev
   : "Content-Security-Policy";
 const cspValue = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://*.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://connect.facebook.net https://analytics.tiktok.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   // analytics.tiktok.com : polices de l'overlay « Test Events » du pixel TikTok
   // (violations font-src constatées en prod le 01/09/2026).
   `font-src 'self' data: https://analytics.tiktok.com${isVercelToolbar ? " https://vercel.live https://assets.vercel.com" : ""}`,
   // *.google-analytics.com : GA4 utilise des endpoints régionaux (region1.…).
+  // Google Ads (tag AW-18448267727 dans app/layout.jsx) : www.google.com,
+  // googleadservices.com, googleads.g.doubleclick.net, *.googlesyndication.com
+  // (pings de conversion / remarketing), td.doubleclick.net en frame-src
+  // (liste des domaines recommandée par Google pour les tags Ads).
   // *.r2.cloudflarestorage.com : URLs présignées d'upload des transferts de fichiers.
   // *.pusher.com : temps réel de la barre de feedback Vercel (non-production).
   // TikTok : *.tiktok.com + wss (mode « Test Events » d'Events Manager, overlay +
   // websocket de debug), *.tiktokw.us / *.tiktokv.us (endpoints régionaux US,
   // enrich_ipv6…). En CSP, https:// ne couvre pas wss://, d'où l'entrée dédiée.
-  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
+  `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr
   // depuis une iframe (incident ERR_BLOCKED_BY_CSP puis ERR_BLOCKED_BY_RESPONSE
   // du 30/07/2026). blob: couvre les aperçus locaux de fichiers en cours
   // d'upload (factures d'achat) ; un blob URL est lié à notre origine.
-  `frame-src 'self' blob:${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://www.facebook.com https://challenges.cloudflare.com`,
+  `frame-src 'self' blob:${isVercelToolbar ? " https://vercel.live" : ""} https://www.googletagmanager.com https://googleads.g.doubleclick.net https://td.doubleclick.net https://www.facebook.com https://challenges.cloudflare.com`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
