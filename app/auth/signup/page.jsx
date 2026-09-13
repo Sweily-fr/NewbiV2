@@ -35,6 +35,17 @@ import {
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { trackSignupConversion } from "@/src/utils/trackEvent";
+
+// Compte créé il y a moins de 15 min : suffisant pour distinguer un retour
+// OAuth d'inscription d'un ancien utilisateur qui reprend son onboarding.
+const FRESH_ACCOUNT_MS = 15 * 60 * 1000;
+function isFreshlyCreated(user) {
+  const createdAt = user?.createdAt ? new Date(user.createdAt).getTime() : NaN;
+  return (
+    Number.isFinite(createdAt) && Date.now() - createdAt < FRESH_ACCOUNT_MS
+  );
+}
 
 const GoogleIcon = (props) => (
   <svg viewBox="0 0 24 24" {...props}>
@@ -85,7 +96,8 @@ const OAUTH_ERROR_MESSAGES = {
   access_denied: "Inscription refusée par le fournisseur.",
   state_mismatch: "La session d'inscription a expiré. Réessayez.",
   state_security_mismatch: "La session d'inscription a expiré. Réessayez.",
-  unable_to_create_user: "Impossible de créer le compte. Réessayez ou utilisez l'inscription par e-mail.",
+  unable_to_create_user:
+    "Impossible de créer le compte. Réessayez ou utilisez l'inscription par e-mail.",
 };
 
 export default function SignUpPage() {
@@ -114,7 +126,9 @@ function SignUpPageContent() {
   const oauthError = searchParams.get("error");
   useEffect(() => {
     if (!oauthError) return;
-    toast.error(OAUTH_ERROR_MESSAGES[oauthError] || "Erreur lors de l'inscription");
+    toast.error(
+      OAUTH_ERROR_MESSAGES[oauthError] || "Erreur lors de l'inscription",
+    );
     const params = new URLSearchParams(searchParams.toString());
     params.delete("error");
     params.delete("error_description");
@@ -146,6 +160,13 @@ function SignUpPageContent() {
       }
       // Authenticated with incomplete onboarding → resume at the right step
       setView(step);
+      // Inscription via Google (retour OAuth avec callbackURL /auth/signup) :
+      // le formulaire email n'est pas passé, on envoie la conversion Google
+      // Ads ici si le compte vient d'être créé. Dédoublonnée par id
+      // utilisateur, donc sans effet pour une inscription email déjà comptée.
+      if (isFreshlyCreated(session.user)) {
+        trackSignupConversion(session.user.id);
+      }
     }
     setSessionHydrated(true);
   }, [sessionPending, session, sessionHydrated, router]);
