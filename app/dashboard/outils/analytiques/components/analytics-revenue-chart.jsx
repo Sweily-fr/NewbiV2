@@ -19,6 +19,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { hasChartValues } from "./analytics-chart-utils";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("fr-FR", {
@@ -159,7 +160,7 @@ export function AnalyticsRevenueChart({
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["revenueHT", "expenseAmount"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>

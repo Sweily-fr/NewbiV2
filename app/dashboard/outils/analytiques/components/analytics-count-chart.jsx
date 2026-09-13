@@ -19,6 +19,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { hasChartValues } from "./analytics-chart-utils";
 
 const formatMonthLabel = (monthStr) => {
   if (!monthStr) return "";
@@ -102,7 +103,7 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["invoiceCount", "expenseCount"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>

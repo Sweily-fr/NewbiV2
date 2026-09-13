@@ -20,6 +20,7 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { hasChartValues } from "./analytics-chart-utils";
 
 const CLIENT_COLORS = [
   "#5b50ff",
@@ -120,7 +121,7 @@ export function AnalyticsClientChart({ topClients, loading }) {
     );
   }
 
-  if (!chartData.length) {
+  if (!hasChartValues(chartData, ["totalTTC"])) {
     return (
       <Card className="shadow-xs flex flex-col min-h-0 py-4">
         <CardHeader>

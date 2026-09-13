@@ -39,7 +39,9 @@ describe("AnalyticsDateFilter - période personnalisée", () => {
   it("passe en mode personnalisé et affiche les champs Du / Au pré-remplis", () => {
     const { props, rerender } = renderFilter();
     openPopover();
-    fireEvent.click(screen.getByRole("button", { name: "Période personnalisée" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Période personnalisée" }),
+    );
     expect(props.onPeriodChange).toHaveBeenCalledWith("custom");
     // La période appliquée reste celle en cours tant que rien n'est saisi
     expect(props.onDateRangeChange).not.toHaveBeenCalled();
@@ -109,5 +111,49 @@ describe("AnalyticsDateFilter - période personnalisée", () => {
     expect(props.onDateRangeChange).toHaveBeenCalledWith(
       getDateRangeForPreset("current_month"),
     );
+  });
+});
+
+describe("AnalyticsDateFilter - sélection au calendrier", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function clickDay(label) {
+    fireEvent.click(screen.getByRole("button", { name: label }));
+  }
+
+  it("reste ouvert après le choix des deux bornes et applique la plage", () => {
+    const { props } = renderFilter({
+      period: "custom",
+      dateRange: { startDate: "2026-03-01", endDate: "2026-03-31" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /01 mars 2026/ }));
+
+    // Une plage complète est déjà sélectionnée : le 1er clic redémarre une
+    // nouvelle plage, le 2e la termine.
+    clickDay(/^(mardi|Tuesday) 10 mars 2026/i);
+    expect(props.onDateRangeChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Valider" })).toBeDisabled();
+
+    clickDay(/^(vendredi|Friday) 20 mars 2026/i);
+    expect(props.onDateRangeChange).toHaveBeenLastCalledWith({
+      startDate: "2026-03-10",
+      endDate: "2026-03-20",
+    });
+    // La popover est toujours ouverte : les champs Du / Au sont visibles
+    expect(screen.getByLabelText("Date de début")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Valider" })).toBeEnabled();
+  });
+
+  it("le bouton Valider ferme la popover", () => {
+    renderFilter({
+      period: "custom",
+      dateRange: { startDate: "2026-03-01", endDate: "2026-03-31" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /01 mars 2026/ }));
+    expect(screen.getByLabelText("Date de début")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Valider" }));
+    expect(screen.queryByLabelText("Date de début")).not.toBeInTheDocument();
   });
 });

@@ -120,11 +120,19 @@ export function AnalyticsDateFilter({
     setCalendarRange(rangeFromDateRange(dateRange));
   };
 
-  const handleCalendarSelect = (range) => {
-    setCalendarRange(range || undefined);
-    if (range?.from && range?.to) {
-      applyCustomRange(range.from, range.to);
-      setOpen(false);
+  // Sélection au calendrier : la popover reste ouverte pour que l'utilisateur
+  // puisse ajuster les deux bornes. Un clic alors qu'une plage complète est
+  // déjà sélectionnée démarre une nouvelle plage (au lieu de déplacer une
+  // seule borne). La période s'applique dès que les deux bornes sont posées.
+  const handleCalendarSelect = (range, triggerDate) => {
+    const hadCompleteRange = Boolean(calendarRange?.from && calendarRange?.to);
+    const next =
+      hadCompleteRange && triggerDate
+        ? { from: triggerDate, to: undefined }
+        : range || undefined;
+    setCalendarRange(next);
+    if (next?.from && next?.to) {
+      applyCustomRange(next.from, next.to);
     }
   };
 
@@ -256,19 +264,34 @@ export function AnalyticsDateFilter({
         {/* Plage sélectionnée */}
         {calendarRange?.from && (
           <div className="border-t px-3 py-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
                 {formatRangeLabel(calendarRange.from, calendarRange.to)}
+                {!calendarRange.to && (
+                  <span className="ml-1 italic">
+                    (choisissez la date de fin)
+                  </span>
+                )}
               </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                onClick={handleClear}
-                aria-label="Réinitialiser la période"
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={handleClear}
+                  aria-label="Réinitialiser la période"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={!calendarRange.to}
+                  onClick={() => setOpen(false)}
+                >
+                  Valider
+                </Button>
+              </div>
             </div>
           </div>
         )}
