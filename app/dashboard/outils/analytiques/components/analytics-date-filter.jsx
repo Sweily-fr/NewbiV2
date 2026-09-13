@@ -257,6 +257,9 @@ export function AnalyticsDateFilter({
             defaultMonth={calendarRange?.from}
             locale={fr}
             numberOfMonths={2}
+            // Deux mois côte à côte : les jours du mois voisin apparaîtraient
+            // en double (et surlignés s'ils sont dans la plage)
+            showOutsideDays={false}
             className="p-0"
           />
         </div>
