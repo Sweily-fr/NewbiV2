@@ -180,7 +180,7 @@ function RowActions({
               <Tag className="h-4 w-4" />
               Catégoriser
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-52">
+            <DropdownMenuSubContent className="w-52 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
               {Object.entries(categoryLabels).map(([key, label]) => (
                 <DropdownMenuItem
                   key={key}
@@ -423,7 +423,9 @@ export const getColumns = ({
     meta: { label: "Catégorie" },
     header: "Catégorie",
     cell: ({ row }) => {
-      const category = row.getValue("category");
+      // Sous-catégorie fine si renseignée (même libellé que la page
+      // Transactions), sinon catégorie large
+      const category = row.original.subcategory || row.getValue("category");
       const config = getCategoryConfig(category);
       const Icon = config.icon;
       return (

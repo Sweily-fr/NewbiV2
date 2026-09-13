@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
+import CategorySearchSelect from "@/src/components/category-search-select";
 import { Calendar } from "@/src/components/ui/calendar";
 import {
   Popover,
@@ -64,25 +65,28 @@ const ACCEPTED_TYPES = [
   "image/webp",
 ];
 
-const CATEGORY_OPTIONS = [
-  { value: "RENT", label: "Loyer" },
-  { value: "SUBSCRIPTIONS", label: "Abonnements" },
-  { value: "OFFICE_SUPPLIES", label: "Fournitures" },
-  { value: "SERVICES", label: "Sous-traitance" },
-  { value: "TRANSPORT", label: "Transport" },
-  { value: "MEALS", label: "Repas" },
-  { value: "TELECOMMUNICATIONS", label: "Télécommunications" },
-  { value: "INSURANCE", label: "Assurance" },
-  { value: "ENERGY", label: "Énergie" },
-  { value: "SOFTWARE", label: "Logiciels" },
-  { value: "HARDWARE", label: "Matériel" },
-  { value: "MARKETING", label: "Marketing" },
-  { value: "TRAINING", label: "Formation" },
-  { value: "MAINTENANCE", label: "Maintenance" },
-  { value: "TAXES", label: "Impôts & taxes" },
-  { value: "UTILITIES", label: "Services publics" },
-  { value: "OTHER", label: "Autre" },
-];
+// Catégories larges que l'OCR peut renvoyer (enum PurchaseInvoiceCategory).
+// Le sélecteur propose le référentiel commun (sous-catégories fines) et
+// résout le libellé de ces codes larges.
+const VALID_CATEGORIES = new Set([
+  "RENT",
+  "SUBSCRIPTIONS",
+  "OFFICE_SUPPLIES",
+  "SERVICES",
+  "TRANSPORT",
+  "MEALS",
+  "TELECOMMUNICATIONS",
+  "INSURANCE",
+  "ENERGY",
+  "SOFTWARE",
+  "HARDWARE",
+  "MARKETING",
+  "TRAINING",
+  "MAINTENANCE",
+  "TAXES",
+  "UTILITIES",
+  "OTHER",
+]);
 
 const STATUS_OPTIONS = [
   { value: "TO_PROCESS", label: "À traiter" },
@@ -92,8 +96,6 @@ const STATUS_OPTIONS = [
   { value: "OVERDUE", label: "En retard" },
   { value: "ARCHIVED", label: "Archivée" },
 ];
-
-const VALID_CATEGORIES = new Set(CATEGORY_OPTIONS.map((o) => o.value));
 
 const PAYMENT_METHOD_OPTIONS = [
   { value: "BANK_TRANSFER", label: "Virement" },
@@ -367,7 +369,9 @@ export function PurchaseInvoiceUploadDrawer({
           amountTVA: parseFloat(editableData.amountTVA) || 0,
           vatRate: parseFloat(editableData.vatRate) || 20,
           amountTTC: parseFloat(editableData.amountTTC),
-          category: editableData.category,
+          // Sous-catégorie fine (référentiel Transactions) ou code large OCR ;
+          // la catégorie large de la facture est dérivée côté API.
+          subcategory: editableData.category || undefined,
           status: editableData.status,
           paymentMethod: editableData.paymentMethod || undefined,
           source: "OCR",
@@ -961,21 +965,11 @@ export function PurchaseInvoiceUploadDrawer({
                       Catégorie
                     </span>
                   </div>
-                  <Select
+                  <CategorySearchSelect
                     value={editableData.category}
                     onValueChange={(v) => handleEditChange("category", v)}
-                  >
-                    <SelectTrigger className="w-44 h-8 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CATEGORY_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    triggerClassName="w-44 h-8 text-sm"
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

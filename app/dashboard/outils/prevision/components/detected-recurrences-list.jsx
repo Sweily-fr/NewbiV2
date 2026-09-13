@@ -36,11 +36,11 @@ import {
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { DetectedRecurrenceDialog } from "./detected-recurrence-dialog";
 import {
-  CATEGORY_LABELS,
   FREQUENCY_LABELS,
   FREQUENCY_SUFFIX,
   formatCurrency,
 } from "./detected-recurrence-labels";
+import { getCategoryLabel } from "@/lib/category-icons-config";
 
 // Libellé d'état d'une récurrence. Dans un scénario, on distingue ce qui
 // vient de Base de ce qui a été surchargé ici.
@@ -75,6 +75,7 @@ const FORECAST_FREQUENCY = {
 const hasUserOverride = (rec) =>
   Boolean(
     rec.categoryOverride ||
+    rec.subcategoryOverride ||
     rec.amountOverride != null ||
     rec.frequencyOverride ||
     rec.labelOverride,
@@ -86,7 +87,7 @@ const detectedSummary = (rec) =>
     rec.partyName,
     formatCurrency(rec.averageAmount),
     FREQUENCY_LABELS[rec.frequency] || "Mensuel",
-    CATEGORY_LABELS[rec.category] || rec.category,
+    getCategoryLabel(rec.category),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -193,7 +194,8 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
               const name = rec.forecastName || rec.partyName;
               const amount = rec.forecastAmount ?? rec.averageAmount;
               const frequency = rec.forecastFrequency || rec.frequency;
-              const category = rec.forecastCategory || rec.category;
+              const category =
+                rec.forecastSubcategory || rec.forecastCategory || rec.category;
               const muteTitle = rec.isMuted
                 ? isScenario
                   ? "Réactiver dans ce scénario"
@@ -241,7 +243,7 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                       )}
                     </div>
                     <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-                      {CATEGORY_LABELS[category] || category || "—"}
+                      {getCategoryLabel(category) || "—"}
                       {frequency
                         ? ` · ${FREQUENCY_LABELS[frequency] || ""}`
                         : ""}{" "}

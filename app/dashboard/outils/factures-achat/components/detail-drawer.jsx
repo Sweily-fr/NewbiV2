@@ -94,6 +94,8 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
+import CategorySearchSelect from "@/src/components/category-search-select";
+import { getCategoryLabel } from "@/lib/category-icons-config";
 import {
   formatCurrencyAmount,
   currencySymbol,
@@ -120,26 +122,6 @@ const STATUS_BADGE = {
   ARCHIVED: "bg-gray-50 text-gray-500 dark:bg-gray-900/20 dark:text-gray-500",
 };
 
-const CATEGORY_OPTIONS = [
-  { value: "RENT", label: "Loyer" },
-  { value: "SUBSCRIPTIONS", label: "Abonnements" },
-  { value: "OFFICE_SUPPLIES", label: "Fournitures" },
-  { value: "SERVICES", label: "Sous-traitance" },
-  { value: "TRANSPORT", label: "Transport" },
-  { value: "MEALS", label: "Repas" },
-  { value: "TELECOMMUNICATIONS", label: "Télécommunications" },
-  { value: "INSURANCE", label: "Assurance" },
-  { value: "ENERGY", label: "Énergie" },
-  { value: "SOFTWARE", label: "Logiciels" },
-  { value: "HARDWARE", label: "Matériel" },
-  { value: "MARKETING", label: "Marketing" },
-  { value: "TRAINING", label: "Formation" },
-  { value: "MAINTENANCE", label: "Maintenance" },
-  { value: "TAXES", label: "Impôts & taxes" },
-  { value: "UTILITIES", label: "Services publics" },
-  { value: "OTHER", label: "Autre" },
-];
-
 const PAYMENT_METHOD_OPTIONS = [
   { value: "BANK_TRANSFER", label: "Virement" },
   { value: "CREDIT_CARD", label: "Carte bancaire" },
@@ -151,10 +133,6 @@ const PAYMENT_METHOD_OPTIONS = [
 
 const paymentMethodLabels = Object.fromEntries(
   PAYMENT_METHOD_OPTIONS.map((o) => [o.value, o.label]),
-);
-
-const categoryLabels = Object.fromEntries(
-  CATEGORY_OPTIONS.map((o) => [o.value, o.label]),
 );
 
 const statusLabels = Object.fromEntries(
@@ -375,7 +353,7 @@ export function PurchaseInvoiceDetailDrawer({
         amountTTC: invoice.amountTTC?.toString() || "",
         currency: invoice.currency || "EUR",
         status: invoice.status || "TO_PROCESS",
-        category: invoice.category || "OTHER",
+        category: invoice.subcategory || invoice.category || "OTHER",
         notes: invoice.notes || "",
         internalReference: invoice.internalReference || "",
         paymentMethod: invoice.paymentMethod || "",
@@ -477,7 +455,9 @@ export function PurchaseInvoiceDetailDrawer({
       amountTTC: parseFloat(form.amountTTC),
       currency: form.currency,
       status: form.status,
-      category: form.category,
+      // Sous-catégorie fine (référentiel Transactions) ou code large hérité ;
+      // la catégorie large de la facture est dérivée côté API.
+      subcategory: form.category || undefined,
       notes: form.notes || undefined,
       internalReference: form.internalReference || undefined,
       paymentMethod: form.paymentMethod || undefined,
@@ -1069,7 +1049,9 @@ export function PurchaseInvoiceDetailDrawer({
                     </span>
                   </div>
                   <span className="text-sm font-normal">
-                    {categoryLabels[invoice?.category] || "Autre"}
+                    {getCategoryLabel(
+                      invoice?.subcategory || invoice?.category,
+                    ) || "Autre"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -1130,21 +1112,11 @@ export function PurchaseInvoiceDetailDrawer({
                     <span className="text-sm font-normal text-muted-foreground">
                       Catégorie
                     </span>
-                    <Select
+                    <CategorySearchSelect
                       value={form.category}
                       onValueChange={(v) => handleChange("category", v)}
-                    >
-                      <SelectTrigger className="w-40 h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORY_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      triggerClassName="w-40 h-8 text-sm"
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-normal text-muted-foreground">

@@ -18,13 +18,9 @@ import {
 } from "@/src/components/ui/select";
 import { LoaderCircle, Pencil, RotateCcw } from "lucide-react";
 import { useUpdateDetectedRecurrence } from "@/src/hooks/useDetectedRecurrences";
-import {
-  CATEGORY_LABELS,
-  EXPENSE_CATEGORY_OPTIONS,
-  INCOME_CATEGORY_OPTIONS,
-  FREQUENCY_LABELS,
-  formatCurrency,
-} from "./detected-recurrence-labels";
+import CategorySearchSelect from "@/src/components/category-search-select";
+import { getCategoryLabel } from "@/lib/category-icons-config";
+import { FREQUENCY_LABELS, formatCurrency } from "./detected-recurrence-labels";
 
 const FREQUENCY_OPTIONS = [
   "WEEKLY",
@@ -55,17 +51,17 @@ export function DetectedRecurrenceDialog({ open, onOpenChange, recurrence }) {
         : "",
     );
     setFrequency(recurrence.forecastFrequency || "MONTHLY");
-    setCategory(recurrence.forecastCategory || "");
+    setCategory(
+      recurrence.forecastSubcategory || recurrence.forecastCategory || "",
+    );
   }, [open, recurrence]);
 
   if (!recurrence) return null;
 
   const isIncome = recurrence.type === "INCOME";
-  const categoryOptions = isIncome
-    ? INCOME_CATEGORY_OPTIONS
-    : EXPENSE_CATEGORY_OPTIONS;
   const hasOverride = Boolean(
     recurrence.categoryOverride ||
+    recurrence.subcategoryOverride ||
     recurrence.amountOverride != null ||
     recurrence.frequencyOverride ||
     recurrence.labelOverride,
@@ -78,9 +74,7 @@ export function DetectedRecurrenceDialog({ open, onOpenChange, recurrence }) {
     recurrence.partyName,
     `${formatCurrency(recurrence.averageAmount)}`,
     FREQUENCY_LABELS[recurrence.frequency] || "Mensuel",
-    detectedCategory
-      ? CATEGORY_LABELS[detectedCategory]
-      : CATEGORY_LABELS[recurrence.category] || recurrence.category,
+    getCategoryLabel(detectedCategory || recurrence.category),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -99,7 +93,9 @@ export function DetectedRecurrenceDialog({ open, onOpenChange, recurrence }) {
       label: label.trim(),
       amount: parsedAmount,
       frequency,
-      category: category || null,
+      // Sous-catégorie fine (référentiel Transactions) ; la catégorie large
+      // de la prévision est dérivée côté API.
+      subcategory: category || null,
     });
     if (result.success) onOpenChange(false);
   };
@@ -181,18 +177,13 @@ export function DetectedRecurrenceDialog({ open, onOpenChange, recurrence }) {
 
             <div className="space-y-1.5">
               <label className="text-sm text-muted-foreground">Catégorie</label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choisir une catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map((value) => (
-                    <SelectItem key={value} value={value}>
-                      {CATEGORY_LABELS[value]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <CategorySearchSelect
+                type={isIncome ? "INCOME" : "EXPENSE"}
+                value={category}
+                onValueChange={setCategory}
+                triggerClassName="w-full"
+                placeholder="Choisir une catégorie"
+              />
             </div>
 
             {/* Footer */}

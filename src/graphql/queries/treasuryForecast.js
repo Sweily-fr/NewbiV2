@@ -134,10 +134,12 @@ export const GET_DETECTED_RECURRENCES = gql`
       partyName
       category
       categoryOverride
+      subcategoryOverride
       amountOverride
       frequencyOverride
       labelOverride
       forecastCategory
+      forecastSubcategory
       forecastAmount
       forecastFrequency
       forecastName
@@ -165,6 +167,7 @@ export const GET_MANUAL_CASHFLOW_ENTRIES = gql`
       name
       type
       category
+      subcategory
       amount
       amountDelta
       amountDeltaType
