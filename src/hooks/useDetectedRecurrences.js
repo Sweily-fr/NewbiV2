@@ -7,11 +7,15 @@ import {
 } from "../graphql/mutations/treasuryForecast";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 
+// Dans un scénario, isMuted/isActive sont l'état effectif dans ce scénario et
+// scenarioOverride signale que le scénario diffère de Base.
 export const useDetectedRecurrences = () => {
   const { workspaceId } = useRequiredWorkspace();
+  const { scenarioId } = useForecastScenario();
   const { data, loading, error, refetch } = useQuery(GET_DETECTED_RECURRENCES, {
-    variables: { workspaceId },
+    variables: { workspaceId, scenarioId: scenarioId || undefined },
     skip: !workspaceId,
   });
   return {
@@ -22,21 +26,31 @@ export const useDetectedRecurrences = () => {
   };
 };
 
+// Dans un scénario, le masquage ne concerne que ce scénario (Base intacte).
 export const useMuteDetectedRecurrence = () => {
-  const { workspaceId } = useRequiredWorkspace();
+  const { scenarioId, isScenario } = useForecastScenario();
   const [mutate, { loading }] = useMutation(MUTE_DETECTED_RECURRENCE, {
     refetchQueries: [
-      { query: GET_DETECTED_RECURRENCES, variables: { workspaceId } },
+      "GetDetectedRecurrences",
       "GetTreasuryForecastData",
+      "GetForecastOccurrences",
+      "GetForecastMonthDetails",
     ],
     awaitRefetchQueries: false,
   });
 
   const setMuted = async (id, muted) => {
     try {
-      const result = await mutate({ variables: { id, muted } });
+      const result = await mutate({
+        variables: { id, muted, scenarioId: scenarioId || undefined },
+      });
       if (result.data?.muteDetectedRecurrence) {
-        toast.success(muted ? "Récurrence masquée" : "Récurrence réactivée");
+        const suffix = isScenario ? " dans ce scénario" : "";
+        toast.success(
+          muted
+            ? `Récurrence masquée${suffix}`
+            : `Récurrence réactivée${suffix}`,
+        );
         return { success: true };
       }
       throw new Error("Erreur lors de la mise à jour");
@@ -54,11 +68,12 @@ export const useMuteDetectedRecurrence = () => {
 };
 
 export const useDeleteDetectedRecurrence = () => {
-  const { workspaceId } = useRequiredWorkspace();
   const [mutate, { loading }] = useMutation(DELETE_DETECTED_RECURRENCE, {
     refetchQueries: [
-      { query: GET_DETECTED_RECURRENCES, variables: { workspaceId } },
+      "GetDetectedRecurrences",
       "GetTreasuryForecastData",
+      "GetForecastOccurrences",
+      "GetForecastMonthDetails",
     ],
     awaitRefetchQueries: false,
   });
@@ -87,10 +102,7 @@ export const useDeleteDetectedRecurrence = () => {
 export const useRunRecurrenceDetection = () => {
   const { workspaceId } = useRequiredWorkspace();
   const [mutate, { loading }] = useMutation(RUN_RECURRENCE_DETECTION, {
-    refetchQueries: [
-      { query: GET_DETECTED_RECURRENCES, variables: { workspaceId } },
-      "GetTreasuryForecastData",
-    ],
+    refetchQueries: ["GetDetectedRecurrences", "GetTreasuryForecastData"],
     awaitRefetchQueries: false,
   });
 

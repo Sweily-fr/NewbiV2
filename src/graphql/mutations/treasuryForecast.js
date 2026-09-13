@@ -29,6 +29,8 @@ const MANUAL_CASHFLOW_ENTRY_FIELDS = gql`
   fragment ManualCashflowEntryFields on ManualCashflowEntry {
     id
     workspaceId
+    scenarioId
+    hiddenInScenario
     name
     type
     category
@@ -82,12 +84,34 @@ export const DELETE_FORECAST_SCENARIO = gql`
   }
 `;
 
+// Sans scenarioId : masque en Base (tous les scénarios héritent). Avec :
+// surcharge propre au scénario, Base intacte.
 export const MUTE_DETECTED_RECURRENCE = gql`
-  mutation MuteDetectedRecurrence($id: ID!, $muted: Boolean!) {
-    muteDetectedRecurrence(id: $id, muted: $muted) {
+  mutation MuteDetectedRecurrence($id: ID!, $muted: Boolean!, $scenarioId: ID) {
+    muteDetectedRecurrence(id: $id, muted: $muted, scenarioId: $scenarioId) {
       id
       isActive
       isMuted
+      scenarioOverride
+    }
+  }
+`;
+
+// Masque (ou réaffiche) une saisie manuelle de Base dans un scénario
+// uniquement.
+export const HIDE_MANUAL_CASHFLOW_ENTRY_IN_SCENARIO = gql`
+  ${MANUAL_CASHFLOW_ENTRY_FIELDS}
+  mutation HideManualCashflowEntryInScenario(
+    $id: ID!
+    $scenarioId: ID!
+    $hidden: Boolean!
+  ) {
+    hideManualCashflowEntryInScenario(
+      id: $id
+      scenarioId: $scenarioId
+      hidden: $hidden
+    ) {
+      ...ManualCashflowEntryFields
     }
   }
 `;
@@ -109,12 +133,19 @@ export const RUN_RECURRENCE_DETECTION = gql`
 
 // Supprime une seule occurrence (un mois) d'une prévision récurrente
 // (saisie manuelle ou récurrence détectée) sans affecter les autres mois.
+// Avec scenarioId : supprimée dans ce scénario uniquement.
 export const EXCLUDE_FORECAST_OCCURRENCE = gql`
   mutation ExcludeForecastOccurrence(
     $kind: ForecastOccurrenceKind!
     $id: ID!
     $month: String!
+    $scenarioId: ID
   ) {
-    excludeForecastOccurrence(kind: $kind, id: $id, month: $month)
+    excludeForecastOccurrence(
+      kind: $kind
+      id: $id
+      month: $month
+      scenarioId: $scenarioId
+    )
   }
 `;

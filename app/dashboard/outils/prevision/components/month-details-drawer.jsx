@@ -24,6 +24,7 @@ import { Trash2 } from "lucide-react";
 import { GET_FORECAST_MONTH_DETAILS } from "@/src/graphql/queries/treasuryForecast";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useExcludeForecastOccurrence } from "@/src/hooks/useForecastOccurrences";
+import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { cn } from "@/src/lib/utils";
 
 const formatCurrency = (value) =>
@@ -248,6 +249,7 @@ export function MonthDetailsDrawer({
   readOnly = false,
 }) {
   const { workspaceId } = useRequiredWorkspace();
+  const { scenarioId, isScenario, scenarioName } = useForecastScenario();
   // Onglet actif : "REAL" (données réelles) ou "FORECAST" (prévisions du mois).
   const [activeTab, setActiveTab] = useState("REAL");
   const { excludeOccurrence, loading: excluding } =
@@ -260,7 +262,7 @@ export function MonthDetailsDrawer({
   }, [open, month]);
 
   const { data, loading } = useQuery(GET_FORECAST_MONTH_DETAILS, {
-    variables: { workspaceId, month },
+    variables: { workspaceId, month, scenarioId: scenarioId || undefined },
     skip: !workspaceId || !month || !open,
     fetchPolicy: "cache-and-network",
   });
@@ -514,7 +516,10 @@ export function MonthDetailsDrawer({
             <AlertDialogTitle>Supprimer cette prévision ?</AlertDialogTitle>
             <AlertDialogDescription className="text-sm leading-relaxed">
               «&nbsp;{toDelete?.name}&nbsp;» sera retirée des prévisions de{" "}
-              {formatMonthTitle(month)} uniquement.
+              {formatMonthTitle(month)}
+              {isScenario
+                ? ` dans le scénario « ${scenarioName} » uniquement (Base inchangée).`
+                : " uniquement."}
               {toDelete?.kind === "DETECTED"
                 ? " Les autres mois de cette récurrence détectée restent inchangés."
                 : " Les autres occurrences de cette récurrence restent inchangées."}
