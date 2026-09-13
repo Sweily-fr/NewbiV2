@@ -231,7 +231,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
               dataKey="actualIncome"
               fill={chartColors.success}
               radius={[4, 4, 0, 0]}
-              barSize={16}
+              maxBarSize={16}
             />
             {/* Revenus prévus */}
             <Bar
@@ -239,7 +239,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
               fill={chartColors.successLight}
               fillOpacity={0.6}
               radius={[4, 4, 0, 0]}
-              barSize={16}
+              maxBarSize={16}
               strokeDasharray="4 2"
               stroke={chartColors.successLight}
             />
@@ -248,7 +248,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
               dataKey="actualExpense"
               fill={chartColors.danger}
               radius={[4, 4, 0, 0]}
-              barSize={16}
+              maxBarSize={16}
             />
             {/* Dépenses prévues */}
             <Bar
@@ -256,7 +256,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
               fill={chartColors.dangerLight}
               fillOpacity={0.6}
               radius={[4, 4, 0, 0]}
-              barSize={16}
+              maxBarSize={16}
               strokeDasharray="4 2"
               stroke={chartColors.dangerLight}
             />

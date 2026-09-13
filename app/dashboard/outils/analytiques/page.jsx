@@ -184,41 +184,58 @@ const RENTABILITE_KPI = [
   },
 ];
 
-const TRESORERIE_BANK_KPI = [
+// Le libellé et le tooltip du solde projeté dépendent de la période
+// sélectionnée : construits dans le composant (voir bankKpiConfig).
+const TRESORERIE_BANK_KPI_BASE = [
   {
     key: "bankBalance",
     label: "Solde bancaire",
-    tooltip: "Solde actuel de tous les comptes connectés",
+    tooltip: "Solde actuel de tous les comptes connectés (à ce jour)",
   },
   {
     key: "burnRate",
     label: "Burn rate mensuel",
-    tooltip: "Moyenne des sorties bancaires sur les 3 derniers mois",
+    tooltip:
+      "Moyenne mensuelle des sorties bancaires sur la période sélectionnée",
     invertTrend: true,
   },
   {
     key: "runway",
     label: "Runway",
     format: (v) => `${Math.round(v || 0)} mois`,
-    tooltip: "Nombre de mois de trésorerie restants au rythme actuel",
-  },
-  {
-    key: "projectedBalance",
-    label: "Solde projeté (3 mois)",
-    tooltip: "Solde estimé dans 3 mois basé sur les prévisions",
+    tooltip:
+      "Nombre de mois de trésorerie restants au rythme de dépenses de la période sélectionnée",
   },
 ];
+
+const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat("fr-FR", {
+  month: "short",
+  year: "numeric",
+});
+const formatMonthKeyLabel = (monthKey) => {
+  if (!monthKey) return "";
+  const [y, m] = monthKey.split("-").map(Number);
+  return MONTH_LABEL_FORMATTER.format(new Date(y, m - 1, 1)).replace(".", "");
+};
+const toDateKey = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 
 const TRESORERIE_KPI = [
   {
     key: "outstandingReceivables",
     label: "Créances en cours TTC",
-    tooltip: "Somme TTC des factures en attente et en retard",
+    tooltip:
+      "Somme TTC des factures en attente et en retard à ce jour (indépendant de la période)",
   },
   {
     key: "overdueAmount",
     label: "Factures en retard TTC",
-    tooltip: "Montant TTC des factures dont la date d'échéance est dépassée",
+    tooltip:
+      "Montant TTC des factures dont la date d'échéance est dépassée à ce jour (indépendant de la période)",
   },
   {
     key: "dso",
@@ -312,50 +329,95 @@ export default function AnalytiquesPage() {
     });
   }, [bankTransactions, dateRange]);
 
-  // Treasury forecast (6 months: 3 past + 3 future)
-  const forecastStart = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 3);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }, []);
-  const forecastEnd = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 3);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  }, []);
+  // Prévision de trésorerie calée sur la période sélectionnée. La fenêtre
+  // demandée à l'API est élargie au mois courant : le resolver ancre les
+  // soldes sur le solde bancaire actuel et ne sait pas reconstituer une
+  // période entièrement passée sans lui. Les mois hors période sont ensuite
+  // retirés côté front (periodForecastData).
+  const todayKey = toDateKey(new Date());
+  const periodStartKey = dateRange?.startDate || todayKey;
+  const periodEndKey = dateRange?.endDate || todayKey;
+  const forecastStart = periodStartKey < todayKey ? periodStartKey : todayKey;
+  const forecastEnd = periodEndKey > todayKey ? periodEndKey : todayKey;
 
   const { forecastData, loading: forecastLoading } = useTreasuryForecastData(
     forecastStart,
     forecastEnd,
   );
 
-  // Bank KPI calculations
+  const periodForecastData = useMemo(() => {
+    if (!forecastData?.months) return forecastData;
+    const startMonth = periodStartKey.slice(0, 7);
+    const endMonth = periodEndKey.slice(0, 7);
+    return {
+      ...forecastData,
+      months: forecastData.months.filter(
+        (m) => m.month >= startMonth && m.month <= endMonth,
+      ),
+    };
+  }, [forecastData, periodStartKey, periodEndKey]);
+
+  // Solde projeté = solde de clôture du dernier mois de la période. Si la
+  // période est déjà terminée, c'est le solde constaté en fin de période.
+  const lastPeriodMonth =
+    periodForecastData?.months?.[periodForecastData.months.length - 1] || null;
+  const periodEndsInFuture = periodEndKey.slice(0, 7) > todayKey.slice(0, 7);
+  const bankKpiConfig = useMemo(
+    () => [
+      ...TRESORERIE_BANK_KPI_BASE,
+      periodEndsInFuture
+        ? {
+            key: "projectedBalance",
+            label: `Solde projeté (fin ${formatMonthKeyLabel(
+              lastPeriodMonth?.month || periodEndKey.slice(0, 7),
+            )})`,
+            tooltip:
+              "Solde estimé à la fin de la période sélectionnée, basé sur les prévisions de trésorerie",
+          }
+        : {
+            key: "projectedBalance",
+            label: "Solde fin de période",
+            tooltip:
+              "Solde bancaire reconstitué à la fin de la période sélectionnée",
+          },
+    ],
+    [periodEndsInFuture, lastPeriodMonth?.month, periodEndKey],
+  );
+
+  // Bank KPI calculations, sur la période sélectionnée
   const bankKpi = useMemo(() => {
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const recentExpenses =
-      bankTransactions?.filter(
-        (t) => t.amount < 0 && new Date(t.date) >= threeMonthsAgo,
-      ) || [];
-    const burnRate =
-      recentExpenses.length > 0
-        ? Math.abs(recentExpenses.reduce((s, t) => s + t.amount, 0)) / 3
-        : 0;
+    const now = new Date();
+    const start = dateRange?.startDate ? new Date(dateRange.startDate) : null;
+    let end = dateRange?.endDate ? new Date(dateRange.endDate) : now;
+    end.setHours(23, 59, 59, 999);
+    // Pas de sorties dans le futur : le rythme se mesure jusqu'à aujourd'hui
+    if (end > now) end = now;
+
+    const periodExpenses = (bankTransactions || []).filter((t) => {
+      if (!(t.amount < 0)) return false;
+      const d = new Date(t.date || t.processedAt || t.createdAt);
+      if (isNaN(d.getTime())) return false;
+      return (!start || d >= start) && d <= end;
+    });
+    const totalOut = Math.abs(periodExpenses.reduce((s, t) => s + t.amount, 0));
+    // Nombre de mois écoulés dans la période (fraction, minimum 1 mois pour
+    // ne pas extrapoler un burn rate à partir de quelques jours)
+    const elapsedDays = start
+      ? Math.max((end - start) / (1000 * 60 * 60 * 24), 0)
+      : 0;
+    const monthsInPeriod = Math.max(elapsedDays / 30.44, 1);
+    const burnRate = totalOut > 0 ? totalOut / monthsInPeriod : 0;
     const runway = burnRate > 0 ? (bankBalance || 0) / burnRate : 99;
 
     return {
       bankBalance: bankBalance || 0,
       burnRate,
       runway: Math.min(runway, 99),
-      projectedBalance: forecastData?.kpi?.projectedBalance3Months || 0,
+      projectedBalance: lastPeriodMonth
+        ? lastPeriodMonth.closingBalance
+        : bankBalance || 0,
     };
-  }, [bankTransactions, bankBalance, forecastData]);
+  }, [bankTransactions, bankBalance, dateRange, lastPeriodMonth]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -512,9 +574,9 @@ export default function AnalytiquesPage() {
             {/* Bank KPI Cards */}
             <div className="px-4 sm:px-6">
               <AnalyticsKpiRow
-                config={TRESORERIE_BANK_KPI}
+                config={bankKpiConfig}
                 kpi={bankKpi}
-                loading={bankLoading}
+                loading={bankLoading || forecastLoading}
               />
             </div>
 
@@ -531,7 +593,7 @@ export default function AnalytiquesPage() {
             {/* Forecast Chart */}
             <div className="px-4 sm:px-6">
               <AnalyticsTreasuryForecastChart
-                forecastData={forecastData}
+                forecastData={periodForecastData}
                 loading={forecastLoading}
               />
             </div>
@@ -555,6 +617,11 @@ export default function AnalytiquesPage() {
               <h2 className="text-lg font-medium text-muted-foreground">
                 Analyse du recouvrement
               </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                Créances, retards et ancienneté reflètent la situation à ce
+                jour. DSO, taux de recouvrement et statuts suivent la période
+                sélectionnée.
+              </p>
             </div>
 
             {/* Recovery KPI Cards */}
