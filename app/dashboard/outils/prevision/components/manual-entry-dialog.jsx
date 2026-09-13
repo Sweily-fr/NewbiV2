@@ -49,7 +49,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CalendarIcon,
+  GitBranch,
 } from "lucide-react";
+import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 
 const FREQUENCIES = [
   { value: "WEEKLY", label: "Toutes les semaines" },
@@ -159,6 +161,7 @@ const formatMonthLabel = (month) =>
 // ou un seul mois quand la modal a été ouverte depuis un « + » du tableau
 // (rangeStart === rangeEnd).
 function ForecastDetailsList({ rangeStart, rangeEnd }) {
+  const { isScenario, scenarioName } = useForecastScenario();
   const { occurrences, loading } = useForecastOccurrences(rangeStart, rangeEnd);
   const singleMonth = Boolean(rangeStart) && rangeStart === rangeEnd;
   const { excludeOccurrence, loading: excluding } =
@@ -268,9 +271,12 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
                     year: "numeric",
                   })
                 : "ce mois"}
+              {isScenario
+                ? ` dans le scénario « ${scenarioName} » uniquement (Base inchangée).`
+                : " uniquement."}
               {toDelete?.kind === "DETECTED"
-                ? " uniquement. Les autres mois de cette récurrence détectée restent inchangés."
-                : " uniquement. Les autres occurrences de cette récurrence restent inchangées."}
+                ? " Les autres mois de cette récurrence détectée restent inchangés."
+                : " Les autres occurrences de cette récurrence restent inchangées."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -302,6 +308,15 @@ export function ManualEntryDialog({
 }) {
   const { upsertEntry, loading: saving } = useUpsertManualCashflowEntry();
   const { deleteEntry, loading: deleting } = useDeleteManualCashflowEntry();
+  const { isScenario, scenarioName } = useForecastScenario();
+  // Rappel affiché sous le titre : une saisie créée dans un scénario lui
+  // appartient ; une saisie de scénario ouverte en modification le rappelle.
+  const scenarioHint =
+    isScenario && !entry
+      ? `Ajoutée au scénario « ${scenarioName} » uniquement`
+      : isScenario && entry?.scenarioId
+        ? `Saisie du scénario « ${scenarioName} »`
+        : null;
 
   // Onglet actif : "EXPENSE" / "INCOME" (formulaire d'ajout) ou "DETAILS".
   const [activeTab, setActiveTab] = useState("EXPENSE");
@@ -462,6 +477,12 @@ export function ManualEntryDialog({
                   ? "Modifier la saisie"
                   : "Nouvelle saisie"}
             </DialogTitle>
+            {scenarioHint && activeTab !== "DETAILS" && (
+              <p className="flex items-center gap-1.5 text-[11px] text-[#5b4fff]/90 mt-1">
+                <GitBranch size={11} />
+                {scenarioHint}
+              </p>
+            )}
           </DialogHeader>
 
           {/* Onglets : Sortie / Entrée (formulaire) + Détails prévisions —

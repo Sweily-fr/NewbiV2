@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { EyeOff, Eye, RefreshCw, Plus, Trash2 } from "lucide-react";
+import { EyeOff, Eye, RefreshCw, Plus, Trash2, GitBranch } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   AlertDialog,
@@ -21,6 +21,20 @@ import {
   useDeleteDetectedRecurrence,
   useRunRecurrenceDetection,
 } from "@/src/hooks/useDetectedRecurrences";
+import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
+
+// Libellé d'état d'une récurrence. Dans un scénario, on distingue ce qui
+// vient de Base de ce qui a été surchargé ici.
+const statusLabel = (rec, isScenario) => {
+  if (rec.isMuted) {
+    return isScenario && rec.scenarioOverride
+      ? "masquée dans ce scénario"
+      : "masquée";
+  }
+  if (isScenario && rec.scenarioOverride) return "réactivée dans ce scénario";
+  if (rec.isActive) return "projetée";
+  return null;
+};
 
 const CATEGORY_LABELS = {
   SALES: "Ventes",
@@ -94,10 +108,10 @@ const formatCurrency = (value) =>
 const PAGE_SIZE = 5;
 
 export function DetectedRecurrencesList({ onCreateForecast }) {
+  const { isScenario, scenarioName } = useForecastScenario();
   const { recurrences, loading } = useDetectedRecurrences();
   const { setMuted, loading: muting } = useMuteDetectedRecurrence();
-  const { deleteRecurrence, loading: deleting } =
-    useDeleteDetectedRecurrence();
+  const { deleteRecurrence, loading: deleting } = useDeleteDetectedRecurrence();
   const { runDetection, loading: detecting } = useRunRecurrenceDetection();
   const [expanded, setExpanded] = useState(false);
   const [toDelete, setToDelete] = useState(null);
@@ -133,6 +147,12 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
               {recurrences.length}
             </span>
           )}
+          {isScenario && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#5b4fff]/10 px-2 py-0.5 text-[10px] font-medium text-[#5b4fff]">
+              <GitBranch size={10} />
+              {scenarioName}
+            </span>
+          )}
         </div>
         <button
           type="button"
@@ -157,6 +177,14 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
           <div className="divide-y divide-border/40">
             {visible.map((rec) => {
               const isIncome = rec.type === "INCOME";
+              const status = statusLabel(rec, isScenario);
+              const muteTitle = rec.isMuted
+                ? isScenario
+                  ? "Réactiver dans ce scénario"
+                  : "Réactiver"
+                : isScenario
+                  ? "Masquer dans ce scénario"
+                  : "Masquer";
               return (
                 <div
                   key={rec.id}
@@ -170,14 +198,16 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                       <span className="text-[13px] text-foreground truncate">
                         {rec.partyName}
                       </span>
-                      {rec.isMuted && (
-                        <span className="text-[10px] text-muted-foreground/60">
-                          masquée
-                        </span>
-                      )}
-                      {!rec.isMuted && rec.isActive && (
-                        <span className="text-[10px] text-muted-foreground/60">
-                          projetée
+                      {status && (
+                        <span
+                          className={cn(
+                            "text-[10px]",
+                            isScenario && rec.scenarioOverride
+                              ? "text-[#5b4fff]/80"
+                              : "text-muted-foreground/60",
+                          )}
+                        >
+                          {status}
                         </span>
                       )}
                     </div>
@@ -227,19 +257,24 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                       onClick={() => setMuted(rec.id, !rec.isMuted)}
                       disabled={muting}
                       className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                      title={rec.isMuted ? "Réactiver" : "Masquer"}
+                      title={muteTitle}
                     >
                       {rec.isMuted ? <Eye size={13} /> : <EyeOff size={13} />}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setToDelete(rec)}
-                      disabled={deleting}
-                      className="p-1 rounded-md text-muted-foreground/40 hover:text-red-500 hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                      title="Supprimer"
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                    {/* La suppression est définitive et commune à tous les
+                        scénarios : dans un scénario, on ne propose que le
+                        masquage local. */}
+                    {!isScenario && (
+                      <button
+                        type="button"
+                        onClick={() => setToDelete(rec)}
+                        disabled={deleting}
+                        className="p-1 rounded-md text-muted-foreground/40 hover:text-red-500 hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

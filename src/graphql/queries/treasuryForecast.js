@@ -42,8 +42,16 @@ export const GET_TREASURY_FORECAST_DATA = gql`
 `;
 
 export const GET_FORECAST_MONTH_DETAILS = gql`
-  query GetForecastMonthDetails($workspaceId: ID, $month: String!) {
-    forecastMonthDetails(workspaceId: $workspaceId, month: $month) {
+  query GetForecastMonthDetails(
+    $workspaceId: ID
+    $month: String!
+    $scenarioId: ID
+  ) {
+    forecastMonthDetails(
+      workspaceId: $workspaceId
+      month: $month
+      scenarioId: $scenarioId
+    ) {
       month
       invoices {
         id
@@ -97,11 +105,13 @@ export const GET_FORECAST_OCCURRENCES = gql`
     $workspaceId: ID
     $startMonth: String!
     $endMonth: String!
+    $scenarioId: ID
   ) {
     forecastOccurrences(
       workspaceId: $workspaceId
       startMonth: $startMonth
       endMonth: $endMonth
+      scenarioId: $scenarioId
     ) {
       id
       kind
@@ -115,8 +125,8 @@ export const GET_FORECAST_OCCURRENCES = gql`
 `;
 
 export const GET_DETECTED_RECURRENCES = gql`
-  query GetDetectedRecurrences($workspaceId: ID) {
-    detectedRecurrences(workspaceId: $workspaceId) {
+  query GetDetectedRecurrences($workspaceId: ID, $scenarioId: ID) {
+    detectedRecurrences(workspaceId: $workspaceId, scenarioId: $scenarioId) {
       id
       workspaceId
       source
@@ -131,16 +141,19 @@ export const GET_DETECTED_RECURRENCES = gql`
       consecutiveMonths
       isActive
       isMuted
+      scenarioOverride
       lastDetectedAt
     }
   }
 `;
 
 export const GET_MANUAL_CASHFLOW_ENTRIES = gql`
-  query GetManualCashflowEntries($workspaceId: ID) {
-    manualCashflowEntries(workspaceId: $workspaceId) {
+  query GetManualCashflowEntries($workspaceId: ID, $scenarioId: ID) {
+    manualCashflowEntries(workspaceId: $workspaceId, scenarioId: $scenarioId) {
       id
       workspaceId
+      scenarioId
+      hiddenInScenario
       name
       type
       category
