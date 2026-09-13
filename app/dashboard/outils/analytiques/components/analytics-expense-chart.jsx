@@ -128,9 +128,9 @@ export function AnalyticsExpenseCategoryChart({
   bankTransactions,
   loading,
 }) {
-  // Même palette indexée par rang que « Sorties par catégorie »
-  // de la vue d'ensemble (variantes daltoniennes incluses).
-  const { getExpenseColor } = useChartColors();
+  // Même palette que « Sorties par catégorie » de la vue d'ensemble,
+  // couleur attribuée par nom de catégorie (variantes daltoniennes incluses).
+  const { assignExpenseColors } = useChartColors();
   const chartData = useMemo(() => {
     // Aggregate bank transactions by mapped internal category
     const bankByCategory = {};
@@ -201,13 +201,14 @@ export function AnalyticsExpenseCategoryChart({
       .filter((c) => c.amount > 0)
       .sort((a, b) => b.amount - a.amount);
 
-    return result.map((c, i) => ({
+    const labeled = result.map((c) => ({
       ...c,
       amount: Math.round(c.amount * 100) / 100,
       label: CATEGORY_LABELS[c.category] || c.category,
-      fill: getExpenseColor(i),
     }));
-  }, [expenseByCategory, bankTransactions, getExpenseColor]);
+    const colors = assignExpenseColors(labeled.map((c) => c.label));
+    return labeled.map((c, i) => ({ ...c, fill: colors[i] }));
+  }, [expenseByCategory, bankTransactions, assignExpenseColors]);
 
   const chartConfig = useMemo(() => {
     const cfg = { amount: { label: "Montant" } };

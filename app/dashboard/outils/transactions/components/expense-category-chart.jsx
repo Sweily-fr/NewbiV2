@@ -52,7 +52,7 @@ export function ExpenseCategoryChart({
   hideHeader,
 }) {
   const isMobile = useIsMobile();
-  const { getExpenseColor } = useChartColors();
+  const { assignExpenseColors } = useChartColors();
   const [timeRange, setTimeRange] = useState(externalTimeRange || "cumul-year"); // 30d, 90d, 365d, custom, cumul-year
   useEffect(() => {
     if (externalTimeRange) setTimeRange(externalTimeRange);
@@ -88,13 +88,16 @@ export function ExpenseCategoryChart({
 
   const chartData = useMemo(() => {
     const categories = data?.dashboardCategoryAggregation?.categories || [];
+    // Couleur par nom de catégorie : identique au camembert « Dépenses par
+    // catégorie » des Analytiques, quel que soit le rang de la part.
+    const colors = assignExpenseColors(categories.map((c) => c.name));
     return categories.map((c, i) => ({
       category: c.name,
       amount: c.amount,
       label: c.name,
-      fill: getExpenseColor(i),
+      fill: colors[i],
     }));
-  }, [data, getExpenseColor]);
+  }, [data, assignExpenseColors]);
 
   // dateRange for display in the pie center (computed locally from timeRange)
   const dateRange = useMemo(() => {

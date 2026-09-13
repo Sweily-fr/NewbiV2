@@ -52,7 +52,7 @@ export function IncomeCategoryChart({
   hideHeader,
 }) {
   const isMobile = useIsMobile();
-  const { getIncomeColor } = useChartColors();
+  const { assignIncomeColors } = useChartColors();
   const [timeRange, setTimeRange] = useState(externalTimeRange || "cumul-year"); // 30d, 90d, 365d, custom, cumul-year
   useEffect(() => {
     if (externalTimeRange) setTimeRange(externalTimeRange);
@@ -114,13 +114,16 @@ export function IncomeCategoryChart({
 
   const chartData = useMemo(() => {
     const categories = data?.dashboardCategoryAggregation?.categories || [];
+    // Couleur par nom de catégorie : identique au camembert « Revenus par
+    // catégorie » des Analytiques, quel que soit le rang de la part.
+    const colors = assignIncomeColors(categories.map((c) => c.name));
     return categories.map((c, i) => ({
       category: c.name,
       amount: c.amount,
       label: c.name,
-      fill: getIncomeColor(i),
+      fill: colors[i],
     }));
-  }, [data, getIncomeColor]);
+  }, [data, assignIncomeColors]);
 
   // dateRange for display in the pie center (computed locally from timeRange)
   const dateRange = useMemo(() => {

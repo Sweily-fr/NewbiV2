@@ -161,6 +161,196 @@ const EXPENSE_PALETTE_COLORBLIND = [
   "#525252",
 ];
 
+// ---------------------------------------------------------------------------
+// Couleur par NOM de catégorie (et non par rang).
+//
+// Les camemberts « Entrées / Sorties par catégorie » de la vue d'ensemble et
+// « Revenus / Dépenses par catégorie » des Analytiques n'affichent pas
+// exactement les mêmes parts (périodes, sources et libellés différents) :
+// attribuer la couleur n° i à la i-ème part rendait la même catégorie d'une
+// couleur différente d'une page à l'autre. On fixe donc un emplacement de
+// palette par famille de catégorie, les synonymes des deux pages partageant
+// le même emplacement (« Repas » = « Restaurants », « Taxes » = « Impôts &
+// Taxes », ...). Les palettes standard et daltoniennes ont le même nombre
+// d'emplacements : la correspondance vaut dans les deux modes.
+// ---------------------------------------------------------------------------
+
+const slotMap = (families) => {
+  const map = {};
+  families.forEach((names, slot) => {
+    names.forEach((n) => {
+      map[n.toLowerCase()] = slot;
+    });
+  });
+  return map;
+};
+
+// Index = emplacement dans INCOME_PALETTE_* (0 = violet brand pour le CA).
+const INCOME_SLOTS = slotMap([
+  [
+    "Chiffre d'affaires",
+    "Facturation",
+    "Revenus professionnels",
+    "Ventes de produits",
+    "Prestations de services",
+  ],
+  ["Honoraires", "Consulting", "Commissions"],
+  ["Virements reçus", "Virement interne"],
+  ["Salaire", "Prime"],
+  ["Subventions", "Aides & Allocations", "CAF", "Pôle Emploi", "Indemnités"],
+  ["Abonnements", "Licences", "Royalties"],
+  ["Investissements", "Dividendes", "Intérêts", "Plus-values"],
+  ["Loyers perçus"],
+  ["Remboursement", "Remboursements", "Cadeaux reçus"],
+  ["Autre revenu", "Autre", "Non catégorisé"],
+]);
+
+// Index = emplacement dans EXPENSE_PALETTE_*.
+const EXPENSE_SLOTS = slotMap([
+  [
+    "Loyer",
+    "Logement",
+    "Charges",
+    "Électricité",
+    "Eau",
+    "Chauffage",
+    "Assurance habitation",
+  ],
+  [
+    "Repas",
+    "Repas d'affaires",
+    "Restaurant",
+    "Restaurants",
+    "Alimentation",
+    "Courses",
+    "Frais de représentation",
+  ],
+  [
+    "Transport",
+    "Déplacements",
+    "Carburant",
+    "Transports en commun",
+    "Taxi/VTC",
+    "Taxi / VTC",
+    "Parking",
+    "Train",
+    "Avion",
+    "Péage",
+    "Location de véhicule",
+    "Hébergement",
+    "Hébergement / Hôtel",
+    "Voyages",
+  ],
+  [
+    "Salaires",
+    "Charges sociales",
+    "Recrutement",
+    "Formation",
+    "Éducation",
+    "Conférence / Séminaire",
+  ],
+  [
+    "Marketing",
+    "Publicité",
+    "Réseaux sociaux",
+    "Site web",
+    "Cadeaux clients",
+    "Communication",
+  ],
+  [
+    "Impôts & Taxes",
+    "Impôts et taxes",
+    "Taxes",
+    "TVA",
+    "Impôt sur le revenu",
+    "Taxe foncière",
+  ],
+  [
+    "Logiciels",
+    "SaaS / Abonnements cloud",
+    "Abonnements",
+    "Abonnements professionnels",
+    "Téléphone/Internet",
+    "Téléphone",
+    "Internet",
+  ],
+  [
+    "Services",
+    "Sous-traitance",
+    "Conseil",
+    "Comptabilité",
+    "Services juridiques",
+    "Frais bancaires",
+    "Banque",
+    "Assurance",
+    "Mutuelle",
+    "Santé",
+    "Médecin",
+    "Pharmacie",
+    "Honoraires",
+  ],
+  [
+    "Matériel",
+    "Matériel informatique",
+    "Équipement professionnel",
+    "Mobilier",
+    "Fournitures",
+    "Fournitures de bureau",
+    "High-tech",
+    "Maison",
+    "Frais postaux",
+    "Impression",
+    "Livres et documentation",
+    "Livres",
+    "Entretien",
+    "Entretien et réparations",
+    "Maintenance",
+  ],
+  [
+    "Autre",
+    "Non catégorisé",
+    "Avoirs / Remboursement",
+    "Loisirs",
+    "Sorties",
+    "Sport",
+    "Shopping",
+    "Vêtements",
+  ],
+]);
+
+// Emplacement déterministe pour un libellé inconnu (catégorie texte libre).
+const hashSlot = (name, size) => {
+  let h = 0;
+  for (let i = 0; i < name.length; i += 1) {
+    h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  return h % size;
+};
+
+const preferredSlot = (name, slots, size) => {
+  const key = String(name || "").toLowerCase();
+  if (Object.hasOwn(slots, key)) return slots[key];
+  return hashSlot(key, size);
+};
+
+// Attribue une couleur à chaque libellé, dans l'ordre donné (les parts sont
+// triées par montant décroissant : les plus grosses gardent leur couleur
+// « naturelle », les plus petites cèdent en cas de collision). Tant qu'il
+// reste des emplacements libres, deux parts d'un même camembert n'ont jamais
+// la même couleur.
+const assignColors = (names, palette, slots) => {
+  const used = new Set();
+  return names.map((name) => {
+    const wanted = preferredSlot(name, slots, palette.length);
+    let slot = wanted;
+    if (used.size < palette.length) {
+      while (used.has(slot)) slot = (slot + 1) % palette.length;
+    }
+    used.add(slot);
+    return palette[slot];
+  });
+};
+
 export function useChartColors() {
   const { colorblindMode } = useTheme();
   const base = colorblindMode ? COLORBLIND_COLORS : DEFAULT_COLORS;
@@ -177,6 +367,11 @@ export function useChartColors() {
     expensePalette,
     getIncomeColor: (index) => incomePalette[index % incomePalette.length],
     getExpenseColor: (index) => expensePalette[index % expensePalette.length],
+    // Couleurs par nom de catégorie, stables d'un graphique à l'autre.
+    assignIncomeColors: (names) =>
+      assignColors(names, incomePalette, INCOME_SLOTS),
+    assignExpenseColors: (names) =>
+      assignColors(names, expensePalette, EXPENSE_SLOTS),
     remap: (color) => remapColor(color, colorblindMode),
     remapList: (colors) => colors.map((c) => remapColor(c, colorblindMode)),
   };

@@ -90,9 +90,9 @@ export function AnalyticsRevenuePieChart({
   bankTransactions,
   loading,
 }) {
-  // Même palette indexée par rang que « Entrées par catégorie »
-  // de la vue d'ensemble (variantes daltoniennes incluses).
-  const { getIncomeColor } = useChartColors();
+  // Même palette que « Entrées par catégorie » de la vue d'ensemble,
+  // couleur attribuée par nom de catégorie (variantes daltoniennes incluses).
+  const { assignIncomeColors } = useChartColors();
 
   // Mêmes règles que la vue d'ensemble (« Entrées par catégorie ») :
   // la part « Chiffre d'affaires » vient des factures payées (créées +
@@ -162,15 +162,16 @@ export function AnalyticsRevenuePieChart({
       });
     }
 
-    return slices
+    const sorted = slices
       .filter((s) => s.amount > 0)
-      .sort((a, b) => b.amount - a.amount)
-      .map((s, i) => ({
-        ...s,
-        amount: Math.round(s.amount * 100) / 100,
-        fill: getIncomeColor(i),
-      }));
-  }, [monthlyRevenue, bankTransactions, getIncomeColor]);
+      .sort((a, b) => b.amount - a.amount);
+    const colors = assignIncomeColors(sorted.map((s) => s.name));
+    return sorted.map((s, i) => ({
+      ...s,
+      amount: Math.round(s.amount * 100) / 100,
+      fill: colors[i],
+    }));
+  }, [monthlyRevenue, bankTransactions, assignIncomeColors]);
 
   const chartConfig = useMemo(() => {
     const cfg = { amount: { label: "Montant" } };
