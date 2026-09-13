@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useMutation } from "@apollo/client";
 import { parseDate } from "@internationalized/date";
 import {
@@ -790,16 +790,19 @@ export function TransactionDetailDrawer({
     const list = [];
     // Existants venant du backend
     const existing = transaction?.receiptFiles || [];
-    for (const r of existing) {
+    existing.forEach((r, idx) => {
       list.push({
         id: r.id,
+        // Position dans receiptFiles : sert au proxy d'aperçu quand le
+        // justificatif n'a pas d'identifiant Mongo (anciens fichiers migrés)
+        receiptIndex: idx,
         url: r.url,
         mimetype: r.mimetype || "",
         filename: r.filename || "Justificatif",
         size: r.size,
         isPending: false,
       });
-    }
+    });
     // Legacy `files[]` fallback (anciens formats)
     if (
       list.length === 0 &&
@@ -851,6 +854,41 @@ export function TransactionDetailDrawer({
   };
   const { isPdf: activeReceiptIsPdf, isImage: activeReceiptIsImage } =
     inferReceiptKind(activeReceipt);
+
+  // PDF en attente d'upload (mode création) : URL blob:, autorisée par la CSP
+  // (frame-src 'self' blob:), contrairement à la data URL de la miniature.
+  const pendingPdfBlobUrl = useMemo(
+    () =>
+      activeReceipt?.isPending && activeReceipt.file && activeReceiptIsPdf
+        ? URL.createObjectURL(activeReceipt.file)
+        : null,
+    [activeReceipt?.isPending, activeReceipt?.file, activeReceiptIsPdf],
+  );
+  useEffect(
+    () => () => {
+      if (pendingPdfBlobUrl) URL.revokeObjectURL(pendingPdfBlobUrl);
+    },
+    [pendingPdfBlobUrl],
+  );
+
+  // URL chargée dans l'iframe PDF. Les justificatifs déjà uploadés passent
+  // par le proxy same-origin /api/document-preview : la CSP de prod
+  // (frame-src 'self') bloque les iframes vers l'URL publique R2
+  // (ERR_BLOCKED_BY_CSP constaté le 14/09/2026). Les images gardent l'URL
+  // directe (img-src autorise https:), le bouton Télécharger aussi.
+  const activeReceiptPdfSrc = (() => {
+    if (!activeReceipt || !activeReceiptIsPdf) return null;
+    if (activeReceipt.isPending) return pendingPdfBlobUrl || activeReceipt.url;
+    const txId = transaction?.id;
+    if (!txId || activeReceipt.receiptIndex === undefined) {
+      // Legacy `files[]` : pas servi par le proxy
+      return activeReceipt.url;
+    }
+    const selector = /^[0-9a-f]{24}$/i.test(activeReceipt.id || "")
+      ? `fileId=${activeReceipt.id}`
+      : `index=${activeReceipt.receiptIndex}`;
+    return `/api/document-preview/transaction/${txId}?${selector}`;
+  })();
 
   const formatDate = (dateInput, includeTime = false) => {
     if (!dateInput) return "Non spécifiée";
@@ -961,7 +999,7 @@ export function TransactionDetailDrawer({
                 <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto overflow-hidden shadow-2xl">
                   {activeReceiptIsPdf ? (
                     <iframe
-                      src={`${activeReceipt.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                      src={`${activeReceiptPdfSrc}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                       title={activeReceipt.filename || "Justificatif"}
                       className="w-full h-full min-h-[297mm] border-0 block"
                     />
