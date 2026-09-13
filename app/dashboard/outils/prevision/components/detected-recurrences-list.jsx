@@ -350,10 +350,14 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                             frequency:
                               FORECAST_FREQUENCY[rec.frequency] || "MONTHLY",
                             category: rec.forecastCategory || rec.category,
+                            // La prévision créée remplace la détection, qui
+                            // sera masquée à l'enregistrement (sinon le
+                            // montant serait compté deux fois).
+                            fromDetection: { id: rec.id, name: rec.partyName },
                           })
                         }
                         className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
-                        title="Créer une prévision récurrente à partir de cette détection"
+                        title="Remplacer par une prévision manuelle (la détection sera masquée)"
                       >
                         <Plus size={13} />
                       </button>

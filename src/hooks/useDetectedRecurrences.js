@@ -40,18 +40,22 @@ export const useMuteDetectedRecurrence = () => {
     awaitRefetchQueries: false,
   });
 
-  const setMuted = async (id, muted) => {
+  // `silent` : pas de toast (l'appelant affiche le sien, ex. remplacement
+  // d'une détection par une prévision manuelle).
+  const setMuted = async (id, muted, { silent = false } = {}) => {
     try {
       const result = await mutate({
         variables: { id, muted, scenarioId: scenarioId || undefined },
       });
       if (result.data?.muteDetectedRecurrence) {
         const suffix = isScenario ? " dans ce scénario" : "";
-        toast.success(
-          muted
-            ? `Récurrence masquée${suffix}`
-            : `Récurrence réactivée${suffix}`,
-        );
+        if (!silent) {
+          toast.success(
+            muted
+              ? `Récurrence masquée${suffix}`
+              : `Récurrence réactivée${suffix}`,
+          );
+        }
         return { success: true };
       }
       throw new Error("Erreur lors de la mise à jour");
