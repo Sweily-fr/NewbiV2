@@ -51,6 +51,7 @@ import {
   Unlink,
   Plus,
   Calculator,
+  ScanSearch,
 } from "lucide-react";
 import { ClipboardTickIcon, TrashIcon } from "@/src/components/icons";
 import { formatDateToFrench, formatLocalDate } from "@/src/utils/dateFormatter";
@@ -62,11 +63,13 @@ import {
   useUpdateImportedInvoice,
   useDeleteImportedInvoice,
   useValidateImportedInvoice,
+  useReanalyzeImportedInvoice,
   GET_IMPORTED_INVOICE_CLIENT_SUGGESTION,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { ClientCombobox } from "./client-combobox";
 import ClientsModal from "@/app/dashboard/outils/transactions/components/clients-modal";
+import { OcrComparisonDialog } from "./ocr-comparison-dialog";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliationGraphQL";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 
@@ -174,6 +177,10 @@ export function ImportedInvoiceSidebar({
   // Création d'un client depuis le tiroir (combobox « Créer un nouveau
   // client ») : le client créé est associé à la facture dans la foulée.
   const [showCreateClient, setShowCreateClient] = useState(false);
+  // Nouvelle analyse OCR : proposition renvoyée par l'API, comparée aux
+  // valeurs actuelles dans un dialogue avant application.
+  const [ocrProposal, setOcrProposal] = useState(null);
+  const [applyingOcr, setApplyingOcr] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -197,6 +204,8 @@ export function ImportedInvoiceSidebar({
     }
   }, [open, previewUrl, invoice?.file?.mimeType]);
 
+  const { reanalyzeImportedInvoice, loading: reanalyzing } =
+    useReanalyzeImportedInvoice();
   const { updateImportedInvoice, loading: updateLoading } =
     useUpdateImportedInvoice();
   const { deleteImportedInvoice, loading: deleteLoading } =
@@ -432,6 +441,46 @@ export function ImportedInvoiceSidebar({
       totalVAT,
       vatRate: vatRateFromAmounts(editData.totalHT, totalVAT),
     });
+  };
+
+  const handleReanalyze = async () => {
+    try {
+      const { data } = await reanalyzeImportedInvoice({
+        variables: { id: invoice.id },
+      });
+      setOcrProposal(data?.reanalyzeImportedInvoice || null);
+    } catch (error) {
+      toast.error(
+        error?.graphQLErrors?.[0]?.message ||
+          "Impossible de relancer l'analyse OCR",
+      );
+    }
+  };
+
+  // Applique les champs choisis dans le dialogue de comparaison : mise à
+  // jour du formulaire (taux recalculé) et enregistrement en une mutation.
+  const applyOcrPatch = async (patch) => {
+    if (!invoice?.id || Object.keys(patch).length === 0) return;
+    setApplyingOcr(true);
+    try {
+      await updateImportedInvoice({
+        variables: { id: invoice.id, input: patch },
+      });
+      setEditData((prev) => {
+        const next = { ...prev, ...patch };
+        next.vatRate = vatRateFromAmounts(next.totalHT, next.totalVAT);
+        return next;
+      });
+      savedRef.current = { ...savedRef.current, ...patch };
+      setSaveState("saved");
+      setOcrProposal(null);
+      toast.success("Valeurs de la nouvelle analyse appliquées");
+      onUpdate?.();
+    } catch (error) {
+      toast.error("Erreur lors de l'application de la nouvelle analyse");
+    } finally {
+      setApplyingOcr(false);
+    }
   };
 
   const linkCreatedClient = (created) => {
@@ -774,11 +823,33 @@ export function ImportedInvoiceSidebar({
 
           {/* Montants : HT et taux pilotent la TVA et le TTC */}
           <section className="rounded-lg border p-4 space-y-4">
-            <div className="flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                Montants
-              </p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Calculator className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Montants
+                </p>
+              </div>
+              {/* Relance l'OCR sur le fichier stocké, sans réimport : les
+                  valeurs lues sont comparées avant d'être appliquées. */}
+              {invoice.file?.url && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 font-normal text-[#5A50FF] hover:text-[#5A50FF] hover:bg-[#5A50FF]/10"
+                  onClick={handleReanalyze}
+                  disabled={reanalyzing || isLoading}
+                  title="Relire le document et comparer avec les valeurs actuelles"
+                >
+                  {reanalyzing ? (
+                    <LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
+                  )}
+                  {reanalyzing ? "Analyse en cours..." : "Relancer l'analyse"}
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2 min-w-0">
@@ -1065,6 +1136,19 @@ export function ImportedInvoiceSidebar({
           </>
         </div>
       </motion.div>
+
+      {/* Comparaison valeurs actuelles / nouvelle analyse OCR */}
+      <OcrComparisonDialog
+        open={!!ocrProposal}
+        onOpenChange={(o) => {
+          if (!o && !applyingOcr) setOcrProposal(null);
+        }}
+        current={editData}
+        proposal={ocrProposal}
+        currency={invoice.currency}
+        onApply={applyOcrPatch}
+        applying={applyingOcr}
+      />
 
       {/* Création d'un client depuis le tiroir, associé à la facture ensuite */}
       {showCreateClient && (
