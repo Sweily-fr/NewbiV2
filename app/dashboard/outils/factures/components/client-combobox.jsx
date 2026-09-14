@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, ChevronsUpDown, X } from "lucide-react";
+import { CheckIcon, ChevronsUpDown, Plus, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Command,
@@ -26,9 +26,16 @@ const clientDisplayName = (client) =>
 /**
  * Sélecteur d'un client existant du workspace (recherche serveur).
  * value = id du client associé (ou null), onChange reçoit le client
- * sélectionné (objet) ou null pour dissocier.
+ * sélectionné (objet) ou null pour dissocier. onCreate (optionnel) ajoute une
+ * entrée « Créer un nouveau client » qui reçoit le texte recherché.
  */
-export function ClientCombobox({ value, onChange, placeholder, selectedName }) {
+export function ClientCombobox({
+  value,
+  onChange,
+  placeholder,
+  selectedName,
+  onCreate,
+}) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { clients, loading } = useClients(1, 50, search);
@@ -69,6 +76,20 @@ export function ClientCombobox({ value, onChange, placeholder, selectedName }) {
               <CommandEmpty>
                 {loading ? "Chargement..." : "Aucun client trouvé."}
               </CommandEmpty>
+              {onCreate && (
+                <CommandGroup>
+                  <CommandItem
+                    value="__create__"
+                    onSelect={() => {
+                      setOpen(false);
+                      onCreate(search);
+                    }}
+                  >
+                    <Plus size={16} className="mr-2 shrink-0" />
+                    <span className="truncate">Créer un nouveau client</span>
+                  </CommandItem>
+                </CommandGroup>
+              )}
               <CommandGroup>
                 {clients.map((client) => (
                   <CommandItem

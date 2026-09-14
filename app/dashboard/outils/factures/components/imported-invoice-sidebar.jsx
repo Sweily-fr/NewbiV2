@@ -65,6 +65,7 @@ import {
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { ClientCombobox } from "./client-combobox";
+import ClientsModal from "@/app/dashboard/outils/transactions/components/clients-modal";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliationGraphQL";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 
@@ -81,16 +82,45 @@ const formatDateForInput = (dateValue) => {
   }
 };
 
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+// Taux de TVA (%) déduit des montants stockés ; 20 par défaut si pas de HT.
+const vatRateFromAmounts = (totalHT, totalVAT) => {
+  const ht = Number(totalHT) || 0;
+  if (ht <= 0) return 20;
+  return round2(((Number(totalVAT) || 0) / ht) * 100);
+};
+
+// Symbole de la devise ("€", "$"…) pour les libellés des champs de montant.
+const currencySymbol = (currency) => {
+  try {
+    return (
+      new Intl.NumberFormat("fr-FR", {
+        style: "currency",
+        currency: currency || "EUR",
+      })
+        .formatToParts(0)
+        .find((part) => part.type === "currency")?.value ||
+      currency ||
+      "€"
+    );
+  } catch {
+    return currency || "€";
+  }
+};
+
+// Le formulaire manipule un taux de TVA (%), l'API stocke des montants :
+// vatRate est local, totalVAT et totalTTC sont recalculés à partir du HT.
 const buildEditData = (inv) => ({
   originalInvoiceNumber: inv.originalInvoiceNumber || "",
   clientId: inv.client?.id || null,
   clientName: inv.client?.name || inv.vendor?.name || "",
-  clientSiret: inv.client?.siret || inv.vendor?.siret || "",
   invoiceDate: formatDateForInput(inv.invoiceDate),
   dueDate: formatDateForInput(inv.dueDate),
   totalHT: inv.totalHT || 0,
   totalVAT: inv.totalVAT || 0,
   totalTTC: inv.totalTTC || 0,
+  vatRate: vatRateFromAmounts(inv.totalHT, inv.totalVAT),
   category: inv.category || "OTHER",
   paymentMethod: inv.paymentMethod || "UNKNOWN",
   notes: inv.notes || "",
@@ -121,6 +151,9 @@ export function ImportedInvoiceSidebar({
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  // Création d'un client depuis le tiroir (combobox « Créer un nouveau
+  // client ») : le client créé est associé à la facture dans la foulée.
+  const [showCreateClient, setShowCreateClient] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -335,6 +368,53 @@ export function ImportedInvoiceSidebar({
       currency: invoice.currency || "EUR",
     }).format(amount || 0);
   };
+  const symbol = currencySymbol(invoice.currency);
+
+  // Montants : HT et taux (%) pilotent TVA et TTC ; saisir le TTC ajuste la
+  // TVA et le taux. Les trois montants sont enregistrés ensemble.
+  const AMOUNT_FIELDS = ["totalHT", "totalVAT", "totalTTC"];
+  const parseAmount = (raw) => (raw === "" ? 0 : parseFloat(raw) || 0);
+  const applyHT = (raw) => {
+    const totalHT = parseAmount(raw);
+    const totalVAT = round2((totalHT * editData.vatRate) / 100);
+    setEditData({
+      ...editData,
+      totalHT,
+      totalVAT,
+      totalTTC: round2(totalHT + totalVAT),
+    });
+  };
+  const applyVatRate = (raw) => {
+    const vatRate = parseAmount(raw);
+    const totalVAT = round2((editData.totalHT * vatRate) / 100);
+    setEditData({
+      ...editData,
+      vatRate,
+      totalVAT,
+      totalTTC: round2(editData.totalHT + totalVAT),
+    });
+  };
+  const applyTTC = (raw) => {
+    const totalTTC = parseAmount(raw);
+    const totalVAT = round2(totalTTC - editData.totalHT);
+    setEditData({
+      ...editData,
+      totalTTC,
+      totalVAT,
+      vatRate: vatRateFromAmounts(editData.totalHT, totalVAT),
+    });
+  };
+
+  const linkCreatedClient = (created) => {
+    if (!created?.id) return;
+    const name =
+      created.type === "INDIVIDUAL"
+        ? `${created.firstName || ""} ${created.lastName || ""}`.trim()
+        : created.name || editData.clientName;
+    const next = { clientId: created.id, clientName: name };
+    setEditData((prev) => ({ ...prev, ...next }));
+    commitFields(["clientId", "clientName"], next);
+  };
 
   const handleDownloadOriginal = () => {
     if (invoice.file?.url) {
@@ -547,22 +627,13 @@ export function ImportedInvoiceSidebar({
                   setEditData({ ...editData, ...next });
                   commitFields(["clientId", "clientName"], next);
                 }}
+                onCreate={() => setShowCreateClient(true)}
               />
               <Input
                 onBlur={() => commitFields(["clientName"])}
                 value={editData.clientName}
                 onChange={(e) =>
                   setEditData({ ...editData, clientName: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>SIRET Client</Label>
-              <Input
-                onBlur={() => commitFields(["clientSiret"])}
-                value={editData.clientSiret}
-                onChange={(e) =>
-                  setEditData({ ...editData, clientSiret: e.target.value })
                 }
               />
             </div>
@@ -592,60 +663,40 @@ export function ImportedInvoiceSidebar({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="space-y-2">
-                <Label>HT</Label>
+                <Label>HT ({symbol})</Label>
                 <Input
                   type="number"
                   step="0.01"
-                  onBlur={() => commitFields(["totalHT"])}
+                  onBlur={() => commitFields(AMOUNT_FIELDS)}
                   value={editData.totalHT ?? ""}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      totalHT:
-                        e.target.value === ""
-                          ? 0
-                          : parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => applyHT(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label>TVA</Label>
+                <Label>Taux de TVA (%)</Label>
                 <Input
                   type="number"
-                  step="0.01"
-                  onBlur={() => commitFields(["totalVAT"])}
-                  value={editData.totalVAT ?? ""}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      totalVAT:
-                        e.target.value === ""
-                          ? 0
-                          : parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  step="0.1"
+                  min="0"
+                  onBlur={() => commitFields(AMOUNT_FIELDS)}
+                  value={editData.vatRate ?? ""}
+                  onChange={(e) => applyVatRate(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label>TTC</Label>
+                <Label>TTC ({symbol})</Label>
                 <Input
                   type="number"
                   step="0.01"
-                  onBlur={() => commitFields(["totalTTC"])}
+                  onBlur={() => commitFields(AMOUNT_FIELDS)}
                   value={editData.totalTTC ?? ""}
-                  onChange={(e) =>
-                    setEditData({
-                      ...editData,
-                      totalTTC:
-                        e.target.value === ""
-                          ? 0
-                          : parseFloat(e.target.value) || 0,
-                    })
-                  }
+                  onChange={(e) => applyTTC(e.target.value)}
                 />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              TVA : {formatAmount(editData.totalVAT)}
+            </p>
             <div className="space-y-2">
               <Label>Catégorie</Label>
               <Select
@@ -944,6 +995,15 @@ export function ImportedInvoiceSidebar({
           </>
         </div>
       </motion.div>
+
+      {/* Création d'un client depuis le tiroir, associé à la facture ensuite */}
+      {showCreateClient && (
+        <ClientsModal
+          open={showCreateClient}
+          onOpenChange={setShowCreateClient}
+          onSave={linkCreatedClient}
+        />
+      )}
 
       {/* Modal de confirmation avant la suppression */}
       <AlertDialog
