@@ -221,6 +221,23 @@ export default function InvoiceTable({
     return sortByDateDesc([...normalInvoices, ...imported]);
   }, [invoices, importedInvoices]);
 
+  // Facture importée affichée dans la sidebar : l'objet sélectionné au clic
+  // (ou l'élément de la file de revue) est un instantané. Après chaque
+  // enregistrement, on relit la version rafraîchie dans la liste pour que la
+  // sidebar reste ouverte avec des données à jour (elle se fermait avant à la
+  // moindre modification).
+  const sidebarImportedInvoice = useMemo(() => {
+    const base =
+      reviewQueue.length > 0
+        ? reviewQueue[reviewIndex]
+        : selectedImportedInvoice;
+    if (!base) return null;
+    const fresh = combinedInvoices.find(
+      (inv) => inv._type === "imported" && inv.id === base.id,
+    );
+    return fresh || base;
+  }, [reviewQueue, reviewIndex, selectedImportedInvoice, combinedInvoices]);
+
   // État pour les tabs de filtre rapide
   const [activeTab, setActiveTab] = useState("all");
 
@@ -1287,11 +1304,7 @@ export default function InvoiceTable({
       <AnimatePresence>
         {(reviewQueue.length > 0 || !!selectedImportedInvoice) && (
           <ImportedInvoiceSidebar
-            invoice={
-              reviewQueue.length > 0
-                ? reviewQueue[reviewIndex]
-                : selectedImportedInvoice
-            }
+            invoice={sidebarImportedInvoice}
             open={true}
             reviewInfo={
               reviewQueue.length > 0
@@ -1316,11 +1329,10 @@ export default function InvoiceTable({
               }
             }}
             onUpdate={() => {
+              // La sidebar reste ouverte : sidebarImportedInvoice est relu
+              // depuis la liste rafraîchie.
               refetchImported();
               onBalancesRefetch?.();
-              if (reviewQueue.length === 0) {
-                setSelectedImportedInvoice(null);
-              }
             }}
           />
         )}
