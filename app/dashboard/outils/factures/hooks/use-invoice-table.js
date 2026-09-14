@@ -45,12 +45,12 @@ import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 // Custom filter functions
-// Une facture importée VALIDATED est "En attente" au même titre qu'une facture
-// Newbi PENDING : on la range sous PENDING pour les onglets et le filtre.
+// Une facture importée VALIDATED est "Terminée" au même titre qu'une facture
+// Newbi COMPLETED : on la range sous COMPLETED pour les onglets et le filtre.
 const normalizeStatusForFilter = (row) => {
   const status = row.getValue("status");
   return row.original?._type === "imported" && status === "VALIDATED"
-    ? "PENDING"
+    ? "COMPLETED"
     : status;
 };
 
@@ -747,9 +747,9 @@ export function useInvoiceTable({
                   };
                 case "VALIDATED":
                   return {
-                    icon: <Clock className="w-3 h-3" />,
+                    icon: <CheckCircle className="w-3 h-3" />,
                     className:
-                      "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+                      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
                   };
                 case "COMPLETED":
                   return {
