@@ -45,10 +45,18 @@ import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 
 // Custom filter functions
+// Une facture importée VALIDATED est "En attente" au même titre qu'une facture
+// Newbi PENDING : on la range sous PENDING pour les onglets et le filtre.
+const normalizeStatusForFilter = (row) => {
+  const status = row.getValue("status");
+  return row.original?._type === "imported" && status === "VALIDATED"
+    ? "PENDING"
+    : status;
+};
+
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
-  const status = row.getValue(columnId);
-  return filterValue.includes(status);
+  return filterValue.includes(normalizeStatusForFilter(row));
 };
 
 // Mémoize filter functions to prevent recreation on each render
@@ -156,8 +164,7 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
 
 const memoizedStatusFilter = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
-  const status = row.getValue(columnId);
-  return filterValue.includes(status);
+  return filterValue.includes(normalizeStatusForFilter(row));
 };
 
 // Custom filter function for clients (filtre par nom pour inclure tous les clients avec le même nom)
@@ -740,18 +747,15 @@ export function useInvoiceTable({
                   };
                 case "VALIDATED":
                   return {
-                    icon: <CheckCircle className="w-3 h-3" />,
+                    icon: <Clock className="w-3 h-3" />,
                     className:
-                      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+                      "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
                   };
-                // Encaissée (rapprochée à une transaction) : bleu comme le
-                // badge de la sidebar importée, sinon le défaut gris + icône
-                // document se confond avec « Brouillon ».
                 case "COMPLETED":
                   return {
                     icon: <CheckCircle className="w-3 h-3" />,
                     className:
-                      "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+                      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
                   };
                 case "REJECTED":
                   return {

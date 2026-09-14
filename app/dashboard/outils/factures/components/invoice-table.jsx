@@ -364,7 +364,11 @@ export default function InvoiceTable({
     now.setHours(0, 0, 0, 0);
     combinedInvoices.forEach((inv) => {
       if (inv.status === "DRAFT") counts.draft++;
-      else if (inv.status === "PENDING") {
+      else if (inv._type === "imported" && inv.status === "VALIDATED") {
+        // Importée vérifiée mais pas encore rapprochée = "En attente" (pas de
+        // notion de retard sur les importées, cf. use-invoice-table).
+        counts.pending++;
+      } else if (inv.status === "PENDING") {
         counts.pending++;
         if (inv.dueDate) {
           const dueDateValue =
