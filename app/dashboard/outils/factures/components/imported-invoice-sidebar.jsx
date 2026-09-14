@@ -623,6 +623,28 @@ export function ImportedInvoiceSidebar({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {/* Relance l'OCR sur le fichier stocké (tout le document), sans
+                réimport : les valeurs lues sont comparées avant application. */}
+            {invoice.file?.url && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 font-normal gap-1.5"
+                onClick={handleReanalyze}
+                disabled={reanalyzing || isLoading}
+                title="Relire le document et comparer avec les valeurs actuelles"
+              >
+                {reanalyzing ? (
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ScanSearch className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {reanalyzing ? "Analyse en cours..." : "Relancer l'analyse"}
+                </span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -823,33 +845,11 @@ export function ImportedInvoiceSidebar({
 
           {/* Montants : HT et taux pilotent la TVA et le TTC */}
           <section className="rounded-lg border p-4 space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Calculator className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Montants
-                </p>
-              </div>
-              {/* Relance l'OCR sur le fichier stocké, sans réimport : les
-                  valeurs lues sont comparées avant d'être appliquées. */}
-              {invoice.file?.url && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 font-normal text-[#5A50FF] hover:text-[#5A50FF] hover:bg-[#5A50FF]/10"
-                  onClick={handleReanalyze}
-                  disabled={reanalyzing || isLoading}
-                  title="Relire le document et comparer avec les valeurs actuelles"
-                >
-                  {reanalyzing ? (
-                    <LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  ) : (
-                    <ScanSearch className="h-3.5 w-3.5 mr-1.5" />
-                  )}
-                  {reanalyzing ? "Analyse en cours..." : "Relancer l'analyse"}
-                </Button>
-              )}
+            <div className="flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                Montants
+              </p>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2 min-w-0">
