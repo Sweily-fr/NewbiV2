@@ -36,14 +36,16 @@ export function ClientCombobox({ value, onChange, placeholder, selectedName }) {
   const selected = clients.find((c) => c.id === value) || null;
 
   return (
-    <div className="flex items-center gap-1">
+    // min-w-0 + flex-1 : le bouton se rétrécit pour laisser la place à la
+    // croix de dissociation au lieu de déborder du tiroir (scroll horizontal).
+    <div className="flex items-center gap-1 min-w-0 w-full">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between font-normal"
+            className="flex-1 min-w-0 justify-between font-normal"
           >
             <span className="truncate">
               {selected
