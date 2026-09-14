@@ -110,22 +110,41 @@ const currencySymbol = (currency) => {
   }
 };
 
+// Montants stockés, rendus cohérents : quand HT + TVA ne donne pas le TTC
+// (TVA saisie comme un taux avant le passage au champ « TVA (%) », OCR
+// partiel), le HT et le TTC font foi et la TVA est recalculée. Sans HT ou
+// sans TTC on ne peut rien déduire, les valeurs restent telles quelles.
+const normalizeAmounts = (inv) => {
+  const totalHT = Number(inv.totalHT) || 0;
+  const totalTTC = Number(inv.totalTTC) || 0;
+  let totalVAT = Number(inv.totalVAT) || 0;
+  if (
+    totalHT > 0 &&
+    totalTTC >= totalHT &&
+    Math.abs(totalHT + totalVAT - totalTTC) > 0.01
+  ) {
+    totalVAT = round2(totalTTC - totalHT);
+  }
+  return { totalHT, totalVAT, totalTTC };
+};
+
 // Le formulaire manipule un taux de TVA (%), l'API stocke des montants :
 // vatRate est local, totalVAT et totalTTC sont recalculés à partir du HT.
-const buildEditData = (inv) => ({
-  originalInvoiceNumber: inv.originalInvoiceNumber || "",
-  clientId: inv.client?.id || null,
-  clientName: inv.client?.name || inv.vendor?.name || "",
-  invoiceDate: formatDateForInput(inv.invoiceDate),
-  dueDate: formatDateForInput(inv.dueDate),
-  totalHT: inv.totalHT || 0,
-  totalVAT: inv.totalVAT || 0,
-  totalTTC: inv.totalTTC || 0,
-  vatRate: vatRateFromAmounts(inv.totalHT, inv.totalVAT),
-  category: inv.category || "OTHER",
-  paymentMethod: inv.paymentMethod || "UNKNOWN",
-  notes: inv.notes || "",
-});
+const buildEditData = (inv) => {
+  const amounts = normalizeAmounts(inv);
+  return {
+    originalInvoiceNumber: inv.originalInvoiceNumber || "",
+    clientId: inv.client?.id || null,
+    clientName: inv.client?.name || inv.vendor?.name || "",
+    invoiceDate: formatDateForInput(inv.invoiceDate),
+    dueDate: formatDateForInput(inv.dueDate),
+    ...amounts,
+    vatRate: vatRateFromAmounts(amounts.totalHT, amounts.totalVAT),
+    category: inv.category || "OTHER",
+    paymentMethod: inv.paymentMethod || "UNKNOWN",
+    notes: inv.notes || "",
+  };
+};
 
 export function ImportedInvoiceSidebar({
   invoice,
@@ -266,6 +285,15 @@ export function ImportedInvoiceSidebar({
     setEditData(data);
     savedRef.current = data;
     setSaveState("idle");
+    // Montants incohérents en base : la TVA recalculée est enregistrée tout
+    // de suite, pour que la liste et les analyses reflètent la même chose
+    // que le tiroir. savedRef garde la valeur stockée afin que le patch ne
+    // soit pas vide.
+    const storedVAT = Number(invoice.totalVAT) || 0;
+    if (storedVAT !== data.totalVAT) {
+      savedRef.current = { ...data, totalVAT: storedVAT };
+      commitFields(["totalHT", "totalVAT", "totalTTC"], data);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoice?.id]);
 
