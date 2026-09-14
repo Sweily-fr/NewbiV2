@@ -744,6 +744,15 @@ export function useInvoiceTable({
                     className:
                       "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
                   };
+                // Encaissée (rapprochée à une transaction) : bleu comme le
+                // badge de la sidebar importée, sinon le défaut gris + icône
+                // document se confond avec « Brouillon ».
+                case "COMPLETED":
+                  return {
+                    icon: <CheckCircle className="w-3 h-3" />,
+                    className:
+                      "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+                  };
                 case "REJECTED":
                   return {
                     icon: <XCircle className="w-3 h-3" />,
