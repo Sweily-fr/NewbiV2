@@ -365,9 +365,8 @@ export default function InvoiceTable({
     combinedInvoices.forEach((inv) => {
       if (inv.status === "DRAFT") counts.draft++;
       else if (inv._type === "imported" && inv.status === "VALIDATED") {
-        // Importée vérifiée mais pas encore rapprochée = "En attente" (pas de
-        // notion de retard sur les importées, cf. use-invoice-table).
-        counts.pending++;
+        // Importée validée = "Terminée" comme une Newbi COMPLETED.
+        counts.completed++;
       } else if (inv.status === "PENDING") {
         counts.pending++;
         if (inv.dueDate) {
