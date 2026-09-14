@@ -193,11 +193,13 @@ const mapExpenseToRow = (expense) => {
       expense.hasReceipt ||
       (expense.files && expense.files.length > 0) ||
       (expense.linkedInvoices?.length || 0) > 0 ||
-      (expense.linkedPurchaseInvoices?.length || 0) > 0,
+      (expense.linkedPurchaseInvoices?.length || 0) > 0 ||
+      (expense.linkedImportedInvoices?.length || 0) > 0,
     receiptRequired:
       expense.receiptRequired !== false &&
       (expense.linkedInvoices?.length || 0) === 0 &&
-      (expense.linkedPurchaseInvoices?.length || 0) === 0,
+      (expense.linkedPurchaseInvoices?.length || 0) === 0 &&
+      (expense.linkedImportedInvoices?.length || 0) === 0,
     expenseType: expense.expenseType || "ORGANIZATION",
     assignedMember: expense.assignedMember || null,
     // Données originales de la transaction bancaire si disponibles
@@ -207,6 +209,8 @@ const mapExpenseToRow = (expense) => {
     linkedInvoices: expense.linkedInvoices || [],
     linkedPurchaseInvoiceIds: expense.linkedPurchaseInvoiceIds || [],
     linkedPurchaseInvoices: expense.linkedPurchaseInvoices || [],
+    linkedImportedInvoiceIds: expense.linkedImportedInvoiceIds || [],
+    linkedImportedInvoices: expense.linkedImportedInvoices || [],
     reconciliationStatus: expense.reconciliationStatus || null,
     reconciliationDate: expense.reconciliationDate || null,
     // Compte PCG et métadonnées (pour affichage et suggestion dans le dialog)
