@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, ChevronsUpDown, Plus, X } from "lucide-react";
+import { CheckIcon, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Command,
@@ -26,16 +26,9 @@ const clientDisplayName = (client) =>
 /**
  * Sélecteur d'un client existant du workspace (recherche serveur).
  * value = id du client associé (ou null), onChange reçoit le client
- * sélectionné (objet) ou null pour dissocier. onCreate (optionnel) ajoute une
- * entrée « Créer un nouveau client » qui reçoit le texte recherché.
+ * sélectionné (objet) ou null pour dissocier.
  */
-export function ClientCombobox({
-  value,
-  onChange,
-  placeholder,
-  selectedName,
-  onCreate,
-}) {
+export function ClientCombobox({ value, onChange, placeholder, selectedName }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { clients, loading } = useClients(1, 50, search);
@@ -43,14 +36,16 @@ export function ClientCombobox({
   const selected = clients.find((c) => c.id === value) || null;
 
   return (
-    <div className="flex items-center gap-1">
+    // min-w-0 + flex-1 : le bouton se rétrécit pour laisser la place à la
+    // croix de dissociation au lieu de déborder du tiroir (scroll horizontal).
+    <div className="flex items-center gap-1 min-w-0 w-full">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between font-normal"
+            className="flex-1 min-w-0 justify-between font-normal"
           >
             <span className="truncate">
               {selected
@@ -76,20 +71,6 @@ export function ClientCombobox({
               <CommandEmpty>
                 {loading ? "Chargement..." : "Aucun client trouvé."}
               </CommandEmpty>
-              {onCreate && (
-                <CommandGroup>
-                  <CommandItem
-                    value="__create__"
-                    onSelect={() => {
-                      setOpen(false);
-                      onCreate(search);
-                    }}
-                  >
-                    <Plus size={16} className="mr-2 shrink-0" />
-                    <span className="truncate">Créer un nouveau client</span>
-                  </CommandItem>
-                </CommandGroup>
-              )}
               <CommandGroup>
                 {clients.map((client) => (
                   <CommandItem

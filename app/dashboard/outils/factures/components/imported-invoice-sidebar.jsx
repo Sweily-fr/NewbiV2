@@ -17,7 +17,6 @@ const PdfPreview = dynamic(
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Separator } from "@/src/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -50,6 +49,8 @@ import {
   Landmark,
   Link2,
   Unlink,
+  Plus,
+  Calculator,
 } from "lucide-react";
 import { ClipboardTickIcon, TrashIcon } from "@/src/components/icons";
 import { formatDateToFrench, formatLocalDate } from "@/src/utils/dateFormatter";
@@ -565,41 +566,102 @@ export function ImportedInvoiceSidebar({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {/* Montant principal */}
-          <div className="text-center py-2">
-            <p className="text-3xl font-bold">
+          <div className="text-center py-1">
+            <p className="text-3xl font-bold tracking-tight">
               {formatAmount(invoice.totalTTC)}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              HT : {formatAmount(invoice.totalHT)} · TVA :{" "}
+              HT {formatAmount(invoice.totalHT)} · TVA{" "}
               {formatAmount(invoice.totalVAT)}
+            </p>
+            {/* État d'enregistrement des champs (sauvegarde à la perte de focus) */}
+            <p
+              className={`text-xs mt-2 min-h-4 ${
+                saveState === "error"
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+              }`}
+              aria-live="polite"
+            >
+              {saveState === "saving"
+                ? "Enregistrement..."
+                : saveState === "saved"
+                  ? "Modifications enregistrées"
+                  : saveState === "error"
+                    ? "Erreur d'enregistrement, réessayez"
+                    : ""}
             </p>
           </div>
 
-          <Separator />
+          {/* Client : association à un client existant, ou création */}
+          <section className="rounded-lg border p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Building className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Client
+                </p>
+              </div>
+              {editData.clientId ? (
+                <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  Associé
+                </span>
+              ) : (
+                <span className="text-xs text-amber-700 dark:text-amber-400">
+                  Aucun client associé
+                </span>
+              )}
+            </div>
+            <ClientCombobox
+              value={editData.clientId}
+              selectedName={editData.clientName}
+              onChange={(client) => {
+                const next = {
+                  clientId: client ? client.id : null,
+                  clientName: client
+                    ? client.type === "INDIVIDUAL"
+                      ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
+                      : client.name || editData.clientName
+                    : editData.clientName,
+                };
+                setEditData({ ...editData, ...next });
+                commitFields(["clientId", "clientName"], next);
+              }}
+            />
+            {!editData.clientId && editData.clientName && (
+              <p className="text-xs text-muted-foreground truncate">
+                Nom lu sur la facture : {editData.clientName}
+              </p>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 -ml-2 font-normal text-[#5A50FF] hover:text-[#5A50FF] hover:bg-[#5A50FF]/10"
+              onClick={() => setShowCreateClient(true)}
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              Créer un client
+            </Button>
+          </section>
 
-          {/* Champs modifiables directement, enregistrés à la perte de focus */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Informations : champs enregistrés à la perte de focus */}
+          <section className="rounded-lg border p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
               <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                 Informations
               </p>
-              <span className="text-xs text-muted-foreground">
-                {saveState === "saving"
-                  ? "Enregistrement..."
-                  : saveState === "saved"
-                    ? "Modifications enregistrées"
-                    : saveState === "error"
-                      ? "Erreur d'enregistrement"
-                      : ""}
-              </span>
             </div>
             <div className="space-y-2">
-              <Label>N° Facture</Label>
+              <Label>N° de facture</Label>
               <Input
                 onBlur={() => commitFields(["originalInvoiceNumber"])}
                 value={editData.originalInvoiceNumber}
+                placeholder="Ex. F-202603-0012"
                 onChange={(e) =>
                   setEditData({
                     ...editData,
@@ -608,38 +670,9 @@ export function ImportedInvoiceSidebar({
                 }
               />
             </div>
-            <div className="space-y-2">
-              <Label>Client</Label>
-              {/* Association à un client existant : corrige un mauvais
-                    rapprochement automatique ou un client non détecté */}
-              <ClientCombobox
-                value={editData.clientId}
-                selectedName={editData.clientName}
-                onChange={(client) => {
-                  const next = {
-                    clientId: client ? client.id : null,
-                    clientName: client
-                      ? client.type === "INDIVIDUAL"
-                        ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
-                        : client.name || editData.clientName
-                      : editData.clientName,
-                  };
-                  setEditData({ ...editData, ...next });
-                  commitFields(["clientId", "clientName"], next);
-                }}
-                onCreate={() => setShowCreateClient(true)}
-              />
-              <Input
-                onBlur={() => commitFields(["clientName"])}
-                value={editData.clientName}
-                onChange={(e) =>
-                  setEditData({ ...editData, clientName: e.target.value })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-2">
-                <Label>Date</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 min-w-0">
+                <Label>Date d'émission</Label>
                 <Input
                   type="date"
                   onBlur={() => commitFields(["invoiceDate"])}
@@ -649,7 +682,7 @@ export function ImportedInvoiceSidebar({
                   }
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>Échéance</Label>
                 <Input
                   type="date"
@@ -661,294 +694,303 @@ export function ImportedInvoiceSidebar({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 min-w-0">
+                <Label>Catégorie</Label>
+                <Select
+                  value={editData.category}
+                  onValueChange={(value) => {
+                    setEditData({ ...editData, category: value });
+                    commitFields(["category"], { category: value });
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(EXPENSE_CATEGORY_LABELS).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 min-w-0">
+                <Label>Moyen de paiement</Label>
+                <Select
+                  value={editData.paymentMethod}
+                  onValueChange={(value) => {
+                    setEditData({ ...editData, paymentMethod: value });
+                    commitFields(["paymentMethod"], { paymentMethod: value });
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PAYMENT_METHOD_LABELS).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </section>
+
+          {/* Montants : HT et taux pilotent la TVA et le TTC */}
+          <section className="rounded-lg border p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                Montants
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2 min-w-0">
                 <Label>HT ({symbol})</Label>
                 <Input
                   type="number"
                   step="0.01"
+                  inputMode="decimal"
                   onBlur={() => commitFields(AMOUNT_FIELDS)}
                   value={editData.totalHT ?? ""}
                   onChange={(e) => applyHT(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Taux de TVA (%)</Label>
+              <div className="space-y-2 min-w-0">
+                <Label>TVA (%)</Label>
                 <Input
                   type="number"
                   step="0.1"
                   min="0"
+                  inputMode="decimal"
                   onBlur={() => commitFields(AMOUNT_FIELDS)}
                   value={editData.vatRate ?? ""}
                   onChange={(e) => applyVatRate(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-0">
                 <Label>TTC ({symbol})</Label>
                 <Input
                   type="number"
                   step="0.01"
+                  inputMode="decimal"
                   onBlur={() => commitFields(AMOUNT_FIELDS)}
                   value={editData.totalTTC ?? ""}
                   onChange={(e) => applyTTC(e.target.value)}
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              TVA : {formatAmount(editData.totalVAT)}
-            </p>
-            <div className="space-y-2">
-              <Label>Catégorie</Label>
-              <Select
-                value={editData.category}
-                onValueChange={(value) => {
-                  setEditData({ ...editData, category: value });
-                  commitFields(["category"], { category: value });
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(EXPENSE_CATEGORY_LABELS).map(
-                    ([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-sm">
+              <span className="text-muted-foreground">
+                Montant de TVA ({editData.vatRate ?? 0} %)
+              </span>
+              <span className="font-medium">
+                {formatAmount(editData.totalVAT)}
+              </span>
             </div>
-            <div className="space-y-2">
-              <Label>Paiement</Label>
-              <Select
-                value={editData.paymentMethod}
-                onValueChange={(value) => {
-                  setEditData({ ...editData, paymentMethod: value });
-                  commitFields(["paymentMethod"], { paymentMethod: value });
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(PAYMENT_METHOD_LABELS).map(
-                    ([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <Separator />
+          </section>
 
           {/* Paiement bancaire : encaissements liés (N↔N), recherche
                   manuelle de transaction. */}
           {canReconcile && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Landmark className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                      Paiement bancaire
-                    </p>
-                  </div>
-                  {linkedTransactions.length > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#5A50FF]/20">
-                      <CheckCircle className="w-3 h-3" />
-                      Rapprochée
-                    </span>
-                  ) : null}
+            <section className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Landmark className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Paiement bancaire
+                  </p>
                 </div>
+                {linkedTransactions.length > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#5A50FF]/20">
+                    <CheckCircle className="w-3 h-3" />
+                    Rapprochée
+                  </span>
+                ) : null}
+              </div>
 
-                {linkedTransactions.length > 0 && (
-                  <div className="space-y-2">
-                    {linkedTransactions.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: "EUR",
-                            }).format(tx.amount || 0)}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {tx.description || "Transaction"}
-                            {tx.date ? ` - ${formatDateToFrench(tx.date)}` : ""}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          disabled={isUnlinkingImported}
-                          onClick={() => handleUnlinkTransaction(tx.id)}
-                          title="Détacher cette transaction"
-                        >
-                          <Unlink className="h-4 w-4" />
-                        </Button>
+              {linkedTransactions.length > 0 && (
+                <div className="space-y-2">
+                  {linkedTransactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
+                          {new Intl.NumberFormat("fr-FR", {
+                            style: "currency",
+                            currency: "EUR",
+                          }).format(tx.amount || 0)}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {tx.description || "Transaction"}
+                          {tx.date ? ` - ${formatDateToFrench(tx.date)}` : ""}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {!showTransactionPicker ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setShowTransactionPicker(true)}
-                  >
-                    <Link2 className="h-3.5 w-3.5 mr-1.5" />
-                    {linkedTransactions.length > 0
-                      ? "Rattacher une autre transaction"
-                      : "Rattacher une transaction"}
-                  </Button>
-                ) : (
-                  <div className="border rounded-lg p-3 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        Sélectionner une transaction
-                      </span>
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => {
-                          setShowTransactionPicker(false);
-                          setTransactionSearch("");
-                        }}
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        disabled={isUnlinkingImported}
+                        onClick={() => handleUnlinkTransaction(tx.id)}
+                        title="Détacher cette transaction"
                       >
-                        <X className="h-3 w-3" />
+                        <Unlink className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Input
-                      value={transactionSearch}
-                      onChange={(e) => setTransactionSearch(e.target.value)}
-                      placeholder="Libellé, référence, montant..."
-                      className="h-8 text-sm"
-                      autoFocus
-                    />
-                    {loadingTransactions ? (
-                      <div className="flex items-center justify-center py-4">
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                      </div>
-                    ) : availableTransactions.length > 0 ? (
-                      <div className="max-h-[240px] overflow-y-auto space-y-2">
-                        {availableTransactions.map((tx) => (
-                          <div
-                            key={tx.id}
-                            className={`p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors ${
-                              tx.score >= 80
-                                ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
-                                : ""
-                            }`}
-                            onClick={() =>
-                              !isLinkingImported && handleLinkTransaction(tx.id)
-                            }
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">
-                                  {new Intl.NumberFormat("fr-FR", {
-                                    style: "currency",
-                                    currency: "EUR",
-                                  }).format(tx.amount || 0)}
-                                </p>
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {tx.description || "Transaction"}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {tx.date ? formatDateToFrench(tx.date) : ""}
-                                </p>
-                              </div>
-                              <div className="flex flex-col items-end gap-1 shrink-0">
-                                {tx.score >= 80 && (
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#5a50ff]/10 text-[#5a50ff] border border-[#5a50ff]/30">
-                                    Correspondance
-                                  </span>
-                                )}
-                                {String(
-                                  tx.reconciliationStatus || "",
-                                ).toLowerCase() === "matched" && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
-                                    Déjà rapprochée
-                                  </span>
-                                )}
-                              </div>
+                  ))}
+                </div>
+              )}
+
+              {!showTransactionPicker ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowTransactionPicker(true)}
+                >
+                  <Link2 className="h-3.5 w-3.5 mr-1.5" />
+                  {linkedTransactions.length > 0
+                    ? "Rattacher une autre transaction"
+                    : "Rattacher une transaction"}
+                </Button>
+              ) : (
+                <div className="border rounded-lg p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Sélectionner une transaction
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        setShowTransactionPicker(false);
+                        setTransactionSearch("");
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Input
+                    value={transactionSearch}
+                    onChange={(e) => setTransactionSearch(e.target.value)}
+                    placeholder="Libellé, référence, montant..."
+                    className="h-8 text-sm"
+                    autoFocus
+                  />
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-4">
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : availableTransactions.length > 0 ? (
+                    <div className="max-h-[240px] overflow-y-auto space-y-2">
+                      {availableTransactions.map((tx) => (
+                        <div
+                          key={tx.id}
+                          className={`p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors ${
+                            tx.score >= 80
+                              ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            !isLinkingImported && handleLinkTransaction(tx.id)
+                          }
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {new Intl.NumberFormat("fr-FR", {
+                                  style: "currency",
+                                  currency: "EUR",
+                                }).format(tx.amount || 0)}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {tx.description || "Transaction"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {tx.date ? formatDateToFrench(tx.date) : ""}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              {tx.score >= 80 && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-[#5a50ff]/10 text-[#5a50ff] border border-[#5a50ff]/30">
+                                  Correspondance
+                                </span>
+                              )}
+                              {String(
+                                tx.reconciliationStatus || "",
+                              ).toLowerCase() === "matched" && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                  Déjà rapprochée
+                                </span>
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-center py-4 text-xs text-muted-foreground">
-                        {transactionSearch.trim()
-                          ? "Aucune transaction ne correspond à cette recherche."
-                          : "Aucune entrée d'argent à rapprocher depuis la date de la facture. Saisissez un libellé ou un montant pour élargir la recherche."}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center py-4 text-xs text-muted-foreground">
+                      {transactionSearch.trim()
+                        ? "Aucune transaction ne correspond à cette recherche."
+                        : "Aucune entrée d'argent à rapprocher depuis la date de la facture. Saisissez un libellé ou un montant pour élargir la recherche."}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
           )}
 
           {/* Fichier joint */}
           {invoice.file && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Document
+            <section className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Document
+                </p>
+              </div>
+              <div
+                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={handleDownloadOriginal}
+              >
+                <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {invoice.file.originalFileName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {invoice.file.fileSize
+                      ? `${Math.round(invoice.file.fileSize / 1024)} Ko`
+                      : invoice.file.mimeType}
                   </p>
                 </div>
-                <div
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={handleDownloadOriginal}
-                >
-                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {invoice.file.originalFileName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {invoice.file.fileSize
-                        ? `${Math.round(invoice.file.fileSize / 1024)} Ko`
-                        : invoice.file.mimeType}
-                    </p>
-                  </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
-                </div>
+                <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
               </div>
-            </>
+            </section>
           )}
 
           {/* Notes */}
           {invoice.notes && (
-            <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <StickyNote className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Notes
-                  </p>
-                </div>
-                <p className="text-sm whitespace-pre-wrap">{invoice.notes}</p>
+            <section className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <StickyNote className="h-4 w-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Notes
+                </p>
               </div>
-            </>
+              <p className="text-sm whitespace-pre-wrap">{invoice.notes}</p>
+            </section>
           )}
         </div>
 
