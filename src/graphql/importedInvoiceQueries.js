@@ -592,6 +592,8 @@ export const REANALYZE_IMPORTED_INVOICE = gql`
   mutation ReanalyzeImportedInvoice($id: ID!) {
     reanalyzeImportedInvoice(id: $id) {
       originalInvoiceNumber
+      clientId
+      clientMatched
       clientName
       clientSiret
       invoiceDate

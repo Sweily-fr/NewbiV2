@@ -58,7 +58,50 @@ export function OcrComparisonDialog({
       render: formatAmount,
       same: round2(current[key]) === round2(proposal[key]),
       missing: proposal[key] === null || proposal[key] === undefined,
+      patch: { [key]: round2(proposal[key]) },
     });
+    // Client : le rapprochement est rejoué par l'API sur les valeurs relues.
+    // Même client si les deux sont associés au même client Newbi, sinon
+    // comparaison des noms. Appliquer = associer (ou dissocier) + nom.
+    const norm = (v) => (v || "").trim().toLowerCase();
+    const clientRow = () => {
+      const cur = {
+        id: current.clientId || null,
+        name: current.clientName || "",
+      };
+      const prop = proposal.clientName
+        ? {
+            id: proposal.clientId || null,
+            name: proposal.clientName,
+            matched: !!proposal.clientMatched,
+          }
+        : null;
+      const same = prop
+        ? cur.id && prop.id
+          ? cur.id === prop.id
+          : norm(cur.name) === norm(prop.name)
+        : true;
+      return {
+        key: "client",
+        label: "Client",
+        currentValue: cur,
+        proposedValue: prop,
+        render: (v) =>
+          v && v.name ? (
+            <span>
+              {v.name}{" "}
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {v.id ? "(client existant)" : "(non rapproché)"}
+              </span>
+            </span>
+          ) : (
+            "—"
+          ),
+        same,
+        missing: !prop,
+        patch: prop ? { clientId: prop.id, clientName: prop.name } : {},
+      };
+    };
     const date = (key, label) => {
       const proposed = proposal[key] ? proposal[key].slice(0, 10) : null;
       return {
@@ -69,6 +112,7 @@ export function OcrComparisonDialog({
         render: formatDate,
         same: (current[key] || "") === (proposed || ""),
         missing: !proposed,
+        patch: { [key]: proposed },
       };
     };
     const plain = (key, label, render = text) => ({
@@ -79,10 +123,11 @@ export function OcrComparisonDialog({
       render,
       same: (current[key] || "") === (proposal[key] || ""),
       missing: !proposal[key],
+      patch: { [key]: proposal[key] || null },
     });
     return [
       plain("originalInvoiceNumber", "N° de facture"),
-      plain("clientName", "Client"),
+      clientRow(),
       date("invoiceDate", "Date d'émission"),
       date("dueDate", "Échéance"),
       amount("totalHT", "Montant HT"),
@@ -111,9 +156,9 @@ export function OcrComparisonDialog({
   const differences = rows.filter((r) => !r.same && !r.missing).length;
 
   const handleApply = () => {
-    const patch = {};
+    let patch = {};
     for (const row of rows) {
-      if (selected[row.key] && !row.missing) patch[row.key] = row.proposedValue;
+      if (selected[row.key] && !row.missing) patch = { ...patch, ...row.patch };
     }
     onApply(patch);
   };
