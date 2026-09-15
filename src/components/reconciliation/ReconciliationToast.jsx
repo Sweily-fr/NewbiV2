@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
-import { Landmark, X, Undo2, ArrowDownLeft } from "lucide-react";
+import { Landmark, X, Undo2, Link2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import {
@@ -89,7 +89,7 @@ function ReconciliationCard({
                 facture client) + ancienneté de la transaction */}
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-400 whitespace-nowrap">
-                <ArrowDownLeft className="h-3 w-3" />
+                <Link2 className="h-3 w-3" />
                 Transaction
                 <span className="text-emerald-500/70 dark:text-emerald-500">
                   →
