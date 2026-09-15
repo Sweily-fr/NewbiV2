@@ -61,6 +61,9 @@ function ReconciliationCard({
   isExiting,
   isProcessing,
 }) {
+  // Facture client importée (Qonto, OCR, Gmail) : même carte, pastille
+  // ambre « Transaction → Facture importée » et libellé sans préfixe.
+  const isImported = invoice.kind === "imported";
   return (
     <div
       onClick={() => onNavigate(invoice.id)}
@@ -79,8 +82,22 @@ function ReconciliationCard({
         <div className="flex items-start gap-3">
           {/* Icône banque */}
           <div className="flex-shrink-0 mt-0.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/25">
-              <Landmark className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-xl",
+                isImported
+                  ? "bg-amber-50 dark:bg-amber-900/25"
+                  : "bg-emerald-50 dark:bg-emerald-900/25",
+              )}
+            >
+              <Landmark
+                className={cn(
+                  "h-4 w-4",
+                  isImported
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-emerald-600 dark:text-emerald-400",
+                )}
+              />
             </div>
           </div>
 
@@ -89,13 +106,18 @@ function ReconciliationCard({
             {/* En-tête : sens du rapprochement proposé (encaissement vers une
                 facture client) + ancienneté de la transaction */}
             <div className="flex items-center justify-between gap-2 mb-1.5">
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-400 whitespace-nowrap">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full whitespace-nowrap",
+                  isImported
+                    ? "bg-amber-50 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400"
+                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-400",
+                )}
+              >
                 <ArrowDownLeft className="h-3 w-3" />
                 Transaction
-                <span className="text-emerald-500/70 dark:text-emerald-500">
-                  →
-                </span>
-                Facture
+                <span className="opacity-60">→</span>
+                {isImported ? "Facture importée" : "Facture"}
               </span>
               <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                 {formatRelativeDate(transaction.date)}
@@ -113,7 +135,10 @@ function ReconciliationCard({
               </span>
               {" - "}
               <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                Facture {formatInvoiceReference(invoice)}
+                {isImported
+                  ? `Facture ${invoice.number || "importée"}`
+                  : `Facture ${formatInvoiceReference(invoice)}`}
+                {invoice.clientName ? ` · ${invoice.clientName}` : ""}
               </span>
             </p>
 
@@ -142,7 +167,7 @@ function ReconciliationCard({
                 disabled={isProcessing}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onLink(transaction.id, invoice.id);
+                  onLink(transaction.id, invoice.id, invoice.kind);
                 }}
                 className={cn(
                   "h-[30px] px-3.5 text-[12px] font-medium rounded-full cursor-pointer",
@@ -294,6 +319,7 @@ export function ReconciliationToastProvider({ children }) {
   const {
     suggestions,
     linkTransaction,
+    linkImportedInvoice,
     refetch: fetchSuggestions,
     loading,
     error,
@@ -382,8 +408,10 @@ export function ReconciliationToastProvider({ children }) {
   }, []);
 
   // Rattacher une transaction à une facture
+  // kind : "newbi" (facture émise sur Newbi) ou "imported" (facture client
+  // importée), chacune a sa mutation de liaison.
   const handleLink = useCallback(
-    async (transactionId, invoiceId) => {
+    async (transactionId, invoiceId, kind = "newbi") => {
       setIsProcessing(true);
       saveIgnoredSuggestion(transactionId);
 
@@ -392,11 +420,10 @@ export function ReconciliationToastProvider({ children }) {
       });
 
       try {
-        const result = await linkTransaction(
-          transactionId,
-          invoiceId,
-          "SUGGESTION",
-        );
+        const result =
+          kind === "imported"
+            ? await linkImportedInvoice(transactionId, invoiceId, "SUGGESTION")
+            : await linkTransaction(transactionId, invoiceId, "SUGGESTION");
         // Rollback de l'optimistic-ignore si le serveur refuse le rattachement :
         // sinon la carte reste masquée alors que la transaction n'est pas
         // rapprochée (linkTransaction ne jette pas, il renvoie { success }).
@@ -412,7 +439,7 @@ export function ReconciliationToastProvider({ children }) {
         setIsProcessing(false);
       }
     },
-    [linkTransaction, animateOut],
+    [linkTransaction, linkImportedInvoice, animateOut],
   );
 
   // Masquer une suggestion du toast — NON bloquant. On la cache uniquement côté

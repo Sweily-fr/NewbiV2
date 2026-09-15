@@ -25,6 +25,7 @@ export const GET_RECONCILIATION_SUGGESTIONS = gql`
           totalTTC
           dueDate
           status
+          kind
         }
         confidence
       }

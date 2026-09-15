@@ -352,12 +352,15 @@ export function TransactionDetailDrawer({
 
   // Facture client importée (Qonto, OCR, Gmail) : même geste que pour une
   // facture Newbi, mutation dédiée.
-  const handleReconcileImportedInvoice = async (importedInvoiceId) => {
+  const handleReconcileImportedInvoice = async (
+    importedInvoiceId,
+    origin = "TRANSACTION",
+  ) => {
     if (!transaction?.id || !importedInvoiceId) return;
     const result = await linkImportedInvoice(
       transaction.id,
       importedInvoiceId,
-      "TRANSACTION",
+      origin,
     );
     if (result?.success) {
       setShowInvoicePicker(false);
@@ -1984,7 +1987,14 @@ export function TransactionDetailDrawer({
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-medium">
-                            Facture {formatInvoiceReference(invoice)}
+                            {invoice.kind === "imported"
+                              ? `Facture ${invoice.number || "importée"}`
+                              : `Facture ${formatInvoiceReference(invoice)}`}
+                            {invoice.kind === "imported" && (
+                              <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground align-middle">
+                                Importée
+                              </span>
+                            )}
                           </span>
                           <p className="text-sm text-muted-foreground truncate">
                             {invoice.clientName}
@@ -2006,9 +2016,16 @@ export function TransactionDetailDrawer({
                           size="sm"
                           className="flex-shrink-0"
                           onClick={() =>
-                            handleReconcileInvoice(invoice.id, "SUGGESTION")
+                            invoice.kind === "imported"
+                              ? handleReconcileImportedInvoice(
+                                  invoice.id,
+                                  "SUGGESTION",
+                                )
+                              : handleReconcileInvoice(invoice.id, "SUGGESTION")
                           }
-                          disabled={isReadOnly || isLinking}
+                          disabled={
+                            isReadOnly || isLinking || isLinkingImported
+                          }
                           title={readOnlyTooltip || "Rapprocher cette facture"}
                         >
                           {isLinking ? (
