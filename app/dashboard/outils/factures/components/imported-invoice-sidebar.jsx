@@ -18,6 +18,14 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Calendar } from "@/src/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -52,6 +60,7 @@ import {
   Plus,
   Calculator,
   ScanSearch,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { ClipboardTickIcon, TrashIcon } from "@/src/components/icons";
 import { formatDateToFrench, formatLocalDate } from "@/src/utils/dateFormatter";
@@ -87,6 +96,41 @@ const formatDateForInput = (dateValue) => {
 };
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+// Sélecteur de date identique aux autres calendriers de la plateforme
+// (Popover + Calendar, format long en français). value = "YYYY-MM-DD" ou "".
+function DateField({ value, onChange, placeholder = "Choisir une date" }) {
+  const date = value ? new Date(`${value}T00:00:00`) : null;
+  const valid = date && !isNaN(date.getTime());
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={`w-full justify-start text-left font-normal ${
+            valid ? "" : "text-muted-foreground"
+          }`}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate">
+            {valid ? format(date, "PPP", { locale: fr }) : placeholder}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={valid ? date : undefined}
+          defaultMonth={valid ? date : undefined}
+          onSelect={(selected) => {
+            if (selected) onChange(format(selected, "yyyy-MM-dd"));
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // Taux de TVA (%) déduit des montants stockés ; 20 par défaut si pas de HT.
 const vatRateFromAmounts = (totalHT, totalVAT) => {
@@ -621,6 +665,23 @@ export function ImportedInvoiceSidebar({
                 </span>
               )}
             </div>
+            {/* État d'enregistrement des champs (sauvegarde à la perte de focus) */}
+            {saveState !== "idle" && (
+              <p
+                className={`text-xs ${
+                  saveState === "error"
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+                }`}
+                aria-live="polite"
+              >
+                {saveState === "saving"
+                  ? "Enregistrement..."
+                  : saveState === "saved"
+                    ? "Modifications enregistrées"
+                    : "Erreur d'enregistrement, réessayez"}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {/* Relance l'OCR sur le fichier stocké (tout le document), sans
@@ -666,34 +727,6 @@ export function ImportedInvoiceSidebar({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Montant principal */}
-          <div className="text-center py-1">
-            <p className="text-3xl font-bold tracking-tight">
-              {formatAmount(invoice.totalTTC)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              HT {formatAmount(invoice.totalHT)} · TVA{" "}
-              {formatAmount(invoice.totalVAT)}
-            </p>
-            {/* État d'enregistrement des champs (sauvegarde à la perte de focus) */}
-            <p
-              className={`text-xs mt-2 min-h-4 ${
-                saveState === "error"
-                  ? "text-destructive"
-                  : "text-muted-foreground"
-              }`}
-              aria-live="polite"
-            >
-              {saveState === "saving"
-                ? "Enregistrement..."
-                : saveState === "saved"
-                  ? "Modifications enregistrées"
-                  : saveState === "error"
-                    ? "Erreur d'enregistrement, réessayez"
-                    : ""}
-            </p>
-          </div>
-
           {/* Client : association à un client existant, ou création */}
           <section className="rounded-lg border p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
@@ -772,24 +805,22 @@ export function ImportedInvoiceSidebar({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2 min-w-0">
                 <Label>Date d'émission</Label>
-                <Input
-                  type="date"
-                  onBlur={() => commitFields(["invoiceDate"])}
+                <DateField
                   value={editData.invoiceDate}
-                  onChange={(e) =>
-                    setEditData({ ...editData, invoiceDate: e.target.value })
-                  }
+                  onChange={(value) => {
+                    setEditData({ ...editData, invoiceDate: value });
+                    commitFields(["invoiceDate"], { invoiceDate: value });
+                  }}
                 />
               </div>
               <div className="space-y-2 min-w-0">
                 <Label>Échéance</Label>
-                <Input
-                  type="date"
-                  onBlur={() => commitFields(["dueDate"])}
+                <DateField
                   value={editData.dueDate}
-                  onChange={(e) =>
-                    setEditData({ ...editData, dueDate: e.target.value })
-                  }
+                  onChange={(value) => {
+                    setEditData({ ...editData, dueDate: value });
+                    commitFields(["dueDate"], { dueDate: value });
+                  }}
                 />
               </div>
             </div>
