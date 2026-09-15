@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { usePurchaseInvoiceReconciliation } from "@/src/hooks/usePurchaseInvoiceReconciliation";
 import { useRouter } from "next/navigation";
-import { Landmark, Undo2, Link2 } from "lucide-react";
+import { Landmark, Undo2, ArrowUpRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   useReconciliationToastVisibility,
@@ -93,7 +93,7 @@ function PurchaseInvoiceReconciliationCard({
                 facture d'achat) + ancienneté de la transaction */}
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-900/25 dark:text-rose-400 whitespace-nowrap">
-                <Link2 className="h-3 w-3" />
+                <ArrowUpRight className="h-3 w-3" />
                 Transaction
                 <span className="text-rose-400/80 dark:text-rose-500">→</span>
                 Facture d&apos;achat
