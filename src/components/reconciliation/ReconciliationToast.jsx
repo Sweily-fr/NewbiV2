@@ -90,11 +90,11 @@ function ReconciliationCard({
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-400 whitespace-nowrap">
                 <ArrowDownLeft className="h-3 w-3" />
-                Encaissement
+                Transaction
                 <span className="text-emerald-500/70 dark:text-emerald-500">
                   →
                 </span>
-                Facture client
+                Facture
               </span>
               <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                 {formatRelativeDate(transaction.date)}

@@ -94,7 +94,7 @@ function PurchaseInvoiceReconciliationCard({
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-900/25 dark:text-rose-400 whitespace-nowrap">
                 <ArrowUpRight className="h-3 w-3" />
-                Paiement
+                Transaction
                 <span className="text-rose-400/80 dark:text-rose-500">→</span>
                 Facture d&apos;achat
               </span>
