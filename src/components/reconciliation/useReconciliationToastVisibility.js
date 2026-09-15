@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-// Marqueur posé sur le conteneur des toasts : une interaction à l'intérieur
-// (rattacher, ignorer, ouvrir) ne doit pas les masquer.
+// Marqueur posé sur le conteneur des toasts (repère DOM des bandeaux de
+// rapprochement ; les interactions à l'intérieur n'ont aucun effet sur la
+// visibilité, qui ne dépend que des panneaux ouverts).
 export const RECONCILIATION_TOAST_ATTR = "data-reconciliation-toast";
 
 // Sélecteur des panneaux qui recouvrent la page : dialogs/drawers Radix et
@@ -26,55 +27,16 @@ const hasOpenOverlay = () => {
 /**
  * Visibilité des toasts de rapprochement.
  *
- * - Masqués tant qu'un panneau (drawer, sidebar, dialog) est ouvert : on ne
- *   superpose pas une suggestion à un écran de travail.
- * - Masqués dès que l'utilisateur agit ailleurs sur la page (clic, touche),
- *   et jusqu'à ce qu'une suggestion encore jamais vue arrive. Une suggestion
- *   déjà écartée par une interaction ne revient donc pas toute seule.
+ * Masqués uniquement tant qu'un panneau (drawer, sidebar, dialog) est
+ * ouvert : on ne superpose pas une suggestion à un écran de travail. Une
+ * frappe clavier ou un clic ailleurs sur la page ne les masque plus (décision
+ * du 15/09/2026) : chaque carte a son bouton « Masquer », c'est le seul geste
+ * qui écarte une suggestion.
  *
- * @param {string[]} suggestionIds ids (transaction) des suggestions actives
  * @returns {boolean} true si les toasts peuvent s'afficher
  */
-export function useReconciliationToastVisibility(suggestionIds) {
+export function useReconciliationToastVisibility() {
   const [overlayOpen, setOverlayOpen] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  const seenIdsRef = useRef(new Set());
-
-  // Nouvelle suggestion jamais vue → réaffichage (annule un masquage
-  // par interaction). Les ids déjà vus restent mémorisés.
-  const idsKey = [...suggestionIds].sort().join("|");
-  useEffect(() => {
-    let hasNew = false;
-    for (const id of suggestionIds) {
-      if (!seenIdsRef.current.has(id)) {
-        seenIdsRef.current.add(id);
-        hasNew = true;
-      }
-    }
-    if (hasNew) setDismissed(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey]);
-
-  // Interaction hors du toast → masquage.
-  useEffect(() => {
-    if (typeof document === "undefined") return undefined;
-    const onInteract = (event) => {
-      const target = event.target;
-      if (
-        target instanceof Element &&
-        target.closest(`[${RECONCILIATION_TOAST_ATTR}]`)
-      ) {
-        return;
-      }
-      setDismissed(true);
-    };
-    document.addEventListener("pointerdown", onInteract, true);
-    document.addEventListener("keydown", onInteract, true);
-    return () => {
-      document.removeEventListener("pointerdown", onInteract, true);
-      document.removeEventListener("keydown", onInteract, true);
-    };
-  }, []);
 
   // Panneau ouvert → masquage, réévalué à chaque mutation du DOM (les
   // portails Radix/vaul se montent sous body ; le verrou de scroll est un
@@ -113,5 +75,5 @@ export function useReconciliationToastVisibility(suggestionIds) {
     };
   }, []);
 
-  return !overlayOpen && !dismissed;
+  return !overlayOpen;
 }

@@ -408,11 +408,9 @@ export function PurchaseInvoiceReconciliationToastProvider({ children }) {
     [router],
   );
 
-  // Masqués tant qu'un panneau est ouvert, et après toute interaction hors
-  // du toast (jusqu'à une suggestion jamais vue).
-  const toastVisible = useReconciliationToastVisibility(
-    activeSuggestions.map((s) => s.transaction.id),
-  );
+  // Masqués uniquement tant qu'un panneau est ouvert ; seul « Masquer »
+  // écarte une suggestion.
+  const toastVisible = useReconciliationToastVisibility();
 
   return (
     <>
