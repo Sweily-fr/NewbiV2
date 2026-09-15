@@ -584,3 +584,35 @@ export function useConvertImportedInvoices() {
   );
   return { convertImportedInvoices, loading, error };
 }
+
+// Relance l'analyse OCR sur le fichier d'une facture importée : renvoie les
+// valeurs lues sans les enregistrer (comparaison dans la sidebar, puis
+// application via updateImportedInvoice). Consomme un import du quota OCR.
+export const REANALYZE_IMPORTED_INVOICE = gql`
+  mutation ReanalyzeImportedInvoice($id: ID!) {
+    reanalyzeImportedInvoice(id: $id) {
+      originalInvoiceNumber
+      clientId
+      clientMatched
+      clientName
+      clientSiret
+      invoiceDate
+      dueDate
+      totalHT
+      totalVAT
+      totalTTC
+      currency
+      category
+      paymentMethod
+      confidence
+      provider
+    }
+  }
+`;
+
+export function useReanalyzeImportedInvoice() {
+  const [reanalyzeImportedInvoice, { loading, error }] = useMutation(
+    REANALYZE_IMPORTED_INVOICE,
+  );
+  return { reanalyzeImportedInvoice, loading, error };
+}

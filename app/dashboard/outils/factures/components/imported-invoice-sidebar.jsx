@@ -18,6 +18,14 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Calendar } from "@/src/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -51,6 +59,8 @@ import {
   Unlink,
   Plus,
   Calculator,
+  ScanSearch,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { ClipboardTickIcon, TrashIcon } from "@/src/components/icons";
 import { formatDateToFrench, formatLocalDate } from "@/src/utils/dateFormatter";
@@ -62,11 +72,13 @@ import {
   useUpdateImportedInvoice,
   useDeleteImportedInvoice,
   useValidateImportedInvoice,
+  useReanalyzeImportedInvoice,
   GET_IMPORTED_INVOICE_CLIENT_SUGGESTION,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { ClientCombobox } from "./client-combobox";
 import ClientsModal from "@/app/dashboard/outils/transactions/components/clients-modal";
+import { OcrComparisonDialog } from "./ocr-comparison-dialog";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliationGraphQL";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 
@@ -84,6 +96,41 @@ const formatDateForInput = (dateValue) => {
 };
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+// Sélecteur de date identique aux autres calendriers de la plateforme
+// (Popover + Calendar, format long en français). value = "YYYY-MM-DD" ou "".
+function DateField({ value, onChange, placeholder = "Choisir une date" }) {
+  const date = value ? new Date(`${value}T00:00:00`) : null;
+  const valid = date && !isNaN(date.getTime());
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={`w-full justify-start text-left font-normal ${
+            valid ? "" : "text-muted-foreground"
+          }`}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate">
+            {valid ? format(date, "PPP", { locale: fr }) : placeholder}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={valid ? date : undefined}
+          defaultMonth={valid ? date : undefined}
+          onSelect={(selected) => {
+            if (selected) onChange(format(selected, "yyyy-MM-dd"));
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 // Taux de TVA (%) déduit des montants stockés ; 20 par défaut si pas de HT.
 const vatRateFromAmounts = (totalHT, totalVAT) => {
@@ -174,6 +221,10 @@ export function ImportedInvoiceSidebar({
   // Création d'un client depuis le tiroir (combobox « Créer un nouveau
   // client ») : le client créé est associé à la facture dans la foulée.
   const [showCreateClient, setShowCreateClient] = useState(false);
+  // Nouvelle analyse OCR : proposition renvoyée par l'API, comparée aux
+  // valeurs actuelles dans un dialogue avant application.
+  const [ocrProposal, setOcrProposal] = useState(null);
+  const [applyingOcr, setApplyingOcr] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -197,6 +248,8 @@ export function ImportedInvoiceSidebar({
     }
   }, [open, previewUrl, invoice?.file?.mimeType]);
 
+  const { reanalyzeImportedInvoice, loading: reanalyzing } =
+    useReanalyzeImportedInvoice();
   const { updateImportedInvoice, loading: updateLoading } =
     useUpdateImportedInvoice();
   const { deleteImportedInvoice, loading: deleteLoading } =
@@ -434,6 +487,46 @@ export function ImportedInvoiceSidebar({
     });
   };
 
+  const handleReanalyze = async () => {
+    try {
+      const { data } = await reanalyzeImportedInvoice({
+        variables: { id: invoice.id },
+      });
+      setOcrProposal(data?.reanalyzeImportedInvoice || null);
+    } catch (error) {
+      toast.error(
+        error?.graphQLErrors?.[0]?.message ||
+          "Impossible de relancer l'analyse OCR",
+      );
+    }
+  };
+
+  // Applique les champs choisis dans le dialogue de comparaison : mise à
+  // jour du formulaire (taux recalculé) et enregistrement en une mutation.
+  const applyOcrPatch = async (patch) => {
+    if (!invoice?.id || Object.keys(patch).length === 0) return;
+    setApplyingOcr(true);
+    try {
+      await updateImportedInvoice({
+        variables: { id: invoice.id, input: patch },
+      });
+      setEditData((prev) => {
+        const next = { ...prev, ...patch };
+        next.vatRate = vatRateFromAmounts(next.totalHT, next.totalVAT);
+        return next;
+      });
+      savedRef.current = { ...savedRef.current, ...patch };
+      setSaveState("saved");
+      setOcrProposal(null);
+      toast.success("Valeurs de la nouvelle analyse appliquées");
+      onUpdate?.();
+    } catch (error) {
+      toast.error("Erreur lors de l'application de la nouvelle analyse");
+    } finally {
+      setApplyingOcr(false);
+    }
+  };
+
   const linkCreatedClient = (created) => {
     if (!created?.id) return;
     const name =
@@ -572,8 +665,47 @@ export function ImportedInvoiceSidebar({
                 </span>
               )}
             </div>
+            {/* État d'enregistrement des champs (sauvegarde à la perte de focus) */}
+            {saveState !== "idle" && (
+              <p
+                className={`text-xs ${
+                  saveState === "error"
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+                }`}
+                aria-live="polite"
+              >
+                {saveState === "saving"
+                  ? "Enregistrement..."
+                  : saveState === "saved"
+                    ? "Modifications enregistrées"
+                    : "Erreur d'enregistrement, réessayez"}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {/* Relance l'OCR sur le fichier stocké (tout le document), sans
+                réimport : les valeurs lues sont comparées avant application. */}
+            {invoice.file?.url && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 font-normal gap-1.5"
+                onClick={handleReanalyze}
+                disabled={reanalyzing || isLoading}
+                title="Relire le document et comparer avec les valeurs actuelles"
+              >
+                {reanalyzing ? (
+                  <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ScanSearch className="h-3.5 w-3.5" />
+                )}
+                <span className="hidden sm:inline">
+                  {reanalyzing ? "Analyse en cours..." : "Relancer l'analyse"}
+                </span>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -595,34 +727,6 @@ export function ImportedInvoiceSidebar({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Montant principal */}
-          <div className="text-center py-1">
-            <p className="text-3xl font-bold tracking-tight">
-              {formatAmount(invoice.totalTTC)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              HT {formatAmount(invoice.totalHT)} · TVA{" "}
-              {formatAmount(invoice.totalVAT)}
-            </p>
-            {/* État d'enregistrement des champs (sauvegarde à la perte de focus) */}
-            <p
-              className={`text-xs mt-2 min-h-4 ${
-                saveState === "error"
-                  ? "text-destructive"
-                  : "text-muted-foreground"
-              }`}
-              aria-live="polite"
-            >
-              {saveState === "saving"
-                ? "Enregistrement..."
-                : saveState === "saved"
-                  ? "Modifications enregistrées"
-                  : saveState === "error"
-                    ? "Erreur d'enregistrement, réessayez"
-                    : ""}
-            </p>
-          </div>
-
           {/* Client : association à un client existant, ou création */}
           <section className="rounded-lg border p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
@@ -701,24 +805,22 @@ export function ImportedInvoiceSidebar({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2 min-w-0">
                 <Label>Date d'émission</Label>
-                <Input
-                  type="date"
-                  onBlur={() => commitFields(["invoiceDate"])}
+                <DateField
                   value={editData.invoiceDate}
-                  onChange={(e) =>
-                    setEditData({ ...editData, invoiceDate: e.target.value })
-                  }
+                  onChange={(value) => {
+                    setEditData({ ...editData, invoiceDate: value });
+                    commitFields(["invoiceDate"], { invoiceDate: value });
+                  }}
                 />
               </div>
               <div className="space-y-2 min-w-0">
                 <Label>Échéance</Label>
-                <Input
-                  type="date"
-                  onBlur={() => commitFields(["dueDate"])}
+                <DateField
                   value={editData.dueDate}
-                  onChange={(e) =>
-                    setEditData({ ...editData, dueDate: e.target.value })
-                  }
+                  onChange={(value) => {
+                    setEditData({ ...editData, dueDate: value });
+                    commitFields(["dueDate"], { dueDate: value });
+                  }}
                 />
               </div>
             </div>
@@ -1065,6 +1167,19 @@ export function ImportedInvoiceSidebar({
           </>
         </div>
       </motion.div>
+
+      {/* Comparaison valeurs actuelles / nouvelle analyse OCR */}
+      <OcrComparisonDialog
+        open={!!ocrProposal}
+        onOpenChange={(o) => {
+          if (!o && !applyingOcr) setOcrProposal(null);
+        }}
+        current={editData}
+        proposal={ocrProposal}
+        currency={invoice.currency}
+        onApply={applyOcrPatch}
+        applying={applyingOcr}
+      />
 
       {/* Création d'un client depuis le tiroir, associé à la facture ensuite */}
       {showCreateClient && (
