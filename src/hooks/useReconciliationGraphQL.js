@@ -108,11 +108,13 @@ export const useLinkTransactionToInvoice = () => {
     },
   });
 
-  const linkTransaction = async (transactionId, invoiceId) => {
+  // origin : geste à l'origine du lien (DOCUMENT, TRANSACTION, SUGGESTION),
+  // mémorisé côté API pour l'étiquette « rapproché depuis… ».
+  const linkTransaction = async (transactionId, invoiceId, origin = null) => {
     try {
       const result = await linkMutation({
         variables: {
-          input: { transactionId, invoiceId },
+          input: { transactionId, invoiceId, origin },
         },
       });
       return {
@@ -217,10 +219,14 @@ export const useLinkTransactionToImportedInvoice = () => {
     },
   );
 
-  const linkImportedInvoice = async (transactionId, importedInvoiceId) => {
+  const linkImportedInvoice = async (
+    transactionId,
+    importedInvoiceId,
+    origin = null,
+  ) => {
     try {
       const result = await linkMutation({
-        variables: { input: { transactionId, importedInvoiceId } },
+        variables: { input: { transactionId, importedInvoiceId, origin } },
       });
       return {
         success:

@@ -180,10 +180,12 @@ export const RECONCILE_PURCHASE_INVOICE = gql`
   mutation ReconcilePurchaseInvoice(
     $purchaseInvoiceId: ID!
     $transactionIds: [ID!]!
+    $origin: ReconciliationLinkOrigin
   ) {
     reconcilePurchaseInvoice(
       purchaseInvoiceId: $purchaseInvoiceId
       transactionIds: $transactionIds
+      origin: $origin
     ) {
       id
       status

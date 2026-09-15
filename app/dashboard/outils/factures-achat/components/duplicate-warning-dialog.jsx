@@ -10,6 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { Button } from "@/src/components/ui/button";
+import { ExternalLink } from "lucide-react";
 
 const formatAmount = (value) =>
   new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
@@ -25,15 +27,18 @@ const formatDate = (value) => {
 };
 
 /**
- * Avertissement non bloquant avant la création d'une facture d'achat qui
- * ressemble à une facture existante (même numéro, ou même fournisseur +
- * montant + date proche). L'utilisateur peut créer quand même.
+ * Avertissement avant la création d'une facture d'achat qui ressemble à une
+ * facture existante (même numéro, ou même fournisseur + montant + date
+ * proche). Trois issues : annuler, utiliser la facture existante
+ * (`onUseExisting(duplicate)`, si fourni), ou créer quand même.
  */
 export function DuplicateWarningDialog({
   open,
   duplicates = [],
   onCancel,
   onConfirm,
+  onUseExisting,
+  useExistingLabel = "Utiliser cette facture",
 }) {
   return (
     <AlertDialog open={open} onOpenChange={(next) => !next && onCancel?.()}>
@@ -45,25 +50,39 @@ export function DuplicateWarningDialog({
               : "Une facture similaire existe déjà"}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Vérifiez qu&apos;il ne s&apos;agit pas de la même facture avant de
-            continuer. Si la facture existe déjà, rattachez-la à la transaction
-            depuis sa fiche plutôt que d&apos;en créer une nouvelle.
+            {onUseExisting
+              ? "S'il s'agit de la même facture, utilisez la facture existante plutôt que d'en créer une nouvelle : vous pourrez la rattacher à la transaction depuis sa fiche."
+              : "Vérifiez qu'il ne s'agit pas de la même facture avant de continuer. Si la facture existe déjà, rattachez-la à la transaction depuis sa fiche plutôt que d'en créer une nouvelle."}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-2">
           {duplicates.map((d) => (
             <div
               key={d.id}
-              className="p-3 border rounded-lg bg-muted/30 text-sm"
+              className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-muted/30 text-sm"
             >
-              <p className="font-medium truncate">
-                {d.supplierName || "Fournisseur"}
-                {d.invoiceNumber ? ` - ${d.invoiceNumber}` : ""}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatAmount(d.amountTTC)}
-                {d.issueDate ? ` - ${formatDate(d.issueDate)}` : ""}
-              </p>
+              <div className="min-w-0">
+                <p className="font-medium truncate">
+                  {d.supplierName || "Fournisseur"}
+                  {d.invoiceNumber ? ` - ${d.invoiceNumber}` : ""}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatAmount(d.amountTTC)}
+                  {d.issueDate ? ` - ${formatDate(d.issueDate)}` : ""}
+                </p>
+              </div>
+              {onUseExisting && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => onUseExisting(d)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                  {useExistingLabel}
+                </Button>
+              )}
             </div>
           ))}
         </div>

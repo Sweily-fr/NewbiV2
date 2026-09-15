@@ -8,8 +8,11 @@ import {
   useCreatePurchaseInvoice,
   useAddPurchaseInvoiceFile,
   useCheckPurchaseInvoiceDuplicates,
+  useReconcilePurchaseInvoice,
+  usePurchaseInvoiceReconciliationPicker,
 } from "@/src/hooks/usePurchaseInvoices";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
+import { ReconcileCandidateDialog } from "./reconcile-candidate-dialog";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -110,6 +113,9 @@ export function PurchaseInvoiceUploadDrawer({
   open,
   onOpenChange,
   onUploaded,
+  // Doublon détecté : ouvrir la fiche de la facture existante (à la fin du
+  // lot, quand un seul fichier a été déposé).
+  onOpenExisting,
   // When true, render only the content + footer (no Drawer shell / header),
   // so this can be embedded inside another drawer (e.g. the tabbed create drawer).
   embedded = false,
@@ -131,6 +137,12 @@ export function PurchaseInvoiceUploadDrawer({
   // Doublons probables détectés avant création : { duplicates } ou null
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const { addFile } = useAddPurchaseInvoiceFile();
+  const { reconcile } = useReconcilePurchaseInvoice();
+  const { fetchReconcileCandidate } = usePurchaseInvoiceReconciliationPicker();
+  // Facture créée alors que le paiement est déjà passé : transaction sûre
+  // proposée avec confirmation ({ invoiceId, label, transaction } ou null).
+  const [reconcileCandidate, setReconcileCandidate] = useState(null);
+  const [confirmingCandidate, setConfirmingCandidate] = useState(false);
 
   const defaultEditableData = {
     supplierName: "",
@@ -335,13 +347,76 @@ export function PurchaseInvoiceUploadDrawer({
   const totalToReview = successResults.length;
   const currentResult = ocrResults[currentReviewIndex];
 
+  // Fichier OCR à rattacher à une facture d'achat (créée ou existante) :
+  // déjà sur R2 (documentUrl) ou encore local.
+  const buildFileInput = (result) => {
+    if (!result || result.error || !result.metadata) return null;
+    return result.metadata.documentUrl
+      ? {
+          cloudflareUrl: result.metadata.documentUrl,
+          fileName: result.metadata.fileName,
+          mimeType: result.metadata.mimeType,
+          fileSize: result.metadata.fileSize,
+          ocrData: result.financial,
+        }
+      : {
+          file: result.file,
+          ocrData: result.financial,
+          processOCR: false,
+        };
+  };
+
+  // Passe au fichier suivant du lot, ou termine. `openExistingId` : à la fin
+  // d'un lot d'un seul fichier rattaché à une facture existante, on ouvre sa
+  // fiche pour que l'utilisateur puisse la rapprocher.
+  const advanceAfterProcessed = ({ openExistingId = null } = {}) => {
+    const newCreatedCount = createdCount + 1;
+    setCreatedCount(newCreatedCount);
+
+    // Find next successful result after current index
+    const nextIndex = ocrResults.findIndex(
+      (r, i) => i > currentReviewIndex && !r.error,
+    );
+
+    if (nextIndex >= 0) {
+      // Move to next invoice (no intermediate toast — only a recap at the end)
+      setCurrentReviewIndex(nextIndex);
+      populateEditableDataFromResult(ocrResults[nextIndex]);
+    } else {
+      // All done — pas de toast : l'écran "done" affiche déjà le récap
+      setCurrentStep("done");
+      setTimeout(() => {
+        resetForm();
+        onUploaded?.();
+        if (openExistingId && totalToReview === 1) {
+          onOpenExisting?.(openExistingId);
+        }
+      }, 1000);
+    }
+  };
+
+  // « Utiliser cette facture » : le fichier déposé est rattaché à la facture
+  // existante au lieu d'en créer une deuxième.
+  const handleUseExisting = async (duplicate) => {
+    setDuplicateWarning(null);
+    const fileInput = buildFileInput(currentResult);
+    try {
+      if (fileInput) await addFile(duplicate.id, fileInput);
+      toast.success("Fichier rattaché à la facture d'achat existante");
+    } catch {
+      toast.error("Impossible de rattacher le fichier à la facture existante");
+      return;
+    }
+    advanceAfterProcessed({ openExistingId: duplicate.id });
+  };
+
   const handleCreate = async ({ skipDuplicateCheck = false } = {}) => {
     if (!editableData.supplierName || !editableData.amountTTC) {
       toast.error("Fournisseur et montant TTC requis");
       return;
     }
-    // Avertissement non bloquant : une facture identique existe peut-être
-    // déjà (saisie manuelle, OCR depuis une transaction, import Qonto...).
+    // Avertissement : une facture identique existe peut-être déjà (saisie
+    // manuelle, OCR depuis une transaction, import Qonto ou Gmail...).
     if (!skipDuplicateCheck) {
       const duplicates = await checkDuplicates({
         supplierName: editableData.supplierName,
@@ -375,6 +450,9 @@ export function PurchaseInvoiceUploadDrawer({
           status: editableData.status,
           paymentMethod: editableData.paymentMethod || undefined,
           source: "OCR",
+          // « Créer quand même » : l'API refuse sinon toute création qui
+          // ressemble à une facture existante (filet anti-doublon serveur).
+          forceCreate: skipDuplicateCheck,
         },
         { silent: true },
       );
@@ -383,43 +461,26 @@ export function PurchaseInvoiceUploadDrawer({
         // toastée par le hook ; ne pas compter la facture comme créée.
         return;
       }
-      if (invoice?.id && result && !result.error && result.metadata) {
-        const fileInput = result.metadata.documentUrl
-          ? {
-              cloudflareUrl: result.metadata.documentUrl,
-              fileName: result.metadata.fileName,
-              mimeType: result.metadata.mimeType,
-              fileSize: result.metadata.fileSize,
-              ocrData: result.financial,
-            }
-          : {
-              file: result.file,
-              ocrData: result.financial,
-              processOCR: false,
-            };
+      const fileInput = invoice?.id ? buildFileInput(result) : null;
+      if (fileInput) {
         await addFile(invoice.id, fileInput);
       }
 
-      const newCreatedCount = createdCount + 1;
-      setCreatedCount(newCreatedCount);
-
-      // Find next successful result after current index
-      const nextIndex = ocrResults.findIndex(
-        (r, i) => i > currentReviewIndex && !r.error,
-      );
-
-      if (nextIndex >= 0) {
-        // Move to next invoice (no intermediate toast — only a recap at the end)
-        setCurrentReviewIndex(nextIndex);
-        populateEditableDataFromResult(ocrResults[nextIndex]);
-      } else {
-        // All done — pas de toast : l'écran "done" affiche déjà le récap
-        setCurrentStep("done");
-        setTimeout(() => {
-          resetForm();
-          onUploaded?.();
-        }, 1000);
+      // Paiement déjà passé en banque : proposer la transaction trouvée,
+      // rien n'est lié sans confirmation. Le lot reprend après la réponse.
+      const found = await fetchReconcileCandidate(invoice.id);
+      if (found) {
+        setReconcileCandidate({
+          invoiceId: invoice.id,
+          label: [editableData.supplierName, editableData.invoiceNumber]
+            .filter(Boolean)
+            .join(" "),
+          transaction: found,
+        });
+        return;
       }
+
+      advanceAfterProcessed();
     } catch {
       toast.error("Erreur lors de la création");
     }
@@ -1196,6 +1257,36 @@ export function PurchaseInvoiceUploadDrawer({
         setDuplicateWarning(null);
         handleCreate({ skipDuplicateCheck: true });
       }}
+      onUseExisting={handleUseExisting}
+    />
+  );
+
+  const reconcileCandidateDialog = (
+    <ReconcileCandidateDialog
+      open={!!reconcileCandidate}
+      transaction={reconcileCandidate?.transaction}
+      invoiceLabel={reconcileCandidate?.label}
+      loading={confirmingCandidate}
+      onCancel={() => {
+        if (confirmingCandidate) return;
+        setReconcileCandidate(null);
+        advanceAfterProcessed();
+      }}
+      onConfirm={async () => {
+        if (!reconcileCandidate) return;
+        setConfirmingCandidate(true);
+        try {
+          await reconcile(
+            reconcileCandidate.invoiceId,
+            [reconcileCandidate.transaction.id],
+            "SUGGESTION",
+          );
+        } finally {
+          setConfirmingCandidate(false);
+          setReconcileCandidate(null);
+          advanceAfterProcessed();
+        }
+      }}
     />
   );
 
@@ -1204,6 +1295,7 @@ export function PurchaseInvoiceUploadDrawer({
       <div className="flex flex-col h-full">
         {body}
         {duplicateDialog}
+        {reconcileCandidateDialog}
       </div>
     );
   }
@@ -1217,6 +1309,7 @@ export function PurchaseInvoiceUploadDrawer({
         {header}
         {body}
         {duplicateDialog}
+        {reconcileCandidateDialog}
       </DrawerContent>
     </Drawer>
   );

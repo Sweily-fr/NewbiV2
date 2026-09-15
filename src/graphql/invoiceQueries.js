@@ -45,6 +45,13 @@ export const INVOICE_FRAGMENT = gql`
       amount
       currency
       date
+      reconciliationLinks {
+        documentType
+        documentId
+        origin
+        linkedAt
+        linkedByName
+      }
     }
     showBankDetails
     clientPositionRight

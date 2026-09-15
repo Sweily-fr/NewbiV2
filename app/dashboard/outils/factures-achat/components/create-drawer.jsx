@@ -25,6 +25,8 @@ export function PurchaseInvoiceCreateDrawer({
   onOpenChange,
   initialTab = "manual",
   onCreated,
+  // Doublon détecté : ouvrir la fiche de la facture existante à la place.
+  onOpenExisting,
 }) {
   const [tab, setTab] = useState(initialTab);
 
@@ -64,6 +66,7 @@ export function PurchaseInvoiceCreateDrawer({
               invoice={null}
               mode="create"
               onSaved={onCreated}
+              onOpenExisting={onOpenExisting}
             />
           </div>
           <div className={cn("h-full", tab !== "ocr" && "hidden")}>
@@ -72,6 +75,7 @@ export function PurchaseInvoiceCreateDrawer({
               open={open}
               onOpenChange={onOpenChange}
               onUploaded={onCreated}
+              onOpenExisting={onOpenExisting}
             />
           </div>
         </div>

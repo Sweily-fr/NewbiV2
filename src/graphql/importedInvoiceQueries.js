@@ -40,6 +40,13 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
       description
       date
       reconciliationStatus
+      reconciliationLinks {
+        documentType
+        documentId
+        origin
+        linkedAt
+        linkedByName
+      }
     }
     totalHT
     totalVAT
@@ -540,8 +547,14 @@ export function usePurchaseExtraOcrImports() {
 // === Conversion ImportedInvoice → PurchaseInvoice ===
 
 export const CONVERT_IMPORTED_INVOICE = gql`
-  mutation ConvertImportedInvoiceToPurchaseInvoice($id: ID!) {
-    convertImportedInvoiceToPurchaseInvoice(id: $id) {
+  mutation ConvertImportedInvoiceToPurchaseInvoice(
+    $id: ID!
+    $forceCreate: Boolean
+  ) {
+    convertImportedInvoiceToPurchaseInvoice(
+      id: $id
+      forceCreate: $forceCreate
+    ) {
       id
       supplierName
       invoiceNumber

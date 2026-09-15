@@ -81,6 +81,7 @@ import ClientsModal from "@/app/dashboard/outils/transactions/components/clients
 import { OcrComparisonDialog } from "./ocr-comparison-dialog";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliationGraphQL";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 
 const formatDateForInput = (dateValue) => {
   if (!dateValue) return "";
@@ -304,7 +305,13 @@ export function ImportedInvoiceSidebar({
 
   const handleLinkTransaction = async (transactionId) => {
     if (!invoice?.id || !transactionId) return;
-    const result = await linkImportedInvoice(transactionId, invoice.id);
+    // Origine DOCUMENT : sélecteur de cette fiche (étiquette « rapproché
+    // depuis la facture importée »).
+    const result = await linkImportedInvoice(
+      transactionId,
+      invoice.id,
+      "DOCUMENT",
+    );
     if (result?.success) {
       setShowTransactionPicker(false);
       setTransactionSearch("");
@@ -965,6 +972,12 @@ export function ImportedInvoiceSidebar({
                           {tx.description || "Transaction"}
                           {tx.date ? ` - ${formatDateToFrench(tx.date)}` : ""}
                         </p>
+                        <LinkOriginTag
+                          className="mt-1"
+                          links={tx.reconciliationLinks}
+                          documentType="IMPORTED_INVOICE"
+                          documentId={invoice.id}
+                        />
                       </div>
                       <Button
                         variant="ghost"

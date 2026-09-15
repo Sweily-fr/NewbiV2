@@ -171,6 +171,14 @@ export const GET_TRANSACTIONS = gql`
         dueDate
         source
       }
+      # Origine de chaque lien (étiquette « rapproché depuis… »)
+      reconciliationLinks {
+        documentType
+        documentId
+        origin
+        linkedAt
+        linkedByName
+      }
       reconciliationStatus
       reconciliationDate
       createdAt
@@ -285,6 +293,14 @@ export const GET_TRANSACTIONS_PAGE = gql`
           dueDate
           source
         }
+        # Origine de chaque lien (étiquette « rapproché depuis… »)
+        reconciliationLinks {
+          documentType
+          documentId
+          origin
+          linkedAt
+          linkedByName
+        }
         reconciliationStatus
         reconciliationDate
         createdAt
@@ -376,6 +392,14 @@ export const GET_TRANSACTION = gql`
         issueDate
         dueDate
         source
+      }
+      # Origine de chaque lien (étiquette « rapproché depuis… »)
+      reconciliationLinks {
+        documentType
+        documentId
+        origin
+        linkedAt
+        linkedByName
       }
       reconciliationStatus
       reconciliationDate
