@@ -5,6 +5,7 @@ import {
   GET_TRANSACTIONS_FOR_PURCHASE_INVOICE,
   GET_PURCHASE_INVOICES_FOR_TRANSACTION,
   GET_PURCHASE_INVOICE_DUPLICATES,
+  GET_PURCHASE_INVOICE_RECONCILE_CANDIDATE,
 } from "@/src/graphql/queries/purchaseInvoiceReconciliation";
 import {
   GET_PURCHASE_INVOICES,
@@ -465,9 +466,29 @@ export const usePurchaseInvoiceReconciliationPicker = () => {
     [client],
   );
 
+  // Facture créée alors que le paiement est déjà passé : transaction sûre à
+  // proposer avec confirmation. Best-effort : null en cas d'erreur (la
+  // création ne doit pas échouer pour ça).
+  const fetchReconcileCandidate = useCallback(
+    async (purchaseInvoiceId) => {
+      try {
+        const { data } = await client.query({
+          query: GET_PURCHASE_INVOICE_RECONCILE_CANDIDATE,
+          variables: { purchaseInvoiceId },
+          fetchPolicy: "network-only",
+        });
+        return data?.purchaseInvoiceReconcileCandidate || null;
+      } catch {
+        return null;
+      }
+    },
+    [client],
+  );
+
   return {
     fetchTransactionsForPurchaseInvoice,
     fetchPurchaseInvoicesForTransaction,
+    fetchReconcileCandidate,
   };
 };
 

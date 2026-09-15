@@ -8,8 +8,11 @@ import {
   useCreatePurchaseInvoice,
   useAddPurchaseInvoiceFile,
   useCheckPurchaseInvoiceDuplicates,
+  useReconcilePurchaseInvoice,
+  usePurchaseInvoiceReconciliationPicker,
 } from "@/src/hooks/usePurchaseInvoices";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
+import { ReconcileCandidateDialog } from "./reconcile-candidate-dialog";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -134,6 +137,12 @@ export function PurchaseInvoiceUploadDrawer({
   // Doublons probables détectés avant création : { duplicates } ou null
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const { addFile } = useAddPurchaseInvoiceFile();
+  const { reconcile } = useReconcilePurchaseInvoice();
+  const { fetchReconcileCandidate } = usePurchaseInvoiceReconciliationPicker();
+  // Facture créée alors que le paiement est déjà passé : transaction sûre
+  // proposée avec confirmation ({ invoiceId, label, transaction } ou null).
+  const [reconcileCandidate, setReconcileCandidate] = useState(null);
+  const [confirmingCandidate, setConfirmingCandidate] = useState(false);
 
   const defaultEditableData = {
     supplierName: "",
@@ -455,6 +464,20 @@ export function PurchaseInvoiceUploadDrawer({
       const fileInput = invoice?.id ? buildFileInput(result) : null;
       if (fileInput) {
         await addFile(invoice.id, fileInput);
+      }
+
+      // Paiement déjà passé en banque : proposer la transaction trouvée,
+      // rien n'est lié sans confirmation. Le lot reprend après la réponse.
+      const found = await fetchReconcileCandidate(invoice.id);
+      if (found) {
+        setReconcileCandidate({
+          invoiceId: invoice.id,
+          label: [editableData.supplierName, editableData.invoiceNumber]
+            .filter(Boolean)
+            .join(" "),
+          transaction: found,
+        });
+        return;
       }
 
       advanceAfterProcessed();
@@ -1238,11 +1261,39 @@ export function PurchaseInvoiceUploadDrawer({
     />
   );
 
+  const reconcileCandidateDialog = (
+    <ReconcileCandidateDialog
+      open={!!reconcileCandidate}
+      transaction={reconcileCandidate?.transaction}
+      invoiceLabel={reconcileCandidate?.label}
+      loading={confirmingCandidate}
+      onCancel={() => {
+        if (confirmingCandidate) return;
+        setReconcileCandidate(null);
+        advanceAfterProcessed();
+      }}
+      onConfirm={async () => {
+        if (!reconcileCandidate) return;
+        setConfirmingCandidate(true);
+        try {
+          await reconcile(reconcileCandidate.invoiceId, [
+            reconcileCandidate.transaction.id,
+          ]);
+        } finally {
+          setConfirmingCandidate(false);
+          setReconcileCandidate(null);
+          advanceAfterProcessed();
+        }
+      }}
+    />
+  );
+
   if (embedded) {
     return (
       <div className="flex flex-col h-full">
         {body}
         {duplicateDialog}
+        {reconcileCandidateDialog}
       </div>
     );
   }
@@ -1256,6 +1307,7 @@ export function PurchaseInvoiceUploadDrawer({
         {header}
         {body}
         {duplicateDialog}
+        {reconcileCandidateDialog}
       </DrawerContent>
     </Drawer>
   );
