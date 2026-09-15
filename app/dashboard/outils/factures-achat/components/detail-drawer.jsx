@@ -83,6 +83,7 @@ import {
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
 import { ReconcileCandidateDialog } from "./reconcile-candidate-dialog";
+import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -164,7 +165,11 @@ function formatDate(date, withTime = false) {
 
 // Ligne cliquable vers une transaction rapprochée (ouvre le détail de la
 // transaction via ?transactionId= sur la page transactions)
-function LinkedTransactionLink({ transactionId, action = null }) {
+function LinkedTransactionLink({
+  transactionId,
+  purchaseInvoiceId = null,
+  action = null,
+}) {
   const { data, loading } = useQuery(GET_TRANSACTION, {
     variables: { id: transactionId },
   });
@@ -192,6 +197,14 @@ function LinkedTransactionLink({ transactionId, action = null }) {
                 )}
                 <span className="shrink-0">{formatDate(tx.date)}</span>
               </div>
+              {purchaseInvoiceId && (
+                <LinkOriginTag
+                  className="mt-1.5"
+                  links={tx.reconciliationLinks}
+                  documentType="PURCHASE_INVOICE"
+                  documentId={purchaseInvoiceId}
+                />
+              )}
             </>
           ) : (
             <p className="text-sm">Voir la transaction</p>
@@ -556,11 +569,13 @@ export function PurchaseInvoiceDetailDrawer({
     onSaved?.();
   };
 
-  const handleReconcile = async (transactionId) => {
+  // origin : geste à l'origine du lien (DOCUMENT = sélecteur de cette fiche,
+  // SUGGESTION = carte de suggestion), pour l'étiquette « rapproché depuis… ».
+  const handleReconcile = async (transactionId, origin = "DOCUMENT") => {
     if (!invoice?.id) return;
     // Le hook retourne undefined en cas d'erreur (toast déjà affiché) :
     // ne pas fermer/rafraîchir comme si le rapprochement avait réussi.
-    const result = await reconcile(invoice.id, [transactionId]);
+    const result = await reconcile(invoice.id, [transactionId], origin);
     if (!result) return;
     setShowTransactionPicker(false);
     setTransactionSearch("");
@@ -1382,6 +1397,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <LinkedTransactionLink
                         key={txId}
                         transactionId={txId}
+                        purchaseInvoiceId={invoice?.id}
                         action={
                           <Button
                             variant="ghost"
@@ -1433,7 +1449,9 @@ export function PurchaseInvoiceDetailDrawer({
                             size="sm"
                             className="text-green-600 border-green-200 hover:bg-green-50"
                             disabled={reconcileLoading}
-                            onClick={() => handleReconcile(s.transactionId)}
+                            onClick={() =>
+                              handleReconcile(s.transactionId, "SUGGESTION")
+                            }
                           >
                             <LinkIcon className="h-3.5 w-3.5 mr-1" />
                             Rapprocher
@@ -1790,9 +1808,11 @@ export function PurchaseInvoiceDetailDrawer({
         try {
           // Le hook retourne undefined en cas d'erreur (toast déjà affiché) :
           // la facture est créée quand même, on ferme sans bloquer.
-          await reconcile(reconcileCandidate.invoiceId, [
-            reconcileCandidate.transaction.id,
-          ]);
+          await reconcile(
+            reconcileCandidate.invoiceId,
+            [reconcileCandidate.transaction.id],
+            "SUGGESTION",
+          );
         } finally {
           setConfirmingCandidate(false);
           setReconcileCandidate(null);

@@ -366,9 +366,15 @@ export const useReconcilePurchaseInvoice = () => {
     },
   );
 
-  const reconcile = async (purchaseInvoiceId, transactionIds) => {
+  // origin : geste à l'origine du lien (DOCUMENT, TRANSACTION, SUGGESTION),
+  // mémorisé côté API pour l'étiquette « rapproché depuis… ».
+  const reconcile = async (
+    purchaseInvoiceId,
+    transactionIds,
+    origin = null,
+  ) => {
     const result = await reconcileMutation({
-      variables: { purchaseInvoiceId, transactionIds },
+      variables: { purchaseInvoiceId, transactionIds, origin },
     });
     return result?.data?.reconcilePurchaseInvoice;
   };

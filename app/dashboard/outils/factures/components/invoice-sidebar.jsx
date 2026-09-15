@@ -98,6 +98,7 @@ import {
 } from "@/src/utils/dateFormatter";
 import { motion } from "framer-motion";
 import { ReceiptItemIcon } from "@/src/components/icons";
+import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 
 export default function InvoiceSidebar({
   isOpen,
@@ -315,13 +316,19 @@ export default function InvoiceSidebar({
     [availableTransactions],
   );
 
-  // Lier une transaction à cette facture
+  // Lier une transaction à cette facture. origin : DOCUMENT (sélecteur de
+  // cette fiche) ou SUGGESTION (carte suggérée), pour l'étiquette
+  // « rapproché depuis… ».
   const handleLinkTransaction = useCallback(
-    async (transactionId) => {
+    async (transactionId, origin = "DOCUMENT") => {
       if (!isMountedRef.current) return;
       setLinkingTransaction(true);
       try {
-        const result = await linkTransaction(transactionId, initialInvoice.id);
+        const result = await linkTransaction(
+          transactionId,
+          initialInvoice.id,
+          origin,
+        );
         if (!isMountedRef.current) return;
         if (result.success) {
           toast.success("Paiement bancaire rattaché avec succès");
@@ -826,7 +833,9 @@ export default function InvoiceSidebar({
                           size="sm"
                           variant="default"
                           className="ml-3 h-7 text-xs"
-                          onClick={() => handleLinkTransaction(tx.id)}
+                          onClick={() =>
+                            handleLinkTransaction(tx.id, "SUGGESTION")
+                          }
                           disabled={linkingTransaction}
                         >
                           {linkingTransaction ? (
@@ -1352,6 +1361,12 @@ export default function InvoiceSidebar({
                         <p className="text-sm font-medium truncate">
                           {tx.description || tx.fromAccount || "Transaction"}
                         </p>
+                        <LinkOriginTag
+                          className="mt-1"
+                          links={tx.reconciliationLinks}
+                          documentType="INVOICE"
+                          documentId={invoice.id}
+                        />
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                           <span>
                             {tx.date

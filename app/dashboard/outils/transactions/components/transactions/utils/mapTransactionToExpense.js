@@ -181,6 +181,7 @@ export const mapTransactionToExpense = (tx) => ({
   linkedPurchaseInvoices: tx.linkedPurchaseInvoices || [],
   linkedImportedInvoiceIds: tx.linkedImportedInvoiceIds || [],
   linkedImportedInvoices: tx.linkedImportedInvoices || [],
+  reconciliationLinks: tx.reconciliationLinks || [],
   reconciliationStatus: tx.reconciliationStatus || null,
   reconciliationDate: tx.reconciliationDate || null,
   pcgAccount: tx.pcgAccount || null,

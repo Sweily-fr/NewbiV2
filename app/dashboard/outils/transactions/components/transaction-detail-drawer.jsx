@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
+import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import { Popover as RACPopover } from "react-aria-components";
 import {
   Select,
@@ -338,9 +339,11 @@ export function TransactionDetailDrawer({
 
   // Pas d'onRefresh ici : le hook refetch déjà GetTransactionsPage /
   // GetTransactions (agrégats serveur), un refetch de plus serait un doublon.
-  const handleReconcileInvoice = async (invoiceId) => {
+  // origin : geste à l'origine du lien (TRANSACTION = sélecteur de ce tiroir,
+  // SUGGESTION = carte de suggestion), pour l'étiquette « rapproché depuis… ».
+  const handleReconcileInvoice = async (invoiceId, origin = "TRANSACTION") => {
     if (!transaction?.id || !invoiceId) return;
-    const result = await linkTransaction(transaction.id, invoiceId);
+    const result = await linkTransaction(transaction.id, invoiceId, origin);
     if (result?.success) {
       setShowInvoicePicker(false);
       setInvoiceSearch("");
@@ -351,7 +354,11 @@ export function TransactionDetailDrawer({
   // facture Newbi, mutation dédiée.
   const handleReconcileImportedInvoice = async (importedInvoiceId) => {
     if (!transaction?.id || !importedInvoiceId) return;
-    const result = await linkImportedInvoice(transaction.id, importedInvoiceId);
+    const result = await linkImportedInvoice(
+      transaction.id,
+      importedInvoiceId,
+      "TRANSACTION",
+    );
     if (result?.success) {
       setShowInvoicePicker(false);
       setInvoiceSearch("");
@@ -362,16 +369,18 @@ export function TransactionDetailDrawer({
   const handlePickInvoice = (invoice) => {
     if (isLinking || isLinkingImported) return;
     if (invoice.kind === "imported") handleReconcileImportedInvoice(invoice.id);
-    else handleReconcileInvoice(invoice.id);
+    else handleReconcileInvoice(invoice.id, "TRANSACTION");
   };
 
   // Rattacher une facture d'achat existante (additif : la facture peut déjà
   // porter d'autres transactions, la transaction d'autres factures).
   const handleReconcilePurchaseInvoice = async (purchaseInvoiceId) => {
     if (!transaction?.id || !purchaseInvoiceId) return;
-    const result = await reconcilePurchaseInvoice(purchaseInvoiceId, [
-      transaction.id,
-    ]);
+    const result = await reconcilePurchaseInvoice(
+      purchaseInvoiceId,
+      [transaction.id],
+      "TRANSACTION",
+    );
     if (result) {
       setShowPurchaseInvoicePicker(false);
       setPurchaseInvoiceSearch("");
@@ -1563,6 +1572,12 @@ export function TransactionDetailDrawer({
                               ? formatAmount(inv.totalTTC)
                               : ""}
                           </p>
+                          <LinkOriginTag
+                            className="mt-1"
+                            links={transaction.reconciliationLinks}
+                            documentType="INVOICE"
+                            documentId={inv.id}
+                          />
                         </div>
                         <Button
                           variant="ghost"
@@ -1628,6 +1643,12 @@ export function TransactionDetailDrawer({
                             ? formatAmount(inv.totalTTC)
                             : ""}
                         </p>
+                        <LinkOriginTag
+                          className="mt-1"
+                          links={transaction?.reconciliationLinks}
+                          documentType="IMPORTED_INVOICE"
+                          documentId={inv.id}
+                        />
                       </div>
                       <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                         Importée
@@ -1716,6 +1737,12 @@ export function TransactionDetailDrawer({
                             </>
                           )}
                         </div>
+                        <LinkOriginTag
+                          className="mt-1.5"
+                          links={transaction?.reconciliationLinks}
+                          documentType="PURCHASE_INVOICE"
+                          documentId={pi.id}
+                        />
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {pi.files?.[0]?.url && (
@@ -1978,7 +2005,9 @@ export function TransactionDetailDrawer({
                           variant="outline"
                           size="sm"
                           className="flex-shrink-0"
-                          onClick={() => handleReconcileInvoice(invoice.id)}
+                          onClick={() =>
+                            handleReconcileInvoice(invoice.id, "SUGGESTION")
+                          }
                           disabled={isReadOnly || isLinking}
                           title={readOnlyTooltip || "Rapprocher cette facture"}
                         >

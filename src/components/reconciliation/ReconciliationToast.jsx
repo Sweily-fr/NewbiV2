@@ -377,7 +377,11 @@ export function ReconciliationToastProvider({ children }) {
       });
 
       try {
-        const result = await linkTransaction(transactionId, invoiceId);
+        const result = await linkTransaction(
+          transactionId,
+          invoiceId,
+          "SUGGESTION",
+        );
         // Rollback de l'optimistic-ignore si le serveur refuse le rattachement :
         // sinon la carte reste masquée alors que la transaction n'est pas
         // rapprochée (linkTransaction ne jette pas, il renvoie { success }).

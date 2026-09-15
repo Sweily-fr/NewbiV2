@@ -40,6 +40,13 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
       description
       date
       reconciliationStatus
+      reconciliationLinks {
+        documentType
+        documentId
+        origin
+        linkedAt
+        linkedByName
+      }
     }
     totalHT
     totalVAT

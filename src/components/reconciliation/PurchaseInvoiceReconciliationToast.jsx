@@ -348,7 +348,11 @@ export function PurchaseInvoiceReconciliationToastProvider({ children }) {
       });
 
       try {
-        const result = await linkTransaction(transactionId, invoiceId);
+        const result = await linkTransaction(
+          transactionId,
+          invoiceId,
+          "SUGGESTION",
+        );
         // Rollback de l'optimistic-ignore si le serveur refuse.
         if (!result?.success) {
           removeIgnoredSuggestion(transactionId);

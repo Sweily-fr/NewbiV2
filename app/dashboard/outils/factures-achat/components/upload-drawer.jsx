@@ -1276,9 +1276,11 @@ export function PurchaseInvoiceUploadDrawer({
         if (!reconcileCandidate) return;
         setConfirmingCandidate(true);
         try {
-          await reconcile(reconcileCandidate.invoiceId, [
-            reconcileCandidate.transaction.id,
-          ]);
+          await reconcile(
+            reconcileCandidate.invoiceId,
+            [reconcileCandidate.transaction.id],
+            "SUGGESTION",
+          );
         } finally {
           setConfirmingCandidate(false);
           setReconcileCandidate(null);
