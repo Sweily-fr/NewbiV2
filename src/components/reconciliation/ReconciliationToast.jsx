@@ -136,8 +136,8 @@ function ReconciliationCard({
               {" - "}
               <span className="font-semibold text-gray-900 dark:text-zinc-100">
                 {isImported
-                  ? `Facture ${invoice.number || "importée"}`
-                  : `Facture ${formatInvoiceReference(invoice)}`}
+                  ? invoice.number || "Facture importée"
+                  : formatInvoiceReference(invoice)}
                 {invoice.clientName ? ` · ${invoice.clientName}` : ""}
               </span>
             </p>
