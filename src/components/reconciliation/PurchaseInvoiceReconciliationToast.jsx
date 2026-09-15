@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { usePurchaseInvoiceReconciliation } from "@/src/hooks/usePurchaseInvoiceReconciliation";
 import { useRouter } from "next/navigation";
-import { Landmark, Undo2 } from "lucide-react";
+import { Landmark, Undo2, ArrowUpRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   useReconciliationToastVisibility,
@@ -82,40 +82,41 @@ function PurchaseInvoiceReconciliationCard({
         <div className="flex items-start gap-3">
           {/* Icône banque */}
           <div className="flex-shrink-0 mt-0.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800">
-              <Landmark className="h-4 w-4 text-gray-500 dark:text-zinc-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-900/25">
+              <Landmark className="h-4 w-4 text-rose-600 dark:text-rose-400" />
             </div>
           </div>
 
           {/* Contenu principal */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              {/* Texte fluide */}
-              <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {transaction.description || "Dépense"}
-                </span>
-                {" — "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {formatCurrency(Math.abs(transaction.amount))}
-                </span>
-                {" · Facture d'achat "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {refLabel}
-                </span>
-              </p>
-
-              {/* Timestamp relatif */}
-              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap">
+            {/* En-tête : sens du rapprochement proposé (paiement vers une
+                facture d'achat) + ancienneté de la transaction */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-900/25 dark:text-rose-400 whitespace-nowrap">
+                <ArrowUpRight className="h-3 w-3" />
+                Paiement
+                <span className="text-rose-400/80 dark:text-rose-500">→</span>
+                Facture d&apos;achat
+              </span>
+              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                 {formatRelativeDate(transaction.date)}
               </span>
             </div>
 
-            {/* Sens du rapprochement proposé (les cartes du bas concernent
-                les factures d'achat, celles du haut les factures client) */}
-            <span className="inline-flex items-center mt-1.5 text-[10px] leading-none px-1.5 py-1 rounded bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 whitespace-nowrap">
-              Transaction → Facture d&apos;achat
-            </span>
+            {/* Texte fluide */}
+            <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {transaction.description || "Dépense"}
+              </span>
+              {" - "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {formatCurrency(Math.abs(transaction.amount))}
+              </span>
+              {" · "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {refLabel}
+              </span>
+            </p>
 
             {/* Actions */}
             <div className="flex items-center gap-2 mt-2.5">

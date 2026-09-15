@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
-import { Landmark, X, Undo2 } from "lucide-react";
+import { Landmark, X, Undo2, ArrowDownLeft } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import {
@@ -78,40 +78,43 @@ function ReconciliationCard({
         <div className="flex items-start gap-3">
           {/* Icône banque */}
           <div className="flex-shrink-0 mt-0.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800">
-              <Landmark className="h-4 w-4 text-gray-500 dark:text-zinc-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-900/25">
+              <Landmark className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
           </div>
 
           {/* Contenu principal */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              {/* Texte fluide */}
-              <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {transaction.description || "Virement reçu"}
+            {/* En-tête : sens du rapprochement proposé (encaissement vers une
+                facture client) + ancienneté de la transaction */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-400 whitespace-nowrap">
+                <ArrowDownLeft className="h-3 w-3" />
+                Encaissement
+                <span className="text-emerald-500/70 dark:text-emerald-500">
+                  →
                 </span>
-                {" a payé "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {formatCurrency(transaction.amount)}
-                </span>
-                {" - "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  Facture {formatInvoiceReference(invoice)}
-                </span>
-              </p>
-
-              {/* Timestamp relatif */}
-              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap">
+                Facture client
+              </span>
+              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                 {formatRelativeDate(transaction.date)}
               </span>
             </div>
 
-            {/* Sens du rapprochement proposé (les cartes du haut concernent
-                les factures client, celles du bas les factures d'achat) */}
-            <span className="inline-flex items-center mt-1.5 text-[10px] leading-none px-1.5 py-1 rounded bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 whitespace-nowrap">
-              Transaction → Facture client
-            </span>
+            {/* Texte fluide */}
+            <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {transaction.description || "Virement reçu"}
+              </span>
+              {" a payé "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {formatCurrency(transaction.amount)}
+              </span>
+              {" - "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                Facture {formatInvoiceReference(invoice)}
+              </span>
+            </p>
 
             {/* Actions */}
             <div className="flex items-center gap-2 mt-2.5">
