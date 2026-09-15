@@ -9,6 +9,7 @@ import {
   useReconciliationToastVisibility,
   RECONCILIATION_TOAST_ATTR,
 } from "./useReconciliationToastVisibility";
+import { useDeckLayout } from "./useDeckLayout";
 import { toast as sonnerToast } from "sonner";
 import {
   getIgnoredSuggestions,
@@ -197,11 +198,15 @@ function PurchaseInvoiceReconciliationDeck({
     if (suggestions.length <= 1) setIsExpanded(false);
   }, [suggestions.length]);
 
-  if (suggestions.length === 0) return null;
-
-  const cardHeight = 110;
   const stackOffset = 8;
   const expandedGap = 12;
+  // Hauteurs réelles des cartes (mode déplié sans chevauchement)
+  const { setRef, heightOf, offsets, expandedTotal } = useDeckLayout(
+    visibleSuggestions.map((s) => s.transaction.id),
+    { gap: expandedGap },
+  );
+
+  if (suggestions.length === 0) return null;
 
   return (
     <div
@@ -224,8 +229,8 @@ function PurchaseInvoiceReconciliationDeck({
         className="relative"
         style={{
           minHeight: isExpanded
-            ? `${visibleSuggestions.length * (cardHeight + expandedGap)}px`
-            : `${cardHeight + (visibleSuggestions.length - 1) * stackOffset}px`,
+            ? `${expandedTotal}px`
+            : `${heightOf(visibleSuggestions[0].transaction.id) + (visibleSuggestions.length - 1) * stackOffset}px`,
           transition: "min-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -238,10 +243,11 @@ function PurchaseInvoiceReconciliationDeck({
           return (
             <div
               key={transaction.id}
+              ref={setRef(transaction.id)}
               className="absolute right-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 bottom: isExpanded
-                  ? `${index * (cardHeight + expandedGap)}px`
+                  ? `${offsets[index]}px`
                   : `${index * stackOffset}px`,
                 transform: isExpanded
                   ? "scale(1)"

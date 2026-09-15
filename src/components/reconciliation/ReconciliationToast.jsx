@@ -10,6 +10,7 @@ import {
   useReconciliationToastVisibility,
   RECONCILIATION_TOAST_ATTR,
 } from "./useReconciliationToastVisibility";
+import { useDeckLayout } from "./useDeckLayout";
 import { toast as sonnerToast } from "sonner";
 import {
   getIgnoredSuggestions,
@@ -206,12 +207,16 @@ function ReconciliationDeck({
     if (suggestions.length <= 1) setIsExpanded(false);
   }, [suggestions.length]);
 
-  if (suggestions.length === 0) return null;
-
   // Constantes de layout
-  const cardHeight = 110; // hauteur estimée d'une carte
   const stackOffset = 8; // décalage entre les cartes en mode deck
   const expandedGap = 12; // espace entre les cartes en mode expanded
+  // Hauteurs réelles des cartes (mode déplié sans chevauchement)
+  const { setRef, heightOf, offsets, expandedTotal } = useDeckLayout(
+    visibleSuggestions.map((s) => s.transaction.id),
+    { gap: expandedGap },
+  );
+
+  if (suggestions.length === 0) return null;
 
   return (
     <div
@@ -225,8 +230,8 @@ function ReconciliationDeck({
         className="relative"
         style={{
           minHeight: isExpanded
-            ? `${visibleSuggestions.length * (cardHeight + expandedGap)}px`
-            : `${cardHeight + (visibleSuggestions.length - 1) * stackOffset}px`,
+            ? `${expandedTotal}px`
+            : `${heightOf(visibleSuggestions[0].transaction.id) + (visibleSuggestions.length - 1) * stackOffset}px`,
           transition: "min-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -239,10 +244,11 @@ function ReconciliationDeck({
           return (
             <div
               key={transaction.id}
+              ref={setRef(transaction.id)}
               className="absolute right-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 top: isExpanded
-                  ? `${index * (cardHeight + expandedGap)}px`
+                  ? `${offsets[index]}px`
                   : `${index * stackOffset}px`,
                 transform: isExpanded
                   ? "scale(1)"
