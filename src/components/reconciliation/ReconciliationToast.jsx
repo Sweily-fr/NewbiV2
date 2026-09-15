@@ -3,13 +3,14 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
-import { Landmark, X, Undo2 } from "lucide-react";
+import { Landmark, X, Undo2, ArrowDownLeft } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import {
   useReconciliationToastVisibility,
   RECONCILIATION_TOAST_ATTR,
 } from "./useReconciliationToastVisibility";
+import { useDeckLayout } from "./useDeckLayout";
 import { toast as sonnerToast } from "sonner";
 import {
   getIgnoredSuggestions,
@@ -60,6 +61,9 @@ function ReconciliationCard({
   isExiting,
   isProcessing,
 }) {
+  // Facture client importée (Qonto, OCR, Gmail) : même carte, pastille
+  // ambre « Transaction → Facture importée » et libellé sans préfixe.
+  const isImported = invoice.kind === "imported";
   return (
     <div
       onClick={() => onNavigate(invoice.id)}
@@ -78,34 +82,65 @@ function ReconciliationCard({
         <div className="flex items-start gap-3">
           {/* Icône banque */}
           <div className="flex-shrink-0 mt-0.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800">
-              <Landmark className="h-4 w-4 text-gray-500 dark:text-zinc-400" />
+            <div
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-xl",
+                isImported
+                  ? "bg-amber-50 dark:bg-amber-900/25"
+                  : "bg-emerald-50 dark:bg-emerald-900/25",
+              )}
+            >
+              <Landmark
+                className={cn(
+                  "h-4 w-4",
+                  isImported
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-emerald-600 dark:text-emerald-400",
+                )}
+              />
             </div>
           </div>
 
           {/* Contenu principal */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              {/* Texte fluide */}
-              <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {transaction.description || "Virement reçu"}
-                </span>
-                {" a payé "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {formatCurrency(transaction.amount)}
-                </span>
-                {" - "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  Facture {formatInvoiceReference(invoice)}
-                </span>
-              </p>
-
-              {/* Timestamp relatif */}
-              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap">
+            {/* En-tête : sens du rapprochement proposé (encaissement vers une
+                facture client) + ancienneté de la transaction */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full whitespace-nowrap",
+                  isImported
+                    ? "bg-amber-50 text-amber-700 dark:bg-amber-900/25 dark:text-amber-400"
+                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-400",
+                )}
+              >
+                <ArrowDownLeft className="h-3 w-3" />
+                Transaction
+                <span className="opacity-60">→</span>
+                {isImported ? "Facture importée" : "Facture"}
+              </span>
+              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                 {formatRelativeDate(transaction.date)}
               </span>
             </div>
+
+            {/* Texte fluide */}
+            <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {transaction.description || "Virement reçu"}
+              </span>
+              {" a payé "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {formatCurrency(transaction.amount)}
+              </span>
+              {" - "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {isImported
+                  ? `Facture ${invoice.number || "importée"}`
+                  : `Facture ${formatInvoiceReference(invoice)}`}
+                {invoice.clientName ? ` · ${invoice.clientName}` : ""}
+              </span>
+            </p>
 
             {/* Actions */}
             <div className="flex items-center gap-2 mt-2.5">
@@ -132,7 +167,7 @@ function ReconciliationCard({
                 disabled={isProcessing}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onLink(transaction.id, invoice.id);
+                  onLink(transaction.id, invoice.id, invoice.kind);
                 }}
                 className={cn(
                   "h-[30px] px-3.5 text-[12px] font-medium rounded-full cursor-pointer",
@@ -197,12 +232,16 @@ function ReconciliationDeck({
     if (suggestions.length <= 1) setIsExpanded(false);
   }, [suggestions.length]);
 
-  if (suggestions.length === 0) return null;
-
   // Constantes de layout
-  const cardHeight = 110; // hauteur estimée d'une carte
   const stackOffset = 8; // décalage entre les cartes en mode deck
   const expandedGap = 12; // espace entre les cartes en mode expanded
+  // Hauteurs réelles des cartes (mode déplié sans chevauchement)
+  const { setRef, heightOf, offsets, expandedTotal } = useDeckLayout(
+    visibleSuggestions.map((s) => s.transaction.id),
+    { gap: expandedGap },
+  );
+
+  if (suggestions.length === 0) return null;
 
   return (
     <div
@@ -216,8 +255,8 @@ function ReconciliationDeck({
         className="relative"
         style={{
           minHeight: isExpanded
-            ? `${visibleSuggestions.length * (cardHeight + expandedGap)}px`
-            : `${cardHeight + (visibleSuggestions.length - 1) * stackOffset}px`,
+            ? `${expandedTotal}px`
+            : `${heightOf(visibleSuggestions[0].transaction.id) + (visibleSuggestions.length - 1) * stackOffset}px`,
           transition: "min-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -230,10 +269,11 @@ function ReconciliationDeck({
           return (
             <div
               key={transaction.id}
+              ref={setRef(transaction.id)}
               className="absolute right-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 top: isExpanded
-                  ? `${index * (cardHeight + expandedGap)}px`
+                  ? `${offsets[index]}px`
                   : `${index * stackOffset}px`,
                 transform: isExpanded
                   ? "scale(1)"
@@ -279,6 +319,7 @@ export function ReconciliationToastProvider({ children }) {
   const {
     suggestions,
     linkTransaction,
+    linkImportedInvoice,
     refetch: fetchSuggestions,
     loading,
     error,
@@ -367,8 +408,10 @@ export function ReconciliationToastProvider({ children }) {
   }, []);
 
   // Rattacher une transaction à une facture
+  // kind : "newbi" (facture émise sur Newbi) ou "imported" (facture client
+  // importée), chacune a sa mutation de liaison.
   const handleLink = useCallback(
-    async (transactionId, invoiceId) => {
+    async (transactionId, invoiceId, kind = "newbi") => {
       setIsProcessing(true);
       saveIgnoredSuggestion(transactionId);
 
@@ -377,7 +420,10 @@ export function ReconciliationToastProvider({ children }) {
       });
 
       try {
-        const result = await linkTransaction(transactionId, invoiceId);
+        const result =
+          kind === "imported"
+            ? await linkImportedInvoice(transactionId, invoiceId, "SUGGESTION")
+            : await linkTransaction(transactionId, invoiceId, "SUGGESTION");
         // Rollback de l'optimistic-ignore si le serveur refuse le rattachement :
         // sinon la carte reste masquée alors que la transaction n'est pas
         // rapprochée (linkTransaction ne jette pas, il renvoie { success }).
@@ -393,7 +439,7 @@ export function ReconciliationToastProvider({ children }) {
         setIsProcessing(false);
       }
     },
-    [linkTransaction, animateOut],
+    [linkTransaction, linkImportedInvoice, animateOut],
   );
 
   // Masquer une suggestion du toast — NON bloquant. On la cache uniquement côté
@@ -442,11 +488,9 @@ export function ReconciliationToastProvider({ children }) {
     [router],
   );
 
-  // Masqués tant qu'un panneau est ouvert, et après toute interaction hors
-  // du toast (jusqu'à une suggestion jamais vue).
-  const toastVisible = useReconciliationToastVisibility(
-    activeSuggestions.map((s) => s.transaction.id),
-  );
+  // Masqués uniquement tant qu'un panneau est ouvert ; seul « Masquer »
+  // écarte une suggestion.
+  const toastVisible = useReconciliationToastVisibility();
 
   return (
     <>

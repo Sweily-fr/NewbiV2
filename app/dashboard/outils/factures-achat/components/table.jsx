@@ -18,8 +18,10 @@ import {
   useBulkDelete,
   useBulkUpdateStatus,
   useBulkCategorize,
+  useCheckPurchaseInvoiceDuplicates,
 } from "@/src/hooks/usePurchaseInvoices";
 import { getColumns } from "./columns";
+import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
 
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -129,6 +131,8 @@ export default function PurchaseInvoiceTable({
   importedInvoices = [],
   importedLoading,
   onImportedConverted,
+  // Conversion Gmail : doublon détecté → ouvrir la facture d'achat existante
+  onOpenExisting,
 }) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
@@ -836,6 +840,7 @@ export default function PurchaseInvoiceTable({
             convertingBulk={convertingBulk}
             rejecting={rejecting}
             onImportedConverted={onImportedConverted}
+            onOpenExisting={onOpenExisting}
           />
         )}
       </div>
@@ -990,6 +995,7 @@ export default function PurchaseInvoiceTable({
             convertingBulk={convertingBulk}
             rejecting={rejecting}
             onImportedConverted={onImportedConverted}
+            onOpenExisting={onOpenExisting}
           />
         )}
       </div>
@@ -1009,7 +1015,12 @@ function ImportedInvoicesPanel({
   convertingBulk,
   rejecting,
   onImportedConverted,
+  onOpenExisting,
 }) {
+  const { checkDuplicates } = useCheckPurchaseInvoiceDuplicates();
+  // Doublon probable avant conversion : { id (facture importée), duplicates }
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+
   const allSelected =
     importedInvoices.length > 0 &&
     importedSelection.size === importedInvoices.length;
@@ -1031,20 +1042,77 @@ function ImportedInvoicesPanel({
     });
   };
 
-  const handleConvertOne = async (id) => {
+  // Conversion unitaire avec avertissement de doublon : la même facture a pu
+  // être saisie à la main, créée par l'OCR d'une transaction ou importée de
+  // Qonto. « Utiliser cette facture » : l'API rattache le fichier à la
+  // facture existante (pas de forceCreate) puis on ouvre sa fiche.
+  const handleConvertOne = async (
+    id,
+    {
+      skipDuplicateCheck = false,
+      forceCreate = false,
+      openExistingId = null,
+    } = {},
+  ) => {
+    const imported = importedInvoices.find((inv) => inv.id === id);
+    if (!skipDuplicateCheck && imported) {
+      const duplicates = await checkDuplicates({
+        supplierName: imported.vendor?.name,
+        invoiceNumber: imported.originalInvoiceNumber,
+        amountTTC: imported.totalTTC,
+        issueDate: imported.invoiceDate,
+      });
+      if (duplicates.length > 0) {
+        setDuplicateWarning({ id, duplicates });
+        return;
+      }
+    }
     try {
-      await convertImportedInvoice({ variables: { id } });
+      await convertImportedInvoice({ variables: { id, forceCreate } });
       setImportedSelection((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
-      toast.success("Facture convertie en facture d'achat");
+      toast.success(
+        openExistingId
+          ? "Fichier rattaché à la facture d'achat existante"
+          : "Facture convertie en facture d'achat",
+      );
       onImportedConverted?.();
+      if (openExistingId) onOpenExisting?.(openExistingId);
     } catch (err) {
       toast.error(`Erreur : ${err.message}`);
     }
   };
+
+  const duplicateDialog = (
+    <DuplicateWarningDialog
+      open={!!duplicateWarning}
+      duplicates={duplicateWarning?.duplicates || []}
+      onCancel={() => setDuplicateWarning(null)}
+      onConfirm={() => {
+        const pendingId = duplicateWarning?.id;
+        setDuplicateWarning(null);
+        if (pendingId) {
+          handleConvertOne(pendingId, {
+            skipDuplicateCheck: true,
+            forceCreate: true,
+          });
+        }
+      }}
+      onUseExisting={(duplicate) => {
+        const pendingId = duplicateWarning?.id;
+        setDuplicateWarning(null);
+        if (pendingId) {
+          handleConvertOne(pendingId, {
+            skipDuplicateCheck: true,
+            openExistingId: duplicate.id,
+          });
+        }
+      }}
+    />
+  );
 
   const handleRejectOne = async (id) => {
     try {
@@ -1264,6 +1332,7 @@ function ImportedInvoicesPanel({
           </div>
         ))}
       </div>
+      {duplicateDialog}
     </div>
   );
 }

@@ -82,6 +82,8 @@ import {
 } from "@/src/hooks/usePurchaseInvoices";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
+import { ReconcileCandidateDialog } from "./reconcile-candidate-dialog";
+import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -163,7 +165,11 @@ function formatDate(date, withTime = false) {
 
 // Ligne cliquable vers une transaction rapprochée (ouvre le détail de la
 // transaction via ?transactionId= sur la page transactions)
-function LinkedTransactionLink({ transactionId, action = null }) {
+function LinkedTransactionLink({
+  transactionId,
+  purchaseInvoiceId = null,
+  action = null,
+}) {
   const { data, loading } = useQuery(GET_TRANSACTION, {
     variables: { id: transactionId },
   });
@@ -191,6 +197,14 @@ function LinkedTransactionLink({ transactionId, action = null }) {
                 )}
                 <span className="shrink-0">{formatDate(tx.date)}</span>
               </div>
+              {purchaseInvoiceId && (
+                <LinkOriginTag
+                  className="mt-1.5"
+                  links={tx.reconciliationLinks}
+                  documentType="PURCHASE_INVOICE"
+                  documentId={purchaseInvoiceId}
+                />
+              )}
             </>
           ) : (
             <p className="text-sm">Voir la transaction</p>
@@ -210,6 +224,9 @@ export function PurchaseInvoiceDetailDrawer({
   mode = "view",
   onSaved,
   onDeleted,
+  // Mode création : ouvrir la fiche d'une facture existante à la place
+  // (issue « Utiliser cette facture » de l'avertissement de doublon).
+  onOpenExisting,
   // When true, render only the content + footer (no Drawer shell / header),
   // so this can be embedded inside another drawer (e.g. the tabbed create drawer).
   embedded = false,
@@ -249,11 +266,15 @@ export function PurchaseInvoiceDetailDrawer({
     useReconcilePurchaseInvoice();
   const { unlink: unlinkTransaction, loading: unlinkLoading } =
     useUnlinkPurchaseInvoiceFromTransaction();
-  const { fetchTransactionsForPurchaseInvoice } =
+  const { fetchTransactionsForPurchaseInvoice, fetchReconcileCandidate } =
     usePurchaseInvoiceReconciliationPicker();
   const { checkDuplicates } = useCheckPurchaseInvoiceDuplicates();
   // Doublons probables détectés avant création : { duplicates } ou null
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  // Facture créée alors que le paiement est déjà passé : transaction sûre
+  // proposée avec confirmation ({ invoiceId, label, transaction } ou null).
+  const [reconcileCandidate, setReconcileCandidate] = useState(null);
+  const [confirmingCandidate, setConfirmingCandidate] = useState(false);
   // Rattachement manuel : sélecteur de transactions (débits) avec recherche
   // serveur — recours quand aucune suggestion ne sort (facture créée après
   // le paiement, écart de montant, relevé couvrant plusieurs prélèvements).
@@ -294,6 +315,7 @@ export function PurchaseInvoiceDetailDrawer({
       setTransactionSearch("");
       setAvailableTransactions([]);
       setDuplicateWarning(null);
+      setReconcileCandidate(null);
     }
   }, [open]);
   const { acknowledge, loading: ackLoading } =
@@ -461,9 +483,12 @@ export function PurchaseInvoiceDetailDrawer({
       notes: form.notes || undefined,
       internalReference: form.internalReference || undefined,
       paymentMethod: form.paymentMethod || undefined,
+      // « Créer quand même » : l'API refuse sinon toute création qui
+      // ressemble à une facture existante (filet anti-doublon serveur).
+      ...(isCreate && skipDuplicateCheck ? { forceCreate: true } : {}),
     };
-    // Avertissement non bloquant : une facture identique existe peut-être
-    // déjà (OCR depuis une transaction, import Qonto, saisie précédente).
+    // Avertissement : une facture identique existe peut-être déjà (OCR
+    // depuis une transaction, import Qonto ou Gmail, saisie précédente).
     if (isCreate && !skipDuplicateCheck) {
       const duplicates = await checkDuplicates({
         supplierName: data.supplierName,
@@ -501,6 +526,21 @@ export function PurchaseInvoiceDetailDrawer({
           console.error("Erreur upload justificatif (création):", err);
         }
       }
+      // Paiement déjà passé en banque : proposer la transaction trouvée,
+      // rien n'est lié sans confirmation.
+      if (isCreate && saved.id) {
+        const found = await fetchReconcileCandidate(saved.id);
+        if (found) {
+          setReconcileCandidate({
+            invoiceId: saved.id,
+            label: [data.supplierName, data.invoiceNumber]
+              .filter(Boolean)
+              .join(" "),
+            transaction: found,
+          });
+          return;
+        }
+      }
       onSaved?.();
     } catch {
       // Error toast is handled by the hook's onError callback
@@ -529,11 +569,13 @@ export function PurchaseInvoiceDetailDrawer({
     onSaved?.();
   };
 
-  const handleReconcile = async (transactionId) => {
+  // origin : geste à l'origine du lien (DOCUMENT = sélecteur de cette fiche,
+  // SUGGESTION = carte de suggestion), pour l'étiquette « rapproché depuis… ».
+  const handleReconcile = async (transactionId, origin = "DOCUMENT") => {
     if (!invoice?.id) return;
     // Le hook retourne undefined en cas d'erreur (toast déjà affiché) :
     // ne pas fermer/rafraîchir comme si le rapprochement avait réussi.
-    const result = await reconcile(invoice.id, [transactionId]);
+    const result = await reconcile(invoice.id, [transactionId], origin);
     if (!result) return;
     setShowTransactionPicker(false);
     setTransactionSearch("");
@@ -1355,6 +1397,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <LinkedTransactionLink
                         key={txId}
                         transactionId={txId}
+                        purchaseInvoiceId={invoice?.id}
                         action={
                           <Button
                             variant="ghost"
@@ -1406,7 +1449,9 @@ export function PurchaseInvoiceDetailDrawer({
                             size="sm"
                             className="text-green-600 border-green-200 hover:bg-green-50"
                             disabled={reconcileLoading}
-                            onClick={() => handleReconcile(s.transactionId)}
+                            onClick={() =>
+                              handleReconcile(s.transactionId, "SUGGESTION")
+                            }
                           >
                             <LinkIcon className="h-3.5 w-3.5 mr-1" />
                             Rapprocher
@@ -1515,7 +1560,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <p className="text-center py-4 text-xs text-muted-foreground">
                         {transactionSearch.trim()
                           ? "Aucune transaction ne correspond à cette recherche."
-                          : "Aucune transaction à rapprocher depuis l'émission. Saisissez un libellé ou un montant pour élargir la recherche."}
+                          : "Aucune transaction ne ressemble à cette facture. Saisissez un libellé ou un montant pour chercher parmi toutes les transactions."}
                       </p>
                     )}
                   </div>
@@ -1735,6 +1780,45 @@ export function PurchaseInvoiceDetailDrawer({
         setDuplicateWarning(null);
         handleSave({ skipDuplicateCheck: true });
       }}
+      onUseExisting={
+        onOpenExisting
+          ? (duplicate) => {
+              setDuplicateWarning(null);
+              onOpenExisting(duplicate.id);
+            }
+          : undefined
+      }
+    />
+  );
+
+  const reconcileCandidateDialog = (
+    <ReconcileCandidateDialog
+      open={!!reconcileCandidate}
+      transaction={reconcileCandidate?.transaction}
+      invoiceLabel={reconcileCandidate?.label}
+      loading={confirmingCandidate}
+      onCancel={() => {
+        if (confirmingCandidate) return;
+        setReconcileCandidate(null);
+        onSaved?.();
+      }}
+      onConfirm={async () => {
+        if (!reconcileCandidate) return;
+        setConfirmingCandidate(true);
+        try {
+          // Le hook retourne undefined en cas d'erreur (toast déjà affiché) :
+          // la facture est créée quand même, on ferme sans bloquer.
+          await reconcile(
+            reconcileCandidate.invoiceId,
+            [reconcileCandidate.transaction.id],
+            "SUGGESTION",
+          );
+        } finally {
+          setConfirmingCandidate(false);
+          setReconcileCandidate(null);
+          onSaved?.();
+        }
+      }}
     />
   );
 
@@ -1743,6 +1827,7 @@ export function PurchaseInvoiceDetailDrawer({
       <div className="flex flex-col h-full">
         {body}
         {duplicateDialog}
+        {reconcileCandidateDialog}
       </div>
     );
   }
@@ -1756,6 +1841,7 @@ export function PurchaseInvoiceDetailDrawer({
         {header}
         {body}
         {duplicateDialog}
+        {reconcileCandidateDialog}
       </DrawerContent>
     </Drawer>
   );

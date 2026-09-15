@@ -3,12 +3,13 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { usePurchaseInvoiceReconciliation } from "@/src/hooks/usePurchaseInvoiceReconciliation";
 import { useRouter } from "next/navigation";
-import { Landmark, Undo2 } from "lucide-react";
+import { Landmark, Undo2, ArrowUpRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   useReconciliationToastVisibility,
   RECONCILIATION_TOAST_ATTR,
 } from "./useReconciliationToastVisibility";
+import { useDeckLayout } from "./useDeckLayout";
 import { toast as sonnerToast } from "sonner";
 import {
   getIgnoredSuggestions,
@@ -82,34 +83,41 @@ function PurchaseInvoiceReconciliationCard({
         <div className="flex items-start gap-3">
           {/* Icône banque */}
           <div className="flex-shrink-0 mt-0.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800">
-              <Landmark className="h-4 w-4 text-gray-500 dark:text-zinc-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-900/25">
+              <Landmark className="h-4 w-4 text-rose-600 dark:text-rose-400" />
             </div>
           </div>
 
           {/* Contenu principal */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              {/* Texte fluide */}
-              <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {transaction.description || "Dépense"}
-                </span>
-                {" — "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {formatCurrency(Math.abs(transaction.amount))}
-                </span>
-                {" · Facture d'achat "}
-                <span className="font-semibold text-gray-900 dark:text-zinc-100">
-                  {refLabel}
-                </span>
-              </p>
-
-              {/* Timestamp relatif */}
-              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5 whitespace-nowrap">
+            {/* En-tête : sens du rapprochement proposé (paiement vers une
+                facture d'achat) + ancienneté de la transaction */}
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium leading-none px-2 py-1 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-900/25 dark:text-rose-400 whitespace-nowrap">
+                <ArrowUpRight className="h-3 w-3" />
+                Transaction
+                <span className="text-rose-400/80 dark:text-rose-500">→</span>
+                Facture d&apos;achat
+              </span>
+              <span className="flex-shrink-0 text-[11px] text-gray-400 dark:text-zinc-500 whitespace-nowrap">
                 {formatRelativeDate(transaction.date)}
               </span>
             </div>
+
+            {/* Texte fluide */}
+            <p className="text-[13px] leading-relaxed text-gray-600 dark:text-zinc-400">
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {transaction.description || "Dépense"}
+              </span>
+              {" - "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {formatCurrency(Math.abs(transaction.amount))}
+              </span>
+              {" · "}
+              <span className="font-semibold text-gray-900 dark:text-zinc-100">
+                {refLabel}
+              </span>
+            </p>
 
             {/* Actions */}
             <div className="flex items-center gap-2 mt-2.5">
@@ -190,11 +198,15 @@ function PurchaseInvoiceReconciliationDeck({
     if (suggestions.length <= 1) setIsExpanded(false);
   }, [suggestions.length]);
 
-  if (suggestions.length === 0) return null;
-
-  const cardHeight = 110;
   const stackOffset = 8;
   const expandedGap = 12;
+  // Hauteurs réelles des cartes (mode déplié sans chevauchement)
+  const { setRef, heightOf, offsets, expandedTotal } = useDeckLayout(
+    visibleSuggestions.map((s) => s.transaction.id),
+    { gap: expandedGap },
+  );
+
+  if (suggestions.length === 0) return null;
 
   return (
     <div
@@ -217,8 +229,8 @@ function PurchaseInvoiceReconciliationDeck({
         className="relative"
         style={{
           minHeight: isExpanded
-            ? `${visibleSuggestions.length * (cardHeight + expandedGap)}px`
-            : `${cardHeight + (visibleSuggestions.length - 1) * stackOffset}px`,
+            ? `${expandedTotal}px`
+            : `${heightOf(visibleSuggestions[0].transaction.id) + (visibleSuggestions.length - 1) * stackOffset}px`,
           transition: "min-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -231,10 +243,11 @@ function PurchaseInvoiceReconciliationDeck({
           return (
             <div
               key={transaction.id}
+              ref={setRef(transaction.id)}
               className="absolute right-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 bottom: isExpanded
-                  ? `${index * (cardHeight + expandedGap)}px`
+                  ? `${offsets[index]}px`
                   : `${index * stackOffset}px`,
                 transform: isExpanded
                   ? "scale(1)"
@@ -348,7 +361,11 @@ export function PurchaseInvoiceReconciliationToastProvider({ children }) {
       });
 
       try {
-        const result = await linkTransaction(transactionId, invoiceId);
+        const result = await linkTransaction(
+          transactionId,
+          invoiceId,
+          "SUGGESTION",
+        );
         // Rollback de l'optimistic-ignore si le serveur refuse.
         if (!result?.success) {
           removeIgnoredSuggestion(transactionId);
@@ -404,11 +421,9 @@ export function PurchaseInvoiceReconciliationToastProvider({ children }) {
     [router],
   );
 
-  // Masqués tant qu'un panneau est ouvert, et après toute interaction hors
-  // du toast (jusqu'à une suggestion jamais vue).
-  const toastVisible = useReconciliationToastVisibility(
-    activeSuggestions.map((s) => s.transaction.id),
-  );
+  // Masqués uniquement tant qu'un panneau est ouvert ; seul « Masquer »
+  // écarte une suggestion.
+  const toastVisible = useReconciliationToastVisibility();
 
   return (
     <>

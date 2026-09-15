@@ -66,12 +66,17 @@ export const useLinkPurchaseInvoiceToTransaction = () => {
     },
   );
 
-  const linkTransaction = async (transactionId, purchaseInvoiceId) => {
+  const linkTransaction = async (
+    transactionId,
+    purchaseInvoiceId,
+    origin = null,
+  ) => {
     try {
       const result = await reconcileMutation({
         variables: {
           purchaseInvoiceId,
           transactionIds: [transactionId],
+          origin,
         },
       });
       const ok = !!result.data?.reconcilePurchaseInvoice;

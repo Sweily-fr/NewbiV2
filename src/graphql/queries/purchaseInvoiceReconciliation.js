@@ -110,3 +110,19 @@ export const GET_PURCHASE_INVOICE_DUPLICATES = gql`
     }
   }
 `;
+
+/**
+ * Facture d'achat créée alors que le paiement est déjà passé : transaction
+ * sûre à proposer avec confirmation (null si aucune ou si ambiguïté).
+ */
+export const GET_PURCHASE_INVOICE_RECONCILE_CANDIDATE = gql`
+  query GetPurchaseInvoiceReconcileCandidate($purchaseInvoiceId: ID!) {
+    purchaseInvoiceReconcileCandidate(purchaseInvoiceId: $purchaseInvoiceId) {
+      id
+      amount
+      description
+      date
+      reconciliationStatus
+    }
+  }
+`;

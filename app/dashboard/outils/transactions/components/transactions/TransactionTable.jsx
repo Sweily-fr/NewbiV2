@@ -211,6 +211,7 @@ const mapExpenseToRow = (expense) => {
     linkedPurchaseInvoices: expense.linkedPurchaseInvoices || [],
     linkedImportedInvoiceIds: expense.linkedImportedInvoiceIds || [],
     linkedImportedInvoices: expense.linkedImportedInvoices || [],
+    reconciliationLinks: expense.reconciliationLinks || [],
     reconciliationStatus: expense.reconciliationStatus || null,
     reconciliationDate: expense.reconciliationDate || null,
     // Compte PCG et métadonnées (pour affichage et suggestion dans le dialog)
