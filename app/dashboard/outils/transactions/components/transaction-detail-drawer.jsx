@@ -1567,7 +1567,7 @@ export function TransactionDetailDrawer({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">
-                            Facture {formatInvoiceReference(inv)}
+                            {formatInvoiceReference(inv)}
                             {inv.clientName ? ` — ${inv.clientName}` : ""}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -1638,7 +1638,7 @@ export function TransactionDetailDrawer({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground truncate">
-                          Facture {inv.number || "importée"}
+                          {inv.number || "Facture importée"}
                           {inv.clientName ? ` — ${inv.clientName}` : ""}
                         </p>
                         <p className="text-xs text-muted-foreground">
@@ -1724,8 +1724,7 @@ export function TransactionDetailDrawer({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium truncate">
-                            Facture d&apos;achat
-                            {pi.invoiceNumber ? ` ${pi.invoiceNumber}` : ""}
+                            {pi.invoiceNumber || "Facture d'achat"}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">
@@ -1988,8 +1987,8 @@ export function TransactionDetailDrawer({
                         <div className="flex-1 min-w-0">
                           <span className="text-sm font-medium">
                             {invoice.kind === "imported"
-                              ? `Facture ${invoice.number || "importée"}`
-                              : `Facture ${formatInvoiceReference(invoice)}`}
+                              ? invoice.number || "Facture importée"
+                              : formatInvoiceReference(invoice)}
                             {invoice.kind === "imported" && (
                               <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground align-middle">
                                 Importée
@@ -2096,7 +2095,9 @@ export function TransactionDetailDrawer({
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium truncate">
-                                    Facture {formatInvoiceReference(invoice)}
+                                    {invoice.kind === "imported"
+                                      ? invoice.number || "Facture importée"
+                                      : formatInvoiceReference(invoice)}
                                     {invoice.kind === "imported" && (
                                       <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground align-middle">
                                         Importée
