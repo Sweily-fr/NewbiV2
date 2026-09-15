@@ -107,6 +107,12 @@ function ReconciliationCard({
               </span>
             </div>
 
+            {/* Sens du rapprochement proposé (les cartes du haut concernent
+                les factures client, celles du bas les factures d'achat) */}
+            <span className="inline-flex items-center mt-1.5 text-[10px] leading-none px-1.5 py-1 rounded bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 whitespace-nowrap">
+              Transaction → Facture client
+            </span>
+
             {/* Actions */}
             <div className="flex items-center gap-2 mt-2.5">
               <button
