@@ -208,11 +208,6 @@ function ReconciliationDeck({
 
   if (suggestions.length === 0) return null;
 
-  // Constantes de layout
-  const cardHeight = 110; // hauteur estimée d'une carte
-  const stackOffset = 8; // décalage entre les cartes en mode deck
-  const expandedGap = 12; // espace entre les cartes en mode expanded
-
   return (
     <div
       ref={containerRef}
@@ -221,37 +216,19 @@ function ReconciliationDeck({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div
-        className="relative"
-        style={{
-          minHeight: isExpanded
-            ? `${visibleSuggestions.length * (cardHeight + expandedGap)}px`
-            : `${cardHeight + (visibleSuggestions.length - 1) * stackOffset}px`,
-          transition: "min-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-        }}
-      >
-        {visibleSuggestions.map((suggestion, index) => {
+      {/* Cartes empilées verticalement, sans chevauchement : la hauteur
+          d'une carte varie (libellé sur 1 ou 2 lignes), un empilement en
+          pile absolue les faisait se recouvrir. */}
+      <div className="flex flex-col items-end gap-3">
+        {visibleSuggestions.map((suggestion) => {
           const transaction = suggestion.transaction;
           const invoice = suggestion.matchingInvoices[0];
-          const isFirst = index === 0;
           const isExiting = exitingIds.has(transaction.id);
 
           return (
             <div
               key={transaction.id}
-              className="absolute right-0 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
-              style={{
-                top: isExpanded
-                  ? `${index * (cardHeight + expandedGap)}px`
-                  : `${index * stackOffset}px`,
-                transform: isExpanded
-                  ? "scale(1)"
-                  : `scale(${1 - index * 0.03})`,
-                opacity: isExpanded ? 1 : isFirst ? 1 : 0.85 - index * 0.1,
-                zIndex: 100 - index,
-                transformOrigin: "top right",
-                pointerEvents: isExpanded || isFirst ? "auto" : "none",
-              }}
+              className="transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
             >
               <ReconciliationCard
                 transaction={transaction}
