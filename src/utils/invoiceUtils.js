@@ -118,7 +118,6 @@ export const refreshPrefixDate = (prefix, date = _getNow()) => {
  */
 export const formatInvoiceReference = (invoice, fallback = "N/A") => {
   if (!invoice?.number) return fallback;
-  return invoice.prefix
-    ? `${invoice.prefix}-${invoice.number}`
-    : invoice.number;
+  // Même repli que la page Factures : préfixe « F » quand il manque.
+  return `${invoice.prefix || "F"}-${invoice.number}`;
 };
