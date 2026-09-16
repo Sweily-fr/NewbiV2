@@ -86,7 +86,6 @@ import {
   useUpdatePurchaseInvoice,
   useDeletePurchaseInvoice,
   useAddPurchaseInvoiceFile,
-  useRemovePurchaseInvoiceFile,
   useMarkAsPaid,
   useReconciliationSuggestions,
   useReconcilePurchaseInvoice,
@@ -273,50 +272,13 @@ export function PurchaseInvoiceDetailDrawer({
   // changes recalculate from the correct source field.
   const [amountSource, setAmountSource] = useState("ht");
   // Justificatif ajouté à la création (uploadé après createInvoice).
-  const [pendingFiles, setPendingFiles] = useState([]);
+  const [pendingFile, setPendingFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const { createInvoice, loading: createLoading } = useCreatePurchaseInvoice();
   const { updateInvoice, loading: updateLoading } = useUpdatePurchaseInvoice();
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { addFile } = useAddPurchaseInvoiceFile();
-  const { removeFile } = useRemovePurchaseInvoiceFile();
-  // Ajout de justificatifs sur une facture existante (plusieurs fichiers)
-  const [uploadingFiles, setUploadingFiles] = useState(false);
-  const [removingFileId, setRemovingFileId] = useState(null);
-  const handleAddFiles = async (fileList) => {
-    const list = Array.from(fileList || []);
-    if (!invoice?.id || list.length === 0) return;
-    setUploadingFiles(true);
-    try {
-      let added = 0;
-      for (const file of list) {
-        const res = await addFile(invoice.id, { file, processOCR: false });
-        if (res?.success) added += 1;
-      }
-      if (added > 0) {
-        toast.success(
-          added > 1 ? `${added} justificatifs ajoutés` : "Justificatif ajouté",
-        );
-        onSaved?.();
-      }
-    } finally {
-      setUploadingFiles(false);
-    }
-  };
-  const handleRemoveFile = async (fileId) => {
-    if (!invoice?.id || !fileId) return;
-    setRemovingFileId(fileId);
-    try {
-      const res = await removeFile(invoice.id, fileId);
-      if (res?.success) {
-        setPreviewIndex(null);
-        onSaved?.();
-      }
-    } finally {
-      setRemovingFileId(null);
-    }
-  };
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
   const { reconcile, loading: reconcileLoading } =
     useReconcilePurchaseInvoice();
@@ -616,7 +578,7 @@ export function PurchaseInvoiceDetailDrawer({
       });
       setIsEditMode(true);
       setAmountSource("ht");
-      setPendingFiles([]);
+      setPendingFile(null);
     }
   }, [invoice, isCreate, open]);
 
@@ -732,13 +694,11 @@ export function PurchaseInvoiceDetailDrawer({
       if (!saved) return;
       // Justificatif ajouté à la création : uploadé une fois la facture créée
       // (addFile gère l'upload du fichier brut, sans OCR).
-      if (isCreate && pendingFiles.length > 0 && saved.id) {
-        for (const file of pendingFiles) {
-          try {
-            await addFile(saved.id, { file, processOCR: false });
-          } catch (err) {
-            console.error("Erreur upload justificatif (création):", err);
-          }
+      if (isCreate && pendingFile && saved.id) {
+        try {
+          await addFile(saved.id, { file: pendingFile, processOCR: false });
+        } catch (err) {
+          console.error("Erreur upload justificatif (création):", err);
         }
       }
       // Paiement déjà passé en banque : proposer la transaction trouvée,
@@ -973,66 +933,48 @@ export function PurchaseInvoiceDetailDrawer({
                 </div>
               );
             })()}
-          {/* Zone d'upload des justificatifs (création uniquement) */}
+          {/* Zone d'upload du justificatif (création uniquement) */}
           {isCreate && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                Justificatifs
+                Justificatif
               </p>
-              {pendingFiles.map((file, idx) => (
-                <div
-                  key={`${file.name}-${idx}`}
-                  className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-muted/30"
-                >
+              {pendingFile ? (
+                <div className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-muted/30">
                   <div className="flex items-center gap-2 min-w-0">
                     <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm truncate">{file.name}</span>
+                    <span className="text-sm truncate">{pendingFile.name}</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 shrink-0"
-                    onClick={() =>
-                      setPendingFiles((prev) =>
-                        prev.filter((_, i) => i !== idx),
-                      )
-                    }
+                    onClick={() => setPendingFile(null)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className={`w-full flex items-center justify-center gap-2 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer ${
-                  pendingFiles.length > 0 ? "p-3" : "flex-col gap-1.5 p-6"
-                }`}
-              >
-                <Upload
-                  className={pendingFiles.length > 0 ? "h-4 w-4" : "h-5 w-5"}
-                />
-                <span className="text-sm">
-                  {pendingFiles.length > 0
-                    ? "Ajouter un autre justificatif"
-                    : "Ajouter un ou plusieurs justificatifs"}
-                </span>
-                {pendingFiles.length === 0 && (
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex flex-col items-center justify-center gap-1.5 p-6 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer"
+                >
+                  <Upload className="h-5 w-5" />
+                  <span className="text-sm">Ajouter un justificatif</span>
                   <span className="text-xs text-muted-foreground/70">
                     PDF, JPG, PNG
                   </span>
-                )}
-              </button>
+                </button>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="application/pdf,image/*"
-                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const list = Array.from(e.target.files || []);
-                  if (list.length)
-                    setPendingFiles((prev) => [...prev, ...list]);
+                  const f = e.target.files?.[0];
+                  if (f) setPendingFile(f);
                   e.target.value = "";
                 }}
               />
@@ -1601,87 +1543,44 @@ export function PurchaseInvoiceDetailDrawer({
             </>
           )}
 
-          {/* Justificatifs (facture existante) : liste, ajout, suppression */}
-          {!isCreate && (
+          {/* Justificatif */}
+          {!isCreate && invoice?.files?.length > 0 && (
             <>
               <Separator />
               <div className="space-y-3">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Justificatif{invoice?.files?.length > 1 ? "s" : ""}
-                    {invoice?.files?.length > 1
-                      ? ` (${invoice.files.length})`
-                      : ""}
+                    Justificatif
                   </p>
                   <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 font-normal gap-1.5 text-xs"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingFiles}
-                      title="Ajouter un ou plusieurs justificatifs"
-                    >
-                      {uploadingFiles ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Plus className="h-3.5 w-3.5" />
-                      )}
-                      Ajouter
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="application/pdf,image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => {
-                        handleAddFiles(e.target.files);
-                        e.target.value = "";
-                      }}
-                    />
                     {/* Relance OCR : les valeurs relues sont comparées avant
                         application, rien n'est écrasé sans choix. */}
-                    {invoice?.files?.length > 0 &&
-                      renderReanalyzeTrigger(
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 font-normal gap-1.5 text-xs"
-                          disabled={reanalyzing || saving}
-                          title="Relire le justificatif et comparer avec les valeurs actuelles"
-                        >
-                          {reanalyzing ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <ScanSearch className="h-3.5 w-3.5" />
-                          )}
-                          {reanalyzing
-                            ? "Analyse en cours..."
-                            : "Relancer l'analyse"}
-                        </Button>,
-                      )}
+                    {renderReanalyzeTrigger(
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 font-normal gap-1.5 text-xs"
+                        disabled={reanalyzing || saving}
+                        title="Relire le justificatif et comparer avec les valeurs actuelles"
+                      >
+                        {reanalyzing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <ScanSearch className="h-3.5 w-3.5" />
+                        )}
+                        {reanalyzing
+                          ? "Analyse en cours..."
+                          : "Relancer l'analyse"}
+                      </Button>,
+                    )}
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Attaché
+                    </span>
                   </div>
                 </div>
-                {!invoice?.files?.length && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingFiles}
-                    className="w-full flex flex-col items-center justify-center gap-1.5 p-6 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer"
-                  >
-                    <Upload className="h-5 w-5" />
-                    <span className="text-sm">
-                      Aucun justificatif : en ajouter
-                    </span>
-                    <span className="text-xs text-muted-foreground/70">
-                      PDF, JPG, PNG, plusieurs fichiers possibles
-                    </span>
-                  </button>
-                )}
-                {(invoice?.files || []).map((file, fileIndex) => {
+                {invoice.files.map((file, fileIndex) => {
                   const isImage = file.mimetype?.startsWith("image/");
                   const isPdf =
                     file.mimetype === "application/pdf" ||
@@ -1788,29 +1687,6 @@ export function PurchaseInvoiceDetailDrawer({
                           }}
                         >
                           <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          title="Retirer ce justificatif"
-                          disabled={removingFileId === file.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (
-                              window.confirm(
-                                "Retirer ce justificatif de la facture ?",
-                              )
-                            ) {
-                              handleRemoveFile(file.id);
-                            }
-                          }}
-                        >
-                          {removingFileId === file.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
                         </Button>
                       </div>
                     </div>
