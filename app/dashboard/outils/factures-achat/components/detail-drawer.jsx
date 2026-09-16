@@ -65,7 +65,9 @@ import {
   Search,
   Loader2,
   ExternalLink,
+  ScanSearch,
 } from "lucide-react";
+import { PurchaseOcrComparisonDialog } from "./ocr-comparison-dialog";
 import {
   DocumentEyeButton,
   DocumentPreviewPanel,
@@ -85,6 +87,7 @@ import {
   useUnlinkPurchaseInvoiceFromTransaction,
   usePurchaseInvoiceReconciliationPicker,
   useCheckPurchaseInvoiceDuplicates,
+  useReanalyzePurchaseInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
@@ -305,6 +308,77 @@ export function PurchaseInvoiceDetailDrawer({
   }));
   const togglePreview = (idx) =>
     setPreviewIndex((current) => (current === idx ? null : idx));
+
+  // Relance OCR : la proposition est comparée aux valeurs actuelles dans un
+  // dialogue, puis les champs cochés sont enregistrés (updatePurchaseInvoice)
+  // et reportés dans le formulaire. Copie du flux des factures importées.
+  const { reanalyzeInvoice, loading: reanalyzing } =
+    useReanalyzePurchaseInvoice();
+  const [ocrProposal, setOcrProposal] = useState(null);
+  const [applyingOcr, setApplyingOcr] = useState(false);
+  useEffect(() => {
+    setOcrProposal(null);
+  }, [open, invoice?.id]);
+  const handleReanalyze = async () => {
+    if (!invoice?.id) return;
+    try {
+      const proposal = await reanalyzeInvoice(
+        invoice.id,
+        invoice.files?.[previewIndex ?? 0]?.id || undefined,
+      );
+      setOcrProposal(proposal);
+    } catch (error) {
+      toast.error(
+        error?.graphQLErrors?.[0]?.message ||
+          error?.message ||
+          "Impossible de relancer l'analyse OCR",
+      );
+    }
+  };
+  const applyOcrPatch = async (patch) => {
+    if (!invoice?.id || Object.keys(patch).length === 0) return;
+    setApplyingOcr(true);
+    try {
+      // Formulaire : valeurs en chaînes, TVA/taux recalculés si besoin.
+      const nextForm = { ...form };
+      for (const [key, value] of Object.entries(patch)) {
+        nextForm[key] =
+          value === null || value === undefined ? "" : String(value);
+      }
+      const ht = parseFloat(nextForm.amountHT);
+      const ttc = parseFloat(nextForm.amountTTC);
+      if (!("amountTVA" in patch) && !isNaN(ht) && !isNaN(ttc) && ttc >= ht) {
+        nextForm.amountTVA = (Math.round((ttc - ht) * 100) / 100).toString();
+      }
+      const tva = parseFloat(nextForm.amountTVA);
+      if (!("vatRate" in patch) && !isNaN(ht) && ht > 0 && !isNaN(tva)) {
+        nextForm.vatRate = (Math.round((tva / ht) * 10000) / 100).toString();
+      }
+      // API : mêmes champs que handleSave, category = sous-catégorie.
+      const input = {};
+      if ("supplierName" in patch && patch.supplierName)
+        input.supplierName = patch.supplierName;
+      if ("invoiceNumber" in patch) input.invoiceNumber = patch.invoiceNumber;
+      if ("issueDate" in patch && patch.issueDate)
+        input.issueDate = patch.issueDate;
+      if ("dueDate" in patch) input.dueDate = patch.dueDate;
+      if ("category" in patch && patch.category)
+        input.subcategory = patch.category;
+      if ("paymentMethod" in patch && patch.paymentMethod)
+        input.paymentMethod = patch.paymentMethod;
+      for (const key of ["amountHT", "amountTVA", "vatRate", "amountTTC"]) {
+        const v = parseFloat(nextForm[key]);
+        if (!isNaN(v)) input[key] = v;
+      }
+      const saved = await updateInvoice(invoice.id, input);
+      if (!saved) return;
+      setForm(nextForm);
+      setOcrProposal(null);
+      onSaved?.();
+    } finally {
+      setApplyingOcr(false);
+    }
+  };
 
   useEffect(() => {
     if (!showTransactionPicker || !invoice?.id) return;
@@ -812,7 +886,7 @@ export function PurchaseInvoiceDetailDrawer({
                       handleChange("supplierName", e.target.value)
                     }
                     placeholder="Nom du fournisseur"
-                    className="w-40 h-8 text-sm text-right"
+                    className="w-56 h-8 text-sm text-right"
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -825,7 +899,7 @@ export function PurchaseInvoiceDetailDrawer({
                       handleChange("invoiceNumber", e.target.value)
                     }
                     placeholder="F-20260001"
-                    className="w-40 h-8 text-sm text-right"
+                    className="w-56 h-8 text-sm text-right"
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -839,7 +913,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-40 h-8 justify-start text-left font-normal text-sm",
+                          "w-56 h-8 justify-start text-left font-normal text-sm",
                           !form.issueDate && "text-muted-foreground",
                         )}
                         type="button"
@@ -896,7 +970,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-40 h-8 justify-start text-left font-normal text-sm",
+                          "w-56 h-8 justify-start text-left font-normal text-sm",
                           !form.dueDate && "text-muted-foreground",
                         )}
                         type="button"
@@ -956,7 +1030,7 @@ export function PurchaseInvoiceDetailDrawer({
                       handleChange("internalReference", e.target.value)
                     }
                     placeholder="Optionnel"
-                    className="w-40 h-8 text-sm text-right"
+                    className="w-56 h-8 text-sm text-right"
                   />
                 </div>
               </div>
@@ -1023,7 +1097,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.amountHT}
                       onChange={(e) => handleChange("amountHT", e.target.value)}
                       placeholder="0.00"
-                      className="w-40 h-8 text-sm text-right"
+                      className="w-56 h-8 text-sm text-right"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1033,7 +1107,7 @@ export function PurchaseInvoiceDetailDrawer({
                     <VatRateSelect
                       value={form.vatRate}
                       onChange={(v) => handleChange("vatRate", String(v))}
-                      className="w-40 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                      className="w-56 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1178,7 +1252,7 @@ export function PurchaseInvoiceDetailDrawer({
                     <CategorySearchSelect
                       value={form.category}
                       onValueChange={(v) => handleChange("category", v)}
-                      triggerClassName="w-40 h-8 text-sm"
+                      triggerClassName="w-56 h-8 text-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1189,7 +1263,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.status}
                       onValueChange={(v) => handleChange("status", v)}
                     >
-                      <SelectTrigger className="w-40 h-8 text-sm">
+                      <SelectTrigger className="w-56 h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1209,7 +1283,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.paymentMethod}
                       onValueChange={(v) => handleChange("paymentMethod", v)}
                     >
-                      <SelectTrigger className="w-40 h-8 text-sm">
+                      <SelectTrigger className="w-56 h-8 text-sm">
                         <SelectValue placeholder="Sélectionner..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1232,7 +1306,7 @@ export function PurchaseInvoiceDetailDrawer({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-40 h-8 justify-start text-left font-normal text-sm",
+                            "w-56 h-8 justify-start text-left font-normal text-sm",
                             !form.paymentDate && "text-muted-foreground",
                           )}
                           type="button"
@@ -1301,10 +1375,32 @@ export function PurchaseInvoiceDetailDrawer({
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                     Justificatif
                   </p>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Attaché
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {/* Relance OCR : les valeurs relues sont comparées avant
+                        application, rien n'est écrasé sans choix. */}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 font-normal gap-1.5 text-xs"
+                      onClick={handleReanalyze}
+                      disabled={reanalyzing || saving}
+                      title="Relire le justificatif et comparer avec les valeurs actuelles"
+                    >
+                      {reanalyzing ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ScanSearch className="h-3.5 w-3.5" />
+                      )}
+                      {reanalyzing
+                        ? "Analyse en cours..."
+                        : "Relancer l'analyse"}
+                    </Button>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Attaché
+                    </span>
+                  </div>
                 </div>
                 {invoice.files.map((file, fileIndex) => {
                   const isImage = file.mimetype?.startsWith("image/");
@@ -1900,6 +1996,19 @@ export function PurchaseInvoiceDetailDrawer({
           index={previewIndex ?? 0}
           onIndexChange={setPreviewIndex}
           onClose={() => setPreviewIndex(null)}
+        />
+        {/* Comparaison valeurs actuelles / nouvelle analyse OCR */}
+        <PurchaseOcrComparisonDialog
+          open={!!ocrProposal}
+          onOpenChange={(o) => {
+            if (!o && !applyingOcr) setOcrProposal(null);
+          }}
+          current={form}
+          proposal={ocrProposal}
+          currency={form.currency}
+          paymentMethodLabels={paymentMethodLabels}
+          onApply={applyOcrPatch}
+          applying={applyingOcr}
         />
       </DrawerContent>
     </Drawer>

@@ -27,6 +27,7 @@ import {
   RECONCILE_PURCHASE_INVOICE,
   UNLINK_PURCHASE_INVOICE_FROM_TRANSACTION,
   UNRECONCILE_PURCHASE_INVOICE,
+  REANALYZE_PURCHASE_INVOICE,
   CREATE_SUPPLIER,
   DELETE_SUPPLIER,
   SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
@@ -157,6 +158,19 @@ export const useUpdatePurchaseInvoice = () => {
   };
 
   return { updateInvoice, loading };
+};
+
+// Relance OCR d'un justificatif : renvoie la proposition (rien n'est
+// enregistré), l'erreur est laissée à l'appelant (toast dans le tiroir).
+export const useReanalyzePurchaseInvoice = () => {
+  const [reanalyzeMutation, { loading }] = useMutation(
+    REANALYZE_PURCHASE_INVOICE,
+  );
+  const reanalyzeInvoice = async (id, fileId) => {
+    const result = await reanalyzeMutation({ variables: { id, fileId } });
+    return result?.data?.reanalyzePurchaseInvoice || null;
+  };
+  return { reanalyzeInvoice, loading };
 };
 
 export const useDeletePurchaseInvoice = () => {
