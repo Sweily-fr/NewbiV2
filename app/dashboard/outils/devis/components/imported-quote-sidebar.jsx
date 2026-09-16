@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -44,6 +44,11 @@ import {
   ChevronRight,
   Loader2,
 } from "lucide-react";
+import {
+  DocumentEyeButton,
+  DocumentPreviewPanel,
+  isDocumentPreviewTarget,
+} from "@/src/components/document-preview-panel";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import {
   IMPORTED_QUOTE_STATUS_LABELS,
@@ -66,6 +71,23 @@ export function ImportedQuoteSidebar({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  // Document affiché dans le volet de gauche (fermé à l'ouverture et au
+  // changement de document). PDF via le proxy same-origin (CSP).
+  const [showPreview, setShowPreview] = useState(false);
+  useEffect(() => {
+    setShowPreview(false);
+  }, [open, quote?.id]);
+  const previewItems =
+    showPreview && quote?.file
+      ? [
+          {
+            url: quote.file.url,
+            pdfSrc: `/api/document-preview/importedQuote/${quote.id}`,
+            filename: quote.file.originalFileName,
+            mimeType: quote.file.mimeType,
+          },
+        ]
+      : [];
 
   const { updateImportedQuote, loading: updateLoading } =
     useUpdateImportedQuote();
@@ -170,7 +192,25 @@ export function ImportedQuoteSidebar({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full overflow-hidden">
+      <SheetContent
+        className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full overflow-hidden"
+        // Un clic dans le volet d'aperçu (portail hors du tiroir) ne doit pas
+        // fermer le tiroir.
+        onPointerDownOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+      >
+        <DocumentPreviewPanel
+          items={previewItems}
+          index={0}
+          onClose={() => setShowPreview(false)}
+          sidebarWidth={512}
+        />
         <SheetHeader className="px-6 py-4 border-b shrink-0">
           {isReviewMode && (
             <p className="text-xs font-medium text-muted-foreground mb-1">
@@ -469,10 +509,15 @@ export function ImportedQuoteSidebar({
                   Document
                 </p>
                 <div
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50"
-                  onClick={handleDownload}
+                  className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${
+                    showPreview
+                      ? "border-[#5A50FF] bg-[#5A50FF]/5"
+                      : "bg-muted/30 hover:bg-muted/50"
+                  }`}
+                  onClick={() => setShowPreview((v) => !v)}
+                  title={showPreview ? "Masquer l'aperçu" : "Voir à gauche"}
                 >
-                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">
                       {quote.file.originalFileName}
@@ -483,7 +528,22 @@ export function ImportedQuoteSidebar({
                         : "PDF"}
                     </p>
                   </div>
-                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  <DocumentEyeButton
+                    active={showPreview}
+                    onClick={() => setShowPreview((v) => !v)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground"
+                    title="Ouvrir dans un nouvel onglet"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload();
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             )}

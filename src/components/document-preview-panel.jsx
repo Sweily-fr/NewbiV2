@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -104,6 +104,25 @@ export function DocumentPreviewPanel({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [open, onClose]);
 
+  // Les tiroirs Radix/vaul (react-remove-scroll) annulent la molette hors du
+  // tiroir : on fait défiler le volet à la main, en capture et non passif
+  // pour rester avant leur écouteur sur document.
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!open || !el) return undefined;
+    const onWheel = (e) => {
+      if (!el.contains(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      el.scrollTop += e.deltaY;
+      el.scrollLeft += e.deltaX;
+    };
+    window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () =>
+      window.removeEventListener("wheel", onWheel, { capture: true });
+  }, [open]);
+
   if (!mounted) return null;
 
   const { isPdf, isImage } = inferDocumentKind(doc);
@@ -155,7 +174,10 @@ export function DocumentPreviewPanel({
               </span>
             </div>
 
-            <div className="absolute inset-0 flex items-start justify-center overflow-y-auto py-16 px-2 md:px-24">
+            <div
+              ref={scrollRef}
+              className="absolute inset-0 flex items-start justify-center overflow-y-auto py-16 px-2 md:px-24"
+            >
               <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto overflow-hidden shadow-2xl">
                 {isPdf && pdfSrc ? (
                   <iframe
