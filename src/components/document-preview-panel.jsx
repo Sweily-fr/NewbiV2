@@ -31,10 +31,15 @@ export function isDocumentPreviewTarget(target) {
 export function inferDocumentKind(doc) {
   if (!doc) return { isPdf: false, isImage: false };
   const mime = (doc.mimeType || doc.mimetype || "").toLowerCase();
-  const name = (doc.filename || doc.originalFileName || doc.originalFilename || "")
-    .toLowerCase();
+  const name = (
+    doc.filename ||
+    doc.originalFileName ||
+    doc.originalFilename ||
+    ""
+  ).toLowerCase();
   const url = (doc.url || "").toLowerCase().split("?")[0];
-  const isPdf = mime === "application/pdf" || name.endsWith(".pdf") || url.endsWith(".pdf");
+  const isPdf =
+    mime === "application/pdf" || name.endsWith(".pdf") || url.endsWith(".pdf");
   const isImage =
     mime.startsWith("image/") ||
     /\.(png|jpe?g|gif|webp|bmp|svg)$/.test(name) ||
@@ -43,7 +48,13 @@ export function inferDocumentKind(doc) {
 }
 
 // Bouton œil commun aux lignes de documents des tiroirs (violet si affiché).
-export function DocumentEyeButton({ active, onClick, disabled, label, className = "" }) {
+export function DocumentEyeButton({
+  active,
+  onClick,
+  disabled,
+  label,
+  className = "",
+}) {
   return (
     <Button
       variant="ghost"
@@ -118,7 +129,10 @@ export function DocumentPreviewPanel({
       el.scrollTop += e.deltaY;
       el.scrollLeft += e.deltaX;
     };
-    window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    window.addEventListener("wheel", onWheel, {
+      passive: false,
+      capture: true,
+    });
     return () =>
       window.removeEventListener("wheel", onWheel, { capture: true });
   }, [open]);
@@ -144,7 +158,10 @@ export function DocumentPreviewPanel({
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } }}
+            exit={{
+              opacity: 0,
+              transition: { duration: 0.1, ease: "easeOut" },
+            }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           />
 
