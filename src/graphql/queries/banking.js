@@ -154,6 +154,7 @@ export const GET_TRANSACTIONS = gql`
         amountTTC
         issueDate
         files {
+          id
           url
           filename
           mimetype
@@ -170,6 +171,11 @@ export const GET_TRANSACTIONS = gql`
         issueDate
         dueDate
         source
+        file {
+          url
+          originalFileName
+          mimeType
+        }
       }
       # Origine de chaque lien (étiquette « rapproché depuis… »)
       reconciliationLinks {
@@ -276,6 +282,7 @@ export const GET_TRANSACTIONS_PAGE = gql`
           amountTTC
           issueDate
           files {
+            id
             url
             filename
             mimetype
@@ -292,6 +299,11 @@ export const GET_TRANSACTIONS_PAGE = gql`
           issueDate
           dueDate
           source
+          file {
+            url
+            originalFileName
+            mimeType
+          }
         }
         # Origine de chaque lien (étiquette « rapproché depuis… »)
         reconciliationLinks {
@@ -376,6 +388,7 @@ export const GET_TRANSACTION = gql`
         amountTTC
         issueDate
         files {
+          id
           url
           filename
           mimetype
@@ -392,6 +405,11 @@ export const GET_TRANSACTION = gql`
         issueDate
         dueDate
         source
+        file {
+          url
+          originalFileName
+          mimeType
+        }
       }
       # Origine de chaque lien (étiquette « rapproché depuis… »)
       reconciliationLinks {
