@@ -345,7 +345,7 @@ export function PurchaseInvoiceDetailDrawer({
   };
   // Plusieurs justificatifs : l'analyse porte sur un seul fichier, on fait
   // choisir lequel (sauf si l'un est déjà affiché dans le volet de gauche).
-  const ReanalyzeTrigger = ({ children }) => {
+  const renderReanalyzeTrigger = (children) => {
     const files = invoice?.files || [];
     if (files.length <= 1 || previewIndex !== null) {
       return React.cloneElement(children, {
@@ -782,8 +782,9 @@ export function PurchaseInvoiceDetailDrawer({
         {/* Facture avec justificatif (créée par OCR ou fichier ajouté) :
             relance de l'analyse depuis l'en-tête, comme sur les factures
             importées, visible en lecture comme en modification. */}
-        {!isCreate && invoice?.files?.length > 0 && (
-          <ReanalyzeTrigger>
+        {!isCreate &&
+          invoice?.files?.length > 0 &&
+          renderReanalyzeTrigger(
             <Button
               type="button"
               variant="ghost"
@@ -798,9 +799,8 @@ export function PurchaseInvoiceDetailDrawer({
               ) : (
                 <ScanSearch className="h-4 w-4" />
               )}
-            </Button>
-          </ReanalyzeTrigger>
-        )}
+            </Button>,
+          )}
         <DrawerClose asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <X className="h-4 w-4" />
@@ -867,7 +867,7 @@ export function PurchaseInvoiceDetailDrawer({
                     </p>
                     {hasFile && (
                       <div className="pt-1.5">
-                        <ReanalyzeTrigger>
+                        {renderReanalyzeTrigger(
                           <Button
                             type="button"
                             size="sm"
@@ -887,8 +887,8 @@ export function PurchaseInvoiceDetailDrawer({
                             {reanalyzing
                               ? "Analyse en cours..."
                               : "Relancer l'analyse"}
-                          </Button>
-                        </ReanalyzeTrigger>
+                          </Button>,
+                        )}
                       </div>
                     )}
                   </div>
@@ -1517,7 +1517,7 @@ export function PurchaseInvoiceDetailDrawer({
                   <div className="flex items-center gap-2">
                     {/* Relance OCR : les valeurs relues sont comparées avant
                         application, rien n'est écrasé sans choix. */}
-                    <ReanalyzeTrigger>
+                    {renderReanalyzeTrigger(
                       <Button
                         type="button"
                         variant="outline"
@@ -1534,8 +1534,8 @@ export function PurchaseInvoiceDetailDrawer({
                         {reanalyzing
                           ? "Analyse en cours..."
                           : "Relancer l'analyse"}
-                      </Button>
-                    </ReanalyzeTrigger>
+                      </Button>,
+                    )}
                     <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
                       <CheckCircle2 className="w-3 h-3" />
                       Attaché
