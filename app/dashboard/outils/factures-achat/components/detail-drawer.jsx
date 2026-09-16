@@ -711,9 +711,9 @@ export function PurchaseInvoiceDetailDrawer({
   };
 
   const header = (
-    <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
-      <div className="flex items-center gap-2">
-        <DrawerTitle className="text-base font-medium">
+    <DrawerHeader className="flex flex-row items-center justify-between gap-3 px-6 py-4 border-b space-y-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <DrawerTitle className="text-base font-medium truncate">
           {isCreate
             ? "Nouvelle facture d'achat"
             : isEditMode
@@ -722,42 +722,40 @@ export function PurchaseInvoiceDetailDrawer({
         </DrawerTitle>
         {!isCreate && invoice?.status && (
           <span
-            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice.status] || STATUS_BADGE.TO_PROCESS}`}
+            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap ${STATUS_BADGE[invoice.status] || STATUS_BADGE.TO_PROCESS}`}
           >
             {statusLabels[invoice.status] || invoice.status}
           </span>
         )}
         {!isCreate && needsReview(invoice) && (
           <span
-            className="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+            className="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-xs font-medium whitespace-nowrap text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
             title={OCR_REVIEW_TITLE}
           >
             À compléter
           </span>
         )}
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1 shrink-0">
         {/* Facture avec justificatif (créée par OCR ou fichier ajouté) :
             relance de l'analyse depuis l'en-tête, comme sur les factures
             importées, visible en lecture comme en modification. */}
         {!isCreate && invoice?.files?.length > 0 && (
           <Button
             type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 font-normal gap-1.5"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
             onClick={() => handleReanalyze()}
             disabled={reanalyzing || saving}
-            title="Relire le justificatif et comparer avec les valeurs actuelles"
+            title="Relancer l'analyse OCR du justificatif"
+            aria-label="Relancer l'analyse OCR du justificatif"
           >
             {reanalyzing ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <ScanSearch className="h-3.5 w-3.5" />
+              <ScanSearch className="h-4 w-4" />
             )}
-            <span className="hidden sm:inline">
-              {reanalyzing ? "Analyse en cours..." : "Relancer l'analyse"}
-            </span>
           </Button>
         )}
         <DrawerClose asChild>
@@ -775,31 +773,40 @@ export function PurchaseInvoiceDetailDrawer({
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
           {!isCreate && needsReview(invoice) && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200 space-y-2">
-              <p>
-                {invoice?.ocrMetadata?.extractionQuality === "none"
-                  ? "Le justificatif n'a pas pu être lu : cette facture a été créée à partir de la transaction bancaire. Vérifiez et complétez le fournisseur, le numéro et les montants."
-                  : "Les moteurs d'analyse habituels étaient indisponibles : les champs ont été devinés à partir du texte du justificatif. Vérifiez le fournisseur, le numéro et les montants."}
-              </p>
-              {invoice?.files?.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 font-normal gap-1.5 text-xs bg-white dark:bg-transparent"
-                  onClick={() => handleReanalyze()}
-                  disabled={reanalyzing || saving}
-                >
-                  {reanalyzing ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <ScanSearch className="h-3.5 w-3.5" />
-                  )}
-                  {reanalyzing
-                    ? "Analyse en cours..."
-                    : "Relancer l'analyse du justificatif"}
-                </Button>
-              )}
+            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+              <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/60">
+                <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                  Champs à vérifier
+                </p>
+                <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+                  {invoice?.ocrMetadata?.extractionQuality === "none"
+                    ? "Le justificatif n'a pas pu être lu : la facture a été créée à partir de la transaction bancaire. Vérifiez le fournisseur, le numéro et les montants."
+                    : "Les moteurs d'analyse étaient indisponibles : les champs ont été devinés à partir du texte du justificatif. Vérifiez le fournisseur, le numéro et les montants."}
+                </p>
+                {invoice?.files?.length > 0 && (
+                  <div className="pt-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 gap-1.5 bg-amber-600 text-white hover:bg-amber-700 font-normal text-xs"
+                      onClick={() => handleReanalyze()}
+                      disabled={reanalyzing || saving}
+                    >
+                      {reanalyzing ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ScanSearch className="h-3.5 w-3.5" />
+                      )}
+                      {reanalyzing
+                        ? "Analyse en cours..."
+                        : "Relancer l'analyse du justificatif"}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {/* Zone d'upload du justificatif (création uniquement) */}
