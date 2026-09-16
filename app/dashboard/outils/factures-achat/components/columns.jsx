@@ -264,7 +264,7 @@ export const getColumns = ({
   },
   {
     accessorKey: "supplierName",
-    size: 140,
+    size: 260,
     header: ({ column }) => (
       <SortableHeader column={column}>Fournisseur</SortableHeader>
     ),
@@ -273,9 +273,9 @@ export const getColumns = ({
       const merchant = findMerchant(name || "");
       const source = row.original?.source;
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <MerchantLogo merchant={merchant} fallbackText={name} size="sm" />
-          <div className="font-normal truncate max-w-[200px]" title={name}>
+          <div className="font-normal truncate min-w-0" title={name}>
             {merchant?.name || name || "Fournisseur"}
           </div>
           {/* Origine externe uniquement (Qonto, PDP) : rien pour un ajout Newbi */}
@@ -443,7 +443,7 @@ export const getColumns = ({
   },
   {
     accessorKey: "status",
-    size: 110,
+    size: 90,
     meta: { label: "Statut" },
     header: "Statut",
     cell: ({ row }) => {
@@ -467,7 +467,7 @@ export const getColumns = ({
   },
   {
     id: "files",
-    size: 100,
+    size: 80,
     meta: { label: "Justificatif" },
     header: "Justificatif",
     cell: ({ row }) => {
