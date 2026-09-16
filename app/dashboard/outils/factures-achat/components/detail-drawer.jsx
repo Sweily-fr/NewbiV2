@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 // Miniature canvas (pdfjs) des justificatifs PDF : pas de visualiseur natif
@@ -68,6 +68,14 @@ import {
   ScanSearch,
 } from "lucide-react";
 import { PurchaseOcrComparisonDialog } from "./ocr-comparison-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 import {
   DocumentEyeButton,
   DocumentPreviewPanel,
@@ -335,6 +343,40 @@ export function PurchaseInvoiceDetailDrawer({
       );
     }
   };
+  // Plusieurs justificatifs : l'analyse porte sur un seul fichier, on fait
+  // choisir lequel (sauf si l'un est déjà affiché dans le volet de gauche).
+  const ReanalyzeTrigger = ({ children }) => {
+    const files = invoice?.files || [];
+    if (files.length <= 1 || previewIndex !== null) {
+      return React.cloneElement(children, {
+        onClick: () => handleReanalyze(),
+      });
+    }
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            Quel justificatif relire ?
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {files.map((file, idx) => (
+            <DropdownMenuItem
+              key={file.id || idx}
+              onClick={() => handleReanalyze(file.id)}
+              className="gap-2"
+            >
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">
+                {file.originalFilename || `Justificatif ${idx + 1}`}
+              </span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
   const applyOcrPatch = async (patch) => {
     if (!invoice?.id || Object.keys(patch).length === 0) return;
     setApplyingOcr(true);
@@ -741,22 +783,23 @@ export function PurchaseInvoiceDetailDrawer({
             relance de l'analyse depuis l'en-tête, comme sur les factures
             importées, visible en lecture comme en modification. */}
         {!isCreate && invoice?.files?.length > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={() => handleReanalyze()}
-            disabled={reanalyzing || saving}
-            title="Relancer l'analyse OCR du justificatif"
-            aria-label="Relancer l'analyse OCR du justificatif"
-          >
-            {reanalyzing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ScanSearch className="h-4 w-4" />
-            )}
-          </Button>
+          <ReanalyzeTrigger>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              disabled={reanalyzing || saving}
+              title="Relancer l'analyse OCR du justificatif"
+              aria-label="Relancer l'analyse OCR du justificatif"
+            >
+              {reanalyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ScanSearch className="h-4 w-4" />
+              )}
+            </Button>
+          </ReanalyzeTrigger>
         )}
         <DrawerClose asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -824,27 +867,28 @@ export function PurchaseInvoiceDetailDrawer({
                     </p>
                     {hasFile && (
                       <div className="pt-1.5">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={review ? "default" : "outline"}
-                          className={`h-8 gap-1.5 font-normal text-xs ${
-                            review
-                              ? "bg-amber-600 text-white hover:bg-amber-700"
-                              : ""
-                          }`}
-                          onClick={() => handleReanalyze()}
-                          disabled={reanalyzing || saving}
-                        >
-                          {reanalyzing ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <ScanSearch className="h-3.5 w-3.5" />
-                          )}
-                          {reanalyzing
-                            ? "Analyse en cours..."
-                            : "Relancer l'analyse"}
-                        </Button>
+                        <ReanalyzeTrigger>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={review ? "default" : "outline"}
+                            className={`h-8 gap-1.5 font-normal text-xs ${
+                              review
+                                ? "bg-amber-600 text-white hover:bg-amber-700"
+                                : ""
+                            }`}
+                            disabled={reanalyzing || saving}
+                          >
+                            {reanalyzing ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <ScanSearch className="h-3.5 w-3.5" />
+                            )}
+                            {reanalyzing
+                              ? "Analyse en cours..."
+                              : "Relancer l'analyse"}
+                          </Button>
+                        </ReanalyzeTrigger>
                       </div>
                     )}
                   </div>
@@ -1473,24 +1517,25 @@ export function PurchaseInvoiceDetailDrawer({
                   <div className="flex items-center gap-2">
                     {/* Relance OCR : les valeurs relues sont comparées avant
                         application, rien n'est écrasé sans choix. */}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 font-normal gap-1.5 text-xs"
-                      onClick={() => handleReanalyze()}
-                      disabled={reanalyzing || saving}
-                      title="Relire le justificatif et comparer avec les valeurs actuelles"
-                    >
-                      {reanalyzing ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <ScanSearch className="h-3.5 w-3.5" />
-                      )}
-                      {reanalyzing
-                        ? "Analyse en cours..."
-                        : "Relancer l'analyse"}
-                    </Button>
+                    <ReanalyzeTrigger>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 font-normal gap-1.5 text-xs"
+                        disabled={reanalyzing || saving}
+                        title="Relire le justificatif et comparer avec les valeurs actuelles"
+                      >
+                        {reanalyzing ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <ScanSearch className="h-3.5 w-3.5" />
+                        )}
+                        {reanalyzing
+                          ? "Analyse en cours..."
+                          : "Relancer l'analyse"}
+                      </Button>
+                    </ReanalyzeTrigger>
                     <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
                       <CheckCircle2 className="w-3 h-3" />
                       Attaché
