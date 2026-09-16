@@ -32,7 +32,6 @@ import {
   // Note : pour les icônes Source / paiements (CARD, TRANSFER, CHECK) on
   // utilise des SVG Vuesax custom importés depuis @/src/components/icons
   // (voir BankIcon / CardIcon / RoutingIcon / NoteIcon ci-dessous).
-  Download,
   Edit,
   Trash2,
   X,
@@ -46,9 +45,6 @@ import {
   Link2,
   Unlink,
   ExternalLink,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
   Maximize2,
   ChevronLeft,
   ChevronRight,
@@ -77,12 +73,6 @@ import {
 } from "@/src/graphql/queries/banking";
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
-import {
-  Dialog as RadixDialog,
-  DialogContent as RadixDialogContent,
-  DialogTitle as RadixDialogTitle,
-} from "@/src/components/ui/dialog";
-import { VisuallyHidden } from "@/src/components/ui/visually-hidden";
 import CategorySearchSelect from "@/src/components/category-search-select";
 import {
   useUnlinkTransactionFromInvoice,
@@ -165,17 +155,16 @@ export function TransactionDetailDrawer({
   const [isEditMode, setIsEditMode] = useState(false);
   // Fichiers en attente d'upload (mode création) — array de { file, previewUrl }
   const [pendingFiles, setPendingFiles] = useState([]);
-  // Index du justificatif actif dans le pane preview gauche (navigation prev/next)
-  const [activeReceiptIndex, setActiveReceiptIndex] = useState(0);
+  // Volet d'aperçu à gauche. Fermé à l'ouverture du tiroir : il ne s'ouvre que
+  // sur un clic explicite (justificatif de la liste, bouton « Voir » d'une
+  // facture liée). { source: "receipts", index } pour les justificatifs de la
+  // transaction, { source: "linked", key, items, index } pour les fichiers
+  // d'une facture d'achat ou d'une facture client importée liée.
+  const [preview, setPreview] = useState(null);
   // Id de la facture d'achat en cours de détachement (liste N↔N)
   const [unlinkingPurchaseInvoiceId, setUnlinkingPurchaseInvoiceId] =
     useState(null);
   const [calendarContainer, setCalendarContainer] = useState(null);
-  const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
-  const [receiptViewerUrl, setReceiptViewerUrl] = useState(null);
-  const [receiptViewerMime, setReceiptViewerMime] = useState(null);
-  const [receiptZoom, setReceiptZoom] = useState(1);
-  const [receiptRotation, setReceiptRotation] = useState(0);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
@@ -210,6 +199,12 @@ export function TransactionDetailDrawer({
   useEffect(() => {
     if (!open) setShowMobileDetails(false);
   }, [open]);
+
+  // Le volet d'aperçu ne survit ni à la fermeture ni au changement de
+  // transaction : chaque ouverture repart sur les seuls détails.
+  useEffect(() => {
+    setPreview(null);
+  }, [open, transaction?.id]);
 
   // Hook pour délier une transaction d'une facture
   const { unlinkTransaction } = useUnlinkTransactionFromInvoice();
@@ -466,7 +461,7 @@ export function TransactionDetailDrawer({
       });
       setIsEditMode(true);
       setPendingFiles([]);
-      setActiveReceiptIndex(0);
+      setPreview(null);
     } else if (transaction) {
       // Mode visualisation/édition: pré-remplir avec les données
       let formattedDate = formatLocalDate();
@@ -531,7 +526,7 @@ export function TransactionDetailDrawer({
       // Seules la description et la catégorie s'éditent, directement en vue.
       setIsEditMode(false);
       setPendingFiles([]);
-      setActiveReceiptIndex(0);
+      setPreview(null);
     }
   }, [open, transaction, isCreateMode]);
 
@@ -751,15 +746,18 @@ export function TransactionDetailDrawer({
     });
   };
 
-  // Délier la transaction de la facture.
-  // Ouvrir le viewer de justificatif
-  const openReceiptViewer = (url, mimetype) => {
-    setReceiptViewerUrl(url);
-    setReceiptViewerMime(mimetype || "");
-    setReceiptZoom(1);
-    setReceiptRotation(0);
-    setReceiptViewerOpen(true);
+  // Ouvre le volet de gauche sur les fichiers d'un document lié ; un second
+  // clic sur le même document le referme.
+  const openLinkedPreview = (key, items) => {
+    setPreview((prev) =>
+      prev?.source === "linked" && prev.key === key
+        ? null
+        : { source: "linked", key, items, index: 0 },
+    );
+    setShowMobileDetails(false);
   };
+  const isLinkedPreviewed = (key) =>
+    preview?.source === "linked" && preview.key === key;
 
   // Ouvrir une facture d'achat liée (page Factures d'achat)
   const handleViewPurchaseInvoice = (purchaseInvoice) => {
@@ -769,10 +767,78 @@ export function TransactionDetailDrawer({
     }
   };
 
-  // Voir le justificatif d'une facture d'achat liée (via le lien, sans copie)
+  // Voir les justificatifs d'une facture d'achat liée dans le volet de gauche.
+  // Les PDF passent par le proxy same-origin (la CSP de prod bloque les
+  // iframes vers l'URL publique R2), sélection du fichier via ?fileId=.
   const handleViewPurchaseInvoiceReceipt = (purchaseInvoice) => {
-    const file = purchaseInvoice?.files?.[0];
-    if (file?.url) openReceiptViewer(file.url, file.mimetype);
+    const items = (purchaseInvoice?.files || [])
+      .filter((f) => f?.url)
+      .map((f) => ({
+        id: f.id,
+        url: f.url,
+        mimetype: f.mimetype || "",
+        filename:
+          f.filename || purchaseInvoice.invoiceNumber || "Facture d'achat",
+        size: f.size,
+        isPending: false,
+        pdfSrc: /^[0-9a-f]{24}$/i.test(f.id || "")
+          ? `/api/document-preview/purchaseInvoice/${purchaseInvoice.id}?fileId=${f.id}`
+          : `/api/document-preview/purchaseInvoice/${purchaseInvoice.id}`,
+      }));
+    if (items.length === 0) return;
+    openLinkedPreview(`pi-${purchaseInvoice.id}`, items);
+  };
+
+  // Voir une facture Newbi liée dans le volet de gauche : PDF archivé servi
+  // par le proxy. On vérifie la disponibilité avant d'ouvrir le volet pour ne
+  // pas afficher une erreur JSON dans l'iframe (brouillon, archive absente).
+  const handleViewInvoicePdf = async (inv) => {
+    if (!inv?.id) return;
+    const key = `invoice-${inv.id}`;
+    if (isLinkedPreviewed(key)) {
+      closePreview();
+      return;
+    }
+    const src = `/api/document-preview/invoice/${inv.id}`;
+    try {
+      const res = await fetch(src, { credentials: "include" });
+      if (!res.ok) {
+        toast.error("Le PDF de cette facture n'est pas encore disponible");
+        return;
+      }
+      openLinkedPreview(key, [
+        {
+          url: src,
+          mimetype: "application/pdf",
+          filename: formatInvoiceReference(inv),
+          isPending: false,
+          pdfSrc: src,
+        },
+      ]);
+    } catch {
+      toast.error("Impossible de charger le PDF de la facture");
+    }
+  };
+
+  // Ouvre la page du document lié (facture, facture importée) et ferme le tiroir
+  const goToInvoicePage = (id) => {
+    router.push(`/dashboard/outils/factures?id=${id}&returnTo=transactions`);
+    onOpenChange(false);
+  };
+
+  // Voir le fichier d'une facture client importée liée dans le volet de gauche
+  const handleViewImportedInvoiceFile = (inv) => {
+    const file = inv?.file;
+    if (!file?.url) return;
+    openLinkedPreview(`imported-${inv.id}`, [
+      {
+        url: file.url,
+        mimetype: file.mimeType || "",
+        filename: file.originalFileName || inv.number || "Facture importée",
+        isPending: false,
+        pdfSrc: `/api/document-preview/importedInvoice/${inv.id}`,
+      },
+    ]);
   };
 
   // Détacher UNE facture d'achat de cette transaction (la facture garde ses
@@ -797,7 +863,8 @@ export function TransactionDetailDrawer({
     }
   };
 
-  // Liste complète des justificatifs (existants + pending) — passe par le pane preview gauche
+  // Liste complète des justificatifs (existants + pending), affichés dans la
+  // sidebar ; le volet de gauche ne montre que celui qui a été cliqué.
   const allReceipts = (() => {
     const list = [];
     // Existants venant du backend
@@ -847,10 +914,40 @@ export function TransactionDetailDrawer({
   })();
 
   const hasReceipt = transaction?.hasReceipt || allReceipts.length > 0;
+  // Documents parcourus par le volet (prev/next) et document affiché.
+  // Aucun volet tant que l'utilisateur n'a rien cliqué.
+  const previewItems = !preview
+    ? []
+    : preview.source === "receipts"
+      ? allReceipts
+      : preview.items;
+  const previewIndex = Math.min(
+    preview?.index || 0,
+    Math.max(previewItems.length - 1, 0),
+  );
   const activeReceipt =
-    allReceipts.length > 0
-      ? allReceipts[Math.min(activeReceiptIndex, allReceipts.length - 1)]
-      : null;
+    previewItems.length > 0 ? previewItems[previewIndex] : null;
+  const isReceiptPreviewed = (idx) =>
+    preview?.source === "receipts" && previewIndex === idx;
+  const togglePreviewReceipt = (idx) => {
+    setPreview(
+      isReceiptPreviewed(idx) ? null : { source: "receipts", index: idx },
+    );
+    setShowMobileDetails(false);
+  };
+  const closePreview = () => setPreview(null);
+  const stepPreview = (delta) =>
+    setPreview((prev) =>
+      prev
+        ? {
+            ...prev,
+            index: Math.max(
+              0,
+              Math.min(previewItems.length - 1, previewIndex + delta),
+            ),
+          }
+        : prev,
+    );
   // Détection PDF/image : mimetype d'abord, fallback sur l'extension de l'URL/nom
   const inferReceiptKind = (r) => {
     if (!r) return { isPdf: false, isImage: false };
@@ -891,6 +988,8 @@ export function TransactionDetailDrawer({
   const activeReceiptPdfSrc = (() => {
     if (!activeReceipt || !activeReceiptIsPdf) return null;
     if (activeReceipt.isPending) return pendingPdfBlobUrl || activeReceipt.url;
+    // Fichier d'un document lié : proxy déjà résolu à l'ouverture du volet
+    if (activeReceipt.pdfSrc) return activeReceipt.pdfSrc;
     const txId = transaction?.id;
     if (!txId || activeReceipt.receiptIndex === undefined) {
       // Legacy `files[]` : pas servi par le proxy
@@ -978,11 +1077,14 @@ export function TransactionDetailDrawer({
         onClick={() => onOpenChange(false)}
       />
 
-      {/* Backdrop sombre + preview à gauche — uniquement si un justificatif est attaché ou en upload */}
-      {(activeReceipt?.url || isUploading) && (
+      {/* Backdrop sombre + volet d'aperçu à gauche : uniquement après un clic
+          sur un justificatif ou sur « Voir » d'une facture liée. Un clic dans
+          le fond referme le volet sans fermer le tiroir. */}
+      {activeReceipt?.url && (
         <>
           <motion.div
-            className="fixed inset-y-0 left-0 md:right-[500px] right-0 z-40 bg-black/60"
+            className="fixed inset-y-0 left-0 md:right-[500px] right-0 z-40 bg-black/60 cursor-pointer"
+            onClick={closePreview}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{
@@ -1002,71 +1104,75 @@ export function TransactionDetailDrawer({
             }}
             transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
           >
-            <div className="absolute inset-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
-              {isUploading ? (
-                <div className="flex items-center justify-center w-full min-h-[calc(100%-4rem)] pointer-events-auto">
-                  <Loader2 className="h-10 w-10 animate-spin text-white/80" />
-                </div>
-              ) : (
-                <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto overflow-hidden shadow-2xl">
-                  {activeReceiptIsPdf ? (
-                    <iframe
-                      src={`${activeReceiptPdfSrc}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                      title={activeReceipt.filename || "Justificatif"}
-                      className="w-full h-full min-h-[297mm] border-0 block"
-                    />
-                  ) : activeReceiptIsImage ? (
-                    <PreviewImage
-                      src={activeReceipt.url}
-                      alt={activeReceipt.filename || "Justificatif"}
-                      className="w-full h-auto object-contain"
-                      containerClassName="w-full"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-muted-foreground p-12 min-h-[calc(100vh-6rem)]">
-                      <FileText className="h-16 w-16 mb-4 opacity-50" />
-                      <p className="text-sm mb-4">Aperçu non disponible</p>
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(activeReceipt.url, "_blank")}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Ouvrir le fichier
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
+            {/* Nom du document + fermeture du volet */}
+            <div className="fixed top-4 left-4 z-[60] flex items-center gap-2 pointer-events-auto max-w-[calc(100%-2rem)] md:max-w-[calc(100%-500px-2rem)]">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 rounded-full bg-black/60 text-white hover:bg-black/80 hover:text-white"
+                onClick={closePreview}
+                title="Fermer l'aperçu"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <span className="px-3 py-1.5 rounded-full bg-black/60 text-white text-xs font-medium truncate">
+                {activeReceipt.filename || "Justificatif"}
+              </span>
             </div>
 
-            {/* Navigation prev/next + indicateur N/total — seulement si > 1 justificatif */}
-            {allReceipts.length > 1 && !isUploading && (
+            <div className="absolute inset-0 flex items-start justify-center overflow-y-auto py-16 px-2 md:px-24">
+              <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto overflow-hidden shadow-2xl">
+                {activeReceiptIsPdf ? (
+                  <iframe
+                    src={`${activeReceiptPdfSrc}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                    title={activeReceipt.filename || "Justificatif"}
+                    className="w-full h-full min-h-[297mm] border-0 block"
+                  />
+                ) : activeReceiptIsImage ? (
+                  <PreviewImage
+                    src={activeReceipt.url}
+                    alt={activeReceipt.filename || "Justificatif"}
+                    className="w-full h-auto object-contain"
+                    containerClassName="w-full"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-muted-foreground p-12 min-h-[calc(100vh-6rem)]">
+                    <FileText className="h-16 w-16 mb-4 opacity-50" />
+                    <p className="text-sm mb-4">Aperçu non disponible</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(activeReceipt.url, "_blank")}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ouvrir le fichier
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Navigation prev/next + indicateur N/total — seulement si > 1 document */}
+            {previewItems.length > 1 && (
               <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-[calc((100%-500px)/2)] md:translate-x-[-50%] z-[60] flex items-center gap-2 px-3 py-2 rounded-full bg-black/70 backdrop-blur-sm text-white text-sm font-medium pointer-events-auto shadow-lg">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-white hover:bg-white/15 hover:text-white rounded-full"
-                  disabled={activeReceiptIndex === 0}
-                  onClick={() =>
-                    setActiveReceiptIndex((i) => Math.max(0, i - 1))
-                  }
+                  disabled={previewIndex === 0}
+                  onClick={() => stepPreview(-1)}
                   title="Précédent"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="tabular-nums select-none">
-                  {activeReceiptIndex + 1} / {allReceipts.length}
+                  {previewIndex + 1} / {previewItems.length}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-white hover:bg-white/15 hover:text-white rounded-full"
-                  disabled={activeReceiptIndex >= allReceipts.length - 1}
-                  onClick={() =>
-                    setActiveReceiptIndex((i) =>
-                      Math.min(allReceipts.length - 1, i + 1),
-                    )
-                  }
+                  disabled={previewIndex >= previewItems.length - 1}
+                  onClick={() => stepPreview(1)}
                   title="Suivant"
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -1090,7 +1196,9 @@ export function TransactionDetailDrawer({
       <motion.div
         className="fixed inset-y-0 right-0 z-50 md:w-[500px] w-full bg-background border-l shadow-lg flex flex-col"
         initial={{ x: "100%" }}
-        animate={{ x: isMobile && !showMobileDetails ? "100%" : 0 }}
+        animate={{
+          x: isMobile && activeReceipt?.url && !showMobileDetails ? "100%" : 0,
+        }}
         exit={{ x: "100%" }}
         transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
       >
@@ -1481,7 +1589,7 @@ export function TransactionDetailDrawer({
                 </div>
               )}
 
-              {/* Liste des justificatifs attachés — clic pour activer dans le preview à gauche */}
+              {/* Liste des justificatifs attachés — clic = afficher/masquer dans le volet de gauche */}
               {allReceipts.length > 0 && (
                 <div className="space-y-1.5">
                   {allReceipts.map((rcpt, idx) => {
@@ -1493,7 +1601,7 @@ export function TransactionDetailDrawer({
                         return `${Math.round(bytes / 1024)} KB`;
                       return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
                     };
-                    const isActive = idx === activeReceiptIndex;
+                    const isActive = isReceiptPreviewed(idx);
                     return (
                       <div
                         key={rcpt.id || `pending-${idx}`}
@@ -1502,7 +1610,7 @@ export function TransactionDetailDrawer({
                             ? "bg-muted/70 ring-1 ring-border"
                             : "bg-muted/40 hover:bg-muted/60"
                         }`}
-                        onClick={() => setActiveReceiptIndex(idx)}
+                        onClick={() => togglePreviewReceipt(idx)}
                       >
                         <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                           {isImg ? (
@@ -1533,7 +1641,7 @@ export function TransactionDetailDrawer({
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRemoveReceiptFile(rcpt);
-                            setActiveReceiptIndex(0);
+                            closePreview();
                           }}
                           title="Retirer"
                         >
@@ -1554,13 +1662,12 @@ export function TransactionDetailDrawer({
                     {transaction.linkedInvoices.map((inv) => (
                       <div
                         key={`linked-${inv.id}`}
-                        onClick={() => {
-                          router.push(
-                            `/dashboard/outils/factures?id=${inv.id}&returnTo=transactions`,
-                          );
-                          onOpenChange(false);
-                        }}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms]"
+                        onClick={() => handleViewInvoicePdf(inv)}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                          isLinkedPreviewed(`invoice-${inv.id}`)
+                            ? "bg-muted/70 ring-1 ring-border"
+                            : "bg-muted/40 hover:bg-muted/60"
+                        }`}
                       >
                         <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
                           <FileText className="h-4 w-4 text-[#5A50FF]" />
@@ -1582,6 +1689,18 @@ export function TransactionDetailDrawer({
                             documentId={inv.id}
                           />
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            goToInvoicePage(inv.id);
+                          }}
+                          title="Ouvrir la facture"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1625,13 +1744,16 @@ export function TransactionDetailDrawer({
                   {linkedImportedInvoices.map((inv) => (
                     <div
                       key={`linked-imported-${inv.id}`}
-                      onClick={() => {
-                        router.push(
-                          `/dashboard/outils/factures?id=${inv.id}&returnTo=transactions`,
-                        );
-                        onOpenChange(false);
-                      }}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms]"
+                      onClick={() =>
+                        inv.file?.url
+                          ? handleViewImportedInvoiceFile(inv)
+                          : goToInvoicePage(inv.id)
+                      }
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                        isLinkedPreviewed(`imported-${inv.id}`)
+                          ? "bg-muted/70 ring-1 ring-border"
+                          : "bg-muted/40 hover:bg-muted/60"
+                      }`}
                     >
                       <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
                         <FileText className="h-4 w-4 text-[#5A50FF]" />
@@ -1656,6 +1778,18 @@ export function TransactionDetailDrawer({
                       <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                         Importée
                       </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToInvoicePage(inv.id);
+                        }}
+                        title="Ouvrir la facture"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1718,7 +1852,16 @@ export function TransactionDetailDrawer({
                 {linkedPurchaseInvoices.map((pi) => (
                   <div
                     key={pi.id}
-                    className="p-3 border rounded-lg bg-muted/30"
+                    onClick={() =>
+                      pi.files?.some((f) => f?.url)
+                        ? handleViewPurchaseInvoiceReceipt(pi)
+                        : handleViewPurchaseInvoice(pi)
+                    }
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                      isLinkedPreviewed(`pi-${pi.id}`)
+                        ? "bg-muted/70 ring-1 ring-border"
+                        : "bg-muted/30 hover:bg-muted/50"
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -1747,23 +1890,15 @@ export function TransactionDetailDrawer({
                         />
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        {pi.files?.[0]?.url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleViewPurchaseInvoiceReceipt(pi)}
-                            title="Voir le justificatif"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => handleViewPurchaseInvoice(pi)}
-                          title="Voir la facture d'achat"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewPurchaseInvoice(pi);
+                          }}
+                          title="Ouvrir la facture d'achat"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
@@ -1771,7 +1906,10 @@ export function TransactionDetailDrawer({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleUnlinkPurchaseInvoice(pi)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnlinkPurchaseInvoice(pi);
+                          }}
                           disabled={
                             isReadOnly || unlinkingPurchaseInvoiceId !== null
                           }
@@ -2210,88 +2348,6 @@ export function TransactionDetailDrawer({
           })()}
         </div>
       </motion.div>
-
-      {/* Viewer plein écran pour le justificatif */}
-      <RadixDialog open={receiptViewerOpen} onOpenChange={setReceiptViewerOpen}>
-        <RadixDialogContent
-          className="max-w-[95vw] max-h-[95vh] w-full h-[90vh] p-0 overflow-hidden flex flex-col sm:max-w-[95vw]"
-          showCloseButton={false}
-        >
-          <VisuallyHidden>
-            <RadixDialogTitle>Justificatif</RadixDialogTitle>
-          </VisuallyHidden>
-          {/* Toolbar */}
-          <div className="flex items-center justify-between px-4 py-2 border-b bg-background/95 backdrop-blur-sm shrink-0">
-            <span className="text-sm font-medium">Justificatif</span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setReceiptZoom((z) => Math.max(0.25, z - 0.25))}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-                title="Dézoomer"
-              >
-                <ZoomOut size={16} />
-              </button>
-              <span className="text-xs text-muted-foreground w-12 text-center">
-                {Math.round(receiptZoom * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={() => setReceiptZoom((z) => Math.min(4, z + 0.25))}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-                title="Zoomer"
-              >
-                <ZoomIn size={16} />
-              </button>
-              <div className="w-px h-5 bg-border mx-1" />
-              <button
-                type="button"
-                onClick={() => setReceiptRotation((r) => (r + 90) % 360)}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-                title="Pivoter"
-              >
-                <RotateCw size={16} />
-              </button>
-              <div className="w-px h-5 bg-border mx-1" />
-              <button
-                type="button"
-                onClick={() => setReceiptViewerOpen(false)}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
-                title="Fermer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-          {/* Document viewer */}
-          <div className="flex-1 overflow-auto bg-muted/30 flex items-center justify-center">
-            {receiptViewerMime === "application/pdf" ? (
-              <iframe
-                src={receiptViewerUrl}
-                className="w-full h-full"
-                title="Justificatif"
-                style={{
-                  transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
-                  transformOrigin: "center center",
-                }}
-              />
-            ) : (
-              <PreviewImage
-                src={receiptViewerUrl}
-                alt="Justificatif"
-                className="max-w-none transition-transform duration-200"
-                containerClassName="flex items-center justify-center w-full h-full"
-                loaderSize="h-8 w-8"
-                draggable={false}
-                style={{
-                  transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
-                  transformOrigin: "center center",
-                }}
-              />
-            )}
-          </div>
-        </RadixDialogContent>
-      </RadixDialog>
     </>
   );
 }
