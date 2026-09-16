@@ -64,7 +64,13 @@ import {
   Unlink,
   Search,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
+import {
+  DocumentEyeButton,
+  DocumentPreviewPanel,
+  isDocumentPreviewTarget,
+} from "@/src/components/document-preview-panel";
 import {
   useCreatePurchaseInvoice,
   useUpdatePurchaseInvoice,
@@ -284,6 +290,21 @@ export function PurchaseInvoiceDetailDrawer({
   const [availableTransactions, setAvailableTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [unlinkingTransactionId, setUnlinkingTransactionId] = useState(null);
+  // Justificatif affiché dans le volet de gauche (index dans invoice.files),
+  // null = volet fermé. Fermé à l'ouverture et au changement de facture.
+  const [previewIndex, setPreviewIndex] = useState(null);
+  useEffect(() => {
+    setPreviewIndex(null);
+  }, [open, invoice?.id]);
+  const previewItems = (invoice?.files || []).map((file) => ({
+    url: file.url,
+    // URL publique R2 interdite par la CSP : PDF via le proxy same-origin.
+    pdfSrc: `/api/document-preview/purchaseInvoice/${invoice?.id}?fileId=${file.id}`,
+    filename: file.originalFilename,
+    mimeType: file.mimetype,
+  }));
+  const togglePreview = (idx) =>
+    setPreviewIndex((current) => (current === idx ? null : idx));
 
   useEffect(() => {
     if (!showTransactionPicker || !invoice?.id) return;
@@ -1285,16 +1306,22 @@ export function PurchaseInvoiceDetailDrawer({
                     Attaché
                   </span>
                 </div>
-                {invoice.files.map((file) => {
+                {invoice.files.map((file, fileIndex) => {
                   const isImage = file.mimetype?.startsWith("image/");
                   const isPdf =
                     file.mimetype === "application/pdf" ||
                     file.originalFilename?.endsWith(".pdf");
+                  const isShown = previewIndex === fileIndex;
                   return (
                     <div
                       key={file.id}
-                      className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
-                      onClick={() => window.open(file.url, "_blank")}
+                      className={`relative group cursor-pointer rounded-xl border overflow-hidden hover:shadow-sm transition-all ${
+                        isShown
+                          ? "border-[#5A50FF] ring-1 ring-[#5A50FF]/40"
+                          : "border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
+                      }`}
+                      onClick={() => togglePreview(fileIndex)}
+                      title={isShown ? "Masquer l'aperçu" : "Voir à gauche"}
                     >
                       <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
                         {isImage && file.url ? (
@@ -1354,6 +1381,22 @@ export function PurchaseInvoiceDetailDrawer({
                             </p>
                           )}
                         </div>
+                        <DocumentEyeButton
+                          active={isShown}
+                          onClick={() => togglePreview(fileIndex)}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground"
+                          title="Ouvrir dans un nouvel onglet"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(file.url, "_blank");
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   );
@@ -1837,11 +1880,27 @@ export function PurchaseInvoiceDetailDrawer({
       <DrawerContent
         className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
         style={{ width: "100vw", height: "100vh" }}
+        // Un clic dans le volet d'aperçu (portail hors du tiroir) ne doit pas
+        // fermer le tiroir.
+        onPointerDownOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
       >
         {header}
         {body}
         {duplicateDialog}
         {reconcileCandidateDialog}
+        <DocumentPreviewPanel
+          items={previewIndex === null ? [] : previewItems}
+          index={previewIndex ?? 0}
+          onIndexChange={setPreviewIndex}
+          onClose={() => setPreviewIndex(null)}
+        />
       </DrawerContent>
     </Drawer>
   );
