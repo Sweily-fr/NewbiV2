@@ -33,7 +33,6 @@ import {
   // utilise des SVG Vuesax custom importés depuis @/src/components/icons
   // (voir BankIcon / CardIcon / RoutingIcon / NoteIcon ci-dessous).
   Edit,
-  Eye,
   Trash2,
   X,
   User,
@@ -788,6 +787,43 @@ export function TransactionDetailDrawer({
       }));
     if (items.length === 0) return;
     openLinkedPreview(`pi-${purchaseInvoice.id}`, items);
+  };
+
+  // Voir une facture Newbi liée dans le volet de gauche : PDF archivé servi
+  // par le proxy. On vérifie la disponibilité avant d'ouvrir le volet pour ne
+  // pas afficher une erreur JSON dans l'iframe (brouillon, archive absente).
+  const handleViewInvoicePdf = async (inv) => {
+    if (!inv?.id) return;
+    const key = `invoice-${inv.id}`;
+    if (isLinkedPreviewed(key)) {
+      closePreview();
+      return;
+    }
+    const src = `/api/document-preview/invoice/${inv.id}`;
+    try {
+      const res = await fetch(src, { credentials: "include" });
+      if (!res.ok) {
+        toast.error("Le PDF de cette facture n'est pas encore disponible");
+        return;
+      }
+      openLinkedPreview(key, [
+        {
+          url: src,
+          mimetype: "application/pdf",
+          filename: formatInvoiceReference(inv),
+          isPending: false,
+          pdfSrc: src,
+        },
+      ]);
+    } catch {
+      toast.error("Impossible de charger le PDF de la facture");
+    }
+  };
+
+  // Ouvre la page du document lié (facture, facture importée) et ferme le tiroir
+  const goToInvoicePage = (id) => {
+    router.push(`/dashboard/outils/factures?id=${id}&returnTo=transactions`);
+    onOpenChange(false);
   };
 
   // Voir le fichier d'une facture client importée liée dans le volet de gauche
@@ -1601,26 +1637,6 @@ export function TransactionDetailDrawer({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={`h-8 w-8 ${
-                            isActive
-                              ? "text-[#5A50FF]"
-                              : "text-muted-foreground"
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePreviewReceipt(idx);
-                          }}
-                          title={
-                            isActive
-                              ? "Masquer l'aperçu"
-                              : "Voir le justificatif"
-                          }
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1646,13 +1662,12 @@ export function TransactionDetailDrawer({
                     {transaction.linkedInvoices.map((inv) => (
                       <div
                         key={`linked-${inv.id}`}
-                        onClick={() => {
-                          router.push(
-                            `/dashboard/outils/factures?id=${inv.id}&returnTo=transactions`,
-                          );
-                          onOpenChange(false);
-                        }}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms]"
+                        onClick={() => handleViewInvoicePdf(inv)}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                          isLinkedPreviewed(`invoice-${inv.id}`)
+                            ? "bg-muted/70 ring-1 ring-border"
+                            : "bg-muted/40 hover:bg-muted/60"
+                        }`}
                       >
                         <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
                           <FileText className="h-4 w-4 text-[#5A50FF]" />
@@ -1674,6 +1689,18 @@ export function TransactionDetailDrawer({
                             documentId={inv.id}
                           />
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            goToInvoicePage(inv.id);
+                          }}
+                          title="Ouvrir la facture"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1717,13 +1744,16 @@ export function TransactionDetailDrawer({
                   {linkedImportedInvoices.map((inv) => (
                     <div
                       key={`linked-imported-${inv.id}`}
-                      onClick={() => {
-                        router.push(
-                          `/dashboard/outils/factures?id=${inv.id}&returnTo=transactions`,
-                        );
-                        onOpenChange(false);
-                      }}
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer bg-muted/40 hover:bg-muted/60 transition-colors duration-[120ms]"
+                      onClick={() =>
+                        inv.file?.url
+                          ? handleViewImportedInvoiceFile(inv)
+                          : goToInvoicePage(inv.id)
+                      }
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                        isLinkedPreviewed(`imported-${inv.id}`)
+                          ? "bg-muted/70 ring-1 ring-border"
+                          : "bg-muted/40 hover:bg-muted/60"
+                      }`}
                     >
                       <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0">
                         <FileText className="h-4 w-4 text-[#5A50FF]" />
@@ -1748,24 +1778,18 @@ export function TransactionDetailDrawer({
                       <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                         Importée
                       </span>
-                      {inv.file?.url && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-8 w-8 ${
-                            isLinkedPreviewed(`imported-${inv.id}`)
-                              ? "text-[#5A50FF]"
-                              : "text-muted-foreground"
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewImportedInvoiceFile(inv);
-                          }}
-                          title="Voir la facture"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          goToInvoicePage(inv.id);
+                        }}
+                        title="Ouvrir la facture"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1828,7 +1852,16 @@ export function TransactionDetailDrawer({
                 {linkedPurchaseInvoices.map((pi) => (
                   <div
                     key={pi.id}
-                    className="p-3 border rounded-lg bg-muted/30"
+                    onClick={() =>
+                      pi.files?.some((f) => f?.url)
+                        ? handleViewPurchaseInvoiceReceipt(pi)
+                        : handleViewPurchaseInvoice(pi)
+                    }
+                    className={`p-3 border rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                      isLinkedPreviewed(`pi-${pi.id}`)
+                        ? "bg-muted/70 ring-1 ring-border"
+                        : "bg-muted/30 hover:bg-muted/50"
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -1857,31 +1890,15 @@ export function TransactionDetailDrawer({
                         />
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        {pi.files?.some((f) => f?.url) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-8 w-8 ${
-                              isLinkedPreviewed(`pi-${pi.id}`)
-                                ? "text-[#5A50FF]"
-                                : "text-muted-foreground"
-                            }`}
-                            onClick={() => handleViewPurchaseInvoiceReceipt(pi)}
-                            title={
-                              isLinkedPreviewed(`pi-${pi.id}`)
-                                ? "Masquer le justificatif"
-                                : "Voir le justificatif"
-                            }
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        )}
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => handleViewPurchaseInvoice(pi)}
-                          title="Voir la facture d'achat"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewPurchaseInvoice(pi);
+                          }}
+                          title="Ouvrir la facture d'achat"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
@@ -1889,7 +1906,10 @@ export function TransactionDetailDrawer({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleUnlinkPurchaseInvoice(pi)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUnlinkPurchaseInvoice(pi);
+                          }}
                           disabled={
                             isReadOnly || unlinkingPurchaseInvoiceId !== null
                           }
