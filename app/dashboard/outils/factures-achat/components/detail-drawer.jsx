@@ -96,6 +96,7 @@ import {
   usePurchaseInvoiceReconciliationPicker,
   useCheckPurchaseInvoiceDuplicates,
   useReanalyzePurchaseInvoice,
+  useReanalyzePurchaseInvoiceFiles,
 } from "@/src/hooks/usePurchaseInvoices";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
@@ -320,13 +321,39 @@ export function PurchaseInvoiceDetailDrawer({
   // Relance OCR : la proposition est comparée aux valeurs actuelles dans un
   // dialogue, puis les champs cochés sont enregistrés (updatePurchaseInvoice)
   // et reportés dans le formulaire. Copie du flux des factures importées.
-  const { reanalyzeInvoice, loading: reanalyzing } =
+  const { reanalyzeInvoice, loading: reanalyzingOne } =
     useReanalyzePurchaseInvoice();
+  const { reanalyzeAllFiles, loading: reanalyzingAll } =
+    useReanalyzePurchaseInvoiceFiles();
+  const reanalyzing = reanalyzingOne || reanalyzingAll;
   const [ocrProposal, setOcrProposal] = useState(null);
+  // Résultat de l'analyse de tous les justificatifs (détail par fichier)
+  const [ocrMulti, setOcrMulti] = useState(null);
   const [applyingOcr, setApplyingOcr] = useState(false);
   useEffect(() => {
     setOcrProposal(null);
+    setOcrMulti(null);
   }, [open, invoice?.id]);
+  // Tous les justificatifs : dédoublonnage, somme des documents distincts,
+  // conversion en devise de la facture (débit bancaire lié prioritaire).
+  const handleReanalyzeAll = async () => {
+    if (!invoice?.id) return;
+    try {
+      const result = await reanalyzeAllFiles(invoice.id);
+      if (!result?.combined) {
+        toast.error("L'analyse n'a rien lu d'exploitable");
+        return;
+      }
+      setOcrMulti(result);
+      setOcrProposal(result.combined);
+    } catch (error) {
+      toast.error(
+        error?.graphQLErrors?.[0]?.message ||
+          error?.message ||
+          "Impossible de relancer l'analyse OCR",
+      );
+    }
+  };
   const handleReanalyze = async (fileId) => {
     if (!invoice?.id) return;
     try {
@@ -334,6 +361,7 @@ export function PurchaseInvoiceDetailDrawer({
         invoice.id,
         fileId || invoice.files?.[previewIndex ?? 0]?.id || undefined,
       );
+      setOcrMulti(null);
       setOcrProposal(proposal);
     } catch (error) {
       toast.error(
@@ -343,11 +371,11 @@ export function PurchaseInvoiceDetailDrawer({
       );
     }
   };
-  // Plusieurs justificatifs : l'analyse porte sur un seul fichier, on fait
-  // choisir lequel (sauf si l'un est déjà affiché dans le volet de gauche).
+  // Plusieurs justificatifs : par défaut on relit tout (somme des documents
+  // distincts, conversion de devise), ou un seul fichier au choix.
   const renderReanalyzeTrigger = (children) => {
     const files = invoice?.files || [];
-    if (files.length <= 1 || previewIndex !== null) {
+    if (files.length <= 1) {
       return React.cloneElement(children, {
         onClick: () => handleReanalyze(),
       });
@@ -355,11 +383,20 @@ export function PurchaseInvoiceDetailDrawer({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-            Quel justificatif relire ?
-          </DropdownMenuLabel>
+        <DropdownMenuContent align="end" className="w-72">
+          <DropdownMenuItem onClick={handleReanalyzeAll} className="gap-2">
+            <ScanSearch className="h-4 w-4 shrink-0 text-[#5A50FF]" />
+            <span>
+              Tous les justificatifs
+              <span className="block text-xs text-muted-foreground">
+                Documents distincts additionnés, devise convertie
+              </span>
+            </span>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            Un seul justificatif
+          </DropdownMenuLabel>
           {files.map((file, idx) => (
             <DropdownMenuItem
               key={file.id || idx}
@@ -416,6 +453,7 @@ export function PurchaseInvoiceDetailDrawer({
       if (!saved) return;
       setForm(nextForm);
       setOcrProposal(null);
+      setOcrMulti(null);
       onSaved?.();
     } finally {
       setApplyingOcr(false);
@@ -2158,10 +2196,14 @@ export function PurchaseInvoiceDetailDrawer({
         <PurchaseOcrComparisonDialog
           open={!!ocrProposal}
           onOpenChange={(o) => {
-            if (!o && !applyingOcr) setOcrProposal(null);
+            if (!o && !applyingOcr) {
+              setOcrProposal(null);
+              setOcrMulti(null);
+            }
           }}
           current={form}
           proposal={ocrProposal}
+          multi={ocrMulti}
           currency={form.currency}
           paymentMethodLabels={paymentMethodLabels}
           onApply={applyOcrPatch}

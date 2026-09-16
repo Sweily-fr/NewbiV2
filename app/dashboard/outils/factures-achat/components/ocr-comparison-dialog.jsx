@@ -14,6 +14,13 @@ import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { getCategoryLabel } from "@/lib/category-icons-config";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -25,17 +32,49 @@ const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
  * du tiroir (dates YYYY-MM-DD, montants en nombre, category = code).
  *
  * `current` = form du tiroir (chaînes), `paymentMethodLabels` = libellés.
+ * `multi` (optionnel) = résultat de l'analyse de tous les justificatifs :
+ * détail par fichier, proposition combinée par défaut, chaque fichier
+ * sélectionnable comme source à la place.
  */
 export function PurchaseOcrComparisonDialog({
   open,
   onOpenChange,
   current,
-  proposal,
+  proposal: singleProposal,
+  multi = null,
   currency,
   paymentMethodLabels = {},
   onApply,
   applying = false,
 }) {
+  // Source des valeurs proposées : combinée ou un fichier précis
+  const [source, setSource] = useState("combined");
+  useEffect(() => {
+    if (open) setSource("combined");
+  }, [open, multi]);
+  const proposal = useMemo(() => {
+    if (!multi) return singleProposal;
+    if (source === "combined") return multi.combined;
+    const f = multi.files.find((x) => x.fileId === source);
+    if (!f?.proposal) return multi.combined;
+    const converted =
+      f.convertedAmountTTC !== null && f.convertedAmountTTC !== undefined;
+    return {
+      ...f.proposal,
+      amountHT: converted ? f.convertedAmountHT : f.proposal.amountHT,
+      amountTVA: converted ? f.convertedAmountTVA : f.proposal.amountTVA,
+      amountTTC: converted ? f.convertedAmountTTC : f.proposal.amountTTC,
+      currency: converted ? currency : f.proposal.currency,
+    };
+  }, [multi, singleProposal, source, currency]);
+  const formatMoney = (amount, cur) =>
+    amount === null || amount === undefined
+      ? "—"
+      : new Intl.NumberFormat("fr-FR", {
+          style: "currency",
+          currency: cur || currency || "EUR",
+        }).format(Number(amount) || 0);
+
   const formatAmount = (amount) =>
     amount === null || amount === undefined || amount === ""
       ? "—"
@@ -158,6 +197,82 @@ export function PurchaseOcrComparisonDialog({
             ) : null}
           </DialogDescription>
         </DialogHeader>
+
+        {multi ? (
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                {multi.files.length} justificatif
+                {multi.files.length > 1 ? "s" : ""} analysé
+                {multi.files.length > 1 ? "s" : ""}, {multi.distinctCount}{" "}
+                document{multi.distinctCount > 1 ? "s" : ""} distinct
+                {multi.distinctCount > 1 ? "s" : ""}
+              </p>
+              <Select value={source} onValueChange={setSource}>
+                <SelectTrigger className="h-8 w-64 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="combined">
+                    {multi.distinctCount > 1
+                      ? `Somme des ${multi.distinctCount} documents`
+                      : "Valeurs combinées"}
+                  </SelectItem>
+                  {multi.files
+                    .filter((f) => f.ok)
+                    .map((f) => (
+                      <SelectItem key={f.fileId} value={f.fileId}>
+                        {f.filename || "Justificatif"}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <table className="w-full text-xs">
+              <tbody>
+                {multi.files.map((f) => (
+                  <tr key={f.fileId} className="border-t">
+                    <td className="py-1.5 pr-2 max-w-[200px] truncate">
+                      {f.filename || "Justificatif"}
+                    </td>
+                    <td className="py-1.5 pr-2 text-muted-foreground whitespace-nowrap">
+                      {!f.ok
+                        ? f.error || "Non lu"
+                        : f.duplicateOf
+                          ? "Même document (non compté)"
+                          : "Compté"}
+                    </td>
+                    <td className="py-1.5 text-right whitespace-nowrap">
+                      {f.ok
+                        ? formatMoney(
+                            f.proposal?.amountTTC,
+                            f.proposal?.currency,
+                          )
+                        : "—"}
+                      {f.ok && f.rate ? (
+                        <span className="block text-muted-foreground">
+                          = {formatMoney(f.convertedAmountTTC)} (taux {f.rate}
+                          {f.rateDate ? `, ${f.rateDate}` : ""})
+                        </span>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {multi.conversionNote ? (
+              <p
+                className={`text-xs ${
+                  multi.conversionMethod === "unavailable"
+                    ? "text-amber-700 dark:text-amber-300"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {multi.conversionNote}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="overflow-x-auto -mx-1 px-1">
           <table className="w-full text-sm">

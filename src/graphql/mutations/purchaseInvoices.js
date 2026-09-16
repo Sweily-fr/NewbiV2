@@ -357,3 +357,60 @@ export const REANALYZE_PURCHASE_INVOICE = gql`
     }
   }
 `;
+
+// Relance OCR sur tous les justificatifs : détail par fichier + proposition
+// combinée (documents distincts additionnés, devise de la facture).
+export const REANALYZE_PURCHASE_INVOICE_FILES = gql`
+  mutation ReanalyzePurchaseInvoiceFiles($id: ID!) {
+    reanalyzePurchaseInvoiceFiles(id: $id) {
+      files {
+        fileId
+        filename
+        ok
+        error
+        proposal {
+          supplierName
+          invoiceNumber
+          invoiceDate
+          dueDate
+          amountHT
+          amountTVA
+          vatRate
+          amountTTC
+          currency
+          category
+          paymentMethod
+          confidence
+          provider
+          extractionQuality
+        }
+        convertedAmountHT
+        convertedAmountTVA
+        convertedAmountTTC
+        rate
+        rateDate
+        duplicateOf
+      }
+      combined {
+        supplierName
+        invoiceNumber
+        invoiceDate
+        dueDate
+        amountHT
+        amountTVA
+        vatRate
+        amountTTC
+        currency
+        category
+        paymentMethod
+        confidence
+        provider
+        extractionQuality
+      }
+      distinctCount
+      conversionMethod
+      conversionNote
+      bankAmount
+    }
+  }
+`;

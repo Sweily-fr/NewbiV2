@@ -28,6 +28,7 @@ import {
   UNLINK_PURCHASE_INVOICE_FROM_TRANSACTION,
   UNRECONCILE_PURCHASE_INVOICE,
   REANALYZE_PURCHASE_INVOICE,
+  REANALYZE_PURCHASE_INVOICE_FILES,
   CREATE_SUPPLIER,
   DELETE_SUPPLIER,
   SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
@@ -171,6 +172,17 @@ export const useReanalyzePurchaseInvoice = () => {
     return result?.data?.reanalyzePurchaseInvoice || null;
   };
   return { reanalyzeInvoice, loading };
+};
+
+export const useReanalyzePurchaseInvoiceFiles = () => {
+  const [reanalyzeMutation, { loading }] = useMutation(
+    REANALYZE_PURCHASE_INVOICE_FILES,
+  );
+  const reanalyzeAllFiles = async (id) => {
+    const result = await reanalyzeMutation({ variables: { id } });
+    return result?.data?.reanalyzePurchaseInvoiceFiles || null;
+  };
+  return { reanalyzeAllFiles, loading };
 };
 
 export const useDeletePurchaseInvoice = () => {
