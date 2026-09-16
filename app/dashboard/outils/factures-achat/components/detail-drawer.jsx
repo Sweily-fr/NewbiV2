@@ -319,12 +319,12 @@ export function PurchaseInvoiceDetailDrawer({
   useEffect(() => {
     setOcrProposal(null);
   }, [open, invoice?.id]);
-  const handleReanalyze = async () => {
+  const handleReanalyze = async (fileId) => {
     if (!invoice?.id) return;
     try {
       const proposal = await reanalyzeInvoice(
         invoice.id,
-        invoice.files?.[previewIndex ?? 0]?.id || undefined,
+        fileId || invoice.files?.[previewIndex ?? 0]?.id || undefined,
       );
       setOcrProposal(proposal);
     } catch (error) {
@@ -886,7 +886,7 @@ export function PurchaseInvoiceDetailDrawer({
                       handleChange("supplierName", e.target.value)
                     }
                     placeholder="Nom du fournisseur"
-                    className="w-56 h-8 text-sm text-right"
+                    className="w-40 h-8 text-sm text-right"
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -899,7 +899,7 @@ export function PurchaseInvoiceDetailDrawer({
                       handleChange("invoiceNumber", e.target.value)
                     }
                     placeholder="F-20260001"
-                    className="w-56 h-8 text-sm text-right"
+                    className="w-40 h-8 text-sm text-right"
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -913,7 +913,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-56 h-8 justify-start text-left font-normal text-sm",
+                          "w-40 h-8 justify-start text-left font-normal text-sm",
                           !form.issueDate && "text-muted-foreground",
                         )}
                         type="button"
@@ -927,7 +927,7 @@ export function PurchaseInvoiceDetailDrawer({
                               );
                               if (isNaN(date.getTime()))
                                 return <span>Date invalide</span>;
-                              return format(date, "PPP", { locale: fr });
+                              return format(date, "dd/MM/yyyy");
                             } catch {
                               return <span>Date invalide</span>;
                             }
@@ -970,7 +970,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-56 h-8 justify-start text-left font-normal text-sm",
+                          "w-40 h-8 justify-start text-left font-normal text-sm",
                           !form.dueDate && "text-muted-foreground",
                         )}
                         type="button"
@@ -982,7 +982,7 @@ export function PurchaseInvoiceDetailDrawer({
                               const date = new Date(form.dueDate + "T00:00:00");
                               if (isNaN(date.getTime()))
                                 return <span>Date invalide</span>;
-                              return format(date, "PPP", { locale: fr });
+                              return format(date, "dd/MM/yyyy");
                             } catch {
                               return <span>Date invalide</span>;
                             }
@@ -1030,7 +1030,7 @@ export function PurchaseInvoiceDetailDrawer({
                       handleChange("internalReference", e.target.value)
                     }
                     placeholder="Optionnel"
-                    className="w-56 h-8 text-sm text-right"
+                    className="w-40 h-8 text-sm text-right"
                   />
                 </div>
               </div>
@@ -1097,7 +1097,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.amountHT}
                       onChange={(e) => handleChange("amountHT", e.target.value)}
                       placeholder="0.00"
-                      className="w-56 h-8 text-sm text-right"
+                      className="w-40 h-8 text-sm text-right"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1107,7 +1107,7 @@ export function PurchaseInvoiceDetailDrawer({
                     <VatRateSelect
                       value={form.vatRate}
                       onChange={(v) => handleChange("vatRate", String(v))}
-                      className="w-56 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                      className="w-40 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1252,7 +1252,7 @@ export function PurchaseInvoiceDetailDrawer({
                     <CategorySearchSelect
                       value={form.category}
                       onValueChange={(v) => handleChange("category", v)}
-                      triggerClassName="w-56 h-8 text-sm"
+                      triggerClassName="w-40 h-8 text-sm"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -1263,7 +1263,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.status}
                       onValueChange={(v) => handleChange("status", v)}
                     >
-                      <SelectTrigger className="w-56 h-8 text-sm">
+                      <SelectTrigger className="w-40 h-8 text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1283,7 +1283,7 @@ export function PurchaseInvoiceDetailDrawer({
                       value={form.paymentMethod}
                       onValueChange={(v) => handleChange("paymentMethod", v)}
                     >
-                      <SelectTrigger className="w-56 h-8 text-sm">
+                      <SelectTrigger className="w-40 h-8 text-sm">
                         <SelectValue placeholder="Sélectionner..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -1306,7 +1306,7 @@ export function PurchaseInvoiceDetailDrawer({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-56 h-8 justify-start text-left font-normal text-sm",
+                            "w-40 h-8 justify-start text-left font-normal text-sm",
                             !form.paymentDate && "text-muted-foreground",
                           )}
                           type="button"
@@ -1320,7 +1320,7 @@ export function PurchaseInvoiceDetailDrawer({
                                 );
                                 if (isNaN(date.getTime()))
                                   return <span>Date invalide</span>;
-                                return format(date, "PPP", { locale: fr });
+                                return format(date, "dd/MM/yyyy");
                               } catch {
                                 return <span>Date invalide</span>;
                               }
@@ -1383,7 +1383,7 @@ export function PurchaseInvoiceDetailDrawer({
                       variant="outline"
                       size="sm"
                       className="h-7 font-normal gap-1.5 text-xs"
-                      onClick={handleReanalyze}
+                      onClick={() => handleReanalyze()}
                       disabled={reanalyzing || saving}
                       title="Relire le justificatif et comparer avec les valeurs actuelles"
                     >
@@ -1481,6 +1481,23 @@ export function PurchaseInvoiceDetailDrawer({
                           active={isShown}
                           onClick={() => togglePreview(fileIndex)}
                         />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground"
+                          title="Relancer l'analyse OCR sur ce justificatif"
+                          disabled={reanalyzing || saving}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReanalyze(file.id);
+                          }}
+                        >
+                          {reanalyzing ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ScanSearch className="h-4 w-4" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
