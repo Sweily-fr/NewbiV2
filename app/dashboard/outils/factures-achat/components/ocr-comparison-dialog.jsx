@@ -15,6 +15,11 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { getCategoryLabel } from "@/lib/category-icons-config";
 import {
+  DocumentEyeButton,
+  DocumentPreviewPanel,
+  isDocumentPreviewTarget,
+} from "@/src/components/document-preview-panel";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -46,7 +51,37 @@ export function PurchaseOcrComparisonDialog({
   paymentMethodLabels = {},
   onApply,
   applying = false,
+  // Aperçu des justificatifs à gauche : facture + fichiers (url, mimetype)
+  invoiceId = null,
+  files = [],
+  sourceFileId = null,
 }) {
+  // Fichier affiché dans le volet de gauche ; le dialogue se cale à droite
+  const [previewFileId, setPreviewFileId] = useState(null);
+  useEffect(() => {
+    if (!open) setPreviewFileId(null);
+  }, [open]);
+  const previewItems = useMemo(() => {
+    if (!previewFileId) return [];
+    const file = (files || []).find((f) => f.id === previewFileId);
+    if (!file) return [];
+    return [
+      {
+        url: file.url,
+        pdfSrc: `/api/document-preview/purchaseInvoice/${invoiceId}?fileId=${file.id}`,
+        filename: file.originalFilename,
+        mimeType: file.mimetype,
+      },
+    ];
+  }, [previewFileId, files, invoiceId]);
+  const canPreview = (fileId) =>
+    Boolean(invoiceId && (files || []).some((f) => f.id === fileId && f.url));
+  const togglePreview = (fileId) =>
+    setPreviewFileId((cur) => (cur === fileId ? null : fileId));
+  const previewOpen = previewItems.length > 0;
+  // Largeur du dialogue (md:max-w-2xl = 42rem) + marge droite 2rem
+  const DIALOG_RIGHT_OFFSET = 42 * 16 + 32;
+
   // Source des valeurs proposées : combinée ou un fichier précis
   const [source, setSource] = useState("combined");
   useEffect(() => {
@@ -173,7 +208,27 @@ export function PurchaseOcrComparisonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-full md:max-w-2xl flex flex-col max-h-[calc(100vh-4rem)]">
+      <DialogContent
+        className={`w-full max-w-full md:max-w-2xl flex flex-col max-h-[calc(100vh-4rem)] transition-[left,right,transform] duration-300 ${
+          previewOpen ? "md:left-auto md:right-8 md:translate-x-0" : ""
+        }`}
+        // Un clic dans le volet d'aperçu (portail) ne ferme pas le dialogue
+        onPointerDownOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+      >
+        <DocumentPreviewPanel
+          items={previewItems}
+          index={0}
+          onClose={() => setPreviewFileId(null)}
+          sidebarWidth={DIALOG_RIGHT_OFFSET}
+          zIndex={110}
+        />
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ScanSearch className="h-5 w-5 text-muted-foreground" />
@@ -193,6 +248,18 @@ export function PurchaseOcrComparisonDialog({
               <span className="block mt-1 text-xs text-amber-700 dark:text-amber-300">
                 Analyse sans IA (moteurs indisponibles) : valeurs devinées sur
                 le texte, à vérifier.
+              </span>
+            ) : null}
+            {!multi && sourceFileId && canPreview(sourceFileId) ? (
+              <span className="mt-1 inline-flex items-center gap-1 text-xs">
+                <DocumentEyeButton
+                  className="h-7 w-7"
+                  active={previewFileId === sourceFileId}
+                  onClick={() => togglePreview(sourceFileId)}
+                />
+                {previewFileId === sourceFileId
+                  ? "Masquer le justificatif"
+                  : "Voir le justificatif analysé"}
               </span>
             ) : null}
           </DialogDescription>
@@ -234,8 +301,18 @@ export function PurchaseOcrComparisonDialog({
                 <tbody>
                   {multi.files.map((f) => (
                     <tr key={f.fileId} className="border-t">
-                      <td className="py-1.5 pr-2 max-w-[200px] truncate">
-                        {f.filename || "Justificatif"}
+                      <td className="py-1 pr-2 max-w-[240px]">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <DocumentEyeButton
+                            className="h-7 w-7"
+                            active={previewFileId === f.fileId}
+                            disabled={!canPreview(f.fileId)}
+                            onClick={() => togglePreview(f.fileId)}
+                          />
+                          <span className="truncate">
+                            {f.filename || "Justificatif"}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-1.5 pr-2 text-muted-foreground whitespace-nowrap">
                         {!f.ok

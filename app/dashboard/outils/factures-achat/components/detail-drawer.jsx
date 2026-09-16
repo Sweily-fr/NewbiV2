@@ -367,6 +367,8 @@ export function PurchaseInvoiceDetailDrawer({
   const [ocrProposal, setOcrProposal] = useState(null);
   // Résultat de l'analyse de tous les justificatifs (détail par fichier)
   const [ocrMulti, setOcrMulti] = useState(null);
+  // Fichier relu en mode « un seul justificatif » (aperçu dans le dialogue)
+  const [ocrSourceFileId, setOcrSourceFileId] = useState(null);
   const [applyingOcr, setApplyingOcr] = useState(false);
   useEffect(() => {
     setOcrProposal(null);
@@ -395,11 +397,11 @@ export function PurchaseInvoiceDetailDrawer({
   const handleReanalyze = async (fileId) => {
     if (!invoice?.id) return;
     try {
-      const proposal = await reanalyzeInvoice(
-        invoice.id,
-        fileId || invoice.files?.[previewIndex ?? 0]?.id || undefined,
-      );
+      const targetFileId =
+        fileId || invoice.files?.[previewIndex ?? 0]?.id || undefined;
+      const proposal = await reanalyzeInvoice(invoice.id, targetFileId);
       setOcrMulti(null);
+      setOcrSourceFileId(targetFileId || null);
       setOcrProposal(proposal);
     } catch (error) {
       toast.error(
@@ -2328,6 +2330,9 @@ export function PurchaseInvoiceDetailDrawer({
           current={form}
           proposal={ocrProposal}
           multi={ocrMulti}
+          invoiceId={invoice?.id}
+          files={invoice?.files || []}
+          sourceFileId={ocrSourceFileId}
           currency={form.currency}
           paymentMethodLabels={paymentMethodLabels}
           onApply={applyOcrPatch}
