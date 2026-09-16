@@ -119,32 +119,15 @@ export const useCreateClient = () => {
     CREATE_CLIENT,
     {
       update: (cache, { data }) => {
-        const newClient = data?.createClient;
-        if (!newClient) return;
-        try {
-          // Lire la query existante
-          const existingClients = cache.readQuery({
-            query: GET_CLIENTS,
-            variables: { workspaceId, page: 1, limit: 10, search: "" },
-          });
-
-          if (existingClients) {
-            // Ajouter le nouveau client au début de la liste
-            cache.writeQuery({
-              query: GET_CLIENTS,
-              variables: { workspaceId, page: 1, limit: 10, search: "" },
-              data: {
-                clients: {
-                  ...existingClients.clients,
-                  items: [newClient, ...existingClients.clients.items],
-                  totalItems: existingClients.clients.totalItems + 1,
-                },
-              },
-            });
-          }
-        } catch {
-          // Si la query n'existe pas dans le cache, on l'ignore
-        }
+        if (!data?.createClient) return;
+        // Même invalidation que useDeleteClient : insérer le client à la main
+        // en tête du cache page 1 le faisait apparaître hors ordre
+        // alphabétique, puis « disparaître » (vers sa vraie page) au premier
+        // rechargement. En évinçant le champ, toutes les variantes
+        // (page, taille, recherche) sont refaites côté serveur, y compris
+        // quand la page Clients n'est pas montée au moment de la création.
+        cache.evict({ id: "ROOT_QUERY", fieldName: "clients" });
+        cache.gc();
       },
       refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
       awaitRefetchQueries: false,
