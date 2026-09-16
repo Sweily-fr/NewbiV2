@@ -33,6 +33,7 @@ import {
   // utilise des SVG Vuesax custom importés depuis @/src/components/icons
   // (voir BankIcon / CardIcon / RoutingIcon / NoteIcon ci-dessous).
   Edit,
+  Eye,
   Trash2,
   X,
   User,
@@ -131,6 +132,31 @@ const statusLabels = {
   FAILED: "Échouée",
   REFUNDED: "Remboursée",
 };
+
+// Bouton « œil » commun à toutes les lignes de la sidebar : affiche le
+// document dans le volet de gauche (violet quand il y est déjà). Sans
+// fichier disponible, l'œil reste visible mais désactivé.
+const EyeButton = ({ active, onClick, disabled, label }) => (
+  <Button
+    variant="ghost"
+    size="icon"
+    className={`h-8 w-8 ${active ? "text-[#5A50FF]" : "text-muted-foreground"}`}
+    disabled={disabled}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick?.();
+    }}
+    title={
+      disabled
+        ? "Aucun fichier à afficher"
+        : active
+          ? "Masquer l'aperçu"
+          : label || "Voir à gauche"
+    }
+  >
+    <Eye className="h-4 w-4" />
+  </Button>
+);
 
 export function TransactionDetailDrawer({
   transaction,
@@ -1634,6 +1660,11 @@ export function TransactionDetailDrawer({
                             </p>
                           )}
                         </div>
+                        <EyeButton
+                          active={isActive}
+                          onClick={() => togglePreviewReceipt(idx)}
+                          label="Voir le justificatif"
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1689,6 +1720,11 @@ export function TransactionDetailDrawer({
                             documentId={inv.id}
                           />
                         </div>
+                        <EyeButton
+                          active={isLinkedPreviewed(`invoice-${inv.id}`)}
+                          onClick={() => handleViewInvoicePdf(inv)}
+                          label="Voir la facture"
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1778,6 +1814,12 @@ export function TransactionDetailDrawer({
                       <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                         Importée
                       </span>
+                      <EyeButton
+                        active={isLinkedPreviewed(`imported-${inv.id}`)}
+                        disabled={!inv.file?.url}
+                        onClick={() => handleViewImportedInvoiceFile(inv)}
+                        label="Voir la facture"
+                      />
                       <Button
                         variant="ghost"
                         size="icon"
@@ -1890,10 +1932,16 @@ export function TransactionDetailDrawer({
                         />
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        <EyeButton
+                          active={isLinkedPreviewed(`pi-${pi.id}`)}
+                          disabled={!pi.files?.some((f) => f?.url)}
+                          onClick={() => handleViewPurchaseInvoiceReceipt(pi)}
+                          label="Voir le justificatif"
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 text-muted-foreground"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleViewPurchaseInvoice(pi);
