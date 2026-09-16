@@ -302,16 +302,15 @@ export const columns = [
       const reconciliationStatus =
         row.original.reconciliationStatus?.toLowerCase();
       const hasSuggestion = reconciliationStatus === "suggested";
-      const hasReceipt =
-        row.original.hasReceipt || files.length > 0 || receiptFiles.length > 0;
+      // Même périmètre que le tiroir : fichiers uploadés sur la transaction
+      // (legacy `files[]` en repli) + factures d'achat et factures importées
+      // liées, dont le document vaut justificatif.
+      const directReceiptsCount =
+        receiptFiles.length > 0 ? receiptFiles.length : files.length;
       const filesCount =
-        receiptFiles.length > 0
-          ? receiptFiles.length
-          : files.length > 0
-            ? files.length
-            : hasReceipt
-              ? 1
-              : 0;
+        directReceiptsCount +
+        (row.original.linkedPurchaseInvoices?.length || 0) +
+        (row.original.linkedImportedInvoices?.length || 0);
 
       // État 4 : Rapproché à une facture (check vert)
       if (hasLinkedInvoice) {
