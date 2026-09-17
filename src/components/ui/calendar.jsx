@@ -11,10 +11,16 @@ import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
 import { cn } from "@/src/lib/utils"
 import { Button, buttonVariants } from "@/src/components/ui/button"
 
+// Jours hors mois masqués par défaut : les « 30, 31 » avant le 1er et les
+// « 1, 2 » après le 30 prêtaient à confusion dans les filtres. fixedWeeks
+// garde toujours 6 lignes pour qu'un calendrier dans un menu/popover ne
+// change pas de hauteur (et ne se repositionne pas) en passant d'un mois à
+// l'autre : les flèches restent sous la souris.
 function Calendar({
   className,
   classNames,
-  showOutsideDays = true,
+  showOutsideDays = false,
+  fixedWeeks = true,
   captionLayout = "label",
   buttonVariant = "ghost",
   formatters,
@@ -26,6 +32,7 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      fixedWeeks={fixedWeeks}
       className={cn(
         "bg-popover group/calendar p-4 text-sm [--cell-size:--spacing(9)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
