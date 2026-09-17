@@ -55,6 +55,27 @@ export function DocumentEyeButton({
   label,
   className = "",
 }) {
+  // Un bouton désactivé ne reçoit pas la souris : l'infobulle « Aucun
+  // fichier à afficher » est portée par un conteneur autour.
+  if (disabled) {
+    return (
+      <span
+        className="inline-flex shrink-0"
+        title="Aucun fichier à afficher"
+        aria-label="Aucun fichier à afficher"
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`h-8 w-8 shrink-0 text-muted-foreground pointer-events-none ${className}`}
+          disabled
+          tabIndex={-1}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </span>
+    );
+  }
   return (
     <Button
       variant="ghost"

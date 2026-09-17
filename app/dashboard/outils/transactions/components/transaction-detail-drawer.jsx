@@ -136,27 +136,46 @@ const statusLabels = {
 // Bouton « œil » commun à toutes les lignes de la sidebar : affiche le
 // document dans le volet de gauche (violet quand il y est déjà). Sans
 // fichier disponible, l'œil reste visible mais désactivé.
-const EyeButton = ({ active, onClick, disabled, label }) => (
-  <Button
-    variant="ghost"
-    size="icon"
-    className={`h-8 w-8 ${active ? "text-[#5A50FF]" : "text-muted-foreground"}`}
-    disabled={disabled}
-    onClick={(e) => {
-      e.stopPropagation();
-      onClick?.();
-    }}
-    title={
-      disabled
-        ? "Aucun fichier à afficher"
-        : active
-          ? "Masquer l'aperçu"
-          : label || "Voir à gauche"
-    }
-  >
-    <Eye className="h-4 w-4" />
-  </Button>
-);
+const EyeButton = ({ active, onClick, disabled, label }) =>
+  disabled ? (
+    // Un bouton désactivé ne reçoit pas la souris : l'infobulle est portée
+    // par un conteneur autour.
+    <span
+      className="inline-flex shrink-0"
+      title="Aucun fichier à afficher"
+      aria-label="Aucun fichier à afficher"
+    >
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground pointer-events-none"
+        disabled
+        tabIndex={-1}
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
+    </span>
+  ) : (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={`h-8 w-8 ${active ? "text-[#5A50FF]" : "text-muted-foreground"}`}
+      disabled={disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick?.();
+      }}
+      title={
+        disabled
+          ? "Aucun fichier à afficher"
+          : active
+            ? "Masquer l'aperçu"
+            : label || "Voir à gauche"
+      }
+    >
+      <Eye className="h-4 w-4" />
+    </Button>
+  );
 
 export function TransactionDetailDrawer({
   transaction,
