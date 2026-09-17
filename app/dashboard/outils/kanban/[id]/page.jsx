@@ -187,6 +187,7 @@ import {
 
 // Hooks
 import { useKanbanBoard } from "./hooks/useKanbanBoard";
+import { TaskPresenceContext, useTaskPresence } from "./hooks/useTaskPresence";
 import { useKanbanColumns } from "./hooks/useKanbanColumns";
 import { useKanbanTasks } from "./hooks/useKanbanTasks";
 import { useKanbanDnDSimple } from "./hooks/useKanbanDnDSimple";
@@ -798,6 +799,15 @@ function KanbanBoardPageContent({ params }) {
     initialFormRef,
     localMutationRef,
   } = useKanbanTasks(id, board);
+
+  // Présence : annonce la tâche ouverte dans la modale d'édition et expose aux
+  // cartes qui d'autre a une tâche ouverte (bordure + avatars sur la carte).
+  const taskPresenceStore = useTaskPresence({
+    boardId: id,
+    workspaceId,
+    currentTaskId: isEditTaskOpen ? editingTask?.id || null : null,
+    enabled: !!board && !isRedirecting && !hasSwitchedWorkspace,
+  });
 
   // Mutation pour réorganiser les colonnes
   const [reorderColumnsMutation] = useMutation(REORDER_COLUMNS);
@@ -1436,6 +1446,7 @@ function KanbanBoardPageContent({ params }) {
 
   return (
     <BoardMembersLookupProvider userIds={allBoardUserIds}>
+      <TaskPresenceContext.Provider value={taskPresenceStore}>
       <div
         key={`kanban-board-${id}`}
         className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
@@ -2067,6 +2078,7 @@ function KanbanBoardPageContent({ params }) {
           }}
         />
       </div>
+      </TaskPresenceContext.Provider>
     </BoardMembersLookupProvider>
   );
 }
