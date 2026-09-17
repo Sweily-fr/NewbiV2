@@ -69,6 +69,8 @@ import {
 import { BoardMembersLookupContext } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
+import { useTaskViewers } from "../hooks/useTaskPresence";
+import { TaskViewersAvatars, PRESENCE_RING_CLASS } from "./TaskViewers";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
 
 // Choisit la pièce jointe à afficher en couverture de carte :
@@ -411,6 +413,10 @@ const TaskCard = memo(
     // Pièce jointe de couverture (image en priorité, sinon vidéo)
     const cover = useMemo(() => getCoverAttachment(task.images), [task.images]);
 
+    // Autres membres qui ont cette tâche ouverte (présence temps réel)
+    const viewers = useTaskViewers(task.id);
+    const hasViewers = viewers.length > 0;
+
     // Récupérer les infos des membres assignés DIRECTEMENT depuis le context
     // (pas via useAssignedMembersInfo qui appelle useQuery — même skipé, 300
     // useQuery par TaskCard s'abonnent au cache Apollo et causent des
@@ -549,10 +555,15 @@ const TaskCard = memo(
           onMouseDown={() => prefetchDetails(task.id)}
           onFocus={() => prefetchDetails(task.id)}
           onTouchStart={() => prefetchDetails(task.id)}
-          className={`relative group/card bg-card text-card-foreground rounded-xl border border-border shadow-xs hover:shadow-sm cursor-pointer flex flex-col transition-all overflow-clip ${
-            isDragging ? "opacity-50" : "opacity-100"
-          }`}
+          className={`relative group/card bg-card text-card-foreground rounded-xl border shadow-xs hover:shadow-sm cursor-pointer flex flex-col transition-all overflow-clip ${
+            hasViewers ? PRESENCE_RING_CLASS : "border-border"
+          } ${isDragging ? "opacity-50" : "opacity-100"}`}
+          data-task-viewers={hasViewers ? viewers.length : undefined}
         >
+          <TaskViewersAvatars
+            viewers={viewers}
+            className="absolute top-1.5 right-1.5 z-[5] rounded-full bg-card p-0.5 shadow-xs"
+          />
           {/* Couverture - première image épinglée, sinon première vidéo */}
           {cover.attachment && (
             <div

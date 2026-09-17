@@ -857,6 +857,49 @@ export const COLUMN_UPDATED_SUBSCRIPTION = gql`
   ${COLUMN_FRAGMENT}
 `;
 
+// ── Présence sur les tâches (qui a une tâche ouverte) ─────────────────────
+export const TASK_PRESENCE_FIELDS = gql`
+  fragment TaskPresenceViewerFields on TaskPresenceViewer {
+    userId
+    taskId
+    name
+    image
+    since
+  }
+`;
+
+export const GET_TASK_PRESENCE = gql`
+  query GetTaskPresence($boardId: ID!, $workspaceId: ID) {
+    taskPresence(boardId: $boardId, workspaceId: $workspaceId) {
+      ...TaskPresenceViewerFields
+    }
+  }
+  ${TASK_PRESENCE_FIELDS}
+`;
+
+export const SET_TASK_PRESENCE = gql`
+  mutation SetTaskPresence($boardId: ID!, $taskId: ID, $workspaceId: ID) {
+    setTaskPresence(
+      boardId: $boardId
+      taskId: $taskId
+      workspaceId: $workspaceId
+    )
+  }
+`;
+
+export const TASK_PRESENCE_SUBSCRIPTION = gql`
+  subscription TaskPresence($boardId: ID!, $workspaceId: ID!) {
+    taskPresence(boardId: $boardId, workspaceId: $workspaceId) {
+      boardId
+      workspaceId
+      viewers {
+        ...TaskPresenceViewerFields
+      }
+    }
+  }
+  ${TASK_PRESENCE_FIELDS}
+`;
+
 // Mutations pour le timer
 export const START_TIMER = gql`
   mutation StartTimer($taskId: ID!, $workspaceId: ID) {

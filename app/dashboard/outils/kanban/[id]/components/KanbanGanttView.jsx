@@ -97,6 +97,7 @@ import {
   addYears,
 } from "date-fns";
 import { fr } from "date-fns/locale";
+import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
 
 // Périodes proposées pour l'export PDF. "displayed" = période affichée à
 // l'écran (comportement historique) ; les presets "derniers X" sont des
@@ -1112,7 +1113,7 @@ export function KanbanGanttView({
                     key={task.id}
                     rootRef={leftColumnRef}
                     className={cn(
-                      "h-[45px] cursor-pointer transition-all group overflow-hidden",
+                      "relative h-[45px] cursor-pointer transition-all group overflow-hidden",
                       hoveredTaskId === task.id
                         ? "bg-primary/2"
                         : "hover:bg-accent/5",
@@ -1127,6 +1128,10 @@ export function KanbanGanttView({
                   >
                     {() => (
                       <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 h-full min-w-0">
+                        <TaskPresenceOverlay
+                          taskId={task.id}
+                          className="rounded-none"
+                        />
                         <div
                           className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full flex-shrink-0"
                           style={{ backgroundColor: task.column.color }}
@@ -1136,6 +1141,11 @@ export function KanbanGanttView({
                             ? `${task.title.slice(0, 25)}...`
                             : task.title}
                         </div>
+                        <TaskPresenceAvatars
+                          taskId={task.id}
+                          size="xxs"
+                          className="flex-shrink-0"
+                        />
                         {task.description && (
                           <Popover>
                             <PopoverTrigger asChild>
@@ -1389,6 +1399,7 @@ export function KanbanGanttView({
                                     setIsOverTask(false);
                                   }}
                                 >
+                                  <TaskPresenceOverlay taskId={task.id} />
                                   {/* Poignée de redimensionnement gauche */}
                                   {task.startDate && !isSliver && (
                                     <div

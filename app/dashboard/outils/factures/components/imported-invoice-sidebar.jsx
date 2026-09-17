@@ -994,7 +994,15 @@ export function ImportedInvoiceSidebar({
                 </div>
               )}
 
-              {!showTransactionPicker ? (
+              {needsValidation ? (
+                // Les données OCR ne sont pas encore vérifiées : pas de
+                // rapprochement (l'API le refuse aussi) tant que la facture
+                // n'est pas validée.
+                <p className="text-xs text-muted-foreground">
+                  Validez d'abord la facture pour pouvoir la rapprocher d'une
+                  transaction.
+                </p>
+              ) : !showTransactionPicker ? (
                 <Button
                   variant="outline"
                   size="sm"
