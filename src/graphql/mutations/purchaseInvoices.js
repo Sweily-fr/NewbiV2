@@ -333,3 +333,84 @@ export const SUBMIT_PURCHASE_INVOICE_EINVOICE_EVENT = gql`
     }
   }
 `;
+
+// Relance l'analyse OCR sur un justificatif de la facture d'achat : renvoie
+// les valeurs lues sans les enregistrer (comparaison dans le tiroir, puis
+// application via updatePurchaseInvoice). Consomme un import du quota OCR.
+export const REANALYZE_PURCHASE_INVOICE = gql`
+  mutation ReanalyzePurchaseInvoice($id: ID!, $fileId: ID) {
+    reanalyzePurchaseInvoice(id: $id, fileId: $fileId) {
+      supplierName
+      invoiceNumber
+      invoiceDate
+      dueDate
+      amountHT
+      amountTVA
+      vatRate
+      amountTTC
+      currency
+      category
+      paymentMethod
+      confidence
+      provider
+      extractionQuality
+    }
+  }
+`;
+
+// Relance OCR sur tous les justificatifs : détail par fichier + proposition
+// combinée (documents distincts additionnés, devise de la facture).
+export const REANALYZE_PURCHASE_INVOICE_FILES = gql`
+  mutation ReanalyzePurchaseInvoiceFiles($id: ID!) {
+    reanalyzePurchaseInvoiceFiles(id: $id) {
+      files {
+        fileId
+        filename
+        ok
+        error
+        proposal {
+          supplierName
+          invoiceNumber
+          invoiceDate
+          dueDate
+          amountHT
+          amountTVA
+          vatRate
+          amountTTC
+          currency
+          category
+          paymentMethod
+          confidence
+          provider
+          extractionQuality
+        }
+        convertedAmountHT
+        convertedAmountTVA
+        convertedAmountTTC
+        rate
+        rateDate
+        duplicateOf
+      }
+      combined {
+        supplierName
+        invoiceNumber
+        invoiceDate
+        dueDate
+        amountHT
+        amountTVA
+        vatRate
+        amountTTC
+        currency
+        category
+        paymentMethod
+        confidence
+        provider
+        extractionQuality
+      }
+      distinctCount
+      conversionMethod
+      conversionNote
+      bankAmount
+    }
+  }
+`;

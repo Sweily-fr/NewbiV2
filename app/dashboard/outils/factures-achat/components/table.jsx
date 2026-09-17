@@ -648,7 +648,7 @@ export default function PurchaseInvoiceTable({
                             <th
                               key={header.id}
                               style={{ width: header.getSize() }}
-                              className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                              className={`h-10 px-3 py-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                             >
                               {header.isPlaceholder
                                 ? null
@@ -709,7 +709,7 @@ export default function PurchaseInvoiceTable({
                               <td
                                 key={cell.id}
                                 style={{ width: cell.column.getSize() }}
-                                className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                                className={`px-3 py-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                               >
                                 {flexRender(
                                   cell.column.columnDef.cell,

@@ -1279,7 +1279,7 @@ export function PurchaseInvoiceUploadDrawer({
           await reconcile(
             reconcileCandidate.invoiceId,
             [reconcileCandidate.transaction.id],
-            "SUGGESTION",
+            "DOCUMENT",
           );
         } finally {
           setConfirmingCandidate(false);
