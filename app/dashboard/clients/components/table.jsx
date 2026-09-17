@@ -1173,7 +1173,7 @@ export default function TableClients({
         </div>
 
         {/* Table - Mobile style (Notion-like) */}
-        <div className="overflow-x-auto pb-24">
+        <div className="overflow-x-auto">
           <Table className="w-full">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -1331,6 +1331,52 @@ export default function TableClients({
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Pagination mobile : sans elle, seuls les 10 premiers contacts
+            étaient atteignables (les suivants n'existaient que via la
+            recherche). Toujours affichée, comme sur desktop ; pb-24 = marge
+            pour la barre de navigation basse. */}
+        <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 pb-24 border-t bg-background">
+          <div className="text-xs font-normal text-muted-foreground">
+            {(() => {
+              const displayTotal = useProvidedClients
+                ? table.getFilteredRowModel().rows.length
+                : totalItems || 0;
+              const start = pagination.pageIndex * pagination.pageSize + 1;
+              const end = Math.min(
+                (pagination.pageIndex + 1) * pagination.pageSize,
+                displayTotal,
+              );
+              return `${start}-${end} sur ${displayTotal}`;
+            })()}
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              aria-label="Page précédente"
+            >
+              <ChevronLeftIcon size={16} aria-hidden="true" />
+            </Button>
+            <span className="whitespace-nowrap text-xs font-normal">
+              Page {pagination.pageIndex + 1} sur{" "}
+              {useProvidedClients ? table.getPageCount() || 1 : totalPages || 1}
+            </span>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              aria-label="Page suivante"
+            >
+              <ChevronRightIcon size={16} aria-hidden="true" />
+            </Button>
+          </div>
         </div>
       </div>
 
