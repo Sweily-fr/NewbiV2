@@ -98,6 +98,7 @@ import {
   useCheckPurchaseInvoiceDuplicates,
   useReanalyzePurchaseInvoice,
   useReanalyzePurchaseInvoiceFiles,
+  useUnreconcilePurchaseInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
@@ -370,6 +371,7 @@ export function PurchaseInvoiceDetailDrawer({
   // Fichier relu en mode « un seul justificatif » (aperçu dans le dialogue)
   const [ocrSourceFileId, setOcrSourceFileId] = useState(null);
   const [applyingOcr, setApplyingOcr] = useState(false);
+  const { unreconcile: unreconcileInvoice } = useUnreconcilePurchaseInvoice();
   useEffect(() => {
     setOcrProposal(null);
     setOcrMulti(null);
@@ -454,10 +456,15 @@ export function PurchaseInvoiceDetailDrawer({
     );
   };
 
-  const applyOcrPatch = async (patch) => {
+  const applyOcrPatch = async (patch, { unlinkFirst = false } = {}) => {
     if (!invoice?.id || Object.keys(patch).length === 0) return;
     setApplyingOcr(true);
     try {
+      // Montant TTC d'une facture rapprochée : l'API exige de délier d'abord
+      if (unlinkFirst) {
+        const unlinked = await unreconcileInvoice(invoice.id);
+        if (!unlinked) return;
+      }
       // Formulaire : valeurs en chaînes, TVA/taux recalculés si besoin.
       const nextForm = { ...form };
       for (const [key, value] of Object.entries(patch)) {
@@ -2336,6 +2343,10 @@ export function PurchaseInvoiceDetailDrawer({
           currency={form.currency}
           paymentMethodLabels={paymentMethodLabels}
           onApply={applyOcrPatch}
+          reconciled={!!invoice?.isReconciled}
+          onUnlinkAndApply={(patch) =>
+            applyOcrPatch(patch, { unlinkFirst: true })
+          }
           applying={applyingOcr}
         />
       </DrawerContent>

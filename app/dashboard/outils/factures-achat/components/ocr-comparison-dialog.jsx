@@ -55,6 +55,11 @@ export function PurchaseOcrComparisonDialog({
   invoiceId = null,
   files = [],
   sourceFileId = null,
+  // Facture rapprochée : l'API refuse un changement de TTC tant que la
+  // transaction est liée. La ligne est bloquée, et « Délier et appliquer »
+  // délie puis applique tout (onUnlinkAndApply).
+  reconciled = false,
+  onUnlinkAndApply = null,
 }) {
   // Fichier affiché dans le volet de gauche ; le dialogue se cale à droite
   const [previewFileId, setPreviewFileId] = useState(null);
@@ -166,6 +171,12 @@ export function PurchaseOcrComparisonDialog({
       missing: !proposal[key],
       patch: { [key]: proposal[key] || null },
     });
+    const ttcRow = amount("amountTTC", "Montant TTC");
+    if (reconciled && !ttcRow.same && !ttcRow.missing) {
+      ttcRow.locked = true;
+      ttcRow.lockedReason =
+        "Facture rapprochée : le montant TTC ne peut changer qu'après avoir délié la transaction.";
+    }
     return [
       plain("supplierName", "Fournisseur"),
       plain("invoiceNumber", "N° de facture"),
@@ -174,7 +185,7 @@ export function PurchaseOcrComparisonDialog({
       amount("amountHT", "Montant HT"),
       amount("vatRate", "Taux de TVA", formatRate),
       amount("amountTVA", "Montant de TVA"),
-      amount("amountTTC", "Montant TTC"),
+      ttcRow,
       plain("category", "Catégorie", (v) =>
         v ? getCategoryLabel(v) || v : "—",
       ),
@@ -183,28 +194,37 @@ export function PurchaseOcrComparisonDialog({
       ),
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proposal, current, currency]);
+  }, [proposal, current, currency, reconciled]);
 
   // Lignes cochées : par défaut celles qui changent et que l'OCR a lues.
   const [selected, setSelected] = useState({});
   useEffect(() => {
     if (!open) return;
     const next = {};
-    for (const row of rows) next[row.key] = !row.same && !row.missing;
+    for (const row of rows)
+      next[row.key] = !row.same && !row.missing && !row.locked;
     setSelected(next);
   }, [open, rows]);
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const differences = rows.filter((r) => !r.same && !r.missing).length;
+  const lockedRow = rows.find((r) => r.locked);
+  const canUnlinkAndApply = Boolean(lockedRow && onUnlinkAndApply);
   const partial = proposal?.extractionQuality === "partial";
 
-  const handleApply = () => {
+  const buildPatch = ({ includeLocked = false } = {}) => {
     let patch = {};
     for (const row of rows) {
-      if (selected[row.key] && !row.missing) patch = { ...patch, ...row.patch };
+      if (row.missing) continue;
+      if (row.locked ? includeLocked : selected[row.key]) {
+        patch = { ...patch, ...row.patch };
+      }
     }
-    onApply(patch);
+    return patch;
   };
+  const handleApply = () => onApply(buildPatch());
+  const handleUnlinkAndApply = () =>
+    onUnlinkAndApply?.(buildPatch({ includeLocked: true }));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -378,7 +398,7 @@ export function PurchaseOcrComparisonDialog({
                       <td className="py-2 align-middle">
                         <Checkbox
                           checked={!!selected[row.key]}
-                          disabled={row.missing || row.same}
+                          disabled={row.missing || row.same || row.locked}
                           onCheckedChange={(checked) =>
                             setSelected((prev) => ({
                               ...prev,
@@ -400,6 +420,15 @@ export function PurchaseOcrComparisonDialog({
                         className={`py-2 ${changed ? "font-medium" : row.missing ? "text-muted-foreground" : ""}`}
                       >
                         {row.missing ? "Non lu" : row.render(row.proposedValue)}
+                        {row.locked ? (
+                          <span
+                            className="block text-xs font-normal text-amber-700 dark:text-amber-300"
+                            title={row.lockedReason}
+                          >
+                            Facture rapprochée : délier la transaction pour
+                            modifier
+                          </span>
+                        ) : null}
                       </td>
                     </tr>
                   );
@@ -418,6 +447,17 @@ export function PurchaseOcrComparisonDialog({
           >
             Garder les valeurs actuelles
           </Button>
+          {canUnlinkAndApply ? (
+            <Button
+              variant="outline"
+              onClick={handleUnlinkAndApply}
+              disabled={applying}
+              className="font-normal gap-1.5 border-amber-300 text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
+              title="Détache la transaction bancaire, puis applique aussi le nouveau montant TTC"
+            >
+              Délier et appliquer ({selectedCount + 1})
+            </Button>
+          ) : null}
           <Button
             variant="primary"
             onClick={handleApply}
