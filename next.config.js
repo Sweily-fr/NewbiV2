@@ -96,6 +96,12 @@ const cspValue = [
   // websocket de debug), *.tiktokw.us / *.tiktokv.us (endpoints régionaux US,
   // enrich_ipv6…). En CSP, https:// ne couvre pas wss://, d'où l'entrée dédiée.
   `connect-src 'self'${isDev ? " http://localhost:* ws://localhost:*" : ""} ${apiOrigins.join(" ")}${isVercelToolbar ? " https://vercel.live https://*.pusher.com wss://*.pusher.com" : ""} https://*.r2.dev https://*.r2.cloudflarestorage.com https://api.cloudinary.com https://*.google-analytics.com https://*.googletagmanager.com https://www.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://*.googlesyndication.com https://www.facebook.com https://*.tiktok.com wss://analytics.tiktok.com https://*.tiktokw.us https://*.tiktokv.us https://www.googleapis.com https://challenges.cloudflare.com`,
+  // Vidéos : couvertures et pièces jointes des tâches kanban servies par le
+  // bucket R2 public (KANBAN_URL, *.r2.dev), aperçus vidéo des transferts de
+  // fichiers via l'API (/api/files/preview) et blob: pour les entrées de ZIP
+  // décompressées côté navigateur. Sans media-src, <video> retombe sur
+  // default-src 'self' et la vidéo est bloquée en prod (ticket du 17/09/2026).
+  `media-src 'self' blob: https://*.r2.dev ${apiOrigins.join(" ")}`,
   // Les aperçus PDF des documents archivés (factures, avoirs, BC) et des
   // documents importés passent par le proxy same-origin /api/document-preview
   // ('self') : le cookie de session host-only ne part jamais vers api.newbi.fr
