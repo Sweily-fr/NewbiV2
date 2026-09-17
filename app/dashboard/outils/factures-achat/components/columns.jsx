@@ -264,7 +264,7 @@ export const getColumns = ({
   },
   {
     accessorKey: "supplierName",
-    size: 140,
+    size: 290,
     header: ({ column }) => (
       <SortableHeader column={column}>Fournisseur</SortableHeader>
     ),
@@ -273,9 +273,9 @@ export const getColumns = ({
       const merchant = findMerchant(name || "");
       const source = row.original?.source;
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <MerchantLogo merchant={merchant} fallbackText={name} size="sm" />
-          <div className="font-normal truncate max-w-[200px]" title={name}>
+          <div className="font-normal truncate min-w-0" title={name}>
             {merchant?.name || name || "Fournisseur"}
           </div>
           {/* Origine externe uniquement (Qonto, PDP) : rien pour un ajout Newbi */}
@@ -443,7 +443,7 @@ export const getColumns = ({
   },
   {
     accessorKey: "status",
-    size: 110,
+    size: 90,
     meta: { label: "Statut" },
     header: "Statut",
     cell: ({ row }) => {
@@ -467,14 +467,25 @@ export const getColumns = ({
   },
   {
     id: "files",
-    size: 100,
+    size: 44,
     meta: { label: "Justificatif" },
-    header: "Justificatif",
+    header: () => (
+      <span
+        className="flex items-center justify-center"
+        title="Justificatif"
+        aria-label="Justificatif"
+      >
+        <Paperclip size={14} />
+      </span>
+    ),
     cell: ({ row }) => {
       const files = row.original.files || [];
       if (files.length === 0) return null;
       return (
-        <div className="flex items-center gap-1.5 text-muted-foreground">
+        <div
+          className="flex items-center justify-center gap-1 text-muted-foreground"
+          title={`${files.length} justificatif${files.length > 1 ? "s" : ""}`}
+        >
           <Paperclip size={14} />
           <span className="text-xs">{files.length}</span>
         </div>

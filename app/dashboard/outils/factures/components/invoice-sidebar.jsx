@@ -834,7 +834,7 @@ export default function InvoiceSidebar({
                           variant="default"
                           className="ml-3 h-7 text-xs"
                           onClick={() =>
-                            handleLinkTransaction(tx.id, "SUGGESTION")
+                            handleLinkTransaction(tx.id, "DOCUMENT")
                           }
                           disabled={linkingTransaction}
                         >

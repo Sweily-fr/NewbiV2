@@ -366,37 +366,17 @@ export const useCreateClient = (providedWorkspaceId) => {
         // (sinon l'erreur réelle du backend est masquée par un TypeError)
         const newClient = data?.createClient;
         if (!newClient) return;
-        // Mettre à jour le cache en temps réel
-        try {
-          const existingClients = cache.readQuery({
-            query: GET_CLIENTS,
-            variables: { workspaceId, page: 1, limit: 10, search: "" },
-          });
-
-          if (existingClients) {
-            cache.writeQuery({
-              query: GET_CLIENTS,
-              variables: { workspaceId, page: 1, limit: 10, search: "" },
-              data: {
-                clients: {
-                  ...existingClients.clients,
-                  items: [newClient, ...existingClients.clients.items],
-                  totalItems: existingClients.clients.totalItems + 1,
-                },
-              },
-            });
-          }
-        } catch {
-          // GET_CLIENTS not in cache, skipping update
-        }
+        // Même invalidation que useDeleteClient (src/hooks/useClients.js) :
+        // insérer le client à la main en tête du cache page 1 le faisait
+        // apparaître hors ordre alphabétique sur la page Clients, puis
+        // « disparaître » (vers sa vraie page) au premier rechargement.
+        // Évincer le champ force toutes les variantes de GetClients (page,
+        // taille, recherche, sélecteurs des éditeurs) à être refaites côté
+        // serveur : les requêtes actives repartent aussitôt, les autres au
+        // prochain montage.
+        cache.evict({ id: "ROOT_QUERY", fieldName: "clients" });
+        cache.gc();
       },
-      // Le writeQuery ci-dessus ne couvre qu'une seule combinaison de
-      // variables (page 1, limit 10, sans recherche). Les sélecteurs de
-      // clients des éditeurs de documents interrogent GetClients avec
-      // d'autres variables (limit 50, recherche) : sans refetch, le client
-      // fraîchement créé n'apparaissait pas dans leur liste tant que la
-      // requête n'était pas relancée.
-      refetchQueries: ["GetClients"],
       errorPolicy: "all",
     },
   );

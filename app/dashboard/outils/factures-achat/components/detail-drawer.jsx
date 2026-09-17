@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 // Miniature canvas (pdfjs) des justificatifs PDF : pas de visualiseur natif
@@ -64,12 +64,29 @@ import {
   Unlink,
   Search,
   Loader2,
+  ExternalLink,
+  ScanSearch,
 } from "lucide-react";
+import { PurchaseOcrComparisonDialog } from "./ocr-comparison-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  DocumentEyeButton,
+  DocumentPreviewPanel,
+  isDocumentPreviewTarget,
+} from "@/src/components/document-preview-panel";
 import {
   useCreatePurchaseInvoice,
   useUpdatePurchaseInvoice,
   useDeletePurchaseInvoice,
   useAddPurchaseInvoiceFile,
+  useRemovePurchaseInvoiceFile,
   useMarkAsPaid,
   useReconciliationSuggestions,
   useReconcilePurchaseInvoice,
@@ -79,6 +96,9 @@ import {
   useUnlinkPurchaseInvoiceFromTransaction,
   usePurchaseInvoiceReconciliationPicker,
   useCheckPurchaseInvoiceDuplicates,
+  useReanalyzePurchaseInvoice,
+  useReanalyzePurchaseInvoiceFiles,
+  useUnreconcilePurchaseInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
@@ -254,13 +274,50 @@ export function PurchaseInvoiceDetailDrawer({
   // changes recalculate from the correct source field.
   const [amountSource, setAmountSource] = useState("ht");
   // Justificatif ajouté à la création (uploadé après createInvoice).
-  const [pendingFile, setPendingFile] = useState(null);
+  const [pendingFiles, setPendingFiles] = useState([]);
   const fileInputRef = useRef(null);
 
   const { createInvoice, loading: createLoading } = useCreatePurchaseInvoice();
   const { updateInvoice, loading: updateLoading } = useUpdatePurchaseInvoice();
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { addFile } = useAddPurchaseInvoiceFile();
+  const { removeFile } = useRemovePurchaseInvoiceFile();
+  // Ajout de justificatifs sur une facture existante (plusieurs fichiers)
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [removingFileId, setRemovingFileId] = useState(null);
+  const handleAddFiles = async (fileList) => {
+    const list = Array.from(fileList || []);
+    if (!invoice?.id || list.length === 0) return;
+    setUploadingFiles(true);
+    try {
+      let added = 0;
+      for (const file of list) {
+        const res = await addFile(invoice.id, { file, processOCR: false });
+        if (res?.success) added += 1;
+      }
+      if (added > 0) {
+        toast.success(
+          added > 1 ? `${added} justificatifs ajoutés` : "Justificatif ajouté",
+        );
+        onSaved?.();
+      }
+    } finally {
+      setUploadingFiles(false);
+    }
+  };
+  const handleRemoveFile = async (fileId) => {
+    if (!invoice?.id || !fileId) return;
+    setRemovingFileId(fileId);
+    try {
+      const res = await removeFile(invoice.id, fileId);
+      if (res?.success) {
+        setPreviewIndex(null);
+        onSaved?.();
+      }
+    } finally {
+      setRemovingFileId(null);
+    }
+  };
   const { markAsPaid, loading: markLoading } = useMarkAsPaid();
   const { reconcile, loading: reconcileLoading } =
     useReconcilePurchaseInvoice();
@@ -284,6 +341,171 @@ export function PurchaseInvoiceDetailDrawer({
   const [availableTransactions, setAvailableTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [unlinkingTransactionId, setUnlinkingTransactionId] = useState(null);
+  // Justificatif affiché dans le volet de gauche (index dans invoice.files),
+  // null = volet fermé. Fermé à l'ouverture et au changement de facture.
+  const [previewIndex, setPreviewIndex] = useState(null);
+  useEffect(() => {
+    setPreviewIndex(null);
+  }, [open, invoice?.id]);
+  const previewItems = (invoice?.files || []).map((file) => ({
+    url: file.url,
+    // URL publique R2 interdite par la CSP : PDF via le proxy same-origin.
+    pdfSrc: `/api/document-preview/purchaseInvoice/${invoice?.id}?fileId=${file.id}`,
+    filename: file.originalFilename,
+    mimeType: file.mimetype,
+  }));
+  const togglePreview = (idx) =>
+    setPreviewIndex((current) => (current === idx ? null : idx));
+
+  // Relance OCR : la proposition est comparée aux valeurs actuelles dans un
+  // dialogue, puis les champs cochés sont enregistrés (updatePurchaseInvoice)
+  // et reportés dans le formulaire. Copie du flux des factures importées.
+  const { reanalyzeInvoice, loading: reanalyzingOne } =
+    useReanalyzePurchaseInvoice();
+  const { reanalyzeAllFiles, loading: reanalyzingAll } =
+    useReanalyzePurchaseInvoiceFiles();
+  const reanalyzing = reanalyzingOne || reanalyzingAll;
+  const [ocrProposal, setOcrProposal] = useState(null);
+  // Résultat de l'analyse de tous les justificatifs (détail par fichier)
+  const [ocrMulti, setOcrMulti] = useState(null);
+  // Fichier relu en mode « un seul justificatif » (aperçu dans le dialogue)
+  const [ocrSourceFileId, setOcrSourceFileId] = useState(null);
+  const [applyingOcr, setApplyingOcr] = useState(false);
+  const { unreconcile: unreconcileInvoice } = useUnreconcilePurchaseInvoice();
+  useEffect(() => {
+    setOcrProposal(null);
+    setOcrMulti(null);
+  }, [open, invoice?.id]);
+  // Tous les justificatifs : dédoublonnage, somme des documents distincts,
+  // conversion en devise de la facture (débit bancaire lié prioritaire).
+  const handleReanalyzeAll = async () => {
+    if (!invoice?.id) return;
+    try {
+      const result = await reanalyzeAllFiles(invoice.id);
+      if (!result?.combined) {
+        toast.error("L'analyse n'a rien lu d'exploitable");
+        return;
+      }
+      setOcrMulti(result);
+      setOcrProposal(result.combined);
+    } catch (error) {
+      toast.error(
+        error?.graphQLErrors?.[0]?.message ||
+          error?.message ||
+          "Impossible de relancer l'analyse OCR",
+      );
+    }
+  };
+  const handleReanalyze = async (fileId) => {
+    if (!invoice?.id) return;
+    try {
+      const targetFileId =
+        fileId || invoice.files?.[previewIndex ?? 0]?.id || undefined;
+      const proposal = await reanalyzeInvoice(invoice.id, targetFileId);
+      setOcrMulti(null);
+      setOcrSourceFileId(targetFileId || null);
+      setOcrProposal(proposal);
+    } catch (error) {
+      toast.error(
+        error?.graphQLErrors?.[0]?.message ||
+          error?.message ||
+          "Impossible de relancer l'analyse OCR",
+      );
+    }
+  };
+  // Plusieurs justificatifs : par défaut on relit tout (somme des documents
+  // distincts, conversion de devise), ou un seul fichier au choix.
+  const renderReanalyzeTrigger = (children) => {
+    const files = invoice?.files || [];
+    if (files.length <= 1) {
+      return React.cloneElement(children, {
+        onClick: () => handleReanalyze(),
+      });
+    }
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-72">
+          <DropdownMenuItem onClick={handleReanalyzeAll} className="gap-2">
+            <ScanSearch className="h-4 w-4 shrink-0 text-[#5A50FF]" />
+            <span>
+              Tous les justificatifs
+              <span className="block text-xs text-muted-foreground">
+                Documents distincts additionnés, devise convertie
+              </span>
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            Un seul justificatif
+          </DropdownMenuLabel>
+          {files.map((file, idx) => (
+            <DropdownMenuItem
+              key={file.id || idx}
+              onClick={() => handleReanalyze(file.id)}
+              className="gap-2"
+            >
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">
+                {file.originalFilename || `Justificatif ${idx + 1}`}
+              </span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
+  const applyOcrPatch = async (patch, { unlinkFirst = false } = {}) => {
+    if (!invoice?.id || Object.keys(patch).length === 0) return;
+    setApplyingOcr(true);
+    try {
+      // Montant TTC d'une facture rapprochée : l'API exige de délier d'abord
+      if (unlinkFirst) {
+        const unlinked = await unreconcileInvoice(invoice.id);
+        if (!unlinked) return;
+      }
+      // Formulaire : valeurs en chaînes, TVA/taux recalculés si besoin.
+      const nextForm = { ...form };
+      for (const [key, value] of Object.entries(patch)) {
+        nextForm[key] =
+          value === null || value === undefined ? "" : String(value);
+      }
+      const ht = parseFloat(nextForm.amountHT);
+      const ttc = parseFloat(nextForm.amountTTC);
+      if (!("amountTVA" in patch) && !isNaN(ht) && !isNaN(ttc) && ttc >= ht) {
+        nextForm.amountTVA = (Math.round((ttc - ht) * 100) / 100).toString();
+      }
+      const tva = parseFloat(nextForm.amountTVA);
+      if (!("vatRate" in patch) && !isNaN(ht) && ht > 0 && !isNaN(tva)) {
+        nextForm.vatRate = (Math.round((tva / ht) * 10000) / 100).toString();
+      }
+      // API : mêmes champs que handleSave, category = sous-catégorie.
+      const input = {};
+      if ("supplierName" in patch && patch.supplierName)
+        input.supplierName = patch.supplierName;
+      if ("invoiceNumber" in patch) input.invoiceNumber = patch.invoiceNumber;
+      if ("issueDate" in patch && patch.issueDate)
+        input.issueDate = patch.issueDate;
+      if ("dueDate" in patch) input.dueDate = patch.dueDate;
+      if ("category" in patch && patch.category)
+        input.subcategory = patch.category;
+      if ("paymentMethod" in patch && patch.paymentMethod)
+        input.paymentMethod = patch.paymentMethod;
+      for (const key of ["amountHT", "amountTVA", "vatRate", "amountTTC"]) {
+        const v = parseFloat(nextForm[key]);
+        if (!isNaN(v)) input[key] = v;
+      }
+      const saved = await updateInvoice(invoice.id, input);
+      if (!saved) return;
+      setForm(nextForm);
+      setOcrProposal(null);
+      setOcrMulti(null);
+      onSaved?.();
+    } finally {
+      setApplyingOcr(false);
+    }
+  };
 
   useEffect(() => {
     if (!showTransactionPicker || !invoice?.id) return;
@@ -403,7 +625,7 @@ export function PurchaseInvoiceDetailDrawer({
       });
       setIsEditMode(true);
       setAmountSource("ht");
-      setPendingFile(null);
+      setPendingFiles([]);
     }
   }, [invoice, isCreate, open]);
 
@@ -519,11 +741,13 @@ export function PurchaseInvoiceDetailDrawer({
       if (!saved) return;
       // Justificatif ajouté à la création : uploadé une fois la facture créée
       // (addFile gère l'upload du fichier brut, sans OCR).
-      if (isCreate && pendingFile && saved.id) {
-        try {
-          await addFile(saved.id, { file: pendingFile, processOCR: false });
-        } catch (err) {
-          console.error("Erreur upload justificatif (création):", err);
+      if (isCreate && pendingFiles.length > 0 && saved.id) {
+        for (const file of pendingFiles) {
+          try {
+            await addFile(saved.id, { file, processOCR: false });
+          } catch (err) {
+            console.error("Erreur upload justificatif (création):", err);
+          }
         }
       }
       // Paiement déjà passé en banque : proposer la transaction trouvée,
@@ -570,7 +794,8 @@ export function PurchaseInvoiceDetailDrawer({
   };
 
   // origin : geste à l'origine du lien (DOCUMENT = sélecteur de cette fiche,
-  // SUGGESTION = carte de suggestion), pour l'étiquette « rapproché depuis… ».
+  // suggestion confirmée depuis la fiche = DOCUMENT aussi : l'étiquette
+  // « rapproché depuis… » indique le côté, pas le mode de découverte).
   const handleReconcile = async (transactionId, origin = "DOCUMENT") => {
     if (!invoice?.id) return;
     // Le hook retourne undefined en cas d'erreur (toast déjà affiché) :
@@ -616,9 +841,9 @@ export function PurchaseInvoiceDetailDrawer({
   };
 
   const header = (
-    <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
-      <div className="flex items-center gap-2">
-        <DrawerTitle className="text-base font-medium">
+    <DrawerHeader className="flex flex-row items-center justify-between gap-3 px-6 py-4 border-b space-y-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <DrawerTitle className="text-base font-medium truncate">
           {isCreate
             ? "Nouvelle facture d'achat"
             : isEditMode
@@ -627,25 +852,49 @@ export function PurchaseInvoiceDetailDrawer({
         </DrawerTitle>
         {!isCreate && invoice?.status && (
           <span
-            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${STATUS_BADGE[invoice.status] || STATUS_BADGE.TO_PROCESS}`}
+            className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap ${STATUS_BADGE[invoice.status] || STATUS_BADGE.TO_PROCESS}`}
           >
             {statusLabels[invoice.status] || invoice.status}
           </span>
         )}
         {!isCreate && needsReview(invoice) && (
           <span
-            className="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+            className="inline-flex items-center rounded-md bg-amber-100 px-2 py-1 text-xs font-medium whitespace-nowrap text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
             title={OCR_REVIEW_TITLE}
           >
             À compléter
           </span>
         )}
       </div>
-      <DrawerClose asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <X className="h-4 w-4" />
-        </Button>
-      </DrawerClose>
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Facture avec justificatif (créée par OCR ou fichier ajouté) :
+            relance de l'analyse depuis l'en-tête, comme sur les factures
+            importées, visible en lecture comme en modification. */}
+        {!isCreate &&
+          invoice?.files?.length > 0 &&
+          renderReanalyzeTrigger(
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              disabled={reanalyzing || saving}
+              title="Relancer l'analyse OCR du justificatif"
+              aria-label="Relancer l'analyse OCR du justificatif"
+            >
+              {reanalyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ScanSearch className="h-4 w-4" />
+              )}
+            </Button>,
+          )}
+        <DrawerClose asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <X className="h-4 w-4" />
+          </Button>
+        </DrawerClose>
+      </div>
     </DrawerHeader>
   );
 
@@ -654,55 +903,146 @@ export function PurchaseInvoiceDetailDrawer({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 space-y-6">
-          {!isCreate && needsReview(invoice) && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-              {invoice?.ocrMetadata?.extractionQuality === "none"
-                ? "Le justificatif n'a pas pu être lu : cette facture a été créée à partir de la transaction bancaire. Vérifiez et complétez le fournisseur, le numéro et les montants."
-                : "Les moteurs d'analyse habituels étaient indisponibles : les champs ont été devinés à partir du texte du justificatif. Vérifiez le fournisseur, le numéro et les montants."}
-            </p>
-          )}
-          {/* Zone d'upload du justificatif (création uniquement) */}
+          {/* Bandeau de relance OCR : dès qu'un justificatif existe, la
+              facture est modifiable et les valeurs lues peuvent être fausses.
+              Ambre si créée sans analyse IA complète (« À compléter »). */}
+          {!isCreate &&
+            (invoice?.files?.length > 0 || needsReview(invoice)) &&
+            (() => {
+              const review = needsReview(invoice);
+              const hasFile = invoice?.files?.length > 0;
+              return (
+                <div
+                  className={`flex gap-3 rounded-xl border p-3 ${
+                    review
+                      ? "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40"
+                      : "border-border bg-muted/40"
+                  }`}
+                >
+                  <div
+                    className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+                      review
+                        ? "bg-amber-100 dark:bg-amber-900/60"
+                        : "bg-[#5A50FF]/10"
+                    }`}
+                  >
+                    {review ? (
+                      <AlertCircle className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                    ) : (
+                      <ScanSearch className="h-4 w-4 text-[#5A50FF]" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <p
+                      className={`text-sm font-medium ${
+                        review
+                          ? "text-amber-900 dark:text-amber-100"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {review ? "Champs à vérifier" : "Valeurs lues par OCR"}
+                    </p>
+                    <p
+                      className={`text-xs leading-relaxed ${
+                        review
+                          ? "text-amber-800 dark:text-amber-200"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {!hasFile
+                        ? "Le justificatif n'a pas pu être lu : vérifiez le fournisseur, le numéro et les montants."
+                        : "Certaines valeurs peuvent être fausses. Relancez l'analyse pour comparer et corriger."}
+                    </p>
+                    {hasFile && (
+                      <div className="pt-1.5">
+                        {renderReanalyzeTrigger(
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={review ? "default" : "outline"}
+                            className={`h-8 gap-1.5 font-normal text-xs ${
+                              review
+                                ? "bg-amber-600 text-white hover:bg-amber-700"
+                                : ""
+                            }`}
+                            disabled={reanalyzing || saving}
+                          >
+                            {reanalyzing ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <ScanSearch className="h-3.5 w-3.5" />
+                            )}
+                            {reanalyzing
+                              ? "Analyse en cours..."
+                              : "Relancer l'analyse"}
+                          </Button>,
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          {/* Zone d'upload des justificatifs (création uniquement) */}
           {isCreate && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                Justificatif
+                Justificatifs
               </p>
-              {pendingFile ? (
-                <div className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-muted/30">
+              {pendingFiles.map((file, idx) => (
+                <div
+                  key={`${file.name}-${idx}`}
+                  className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-muted/30"
+                >
                   <div className="flex items-center gap-2 min-w-0">
                     <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm truncate">{pendingFile.name}</span>
+                    <span className="text-sm truncate">{file.name}</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 shrink-0"
-                    onClick={() => setPendingFile(null)}
+                    onClick={() =>
+                      setPendingFiles((prev) =>
+                        prev.filter((_, i) => i !== idx),
+                      )
+                    }
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center justify-center gap-1.5 p-6 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer"
-                >
-                  <Upload className="h-5 w-5" />
-                  <span className="text-sm">Ajouter un justificatif</span>
+              ))}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-full flex items-center justify-center gap-2 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer ${
+                  pendingFiles.length > 0 ? "p-3" : "flex-col gap-1.5 p-6"
+                }`}
+              >
+                <Upload
+                  className={pendingFiles.length > 0 ? "h-4 w-4" : "h-5 w-5"}
+                />
+                <span className="text-sm">
+                  {pendingFiles.length > 0
+                    ? "Ajouter un autre justificatif"
+                    : "Ajouter un ou plusieurs justificatifs"}
+                </span>
+                {pendingFiles.length === 0 && (
                   <span className="text-xs text-muted-foreground/70">
                     PDF, JPG, PNG
                   </span>
-                </button>
-              )}
+                )}
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="application/pdf,image/*"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) setPendingFile(f);
+                  const list = Array.from(e.target.files || []);
+                  if (list.length)
+                    setPendingFiles((prev) => [...prev, ...list]);
                   e.target.value = "";
                 }}
               />
@@ -832,7 +1172,7 @@ export function PurchaseInvoiceDetailDrawer({
                               );
                               if (isNaN(date.getTime()))
                                 return <span>Date invalide</span>;
-                              return format(date, "PPP", { locale: fr });
+                              return format(date, "dd/MM/yyyy");
                             } catch {
                               return <span>Date invalide</span>;
                             }
@@ -887,7 +1227,7 @@ export function PurchaseInvoiceDetailDrawer({
                               const date = new Date(form.dueDate + "T00:00:00");
                               if (isNaN(date.getTime()))
                                 return <span>Date invalide</span>;
-                              return format(date, "PPP", { locale: fr });
+                              return format(date, "dd/MM/yyyy");
                             } catch {
                               return <span>Date invalide</span>;
                             }
@@ -1225,7 +1565,7 @@ export function PurchaseInvoiceDetailDrawer({
                                 );
                                 if (isNaN(date.getTime()))
                                   return <span>Date invalide</span>;
-                                return format(date, "PPP", { locale: fr });
+                                return format(date, "dd/MM/yyyy");
                               } catch {
                                 return <span>Date invalide</span>;
                               }
@@ -1271,30 +1611,102 @@ export function PurchaseInvoiceDetailDrawer({
             </>
           )}
 
-          {/* Justificatif */}
-          {!isCreate && invoice?.files?.length > 0 && (
+          {/* Justificatifs (facture existante) : liste, ajout, suppression */}
+          {!isCreate && (
             <>
               <Separator />
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                    Justificatif
+                    Justificatif{invoice?.files?.length > 1 ? "s" : ""}
+                    {invoice?.files?.length > 1
+                      ? ` (${invoice.files.length})`
+                      : ""}
                   </p>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Attaché
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 font-normal gap-1.5 text-xs"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFiles}
+                      title="Ajouter un ou plusieurs justificatifs"
+                    >
+                      {uploadingFiles ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5" />
+                      )}
+                      Ajouter
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf,image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        handleAddFiles(e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                    {/* Relance OCR : les valeurs relues sont comparées avant
+                        application, rien n'est écrasé sans choix. */}
+                    {invoice?.files?.length > 0 &&
+                      renderReanalyzeTrigger(
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 font-normal gap-1.5 text-xs"
+                          disabled={reanalyzing || saving}
+                          title="Relire le justificatif et comparer avec les valeurs actuelles"
+                        >
+                          {reanalyzing ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <ScanSearch className="h-3.5 w-3.5" />
+                          )}
+                          {reanalyzing
+                            ? "Analyse en cours..."
+                            : "Relancer l'analyse"}
+                        </Button>,
+                      )}
+                  </div>
                 </div>
-                {invoice.files.map((file) => {
+                {!invoice?.files?.length && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingFiles}
+                    className="w-full flex flex-col items-center justify-center gap-1.5 p-6 border border-dashed rounded-lg text-muted-foreground hover:bg-muted/40 hover:border-muted-foreground/40 transition-colors cursor-pointer"
+                  >
+                    <Upload className="h-5 w-5" />
+                    <span className="text-sm">
+                      Aucun justificatif : en ajouter
+                    </span>
+                    <span className="text-xs text-muted-foreground/70">
+                      PDF, JPG, PNG, plusieurs fichiers possibles
+                    </span>
+                  </button>
+                )}
+                {(invoice?.files || []).map((file, fileIndex) => {
                   const isImage = file.mimetype?.startsWith("image/");
                   const isPdf =
                     file.mimetype === "application/pdf" ||
                     file.originalFilename?.endsWith(".pdf");
+                  const isShown = previewIndex === fileIndex;
                   return (
                     <div
                       key={file.id}
-                      className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
-                      onClick={() => window.open(file.url, "_blank")}
+                      className={`relative group cursor-pointer rounded-xl border overflow-hidden hover:shadow-sm transition-all ${
+                        isShown
+                          ? "border-[#5A50FF] ring-1 ring-[#5A50FF]/40"
+                          : "border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500"
+                      }`}
+                      onClick={() => togglePreview(fileIndex)}
+                      title={isShown ? "Masquer l'aperçu" : "Voir à gauche"}
                     >
                       <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
                         {isImage && file.url ? (
@@ -1354,6 +1766,62 @@ export function PurchaseInvoiceDetailDrawer({
                             </p>
                           )}
                         </div>
+                        <DocumentEyeButton
+                          active={isShown}
+                          onClick={() => togglePreview(fileIndex)}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground"
+                          title="Relancer l'analyse OCR sur ce justificatif"
+                          disabled={reanalyzing || saving}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReanalyze(file.id);
+                          }}
+                        >
+                          {reanalyzing ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ScanSearch className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground"
+                          title="Ouvrir dans un nouvel onglet"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(file.url, "_blank");
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          title="Retirer ce justificatif"
+                          disabled={removingFileId === file.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (
+                              window.confirm(
+                                "Retirer ce justificatif de la facture ?",
+                              )
+                            ) {
+                              handleRemoveFile(file.id);
+                            }
+                          }}
+                        >
+                          {removingFileId === file.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
                       </div>
                     </div>
                   );
@@ -1450,7 +1918,7 @@ export function PurchaseInvoiceDetailDrawer({
                             className="text-green-600 border-green-200 hover:bg-green-50"
                             disabled={reconcileLoading}
                             onClick={() =>
-                              handleReconcile(s.transactionId, "SUGGESTION")
+                              handleReconcile(s.transactionId, "DOCUMENT")
                             }
                           >
                             <LinkIcon className="h-3.5 w-3.5 mr-1" />
@@ -1811,7 +2279,7 @@ export function PurchaseInvoiceDetailDrawer({
           await reconcile(
             reconcileCandidate.invoiceId,
             [reconcileCandidate.transaction.id],
-            "SUGGESTION",
+            "DOCUMENT",
           );
         } finally {
           setConfirmingCandidate(false);
@@ -1837,11 +2305,51 @@ export function PurchaseInvoiceDetailDrawer({
       <DrawerContent
         className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
         style={{ width: "100vw", height: "100vh" }}
+        // Un clic dans le volet d'aperçu (portail hors du tiroir) ne doit pas
+        // fermer le tiroir.
+        onPointerDownOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
       >
         {header}
         {body}
         {duplicateDialog}
         {reconcileCandidateDialog}
+        <DocumentPreviewPanel
+          items={previewIndex === null ? [] : previewItems}
+          index={previewIndex ?? 0}
+          onIndexChange={setPreviewIndex}
+          onClose={() => setPreviewIndex(null)}
+        />
+        {/* Comparaison valeurs actuelles / nouvelle analyse OCR */}
+        <PurchaseOcrComparisonDialog
+          open={!!ocrProposal}
+          onOpenChange={(o) => {
+            if (!o && !applyingOcr) {
+              setOcrProposal(null);
+              setOcrMulti(null);
+            }
+          }}
+          current={form}
+          proposal={ocrProposal}
+          multi={ocrMulti}
+          invoiceId={invoice?.id}
+          files={invoice?.files || []}
+          sourceFileId={ocrSourceFileId}
+          currency={form.currency}
+          paymentMethodLabels={paymentMethodLabels}
+          onApply={applyOcrPatch}
+          reconciled={!!invoice?.isReconciled}
+          onUnlinkAndApply={(patch) =>
+            applyOcrPatch(patch, { unlinkFirst: true })
+          }
+          applying={applyingOcr}
+        />
       </DrawerContent>
     </Drawer>
   );
