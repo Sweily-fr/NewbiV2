@@ -11,8 +11,10 @@ import { cn } from "@/src/lib/utils";
  * - TRANSACTION : rapproché depuis le tiroir de la transaction
  * - RECEIPT : justificatif déposé sur la transaction (facture créée ou
  *   reconnue par la lecture automatique)
- * - SUGGESTION : suggestion automatique confirmée (bandeau, fiche,
- *   « Transaction trouvée »)
+ * - SUGGESTION : suggestion confirmée depuis le bandeau global du tableau
+ *   de bord (toasts « Transaction trouvée » / « Facture trouvée »), sans
+ *   côté. Une suggestion validée depuis une fiche ou un tiroir est
+ *   enregistrée avec ce côté (DOCUMENT ou TRANSACTION) depuis le 17/09/2026.
  *
  * Les liens antérieurs à cette mémoire n'ont pas d'entrée : rien n'est
  * affiché. Couleur par famille : violet = fait à la main, vert = automatique
@@ -45,7 +47,7 @@ export const linkOriginLabel = (link) => {
     case "RECEIPT":
       return "Justificatif déposé";
     case "SUGGESTION":
-      return "Suggestion confirmée";
+      return "Suggestion confirmée (bandeau)";
     default:
       return null;
   }

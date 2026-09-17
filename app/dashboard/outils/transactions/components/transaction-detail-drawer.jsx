@@ -361,7 +361,8 @@ export function TransactionDetailDrawer({
   // Pas d'onRefresh ici : le hook refetch déjà GetTransactionsPage /
   // GetTransactions (agrégats serveur), un refetch de plus serait un doublon.
   // origin : geste à l'origine du lien (TRANSACTION = sélecteur de ce tiroir,
-  // SUGGESTION = carte de suggestion), pour l'étiquette « rapproché depuis… ».
+  // suggestion confirmée depuis le tiroir = TRANSACTION aussi : l'étiquette
+  // « rapproché depuis… » indique le côté, pas le mode de découverte).
   const handleReconcileInvoice = async (invoiceId, origin = "TRANSACTION") => {
     if (!transaction?.id || !invoiceId) return;
     const result = await linkTransaction(transaction.id, invoiceId, origin);
@@ -2204,9 +2205,12 @@ export function TransactionDetailDrawer({
                             invoice.kind === "imported"
                               ? handleReconcileImportedInvoice(
                                   invoice.id,
-                                  "SUGGESTION",
+                                  "TRANSACTION",
                                 )
-                              : handleReconcileInvoice(invoice.id, "SUGGESTION")
+                              : handleReconcileInvoice(
+                                  invoice.id,
+                                  "TRANSACTION",
+                                )
                           }
                           disabled={
                             isReadOnly || isLinking || isLinkingImported

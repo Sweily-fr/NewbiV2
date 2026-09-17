@@ -794,7 +794,8 @@ export function PurchaseInvoiceDetailDrawer({
   };
 
   // origin : geste à l'origine du lien (DOCUMENT = sélecteur de cette fiche,
-  // SUGGESTION = carte de suggestion), pour l'étiquette « rapproché depuis… ».
+  // suggestion confirmée depuis la fiche = DOCUMENT aussi : l'étiquette
+  // « rapproché depuis… » indique le côté, pas le mode de découverte).
   const handleReconcile = async (transactionId, origin = "DOCUMENT") => {
     if (!invoice?.id) return;
     // Le hook retourne undefined en cas d'erreur (toast déjà affiché) :
@@ -1917,7 +1918,7 @@ export function PurchaseInvoiceDetailDrawer({
                             className="text-green-600 border-green-200 hover:bg-green-50"
                             disabled={reconcileLoading}
                             onClick={() =>
-                              handleReconcile(s.transactionId, "SUGGESTION")
+                              handleReconcile(s.transactionId, "DOCUMENT")
                             }
                           >
                             <LinkIcon className="h-3.5 w-3.5 mr-1" />
@@ -2278,7 +2279,7 @@ export function PurchaseInvoiceDetailDrawer({
           await reconcile(
             reconcileCandidate.invoiceId,
             [reconcileCandidate.transaction.id],
-            "SUGGESTION",
+            "DOCUMENT",
           );
         } finally {
           setConfirmingCandidate(false);
