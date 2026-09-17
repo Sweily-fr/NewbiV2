@@ -75,6 +75,7 @@ import {
 } from "../hooks/useMemberToggle";
 import { useLazyVisible } from "../hooks/useLazyVisible";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
 import { calculateTaskAmount, formatTaskAmount } from "./taskAmount";
 import { toast } from "sonner";
 
@@ -2280,6 +2281,8 @@ const TaskRow = React.memo(function TaskRow({
         onEditTask(task);
       }}
     >
+      {/* Liseré « quelqu'un a cette tâche ouverte » */}
+      <TaskPresenceOverlay taskId={task.id} className="rounded-none" />
       {isVisible ? children : null}
     </div>
   );
@@ -2414,6 +2417,11 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             workspaceId={workspaceId}
             popoverOpenRef={popoverOpenRef}
             allBoardTags={allBoardTags}
+          />
+          <TaskPresenceAvatars
+            taskId={task.id}
+            size="xxs"
+            className="ml-1 flex-shrink-0"
           />
         </div>
       </div>

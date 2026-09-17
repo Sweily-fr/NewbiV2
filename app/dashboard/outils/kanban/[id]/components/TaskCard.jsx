@@ -70,6 +70,7 @@ import { BoardMembersLookupContext } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
 import { useTaskViewers } from "../hooks/useTaskPresence";
+import { TaskViewersAvatars, PRESENCE_RING_CLASS } from "./TaskViewers";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
 
 // Choisit la pièce jointe à afficher en couverture de carte :
@@ -117,47 +118,6 @@ function DescriptionPopover({ description }) {
     </Popover>
   );
 }
-
-// Libellé « Alice consulte cette tâche » / « Alice et Bob consultent… »
-function viewersLabel(viewers) {
-  const names = viewers.map((v) => v.name || "Un membre");
-  if (names.length === 1) return `${names[0]} consulte cette tâche`;
-  if (names.length === 2) {
-    return `${names[0]} et ${names[1]} consultent cette tâche`;
-  }
-  return `${names.slice(0, -1).join(", ")} et ${names[names.length - 1]} consultent cette tâche`;
-}
-
-/**
- * Avatars des autres membres qui ont la tâche ouverte, en haut à droite de
- * la carte. Prévient avant de déplacer/modifier une tâche sur laquelle
- * quelqu'un travaille déjà.
- */
-const TaskViewersBadge = memo(function TaskViewersBadge({ viewers }) {
-  if (!viewers || viewers.length === 0) return null;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div
-          className="absolute top-1.5 right-1.5 z-[5] rounded-full bg-card p-0.5 shadow-xs"
-          onClick={(e) => e.stopPropagation()}
-          aria-label={viewersLabel(viewers)}
-        >
-          <AvatarGroup
-            users={viewers.map((v) => ({
-              userId: v.userId,
-              name: v.name,
-              image: v.image,
-            }))}
-            max={3}
-            size="xs"
-          />
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="top">{viewersLabel(viewers)}</TooltipContent>
-    </Tooltip>
-  );
-});
 
 const TAG_COLORS = [
   { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" }, // blue
@@ -596,13 +556,14 @@ const TaskCard = memo(
           onFocus={() => prefetchDetails(task.id)}
           onTouchStart={() => prefetchDetails(task.id)}
           className={`relative group/card bg-card text-card-foreground rounded-xl border shadow-xs hover:shadow-sm cursor-pointer flex flex-col transition-all overflow-clip ${
-            hasViewers
-              ? "border-[#5b50ff] ring-2 ring-[#5b50ff]/25"
-              : "border-border"
+            hasViewers ? PRESENCE_RING_CLASS : "border-border"
           } ${isDragging ? "opacity-50" : "opacity-100"}`}
           data-task-viewers={hasViewers ? viewers.length : undefined}
         >
-          <TaskViewersBadge viewers={viewers} />
+          <TaskViewersAvatars
+            viewers={viewers}
+            className="absolute top-1.5 right-1.5 z-[5] rounded-full bg-card p-0.5 shadow-xs"
+          />
           {/* Couverture - première image épinglée, sinon première vidéo */}
           {cover.attachment && (
             <div

@@ -82,6 +82,8 @@ import { useDebouncedMemberFlush } from "../hooks/useMemberToggle";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { cn } from "@/src/lib/utils";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useTaskViewers } from "../hooks/useTaskPresence";
+import { TaskViewersBanner, PRESENCE_RING_CLASS } from "./TaskViewers";
 import { perfMark } from "@/src/utils/kanbanPerf";
 
 // Sub-components extracted for maintainability
@@ -207,6 +209,9 @@ export function TaskModal({
   localMutationRef,
 }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  // Autres membres qui ont aussi cette tâche ouverte (présence temps réel)
+  const viewers = useTaskViewers(isEditing ? taskForm?.id : null);
+  const hasViewers = viewers.length > 0;
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
@@ -816,7 +821,9 @@ export function TaskModal({
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
         noAnimation
-        className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col"
+        className={`!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col ${
+          hasViewers ? PRESENCE_RING_CLASS : ""
+        }`}
       >
         <DialogDescription className="sr-only">
           {isEditing
@@ -836,6 +843,7 @@ export function TaskModal({
               totalTasks={totalTasks}
               goToPrev={goToPrev}
               goToNext={goToNext}
+              viewers={viewers}
             />
 
             <div className="flex flex-1 min-h-0">
@@ -1748,6 +1756,10 @@ export function TaskModal({
               <DialogTitle className="text-base font-semibold">
                 {isEditing ? "Modifier la tâche" : "Créer une nouvelle tâche"}
               </DialogTitle>
+              <TaskViewersBanner
+                viewers={viewers}
+                className="mt-1 w-fit max-w-full"
+              />
             </DialogHeader>
 
             <Tabs
