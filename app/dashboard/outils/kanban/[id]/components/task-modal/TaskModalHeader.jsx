@@ -1,6 +1,7 @@
 import React from "react";
 import { ChevronUp, ChevronRight } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { TaskViewersBanner } from "../TaskViewers";
 
 export function TaskModalHeader({
   isEditing,
@@ -12,6 +13,7 @@ export function TaskModalHeader({
   totalTasks,
   goToPrev,
   goToNext,
+  viewers = [],
 }) {
   if (!isEditing) return null;
 
@@ -56,6 +58,7 @@ export function TaskModalHeader({
       </div>
 
       <div className="flex items-center gap-3 mr-8">
+        <TaskViewersBanner viewers={viewers} className="max-w-[360px]" />
         {taskForm.createdAt && (
           <span className="text-[11px] text-muted-foreground/40">
             Créé le {new Date(taskForm.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}

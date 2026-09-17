@@ -69,6 +69,49 @@ const INITIAL_TASK_FORM = Object.freeze({
   timeTracking: null,
 });
 
+// ── Fusion temps réel sans perdre la frappe ──────────────────────────────
+// Quand un autre membre modifie la tâche ouverte (déplacement de colonne,
+// tag…), on ne peut pas écraser tout le formulaire : la collègue en train
+// d'écrire une description perdrait son texte. On garde donc en mémoire la
+// dernière valeur connue du serveur pour chaque champ synchronisable ; un
+// champ local différent de cette valeur est « sale » (en cours d'édition) et
+// conserve sa valeur locale, les autres prennent la valeur distante.
+const SYNCED_SCALAR_FIELDS = [
+  "title",
+  "description",
+  "status",
+  "priority",
+  "startDate",
+  "dueDate",
+  "columnId",
+];
+const tagsKey = (tags) =>
+  Array.isArray(tags) ? tags.map((t) => t?.name || "").join("|") : "";
+// Les ids de checklist sont régénérés côté client : on compare texte + état
+const checklistKey = (list) =>
+  Array.isArray(list)
+    ? list.map((i) => `${i?.text || ""}:${i?.completed ? 1 : 0}`).join("|")
+    : "";
+const normalizeChecklist = (list) =>
+  list.map((item, index) => ({
+    id: item?.id || `checklist-item-${index}-${Date.now()}`,
+    text: item?.text || "",
+    completed: Boolean(item?.completed),
+  }));
+
+// Instantané « côté serveur » des champs synchronisables d'un formulaire
+const serverSnapshotOf = (form) => ({
+  title: form.title ?? "",
+  description: form.description ?? "",
+  status: form.status ?? "",
+  priority: form.priority ?? "",
+  startDate: form.startDate ?? "",
+  dueDate: form.dueDate ?? "",
+  columnId: form.columnId ?? "",
+  tagsKey: tagsKey(form.tags),
+  checklistKey: checklistKey(form.checklist),
+});
+
 export const useKanbanTasks = (boardId, board) => {
   const { workspaceId } = useWorkspace();
   const apolloClient = useApolloClient();
@@ -85,6 +128,11 @@ export const useKanbanTasks = (boardId, board) => {
 
   // Ref pour l'état initial du formulaire (utilisé par l'auto-save dans TaskModal)
   const initialFormRef = useRef(null);
+
+  // Dernière valeur connue du serveur pour les champs synchronisables de la
+  // tâche ouverte (cf. SYNCED_SCALAR_FIELDS) : sert à distinguer une
+  // modification locale en cours d'une valeur simplement périmée.
+  const serverFormRef = useRef(null);
 
   // Lazy query pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
   // Chargé uniquement quand on ouvre le modal de détail.
@@ -185,31 +233,50 @@ export const useKanbanTasks = (boardId, board) => {
     // Si c'est une mutation locale, on ne synchronise pas le form (l'utilisateur a déjà les bonnes données)
     if (localMutationRef.current) {
       localMutationRef.current = false;
-    } else {
-      // Mise à jour d'un autre utilisateur → synchroniser taskForm avec les données du board
-      // pour éviter que l'auto-save n'écrase les changements avec des données périmées
+      // Le serveur reflète désormais nos valeurs : mettre l'instantané à jour
       setTaskForm((prev) => {
-        const synced = {
-          ...prev,
-          title: editingTaskFromBoard.title ?? prev.title,
-          description: editingTaskFromBoard.description ?? prev.description,
-          status: editingTaskFromBoard.status ?? prev.status,
-          priority: editingTaskFromBoard.priority
-            ? editingTaskFromBoard.priority.toLowerCase()
+        serverFormRef.current = serverSnapshotOf(prev);
+        return prev;
+      });
+    } else {
+      // Mise à jour d'un autre utilisateur → fusionner sans écraser ce que
+      // l'utilisateur est en train d'écrire (voir SYNCED_SCALAR_FIELDS).
+      setTaskForm((prev) => {
+        const remote = editingTaskFromBoard;
+        const serverPrev = serverFormRef.current || serverSnapshotOf(prev);
+
+        // Valeurs distantes, avec repli sur le local quand le serveur ne
+        // renvoie rien (même sémantique que l'ancienne resynchronisation)
+        const serverNext = {
+          title: remote.title ?? prev.title,
+          description: remote.description ?? prev.description,
+          status: remote.status ?? prev.status,
+          priority: remote.priority
+            ? remote.priority.toLowerCase()
             : prev.priority,
-          startDate: editingTaskFromBoard.startDate ?? prev.startDate,
-          dueDate: editingTaskFromBoard.dueDate ?? prev.dueDate,
-          columnId: editingTaskFromBoard.columnId ?? prev.columnId,
-          tags: Array.isArray(editingTaskFromBoard.tags)
-            ? editingTaskFromBoard.tags
-            : prev.tags,
-          checklist: Array.isArray(editingTaskFromBoard.checklist)
-            ? editingTaskFromBoard.checklist.map((item, index) => ({
-                id: item?.id || `checklist-item-${index}-${Date.now()}`,
-                text: item?.text || "",
-                completed: Boolean(item?.completed),
-              }))
-            : prev.checklist,
+          startDate: remote.startDate ?? prev.startDate,
+          dueDate: remote.dueDate ?? prev.dueDate,
+          columnId: remote.columnId ?? prev.columnId,
+        };
+        const remoteTags = Array.isArray(remote.tags) ? remote.tags : prev.tags;
+        const remoteChecklist = Array.isArray(remote.checklist)
+          ? normalizeChecklist(remote.checklist)
+          : prev.checklist;
+
+        const synced = { ...prev };
+        for (const field of SYNCED_SCALAR_FIELDS) {
+          const local = prev[field] ?? "";
+          const dirty = local !== (serverPrev[field] ?? "");
+          synced[field] = dirty ? prev[field] : serverNext[field];
+        }
+        synced.tags =
+          tagsKey(prev.tags) !== serverPrev.tagsKey ? prev.tags : remoteTags;
+        synced.checklist =
+          checklistKey(prev.checklist) !== serverPrev.checklistKey
+            ? prev.checklist
+            : remoteChecklist;
+
+        Object.assign(synced, {
           // NE PAS écraser les membres avec la valeur du board pendant l'édition.
           // Les membres sont pilotés localement (toggle + flush debouncé, exclus
           // de l'auto-save) : un écho non lié (commentaire, autre champ, autre
@@ -219,18 +286,26 @@ export const useKanbanTasks = (boardId, board) => {
           // toujours la valeur locale (la vérité serveur est rétablie en cas
           // d'échec via le onError du flush).
           assignedMembers: prev.assignedMembers,
-          images: Array.isArray(editingTaskFromBoard.images)
-            ? editingTaskFromBoard.images
-            : prev.images,
-          timeTracking: editingTaskFromBoard.timeTracking ?? prev.timeTracking,
+          images: Array.isArray(remote.images) ? remote.images : prev.images,
+          timeTracking: remote.timeTracking ?? prev.timeTracking,
           // null = Claude a répondu (marqueur effacé) : on prend la valeur du
           // board telle quelle, sans repli sur l'ancienne
-          claudeWorkingSince: editingTaskFromBoard.claudeWorkingSince ?? null,
-          claudeCodingSince: editingTaskFromBoard.claudeCodingSince ?? null,
-          updatedAt: editingTaskFromBoard.updatedAt ?? prev.updatedAt,
+          claudeWorkingSince: remote.claudeWorkingSince ?? null,
+          claudeCodingSince: remote.claudeCodingSince ?? null,
+          updatedAt: remote.updatedAt ?? prev.updatedAt,
+        });
+
+        // La signature de référence de l'auto-save = ce que le serveur a
+        // réellement. Les champs sales restent différents → ils seront
+        // sauvegardés (au blur pour un champ texte), sans jamais être perdus.
+        const pureServerForm = {
+          ...synced,
+          ...serverNext,
+          tags: remoteTags,
+          checklist: remoteChecklist,
         };
-        // Mettre à jour initialFormRef pour éviter que l'auto-save ne se déclenche
-        initialFormRef.current = computeAutoSaveSignature(synced);
+        initialFormRef.current = computeAutoSaveSignature(pureServerForm);
+        serverFormRef.current = serverSnapshotOf(pureServerForm);
         return synced;
       });
     }
@@ -899,6 +974,7 @@ export const useKanbanTasks = (boardId, board) => {
         formData.id = taskId;
       }
 
+      serverFormRef.current = serverSnapshotOf(formData);
       setTaskForm(formData);
       perfMark("useKanbanTasks.openEditTaskModal end (state setters queued)");
 
