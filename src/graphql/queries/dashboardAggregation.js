@@ -11,6 +11,31 @@ export const GET_DASHBOARD_SUMMARY = gql`
   }
 `;
 
+// Cadre Facturation de l'accueil : ventes et achats du mois courant (TTC)
+export const GET_DASHBOARD_BILLING_MONTH = gql`
+  query GetDashboardBillingMonth($workspaceId: ID!) {
+    dashboardBillingMonth(workspaceId: $workspaceId) {
+      month
+      sales {
+        total
+        count
+        pending
+        pendingCount
+        overdue
+        overdueCount
+      }
+      purchases {
+        total
+        count
+        pending
+        pendingCount
+        overdue
+        overdueCount
+      }
+    }
+  }
+`;
+
 export const GET_TREASURY_CHART = gql`
   query GetTreasuryChart(
     $workspaceId: ID!

@@ -77,7 +77,10 @@ import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useQuery } from "@apollo/client";
-import { GET_TREASURY_CHART } from "@/src/graphql/queries/dashboardAggregation";
+import {
+  GET_TREASURY_CHART,
+  GET_DASHBOARD_BILLING_MONTH,
+} from "@/src/graphql/queries/dashboardAggregation";
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -105,7 +108,6 @@ import {
   BankIcon,
 } from "@/src/components/icons";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
-import { useInvoiceBalances } from "@/src/graphql/invoiceQueries";
 import { usePurchaseInvoiceStats } from "@/src/hooks/usePurchaseInvoices";
 import { useQuoteBalances } from "@/src/graphql/quoteQueries";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
@@ -135,8 +137,7 @@ function DashboardContent() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
 
-  // Données factures et achats pour les KPIs
-  const { balances: invoiceBalances } = useInvoiceBalances();
+  // Données achats pour les KPIs (compteur "Achats à payer")
   const { stats: purchaseStats } = usePurchaseInvoiceStats();
   const { balances: quoteBalances } = useQuoteBalances();
   const { unreadCount: notifUnreadCount } = useActivityNotifications();
@@ -186,6 +187,29 @@ function DashboardContent() {
       skip: !workspaceId,
     },
   );
+
+  // Cadre Facturation : ventes et achats du mois calendaire courant (TTC),
+  // calculés côté serveur (heure de Paris). Le titre du cadre suit le mois
+  // renvoyé par l'API pour rester aligné sur les montants affichés.
+  const { data: billingMonthData } = useQuery(GET_DASHBOARD_BILLING_MONTH, {
+    variables: { workspaceId },
+    fetchPolicy: "cache-and-network",
+    skip: !workspaceId,
+  });
+  const billingMonth = billingMonthData?.dashboardBillingMonth;
+  const billingMonthLabel = useMemo(() => {
+    const date = billingMonth?.month
+      ? new Date(`${billingMonth.month}-15T12:00:00`)
+      : new Date();
+    const label = date.toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }, [billingMonth?.month]);
+  const EMPTY_BILLING_SIDE = { total: 0, pending: 0, overdue: 0 };
+  const monthSales = billingMonth?.sales || EMPTY_BILLING_SIDE;
+  const monthPurchases = billingMonth?.purchases || EMPTY_BILLING_SIDE;
 
   const incomeChartData = useMemo(() => {
     const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
@@ -692,14 +716,7 @@ function DashboardContent() {
           </div>
         </div> */}
         {/* Deux cards KPI */}
-        <div className="flex items-center justify-between mt-6">
-          <h2 className="text-sm font-medium text-foreground">
-            En un coup d&apos;oeil —{" "}
-            {new Date().toLocaleDateString("fr-FR", {
-              month: "long",
-              year: "numeric",
-            })}
-          </h2>
+        <div className="flex items-center justify-end mt-6">
           <Button
             variant="ghost"
             size="sm"
@@ -892,7 +909,7 @@ function DashboardContent() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-normal">
-                        Facturation
+                        {billingMonthLabel}
                       </CardTitle>
                       <Button
                         variant="ghost"
@@ -912,20 +929,28 @@ function DashboardContent() {
                           Ventes (TTC)
                         </p>
                         <p className="text-2xl font-medium mt-1">
-                          {formatCurrency(invoiceBalances.totalBilled)}
+                          {formatCurrency(monthSales.total)}
                         </p>
                         <a
-                          href="/dashboard/outils/factures?status=PENDING"
+                          href="/dashboard/outils/factures?status=pending"
                           className="flex items-center gap-1.5 mt-2 group cursor-pointer"
                         >
                           <span className="text-xs text-muted-foreground group-hover:text-amber-600 transition-colors">
                             En cours
                           </span>
                           <span className="text-xs font-medium text-amber-600 group-hover:underline">
-                            {formatCurrency(
-                              invoiceBalances.totalBilled -
-                                invoiceBalances.totalPaid,
-                            )}
+                            {formatCurrency(monthSales.pending)}
+                          </span>
+                        </a>
+                        <a
+                          href="/dashboard/outils/factures?status=overdue"
+                          className="flex items-center gap-1.5 mt-1 group cursor-pointer"
+                        >
+                          <span className="text-xs text-muted-foreground group-hover:text-red-500 transition-colors">
+                            En retard
+                          </span>
+                          <span className="text-xs font-medium text-red-500 group-hover:underline">
+                            {formatCurrency(monthSales.overdue)}
                           </span>
                         </a>
                       </div>
@@ -934,17 +959,28 @@ function DashboardContent() {
                           Achats (TTC)
                         </p>
                         <p className="text-2xl font-medium mt-1">
-                          {formatCurrency(purchaseStats.totalThisMonth)}
+                          {formatCurrency(monthPurchases.total)}
                         </p>
                         <a
                           href="/dashboard/outils/factures-achat"
                           className="flex items-center gap-1.5 mt-2 group cursor-pointer"
                         >
-                          <span className="text-xs text-muted-foreground group-hover:text-red-500 transition-colors">
+                          <span className="text-xs text-muted-foreground group-hover:text-amber-600 transition-colors">
                             À payer
                           </span>
+                          <span className="text-xs font-medium text-amber-600 group-hover:underline">
+                            {formatCurrency(monthPurchases.pending)}
+                          </span>
+                        </a>
+                        <a
+                          href="/dashboard/outils/factures-achat"
+                          className="flex items-center gap-1.5 mt-1 group cursor-pointer"
+                        >
+                          <span className="text-xs text-muted-foreground group-hover:text-red-500 transition-colors">
+                            En retard
+                          </span>
                           <span className="text-xs font-medium text-red-500 group-hover:underline">
-                            {formatCurrency(purchaseStats.totalToPay)}
+                            {formatCurrency(monthPurchases.overdue)}
                           </span>
                         </a>
                       </div>
