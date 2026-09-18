@@ -1,6 +1,14 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { Caveat } from "next/font/google";
+
+// Typo manuscrite réservée à l'accroche "deuxième métier" du H1
+const handwriting = Caveat({
+  subsets: ["latin"],
+  weight: ["700"],
+  display: "swap",
+});
 
 export default function HeroSection() {
   return (
@@ -34,7 +42,13 @@ export default function HeroSection() {
               <span className="inline-block">Gérer sa boîte,</span>{" "}
               <span className="inline-block">ce n'est pas censé être</span>{" "}
               <span className="inline-block">
-                un <span className="text-indigo-600">deuxième métier</span>.
+                un{" "}
+                <span
+                  className={`${handwriting.className} text-indigo-600 font-bold text-[1.35em] leading-none`}
+                >
+                  deuxième métier
+                </span>
+                .
               </span>
             </h1>
 
