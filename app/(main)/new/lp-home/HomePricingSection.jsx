@@ -14,7 +14,7 @@ const freelancePrice = `${freelancePlan.monthlyPrice
   .replace(".", ",")}€`;
 
 const TRIAL_HIGHLIGHTS = [
-  "Toutes les fonctionnalités incluses",
+  "Toutes les fonctionnalités Freelance",
   "Sans carte bancaire",
   "Sans engagement",
 ];

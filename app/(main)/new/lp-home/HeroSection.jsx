@@ -1,6 +1,16 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { Instrument_Serif } from "next/font/google";
+
+// Serif réservée au surtitre et à l'accroche "deuxième métier" du H1
+// (Instrument Serif n'existe qu'en 400).
+const accentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
 
 export default function HeroSection() {
   return (
@@ -34,7 +44,13 @@ export default function HeroSection() {
               <span className="inline-block">Gérer sa boîte,</span>{" "}
               <span className="inline-block">ce n'est pas censé être</span>{" "}
               <span className="inline-block">
-                un <span className="text-indigo-600">deuxième métier</span>.
+                un{" "}
+                <span
+                  className={`${accentSerif.className} italic text-indigo-600 text-[1.15em] leading-none`}
+                >
+                  deuxième métier
+                </span>
+                .
               </span>
             </h1>
 
@@ -61,7 +77,11 @@ export default function HeroSection() {
 
             {/* Section preuve sociale */}
             <p className="text-xs sm:text-sm text-gray-600">
-              + 12 000 factures émises
+              <span className="text-gray-900 font-medium">
+                + 140 indépendants
+              </span>
+              <span className="mx-2 text-gray-300">·</span>+ 12 000 factures
+              émises
             </p>
 
             {/* Mobile: Image mockup + label facturation électronique superposé */}

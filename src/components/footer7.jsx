@@ -119,9 +119,6 @@ const Footer7 = ({
               aujourd'hui.
             </p>
           </hgroup>
-          <p className="mx-auto mt-4 md:mt-6 max-w-sm text-sm/6 text-gray-500">
-            Commence à gagner du temps avec Newbi.
-          </p>
           <div className="mt-4 md:mt-6 flex justify-center">
             <Link
               href="/auth/signup"

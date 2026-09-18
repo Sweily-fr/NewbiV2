@@ -224,7 +224,7 @@ function GridItem({ img, icon }) {
       >
         {img && (
           <img
-            alt="Logo d'un outil intégré à la plateforme de gestion Newbi"
+            alt=""
             loading="lazy"
             width="120"
             height="120"

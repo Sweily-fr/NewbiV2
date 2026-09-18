@@ -9,7 +9,6 @@ import {
   AgentStudioSection,
   ComponentsSection,
   ComplianceSection,
-  GovernanceSection,
   NewGovernanceSection,
   EInvoicingSection,
   HomePricingSection,
@@ -21,7 +20,7 @@ import {
 export const metadata = {
   // `absolute` court-circuite le template "%s | Newbi" du layout racine
   title: {
-    absolute: "Newbi | Plateforme tout-en-un de gestion d'entreprise",
+    absolute: "Newbi | Devis, factures et gestion pour indépendants",
   },
   description:
     "Newbi, la plateforme tout-en-un pour indépendants et petites équipes : devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
@@ -36,8 +35,15 @@ export const metadata = {
   alternates: {
     canonical: "/",
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Newbi | Devis, factures et gestion pour indépendants",
+    description:
+      "Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
+    images: ["/images/op-newbi.png"],
+  },
   openGraph: {
-    title: "Newbi | Plateforme tout-en-un de gestion d'entreprise",
+    title: "Newbi | Devis, factures et gestion pour indépendants",
     description:
       "Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
     url: "/",
@@ -69,7 +75,6 @@ export default function Home() {
         {/* <ComplianceSection /> */}
         <NewGovernanceSection />
         <EInvoicingSection />
-        <GovernanceSection />
         {/* <NewPricingSection /> */}
         {/* <TestimonialsSplit /> */}
         <HomePricingSection />

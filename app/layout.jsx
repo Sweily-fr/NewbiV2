@@ -18,11 +18,11 @@ export const viewport = {
 
 export const metadata = {
   title: {
-    default: "Newbi - Solution complète pour freelances et petites entreprises",
+    default: "Newbi - Devis, factures et gestion pour indépendants",
     template: "%s | Newbi",
   },
   description:
-    "Newbi simplifie la gestion de votre activité : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets. Tout-en-un pour freelances et petites entreprises.",
+    "Gérer sa boîte, ce n'est pas censé être un deuxième métier. Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
   keywords: [
     "freelance",
     "facturation",
@@ -46,9 +46,9 @@ export const metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "Newbi - Solution complète pour freelances et petites entreprises",
+    title: "Newbi - Devis, factures et gestion pour indépendants",
     description:
-      "Simplifiez votre activité avec Newbi : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets.",
+      "Tes devis, tes factures, tes clients et tes reçus au même endroit. Tu peux fermer ton Excel. 30 jours gratuits, sans carte bancaire.",
     url: "/",
     siteName: "Newbi",
     locale: "fr_FR",
@@ -58,15 +58,15 @@ export const metadata = {
         url: "/images/op-newbi.png",
         width: 1200,
         height: 630,
-        alt: "Newbi - Solution complète pour freelances",
+        alt: "Newbi - Devis, factures et gestion pour indépendants",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Newbi - Solution complète pour freelances et petites entreprises",
+    title: "Newbi - Devis, factures et gestion pour indépendants",
     description:
-      "Simplifiez votre activité avec Newbi : devis, factures, signatures électroniques, transferts de fichiers et gestion de projets.",
+      "Tes devis, tes factures, tes clients et tes reçus au même endroit. Tu peux fermer ton Excel. 30 jours gratuits, sans carte bancaire.",
     images: ["/images/op-newbi.png"],
   },
   robots: {
