@@ -1,28 +1,6 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { trackEvent } from "@/src/utils/trackEvent";
-import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
-
-// Icône étoile pour les ratings
-const StarIcon = () => (
-  <svg
-    width="15"
-    height="14"
-    viewBox="0 0 15 14"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M7.1141 2.01454C7.24855 1.74216 7.31577 1.60596 7.40703 1.56245C7.48644 1.52459 7.57869 1.52459 7.65809 1.56245C7.74935 1.60596 7.81658 1.74215 7.95103 2.01454L9.22659 4.59868C9.26628 4.6791 9.28613 4.7193 9.31513 4.75052C9.34081 4.77816 9.37161 4.80056 9.40582 4.81646C9.44446 4.83443 9.48882 4.84092 9.57756 4.85389L12.4308 5.27093C12.7313 5.31485 12.8815 5.33681 12.951 5.41019C13.0115 5.47404 13.0399 5.56177 13.0284 5.64897C13.0152 5.74919 12.9064 5.85512 12.6889 6.06699L10.6251 8.07718C10.5607 8.13984 10.5286 8.17117 10.5078 8.20845C10.4894 8.24146 10.4776 8.27773 10.4731 8.31523C10.4679 8.35759 10.4755 8.40185 10.4907 8.49037L10.9777 11.3297C11.0291 11.6291 11.0547 11.7789 11.0065 11.8677C10.9645 11.945 10.8898 11.9993 10.8033 12.0153C10.7039 12.0337 10.5695 11.963 10.3005 11.8216L7.74977 10.4802C7.6703 10.4384 7.63056 10.4175 7.58869 10.4093C7.55163 10.402 7.5135 10.402 7.47643 10.4093C7.43457 10.4175 7.39483 10.4384 7.31535 10.4802L4.76459 11.8216C4.49567 11.963 4.36121 12.0337 4.26179 12.0153C4.17528 11.9993 4.10064 11.945 4.05865 11.8677C4.01039 11.7789 4.03607 11.6291 4.08743 11.3297L4.5744 8.49037C4.58958 8.40185 4.59717 8.35759 4.59204 8.31523C4.58749 8.27773 4.5757 8.24146 4.55732 8.20845C4.53656 8.17117 4.5044 8.13984 4.44006 8.07718L2.37621 6.06699C2.15869 5.85512 2.04993 5.74919 2.03669 5.64897C2.02518 5.56177 2.05362 5.47404 2.11411 5.41019C2.18364 5.33681 2.33387 5.31485 2.63433 5.27093L5.48757 4.85389C5.5763 4.84092 5.62067 4.83443 5.6593 4.81646C5.69351 4.80056 5.72431 4.77816 5.74999 4.75052C5.779 4.7193 5.79884 4.6791 5.83854 4.59868L7.1141 2.01454Z"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="1.16667"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 // Icône France
 const FranceIcon = () => (
@@ -75,79 +53,36 @@ export default function HeroSection() {
 
             {/* Titre principal H1 */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6">
-              La solution tout-en-un de facturation et gestion{" "}
-              <br className="hidden sm:block" /> pour votre{" "}
-              <span className="text-indigo-600">entreprise</span>
+              Gérer sa boîte, ce n'est pas censé être{" "}
+              <br className="hidden sm:block" /> un{" "}
+              <span className="text-indigo-600">deuxième métier</span>.
             </h1>
 
             {/* Sous-titre */}
             <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
-              Gérez votre comptabilité, vos factures, vos projets et votre
-              communication professionnelle depuis une seule plateforme. Simple,
-              puissant et made in France.
+              Tes devis, tes factures, tes clients et tes reçus au même endroit.
+              Tu peux fermer ton Excel.
             </h2>
 
-            {/* Boutons CTA */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-              <WhatsAppContactButton
-                className="rounded-xl px-8 py-3 h-auto"
-                onClick={() => {
-                  trackEvent({ eventName: "Contact" });
-                }}
-              />
+            {/* Bouton CTA */}
+            <div className="flex flex-col items-center justify-center mb-8">
               <Link
-                href="/#pricing"
-                className="block rounded-xl px-8 py-3 text-center text-base font-normal active:scale-[0.98] border border-gray-200 bg-white text-black transition duration-200 hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800 w-full sm:w-auto"
+                href="/auth/signup"
+                className="rounded-xl px-8 py-3 text-center text-base font-medium transition duration-200 active:scale-[0.98] bg-[#202020] text-white hover:bg-[#333333] dark:bg-white dark:text-black w-full sm:w-auto"
               >
-                Voir les tarifs
+                Commencer gratuitement
               </Link>
+              <span className="mt-2 text-xs text-gray-500">
+                sans carte bancaire
+              </span>
             </div>
 
-            {/* Section avis / social proof */}
-            <div className="flex flex-wrap items-center justify-center gap-3">
+            {/* Section preuve sociale */}
+            <div className="flex items-center justify-center gap-3">
               <FranceIcon />
-              <div className="flex items-center gap-0">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      opacity: 1,
-                      color: i < 4 ? "#FFC062" : "#000000",
-                      position: "relative",
-                      display: "inline-flex",
-                    }}
-                  >
-                    {i === 4 ? (
-                      <>
-                        <StarIcon />
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "50%",
-                            height: "100%",
-                            overflow: "hidden",
-                            color: "#FFC062",
-                          }}
-                        >
-                          <StarIcon />
-                        </div>
-                      </>
-                    ) : (
-                      <StarIcon />
-                    )}
-                  </div>
-                ))}
-              </div>
               <span className="border-l border-gray-500 pl-3 text-xs sm:text-sm text-gray-600">
-                Solution innovante 2026 par
+                + 12 000 factures émises
               </span>
-              <img
-                src="/newbiLetter.png"
-                alt="newbi logo"
-                className="w-[60px] h-auto object-contain"
-              />
             </div>
 
             {/* Mobile: Image mockup + label facturation électronique superposé */}
