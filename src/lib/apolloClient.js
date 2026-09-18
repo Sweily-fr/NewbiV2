@@ -244,6 +244,10 @@ export function onWsReconnected(callback) {
   return typeof off === "function" ? off : () => {};
 }
 
+// JWT courant (mis en cache, rafraîchi à l'expiration) pour les connexions
+// qui n'ont pas de cookie : WebSocket GraphQL et éditeur collaboratif.
+export { getJWTToken };
+
 // ==================== AUTH LINK ====================
 // JWT on-demand pour l'auth cross-origin (frontend Vercel → backend API).
 // Le JWT est récupéré via /api/auth/token (same-origin, cookie envoyé)

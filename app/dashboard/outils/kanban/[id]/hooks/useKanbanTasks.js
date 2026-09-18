@@ -18,6 +18,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { computeAutoSaveSignature } from "./taskFormSignature";
+import { isCollabDescriptionEnabled } from "../components/task-modal/collabConfig";
 import { perfMark } from "@/src/utils/kanbanPerf";
 
 const UPLOAD_TASK_IMAGE = gql`
@@ -824,7 +825,12 @@ export const useKanbanTasks = (boardId, board) => {
       const input = {
         id: editingTask.id,
         title: taskForm.title,
-        description: taskForm.description,
+        // En édition collaborative, la description est persistée par le
+        // serveur collab (Yjs) : l'envoyer ici écraserait la version partagée
+        // avec un HTML en retard.
+        ...(isCollabDescriptionEnabled()
+          ? {}
+          : { description: taskForm.description }),
         priority:
           taskForm.priority.toLowerCase() === "none"
             ? ""
