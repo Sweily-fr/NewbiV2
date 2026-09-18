@@ -215,6 +215,12 @@ export const useKanbanTasks = (boardId, board) => {
   // Ref pour savoir si c'est l'utilisateur local qui a déclenché la dernière mutation
   const localMutationRef = useRef(false);
 
+  // Garde-fou : si la tâche ouverte change d'updatedAt en rafale (deux
+  // sources qui se répondent), on cesse de resynchroniser plutôt que de
+  // boucler jusqu'au « Maximum update depth exceeded », et on trace les
+  // valeurs pour trouver la source.
+  const syncBurstRef = useRef([]);
+
   // Synchroniser les données temps réel quand la tâche est mise à jour via subscription
   // Quand updatedAt change, synchroniser taskForm avec les données du board ET refetch les détails
   useEffect(() => {
@@ -222,6 +228,19 @@ export const useKanbanTasks = (boardId, board) => {
 
     const updateKey = `${editingTaskFromBoard.id}-${editingTaskFromBoard.updatedAt}`;
     if (lastUpdateRef.current === updateKey) return;
+
+    const now = Date.now();
+    syncBurstRef.current = syncBurstRef.current
+      .filter((e) => now - e.at < 3000)
+      .concat({ at: now, key: updateKey });
+    if (syncBurstRef.current.length > 12) {
+      console.warn(
+        "[Kanban] Resynchronisation de la tâche en rafale, ignorée :",
+        syncBurstRef.current.slice(-6).map((e) => e.key),
+      );
+      lastUpdateRef.current = updateKey;
+      return;
+    }
 
     // Premier rendu après ouverture du modal : ne pas refetch (déjà fait dans openEditTaskModal)
     if (!lastUpdateRef.current) {
@@ -307,7 +326,15 @@ export const useKanbanTasks = (boardId, board) => {
         };
         initialFormRef.current = computeAutoSaveSignature(pureServerForm);
         serverFormRef.current = serverSnapshotOf(pureServerForm);
-        return synced;
+
+        // Rien de visible n'a changé (écho de notre propre état, événement
+        // répété) : garder la même référence pour ne pas re-rendre.
+        const unchanged = Object.keys(synced).every((k) =>
+          k === "checklist"
+            ? checklistKey(synced.checklist) === checklistKey(prev.checklist)
+            : synced[k] === prev[k],
+        );
+        return unchanged ? prev : synced;
       });
     }
 
