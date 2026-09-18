@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { HocuspocusProvider } from "@hocuspocus/provider";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, useEditorState, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCaret from "@tiptap/extension-collaboration-caret";
@@ -199,7 +199,21 @@ export const CollaborativeDescriptionEditor = forwardRef(
     // sauvegarde : ici le serveur persiste lui-même, rien à faire.
     useImperativeHandle(ref, () => ({ commit: () => {} }), []);
 
-    const isEmpty = !editor || editor.isEmpty;
+    // TipTap v3 ne re-rend pas le composant à chaque transaction : les états
+    // (vide, gras actif…) doivent être lus via useEditorState, sinon le
+    // placeholder et la barre d'outils restent figés.
+    const editorState = useEditorState({
+      editor,
+      selector: ({ editor: e }) => ({
+        isEmpty: !e || e.isEmpty,
+        active: e
+          ? Object.fromEntries(
+              TOOLBAR.map((t) => [t.active, e.isActive(t.active)]),
+            )
+          : {},
+      }),
+    });
+    const isEmpty = editorState?.isEmpty ?? true;
 
     const applyLink = () => {
       if (!editor) return;
@@ -226,7 +240,7 @@ export const CollaborativeDescriptionEditor = forwardRef(
         <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
           <div className="flex items-center gap-0.5">
             {TOOLBAR.map((item) => {
-              const isActive = editor?.isActive(item.active);
+              const isActive = !!editorState?.active?.[item.active];
               return (
                 <Tooltip key={item.tooltip}>
                   <TooltipTrigger asChild>

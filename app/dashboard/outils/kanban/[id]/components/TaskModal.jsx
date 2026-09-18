@@ -89,6 +89,7 @@ import { perfMark } from "@/src/utils/kanbanPerf";
 // Sub-components extracted for maintainability
 import { PendingCommentsView } from "./task-modal/PendingCommentsView";
 import { TaskDescriptionField } from "./task-modal/TaskDescriptionField";
+import { isCollabDescriptionEnabled } from "./task-modal/collabConfig";
 import { useSession } from "@/src/lib/auth-client";
 import { TaskModalHeader } from "./task-modal/TaskModalHeader";
 import { computeAutoSaveSignature } from "../hooks/taskFormSignature";
@@ -1627,7 +1628,11 @@ export function TaskModal({
 
                   {/* Description — sous la grille des propriétés */}
                   <div className="space-y-1 border-t border-border/30 pt-4">
-                    {!showDescription && !taskForm.description ? (
+                    {!showDescription &&
+                    !taskForm.description &&
+                    // En collaboratif le document partagé fait foi : l'éditeur
+                    // est toujours affiché (le cache peut être en retard)
+                    !(isCollabDescriptionEnabled() && isEditing) ? (
                       <button
                         type="button"
                         onClick={() => setShowDescription(true)}
@@ -1841,7 +1846,8 @@ export function TaskModal({
 
                   {/* Description - Collapse comme sur desktop */}
                   <div className="space-y-2">
-                    {!showDescription ? (
+                    {!showDescription &&
+                    !(isCollabDescriptionEnabled() && isEditing) ? (
                       <button
                         type="button"
                         onClick={() => setShowDescription(true)}
