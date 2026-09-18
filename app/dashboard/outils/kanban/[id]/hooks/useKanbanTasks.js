@@ -134,6 +134,11 @@ export const useKanbanTasks = (boardId, board) => {
   // tâche ouverte (cf. SYNCED_SCALAR_FIELDS) : sert à distinguer une
   // modification locale en cours d'une valeur simplement périmée.
   const serverFormRef = useRef(null);
+  // Signature du dernier formulaire envoyé par l'auto-save : si le serveur
+  // renvoie une valeur différente de ce qu'on lui a envoyé (champ normalisé :
+  // espace en fin de titre, date reformatée…), le champ resterait « sale »
+  // et l'auto-save repartirait à chaque resynchronisation, à l'infini.
+  const lastSentSignatureRef = useRef(null);
 
   // Lazy query pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
   // Chargé uniquement quand on ouvre le modal de détail.
@@ -324,7 +329,13 @@ export const useKanbanTasks = (boardId, board) => {
           tags: remoteTags,
           checklist: remoteChecklist,
         };
-        initialFormRef.current = computeAutoSaveSignature(pureServerForm);
+        const syncedSignature = computeAutoSaveSignature(synced);
+        initialFormRef.current =
+          syncedSignature === lastSentSignatureRef.current
+            ? // Déjà envoyé tel quel : le serveur a eu le dernier mot, on
+              // ne le renvoie pas en boucle
+              syncedSignature
+            : computeAutoSaveSignature(pureServerForm);
         serverFormRef.current = serverSnapshotOf(pureServerForm);
 
         // Rien de visible n'a changé (écho de notre propre état, événement
@@ -841,6 +852,7 @@ export const useKanbanTasks = (boardId, board) => {
       return;
     }
 
+    lastSentSignatureRef.current = computeAutoSaveSignature(taskForm);
     try {
       // NOTE: `assignedMembers` est volontairement EXCLU du payload d'auto-save.
       // Les assignations/désassignations sont gérées exclusivement par
