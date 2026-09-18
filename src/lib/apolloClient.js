@@ -233,6 +233,17 @@ export function forceWsReconnect() {
   }
 }
 
+// Abonne un callback aux reconnexions du WebSocket (après une coupure, un
+// redéploiement de l'API ou forceWsReconnect). Les subscriptions sont
+// rejouées par le transport, mais l'état annoncé au serveur (ex. présence sur
+// une tâche) doit être ré-émis par l'appelant. Retourne la fonction de
+// désabonnement.
+export function onWsReconnected(callback) {
+  if (!_wsClient?.onReconnected) return () => {};
+  const off = _wsClient.onReconnected(callback);
+  return typeof off === "function" ? off : () => {};
+}
+
 // ==================== AUTH LINK ====================
 // JWT on-demand pour l'auth cross-origin (frontend Vercel → backend API).
 // Le JWT est récupéré via /api/auth/token (same-origin, cookie envoyé)

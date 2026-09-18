@@ -10,15 +10,27 @@ import {
 } from "react";
 import { useMutation, useQuery, useSubscription } from "@apollo/client";
 import { useSession } from "@/src/lib/auth-client";
+import { onWsReconnected } from "@/src/lib/apolloClient";
 import {
   GET_TASK_PRESENCE,
   SET_TASK_PRESENCE,
   TASK_PRESENCE_SUBSCRIPTION,
 } from "@/src/graphql/kanbanQueries";
 
-// Doit rester inférieur à STALE_MS côté API (75 s) : au-delà, la présence
-// est purgée comme un onglet fermé sans prévenir.
+// Doit rester bien inférieur à STALE_MS côté API (120 s) : au-delà, la
+// présence est purgée comme un onglet fermé sans prévenir. Chrome ralentit
+// les minuteurs d'un onglet caché à 1/min, d'où la marge.
 const HEARTBEAT_MS = 30 * 1000;
+// Relecture périodique de l'état : purge les onglets expirés côté serveur
+// (diffusée à tous) et resynchronise après une coupure silencieuse.
+const REFRESH_MS = 30 * 1000;
+
+// Identifiant de cet onglet : un utilisateur peut avoir le même tableau
+// ouvert plusieurs fois, chaque onglet annonce sa propre présence.
+const newClientId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 // Après une erreur de subscription, délai avant de se réabonner.
 const RESUBSCRIBE_DELAY_MS = 5 * 1000;
 
@@ -117,18 +129,29 @@ export function useTaskPresence({
 
   const active = enabled && !!boardId && !!workspaceId && !!meId;
 
-  useQuery(GET_TASK_PRESENCE, {
+  const clientIdRef = useRef(null);
+  if (!clientIdRef.current) clientIdRef.current = newClientId();
+  const clientId = clientIdRef.current;
+
+  // État initial + relecture toutes les REFRESH_MS. Le résultat est appliqué
+  // via un effet sur `data` (onCompleted est déprécié en Apollo 3.14).
+  const { data: presenceData, refetch } = useQuery(GET_TASK_PRESENCE, {
     variables: { boardId, workspaceId },
     skip: !active,
     fetchPolicy: "network-only",
+    nextFetchPolicy: "network-only",
+    pollInterval: REFRESH_MS,
+    notifyOnNetworkStatusChange: false,
     context: { skipErrorToast: true },
-    onCompleted: (data) => {
-      if (data?.taskPresence) store.setViewers(data.taskPresence, meId);
-    },
   });
+  useEffect(() => {
+    if (presenceData?.taskPresence) {
+      store.setViewers(presenceData.taskPresence, meId);
+    }
+  }, [presenceData, store, meId]);
 
   useSubscription(TASK_PRESENCE_SUBSCRIPTION, {
-    variables: { boardId, workspaceId },
+    variables: { boardId, workspaceId, clientId },
     skip: !active || resubscribePause,
     onData: ({ data }) => {
       const payload = data?.data?.taskPresence;
@@ -171,7 +194,12 @@ export function useTaskPresence({
       queueRef.current = queueRef.current
         .then(() =>
           setTaskPresenceMutation({
-            variables: { boardId, taskId: taskId || null, workspaceId },
+            variables: {
+              boardId,
+              taskId: taskId || null,
+              clientId,
+              workspaceId,
+            },
           }),
         )
         .then(() => {
@@ -181,8 +209,13 @@ export function useTaskPresence({
           // Silencieux : la présence est un confort, jamais bloquante
         });
     },
-    [setTaskPresenceMutation, boardId, workspaceId],
+    [setTaskPresenceMutation, boardId, clientId, workspaceId],
   );
+
+  // Tâche annoncée en ce moment, lue par le handler de reconnexion sans
+  // dépendre du cycle de rendu.
+  const currentTaskIdRef = useRef(null);
+  currentTaskIdRef.current = active ? currentTaskId || null : null;
 
   useEffect(() => {
     if (!active) return undefined;
@@ -193,9 +226,21 @@ export function useTaskPresence({
     if (!taskId) return undefined;
     const interval = setInterval(() => send(taskId), HEARTBEAT_MS);
     return () => clearInterval(interval);
-    // resubscribeKey : après un réabonnement, le serveur a retiré notre
+    // resubscribeKey : après un réabonnement, le serveur a pu retirer notre
     // présence à la fermeture de l'ancienne subscription → on se ré-annonce.
   }, [active, currentTaskId, send, resubscribeKey]);
+
+  // Reconnexion du WebSocket (coupure, changement de réseau, redéploiement) :
+  // le serveur retire la présence de l'onglet déconnecté après un court délai
+  // de grâce. On se ré-annonce tout de suite pour rester dans ce délai, et on
+  // relit l'état pour rattraper ce qu'on a manqué pendant la coupure.
+  useEffect(() => {
+    if (!active) return undefined;
+    return onWsReconnected(() => {
+      if (currentTaskIdRef.current) send(currentTaskIdRef.current);
+      refetch().catch(() => {});
+    });
+  }, [active, send, refetch]);
 
   // Quitter le tableau (ou changer de tableau) retire la présence.
   useEffect(

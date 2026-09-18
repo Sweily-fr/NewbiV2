@@ -878,18 +878,32 @@ export const GET_TASK_PRESENCE = gql`
 `;
 
 export const SET_TASK_PRESENCE = gql`
-  mutation SetTaskPresence($boardId: ID!, $taskId: ID, $workspaceId: ID) {
+  mutation SetTaskPresence(
+    $boardId: ID!
+    $taskId: ID
+    $clientId: String
+    $workspaceId: ID
+  ) {
     setTaskPresence(
       boardId: $boardId
       taskId: $taskId
+      clientId: $clientId
       workspaceId: $workspaceId
     )
   }
 `;
 
 export const TASK_PRESENCE_SUBSCRIPTION = gql`
-  subscription TaskPresence($boardId: ID!, $workspaceId: ID!) {
-    taskPresence(boardId: $boardId, workspaceId: $workspaceId) {
+  subscription TaskPresence(
+    $boardId: ID!
+    $workspaceId: ID!
+    $clientId: String
+  ) {
+    taskPresence(
+      boardId: $boardId
+      workspaceId: $workspaceId
+      clientId: $clientId
+    ) {
       boardId
       workspaceId
       viewers {
