@@ -189,9 +189,9 @@ describe("formatInvoiceReference", () => {
     ).toBe("F-2026-09-000012");
   });
 
-  it("retombe sur le numéro seul sans préfixe (factures importées)", () => {
-    expect(formatInvoiceReference({ number: "INV-42" })).toBe("INV-42");
-    expect(formatInvoiceReference({ prefix: "", number: "7" })).toBe("7");
+  it("retombe sur le préfixe « F » quand il manque (même repli que la page Factures)", () => {
+    expect(formatInvoiceReference({ number: "INV-42" })).toBe("F-INV-42");
+    expect(formatInvoiceReference({ prefix: "", number: "7" })).toBe("F-7");
   });
 
   it("retourne le fallback sans numéro", () => {

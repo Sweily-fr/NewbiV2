@@ -263,6 +263,7 @@ describe("signInGoogle / signInGithub", () => {
     expect(authClientMock.signIn.social).toHaveBeenCalledWith({
       provider: "google",
       callbackURL: "/dashboard",
+      errorCallbackURL: "/auth/login",
     });
   });
 
@@ -278,6 +279,7 @@ describe("signInGoogle / signInGithub", () => {
     expect(authClientMock.signIn.social).toHaveBeenCalledWith({
       provider: "github",
       callbackURL: "/dashboard",
+      errorCallbackURL: "/auth/login",
     });
   });
 
