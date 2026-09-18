@@ -24,14 +24,18 @@ export default function HeroSection() {
                 animation: "shimmer 3s ease-in-out infinite",
               }}
             >
-              Pour les entrepreneurs et PME françaises.
+              Pour les indépendants et les petites équipes
             </p>
 
             {/* Titre principal H1 */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6">
-              Gérer sa boîte, ce n'est pas censé être{" "}
-              <br className="hidden sm:block" /> un{" "}
-              <span className="text-indigo-600">deuxième métier</span>.
+            {/* Chaque segment est insécable (inline-block) : le titre ne se
+                coupe qu'entre les groupes de sens, jamais au milieu d'un. */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6 text-balance">
+              <span className="inline-block">Gérer sa boîte,</span>{" "}
+              <span className="inline-block">ce n'est pas censé être</span>{" "}
+              <span className="inline-block">
+                un <span className="text-indigo-600">deuxième métier</span>.
+              </span>
             </h1>
 
             {/* Sous-titre */}
@@ -44,7 +48,7 @@ export default function HeroSection() {
             <div className="flex flex-col items-center justify-center mb-8">
               <Link
                 href="/auth/signup"
-                className="rounded-xl px-8 py-3 text-center text-base font-medium transition duration-200 active:scale-[0.98] bg-[#202020] text-white hover:bg-[#333333] dark:bg-white dark:text-black w-full sm:w-auto"
+                className="rounded-xl px-8 py-3 text-center text-base font-medium transition duration-200 active:scale-[0.98] bg-[#5b50FF] text-white hover:bg-[#4a40e6] w-full sm:w-auto"
               >
                 Commencer gratuitement
               </Link>
