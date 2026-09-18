@@ -1,20 +1,18 @@
 import React from "react";
 import { homeJsonLd } from "@/src/utils/seo-data";
+import { buildHomeFaqJsonLd } from "./new/lp-home/FAQSection";
 
 // Import des sections depuis le dossier lp-home
 import {
   NewHeroNavbar,
   HeroSection,
-  TrustedBySection,
   AgentStudioSection,
   ComponentsSection,
   ComplianceSection,
   GovernanceSection,
   NewGovernanceSection,
   EInvoicingSection,
-  MetiersSection,
-  PricingSection,
-  FeaturedOnSection,
+  HomePricingSection,
   NewPricingSection,
   TestimonialsSplit,
   FAQSection,
@@ -26,7 +24,7 @@ export const metadata = {
     absolute: "Newbi | Plateforme tout-en-un de gestion d'entreprise",
   },
   description:
-    "Newbi, la plateforme tout-en-un pour gérer votre entreprise : facturation, devis, trésorerie, gestion de projets, signatures mail. Essai gratuit 30 jours.",
+    "Newbi, la plateforme tout-en-un pour indépendants et petites équipes : devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
   keywords: [
     "logiciel de facturation",
     "logiciel devis facture",
@@ -41,12 +39,19 @@ export const metadata = {
   openGraph: {
     title: "Newbi | Plateforme tout-en-un de gestion d'entreprise",
     description:
-      "Newbi, la plateforme tout-en-un pour gérer votre entreprise : facturation, devis, trésorerie, gestion de projets, signatures mail. Essai gratuit 30 jours.",
+      "Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
     url: "/",
     type: "website",
     images: ["/images/op-newbi.png"],
   },
 };
+
+// Le FAQPage générique de homeJsonLd est remplacé par celui construit depuis
+// les questions affichées sur la page (balisage = contenu visible).
+const jsonLd = [
+  ...homeJsonLd.filter((item) => item["@type"] !== "FAQPage"),
+  buildHomeFaqJsonLd(),
+];
 
 export default function Home() {
   return (
@@ -54,23 +59,20 @@ export default function Home() {
       {/* Données structurées rendues côté serveur (lisibles sans exécuter le JS) */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <NewHeroNavbar />
       <div className="bg-[#FDFDFD]">
         <HeroSection />
-        <TrustedBySection />
         {/* <AgentStudioSection /> */}
         {/* <ComponentsSection /> */}
         {/* <ComplianceSection /> */}
         <NewGovernanceSection />
         <EInvoicingSection />
         <GovernanceSection />
-        <MetiersSection />
         {/* <NewPricingSection /> */}
         {/* <TestimonialsSplit /> */}
-        <PricingSection />
-        <FeaturedOnSection />
+        <HomePricingSection />
         <FAQSection />
       </div>
     </>

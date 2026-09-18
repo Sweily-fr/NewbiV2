@@ -26,59 +26,88 @@ function buildPricingFaqContent() {
     ].join("\n");
   }).join("\n\n");
   return (
-    "À l'inscription, vous bénéficiez de 30 jours gratuits, durant lesquels vous pouvez résilier votre abonnement à tout moment.\n\n" +
-    "Newbi propose 3 formules :\n\n" +
+    "Tu profites de 30 jours gratuits à l'inscription, sans carte bancaire et sans engagement.\n\n" +
+    "Ensuite, Newbi propose 3 formules :\n\n" +
     planLines +
-    "\n\nVous pouvez à tout moment changer votre abonnement ou le résilier sans conditions."
+    "\n\nTu peux changer de formule ou résilier à tout moment, sans conditions."
   );
 }
 
-const questions = [
+export const HOME_FAQ = [
   {
     id: "item-1",
-    title: "Qu'est-ce que newbi ?",
+    title: "Qu'est-ce que Newbi ?",
     content:
-      "Newbi est une plateforme tout-en-un pour gérer simplement et efficacement votre activité: devis, factures, signature de mail, gestion de tâches en Kanban et transfert de fichiers sécurisé. Notre objectif ? Vous faire gagner du temps du premier contact client jusqu'à l'encaissement.",
+      "Newbi est une plateforme tout-en-un pour gérer ton entreprise au quotidien : devis, factures, clients, reçus et dépenses, connexion bancaire, trésorerie et facturation électronique. Tu y trouves aussi des outils du quotidien comme les signatures de mail, le transfert de fichiers et la gestion de projets. L'objectif : que tu passes moins de temps sur l'administratif et plus sur ton activité.",
   },
   {
     id: "item-2",
-    title: "À qui s'adresse newbi ?",
+    title: "À qui s'adresse Newbi ?",
     content:
-      "Newbi est une plateforme pensée pour les indépendants, TPE/PME, agences et associations qui veulent centraliser leurs outils commerciaux et administratifs, sans complexité. Newbi convient aussi aux équipes qui collaborent sur des ventes et des projets.",
+      "Aux indépendants, freelances et petites équipes (TPE, agences, associations) qui veulent un seul outil simple pour tout centraliser, sans passer par Excel ou empiler les logiciels. Newbi fonctionne aussi bien seul qu'à plusieurs, avec des accès pour tes collaborateurs et ton expert-comptable.",
   },
   {
     id: "item-3",
-    title: "Comment créer un compte Newbi et vérifier mon adresse e-mail ?",
+    title: "Newbi est-il conforme à la facturation électronique ?",
     content:
-      'C\'est très simple, 3 étapes :\n\n• Cliquez sur "Inscription" depuis la page d\'accueil\n• Renseignez votre mail et un mot de passe robuste\n• Ouvrez l\'e-mail de confirmation et cliquez sur "Vérifier mon adresse"',
+      "Oui. La facturation électronique est en vigueur depuis le 1er septembre 2026 et Newbi est prêt : tu peux recevoir et émettre des factures électroniques au bon format, avec l'archivage légal inclus. Tu n'as rien à configurer de compliqué, tout est intégré dans ton espace habituel.",
   },
   {
     id: "item-4",
-    title:
-      "Quelles sont les premières étapes après l'inscription pour être opérationnel rapidement ?",
+    title: "Comment fonctionne l'essai gratuit ?",
     content:
-      "Après votre inscription, plusieurs choses sont à réaliser si vous souhaitez être opérationnel.\n \n• Complétez votre catalogue produits: \nCréez vos produits avec leurs tarifs HT/ TTC, taux de TVA, unités, remises éventuelles\n• Complétez votre annuaire clients: \nAjoutez vos clients(raison sociale, SIREN / SIRET, n°TVA, contacts, adresse de facturation / livraison)\n\nAvec ces données en place, vous pouvez générer vos premiers devis puis les convertir en factures en quelques clics. Passez ensuite à la génération de votre signature professionnelle et celles de vos équipes, si besoin. Une fois ces étapes effectuées, vous êtes prêt à utiliser Newbi de manière fluide et efficace.",
+      "Tu crées ton compte en quelques secondes, sans carte bancaire, et tu as accès à toutes les fonctionnalités pendant 30 jours. À la fin de l'essai, tu choisis la formule qui te convient. Si tu ne fais rien, ton compte n'est pas facturé.",
   },
   {
     id: "item-5",
-    title:
-      "Quelles formules et quels prix propose Newbi ? Y a-t-il un essai gratuit ?",
+    title: "Quelles formules et quels prix propose Newbi ?",
     content: buildPricingFaqContent(),
   },
   {
     id: "item-6",
-    title:
-      "Quels moyens de paiement sont acceptés pour l'abonnement Newbi et comment modifier ma formule ?",
+    title: "Puis-je connecter ma banque et scanner mes reçus ?",
     content:
-      "Actuellement, l'abonnement Newbi se règle uniquement par carte bancaire. Il suffit d'enregistrer une carte valide dans votre espace client pour démarrer après les 30 jours d'essai gratuit.",
+      "Oui. Tu connectes ton compte bancaire pour synchroniser tes transactions, suivre ta trésorerie et rapprocher automatiquement tes paiements avec tes factures. Pour les dépenses, tu prends ton reçu en photo ou tu déposes le justificatif : Newbi le lit (OCR), extrait les montants et la TVA, et le classe pour toi.",
   },
   {
     id: "item-7",
-    title: "Qui contacter si j'ai une question ou un problème sur Newbi ?",
+    title: "Mon expert-comptable peut-il accéder à Newbi ?",
     content:
-      "Rejoignez la communauté Newbi sur Whatsapp. Il suffit d'y accéder pour rejoindre les groupes thématiques et poser vos questions directement à la communauté et à l'équipe.",
+      "Oui, et c'est gratuit : chaque formule inclut au moins un accès comptable. Ton expert-comptable retrouve tes factures, tes dépenses et tes justificatifs directement dans Newbi, et tu peux exporter ta comptabilité dans les formats habituels.",
+  },
+  {
+    id: "item-8",
+    title: "Newbi est-il disponible sur mobile ?",
+    content:
+      "Oui. L'application Newbi est disponible sur iPhone (App Store) et Android (Google Play). Tu retrouves ton espace avec le même compte : consulter et créer tes factures, suivre tes paiements, photographier un reçu pour l'ajouter en dépense. Le site web reste conseillé pour les tâches plus lourdes comme le paramétrage ou les exports comptables.",
+  },
+  {
+    id: "item-9",
+    title: "Comment payer mon abonnement et comment résilier ?",
+    content:
+      "L'abonnement se règle par carte bancaire, en mensuel ou en annuel (10 % de réduction). Tu changes de formule ou tu résilies quand tu veux depuis tes paramètres, sans frais ni préavis.",
+  },
+  {
+    id: "item-10",
+    title: "Qui contacter si j'ai une question ?",
+    content:
+      "L'équipe Newbi est disponible directement sur WhatsApp : tu poses ta question et un conseiller te répond. Tu peux aussi passer par la page contact du site.",
   },
 ];
+
+// Schéma FAQPage généré depuis les questions réellement affichées, pour
+// que le balisage reste synchronisé avec le contenu visible (exigence Google).
+export function buildHomeFaqJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: HOME_FAQ.map((q) => ({
+      "@type": "Question",
+      name: q.title,
+      acceptedAnswer: { "@type": "Answer", text: q.content },
+    })),
+  };
+}
 
 export default function FAQSection() {
   return (
@@ -88,8 +117,8 @@ export default function FAQSection() {
           Questions fréquentes
         </h2>
         <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
-          Nous sommes là pour répondre à toutes vos questions. Si vous ne
-          trouvez pas l'information recherchée, n'hésitez pas à{" "}
+          On est là pour répondre à toutes tes questions. Si tu ne trouves pas
+          l'information recherchée, n'hésite pas à{" "}
           <a href="/contact" className="underline underline-offset-4">
             nous contacter
           </a>
@@ -102,7 +131,7 @@ export default function FAQSection() {
         className="bg-card dark:bg-card/50 w-full -space-y-px rounded-lg"
         defaultValue="item-1"
       >
-        {questions.map((item) => (
+        {HOME_FAQ.map((item) => (
           <AccordionItem
             value={item.id}
             key={item.id}
@@ -118,7 +147,7 @@ export default function FAQSection() {
         ))}
       </Accordion>
       <p className="text-muted-foreground">
-        Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
+        Tu ne trouves pas ce que tu cherches ? Contacte notre{" "}
         <a
           href="/contact"
           className="text-primary underline underline-offset-4"

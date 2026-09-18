@@ -6,17 +6,17 @@ const steps = [
   {
     num: "1",
     title: "Début 2026",
-    desc: "Newbi intègre la facturation électronique. Vous pouvez dès maintenant préparer votre transition en douceur.",
+    desc: "Newbi intègre la facturation électronique. Tu peux dès maintenant préparer ta transition en douceur.",
   },
   {
     num: "2",
     title: "1er sept. 2026",
-    desc: "Toutes les entreprises doivent être en mesure de recevoir des factures au format électronique. Vous êtes déjà prêt avec Newbi.",
+    desc: "Toutes les entreprises doivent être en mesure de recevoir des factures au format électronique. Tu es déjà prêt avec Newbi.",
   },
   {
     num: "3",
     title: "1er sept. 2027",
-    desc: "L'émission de factures électroniques devient obligatoire pour tous. Newbi vous permet d'émettre et transmettre en un clic.",
+    desc: "L'émission de factures électroniques devient obligatoire pour tous. Newbi te permet d'émettre et transmettre en un clic.",
   },
 ];
 
@@ -31,7 +31,7 @@ export default function EInvoicingSection({ maxWidth = "max-w-6xl" }) {
             {/* Text */}
             <div className="flex-1 px-6 lg:px-12 py-10 md:py-16">
               <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
-                Newbi sera prêt, et vous ?
+                Newbi est prêt, et toi ?
               </span>
 
               <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-gray-950 mb-4">
@@ -39,21 +39,21 @@ export default function EInvoicingSection({ maxWidth = "max-w-6xl" }) {
               </h2>
 
               <p className="text-base text-gray-700 max-w-xl mb-4 leading-relaxed">
-                À partir du <strong>1er septembre 2026</strong>, la facturation
-                électronique se met en place : toutes les entreprises devront{" "}
+                Depuis le <strong>1er septembre 2026</strong>, la facturation
+                électronique est en vigueur : toutes les entreprises doivent{" "}
                 <strong>pouvoir recevoir</strong> des factures électroniques, et
-                l'<strong>émission</strong> se généralisera progressivement.
+                l'<strong>émission</strong> se généralise progressivement.
               </p>
               <p className="text-base text-gray-700 max-w-xl mb-8 leading-relaxed">
-                Avec Newbi, vous serez accompagné pas à pas dans cette
-                transition, pour être prêt et conforme le jour J.
+                Avec Newbi, tu es accompagné pas à pas dans cette transition,
+                pour être conforme dès aujourd'hui.
               </p>
 
               <Link
-                href="/auth/register"
+                href="/auth/signup"
                 className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-medium text-white bg-[#202020] hover:bg-[#333333] transition-colors"
               >
-                Choisir Newbi
+                Commencer gratuitement
               </Link>
             </div>
 

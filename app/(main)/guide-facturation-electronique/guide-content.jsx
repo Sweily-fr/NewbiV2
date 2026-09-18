@@ -277,15 +277,28 @@ export default function GuideFacturationElectroniquePage() {
                     <Checkbox
                       id="terms"
                       checked={acceptedTerms}
-                      onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                      onCheckedChange={(checked) =>
+                        setAcceptedTerms(checked === true)
+                      }
                     />
-                    <Label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
+                    <Label
+                      htmlFor="terms"
+                      className="text-xs text-gray-600 leading-relaxed cursor-pointer"
+                    >
                       J'accepte les{" "}
-                      <Link href="/conditions-generales" className="text-indigo-600 underline" target="_blank">
+                      <Link
+                        href="/conditions-generales"
+                        className="text-indigo-600 underline"
+                        target="_blank"
+                      >
                         CGU/CGV
                       </Link>{" "}
                       et la{" "}
-                      <Link href="/politique-de-confidentialite" className="text-indigo-600 underline" target="_blank">
+                      <Link
+                        href="/politique-de-confidentialite"
+                        className="text-indigo-600 underline"
+                        target="_blank"
+                      >
                         politique de confidentialité
                       </Link>{" "}
                       de Newbi. *
@@ -293,7 +306,14 @@ export default function GuideFacturationElectroniquePage() {
                   </div>
 
                   {/* Honeypot — invisible pour les utilisateurs */}
-                  <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }} aria-hidden="true">
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: "-9999px",
+                      top: "-9999px",
+                    }}
+                    aria-hidden="true"
+                  >
                     <label htmlFor="website">Website</label>
                     <input
                       type="text"
@@ -315,9 +335,7 @@ export default function GuideFacturationElectroniquePage() {
                     />
                   )}
 
-                  {error && (
-                    <p className="text-sm text-red-600">{error}</p>
-                  )}
+                  {error && <p className="text-sm text-red-600">{error}</p>}
 
                   <Button
                     type="submit"
@@ -347,7 +365,9 @@ export default function GuideFacturationElectroniquePage() {
             <div className="flex flex-wrap gap-4 mb-8">
               <div className="flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-100 px-4 py-2.5">
                 <Clock className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-700">~25 min de lecture</span>
+                <span className="text-sm text-gray-700">
+                  ~25 min de lecture
+                </span>
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-100 px-4 py-2.5">
                 <FileText className="w-4 h-4 text-gray-500" />
@@ -388,7 +408,10 @@ export default function GuideFacturationElectroniquePage() {
                   "Choisir entre PPF et PDP en toute connaissance",
                   "Éviter les sanctions avec notre checklist pratique",
                 ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-indigo-800">
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-sm text-indigo-800"
+                  >
                     <CheckCircle2 className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
                     {item}
                   </li>
@@ -411,7 +434,7 @@ export default function GuideFacturationElectroniquePage() {
             et made in France.
           </p>
           <Link
-            href="/#pricing"
+            href="/tarifs"
             className="inline-flex items-center gap-2 rounded-xl px-8 py-3 text-base font-normal bg-white text-black hover:bg-gray-100 transition duration-150 active:scale-[0.98]"
           >
             Découvrir nos tarifs

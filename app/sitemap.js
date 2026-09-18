@@ -56,6 +56,7 @@ export default function sitemap() {
       changeFrequency: "daily",
       priority: 0.8,
     },
+    { url: `${baseUrl}/tarifs`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/faq`, changeFrequency: "monthly", priority: 0.6 },
     {
       url: `${baseUrl}/qui-sommes-nous`,

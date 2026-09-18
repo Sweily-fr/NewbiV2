@@ -30,7 +30,7 @@ const defaultSections = [
     links: [
       // { name: "Blog", href: "#" },
       { name: "FAQ", href: "#" },
-      { name: "Tarifs", href: "/#pricing" },
+      { name: "Tarifs", href: "/tarifs" },
       { name: "Communauté", href: "#" },
     ],
   },
@@ -113,21 +113,21 @@ const Footer7 = ({
               Commencez gratuitement aujourd'hui
             </h2> */}
             <p className="mt-4 md:mt-6 text-xl md:text-2xl lg:text-4xl font-normal tracking-tight text-gray-950">
-              Vous aussi, gagnez du temps sur vos achats
+              Toi aussi, gagne du temps.
               <br className="hidden md:block" />
-              <span className="md:hidden"> </span>Commencez gratuitement
+              <span className="md:hidden"> </span>Commence gratuitement
               aujourd'hui.
             </p>
           </hgroup>
           <p className="mx-auto mt-4 md:mt-6 max-w-sm text-sm/6 text-gray-500">
-            Commencez à gagner plus rapidement avec newbi.
+            Commence à gagner du temps avec Newbi.
           </p>
           <div className="mt-4 md:mt-6 flex justify-center">
             <Link
               href="/auth/signup"
               className="inline-block rounded-xl px-8 py-3 text-center text-base font-normal transition duration-150 active:scale-[0.98] bg-[#202020] text-white dark:bg-white dark:text-black hover:bg-gray-800"
             >
-              Démarrer gratuitement
+              Commencer gratuitement
             </Link>
           </div>
         </div>
@@ -365,7 +365,7 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
-                      href="/#pricing"
+                      href="/tarifs"
                     >
                       Tarifs
                     </a>
@@ -503,7 +503,7 @@ const Footer7 = ({
                 >
                   By Sweily
                 </a>{" "}
-                — Made with{" "}
+                • Made with{" "}
                 <Heart
                   size={14}
                   className="inline-block text-red-500 fill-red-500 mx-1"

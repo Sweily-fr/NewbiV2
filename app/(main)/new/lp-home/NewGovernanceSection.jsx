@@ -42,7 +42,7 @@ const activities = [
     title: "Export comptable",
     badge: "ENVOYÉ",
     badgeType: "success",
-    desc: "Transmis à votre expert-comptable...",
+    desc: "Transmis à ton expert-comptable...",
   },
   {
     color: "bg-orange-500",
@@ -64,7 +64,7 @@ const images = [
 
 export default function NewGovernanceSection() {
   return (
-    <section className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden">
+    <section className="pt-0 -mt-4 md:-mt-10 lg:-mt-16 relative overflow-hidden">
       <style>{`
         @keyframes growBar {
           0%, 5% { width: 0%; }
@@ -137,15 +137,15 @@ export default function NewGovernanceSection() {
             SOLUTION TOUT-EN-UN
           </span>
           <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
-            Gardez le contrôle de votre entreprise
+            Garde le contrôle de ton activité
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
-            Centralisez toutes vos opérations financières et administratives sur
-            une seule plateforme intuitive. Prenez des{" "}
+            Centralise toutes tes opérations financières et administratives sur
+            une seule plateforme intuitive. Prends des{" "}
             <span className="text-[#5A50FF] font-medium">
               décisions éclairées
             </span>{" "}
-            grâce à une vue d'ensemble complète de votre activité.
+            grâce à une vue d'ensemble complète de ton activité.
           </p>
         </div>
 
@@ -155,7 +155,6 @@ export default function NewGovernanceSection() {
           <TresorerieCard />
           <MultiCompteCard />
           <RapportsCard />
-          <FullWidthCard />
         </div>
       </div>
     </section>
@@ -170,8 +169,8 @@ function DashboardCard() {
           Tableau de bord en temps réel
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Suivez tous vos indicateurs clés en un coup d'oeil. Chiffre
-          d'affaires, trésorerie, factures en attente — tout est centralisé.
+          Suis tous tes indicateurs clés en un coup d'oeil. Chiffre d'affaires,
+          trésorerie, factures en attente : tout est centralisé.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden">
@@ -238,11 +237,11 @@ function TresorerieCard() {
     <div className="border-b border-neutral-200 dark:border-neutral-800">
       <div className="p-4 md:p-8">
         <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Pilotez vos chiffres, anticipez votre croissance
+          Pilote tes chiffres, anticipe ta croissance
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Centralisez vos données financières et prenez les bonnes décisions
-          grâce à des indicateurs clairs sur votre activité.
+          Centralise tes données financières et prends les bonnes décisions
+          grâce à des indicateurs clairs sur ton activité.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden">
@@ -469,11 +468,11 @@ function RapportsCard() {
     <div className="dark:border-neutral-800">
       <div className="p-4 md:p-8">
         <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Gérez l'ensemble de vos dépenses
+          Gère l'ensemble de tes dépenses
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Catégorisez automatiquement vos dépenses, scannez vos justificatifs et
-          gardez un oeil sur chaque euro dépensé.
+          Catégorise automatiquement tes dépenses, scanne tes justificatifs et
+          garde un oeil sur chaque euro dépensé.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
@@ -566,11 +565,10 @@ function MultiCompteCard() {
     <div className="border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800">
       <div className="p-4 md:p-8">
         <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Vos paiements, sous contrôle
+          Tes paiements, sous contrôle
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Synchronisez vos transactions et relancez les retards en quelques
-          clics.
+          Synchronise tes transactions et relance les retards en quelques clics.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
@@ -764,33 +762,6 @@ function MultiCompteCard() {
             </p>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function FullWidthCard() {
-  return (
-    <div className="md:col-span-2 border-t border-neutral-200 dark:border-neutral-800 grid grid-cols-1 md:grid-cols-[5fr_6fr] overflow-hidden">
-      {/* Texte gauche */}
-      <div className="p-4 md:p-8">
-        <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Des factures qui inspirent confiance
-        </h2>
-        <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-lg text-balance">
-          Créez des factures élégantes et professionnelles qui reflètent l'image
-          de votre entreprise. Personnalisez vos modèles, ajoutez votre logo et
-          envoyez-les en un clic. Vos clients reçoivent un document soigné qui
-          renforce votre crédibilité.
-        </p>
-      </div>
-      {/* Image droite */}
-      <div className="h-[300px]">
-        <img
-          src="https://images.unsplash.com/photo-1556740758-90de374c12ad?w=800&q=80"
-          alt="Factures professionnelles"
-          className="w-full h-full object-cover"
-        />
       </div>
     </div>
   );

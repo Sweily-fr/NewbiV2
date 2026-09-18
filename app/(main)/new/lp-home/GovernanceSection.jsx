@@ -14,7 +14,7 @@ const activities = [
     title: "Factures Q4",
     badge: "ENVOYÉ",
     badgeType: "success",
-    desc: "12 fichiers envoyés à votre compta...",
+    desc: "12 fichiers envoyés à ta compta...",
   },
   {
     color: "bg-orange-500",
@@ -49,7 +49,7 @@ const activities = [
     title: "Pièces justificatives",
     badge: "EN COURS",
     badgeType: "processing",
-    desc: "Synchronisation avec votre expert...",
+    desc: "Synchronisation avec ton expert...",
   },
 ];
 
@@ -75,8 +75,8 @@ export default function GovernanceSection() {
             Des outils supplémentaires pour aller plus loin
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
-            En plus de la gestion financière, profitez d'une suite d'outils
-            collaboratifs pour optimiser votre quotidien professionnel.
+            En plus de la gestion financière, profite d'une suite d'outils
+            collaboratifs pour optimiser ton quotidien professionnel.
           </p>
         </div>
 
@@ -100,8 +100,8 @@ function AuditTrail() {
           Partage de documents
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Partagez vos documents comptables et professionnels avec votre
-          expert-comptable ou vos collaborateurs en toute sécurité.
+          Partage tes documents comptables et professionnels avec ton
+          expert-comptable ou tes collaborateurs en toute sécurité.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
@@ -185,8 +185,8 @@ function RoleBasedAccess() {
           Signature de mail
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Créez des signatures email professionnelles et uniformes pour toute
-          votre équipe en quelques clics.
+          Crée des signatures email professionnelles et uniformes pour toute ton
+          équipe en quelques clics.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant mask-radial-from-20%">
@@ -251,7 +251,7 @@ function ApprovalQueue() {
           Transfert de fichiers
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Envoyez des fichiers volumineux en toute sécurité avec suivi de
+          Envoie des fichiers volumineux en toute sécurité avec suivi de
           téléchargement et notifications automatiques.
         </p>
       </div>
@@ -288,8 +288,8 @@ function GuardrailEngine() {
           Gestion de projets
         </h2>
         <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Suivez l'avancement de vos projets avec des tableaux visuels simples.
-          Organisez vos tâches par statut et ne perdez plus rien de vue.
+          Suis l'avancement de tes projets avec des tableaux visuels simples.
+          Organise tes tâches par statut et ne perds plus rien de vue.
         </p>
       </div>
       <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">

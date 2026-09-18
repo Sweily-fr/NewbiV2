@@ -463,12 +463,12 @@ export const seoData = {
 
   // Page Tarifs
   pricing: {
-    title: "Tarifs et Abonnements - Plans Newbi pour Entrepreneurs",
+    title: "Tarifs Newbi - Offres Freelance, TPE et Entreprise",
     description:
-      "Découvrez nos tarifs transparents pour votre gestion d'entreprise. Essai gratuit de 30 jours, puis abonnement flexible. Fonctionnalités complètes incluses.",
+      "Comparez les offres Newbi : Freelance dès 17,99 € TTC/mois, TPE et Entreprise. 30 jours gratuits, sans carte bancaire, sans engagement.",
     keywords:
       "tarifs newbi, prix abonnement, plan entrepreneur, facturation prix, devis tarif, essai gratuit, abonnement mensuel",
-    canonical: `${baseUrl}/pricing`,
+    canonical: `${baseUrl}/tarifs`,
     openGraph: {
       title: "Tarifs Newbi - Plans pour Entrepreneurs",
       description:
@@ -489,7 +489,7 @@ export const seoData = {
       name: "Newbi - Solution de gestion d'entreprise",
       description:
         "Solution complète de gestion pour entrepreneurs et freelances",
-      url: `${baseUrl}/pricing`,
+      url: `${baseUrl}/tarifs`,
       brand: {
         "@type": "Brand",
         name: "Newbi",
@@ -506,10 +506,10 @@ export const seoData = {
         },
         {
           "@type": "Offer",
-          name: "Plan Professionnel",
-          price: "29",
+          name: "Freelance",
+          price: "17.99",
           priceCurrency: "EUR",
-          description: "Abonnement mensuel - Accès complet",
+          description: "Abonnement mensuel TTC, 1 utilisateur",
           availability: "https://schema.org/InStock",
         },
       ],

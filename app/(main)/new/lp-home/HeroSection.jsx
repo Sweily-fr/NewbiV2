@@ -106,7 +106,7 @@ export default function HeroSection() {
           {/* Mockup Mac - Position absolue à droite, en bas */}
           <img
             src="/transactions-hero-section.png"
-            alt="Dashboard Newbi — Transactions"
+            alt="Dashboard Newbi, transactions"
             className="absolute object-contain rounded-md"
             style={{
               bottom: "110px",
@@ -130,7 +130,7 @@ export default function HeroSection() {
           {/* Mockup iPhone - Position absolue à gauche, en bas */}
           <img
             src="/mockup-iphone-factures-clients.png"
-            alt="Application mobile Newbi — Factures clients"
+            alt="Application mobile Newbi, factures clients"
             className="absolute object-contain rounded-md"
             style={{
               bottom: "30px",
