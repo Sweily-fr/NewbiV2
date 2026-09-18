@@ -40,13 +40,13 @@ export default function HeroSection() {
             {/* Titre principal H1 */}
             {/* Chaque segment est insécable (inline-block) : le titre ne se
                 coupe qu'entre les groupes de sens, jamais au milieu d'un. */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6 text-balance">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-black dark:text-white mb-6 text-balance">
               <span className="inline-block">Gérer sa boîte,</span>{" "}
               <span className="inline-block">ce n'est pas censé être</span>{" "}
               <span className="inline-block">
                 un{" "}
                 <span
-                  className={`${accentSerif.className} italic text-indigo-600 text-[1.15em] leading-none`}
+                  className={`${accentSerif.className} italic font-normal text-indigo-600 text-[1.15em] leading-none`}
                 >
                   deuxième métier
                 </span>
