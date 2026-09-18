@@ -1,15 +1,6 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Chewy } from "next/font/google";
-
-// Typo manuscrite réservée à l'accroche "deuxième métier" du H1
-// (Chewy n'existe qu'en 400 : la graisse vient du dessin de la police)
-const handwriting = Chewy({
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
-});
 
 export default function HeroSection() {
   return (
@@ -39,17 +30,11 @@ export default function HeroSection() {
             {/* Titre principal H1 */}
             {/* Chaque segment est insécable (inline-block) : le titre ne se
                 coupe qu'entre les groupes de sens, jamais au milieu d'un. */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-black dark:text-white mb-6 text-balance">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-black dark:text-white mb-6 text-balance">
               <span className="inline-block">Gérer sa boîte,</span>{" "}
               <span className="inline-block">ce n'est pas censé être</span>{" "}
               <span className="inline-block">
-                un{" "}
-                <span
-                  className={`${handwriting.className} inline-block align-middle text-indigo-600 text-[1.3em] leading-none -rotate-3 origin-center px-1 translate-y-[0.06em]`}
-                >
-                  deuxième métier
-                </span>
-                .
+                un <span className="text-indigo-600">deuxième métier</span>.
               </span>
             </h1>
 
