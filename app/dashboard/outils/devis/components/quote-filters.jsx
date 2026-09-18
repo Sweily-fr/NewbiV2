@@ -23,14 +23,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { Calendar } from "@/src/components/ui/calendar";
+import { DateFilterSubmenu } from "@/src/components/date-filter-submenu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
-import { fr } from "date-fns/locale";
+import { subDays, startOfDay, endOfDay } from "date-fns";
 import { QUOTE_STATUS_LABELS } from "@/src/graphql/quoteQueries";
 
 export default function QuoteFilters({
@@ -195,87 +194,18 @@ export default function QuoteFilters({
               </Badge>
             )}
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-auto p-0">
-            <div className="space-y-0">
-              {/* Plages rapides */}
-              <div className="p-3 pb-4">
-                <p className="text-sm font-normal pb-3">Plages rapides</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs justify-start bg-popover hover:bg-accent"
-                    onClick={() => setQuickDateRange("today")}
-                  >
-                    Aujourd'hui
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs justify-start bg-popover hover:bg-accent"
-                    onClick={() => setQuickDateRange("yesterday")}
-                  >
-                    Hier
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs justify-start bg-popover hover:bg-accent"
-                    onClick={() => setQuickDateRange("last7days")}
-                  >
-                    7 derniers jours
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs justify-start bg-popover hover:bg-accent"
-                    onClick={() => setQuickDateRange("last30days")}
-                  >
-                    30 derniers jours
-                  </Button>
-                </div>
-              </div>
-
-              {/* Calendrier */}
-              <div className="border-t pt-3 pb-5 flex justify-center">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={(range) => {
-                    setDateRange(range || { from: null, to: null });
-                    setDateFilter(range || null);
-                  }}
-                  locale={fr}
-                  numberOfMonths={1}
-                  className="p-0"
-                />
-              </div>
-
-              {/* Affichage de la plage sélectionnée */}
-              {(dateRange?.from || dateRange?.to) && (
-                <div className="border-t pt-3 px-3 pb-3">
-                  <p className="text-xs text-muted-foreground px-2">
-                    {dateRange.from &&
-                      format(dateRange.from, "dd MMM yyyy", { locale: fr })}
-                    {dateRange.to &&
-                      dateRange.from !== dateRange.to &&
-                      ` - ${format(dateRange.to, "dd MMM yyyy", { locale: fr })}`}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs mt-2 w-full"
-                    onClick={() => {
-                      setDateRange({ from: null, to: null });
-                      setDateFilter(null);
-                    }}
-                  >
-                    Effacer
-                  </Button>
-                </div>
-              )}
-            </div>
-          </DropdownMenuSubContent>
+          <DateFilterSubmenu
+            dateRange={dateRange}
+            onSelectRange={(range) => {
+              setDateRange(range || { from: null, to: null });
+              setDateFilter(range || null);
+            }}
+            onQuickRange={setQuickDateRange}
+            onClear={() => {
+              setDateRange({ from: null, to: null });
+              setDateFilter(null);
+            }}
+          />
         </DropdownMenuSub>
 
         {/* Client Filter - Nested Dropdown */}
