@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import * as Y from "yjs";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -109,13 +108,14 @@ export const CollaborativeDescriptionEditor = forwardRef(
     const [status, setStatus] = useState("connecting");
     const unavailableRef = useRef(false);
 
-    // Un document et un provider par tâche ouverte
+    // Un provider (et son document Yjs) par tâche ouverte. On n'importe pas
+    // yjs ici : le document vient du provider, pour que provider, TipTap et
+    // l'éditeur partagent la même instance de la bibliothèque (deux copies =
+    // « Yjs was already imported », mises à jour silencieusement ignorées).
     const { ydoc, provider } = useMemo(() => {
-      const doc = new Y.Doc();
       const prov = new HocuspocusProvider({
         url: getCollabWsUrl(),
         name: collabDocumentName(taskId),
-        document: doc,
         token: async () => (await getJWTToken()) || "",
         onSynced: () => {
           console.info("[Collab] Document synchronisé", taskId);
@@ -131,16 +131,15 @@ export const CollaborativeDescriptionEditor = forwardRef(
           onUnavailable?.("auth");
         },
       });
-      return { ydoc: doc, provider: prov };
+      return { ydoc: prov.document, provider: prov };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [taskId]);
 
     useEffect(
       () => () => {
         provider.destroy();
-        ydoc.destroy();
       },
-      [provider, ydoc],
+      [provider],
     );
 
     // Serveur injoignable : repli sur l'éditeur classique
