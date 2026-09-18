@@ -45,16 +45,18 @@ export default function HeroSection() {
             </h2>
 
             {/* Bouton CTA */}
-            <div className="flex flex-col items-center justify-center mb-8">
+            <div className="flex items-center justify-center mb-8">
               <Link
                 href="/auth/signup"
-                className="rounded-xl px-8 py-3 text-center text-base font-medium transition duration-200 active:scale-[0.98] bg-[#5b50FF] text-white hover:bg-[#4a40e6] w-full sm:w-auto"
+                className="flex flex-col items-center rounded-xl px-8 py-3 text-center transition duration-200 active:scale-[0.98] bg-[#5b50FF] text-white hover:bg-[#4a40e6] w-full sm:w-auto"
               >
-                Commencer gratuitement
+                <span className="text-base font-medium leading-tight">
+                  Commencer gratuitement
+                </span>
+                <span className="text-xs font-normal text-white/75 leading-tight">
+                  sans carte bancaire
+                </span>
               </Link>
-              <span className="mt-2 text-xs text-gray-500">
-                sans carte bancaire
-              </span>
             </div>
 
             {/* Section preuve sociale */}
