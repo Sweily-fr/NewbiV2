@@ -18,6 +18,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { computeAutoSaveSignature } from "./taskFormSignature";
+import { isDescriptionHandledByCollab } from "../components/task-modal/collabConfig";
 import { perfMark } from "@/src/utils/kanbanPerf";
 
 const UPLOAD_TASK_IMAGE = gql`
@@ -133,6 +134,11 @@ export const useKanbanTasks = (boardId, board) => {
   // tâche ouverte (cf. SYNCED_SCALAR_FIELDS) : sert à distinguer une
   // modification locale en cours d'une valeur simplement périmée.
   const serverFormRef = useRef(null);
+  // Signature du dernier formulaire envoyé par l'auto-save : si le serveur
+  // renvoie une valeur différente de ce qu'on lui a envoyé (champ normalisé :
+  // espace en fin de titre, date reformatée…), le champ resterait « sale »
+  // et l'auto-save repartirait à chaque resynchronisation, à l'infini.
+  const lastSentSignatureRef = useRef(null);
 
   // Lazy query pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
   // Chargé uniquement quand on ouvre le modal de détail.
@@ -214,6 +220,12 @@ export const useKanbanTasks = (boardId, board) => {
   // Ref pour savoir si c'est l'utilisateur local qui a déclenché la dernière mutation
   const localMutationRef = useRef(false);
 
+  // Garde-fou : si la tâche ouverte change d'updatedAt en rafale (deux
+  // sources qui se répondent), on cesse de resynchroniser plutôt que de
+  // boucler jusqu'au « Maximum update depth exceeded », et on trace les
+  // valeurs pour trouver la source.
+  const syncBurstRef = useRef([]);
+
   // Synchroniser les données temps réel quand la tâche est mise à jour via subscription
   // Quand updatedAt change, synchroniser taskForm avec les données du board ET refetch les détails
   useEffect(() => {
@@ -221,6 +233,19 @@ export const useKanbanTasks = (boardId, board) => {
 
     const updateKey = `${editingTaskFromBoard.id}-${editingTaskFromBoard.updatedAt}`;
     if (lastUpdateRef.current === updateKey) return;
+
+    const now = Date.now();
+    syncBurstRef.current = syncBurstRef.current
+      .filter((e) => now - e.at < 3000)
+      .concat({ at: now, key: updateKey });
+    if (syncBurstRef.current.length > 12) {
+      console.warn(
+        "[Kanban] Resynchronisation de la tâche en rafale, ignorée :",
+        syncBurstRef.current.slice(-6).map((e) => e.key),
+      );
+      lastUpdateRef.current = updateKey;
+      return;
+    }
 
     // Premier rendu après ouverture du modal : ne pas refetch (déjà fait dans openEditTaskModal)
     if (!lastUpdateRef.current) {
@@ -304,9 +329,23 @@ export const useKanbanTasks = (boardId, board) => {
           tags: remoteTags,
           checklist: remoteChecklist,
         };
-        initialFormRef.current = computeAutoSaveSignature(pureServerForm);
+        const syncedSignature = computeAutoSaveSignature(synced);
+        initialFormRef.current =
+          syncedSignature === lastSentSignatureRef.current
+            ? // Déjà envoyé tel quel : le serveur a eu le dernier mot, on
+              // ne le renvoie pas en boucle
+              syncedSignature
+            : computeAutoSaveSignature(pureServerForm);
         serverFormRef.current = serverSnapshotOf(pureServerForm);
-        return synced;
+
+        // Rien de visible n'a changé (écho de notre propre état, événement
+        // répété) : garder la même référence pour ne pas re-rendre.
+        const unchanged = Object.keys(synced).every((k) =>
+          k === "checklist"
+            ? checklistKey(synced.checklist) === checklistKey(prev.checklist)
+            : synced[k] === prev[k],
+        );
+        return unchanged ? prev : synced;
       });
     }
 
@@ -813,6 +852,7 @@ export const useKanbanTasks = (boardId, board) => {
       return;
     }
 
+    lastSentSignatureRef.current = computeAutoSaveSignature(taskForm);
     try {
       // NOTE: `assignedMembers` est volontairement EXCLU du payload d'auto-save.
       // Les assignations/désassignations sont gérées exclusivement par
@@ -824,7 +864,12 @@ export const useKanbanTasks = (boardId, board) => {
       const input = {
         id: editingTask.id,
         title: taskForm.title,
-        description: taskForm.description,
+        // En édition collaborative, la description est persistée par le
+        // serveur collab (Yjs) : l'envoyer ici écraserait la version partagée
+        // avec un HTML en retard.
+        ...(isDescriptionHandledByCollab(editingTask.id)
+          ? {}
+          : { description: taskForm.description }),
         priority:
           taskForm.priority.toLowerCase() === "none"
             ? ""

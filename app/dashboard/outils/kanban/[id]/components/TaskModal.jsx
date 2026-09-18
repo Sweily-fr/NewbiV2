@@ -88,7 +88,9 @@ import { perfMark } from "@/src/utils/kanbanPerf";
 
 // Sub-components extracted for maintainability
 import { PendingCommentsView } from "./task-modal/PendingCommentsView";
-import { DescriptionEditor } from "./task-modal/DescriptionEditor";
+import { TaskDescriptionField } from "./task-modal/TaskDescriptionField";
+import { isCollabDescriptionEnabled } from "./task-modal/collabConfig";
+import { useSession } from "@/src/lib/auth-client";
 import { TaskModalHeader } from "./task-modal/TaskModalHeader";
 import { computeAutoSaveSignature } from "../hooks/taskFormSignature";
 
@@ -211,6 +213,14 @@ export function TaskModal({
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   // Autres membres qui ont aussi cette tâche ouverte (présence temps réel)
   const viewers = useTaskViewers(isEditing ? taskForm?.id : null);
+  // Identité affichée sur le curseur dans l'éditeur collaboratif
+  const { data: session } = useSession();
+  const collabUser = useMemo(() => {
+    const u = session?.user;
+    if (!u) return null;
+    const name = [u.name, u.lastName].filter(Boolean).join(" ") || u.email;
+    return { name, image: u.image || null };
+  }, [session?.user]);
   const hasViewers = viewers.length > 0;
   const readOnlyTooltip = isReadOnly
     ? isOwner
@@ -1618,7 +1628,11 @@ export function TaskModal({
 
                   {/* Description — sous la grille des propriétés */}
                   <div className="space-y-1 border-t border-border/30 pt-4">
-                    {!showDescription && !taskForm.description ? (
+                    {!showDescription &&
+                    !taskForm.description &&
+                    // En collaboratif le document partagé fait foi : l'éditeur
+                    // est toujours affiché (le cache peut être en retard)
+                    !(isCollabDescriptionEnabled() && isEditing) ? (
                       <button
                         type="button"
                         onClick={() => setShowDescription(true)}
@@ -1627,8 +1641,10 @@ export function TaskModal({
                         Ajouter une description...
                       </button>
                     ) : (
-                      <DescriptionEditor
+                      <TaskDescriptionField
                         ref={descriptionEditorRef}
+                        taskId={isEditing ? taskForm?.id : null}
+                        user={collabUser}
                         value={taskForm.description}
                         onChange={(html) =>
                           setTaskForm((prev) => ({
@@ -1830,7 +1846,8 @@ export function TaskModal({
 
                   {/* Description - Collapse comme sur desktop */}
                   <div className="space-y-2">
-                    {!showDescription ? (
+                    {!showDescription &&
+                    !(isCollabDescriptionEnabled() && isEditing) ? (
                       <button
                         type="button"
                         onClick={() => setShowDescription(true)}
@@ -1844,8 +1861,10 @@ export function TaskModal({
                         <Label className="text-sm font-normal">
                           Description
                         </Label>
-                        <DescriptionEditor
+                        <TaskDescriptionField
                           ref={descriptionEditorRef}
+                          taskId={isEditing ? taskForm?.id : null}
+                          user={collabUser}
                           value={taskForm.description}
                           onChange={(html) =>
                             setTaskForm((prev) => ({
