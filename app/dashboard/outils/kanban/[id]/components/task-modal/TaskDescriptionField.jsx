@@ -3,7 +3,7 @@
 import { forwardRef, useCallback, useState } from "react";
 import { DescriptionEditor } from "./DescriptionEditor";
 import { CollaborativeDescriptionEditor } from "./CollaborativeDescriptionEditor";
-import { isCollabDescriptionEnabled } from "./collabConfig";
+import { isCollabDescriptionEnabled, markCollabFallback } from "./collabConfig";
 
 /**
  * Choisit l'éditeur de description : collaboratif (lettre par lettre) quand le

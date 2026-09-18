@@ -16,6 +16,24 @@ export const getCollabWsUrl = () => {
 
 export const collabDocumentName = (taskId) => `kanban-task:${taskId}`;
 
+// Tâches dont l'éditeur collaboratif est retombé sur l'éditeur classique
+// (serveur injoignable, auth refusée) : pour elles, la description doit à
+// nouveau être enregistrée par l'auto-save du formulaire, sinon les frappes
+// seraient perdues.
+const fallbackTaskIds = new Set();
+export const markCollabFallback = (taskId) => {
+  if (taskId) fallbackTaskIds.add(String(taskId));
+};
+export const clearCollabFallback = (taskId) => {
+  if (taskId) fallbackTaskIds.delete(String(taskId));
+};
+// Vrai quand la description de cette tâche est persistée par le serveur
+// collab (et ne doit donc PAS être envoyée par updateTask).
+export const isDescriptionHandledByCollab = (taskId) =>
+  isCollabDescriptionEnabled() &&
+  !!taskId &&
+  !fallbackTaskIds.has(String(taskId));
+
 // Couleur du curseur : même palette que les avatars (UserAvatar), en hex
 // puisque le curseur est stylé en inline par l'extension TipTap.
 const CURSOR_COLORS = [

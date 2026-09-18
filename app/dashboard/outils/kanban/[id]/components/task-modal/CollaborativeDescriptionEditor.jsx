@@ -82,7 +82,7 @@ const TOOLBAR = [
 
 // Au-delà de ce délai sans synchronisation, on considère le serveur collab
 // injoignable et on repasse sur l'éditeur classique (voir TaskDescriptionField).
-const SYNC_TIMEOUT_MS = 6000;
+const SYNC_TIMEOUT_MS = 15000;
 
 /**
  * Éditeur de description partagé en temps réel (Yjs + Hocuspocus) : chaque
@@ -117,8 +117,14 @@ export const CollaborativeDescriptionEditor = forwardRef(
         name: collabDocumentName(taskId),
         document: doc,
         token: async () => (await getJWTToken()) || "",
-        onSynced: () => setSynced(true),
-        onStatus: ({ status: s }) => setStatus(s),
+        onSynced: () => {
+          console.info("[Collab] Document synchronisé", taskId);
+          setSynced(true);
+        },
+        onStatus: ({ status: s }) => {
+          console.info("[Collab] Connexion:", s);
+          setStatus(s);
+        },
         onAuthenticationFailed: () => {
           if (unavailableRef.current) return;
           unavailableRef.current = true;
@@ -153,7 +159,9 @@ export const CollaborativeDescriptionEditor = forwardRef(
         immediatelyRender: false,
         extensions: [
           // L'annulation est gérée par Yjs (Collaboration), pas par l'éditeur
-          StarterKit.configure({ undoRedo: false }),
+          // Même schéma que le serveur (collabExtensions). TrailingNode
+          // désactivé : il modifierait le document dès l'ouverture.
+          StarterKit.configure({ undoRedo: false, trailingNode: false }),
           Collaboration.configure({ document: ydoc }),
           CollaborationCaret.configure({
             provider,
