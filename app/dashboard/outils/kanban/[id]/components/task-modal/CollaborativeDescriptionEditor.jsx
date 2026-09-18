@@ -4,7 +4,6 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -108,11 +107,17 @@ export const CollaborativeDescriptionEditor = forwardRef(
     const [status, setStatus] = useState("connecting");
     const unavailableRef = useRef(false);
 
-    // Un provider (et son document Yjs) par tâche ouverte. On n'importe pas
-    // yjs ici : le document vient du provider, pour que provider, TipTap et
-    // l'éditeur partagent la même instance de la bibliothèque (deux copies =
-    // « Yjs was already imported », mises à jour silencieusement ignorées).
-    const { ydoc, provider } = useMemo(() => {
+    // Un provider (et son document Yjs) par tâche ouverte, créé dans un
+    // effet et non un useMemo : en développement React monte/démonte deux
+    // fois (StrictMode), un provider mémoïsé serait détruit par le nettoyage
+    // puis réutilisé, et l'éditeur écrirait dans un document mort. On
+    // n'importe pas yjs ici : le document vient du provider, pour que
+    // provider, TipTap et l'éditeur partagent la même instance de la
+    // bibliothèque (deux copies = mises à jour silencieusement ignorées).
+    const [provider, setProvider] = useState(null);
+    useEffect(() => {
+      setSynced(false);
+      setStatus("connecting");
       const prov = new HocuspocusProvider({
         url: getCollabWsUrl(),
         name: collabDocumentName(taskId),
@@ -131,16 +136,13 @@ export const CollaborativeDescriptionEditor = forwardRef(
           onUnavailable?.("auth");
         },
       });
-      return { ydoc: prov.document, provider: prov };
+      setProvider(prov);
+      return () => {
+        prov.destroy();
+        setProvider(null);
+      };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [taskId]);
-
-    useEffect(
-      () => () => {
-        provider.destroy();
-      },
-      [provider],
-    );
 
     // Serveur injoignable : repli sur l'éditeur classique
     useEffect(() => {
@@ -156,20 +158,23 @@ export const CollaborativeDescriptionEditor = forwardRef(
     const editor = useEditor(
       {
         immediatelyRender: false,
-        extensions: [
-          // L'annulation est gérée par Yjs (Collaboration), pas par l'éditeur
-          // Même schéma que le serveur (collabExtensions). TrailingNode
-          // désactivé : il modifierait le document dès l'ouverture.
-          StarterKit.configure({ undoRedo: false, trailingNode: false }),
-          Collaboration.configure({ document: ydoc }),
-          CollaborationCaret.configure({
-            provider,
-            user: {
-              name: user?.name || "Membre",
-              color: cursorColorFor(user?.name),
-            },
-          }),
-        ],
+        // Même schéma que le serveur (collabExtensions). L'annulation est
+        // gérée par Yjs, pas par l'éditeur ; TrailingNode désactivé (il
+        // modifierait le document dès l'ouverture). Tant que le provider
+        // n'existe pas, éditeur vide non éditable.
+        extensions: provider
+          ? [
+              StarterKit.configure({ undoRedo: false, trailingNode: false }),
+              Collaboration.configure({ document: provider.document }),
+              CollaborationCaret.configure({
+                provider,
+                user: {
+                  name: user?.name || "Membre",
+                  color: cursorColorFor(user?.name),
+                },
+              }),
+            ]
+          : [StarterKit.configure({ undoRedo: false, trailingNode: false })],
         editable: false,
         onFocus: () => onFocusProp?.(),
         onBlur: () => onBlurProp?.(),
@@ -181,14 +186,14 @@ export const CollaborativeDescriptionEditor = forwardRef(
           },
         },
       },
-      [ydoc, provider],
+      [provider],
     );
 
     // Éditable seulement une fois le document reçu du serveur : sinon on
     // taperait dans un document vide qui écraserait le contenu à la fusion.
     useEffect(() => {
-      if (editor) editor.setEditable(synced);
-    }, [editor, synced]);
+      if (editor) editor.setEditable(!!provider && synced);
+    }, [editor, provider, synced]);
 
     // L'ancien éditeur exposait commit() pour forcer la propagation avant une
     // sauvegarde : ici le serveur persiste lui-même, rien à faire.
