@@ -1,12 +1,13 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Caveat } from "next/font/google";
+import { Chewy } from "next/font/google";
 
 // Typo manuscrite réservée à l'accroche "deuxième métier" du H1
-const handwriting = Caveat({
+// (Chewy n'existe qu'en 400 : la graisse vient du dessin de la police)
+const handwriting = Chewy({
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -44,7 +45,7 @@ export default function HeroSection() {
               <span className="inline-block">
                 un{" "}
                 <span
-                  className={`${handwriting.className} text-indigo-600 font-bold text-[1.35em] leading-none`}
+                  className={`${handwriting.className} inline-block text-indigo-600 text-[1.3em] leading-none -rotate-3 origin-bottom-left px-1`}
                 >
                   deuxième métier
                 </span>
