@@ -36,15 +36,17 @@ export default function LpShell({ children }) {
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/auth/login"
-              className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1"
+              className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1 whitespace-nowrap"
             >
               Connexion
             </Link>
             <Link
               href={SIGNUP_HREF}
-              className="inline-flex items-center rounded-lg bg-[#5b50FF] hover:bg-[#4a40e6] text-white text-sm font-medium px-4 py-2 transition-colors"
+              className="inline-flex items-center whitespace-nowrap rounded-lg bg-[#5b50FF] hover:bg-[#4a40e6] text-white text-sm font-medium px-3.5 sm:px-4 py-2 transition-colors"
             >
-              {CTA_LABEL}
+              {/* Libellé court sur mobile pour tenir sur une ligne */}
+              <span className="sm:hidden">Essai gratuit</span>
+              <span className="hidden sm:inline">{CTA_LABEL}</span>
             </Link>
           </div>
         </div>
