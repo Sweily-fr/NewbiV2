@@ -36,6 +36,7 @@ import { useSession, performLogout } from "@/src/lib/auth-client";
 import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
+import { sendAttribution } from "@/src/lib/attribution";
 
 // Compte créé il y a moins de 15 min : suffisant pour distinguer un retour
 // OAuth d'inscription d'un ancien utilisateur qui reprend son onboarding.
@@ -166,6 +167,8 @@ function SignUpPageContent() {
       // utilisateur, donc sans effet pour une inscription email déjà comptée.
       if (isFreshlyCreated(session.user)) {
         trackSignupConversion(session.user.id);
+        // Idem pour l'attribution (dédoublonnée par id utilisateur).
+        sendAttribution(session.user.id);
       }
     }
     setSessionHydrated(true);
