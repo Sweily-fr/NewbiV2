@@ -2,6 +2,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
+import AttributionCapture from "@/src/components/AttributionCapture";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
@@ -190,6 +191,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="font-sans antialiased">
         <ForceDesktopViewport />
+        <AttributionCapture />
         <ApolloWrapper>
           <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
             {children}

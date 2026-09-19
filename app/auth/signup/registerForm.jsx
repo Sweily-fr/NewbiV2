@@ -11,6 +11,7 @@ import { registerUser, verifyEmail } from "../../../src/lib/auth/api";
 import { signUp } from "../../../src/lib/auth-client";
 import posthog from "posthog-js";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
+import { sendAttribution } from "@/src/lib/attribution";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -133,6 +134,9 @@ const RegisterFormContent = ({ onSuccess: onSuccessProp }) => {
           // Conversion Google Ads « Inscription » : au compte réellement créé,
           // pas au clic sur le bouton (formulaires en erreur exclus).
           trackSignupConversion(ctx.data?.user?.id || formData.email);
+          // Attribution Google Ads / UTM capturée à l'arrivée sur le site,
+          // rattachée au compte (écriture unique côté serveur).
+          if (ctx.data?.user?.id) sendAttribution(ctx.data.user.id);
 
           // Track signup event and identify user
           posthog.identify(ctx.data?.user?.id || formData.email, {
