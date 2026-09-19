@@ -408,7 +408,22 @@ const errorLink = onError(
                 await new Promise((resolve) => setTimeout(resolve, 2000));
                 const secondCheck = await authClient
                   .getSession({ query: { disableCookieCache: true } })
-                  .catch(() => null);
+                  .catch((err) => ({ data: null, error: err }));
+
+                if (secondCheck?.error) {
+                  // Même règle que pour le 1er check : un serveur d'auth en
+                  // erreur n'est pas une session révoquée, on ne déconnecte pas.
+                  console.error(
+                    "[Auth Retry] getSession() en erreur au 2e check (transitoire), pas de redirection:",
+                    secondCheck.error?.message || secondCheck.error,
+                  );
+                  observer.error(graphQLErrors[0]);
+                  _pendingRetryQueue.forEach((pending) =>
+                    pending.observer.error(graphQLErrors[0]),
+                  );
+                  _pendingRetryQueue = [];
+                  return;
+                }
 
                 if (secondCheck?.data?.user) {
                   console.warn(

@@ -276,6 +276,11 @@ function setCachedAccess(cacheKey, result) {
   });
 }
 
+// Délais entre les tentatives de récupération de session : après une veille
+// du poste ou une coupure Mongo, le pool met quelques secondes à se rétablir.
+// Le dernier délai est 0 : pas d'attente après l'ultime échec.
+const SESSION_FETCH_RETRY_DELAYS_MS = [1000, 2000, 3000, 0];
+
 /**
  * Server Component Layout pour le Dashboard
  * Vérifie l'authentification ET l'abonnement côté serveur avant de rendre le contenu
@@ -284,15 +289,35 @@ export default async function DashboardLayout({ children }) {
   // Récupérer les headers de la requête
   const headersList = await headers();
 
-  // Récupérer la session utilisateur côté serveur
+  // Récupérer la session utilisateur côté serveur.
+  // Une erreur ici (Mongo injoignable, pool réinitialisé après une veille,
+  // Better Auth en 500) n'est PAS une absence de session : on réessaie
+  // brièvement, puis on laisse l'erreur remonter à app/error.jsx (bouton
+  // « Réessayer »). Rediriger vers le login déconnectait l'utilisateur
+  // alors que sa session était intacte en base.
   let session;
-  try {
-    session = await auth.api.getSession({
-      headers: headersList,
-    });
-  } catch (error) {
-    console.error("[Dashboard Layout] Erreur récupération session:", error);
-    redirect("/auth/login");
+  let sessionError = null;
+  for (let attempt = 0; attempt < SESSION_FETCH_RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      session = await auth.api.getSession({
+        headers: headersList,
+      });
+      sessionError = null;
+      break;
+    } catch (error) {
+      sessionError = error;
+      console.error(
+        `[Dashboard Layout] Erreur récupération session (tentative ${attempt + 1}/${SESSION_FETCH_RETRY_DELAYS_MS.length}):`,
+        error?.message || error,
+      );
+      const delay = SESSION_FETCH_RETRY_DELAYS_MS[attempt];
+      if (delay > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  if (sessionError) {
+    throw sessionError;
   }
 
   // Vérifier l'authentification
