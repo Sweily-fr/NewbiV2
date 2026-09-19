@@ -38,15 +38,16 @@ export default function HeroSection() {
             </p>
 
             {/* Titre principal H1 */}
-            {/* Chaque segment est insécable (inline-block) : le titre ne se
-                coupe qu'entre les groupes de sens, jamais au milieu d'un. */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-black dark:text-white mb-6 text-balance">
-              <span className="inline-block">Gérer sa boîte,</span>{" "}
-              <span className="inline-block">ce n'est pas censé être</span>{" "}
-              <span className="inline-block">
+            {/* Sur mobile le titre coule librement (text-balance équilibre les
+                lignes, seule l'accroche reste insécable). À partir de sm, chaque
+                segment est insécable : coupure uniquement entre groupes de sens. */}
+            <h1 className="text-[2rem] leading-[1.1] sm:text-5xl sm:leading-tight lg:text-6xl font-extrabold tracking-tight text-black dark:text-white mb-6 text-balance">
+              <span className="sm:inline-block">Gérer sa boîte,</span>{" "}
+              <span className="sm:inline-block">ce n'est pas censé être</span>{" "}
+              <span className="sm:inline-block">
                 un{" "}
                 <span
-                  className={`${accentSerif.className} italic font-normal text-indigo-600 text-[1.15em] leading-none`}
+                  className={`${accentSerif.className} italic font-normal whitespace-nowrap text-indigo-600 text-[1.15em] leading-none`}
                 >
                   deuxième métier
                 </span>
