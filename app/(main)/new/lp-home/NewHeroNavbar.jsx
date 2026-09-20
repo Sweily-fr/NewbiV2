@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Equal,
   X,
@@ -24,6 +25,11 @@ import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button"
 import React from "react";
 import { cn } from "@/src/lib/utils";
 import { useSession } from "@/src/lib/auth-client";
+import { SIGNUP_HREF, CTA_LABEL } from "@/app/lp/_components/lp-config";
+
+// Landing pages Ads sur lesquelles la navbar adapte ses CTA (libellé +
+// couleur du bouton d'inscription). À étendre si d'autres LP l'utilisent.
+const ADS_LP_PATHS = ["/lp/facturation-electronique"];
 
 const menuItems = [
   {
@@ -148,6 +154,11 @@ const menuItems = [
 export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
+  const pathname = usePathname();
+  const isAdsLp = ADS_LP_PATHS.includes(pathname);
+  // Sur une LP Ads : « Commencer gratuitement » en violet, sinon « Inscription » noir.
+  const signupHref = isAdsLp ? SIGNUP_HREF : "/auth/signup";
+  const signupLabel = isAdsLp ? CTA_LABEL : "Inscription";
 
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -394,9 +405,13 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       <span>Connexion</span>
                     </Link>
                   </Button>
-                  <Button asChild size="md">
-                    <Link href="/auth/signup">
-                      <span>Inscription</span>
+                  <Button
+                    asChild
+                    size="md"
+                    variant={isAdsLp ? "primary" : "default"}
+                  >
+                    <Link href={signupHref}>
+                      <span>{signupLabel}</span>
                     </Link>
                   </Button>
                 </>
@@ -523,14 +538,18 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       <Button
                         asChild
                         size="lg"
-                        className="w-full rounded-lg py-2 text-sm bg-[#202020]"
+                        variant={isAdsLp ? "primary" : "default"}
+                        className={cn(
+                          "w-full rounded-lg py-2 text-sm",
+                          !isAdsLp && "bg-[#202020]",
+                        )}
                       >
                         <Link
-                          href="/auth/signup"
+                          href={signupHref}
                           className="flex items-center justify-center"
                           onClick={() => setMenuState(false)}
                         >
-                          <span>Inscription</span>
+                          <span>{signupLabel}</span>
                         </Link>
                       </Button>
                       <Button

@@ -1,60 +1,110 @@
-import { Instrument_Serif } from "next/font/google";
 import LpCtaButton from "./LpCtaButton";
+import { CTA_SUBLABEL } from "./lp-config";
 
-const accentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: ["400"],
-  style: ["italic"],
-  display: "swap",
-});
-
-// Chronologie concrète (« lundi / mercredi / vendredi » ou « jour 1 / 10 min
-// plus tard / chaque mois ») plutôt qu'un « en 3 étapes » abstrait.
-// Steps : { when, title, desc, aside? } — `aside` est une petite ligne de
-// résultat affichée en bas de la carte (ex. « Devis signé en 2 min »).
-export default function LpSteps({ title, intro, steps, ctaLabel }) {
+// Chronologie en 3 colonnes : titre centré, puis pour chaque étape une ligne
+// en haut, un check + libellé, le moment en gros, et la description.
+// Steps : { when, title?, desc, aside? } — `title` (optionnel) ouvre le
+// paragraphe en gras. `variant` : "dark" (fond #202020, défaut) ou "light".
+export default function LpSteps({
+  title,
+  intro,
+  steps,
+  ctaLabel = "Essayer gratuitement",
+  variant = "dark",
+}) {
+  const dark = variant === "dark";
   return (
-    <section className="px-5 py-14 md:py-20 bg-[#202020] text-white">
+    <section
+      className={`px-5 py-14 md:py-20 ${
+        dark ? "bg-[#202020] text-white" : "bg-[#F5F5F7] text-gray-950"
+      }`}
+    >
       <div className="max-w-6xl mx-auto">
-        <div className="max-w-2xl mb-12 md:mb-16">
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance mb-4">
+        <div className="max-w-2xl mx-auto text-center mb-12 md:mb-16">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance mb-5">
             {title}
           </h2>
-          {intro && <p className="text-white/70 text-balance">{intro}</p>}
+          {intro && (
+            <p
+              className={`text-balance ${dark ? "text-white/70" : "text-gray-600"}`}
+            >
+              {intro}
+            </p>
+          )}
         </div>
 
-        <ol className="relative grid md:grid-cols-3 gap-8 md:gap-6">
-          {/* Ligne de temps (desktop) */}
-          <div className="hidden md:block absolute top-3 left-0 right-0 h-px bg-white/15" />
+        <ol className="grid md:grid-cols-3 gap-10 md:gap-8">
           {steps.map((step) => (
-            <li key={step.title} className="relative md:pt-10">
-              <span className="hidden md:block absolute top-1.5 left-0 size-3 rounded-full bg-[#5A50FF] ring-4 ring-[#202020]" />
-              <p
-                className={`${accentSerif.className} italic text-2xl text-[#B9B3FF] mb-3`}
-              >
-                {step.when}
-              </p>
-              <h3 className="text-lg font-semibold leading-snug mb-2">
-                {step.title}
-              </h3>
-              <p className="text-sm text-white/70 leading-relaxed">
-                {step.desc}
-              </p>
+            <li
+              key={step.when}
+              className={`border-t-2 pt-6 ${dark ? "border-white" : "border-gray-950"}`}
+            >
               {step.aside && (
-                <p className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-xs text-white/80">
-                  <span className="size-1.5 rounded-full bg-emerald-400" />
+                <p
+                  className={`flex items-center gap-2 text-sm mb-4 ${
+                    dark ? "text-white/80" : "text-gray-800"
+                  }`}
+                >
+                  <span
+                    className={`flex size-5 items-center justify-center rounded-full ${
+                      dark
+                        ? "bg-white text-[#202020]"
+                        : "bg-gray-950 text-white"
+                    }`}
+                  >
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  </span>
                   {step.aside}
                 </p>
               )}
+              <h3 className="text-2xl md:text-[1.75rem] font-medium tracking-tight leading-tight mb-3">
+                {step.when}
+              </h3>
+              <p
+                className={`text-base leading-relaxed ${
+                  dark ? "text-white/70" : "text-gray-700"
+                }`}
+              >
+                {step.title && (
+                  <>
+                    <span
+                      className={`font-medium ${dark ? "text-white" : "text-gray-950"}`}
+                    >
+                      {step.title}.
+                    </span>{" "}
+                  </>
+                )}
+                {step.desc}
+              </p>
             </li>
           ))}
         </ol>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 mt-14">
-          <LpCtaButton label={ctaLabel} className="w-full sm:w-auto" />
-          <p className="text-sm text-white/60">
-            Pas de paramétrage, pas de formation. Tu commences par ta première
-            facture.
+        <div className="flex flex-col items-center mt-14">
+          <LpCtaButton
+            label={ctaLabel}
+            sublabel={null}
+            dark={!dark}
+            light={dark}
+            className="w-full sm:w-auto"
+          />
+          <p
+            className={`text-xs text-center pt-3 ${
+              dark ? "text-white/60" : "text-gray-500"
+            }`}
+          >
+            {CTA_SUBLABEL}
           </p>
         </div>
       </div>

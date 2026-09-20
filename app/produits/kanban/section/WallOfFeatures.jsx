@@ -135,9 +135,7 @@ function ParentTile({ icon: Icon, label, color = "#5A50FF" }) {
       >
         <Icon size={24} style={{ color }} />
       </div>
-      <span className="text-base font-semibold text-neutral-900">
-        {label}
-      </span>
+      <span className="text-base font-semibold text-neutral-900">{label}</span>
     </>
   );
 }
@@ -146,14 +144,14 @@ export default function WallOfFeatures() {
   return (
     <section className="pt-10 md:pt-20 lg:pt-22 relative overflow-hidden">
       <div className="text-center mb-12 md:mb-16 px-4">
-        <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 mb-4">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
           Tout ce dont vous avez besoin,
           <br className="hidden sm:block" />
           dans une seule plateforme
         </h2>
         <p className="text-md font-normal tracking-tight text-gray-600 mx-auto max-w-2xl">
-          +30 fonctionnalités pour gérer vos projets, votre facturation et
-          votre activité au quotidien.
+          +30 fonctionnalités pour gérer vos projets, votre facturation et votre
+          activité au quotidien.
         </p>
       </div>
 
@@ -161,16 +159,32 @@ export default function WallOfFeatures() {
       <div className="block md:hidden px-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-[#F8F9FA] rounded-2xl overflow-hidden aspect-square">
-            <img src="/images/wall-projets-preview.png" alt="Projets" className="w-full h-full object-contain" />
+            <img
+              src="/images/wall-projets-preview.png"
+              alt="Projets"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="bg-[#F8F9FA] rounded-2xl overflow-hidden aspect-square">
-            <img src="/images/wall-vue-liste-preview.png" alt="Vue Liste" className="w-full h-full object-contain" />
+            <img
+              src="/images/wall-vue-liste-preview.png"
+              alt="Vue Liste"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="bg-[#F8F9FA] rounded-2xl overflow-hidden aspect-square">
-            <img src="/images/wall-vue-gantt-preview.png" alt="Vue Gantt" className="w-full h-full object-contain" />
+            <img
+              src="/images/wall-vue-gantt-preview.png"
+              alt="Vue Gantt"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="bg-[#F8F9FA] rounded-2xl overflow-hidden aspect-square">
-            <img src="/images/wall-collaboration-preview.png" alt="Collaboration" className="w-full h-full object-contain" />
+            <img
+              src="/images/wall-collaboration-preview.png"
+              alt="Collaboration"
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
       </div>
@@ -187,7 +201,10 @@ export default function WallOfFeatures() {
         <div className="grid grid-cols-10">
           {/* Empty row */}
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={`et-${i}`} className="py-6 border-b border-r border-[#EEEEEE]" />
+            <div
+              key={`et-${i}`}
+              className="py-6 border-b border-r border-[#EEEEEE]"
+            />
           ))}
           {/* Row 1 */}
           {row1.map((f, i) => (
@@ -278,11 +295,13 @@ export default function WallOfFeatures() {
           ))}
           {/* Empty row */}
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={`eb-${i}`} className="py-6 border-b border-r border-[#EEEEEE]" />
+            <div
+              key={`eb-${i}`}
+              className="py-6 border-b border-r border-[#EEEEEE]"
+            />
           ))}
         </div>
       </div>
-
     </section>
   );
 }

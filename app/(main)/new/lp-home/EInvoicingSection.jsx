@@ -34,7 +34,7 @@ export default function EInvoicingSection({ maxWidth = "max-w-6xl" }) {
                 Newbi est prêt, et toi ?
               </span>
 
-              <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-gray-950 mb-4">
+              <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-gray-950 mb-4">
                 Facturation électronique
               </h2>
 

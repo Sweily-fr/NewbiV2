@@ -16,7 +16,7 @@ export default function AchatsGovernanceSection() {
           <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
             GESTION DES ACHATS
           </span>
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 mb-4">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
             Maîtrisez chaque dépense de votre entreprise
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 mx-auto mb-8 max-w-2xl">
