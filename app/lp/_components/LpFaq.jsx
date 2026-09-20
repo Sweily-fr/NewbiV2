@@ -19,11 +19,15 @@ export function buildFaqJsonLd(items) {
   };
 }
 
-export default function LpFaq({ items, title = "Questions fréquentes" }) {
+export default function LpFaq({
+  items,
+  title = "Questions fréquentes",
+  id = "lp-faq",
+}) {
   return (
-    <section className="px-5 py-14 md:py-20">
+    <section id={id} className="px-5 py-14 md:py-20 scroll-mt-24">
       <div className="mx-auto w-full max-w-3xl">
-        <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-center text-gray-950 mb-10">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-center text-gray-950 mb-12">
           {title}
         </h2>
         <Accordion

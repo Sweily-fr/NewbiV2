@@ -55,7 +55,7 @@ export default function TestimonialsSplit() {
           <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
             Recommandé par toute une communauté
           </span>
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-gray-950 mb-4">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-gray-950 mb-4">
             Vous en parlez mieux que nous
           </h2>
           <p className="text-base text-gray-600">
@@ -94,7 +94,6 @@ export default function TestimonialsSplit() {
             ))}
           </div>
         </div>
-
       </div>
     </section>
   );

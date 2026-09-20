@@ -11,7 +11,7 @@ export default function LpBenefits({ eyebrow, title, subtitle, items }) {
               {eyebrow}
             </span>
           )}
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 mb-4">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
             {title}
           </h2>
           {subtitle && <p className="text-gray-600 text-balance">{subtitle}</p>}

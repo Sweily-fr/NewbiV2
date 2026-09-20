@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useSession } from "@/src/lib/auth-client";
+import { usePathname } from "next/navigation";
 import { Heart } from "lucide-react";
 
 // Logos officiels des réseaux sociaux (SVG servis depuis /public/social/*.svg).
@@ -97,6 +98,10 @@ const Footer7 = ({
   legalLinks = defaultLegalLinks,
 }) => {
   const { data: session } = useSession();
+  const pathname = usePathname();
+  // Titre du bloc CTA adapté à la LP facturation électronique
+  const isFactElecLp = pathname === "/lp/facturation-electronique";
+
   // const { openCookieSettings } = useCookieConsent();
 
   // Helper function to get the appropriate link based on authentication
@@ -112,14 +117,24 @@ const Footer7 = ({
             {/* <h2 className="font-mono text-xs/5 font-medium tracking-widest text-gray-500 uppercase">
               Commencez gratuitement aujourd'hui
             </h2> */}
-            <p className="mt-4 md:mt-6 text-xl md:text-2xl lg:text-4xl font-normal tracking-tight text-gray-950">
-              Toi aussi, gagne du temps.
-              <br className="hidden md:block" />
-              <span className="md:hidden"> </span>Commence gratuitement
-              aujourd'hui.
+            <p className="mt-4 md:mt-6 text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
+              {isFactElecLp ? (
+                <>
+                  Conforme en un clic.
+                  <br className="hidden md:block" />
+                  <span className="md:hidden"> </span>Commence gratuitement.
+                </>
+              ) : (
+                <>
+                  Toi aussi, gagne du temps.
+                  <br className="hidden md:block" />
+                  <span className="md:hidden"> </span>Commence gratuitement
+                  aujourd'hui.
+                </>
+              )}
             </p>
           </hgroup>
-          <div className="mt-4 md:mt-6 flex justify-center">
+          <div className="mt-8 md:mt-10 flex justify-center">
             <Link
               href="/auth/signup"
               className="inline-block rounded-xl px-8 py-3 text-center text-base font-normal transition duration-150 active:scale-[0.98] bg-[#202020] text-white dark:bg-white dark:text-black hover:bg-gray-800"
@@ -444,7 +459,8 @@ const Footer7 = ({
             </div>
           </div>
         </div>
-        <div className="px-4 md:px-0 pt-4 pb-5 flex flex-wrap items-center gap-4">
+        {/* Badges (compatible facturation électronique, FranceSaaS, France Num) alignés à droite */}
+        <div className="px-4 md:px-0 pt-4 pb-5 flex flex-wrap items-center justify-end gap-4">
           <Link
             href="/produits/facturation-electronique"
             className="inline-block"

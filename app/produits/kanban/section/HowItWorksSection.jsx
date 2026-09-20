@@ -12,7 +12,7 @@ export default function HowItWorksSection() {
           <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5851ff] mb-3">
             3 VUES, 1 SEUL OUTIL
           </span>
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 mb-4">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
             Pilotez vos projets comme vous voulez
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 mx-auto max-w-2xl">
@@ -29,7 +29,8 @@ export default function HowItWorksSection() {
                 Vue Board
               </h3>
               <p className="text-base text-gray-600 max-w-md mb-6">
-                Visualisez l&apos;avancement de vos tâches en colonnes. Glissez-déposez pour mettre à jour le statut en un instant.
+                Visualisez l&apos;avancement de vos tâches en colonnes.
+                Glissez-déposez pour mettre à jour le statut en un instant.
               </p>
               <Link
                 href="/auth/register"
@@ -57,7 +58,8 @@ export default function HowItWorksSection() {
                   Vue Liste
                 </h3>
                 <p className="text-sm text-gray-600 max-w-sm">
-                  Affichez toutes vos tâches en tableau avec statut, priorité, assigné et échéance.
+                  Affichez toutes vos tâches en tableau avec statut, priorité,
+                  assigné et échéance.
                 </p>
               </div>
               <div className="relative mt-4 -mx-4 lg:absolute lg:bottom-0 lg:right-0 lg:mt-0 lg:mx-0 lg:w-[150%] lg:translate-x-[45%] lg:translate-y-[65%]">
@@ -76,7 +78,8 @@ export default function HowItWorksSection() {
                   Vue Gantt
                 </h3>
                 <p className="text-sm text-gray-600 max-w-sm">
-                  Planifiez vos projets sur une timeline et visualisez les dépendances entre les tâches.
+                  Planifiez vos projets sur une timeline et visualisez les
+                  dépendances entre les tâches.
                 </p>
               </div>
               <div className="relative mt-4 -mx-4 lg:absolute lg:bottom-0 lg:right-0 lg:mt-0 lg:mx-0 lg:w-[150%] lg:translate-x-[45%] lg:translate-y-[65%]">

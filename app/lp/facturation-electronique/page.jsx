@@ -1,20 +1,31 @@
-import {
-  InvoiceListVisual,
-  FormatVisual,
-  LifecycleVisual,
-  InboxVisual,
-  ArchiveVisual,
-  WhatsappVisual,
-} from "../_components/LpVisuals";
+import {} from // InvoiceListVisual,
+// FormatVisual,
+// LifecycleVisual,
+// InboxVisual,
+// ArchiveVisual,
+// WhatsappVisual,
+"../_components/LpVisuals";
 import LpShell from "../_components/LpShell";
-import LpHero from "../_components/LpHero";
-import LpTrustBar from "../_components/LpTrustBar";
-import LpBenefits from "../_components/LpBenefits";
+// import LpHero from "../_components/LpHero";
+import HeroSection from "./section/hero-section";
+import FeatureBento from "./section/FeatureBento";
+import ConcernedChecker from "./section/ConcernedChecker";
+// import LpTrustBar from "../_components/LpTrustBar";
+import LpTrustFeatures from "../_components/LpTrustFeatures";
+import { Euro, Archive, Star, MessageCircle, ShieldCheck } from "lucide-react";
+// import LpBenefits from "../_components/LpBenefits";
+import LpEssentials from "../_components/LpEssentials";
+import {
+  LawVisual,
+  AutomationVisual,
+  StartVisual,
+} from "./section/EssentialsVisuals";
 import LpSteps from "../_components/LpSteps";
 import LpTestimonials from "../_components/LpTestimonials";
 import HomePricingSection from "@/app/(main)/new/lp-home/HomePricingSection";
 import LpFaq, { buildFaqJsonLd } from "../_components/LpFaq";
 import LpFinalCta from "../_components/LpFinalCta";
+import { FacturationBanner } from "@/app/produits/factures/section/FacturationBanner";
 
 // Landing page Google Ads — intention « facturation électronique / réforme 2026 ».
 // noindex : page réservée au trafic payant, pour ne pas concurrencer
@@ -29,46 +40,113 @@ export const metadata = {
   alternates: { canonical: "/produits/facturation-electronique" },
 };
 
-const TRUST = [
-  "Formats Factur-X, UBL, CII",
-  "Archivage légal 10 ans inclus",
-  "Transmission via plateforme agréée",
-  "Sans surcoût, dans toutes les formules",
-  "Support humain sur WhatsApp",
+// Ancien bandeau de réassurance (5 points), remplacé par TRUST_FEATURES.
+// const TRUST = [
+//   "Formats Factur-X, UBL, CII",
+//   "Archivage légal 10 ans inclus",
+//   "Transmission via plateforme agréée",
+//   "Sans surcoût, dans toutes les formules",
+//   "Support humain sur WhatsApp",
+// ];
+
+// 3 arguments clés sous le hero : prix, conformité, archivage.
+const TRUST_FEATURES = [
+  {
+    icon: <Euro size={26} strokeWidth={1.75} />,
+    title: "Inclus, sans surcoût",
+    desc: "Dans toutes les formules Newbi, sans frais par facture.",
+  },
+  {
+    icon: (
+      <img
+        src="/logo_Compatible_Facturation_electronique-footer.png"
+        alt="Solution compatible facturation électronique"
+        className="h-16 w-auto object-contain"
+      />
+    ),
+    plain: true,
+    title: "100 % conforme",
+    desc: "Formats Factur-X, UBL, CII et transmission via plateforme agréée.",
+  },
+  {
+    icon: <Archive size={26} strokeWidth={1.75} />,
+    title: "Archivage légal 10 ans",
+    desc: "Chaque facture est conservée et traçable pendant la durée légale.",
+  },
 ];
 
-const BENEFITS = [
+// Ancien bento de 6 bénéfices, remplacé par ESSENTIALS (même contenu, 3 cartes).
+// const BENEFITS = [
+//   {
+//     title: "Tu factures comme avant. Le format, c'est notre affaire.",
+//     desc: "Même écran, mêmes clients, même bouton « Nouvelle facture ». Derrière, Newbi produit le fichier structuré et le transmet à la bonne plateforme.",
+//     visual: <InvoiceListVisual einvoicing />,
+//     wide: true,
+//   },
+//   {
+//     title: "Factur-X, UBL, CII : tu n'as pas à choisir",
+//     desc: "Newbi génère le format attendu par la plateforme de ton client. Tu n'entendras plus jamais parler de ces sigles.",
+//     visual: <FormatVisual />,
+//   },
+//   {
+//     title: "Tu sais où en est chaque facture, sans appeler",
+//     desc: "Déposée, transmise, reçue, acceptée, payée : le statut avance sous tes yeux. Plus de « vous l'avez bien reçue ? ».",
+//     visual: <LifecycleVisual />,
+//     wide: true,
+//   },
+//   {
+//     title: "Les factures de tes fournisseurs se rangent seules",
+//     desc: "Elles arrivent directement dans Newbi, classées en dépenses, prêtes pour ta TVA et ton comptable.",
+//     visual: <InboxVisual />,
+//   },
+//   {
+//     title: "Dix ans d'archives, zéro classeur",
+//     desc: "Chaque facture est conservée pendant la durée légale, avec sa traçabilité. Si le fisc demande, tu exportes.",
+//     visual: <ArchiveVisual />,
+//   },
+//   {
+//     title: "Une question ? Un humain répond, sur WhatsApp",
+//     desc: "Pas de ticket, pas de robot. L'équipe Newbi t'explique un statut ou une règle de la réforme en langage normal.",
+//     visual: <WhatsappVisual />,
+//   },
+// ];
+
+// Section « l'essentiel » : 3 cartes qui reprennent tout le contenu de
+// l'ancien bento (formats, statuts, réception fournisseurs, archivage,
+// support), réorganisé en « ce qui change / ce que Newbi fait / comment
+// te préparer ».
+const ESSENTIALS = [
   {
-    title: "Tu factures comme avant. Le format, c'est notre affaire.",
-    desc: "Même écran, mêmes clients, même bouton « Nouvelle facture ». Derrière, Newbi produit le fichier structuré et le transmet à la bonne plateforme.",
-    visual: <InvoiceListVisual einvoicing />,
-    wide: true,
+    title: "Ce que la loi te demande",
+    intro:
+      "Dès le 1er septembre 2026, tes factures passent par une plateforme agréée par l'État, dans un format structuré (Factur-X, UBL, CII), avec suivi et archivage 10 ans.",
+    points: [
+      "Réception : toutes les entreprises dès 2026",
+      "Émission : TPE, PME et micro-entreprises en 2027",
+    ],
+    visual: <LawVisual />,
   },
   {
-    title: "Factur-X, UBL, CII : tu n'as pas à choisir",
-    desc: "Newbi génère le format attendu par la plateforme de ton client. Tu n'entendras plus jamais parler de ces sigles.",
-    visual: <FormatVisual />,
+    title: "Ce que Newbi fait à ta place",
+    intro:
+      "Tu factures comme avant. Newbi génère le bon format, le transmet et gère le reste.",
+    points: [
+      "Statut de chaque facture en direct",
+      "Factures fournisseurs classées en dépenses",
+      "Archivage légal 10 ans, exportable",
+    ],
+    visual: <AutomationVisual />,
   },
   {
-    title: "Tu sais où en est chaque facture, sans appeler",
-    desc: "Déposée, transmise, reçue, acceptée, payée : le statut avance sous tes yeux. Plus de « vous l'avez bien reçue ? ».",
-    visual: <LifecycleVisual />,
-    wide: true,
-  },
-  {
-    title: "Les factures de tes fournisseurs se rangent seules",
-    desc: "Elles arrivent directement dans Newbi, classées en dépenses, prêtes pour ta TVA et ton comptable.",
-    visual: <InboxVisual />,
-  },
-  {
-    title: "Dix ans d'archives, zéro classeur",
-    desc: "Chaque facture est conservée pendant la durée légale, avec sa traçabilité. Si le fisc demande, tu exportes.",
-    visual: <ArchiveVisual />,
-  },
-  {
-    title: "Une question ? Un humain répond, sur WhatsApp",
-    desc: "Pas de ticket, pas de robot. L'équipe Newbi t'explique un statut ou une règle de la réforme en langage normal.",
-    visual: <WhatsappVisual />,
+    title: "Par où commencer ?",
+    intro:
+      "Crée ton compte, ton SIRET pré-remplit le reste : première facture électronique dans la matinée.",
+    points: [
+      "Inclus dans toutes les formules, sans surcoût",
+      "30 jours offerts, sans carte bancaire",
+      "Un humain répond sur WhatsApp",
+    ],
+    visual: <StartVisual />,
   },
 ];
 
@@ -90,6 +168,28 @@ const STEPS = [
     title: "Ton comptable retrouve tout, déjà archivé",
     desc: "Factures émises, factures reçues, justificatifs : dans son accès gratuit, exportables. Toi, tu n'as rien envoyé.",
     aside: "Archivé 10 ans, automatiquement",
+  },
+];
+
+// Cartes de réassurance sous les témoignages.
+const PROOFS = [
+  {
+    avatar: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    icon: <Star size={22} strokeWidth={1.75} />,
+    title: "+ 140 indépendants",
+    desc: "facturent déjà avec Newbi, prêts pour la facturation électronique.",
+  },
+  {
+    avatar: "/lp/about/about-11.jpeg",
+    icon: <MessageCircle size={22} strokeWidth={1.75} />,
+    title: "Un humain sur WhatsApp",
+    desc: "Une question sur la réforme ? L'équipe répond en langage normal, pas de robot.",
+  },
+  {
+    avatar: "/lp/about/about-4.jpeg",
+    icon: <ShieldCheck size={22} strokeWidth={1.75} />,
+    title: "Tes données protégées",
+    desc: "Hébergées en Europe, jamais revendues ni partagées. Archivées 10 ans.",
   },
 ];
 
@@ -134,61 +234,102 @@ const FAQ = [
 
 export default function LpFacturationElectronique() {
   return (
-    <LpShell>
+    <LpShell
+      navbar="full"
+      footer="full"
+      banner={
+        <FacturationBanner
+          text={
+            <>
+              Passez à la facturation électronique avec Newbi :{" "}
+              <span className="font-medium text-[#5A50FF] underline decoration-[#5A50FF] decoration-1 underline-offset-4">
+                c’est simple et gratuit
+              </span>
+            </>
+          }
+          ctaHref={null}
+          centered
+        />
+      }
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(buildFaqJsonLd(FAQ)),
         }}
       />
-      <LpHero
-        eyebrow="Compatible avec la réforme 2026"
-        title="Logiciel de facturation électronique,"
-        accent="prêt pour la réforme"
-        titleEnd="."
-        subtitle="Émets, reçois et archive tes factures électroniques au bon format, sans changer ta façon de travailler. Inclus dans Newbi, sans surcoût."
-        proof={
+      {/* Hero en refonte : seul le H1 est affiché, le reste des props est
+          conservé pour réactiver les blocs dans section/hero-section.jsx */}
+      <HeroSection
+        // eyebrow="Compatible avec la réforme 2026"
+        title="Logiciel de facturation électronique, prêt pour la réforme."
+        // accent="prêt pour la réforme"
+        // titleEnd="."
+        subtitle={
           <>
-            <span className="text-gray-900 font-medium">
-              + 140 indépendants
-            </span>
-            <span className="mx-2 text-gray-300">·</span>+ 12 000 factures
-            émises
+            Émets, reçois et archive tes factures électroniques au bon format,{" "}
+            <strong className="font-medium text-gray-900">
+              sans changer ta façon de travailler
+            </strong>
+            . Inclus dans Newbi, sans surcoût.
           </>
         }
-        image="/lp/factures/facture1.png"
-        mobileImage="/mockup-iphone-factures-clients.png"
-        mobileImageAlt="Application mobile Newbi : factures et clients"
-        imageAlt="Interface Newbi : liste de factures avec statuts de facturation électronique"
-        badge={
-          <img
-            src="/logo_Compatible_Facturation_electronique-footer.png"
-            alt="Compatible facturation électronique 2026"
-            className="h-12 w-auto object-contain"
-          />
-        }
+        // proof={
+        //   <>
+        //     <span className="text-gray-900 font-medium">
+        //       + 140 indépendants
+        //     </span>
+        //     <span className="mx-2 text-gray-300">·</span>+ 12 000 factures
+        //     émises
+        //   </>
+        // }
+        // image="/lp/factures/facture1.png"
+        // mobileImage="/mockup-iphone-factures-clients.png"
+        // mobileImageAlt="Application mobile Newbi : factures et clients"
+        // imageAlt="Interface Newbi : liste de factures avec statuts de facturation électronique"
+        // badge={
+        //   <img
+        //     src="/logo_Compatible_Facturation_electronique-footer.png"
+        //     alt="Compatible facturation électronique 2026"
+        //     className="h-12 w-auto object-contain"
+        //   />
+        // }
       />
-      <LpTrustBar items={TRUST} />
-      <LpBenefits
+      {/* <LpTrustBar items={TRUST} /> */}
+      <LpTrustFeatures items={TRUST_FEATURES} />
+      {/* <LpBenefits
         eyebrow="Facturation électronique"
         title="Ce que la réforme te demande. Ce que Newbi fait à ta place."
         subtitle="Pas de module à acheter, pas de prestataire en plus. L'émission, la réception, le suivi et l'archivage sont déjà dans ton outil de facturation."
         items={BENEFITS}
-      />
+      /> */}
+      <LpEssentials title="La réforme 2026, en clair" items={ESSENTIALS} />
+      <ConcernedChecker />
       <LpSteps
         title="Ta première facture électronique, ce matin"
         intro="Pas de migration, pas de formation. Voilà comment ça se passe vraiment."
         steps={STEPS}
-        ctaLabel="Envoyer ma première facture électronique"
+        ctaLabel="Essayer gratuitement"
       />
-      <LpTestimonials title="Ils facturent déjà avec Newbi" />
+      <FeatureBento />
+      <LpTestimonials
+        title="Ils ont passé le cap, sans stress"
+        proofs={PROOFS}
+      />
       {/* Mêmes cartes de prix que la home */}
       <HomePricingSection />
-      <LpFaq items={FAQ} />
       <LpFinalCta
-        title="Passe à la facturation électronique sans stress"
+        title={
+          <>
+            Passe à la facturation
+            <br className="hidden md:block" /> électronique sans stress
+          </>
+        }
         subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 30 jours pour tester, sans carte bancaire."
+        image="/lp/facturation-electronique/cta-laptop.jpg"
+        imageAlt="Un indépendant consulte ses factures clients dans Newbi sur son ordinateur portable"
       />
+      <LpFaq items={FAQ} />
     </LpShell>
   );
 }

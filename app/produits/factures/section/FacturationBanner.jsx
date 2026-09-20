@@ -5,7 +5,20 @@ import { XIcon, Zap } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 
-export function FacturationBanner() {
+// `text` / `ctaHref` / `ctaLabel` sont surchargés par les LP Ads, qui gardent
+// le même visuel mais un message adapté. `ctaHref` à null masque le bouton,
+// `centered` centre le texte (la croix reste à droite).
+export function FacturationBanner({
+  text = (
+    <>
+      Passez à la facturation électronique dès maintenant avec notre outil{" "}
+      <span className="font-semibold">100% compatible</span>
+    </>
+  ),
+  ctaHref = "/produits/factures#features",
+  ctaLabel = "Découvrir",
+  centered = false,
+}) {
   const [isVisible, setIsVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -26,19 +39,20 @@ export function FacturationBanner() {
       }`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1">
+        <div
+          className={`flex items-center gap-3 flex-1 ${centered ? "justify-center" : ""}`}
+        >
           <div className="bg-white/20 flex size-8 shrink-0 items-center justify-center rounded-full">
             <Zap className="text-[#202020]" size={14} />
           </div>
-          <p className="text-sm text-[#202020]">
-            Passez à la facturation électronique dès maintenant avec notre outil{" "}
-            <span className="font-semibold">100% compatible</span>
-          </p>
+          <p className="text-sm text-[#202020]">{text}</p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/produits/factures#features" className="hidden sm:block">
-            <Button size="sm">Découvrir</Button>
-          </Link>
+          {ctaHref && (
+            <Link href={ctaHref} className="hidden sm:block">
+              <Button size="sm">{ctaLabel}</Button>
+            </Link>
+          )}
           <button
             onClick={() => {
               setIsVisible(false);
