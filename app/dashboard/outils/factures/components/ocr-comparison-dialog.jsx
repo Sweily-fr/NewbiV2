@@ -17,6 +17,11 @@ import {
   EXPENSE_CATEGORY_LABELS,
   PAYMENT_METHOD_LABELS,
 } from "@/src/graphql/importedInvoiceQueries";
+import {
+  DocumentEyeButton,
+  DocumentPreviewPanel,
+  isDocumentPreviewTarget,
+} from "@/src/components/document-preview-panel";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -34,7 +39,30 @@ export function OcrComparisonDialog({
   currency,
   onApply,
   applying = false,
+  // Aperçu du fichier de la facture à gauche (proxy same-origin) : ouvert
+  // d'office pour vérifier les valeurs relues sur la pièce.
+  invoiceId = null,
+  file = null,
 }) {
+  const previewItem = useMemo(
+    () =>
+      invoiceId && file?.url
+        ? {
+            url: file.url,
+            pdfSrc: `/api/document-preview/importedInvoice/${invoiceId}`,
+            filename: file.originalFileName,
+            mimeType: file.mimeType,
+          }
+        : null,
+    [invoiceId, file],
+  );
+  const [previewOpen, setPreviewOpen] = useState(false);
+  useEffect(() => {
+    setPreviewOpen(open && !!previewItem);
+  }, [open, previewItem]);
+  // Largeur du dialogue (md:max-w-2xl = 42rem) + marge droite 2rem
+  const DIALOG_RIGHT_OFFSET = 42 * 16 + 32;
+
   const formatAmount = (amount) =>
     amount === null || amount === undefined
       ? "—"
@@ -165,7 +193,27 @@ export function OcrComparisonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-full md:max-w-2xl">
+      <DialogContent
+        className={`w-full max-w-full md:max-w-2xl flex flex-col max-h-[calc(100vh-4rem)] transition-[left,right,transform] duration-300 ${
+          previewOpen ? "md:left-auto md:right-8 md:translate-x-0" : ""
+        }`}
+        // Un clic dans le volet d'aperçu (portail) ne ferme pas le dialogue
+        onPointerDownOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+      >
+        <DocumentPreviewPanel
+          items={previewOpen && previewItem ? [previewItem] : []}
+          index={0}
+          onClose={() => setPreviewOpen(false)}
+          sidebarWidth={DIALOG_RIGHT_OFFSET}
+          zIndex={110}
+        />
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ScanSearch className="h-5 w-5 text-muted-foreground" />
@@ -181,10 +229,22 @@ export function OcrComparisonDialog({
                 {Math.round(Number(proposal.confidence) * 100)} %
               </span>
             ) : null}
+            {previewItem ? (
+              <span className="mt-1 inline-flex items-center gap-1 text-xs">
+                <DocumentEyeButton
+                  className="h-7 w-7"
+                  active={previewOpen}
+                  onClick={() => setPreviewOpen((v) => !v)}
+                />
+                {previewOpen
+                  ? "Masquer la facture"
+                  : "Voir la facture analysée"}
+              </span>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-x-auto -mx-1 px-1">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto -mx-1 px-1">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs text-muted-foreground uppercase tracking-wide">
