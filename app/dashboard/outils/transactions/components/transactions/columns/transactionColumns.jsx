@@ -15,6 +15,7 @@ import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
+import { getStandaloneReceipts } from "../utils/receiptFiles";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
@@ -295,8 +296,6 @@ export const columns = [
       label: "Justificatif",
     },
     cell: ({ row, table }) => {
-      const files = row.original.files || [];
-      const receiptFiles = row.original.receiptFiles || [];
       const linkedInvoices = row.original.linkedInvoices || [];
       const linkedImportedInvoices = row.original.linkedImportedInvoices || [];
       const linkedPurchaseInvoices = row.original.linkedPurchaseInvoices || [];
@@ -306,10 +305,11 @@ export const columns = [
 
       // Un compteur par nature de pièce, jamais additionnés entre eux :
       // - trombone : fichiers déposés sur la transaction (legacy `files[]`
-      //   en repli, même règle que la liste du tiroir) ;
+      //   en repli), sans ceux devenus facture d'achat liée, comptés dans
+      //   le panier (même règle que la liste du tiroir) ;
       // - facture : factures de vente liées (Newbi + importées) ;
       // - panier : factures d'achat liées.
-      const receipts = receiptFiles.length > 0 ? receiptFiles : files;
+      const receipts = getStandaloneReceipts(row.original);
       const salesInvoices = [
         ...linkedInvoices.map((inv) => ({
           id: `inv-${inv.id}`,

@@ -23,6 +23,7 @@ export const UPDATE_TRANSACTION = gql`
       metadata
       receiptFiles {
         id
+        purchaseInvoiceId
         url
         key
         filename

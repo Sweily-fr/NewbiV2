@@ -86,6 +86,7 @@ import {
 } from "@/src/hooks/usePurchaseInvoices";
 import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
+import { getStandaloneReceipts } from "./transactions/utils/receiptFiles";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
@@ -911,39 +912,24 @@ export function TransactionDetailDrawer({
 
   // Liste complète des justificatifs (existants + pending), affichés dans la
   // sidebar ; le volet de gauche ne montre que celui qui a été cliqué.
+  // Un fichier devenu facture d'achat liée n'est pas relisté : la carte
+  // « Facture d'achat liée » le porte déjà (cf. getStandaloneReceipts).
   const allReceipts = (() => {
     const list = [];
-    // Existants venant du backend
-    const existing = transaction?.receiptFiles || [];
-    existing.forEach((r, idx) => {
+    // Existants venant du backend (receiptFiles, legacy `files[]` en repli)
+    for (const r of getStandaloneReceipts(transaction)) {
       list.push({
         id: r.id,
         // Position dans receiptFiles : sert au proxy d'aperçu quand le
         // justificatif n'a pas d'identifiant Mongo (anciens fichiers migrés)
-        receiptIndex: idx,
+        receiptIndex: r.receiptIndex,
         url: r.url,
         mimetype: r.mimetype || "",
-        filename: r.filename || "Justificatif",
+        filename: r.originalFilename || r.filename || "Justificatif",
         size: r.size,
+        uploadedAt: r.uploadedAt || null,
         isPending: false,
       });
-    });
-    // Legacy `files[]` fallback (anciens formats)
-    if (
-      list.length === 0 &&
-      Array.isArray(transaction?.files) &&
-      transaction.files.length > 0
-    ) {
-      for (const f of transaction.files) {
-        list.push({
-          id: f.id,
-          url: f.url,
-          mimetype: f.mimetype || "",
-          filename: f.originalFilename || f.filename || "Justificatif",
-          size: f.size,
-          isPending: false,
-        });
-      }
     }
     // Pending (mode création)
     for (const p of pendingFiles) {
@@ -1635,11 +1621,12 @@ export function TransactionDetailDrawer({
                 </div>
               )}
 
-              {/* Liste des justificatifs attachés — clic = afficher/masquer dans le volet de gauche */}
+              {/* Liste des justificatifs attachés — même carte que les
+                  factures d'achat liées ; clic = afficher/masquer dans le
+                  volet de gauche */}
               {allReceipts.length > 0 && (
-                <div className="space-y-1.5">
+                <div className="space-y-3">
                   {allReceipts.map((rcpt, idx) => {
-                    const isImg = (rcpt.mimetype || "").startsWith("image/");
                     const formatFileSize = (bytes) => {
                       if (!bytes) return "";
                       if (bytes < 1024) return `${bytes} B`;
@@ -1648,56 +1635,69 @@ export function TransactionDetailDrawer({
                       return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
                     };
                     const isActive = isReceiptPreviewed(idx);
+                    const sizeLabel = rcpt.size
+                      ? formatFileSize(rcpt.size)
+                      : "";
+                    const dateLabel = rcpt.uploadedAt
+                      ? formatDate(rcpt.uploadedAt)
+                      : "";
                     return (
                       <div
                         key={rcpt.id || `pending-${idx}`}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                        onClick={() => togglePreviewReceipt(idx)}
+                        className={`p-3 border rounded-lg cursor-pointer transition-colors duration-[120ms] ${
                           isActive
                             ? "bg-muted/70 ring-1 ring-border"
-                            : "bg-muted/40 hover:bg-muted/60"
+                            : "bg-muted/30 hover:bg-muted/50"
                         }`}
-                        onClick={() => togglePreviewReceipt(idx)}
                       >
-                        <div className="size-8 rounded-md bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                          {isImg ? (
-                            <PreviewImage
-                              src={rcpt.url}
-                              alt=""
-                              className="h-full w-full object-cover rounded-md"
-                              containerClassName="h-full w-full"
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium truncate">
+                                {rcpt.filename}
+                              </span>
+                            </div>
+                            {(sizeLabel || dateLabel) && (
+                              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                {sizeLabel && <span>{sizeLabel}</span>}
+                                {sizeLabel && dateLabel && <span>•</span>}
+                                {dateLabel && <span>{dateLabel}</span>}
+                              </div>
+                            )}
+                            <span
+                              className={`mt-1.5 inline-flex items-center max-w-full truncate text-[10px] leading-none px-1.5 py-1 rounded whitespace-nowrap ${
+                                rcpt.isPending
+                                  ? "bg-muted text-muted-foreground"
+                                  : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                              }`}
+                            >
+                              {rcpt.isPending
+                                ? "À envoyer"
+                                : "Justificatif déposé"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <EyeButton
+                              active={isActive}
+                              onClick={() => togglePreviewReceipt(idx)}
+                              label="Voir le justificatif"
                             />
-                          ) : (
-                            <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                          )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveReceiptFile(rcpt);
+                                closePreview();
+                              }}
+                              title="Retirer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {rcpt.filename}
-                          </p>
-                          {rcpt.size && (
-                            <p className="text-xs text-muted-foreground">
-                              {formatFileSize(rcpt.size)}
-                            </p>
-                          )}
-                        </div>
-                        <EyeButton
-                          active={isActive}
-                          onClick={() => togglePreviewReceipt(idx)}
-                          label="Voir le justificatif"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveReceiptFile(rcpt);
-                            closePreview();
-                          }}
-                          title="Retirer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     );
                   })}
