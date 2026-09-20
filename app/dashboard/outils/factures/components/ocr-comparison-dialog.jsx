@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LoaderCircle, ScanSearch } from "lucide-react";
+import { LoaderCircle, Pencil, ScanSearch } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,29 @@ import {
   DocumentPreviewPanel,
   isDocumentPreviewTarget,
 } from "@/src/components/document-preview-panel";
+import {
+  OcrValueInput,
+  applyOcrDrafts,
+  ocrDraftValue,
+} from "@/src/components/reconciliation/OcrValueInput";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+// Champs modifiables à la main dans la colonne « Nouvelle analyse » (le
+// client se choisit dans le tiroir, pas ici)
+const FIELD_KINDS = {
+  originalInvoiceNumber: "text",
+  invoiceDate: "date",
+  dueDate: "date",
+  totalHT: "number",
+  totalVAT: "number",
+  totalTTC: "number",
+  category: "select",
+  paymentMethod: "select",
+};
+const NUMBER_KEYS = new Set(["totalHT", "totalVAT", "totalTTC"]);
+const toOptions = (labels) =>
+  Object.entries(labels).map(([value, label]) => ({ value, label }));
 
 /**
  * Compare les valeurs actuelles d'une facture importée (gauche) avec celles
@@ -63,6 +84,25 @@ export function OcrComparisonDialog({
   // Largeur du dialogue (md:max-w-2xl = 42rem) + marge droite 2rem
   const DIALOG_RIGHT_OFFSET = 42 * 16 + 32;
 
+  // Mode « Modifier » : l'utilisateur corrige les valeurs proposées avant de
+  // les appliquer (brouillons en chaînes, appliqués sur la proposition).
+  const [editing, setEditing] = useState(false);
+  const [drafts, setDrafts] = useState({});
+  useEffect(() => {
+    setEditing(false);
+    setDrafts({});
+  }, [open, proposal]);
+  const effectiveProposal = useMemo(
+    () => applyOcrDrafts(proposal, drafts, NUMBER_KEYS),
+    [proposal, drafts],
+  );
+  const optionsFor = (key) =>
+    key === "category"
+      ? toOptions(EXPENSE_CATEGORY_LABELS)
+      : key === "paymentMethod"
+        ? toOptions(PAYMENT_METHOD_LABELS)
+        : [];
+
   const formatAmount = (amount) =>
     amount === null || amount === undefined
       ? "—"
@@ -74,6 +114,8 @@ export function OcrComparisonDialog({
   const text = (value) => (value ? String(value) : "—");
 
   const rows = useMemo(() => {
+    // Valeurs proposées = analyse OCR + corrections saisies
+    const proposal = effectiveProposal;
     if (!proposal || !current) return [];
     const amount = (key, label) => ({
       key,
@@ -169,16 +211,22 @@ export function OcrComparisonDialog({
       ),
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proposal, current, currency]);
+  }, [effectiveProposal, current, currency]);
 
   // Lignes cochées : par défaut celles qui changent et que l'OCR a lues.
+  // Pendant la saisie, une valeur corrigée coche sa ligne sans recalculer
+  // les autres.
   const [selected, setSelected] = useState({});
   useEffect(() => {
-    if (!open) return;
+    if (!open || editing) return;
     const next = {};
     for (const row of rows) next[row.key] = !row.same && !row.missing;
     setSelected(next);
-  }, [open, rows]);
+  }, [open, rows, editing]);
+  const setDraft = (key, value) => {
+    setDrafts((prev) => ({ ...prev, [key]: value }));
+    setSelected((prev) => ({ ...prev, [key]: true }));
+  };
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const differences = rows.filter((r) => !r.same && !r.missing).length;
@@ -288,7 +336,25 @@ export function OcrComparisonDialog({
                     <td
                       className={`py-2 ${changed ? "font-medium" : row.missing ? "text-muted-foreground" : ""}`}
                     >
-                      {row.missing ? "Non lu" : row.render(row.proposedValue)}
+                      {editing && FIELD_KINDS[row.key] ? (
+                        <OcrValueInput
+                          kind={FIELD_KINDS[row.key]}
+                          value={
+                            drafts[row.key] ??
+                            ocrDraftValue(
+                              proposal,
+                              row.key,
+                              FIELD_KINDS[row.key],
+                            )
+                          }
+                          onChange={(v) => setDraft(row.key, v)}
+                          options={optionsFor(row.key)}
+                        />
+                      ) : row.missing ? (
+                        "Non lu"
+                      ) : (
+                        row.render(row.proposedValue)
+                      )}
                     </td>
                   </tr>
                 );
@@ -298,6 +364,16 @@ export function OcrComparisonDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setEditing((v) => !v)}
+            disabled={applying}
+            className="font-normal gap-1.5 sm:mr-auto"
+            title="Corriger directement les valeurs de la nouvelle analyse"
+          >
+            <Pencil className="h-4 w-4" />
+            {editing ? "Terminer la saisie" : "Modifier"}
+          </Button>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
