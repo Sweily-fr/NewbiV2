@@ -270,7 +270,7 @@ export function OcrComparisonDialog({
           <DialogDescription>
             {differences === 0
               ? "La nouvelle analyse lit les mêmes valeurs que celles enregistrées."
-              : `${differences} valeur${differences > 1 ? "s" : ""} diffère${differences > 1 ? "nt" : ""}. Cochez celles à reprendre, les autres restent inchangées.`}
+              : `${differences} valeur${differences > 1 ? "s" : ""} diffère${differences > 1 ? "nt" : ""} de la facture. Cochez celles à enregistrer, les autres restent telles quelles.`}
             {proposal?.confidence ? (
               <span className="block mt-1 text-xs">
                 Confiance de l'analyse :{" "}
@@ -380,7 +380,7 @@ export function OcrComparisonDialog({
             disabled={applying}
             className="font-normal"
           >
-            Garder les valeurs actuelles
+            Annuler
           </Button>
           <Button
             variant="primary"
@@ -391,7 +391,11 @@ export function OcrComparisonDialog({
             {applying ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : null}
-            Appliquer {selectedCount > 0 ? `(${selectedCount})` : ""}
+            {selectedCount > 1
+              ? `Enregistrer ${selectedCount} valeurs`
+              : selectedCount === 1
+                ? "Enregistrer 1 valeur"
+                : "Enregistrer"}
           </Button>
         </DialogFooter>
       </DialogContent>

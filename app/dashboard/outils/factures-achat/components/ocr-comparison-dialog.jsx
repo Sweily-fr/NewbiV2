@@ -72,7 +72,7 @@ export function PurchaseOcrComparisonDialog({
   files = [],
   sourceFileId = null,
   // Facture rapprochée : l'API refuse un changement de TTC tant que la
-  // transaction est liée. La ligne est bloquée, et « Délier et appliquer »
+  // transaction est liée. La ligne est bloquée, et la case « Détacher »
   // délie puis applique tout (onUnlinkAndApply).
   reconciled = false,
   onUnlinkAndApply = null,
@@ -314,6 +314,15 @@ export function PurchaseOcrComparisonDialog({
   const canUnlinkAndApply = Boolean(lockedRow && onUnlinkAndApply);
   const partial = proposal?.extractionQuality === "partial";
 
+  // Facture rapprochée et TTC différent : l'utilisateur choisit
+  // explicitement de détacher la transaction pour enregistrer aussi le TTC.
+  const [unlinkForTtc, setUnlinkForTtc] = useState(false);
+  useEffect(() => {
+    setUnlinkForTtc(false);
+  }, [open, proposal]);
+  const includeTtc = canUnlinkAndApply && unlinkForTtc;
+  const totalToSave = selectedCount + (includeTtc ? 1 : 0);
+
   const buildPatch = ({ includeLocked = false } = {}) => {
     let patch = {};
     for (const row of rows) {
@@ -324,9 +333,10 @@ export function PurchaseOcrComparisonDialog({
     }
     return patch;
   };
-  const handleApply = () => onApply(buildPatch());
-  const handleUnlinkAndApply = () =>
-    onUnlinkAndApply?.(buildPatch({ includeLocked: true }));
+  const handleSave = () =>
+    includeTtc
+      ? onUnlinkAndApply?.(buildPatch({ includeLocked: true }))
+      : onApply(buildPatch());
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -362,7 +372,7 @@ export function PurchaseOcrComparisonDialog({
           <DialogDescription>
             {differences === 0
               ? "La nouvelle analyse lit les mêmes valeurs que celles enregistrées."
-              : `${differences} valeur${differences > 1 ? "s" : ""} diffère${differences > 1 ? "nt" : ""}. Cochez celles à reprendre, les autres restent inchangées.`}
+              : `${differences} valeur${differences > 1 ? "s" : ""} diffère${differences > 1 ? "nt" : ""} de la facture. Cochez celles à enregistrer, les autres restent telles quelles.`}
             {proposal?.confidence ? (
               <span className="block mt-1 text-xs">
                 Confiance de l'analyse :{" "}
@@ -596,8 +606,9 @@ export function PurchaseOcrComparisonDialog({
                               className="block text-xs font-normal text-amber-700 dark:text-amber-300"
                               title={row.lockedReason}
                             >
-                              Facture rapprochée : délier la transaction pour
-                              modifier
+                              {includeTtc
+                                ? "Sera enregistré après détachement de la transaction"
+                                : "Bloqué : facture rapprochée (voir ci-dessous)"}
                             </span>
                           ) : null}
                         </td>
@@ -609,6 +620,30 @@ export function PurchaseOcrComparisonDialog({
             </div>
           </div>
         </div>
+
+        {canUnlinkAndApply ? (
+          <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/30 cursor-pointer">
+            <Checkbox
+              checked={unlinkForTtc}
+              onCheckedChange={(checked) => setUnlinkForTtc(!!checked)}
+              disabled={applying}
+              className="mt-0.5"
+              aria-label="Détacher la transaction pour enregistrer le nouveau montant TTC"
+            />
+            <span className="space-y-1">
+              <span className="block font-medium text-amber-900 dark:text-amber-200">
+                Détacher la transaction bancaire pour enregistrer aussi le
+                nouveau montant TTC
+              </span>
+              <span className="block text-xs text-amber-800/90 dark:text-amber-300/90">
+                Cette facture est rapprochée d'une transaction : son montant TTC
+                ne peut pas changer tant que le lien existe. En cochant, la
+                transaction est détachée puis le TTC de la nouvelle analyse est
+                enregistré. Vous pourrez rattacher une transaction ensuite.
+              </span>
+            </span>
+          </label>
+        ) : null}
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button
@@ -627,29 +662,27 @@ export function PurchaseOcrComparisonDialog({
             disabled={applying}
             className="font-normal"
           >
-            Garder les valeurs actuelles
+            Annuler
           </Button>
-          {canUnlinkAndApply ? (
-            <Button
-              variant="outline"
-              onClick={handleUnlinkAndApply}
-              disabled={applying}
-              className="font-normal gap-1.5 border-amber-300 text-amber-800 hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-950/40"
-              title="Détache la transaction bancaire, puis applique aussi le nouveau montant TTC"
-            >
-              Délier et appliquer ({selectedCount + 1})
-            </Button>
-          ) : null}
           <Button
             variant="primary"
-            onClick={handleApply}
-            disabled={applying || selectedCount === 0}
+            onClick={handleSave}
+            disabled={applying || totalToSave === 0}
             className="font-medium gap-1.5"
+            title={
+              includeTtc
+                ? "Détache la transaction puis enregistre les valeurs cochées et le TTC"
+                : "Enregistre les valeurs cochées sur la facture"
+            }
           >
             {applying ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />
             ) : null}
-            Appliquer {selectedCount > 0 ? `(${selectedCount})` : ""}
+            {totalToSave > 1
+              ? `Enregistrer ${totalToSave} valeurs`
+              : totalToSave === 1
+                ? "Enregistrer 1 valeur"
+                : "Enregistrer"}
           </Button>
         </DialogFooter>
       </DialogContent>
