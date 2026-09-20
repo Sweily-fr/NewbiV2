@@ -125,6 +125,7 @@ export const GET_TRANSACTIONS = gql`
       metadata
       receiptFiles {
         id
+        purchaseInvoiceId
         url
         key
         filename
@@ -253,6 +254,7 @@ export const GET_TRANSACTIONS_PAGE = gql`
         metadata
         receiptFiles {
           id
+          purchaseInvoiceId
           url
           key
           filename
@@ -359,6 +361,7 @@ export const GET_TRANSACTION = gql`
       metadata
       receiptFiles {
         id
+        purchaseInvoiceId
         url
         key
         filename
@@ -522,6 +525,7 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
       message
       receiptFiles {
         id
+        purchaseInvoiceId
         url
         key
         filename
@@ -533,6 +537,7 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
         id
         receiptFiles {
           id
+          purchaseInvoiceId
           url
           filename
         }
@@ -560,6 +565,7 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
       message
       receiptFiles {
         id
+        purchaseInvoiceId
         url
         key
         filename
@@ -571,6 +577,7 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
         id
         receiptFiles {
           id
+          purchaseInvoiceId
           url
           filename
         }

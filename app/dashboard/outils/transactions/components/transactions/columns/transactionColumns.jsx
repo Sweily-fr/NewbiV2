@@ -5,15 +5,21 @@ import {
   FileTextIcon,
   PenLine,
   Landmark,
-  CheckCircle2,
   Sparkles,
+  Paperclip,
+  ShoppingBasket,
 } from "lucide-react";
-import { Link2Icon as Link2, MoneyReciveIcon } from "@/src/components/icons";
+import { MoneyReciveIcon } from "@/src/components/icons";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
 import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
+import { getStandaloneReceipts } from "../utils/receiptFiles";
+import {
+  LinkedPiecesCell,
+  PIECE_COLORS,
+} from "@/src/components/reconciliation/LinkedPiecesCell";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
@@ -294,118 +300,119 @@ export const columns = [
       label: "Justificatif",
     },
     cell: ({ row, table }) => {
-      const files = row.original.files || [];
-      const receiptFiles = row.original.receiptFiles || [];
-      // N↔N : on prend la 1re facture liée pour l'affichage compact du tableau.
-      const linkedInvoice = row.original.linkedInvoices?.[0] || null;
-      const hasLinkedInvoice = !!linkedInvoice?.id;
+      const linkedInvoices = row.original.linkedInvoices || [];
+      const linkedImportedInvoices = row.original.linkedImportedInvoices || [];
+      const linkedPurchaseInvoices = row.original.linkedPurchaseInvoices || [];
       const reconciliationStatus =
         row.original.reconciliationStatus?.toLowerCase();
       const hasSuggestion = reconciliationStatus === "suggested";
-      // Même périmètre que le tiroir : fichiers uploadés sur la transaction
-      // (legacy `files[]` en repli) + factures d'achat et factures importées
-      // liées, dont le document vaut justificatif.
-      const directReceiptsCount =
-        receiptFiles.length > 0 ? receiptFiles.length : files.length;
-      const filesCount =
-        directReceiptsCount +
-        (row.original.linkedPurchaseInvoices?.length || 0) +
-        (row.original.linkedImportedInvoices?.length || 0);
 
-      // État 4 : Rapproché à une facture (check vert)
-      if (hasLinkedInvoice) {
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5">
-                  <div className="relative">
-                    <FileTextIcon size={14} className="text-green-600" />
-                    <Link2 className="w-2 h-2 text-green-600 absolute -bottom-0.5 -right-0.5" />
-                  </div>
-                  <CheckCircle2 size={12} className="text-green-600" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="text-center">
-                  <div className="font-medium">Facture liée</div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatInvoiceReference(linkedInvoice)} -{" "}
-                    {linkedInvoice.clientName || "Client"}
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      }
+      // Un compteur par nature de pièce, jamais additionnés entre eux :
+      // - trombone : fichiers déposés sur la transaction (legacy `files[]`
+      //   en repli), sans ceux devenus facture d'achat liée, comptés dans
+      //   le panier (même règle que la liste du tiroir) ;
+      // - facture : factures de vente liées (Newbi + importées) ;
+      // - panier : factures d'achat liées.
+      const receipts = getStandaloneReceipts(row.original);
+      const salesInvoices = [
+        ...linkedInvoices.map((inv) => ({
+          id: `inv-${inv.id}`,
+          label: `${formatInvoiceReference(inv)} - ${inv.clientName || "Client"}`,
+        })),
+        ...linkedImportedInvoices.map((inv) => ({
+          id: `imp-${inv.id}`,
+          label: `${inv.number || "Facture importée"} - ${inv.clientName || "Client"}`,
+        })),
+      ];
+      const counters = [
+        receipts.length > 0 && {
+          key: "receipts",
+          Icon: Paperclip,
+          count: receipts.length,
+          className: PIECE_COLORS.receipt,
+          title:
+            receipts.length > 1
+              ? `${receipts.length} justificatifs`
+              : "1 justificatif",
+          lines: receipts.map(
+            (f) => f.filename || f.originalFilename || "Justificatif",
+          ),
+        },
+        salesInvoices.length > 0 && {
+          key: "sales",
+          Icon: FileTextIcon,
+          count: salesInvoices.length,
+          className: PIECE_COLORS.invoice,
+          title:
+            salesInvoices.length > 1
+              ? `${salesInvoices.length} factures liées`
+              : "Facture liée",
+          lines: salesInvoices.map((inv) => inv.label),
+        },
+        linkedPurchaseInvoices.length > 0 && {
+          key: "purchase",
+          Icon: ShoppingBasket,
+          count: linkedPurchaseInvoices.length,
+          className: PIECE_COLORS.purchaseInvoice,
+          title:
+            linkedPurchaseInvoices.length > 1
+              ? `${linkedPurchaseInvoices.length} factures d'achat liées`
+              : "Facture d'achat liée",
+          lines: linkedPurchaseInvoices.map(
+            (pi) =>
+              `${pi.invoiceNumber || "Facture d'achat"} - ${pi.supplierName || "Fournisseur"}`,
+          ),
+        },
+      ].filter(Boolean);
 
-      // État 2 : Suggestion en attente (ambre pulsant)
-      if (hasSuggestion) {
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  className="flex items-center gap-1.5 cursor-pointer group/suggestion"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const onOpenReconciliation =
-                      table.options.meta?.onOpenReconciliation;
-                    if (onOpenReconciliation) {
-                      onOpenReconciliation(row.original);
-                    }
-                  }}
-                >
-                  <div className="relative">
-                    <Sparkles
-                      size={14}
-                      className="text-amber-500 group-hover/suggestion:text-amber-600 transition-colors"
-                    />
-                    <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                  </div>
-                  <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 group-hover/suggestion:text-amber-700 dark:group-hover/suggestion:text-amber-300 transition-colors">
-                    Match
-                  </span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <div className="text-center">
-                  <div className="font-medium">Suggestion de rapprochement</div>
-                  <div className="text-xs text-muted-foreground">
-                    Cliquez pour voir la facture correspondante
-                  </div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      }
-
-      // État 3 : Justificatif attaché / État 1 : Vide
-      return (
+      // Suggestion en attente (ambre pulsant) : affichée tant qu'aucune
+      // facture de vente n'est liée, avec le libellé « Match » seulement
+      // quand la cellule est vide (place disponible).
+      const showSuggestion = hasSuggestion && salesInvoices.length === 0;
+      const suggestion = showSuggestion ? (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5">
-                <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {filesCount > 0 ? filesCount : "-"}
-                </span>
-              </div>
+              <button
+                className="flex items-center gap-1.5 cursor-pointer group/suggestion"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const onOpenReconciliation =
+                    table.options.meta?.onOpenReconciliation;
+                  if (onOpenReconciliation) {
+                    onOpenReconciliation(row.original);
+                  }
+                }}
+              >
+                <div className="relative">
+                  <Sparkles
+                    size={14}
+                    className="text-amber-500 group-hover/suggestion:text-amber-600 transition-colors"
+                  />
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                </div>
+                {counters.length === 0 && (
+                  <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400 group-hover/suggestion:text-amber-700 dark:group-hover/suggestion:text-amber-300 transition-colors">
+                    Match
+                  </span>
+                )}
+              </button>
             </TooltipTrigger>
             <TooltipContent>
-              {filesCount > 1
-                ? `${filesCount} justificatifs attachés`
-                : filesCount === 1
-                  ? "1 justificatif attaché"
-                  : "Aucun justificatif"}
+              <div className="text-center">
+                <div className="font-medium">Suggestion de rapprochement</div>
+                <div className="text-xs text-muted-foreground">
+                  Cliquez pour voir la facture correspondante
+                </div>
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      );
+      ) : null;
+
+      return <LinkedPiecesCell counters={counters} extra={suggestion} />;
     },
-    size: 90,
+    size: 120,
   },
   {
     id: "actions",

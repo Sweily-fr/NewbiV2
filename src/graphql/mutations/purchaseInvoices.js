@@ -354,6 +354,16 @@ export const REANALYZE_PURCHASE_INVOICE = gql`
       confidence
       provider
       extractionQuality
+      # Document en devise étrangère : montants convertis ci-dessus,
+      # valeurs lues d'origine + méthode de conversion ici
+      originalAmountHT
+      originalAmountTVA
+      originalAmountTTC
+      originalCurrency
+      rate
+      rateDate
+      conversionMethod
+      conversionNote
     }
   }
 `;

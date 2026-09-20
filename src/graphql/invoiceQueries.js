@@ -208,6 +208,9 @@ export const INVOICE_LIST_FRAGMENT = gql`
     progressMode
     globalProgressPercentage
     status
+    # Compteur « transactions rapprochées » du tableau (ids seuls : pas de
+    # résolveur linkedTransactions par ligne)
+    linkedTransactionIds
     eInvoiceStatus
     eInvoiceLastCode
     eReportingStatus
