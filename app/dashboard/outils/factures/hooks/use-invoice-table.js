@@ -23,8 +23,14 @@ import {
   XCircle,
   Archive,
   CircleAlert,
+  Landmark,
+  Paperclip,
 } from "lucide-react";
 import { DocumentSourceBadge } from "@/src/components/document-source-badge";
+import {
+  LinkedPiecesCell,
+  pluralizePieces,
+} from "@/src/components/reconciliation/LinkedPiecesCell";
 import { dateSortingFn } from "@/src/lib/document-dates";
 import { cn } from "@/src/lib/utils";
 import {
@@ -866,6 +872,67 @@ export function useInvoiceTable({
             <div className="flex items-center">
               <EmailTrackingStatus emailTracking={emailTracking} />
             </div>
+          );
+        },
+        size: 100,
+        enableSorting: false,
+      },
+      {
+        id: "linkedPieces",
+        header: () => (
+          <div className="flex items-center font-normal">Justificatif</div>
+        ),
+        meta: {
+          label: "Justificatif",
+        },
+        // Même cellule que les tableaux Transactions et Factures d'achat :
+        // trombone = fichier de la facture importée, banque = transactions
+        // rapprochées (paiement bancaire).
+        cell: ({ row }) => {
+          const inv = row.original;
+          // La liste ne charge que les identifiants (pas de résolveur par
+          // ligne) ; le détail des transactions n'est là que si la fiche
+          // complète a été chargée.
+          const linkedTransactions = inv.linkedTransactions || [];
+          const linkedCount = Math.max(
+            (inv.linkedTransactionIds || []).length,
+            linkedTransactions.length,
+          );
+          const hasImportedFile = inv._type === "imported" && !!inv.file?.url;
+          return (
+            <LinkedPiecesCell
+              counters={[
+                {
+                  key: "file",
+                  Icon: Paperclip,
+                  count: hasImportedFile ? 1 : 0,
+                  title: "1 justificatif",
+                  lines: [inv.file?.originalFileName || "Facture importée"],
+                },
+                {
+                  key: "transactions",
+                  Icon: Landmark,
+                  count: linkedCount,
+                  className: "text-green-600",
+                  title: pluralizePieces(
+                    linkedCount,
+                    "transaction rapprochée",
+                    "transactions rapprochées",
+                  ),
+                  lines: linkedTransactions.map((tx) => {
+                    const date = tx.date
+                      ? new Intl.DateTimeFormat("fr-FR", {
+                          dateStyle: "medium",
+                        }).format(new Date(tx.date))
+                      : "";
+                    return [tx.description || "Transaction", date]
+                      .filter(Boolean)
+                      .join(" - ");
+                  }),
+                },
+              ]}
+              emptyLabel="Aucune transaction rapprochée"
+            />
           );
         },
         size: 100,

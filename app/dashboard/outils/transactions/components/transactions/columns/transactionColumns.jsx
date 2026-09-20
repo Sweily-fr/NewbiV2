@@ -16,6 +16,7 @@ import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
 import { getStandaloneReceipts } from "../utils/receiptFiles";
+import { LinkedPiecesCell } from "@/src/components/reconciliation/LinkedPiecesCell";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
@@ -404,57 +405,7 @@ export const columns = [
         </TooltipProvider>
       ) : null;
 
-      if (counters.length === 0) {
-        if (suggestion) return suggestion;
-        return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-xs text-muted-foreground">-</span>
-              </TooltipTrigger>
-              <TooltipContent>Aucun justificatif</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      }
-
-      return (
-        <div className="flex items-center gap-2.5">
-          {counters.map(({ key, Icon, count, className, title, lines }) => (
-            <TooltipProvider key={key}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    className={`flex items-center gap-1 ${
-                      className || "text-muted-foreground"
-                    }`}
-                  >
-                    <Icon size={14} />
-                    <span className="text-xs">{count}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <div className="font-medium">{title}</div>
-                  {lines.slice(0, 5).map((line, i) => (
-                    <div
-                      key={i}
-                      className="text-xs text-muted-foreground truncate max-w-[220px]"
-                    >
-                      {line}
-                    </div>
-                  ))}
-                  {lines.length > 5 && (
-                    <div className="text-xs text-muted-foreground">
-                      +{lines.length - 5} autres
-                    </div>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ))}
-          {suggestion}
-        </div>
-      );
+      return <LinkedPiecesCell counters={counters} extra={suggestion} />;
     },
     size: 120,
   },
