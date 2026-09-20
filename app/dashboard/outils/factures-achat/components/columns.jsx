@@ -13,7 +13,13 @@ import {
   CheckCircle2,
   Archive,
   Tag,
+  Landmark,
 } from "lucide-react";
+import {
+  LinkedPiecesCell,
+  PIECE_COLORS,
+  pluralizePieces,
+} from "@/src/components/reconciliation/LinkedPiecesCell";
 import {
   DocumentSourceBadge,
   isExternalSource,
@@ -467,28 +473,45 @@ export const getColumns = ({
   },
   {
     id: "files",
-    size: 44,
+    size: 90,
     meta: { label: "Justificatif" },
-    header: () => (
-      <span
-        className="flex items-center justify-center"
-        title="Justificatif"
-        aria-label="Justificatif"
-      >
-        <Paperclip size={14} />
-      </span>
-    ),
+    header: "Justificatif",
+    // Même cellule que le tableau Transactions : un compteur par nature de
+    // pièce (trombone = justificatifs, banque = transactions rapprochées).
     cell: ({ row }) => {
       const files = row.original.files || [];
-      if (files.length === 0) return null;
+      const linkedTransactionIds = row.original.linkedTransactionIds || [];
       return (
-        <div
-          className="flex items-center justify-center gap-1 text-muted-foreground"
-          title={`${files.length} justificatif${files.length > 1 ? "s" : ""}`}
-        >
-          <Paperclip size={14} />
-          <span className="text-xs">{files.length}</span>
-        </div>
+        <LinkedPiecesCell
+          counters={[
+            {
+              key: "files",
+              Icon: Paperclip,
+              count: files.length,
+              className: PIECE_COLORS.receipt,
+              title: pluralizePieces(
+                files.length,
+                "justificatif",
+                "justificatifs",
+              ),
+              lines: files.map(
+                (f, idx) =>
+                  f.originalFilename || f.filename || `Justificatif ${idx + 1}`,
+              ),
+            },
+            {
+              key: "transactions",
+              Icon: Landmark,
+              count: linkedTransactionIds.length,
+              className: PIECE_COLORS.transaction,
+              title: pluralizePieces(
+                linkedTransactionIds.length,
+                "transaction rapprochée",
+                "transactions rapprochées",
+              ),
+            },
+          ]}
+        />
       );
     },
     enableSorting: false,

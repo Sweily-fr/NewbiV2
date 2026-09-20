@@ -1200,6 +1200,8 @@ export function ImportedInvoiceSidebar({
         currency={invoice.currency}
         onApply={applyOcrPatch}
         applying={applyingOcr}
+        invoiceId={invoice.id}
+        file={invoice.file}
       />
 
       {/* Création d'un client depuis le tiroir, associé à la facture ensuite */}
