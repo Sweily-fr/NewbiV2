@@ -1627,19 +1627,17 @@ export function TransactionDetailDrawer({
               {allReceipts.length > 0 && (
                 <div className="space-y-3">
                   {allReceipts.map((rcpt, idx) => {
-                    const formatFileSize = (bytes) => {
-                      if (!bytes) return "";
-                      if (bytes < 1024) return `${bytes} B`;
-                      if (bytes < 1024 * 1024)
-                        return `${Math.round(bytes / 1024)} KB`;
-                      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-                    };
                     const isActive = isReceiptPreviewed(idx);
-                    const sizeLabel = rcpt.size
-                      ? formatFileSize(rcpt.size)
-                      : "";
+                    // Mêmes lignes que les cartes de documents liés : titre,
+                    // nature, puis date (pas de poids de fichier).
+                    const { isPdf, isImage } = inferReceiptKind(rcpt);
+                    const kindLabel = isPdf
+                      ? "Document PDF"
+                      : isImage
+                        ? "Image"
+                        : "Fichier";
                     const dateLabel = rcpt.uploadedAt
-                      ? formatDate(rcpt.uploadedAt)
+                      ? `Déposé le ${formatDate(rcpt.uploadedAt)}`
                       : "";
                     return (
                       <div
@@ -1658,11 +1656,12 @@ export function TransactionDetailDrawer({
                                 {rcpt.filename}
                               </span>
                             </div>
-                            {(sizeLabel || dateLabel) && (
+                            <p className="text-sm text-muted-foreground truncate">
+                              {kindLabel}
+                            </p>
+                            {dateLabel && (
                               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                {sizeLabel && <span>{sizeLabel}</span>}
-                                {sizeLabel && dateLabel && <span>•</span>}
-                                {dateLabel && <span>{dateLabel}</span>}
+                                <span>{dateLabel}</span>
                               </div>
                             )}
                             <span
