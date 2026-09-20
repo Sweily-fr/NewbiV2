@@ -1,6 +1,53 @@
 "use client";
 
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { Calendar } from "@/src/components/ui/calendar";
 import { Input } from "@/src/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+
+// Sélecteur de date identique aux autres calendriers de la plateforme
+// (Popover + Calendar, format dd/MM/yyyy). value = "YYYY-MM-DD" ou "".
+function DateField({ value, onChange, className = "" }) {
+  const date = value ? new Date(`${value}T00:00:00`) : null;
+  const valid = Boolean(date && !isNaN(date.getTime()));
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className={`justify-start text-left font-normal ${
+            valid ? "" : "text-muted-foreground"
+          } ${className}`}
+        >
+          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate">
+            {valid ? format(date, "dd/MM/yyyy") : "Choisir une date"}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={valid ? date : undefined}
+          defaultMonth={valid ? date : undefined}
+          onSelect={(selected) => {
+            if (selected) onChange(format(selected, "yyyy-MM-dd"));
+          }}
+          initialFocus
+          locale={fr}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 /**
  * Champ de saisie d'une valeur proposée par l'OCR dans les dialogues de
@@ -47,10 +94,9 @@ export function OcrValueInput({
   }
   if (kind === "date") {
     return (
-      <Input
-        type="date"
+      <DateField
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
         className={`${base} w-40`}
       />
     );
