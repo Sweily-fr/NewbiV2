@@ -359,7 +359,16 @@ export function useInvoiceTable({
                     </span>
                   )}
                 </div>
-                {!isImported && (
+                {isImported ? (
+                  invoice.originalInvoiceNumber && (
+                    <div
+                      className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none"
+                      title={invoice.originalInvoiceNumber}
+                    >
+                      {invoice.originalInvoiceNumber}
+                    </div>
+                  )
+                ) : (
                   <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
                     {(invoice.prefix
                       ? `${invoice.prefix.replace(/-$/, "")}-${invoice.number}`
