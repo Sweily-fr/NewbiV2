@@ -32,6 +32,30 @@ import {
  * héritée (ex. "SERVICES") : son libellé est résolu par getCategoryConfig,
  * la même source que la colonne Catégorie des tableaux.
  */
+// Normalise pour une recherche insensible à la casse et aux accents
+// (« telephone » trouve « Téléphone »).
+const normalize = (text) =>
+  String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+/**
+ * Filtre cmdk : correspondance par sous-chaîne contiguë uniquement (le filtre
+ * fuzzy par défaut faisait remonter des dizaines de catégories sans rapport,
+ * ex. « tel » → Hôtel, Électricité, Transport...). Un libellé qui commence par
+ * la saisie passe devant un libellé qui la contient seulement.
+ */
+export const filterCategory = (value, search, keywords = []) => {
+  const query = normalize(search);
+  if (!query) return 1;
+  const candidates = [value, ...keywords].map(normalize);
+  if (candidates.some((c) => c.startsWith(query))) return 1;
+  if (candidates.some((c) => c.includes(query))) return 0.5;
+  return 0;
+};
+
 export default function CategorySearchSelect({
   value,
   onValueChange,
@@ -95,7 +119,7 @@ export default function CategorySearchSelect({
           sideOffset={4}
           style={{ maxHeight: "var(--radix-popper-available-height, 300px)" }}
         >
-          <Command>
+          <Command filter={filterCategory}>
             <CommandInput placeholder="Rechercher une catégorie..." />
             <CommandList
               className="max-h-[250px] overflow-y-auto overscroll-contain"
@@ -108,7 +132,7 @@ export default function CategorySearchSelect({
                     <CommandItem
                       key={category.value}
                       value={category.value}
-                      keywords={[category.label, group.heading]}
+                      keywords={[category.label]}
                       onSelect={(currentValue) => {
                         onValueChange(
                           currentValue === value ? "" : currentValue,
