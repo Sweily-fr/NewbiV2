@@ -61,7 +61,7 @@ export default function FAQ() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-10 md:pt-20 lg:pt-22 pb-16">
       <div className="space-y-2 text-center">
-        <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 mb-4">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
           Questions fréquentes
         </h2>
         <p className="text-md font-normal tracking-tight text-gray-600 mx-auto mb-8 max-w-2xl">

@@ -2,11 +2,13 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
-// Version condensée des tarifs pour la page d'accueil : essai gratuit,
-// offre Freelance, et renvoi vers /tarifs pour le comparatif complet.
+// Version condensée des tarifs (home + LP) : essai gratuit, offre Freelance,
+// et renvoi vers /tarifs pour le comparatif complet. Disposition en 3
+// colonnes séparées par un filet vertical, sans cartes : prix, nom de
+// l'offre, description, liste à puces, lien fléché en bas.
 // Le prix Freelance vient du module central (plans-display.js).
 const freelancePlan = PLANS_DISPLAY.find((p) => p.key === "freelance");
 const freelancePrice = `${freelancePlan.monthlyPrice
@@ -27,12 +29,98 @@ const FREELANCE_HIGHLIGHTS = [
   "Un accès comptable gratuit",
 ];
 
-function Highlight({ children }) {
+function Column({ children, first = false }) {
   return (
-    <li className="flex items-start gap-2.5 text-[13px] text-gray-600 dark:text-gray-400">
-      <Check className="mt-0.5 size-4 shrink-0 text-gray-900 dark:text-gray-100" />
-      <span>{children}</span>
-    </li>
+    <div
+      className={`flex flex-col py-8 md:py-2 md:pr-10 last:md:pr-0 ${
+        first
+          ? ""
+          : "border-t md:border-t-0 md:border-l border-gray-200 dark:border-gray-800 md:pl-10"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PriceLine({ price, suffix, badge }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <p className="text-2xl md:text-[1.75rem] font-medium tracking-tight text-gray-950 dark:text-gray-50 leading-tight">
+        {price}
+        {suffix && (
+          <span className="text-base md:text-lg font-normal text-gray-500 dark:text-gray-400">
+            {" "}
+            {suffix}
+          </span>
+        )}
+      </p>
+      {badge && (
+        <span className="relative overflow-hidden shrink-0 mt-1 rounded-md bg-[#E4E2FF] px-2.5 py-0.5 text-[12px] font-medium text-[#5A50FF]">
+          <span className="relative z-10">{badge}</span>
+          {/* Reflet qui balaie le badge toutes les 5 s */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 z-0 pointer-events-none opacity-0"
+            style={{
+              background:
+                "linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.75) 50%, transparent 70%)",
+              backgroundSize: "250% 100%",
+              animation: "pricingBadgeShine 5s ease-in-out infinite",
+            }}
+          />
+          <style>{`
+            @keyframes pricingBadgeShine {
+              0% { background-position: 150% 0; opacity: 0; }
+              1% { opacity: 1; }
+              17% { opacity: 1; }
+              18% { background-position: -150% 0; opacity: 0; }
+              100% { background-position: -150% 0; opacity: 0; }
+            }
+          `}</style>
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Bullets({ items }) {
+  return (
+    <ul className="mt-3 space-y-2 text-[15px] text-gray-800 dark:text-gray-200 list-disc pl-5 marker:text-gray-400">
+      {items.map((h) => (
+        <li key={h}>{h}</li>
+      ))}
+    </ul>
+  );
+}
+
+function ArrowLink({ href, children, sub }) {
+  return (
+    <div className="mt-auto pt-10">
+      <Link
+        href={href}
+        className="group inline-flex items-center gap-1.5 text-[17px] font-medium text-gray-950 dark:text-gray-50 hover:underline underline-offset-4"
+      >
+        {children}
+        {/* Au survol : la flèche monte et disparaît, puis revient par le bas */}
+        <span className="relative inline-flex size-[18px] overflow-hidden">
+          <ArrowUpRight className="size-[18px] group-hover:animate-[pricingArrowSwap_0.5s_ease-in-out]" />
+        </span>
+      </Link>
+      <style>{`
+        @keyframes pricingArrowSwap {
+          0% { transform: translate(0, 0); opacity: 1; }
+          45% { transform: translate(60%, -100%); opacity: 0; }
+          50% { transform: translate(-60%, 100%); opacity: 0; }
+          100% { transform: translate(0, 0); opacity: 1; }
+        }
+      `}</style>
+      {sub && (
+        <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">
+          {sub}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -41,8 +129,8 @@ export default function HomePricingSection() {
     <div id="pricing" className="w-full pt-16 lg:pt-20 pb-10">
       <div className="container max-w-6xl mx-auto px-4">
         {/* Titre centré */}
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-gray-950 dark:text-gray-50 mb-3">
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-gray-950 dark:text-gray-50 mb-4">
             Profite de 30 jours offerts
           </h2>
           <p className="text-[15px] text-gray-500 dark:text-gray-400">
@@ -50,88 +138,66 @@ export default function HomePricingSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3">
           {/* Essai gratuit */}
-          <div className="flex flex-col rounded-3xl border border-gray-200 dark:border-gray-800 px-6 py-6">
-            <h3 className="text-lg font-normal text-gray-900 dark:text-gray-50">
+          <Column first>
+            <PriceLine price="0€" suffix="pendant 30 jours" />
+            <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
               Essai gratuit
             </h3>
-            <div className="flex items-baseline gap-2 mt-3">
-              <span className="text-3xl font-semibold text-gray-900 dark:text-gray-50">
-                0€
-              </span>
-              <span className="text-[13px] text-gray-400">
-                pendant 30 jours
-              </span>
-            </div>
-            <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mt-5">
-              Pour tester Newbi sans risque
+            <p className="mt-8 text-[15px] text-gray-800 dark:text-gray-200">
+              Pour tester Newbi sans risque :
             </p>
-            <ul className="flex flex-col gap-2 mt-3">
-              {TRIAL_HIGHLIGHTS.map((h) => (
-                <Highlight key={h}>{h}</Highlight>
-              ))}
-            </ul>
-            <Link href="/auth/signup" className="mt-auto pt-6 block">
-              <span className="flex items-center justify-center w-full py-2.5 rounded-lg text-[15px] font-medium bg-[#202020] text-white hover:bg-[#333333] transition-colors">
-                Commencer gratuitement
-              </span>
-            </Link>
-          </div>
+            <Bullets items={TRIAL_HIGHLIGHTS} />
+            <ArrowLink href="/auth/signup" sub="Sans carte bancaire">
+              Commencer gratuitement
+            </ArrowLink>
+          </Column>
 
           {/* Freelance */}
-          <div className="flex flex-col rounded-3xl border-2 border-[#5A50FF]/30 shadow-sm px-6 py-6">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-normal text-gray-900 dark:text-gray-50">
-                {freelancePlan.displayName}
-              </h3>
-              <span className="text-[11px] font-medium text-[#5A50FF] bg-[#5A50FF]/8 border border-[#5A50FF]/15 rounded-md px-2.5 py-0.5">
-                Populaire
-              </span>
-            </div>
-            <div className="flex items-baseline gap-2 mt-3">
-              <span className="text-3xl font-semibold text-gray-900 dark:text-gray-50">
-                {freelancePrice}
-              </span>
-              <span className="text-[13px] text-gray-400">/mois, TTC</span>
-            </div>
-            <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mt-5">
+          <Column>
+            <PriceLine
+              price={freelancePrice}
+              suffix="/mois, TTC"
+              badge="Populaire"
+            />
+            <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
+              {freelancePlan.displayName}
+            </h3>
+            <p className="mt-8 text-[15px] text-gray-800 dark:text-gray-200">
               {freelancePlan.description}
             </p>
-            <ul className="flex flex-col gap-2 mt-3">
-              {FREELANCE_HIGHLIGHTS.map((h) => (
-                <Highlight key={h}>{h}</Highlight>
-              ))}
-            </ul>
-            <Link href="/auth/signup" className="mt-auto pt-6 block">
-              <span className="flex items-center justify-center w-full py-2.5 rounded-lg text-[15px] font-medium bg-[#5b50FF] text-white hover:bg-[#4a40e6] transition-colors">
-                Commencer gratuitement
-              </span>
-            </Link>
-          </div>
+            <Bullets items={FREELANCE_HIGHLIGHTS} />
+            <ArrowLink href="/auth/signup" sub="30 jours offerts">
+              Commencer gratuitement
+            </ArrowLink>
+          </Column>
 
           {/* Toutes les offres */}
-          <div className="flex flex-col rounded-3xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 px-6 py-6">
-            <h3 className="text-lg font-normal text-gray-900 dark:text-gray-50">
-              Toutes nos offres
-            </h3>
-            <p className="text-[13px] text-gray-400 mt-3">
+          <Column>
+            <PriceLine price="Toutes nos offres" />
+            <h3 className="mt-3 text-lg text-gray-900 dark:text-gray-50">
               TPE, Entreprise et comparatif détaillé
-            </p>
-            <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mt-5">
+            </h3>
+            <p className="mt-8 text-[15px] text-gray-800 dark:text-gray-200">
               Tu as une équipe ou plusieurs comptes bancaires ?
             </p>
-            <p className="text-[13px] text-gray-600 dark:text-gray-400 mt-2">
+            <p className="mt-3 text-[15px] text-gray-600 dark:text-gray-400">
               Découvre le détail complet de chaque offre, fonctionnalité par
               fonctionnalité, et choisis celle qui correspond à ton activité.
             </p>
-            <Link href="/tarifs" className="mt-auto pt-6 block">
-              <span className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-[15px] font-medium border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-800 transition-colors">
-                Voir toutes nos offres
-                <ArrowRight className="size-4" />
-              </span>
-            </Link>
-          </div>
+            <ArrowLink href="/tarifs">Voir toutes nos offres</ArrowLink>
+          </Column>
+        </div>
+
+        {/* CTA centré */}
+        <div className="flex justify-center mt-14">
+          <Link
+            href="/auth/signup"
+            className="inline-flex items-center justify-center rounded-xl bg-[#202020] hover:bg-[#333333] text-white text-base font-medium px-8 py-3 transition-colors"
+          >
+            Commencer gratuitement
+          </Link>
         </div>
       </div>
     </div>

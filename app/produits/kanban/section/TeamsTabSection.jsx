@@ -15,10 +15,26 @@ const tabs = [
       "Suivez l'avancement en temps réel",
     ],
     features: [
-      { img: "https://randomuser.me/api/portraits/women/44.jpg", color: "#5A50FF", text: "Boards dédiés par compte client" },
-      { img: "https://randomuser.me/api/portraits/men/32.jpg", color: "#F59E0B", text: "Collaboration en équipe sur chaque brief" },
-      { img: "https://randomuser.me/api/portraits/women/68.jpg", color: "#EF4444", text: "Planification Gantt des livrables" },
-      { img: "https://randomuser.me/api/portraits/men/75.jpg", color: "#22C55E", text: "Vue Liste pour le suivi détaillé" },
+      {
+        img: "https://randomuser.me/api/portraits/women/44.jpg",
+        color: "#5A50FF",
+        text: "Boards dédiés par compte client",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/men/32.jpg",
+        color: "#F59E0B",
+        text: "Collaboration en équipe sur chaque brief",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/women/68.jpg",
+        color: "#EF4444",
+        text: "Planification Gantt des livrables",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/men/75.jpg",
+        color: "#22C55E",
+        text: "Vue Liste pour le suivi détaillé",
+      },
     ],
   },
   {
@@ -33,10 +49,26 @@ const tabs = [
       "Gérez plusieurs projets en parallèle",
     ],
     features: [
-      { img: "https://randomuser.me/api/portraits/men/22.jpg", color: "#3B82F6", text: "Vue Kanban pour chaque mission" },
-      { img: "https://randomuser.me/api/portraits/women/55.jpg", color: "#EC4899", text: "Checklist de sous-tâches détaillées" },
-      { img: "https://randomuser.me/api/portraits/men/45.jpg", color: "#F59E0B", text: "Timeline pour planifier vos semaines" },
-      { img: "https://randomuser.me/api/portraits/women/12.jpg", color: "#8B5CF6", text: "Archivage des projets terminés" },
+      {
+        img: "https://randomuser.me/api/portraits/men/22.jpg",
+        color: "#3B82F6",
+        text: "Vue Kanban pour chaque mission",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/women/55.jpg",
+        color: "#EC4899",
+        text: "Checklist de sous-tâches détaillées",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/men/45.jpg",
+        color: "#F59E0B",
+        text: "Timeline pour planifier vos semaines",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/women/12.jpg",
+        color: "#8B5CF6",
+        text: "Archivage des projets terminés",
+      },
     ],
   },
   {
@@ -51,10 +83,26 @@ const tabs = [
       "Détectez les blocages rapidement",
     ],
     features: [
-      { img: "https://randomuser.me/api/portraits/women/33.jpg", color: "#EF4444", text: "Sprints visuels en Kanban" },
-      { img: "https://randomuser.me/api/portraits/men/52.jpg", color: "#22C55E", text: "Roadmap Gantt pour la planification" },
-      { img: "https://randomuser.me/api/portraits/women/21.jpg", color: "#3B82F6", text: "Assignation et collaboration temps réel" },
-      { img: "https://randomuser.me/api/portraits/men/67.jpg", color: "#F59E0B", text: "Vue Liste pour les daily standups" },
+      {
+        img: "https://randomuser.me/api/portraits/women/33.jpg",
+        color: "#EF4444",
+        text: "Sprints visuels en Kanban",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/men/52.jpg",
+        color: "#22C55E",
+        text: "Roadmap Gantt pour la planification",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/women/21.jpg",
+        color: "#3B82F6",
+        text: "Assignation et collaboration temps réel",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/men/67.jpg",
+        color: "#F59E0B",
+        text: "Vue Liste pour les daily standups",
+      },
     ],
   },
   {
@@ -69,10 +117,26 @@ const tabs = [
       "Répartition claire de la charge",
     ],
     features: [
-      { img: "https://randomuser.me/api/portraits/men/11.jpg", color: "#8B5CF6", text: "Dossiers organisés en colonnes" },
-      { img: "https://randomuser.me/api/portraits/women/76.jpg", color: "#EC4899", text: "Liste des tâches par collaborateur" },
-      { img: "https://randomuser.me/api/portraits/men/36.jpg", color: "#EF4444", text: "Échéances visualisées sur timeline" },
-      { img: "https://randomuser.me/api/portraits/women/90.jpg", color: "#22C55E", text: "Partage sécurisé avec les clients" },
+      {
+        img: "https://randomuser.me/api/portraits/men/11.jpg",
+        color: "#8B5CF6",
+        text: "Dossiers organisés en colonnes",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/women/76.jpg",
+        color: "#EC4899",
+        text: "Liste des tâches par collaborateur",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/men/36.jpg",
+        color: "#EF4444",
+        text: "Échéances visualisées sur timeline",
+      },
+      {
+        img: "https://randomuser.me/api/portraits/women/90.jpg",
+        color: "#22C55E",
+        text: "Partage sécurisé avec les clients",
+      },
     ],
   },
 ];
@@ -86,11 +150,12 @@ export default function TeamsTabSection() {
       <div className="max-w-6xl px-4 mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-balance text-gray-950 mb-4">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
             Un Kanban adapté à votre métier
           </h2>
           <p className="text-md font-normal tracking-tight text-gray-600 mx-auto max-w-2xl">
-            Agences, freelances, startups ou cabinets — gérez vos projets avec un outil pensé pour votre réalité.
+            Agences, freelances, startups ou cabinets — gérez vos projets avec
+            un outil pensé pour votre réalité.
           </p>
         </div>
 
@@ -129,7 +194,10 @@ export default function TeamsTabSection() {
               {/* Checklist */}
               <ul className="space-y-3">
                 {tab.checks.map((check, i) => (
-                  <li key={i} className="flex items-center gap-3 text-[15px] text-gray-700">
+                  <li
+                    key={i}
+                    className="flex items-center gap-3 text-[15px] text-gray-700"
+                  >
                     <Check size={18} className="text-[#838383] shrink-0" />
                     {check}
                   </li>
@@ -140,24 +208,24 @@ export default function TeamsTabSection() {
             {/* Right: feature cards */}
             <div className="p-8 lg:p-12 flex flex-col gap-3 justify-center">
               {tab.features.map((feature, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-4 bg-white rounded-2xl shadow-sm px-5 py-4"
+                >
                   <div
-                    key={i}
-                    className="flex items-center gap-4 bg-white rounded-2xl shadow-sm px-5 py-4"
+                    className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
+                    style={{ backgroundColor: `${feature.color}15` }}
                   >
-                    <div
-                      className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
-                      style={{ backgroundColor: `${feature.color}15` }}
-                    >
-                      <img
-                        src={feature.img}
-                        alt=""
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    <span className="text-[15px] font-medium text-gray-900">
-                      {feature.text}
-                    </span>
+                    <img
+                      src={feature.img}
+                      alt=""
+                      className="w-full h-full object-cover rounded-full"
+                    />
                   </div>
+                  <span className="text-[15px] font-medium text-gray-900">
+                    {feature.text}
+                  </span>
+                </div>
               ))}
             </div>
           </div>

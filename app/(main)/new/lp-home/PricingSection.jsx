@@ -329,7 +329,7 @@ export default function PricingSection({ variant = "home" }) {
       >
         {/* Titre centré */}
         <div className="text-center mb-2">
-          <h2 className="text-3xl md:text-[2.5rem] font-medium tracking-[-0.015em] text-gray-950 dark:text-gray-50 mb-3">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-gray-950 dark:text-gray-50 mb-3">
             Profitez de 30 jours offerts
           </h2>
           <p className="text-[15px] text-gray-500 dark:text-gray-400">
