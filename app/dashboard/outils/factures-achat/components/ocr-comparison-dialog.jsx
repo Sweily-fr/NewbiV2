@@ -121,14 +121,38 @@ export function PurchaseOcrComparisonDialog({
     if (!f?.proposal) return multi.combined;
     const converted =
       f.convertedAmountTTC !== null && f.convertedAmountTTC !== undefined;
+    const foreign =
+      converted &&
+      f.proposal.currency &&
+      f.proposal.currency !== (currency || "EUR");
     return {
       ...f.proposal,
       amountHT: converted ? f.convertedAmountHT : f.proposal.amountHT,
       amountTVA: converted ? f.convertedAmountTVA : f.proposal.amountTVA,
       amountTTC: converted ? f.convertedAmountTTC : f.proposal.amountTTC,
       currency: converted ? currency : f.proposal.currency,
+      // Même forme que la relance mono-fichier : valeurs lues d'origine
+      originalAmountHT: foreign ? f.proposal.amountHT : null,
+      originalAmountTVA: foreign ? f.proposal.amountTVA : null,
+      originalAmountTTC: foreign ? f.proposal.amountTTC : null,
+      originalCurrency: foreign ? f.proposal.currency : null,
+      rate: f.rate ?? null,
+      rateDate: f.rateDate ?? null,
+      conversionMethod: foreign ? "rate" : "none",
+      conversionNote: null,
     };
   }, [multi, singleProposal, source, currency]);
+  // Devise étrangère lue sur le document : les montants proposés sont
+  // convertis, l'original est rappelé sous chaque montant.
+  const originalCurrency =
+    proposal?.originalCurrency &&
+    proposal.originalCurrency !== (currency || "EUR")
+      ? proposal.originalCurrency
+      : null;
+  const unconverted =
+    !originalCurrency &&
+    proposal?.currency &&
+    proposal.currency !== (currency || "EUR");
   const formatMoney = (amount, cur) =>
     amount === null || amount === undefined
       ? "—"
@@ -163,6 +187,9 @@ export function PurchaseOcrComparisonDialog({
       label,
       currentValue: curNum(key),
       proposedValue: numMissing(proposal[key]) ? null : round2(proposal[key]),
+      original: originalCurrency
+        ? proposal[`original${key.charAt(0).toUpperCase()}${key.slice(1)}`]
+        : null,
       render,
       same:
         curNum(key) ===
@@ -216,7 +243,7 @@ export function PurchaseOcrComparisonDialog({
       ),
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proposal, current, currency, reconciled]);
+  }, [proposal, current, currency, reconciled, originalCurrency]);
 
   // Lignes cochées : par défaut celles qui changent et que l'OCR a lues.
   const [selected, setSelected] = useState({});
@@ -293,6 +320,30 @@ export function PurchaseOcrComparisonDialog({
               <span className="block mt-1 text-xs text-amber-700 dark:text-amber-300">
                 Analyse sans IA (moteurs indisponibles) : valeurs devinées sur
                 le texte, à vérifier.
+              </span>
+            ) : null}
+            {originalCurrency ? (
+              <span
+                className={`block mt-1 text-xs ${
+                  proposal?.conversionMethod === "unavailable"
+                    ? "text-amber-700 dark:text-amber-300"
+                    : ""
+                }`}
+              >
+                Document en {originalCurrency} : montants ramenés en{" "}
+                {currency || "EUR"}
+                {proposal?.conversionMethod === "bank"
+                  ? " sur le débit bancaire lié"
+                  : proposal?.rate
+                    ? ` au taux BCE 1 ${originalCurrency} = ${proposal.rate} ${currency || "EUR"}${proposal.rateDate ? ` (${proposal.rateDate})` : ""}`
+                    : ""}
+                .{proposal?.conversionNote ? ` ${proposal.conversionNote}` : ""}
+              </span>
+            ) : null}
+            {unconverted ? (
+              <span className="block mt-1 text-xs text-amber-700 dark:text-amber-300">
+                Document lu en {proposal.currency}, non converti en{" "}
+                {currency || "EUR"} : ne reprenez pas les montants tels quels.
               </span>
             ) : null}
             {!multi && sourceFileId && canPreview(sourceFileId) ? (
@@ -463,6 +514,14 @@ export function PurchaseOcrComparisonDialog({
                           {row.missing
                             ? "Non lu"
                             : row.render(row.proposedValue)}
+                          {!row.missing &&
+                          row.original !== null &&
+                          row.original !== undefined ? (
+                            <span className="block text-xs font-normal text-muted-foreground">
+                              {formatMoney(row.original, originalCurrency)} lu
+                              sur le document
+                            </span>
+                          ) : null}
                           {row.locked ? (
                             <span
                               className="block text-xs font-normal text-amber-700 dark:text-amber-300"
