@@ -41,6 +41,7 @@ import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVi
 
 import { columns } from "./columns/transactionColumns";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
+import CategorySearchSelect from "@/src/components/category-search-select";
 import { mapTransactionToExpense } from "./utils/mapTransactionToExpense";
 import { MobileToolbar } from "./components/MobileToolbar";
 import { MobileTable } from "./components/MobileTable";
@@ -289,16 +290,9 @@ export default function TransactionTable({
   ];
 
   // Valeurs possibles pour chaque filtre
+  // (la catégorie utilise CategorySearchSelect : mêmes sous-catégories fines
+  // que le sélecteur de ligne + catégories larges, cf. rendu plus bas)
   const filterValues = {
-    category: [
-      { value: "TRAVEL", label: "Transport" },
-      { value: "MEALS", label: "Repas" },
-      { value: "OFFICE_SUPPLIES", label: "Fournitures" },
-      { value: "SERVICES", label: "Services" },
-      { value: "SOFTWARE", label: "Logiciels" },
-      { value: "MARKETING", label: "Marketing" },
-      { value: "OTHER", label: "Autre" },
-    ],
     paymentMethod: [
       { value: "CARD", label: "Carte" },
       { value: "BANK_TRANSFER", label: "Virement" },
@@ -1117,6 +1111,19 @@ export default function TransactionTable({
                             </PopoverContent>
                           </Popover>
                         </div>
+                      ) : filter.field === "category" ? (
+                        <CategorySearchSelect
+                          className="flex-1 min-w-0"
+                          triggerClassName="w-full h-9"
+                          contentClassName="z-[9999]"
+                          value={filter.value}
+                          onValueChange={(value) =>
+                            updateFilter(filter.id, "value", value)
+                          }
+                          placeholder="Sélectionner..."
+                          type="ALL"
+                          includeBroadCategories
+                        />
                       ) : filterValues[filter.field] ? (
                         <Select
                           value={filter.value}
