@@ -29,6 +29,7 @@ import {
 import { DocumentSourceBadge } from "@/src/components/document-source-badge";
 import {
   LinkedPiecesCell,
+  PIECE_COLORS,
   pluralizePieces,
 } from "@/src/components/reconciliation/LinkedPiecesCell";
 import { dateSortingFn } from "@/src/lib/document-dates";
@@ -906,6 +907,7 @@ export function useInvoiceTable({
                   key: "file",
                   Icon: Paperclip,
                   count: hasImportedFile ? 1 : 0,
+                  className: PIECE_COLORS.receipt,
                   title: "1 justificatif",
                   lines: [inv.file?.originalFileName || "Facture importée"],
                 },
@@ -913,7 +915,7 @@ export function useInvoiceTable({
                   key: "transactions",
                   Icon: Landmark,
                   count: linkedCount,
-                  className: "text-green-600",
+                  className: PIECE_COLORS.transaction,
                   title: pluralizePieces(
                     linkedCount,
                     "transaction rapprochée",

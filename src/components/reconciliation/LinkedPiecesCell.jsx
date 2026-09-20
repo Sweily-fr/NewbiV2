@@ -18,6 +18,18 @@ import {
  */
 const MAX_LINES = 5;
 
+/**
+ * Couleurs des icônes, reprises du tiroir de transaction : vert émeraude de
+ * l'étiquette « Justificatif déposé », violet Newbi des factures liées et
+ * des rapprochements, rose des pastilles « Transaction → Facture d'achat ».
+ */
+export const PIECE_COLORS = {
+  receipt: "text-emerald-600 dark:text-emerald-400",
+  invoice: "text-[#5A50FF]",
+  transaction: "text-[#5A50FF]",
+  purchaseInvoice: "text-rose-600 dark:text-rose-400",
+};
+
 const plural = (count, singular, pluralForm) =>
   count > 1 ? `${count} ${pluralForm}` : `${count} ${singular}`;
 

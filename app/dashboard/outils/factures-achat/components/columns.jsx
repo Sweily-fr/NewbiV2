@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import {
   LinkedPiecesCell,
+  PIECE_COLORS,
   pluralizePieces,
 } from "@/src/components/reconciliation/LinkedPiecesCell";
 import {
@@ -487,6 +488,7 @@ export const getColumns = ({
               key: "files",
               Icon: Paperclip,
               count: files.length,
+              className: PIECE_COLORS.receipt,
               title: pluralizePieces(
                 files.length,
                 "justificatif",
@@ -501,7 +503,7 @@ export const getColumns = ({
               key: "transactions",
               Icon: Landmark,
               count: linkedTransactionIds.length,
-              className: "text-green-600",
+              className: PIECE_COLORS.transaction,
               title: pluralizePieces(
                 linkedTransactionIds.length,
                 "transaction rapprochée",

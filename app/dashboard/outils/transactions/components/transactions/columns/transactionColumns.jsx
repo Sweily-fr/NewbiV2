@@ -16,7 +16,10 @@ import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
 import { getStandaloneReceipts } from "../utils/receiptFiles";
-import { LinkedPiecesCell } from "@/src/components/reconciliation/LinkedPiecesCell";
+import {
+  LinkedPiecesCell,
+  PIECE_COLORS,
+} from "@/src/components/reconciliation/LinkedPiecesCell";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
@@ -326,6 +329,7 @@ export const columns = [
           key: "receipts",
           Icon: Paperclip,
           count: receipts.length,
+          className: PIECE_COLORS.receipt,
           title:
             receipts.length > 1
               ? `${receipts.length} justificatifs`
@@ -338,7 +342,7 @@ export const columns = [
           key: "sales",
           Icon: FileTextIcon,
           count: salesInvoices.length,
-          className: "text-green-600",
+          className: PIECE_COLORS.invoice,
           title:
             salesInvoices.length > 1
               ? `${salesInvoices.length} factures liées`
@@ -349,6 +353,7 @@ export const columns = [
           key: "purchase",
           Icon: ShoppingBasket,
           count: linkedPurchaseInvoices.length,
+          className: PIECE_COLORS.purchaseInvoice,
           title:
             linkedPurchaseInvoices.length > 1
               ? `${linkedPurchaseInvoices.length} factures d'achat liées`
