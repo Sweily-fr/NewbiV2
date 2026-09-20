@@ -1,12 +1,13 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
 import {
   EXPENSE_CATEGORY_GROUPS,
   INCOME_CATEGORY_GROUPS,
+  EXPENSE_BROAD_CATEGORY_CODES,
   getCategoryConfig,
 } from "@/lib/category-icons-config";
 import { Button } from "@/src/components/ui/button";
@@ -31,6 +32,11 @@ import {
  * regroupées et filtrables. `value` peut aussi être une catégorie large
  * héritée (ex. "SERVICES") : son libellé est résolu par getCategoryConfig,
  * la même source que la colonne Catégorie des tableaux.
+ *
+ * `type="ALL"` propose les sorties puis les entrées (filtre de la page
+ * Transactions, qui mélange les deux sens). `includeBroadCategories` ajoute un
+ * groupe « Catégories larges » (enum ExpenseCategory) pour retrouver les
+ * transactions anciennes ou bancaires qui n'ont qu'une catégorie large.
  */
 // Normalise pour une recherche insensible à la casse et aux accents
 // (« telephone » trouve « Téléphone »).
@@ -64,12 +70,31 @@ export default function CategorySearchSelect({
   triggerClassName,
   placeholder = "Sélectionner une catégorie",
   type = "EXPENSE",
+  includeBroadCategories = false,
+  contentClassName,
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
 
-  const groups =
-    type === "INCOME" ? INCOME_CATEGORY_GROUPS : EXPENSE_CATEGORY_GROUPS;
+  const groups = useMemo(() => {
+    const base =
+      type === "ALL"
+        ? [...EXPENSE_CATEGORY_GROUPS, ...INCOME_CATEGORY_GROUPS]
+        : type === "INCOME"
+          ? INCOME_CATEGORY_GROUPS
+          : EXPENSE_CATEGORY_GROUPS;
+    if (!includeBroadCategories) return base;
+    return [
+      ...base,
+      {
+        heading: "Catégories larges",
+        options: EXPENSE_BROAD_CATEGORY_CODES.map((code) => ({
+          value: code,
+          label: getCategoryConfig(code).label,
+        })),
+      },
+    ];
+  }, [type, includeBroadCategories]);
   const otherGroups =
     type === "INCOME" ? EXPENSE_CATEGORY_GROUPS : INCOME_CATEGORY_GROUPS;
 
@@ -114,7 +139,10 @@ export default function CategorySearchSelect({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-full min-w-[var(--radix-popper-anchor-width)] border-input p-0"
+          className={cn(
+            "w-full min-w-[var(--radix-popper-anchor-width)] border-input p-0",
+            contentClassName,
+          )}
           align="start"
           sideOffset={4}
           style={{ maxHeight: "var(--radix-popper-available-height, 300px)" }}
