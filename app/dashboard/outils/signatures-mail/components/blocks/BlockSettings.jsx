@@ -1977,11 +1977,13 @@ function LogoSettings({ props, onUpdate }) {
 
       toast.info("Optimisation de l'image...");
 
+      // Le preset "logo" produit un PNG : garder l'extension et le type PNG
+      // pour conserver la transparence (rendu correct en mode sombre)
       const optimizedBlob = await optimizeImage(file, "logo");
       const optimizedFile = new File(
         [optimizedBlob],
-        `logo-${Date.now()}.jpg`,
-        { type: "image/jpeg" },
+        `logo-${Date.now()}.png`,
+        { type: "image/png" },
       );
 
       const signatureId = editingSignatureId || `temp-${Date.now()}`;
@@ -2070,6 +2072,11 @@ function LogoSettings({ props, onUpdate }) {
             Changer l'image...
           </Button>
         )}
+
+        <p className="mt-2 text-[11px] leading-snug text-neutral-500 dark:text-neutral-400 text-center">
+          Privilégiez un PNG à fond transparent : il s'adapte au mieux à tous les
+          clients mail, y compris en mode sombre.
+        </p>
       </div>
 
       {/* Taille du logo */}
