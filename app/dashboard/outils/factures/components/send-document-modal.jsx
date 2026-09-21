@@ -28,6 +28,7 @@ import {
   useSendQuoteEmail,
   useSendCreditNoteEmail,
   useSendPurchaseOrderEmail,
+  useSendDeliveryNoteEmail,
 } from "@/src/graphql/documentEmailQueries";
 import {
   useEmailSettings,
@@ -46,6 +47,11 @@ const DOCUMENT_LABELS = {
     article: "le",
     title: "Envoyer le bon de commande",
   },
+  deliveryNote: {
+    singular: "bon de livraison",
+    article: "le",
+    title: "Envoyer le bon de livraison",
+  },
 };
 
 // Récupérer le template sauvegardé depuis les paramètres email
@@ -61,6 +67,8 @@ function getSavedTemplate(emailSettings, documentType) {
       return emailSettings.creditNoteEmailTemplate || null;
     case "purchaseOrder":
       return emailSettings.purchaseOrderEmailTemplate || null;
+    case "deliveryNote":
+      return emailSettings.deliveryNoteEmailTemplate || null;
     default:
       return null;
   }
@@ -155,6 +163,7 @@ export function SendDocumentModal({
   const [sendQuoteEmail] = useSendQuoteEmail();
   const [sendCreditNoteEmail] = useSendCreditNoteEmail();
   const [sendPurchaseOrderEmail] = useSendPurchaseOrderEmail();
+  const [sendDeliveryNoteEmail] = useSendDeliveryNoteEmail();
 
   // Valeurs par défaut (utilise les templates sauvegardés si disponibles)
   const defaultContent = getDefaultEmailContent(documentType, emailSettings);
@@ -269,6 +278,10 @@ export function SendDocumentModal({
         result = await sendPurchaseOrderEmail({
           variables: { workspaceId, input },
         });
+      } else if (documentType === "deliveryNote") {
+        result = await sendDeliveryNoteEmail({
+          variables: { workspaceId, input },
+        });
       } else {
         result = await sendCreditNoteEmail({
           variables: { workspaceId, input },
@@ -297,6 +310,10 @@ export function SendDocumentModal({
             documentType === "purchaseOrder"
               ? data.emailBody
               : emailSettings.purchaseOrderEmailTemplate || "",
+          deliveryNoteEmailTemplate:
+            documentType === "deliveryNote"
+              ? data.emailBody
+              : emailSettings.deliveryNoteEmailTemplate || "",
           useCustomFooter: data.useCustomFooter || false,
           customEmailFooter: data.customEmailFooter || "",
         };

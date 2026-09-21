@@ -152,6 +152,7 @@ export function usePermissions() {
         member: {
           quotes: ["view", "create", "send", "export"],
           purchaseOrders: ["view", "create", "send", "export"],
+          deliveryNotes: ["view", "create", "send", "export"],
           invoices: ["view", "create", "send", "export", "import"],
           creditNotes: ["view", "create", "export"],
           expenses: ["view", "create", "ocr", "export"],
@@ -171,6 +172,7 @@ export function usePermissions() {
         accountant: {
           quotes: ["view", "export"],
           purchaseOrders: ["view", "export"],
+          deliveryNotes: ["view", "export"],
           invoices: ["view", "export", "mark-paid", "import"],
           creditNotes: ["view", "export"],
           expenses: ["view", "approve", "export"],
@@ -187,6 +189,7 @@ export function usePermissions() {
         viewer: {
           quotes: ["view"],
           purchaseOrders: ["view"],
+          deliveryNotes: ["view"],
           invoices: ["view"],
           creditNotes: ["view"],
           expenses: ["view"],

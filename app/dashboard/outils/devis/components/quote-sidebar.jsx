@@ -805,6 +805,34 @@ export default function QuoteSidebar({
             </div>
           </div>
 
+          {/* Bons de livraison liés (créés à partir de ce devis) */}
+          {quote.linkedDeliveryNotes &&
+            quote.linkedDeliveryNotes.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Bons de livraison liés
+                  </p>
+                  <div className="space-y-1">
+                    {quote.linkedDeliveryNotes.map((dn) => (
+                      <LinkedDocumentRow
+                        key={dn.id}
+                        type="deliveryNote"
+                        document={dn}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/bons-de-livraison?id=${dn.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
           {/* Bons de commande liés (créés à partir de ce devis) */}
           {quote.linkedPurchaseOrders &&
             quote.linkedPurchaseOrders.length > 0 && (
