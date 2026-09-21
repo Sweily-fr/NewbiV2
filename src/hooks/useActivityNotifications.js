@@ -4,10 +4,24 @@ import {
   useSubscription,
   useApolloClient,
 } from "@apollo/client";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
+import { getExternalSource } from "@/src/components/document-source-badge";
+import { FileDown } from "lucide-react";
 
 // Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
 // rafraîchir sans recharger la page, par nom d'opération GraphQL.
+// Le hook est monté par plusieurs composants (cloche, pages…) : chacun reçoit
+// l'événement WebSocket. Un seul toast par notification, quel que soit le
+// nombre d'instances.
+const TOASTED_NOTIFICATION_IDS = new Set();
+const rememberToasted = (id) => {
+  if (!id) return true;
+  if (TOASTED_NOTIFICATION_IDS.has(id)) return false;
+  TOASTED_NOTIFICATION_IDS.add(id);
+  setTimeout(() => TOASTED_NOTIFICATION_IDS.delete(id), 60_000);
+  return true;
+};
+
 const IMPORTED_DOCUMENT_QUERIES = {
   INVOICE: ["GetImportedInvoices", "GetInvoices", "GetImportedInvoiceStats"],
   QUOTE: ["GetImportedQuotes", "GetQuotes", "GetImportedQuoteStats"],
@@ -96,6 +110,7 @@ export const useActivityNotifications = (options = {}) => {
           ? "PURCHASE_INVOICE"
           : null;
     if (!documentType) return;
+    if (!rememberToasted(incoming.id)) return;
 
     const include = IMPORTED_DOCUMENT_QUERIES[documentType] || [];
     if (include.length > 0) {
@@ -106,8 +121,24 @@ export const useActivityNotifications = (options = {}) => {
         );
     }
     const url = incoming.data?.url;
-    toast.info(incoming.title || "Nouveau document reçu", {
-      description: incoming.message,
+    const ext = getExternalSource(incoming.data?.source);
+    const details = [
+      incoming.data?.documentNumber,
+      incoming.data?.supplierName,
+      Number.isFinite(Number(incoming.data?.amountTTC)) &&
+      incoming.data?.amountTTC !== null
+        ? `${Number(incoming.data.amountTTC).toLocaleString("fr-FR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })} € TTC`
+        : null,
+    ].filter(Boolean);
+    toast.document(incoming.title || "Nouveau document reçu", {
+      description: details.length > 0 ? details.join(" · ") : incoming.message,
+      logo: ext?.logo,
+      logoBg: ext?.bg,
+      logoAlt: ext?.name,
+      fallbackIcon: ext?.icon || FileDown,
       action: url
         ? { label: "Voir", onClick: () => window.location.assign(url) }
         : undefined,

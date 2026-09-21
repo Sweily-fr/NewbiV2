@@ -1340,11 +1340,14 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
 
 // Types de produit du référentiel Abby pour les recettes créées par Newbi
 const ABBY_PRODUCT_TYPES = [
-  { value: 1, label: "Vente de marchandises" },
-  { value: 2, label: "Prestation de service commerciale ou artisanale" },
-  { value: 3, label: "Prestation de service libérale" },
-  { value: 4, label: "Autre (type 4)" },
-  { value: 5, label: "Autre (type 5)" },
+  { value: 1, label: "Vente de marchandises (BIC)" },
+  { value: 2, label: "Prestations de services (BNC)" },
+  {
+    value: 3,
+    label: "Prestations de services artisanales ou commerciales (BIC)",
+  },
+  { value: 4, label: "Vente de produits fabriqués (BIC)" },
+  { value: 5, label: "Débours" },
 ];
 
 function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {

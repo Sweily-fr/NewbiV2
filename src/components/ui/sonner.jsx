@@ -260,6 +260,94 @@ const LoadingToast = ({ message, isMobile, description }) => (
   </div>
 );
 
+// Notification « document reçu » (import Qonto, Abby, Gmail, PDP…) :
+// logo de la plateforme, titre, détail (numéro, tiers, montant) et bouton Voir.
+const DocumentToast = ({
+  toastId,
+  title,
+  description,
+  logo,
+  logoBg,
+  logoAlt,
+  fallbackIcon: FallbackIcon,
+  action,
+  isMobile,
+}) => {
+  const [imgFailed, setImgFailed] = useState(false);
+  const showLogo = !!logo && !imgFailed;
+  return (
+    <div
+      className={`w-[360px] max-w-[calc(100vw-32px)] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
+      style={{ backgroundColor: "#202020" }}
+    >
+      <div className="flex gap-3 items-start">
+        <span
+          className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg overflow-hidden ring-1 ring-white/10"
+          style={{
+            backgroundColor: showLogo
+              ? logoBg || "#ffffff"
+              : "rgba(255,255,255,0.08)",
+          }}
+        >
+          {showLogo ? (
+            <img
+              src={logo}
+              alt={logoAlt || ""}
+              className="w-8 h-8 object-cover"
+              onError={() => setImgFailed(true)}
+            />
+          ) : FallbackIcon ? (
+            <FallbackIcon size={16} style={{ color: "#ffffff" }} />
+          ) : (
+            <InfoIcon size={16} className="text-blue-500" />
+          )}
+        </span>
+        <div className="grow min-w-0">
+          <p
+            className="text-sm font-medium leading-5 truncate"
+            style={{ color: "#ffffff" }}
+          >
+            {title}
+          </p>
+          {description && (
+            <p
+              className="mt-0.5 text-xs leading-5 break-words"
+              style={{ color: "rgba(255, 255, 255, 0.65)" }}
+            >
+              {description}
+            </p>
+          )}
+          {action && (
+            <button
+              type="button"
+              onClick={() => {
+                sonnerToast.dismiss(toastId);
+                action.onClick?.();
+              }}
+              className="mt-2 inline-flex items-center h-7 px-3 rounded-md text-xs font-medium bg-white text-[#202020] hover:bg-white/90 cursor-pointer"
+            >
+              {action.label}
+            </button>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          className="group -my-1.5 -me-2 size-8 shrink-0 p-0 hover:bg-transparent"
+          aria-label="Fermer la notification"
+          onClick={() => sonnerToast.dismiss(toastId)}
+        >
+          <XIcon
+            size={16}
+            className="opacity-60 transition-opacity group-hover:opacity-100"
+            aria-hidden="true"
+            style={{ color: "#ffffff" }}
+          />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 // Détection mobile pour les toasts
 const checkIsMobile = () =>
   typeof window !== "undefined" && window.innerWidth < 768;
@@ -340,6 +428,36 @@ const toast = {
         />
       ),
       { duration: Infinity, ...sonnerOptions },
+    );
+  },
+  // Document reçu d'une plateforme externe (Qonto, Abby, Gmail, PDP…)
+  // options : { description, logo, logoBg, logoAlt, fallbackIcon, action:
+  // { label, onClick }, duration… }
+  document: (title, options) => {
+    const {
+      description,
+      logo,
+      logoBg,
+      logoAlt,
+      fallbackIcon,
+      action,
+      ...sonnerOptions
+    } = options || {};
+    return sonnerToast.custom(
+      (id) => (
+        <DocumentToast
+          toastId={id}
+          title={title}
+          description={description}
+          logo={logo}
+          logoBg={logoBg}
+          logoAlt={logoAlt}
+          fallbackIcon={fallbackIcon}
+          action={action}
+          isMobile={checkIsMobile()}
+        />
+      ),
+      { duration: 8000, ...sonnerOptions },
     );
   },
   // Conserver les méthodes originales de sonner si nécessaire

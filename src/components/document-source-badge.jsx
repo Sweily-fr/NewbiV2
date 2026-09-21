@@ -42,6 +42,14 @@ const EXTERNAL_SOURCES = {
   },
 };
 
+/**
+ * Fiche d'une plateforme externe (nom, logo, icône) ou null si le document
+ * vient de Newbi.
+ */
+export function getExternalSource(source) {
+  return EXTERNAL_SOURCES[String(source || "").toUpperCase()] || null;
+}
+
 export function isExternalSource(source) {
   return !!source && !!EXTERNAL_SOURCES[String(source).toUpperCase()];
 }
