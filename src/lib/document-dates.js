@@ -30,19 +30,32 @@ export function toTime(value) {
   return d ? d.getTime() : 0;
 }
 
+/** Début du jour local (ms) d'une date, ou 0 si absente / invalide */
+function toDayTime(value) {
+  const d = parseDocumentDate(value);
+  if (!d) return 0;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
 /**
  * Tri décroissant (plus récent en premier) sur la première date disponible
  * parmi `fields`, quel que soit le type de document (natif ou importé).
+ *
+ * Comparaison au jour près : un document Newbi est daté à minuit (jour seul)
+ * alors qu'un document importé (Abby, Qonto…) porte une heure précise. Deux
+ * documents du même jour sont départagés par leur date de création, pour que
+ * le dernier créé reste en haut.
  */
 export function sortByDateDesc(list, fields = ["issueDate", "createdAt"]) {
-  const time = (doc) => {
+  const day = (doc) => {
     for (const f of fields) {
-      const t = toTime(doc?.[f]);
+      const t = toDayTime(doc?.[f]);
       if (t) return t;
     }
     return 0;
   };
-  return [...list].sort((a, b) => time(b) - time(a));
+  const created = (doc) => toTime(doc?.createdAt);
+  return [...list].sort((a, b) => day(b) - day(a) || created(b) - created(a));
 }
 
 /**
