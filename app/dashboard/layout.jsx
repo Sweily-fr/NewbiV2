@@ -25,38 +25,55 @@ async function getOrgSubscriptionState(orgId) {
   const subscriptionPromise = mongoDb.collection("subscription").findOne({
     $or: [{ referenceId: orgId }, { organizationId: orgId }],
   });
+  const orgObjectId = ObjectId.isValid(orgId) ? new ObjectId(orgId) : null;
+  const orgPromise = orgObjectId
+    ? mongoDb
+        .collection("organization")
+        .findOne(
+          { _id: orgObjectId },
+          {
+            projection: {
+              isTrialActive: 1,
+              trialEndDate: 1,
+              hasUsedTrial: 1,
+            },
+          },
+        )
+        .catch((err) => {
+          // Non-fatal : sans doc org on retombe sur la logique abonnement.
+          console.warn(
+            `[Dashboard Layout] org lookup failed for org ${orgId}:`,
+            err?.message,
+          );
+          return null;
+        })
+    : Promise.resolve(null);
 
   // App-managed trial check (feature-flagged). When ENABLE_APP_TRIAL is OFF
   // (default), this block is skipped and the legacy Stripe-based logic below
   // runs unchanged.
   if (isAppTrialEnabled()) {
-    try {
-      const orgObjectId = ObjectId.isValid(orgId) ? new ObjectId(orgId) : null;
-      const orgDoc = orgObjectId
-        ? await mongoDb
-            .collection("organization")
-            .findOne(
-              { _id: orgObjectId },
-              { projection: { isTrialActive: 1, trialEndDate: 1 } },
-            )
-        : null;
-      if (isTrialAppActive(orgDoc)) {
-        // Éviter une rejection non gérée si la requête abonnement échoue
-        subscriptionPromise.catch(() => {});
-        return "full";
-      }
-    } catch (err) {
-      // Non-fatal — fall through to the Stripe-based check below.
-      console.warn(
-        `[Dashboard Layout] trial lookup failed for org ${orgId}:`,
-        err?.message,
-      );
+    const orgDoc = await orgPromise;
+    if (isTrialAppActive(orgDoc)) {
+      // Éviter une rejection non gérée si la requête abonnement échoue
+      subscriptionPromise.catch(() => {});
+      return "full";
     }
   }
 
   const subscription = await subscriptionPromise;
 
-  if (!subscription) return "none";
+  if (!subscription) {
+    // Aucun document abonnement. Si l'org a déjà consommé son essai
+    // applicatif (essai expiré sans jamais passer par Stripe), l'utilisateur
+    // a terminé son onboarding : on le garde sur le dashboard en LECTURE
+    // SEULE avec la bannière « Renouveler l'abonnement ». Le renvoyer vers
+    // /auth/signup bouclait : cette page renvoie sur /dashboard dès que
+    // l'onboarding est terminé.
+    const orgDoc = await orgPromise;
+    if (hasConsumedAppTrial(orgDoc)) return "readonly";
+    return "none";
+  }
 
   // Décision #12 (Lot 5) — past_due est un grace period Stripe pendant les
   // retries de paiement, considéré actif.
@@ -74,6 +91,20 @@ async function getOrgSubscriptionState(orgId) {
   // Un document existe mais l'abonnement est expiré → lecture seule sur le
   // dashboard (au lieu d'une redirection signup qui bouclait).
   return "readonly";
+}
+
+/**
+ * Une org a « consommé » son essai applicatif si elle en a eu un (date de fin
+ * posée ou drapeau hasUsedTrial) et qu'il n'est plus actif. Une org sans
+ * aucune trace d'essai (compte historique Stripe-first jamais souscrit)
+ * n'est pas concernée.
+ * @param {object|null} orgDoc
+ * @returns {boolean}
+ */
+function hasConsumedAppTrial(orgDoc) {
+  if (!orgDoc) return false;
+  if (isTrialAppActive(orgDoc)) return false;
+  return orgDoc.hasUsedTrial === true || Boolean(orgDoc.trialEndDate);
 }
 
 /**
@@ -297,7 +328,11 @@ export default async function DashboardLayout({ children }) {
   // alors que sa session était intacte en base.
   let session;
   let sessionError = null;
-  for (let attempt = 0; attempt < SESSION_FETCH_RETRY_DELAYS_MS.length; attempt++) {
+  for (
+    let attempt = 0;
+    attempt < SESSION_FETCH_RETRY_DELAYS_MS.length;
+    attempt++
+  ) {
     try {
       session = await auth.api.getSession({
         headers: headersList,
