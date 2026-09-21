@@ -29,7 +29,7 @@ import { SIGNUP_HREF, CTA_LABEL } from "@/app/lp/_components/lp-config";
 
 // Landing pages Ads sur lesquelles la navbar adapte ses CTA (libellé +
 // couleur du bouton d'inscription). À étendre si d'autres LP l'utilisent.
-const ADS_LP_PATHS = ["/lp/facturation-electronique"];
+const ADS_LP_PATHS = ["/lp/facturation-electronique", "/lp/gestion"];
 
 const menuItems = [
   {
