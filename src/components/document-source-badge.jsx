@@ -21,6 +21,12 @@ const EXTERNAL_SOURCES = {
     bg: "#2E1065",
     label: (doc) => `${doc} importé depuis Qonto`,
   },
+  ABBY: {
+    name: "Abby",
+    logo: `${BRANDFETCH_CDN}/abby.fr/w/400/h/400`,
+    bg: "#FFFFFF",
+    label: (doc) => `${doc} importé depuis Abby`,
+  },
   GMAIL: {
     name: "Gmail",
     logo: `${BRANDFETCH_CDN}/gmail.com/w/400/h/400`,
