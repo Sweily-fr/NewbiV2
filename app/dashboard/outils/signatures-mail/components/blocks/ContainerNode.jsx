@@ -219,7 +219,7 @@ export default function ContainerNode({
   };
 
   const handleDragLeave = (e) => {
-    if (!e.currentTarget.contains(e.relatedTarget)) {
+    if (!(e.relatedTarget instanceof Node) || !e.currentTarget.contains(e.relatedTarget)) {
       setIsDragOver(false);
       setDropPosition(null);
     }
@@ -479,7 +479,7 @@ export default function ContainerNode({
         onMouseEnter: () => onHover && onHover(container.id),
         onMouseLeave: (e) => {
           // Only clear hover if leaving to outside, not to a child
-          if (!e.currentTarget.contains(e.relatedTarget)) {
+          if (!(e.relatedTarget instanceof Node) || !e.currentTarget.contains(e.relatedTarget)) {
             onHover && onHover(null);
           }
         },
