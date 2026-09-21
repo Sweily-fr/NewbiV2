@@ -188,6 +188,7 @@ import {
 // Hooks
 import { useKanbanBoard } from "./hooks/useKanbanBoard";
 import { TaskPresenceContext, useTaskPresence } from "./hooks/useTaskPresence";
+import { BoardMembersPresence } from "./components/BoardMembersPresence";
 import { useKanbanColumns } from "./hooks/useKanbanColumns";
 import { useKanbanTasks } from "./hooks/useKanbanTasks";
 import { useKanbanDnDSimple } from "./hooks/useKanbanDnDSimple";
@@ -1634,24 +1635,10 @@ function KanbanBoardPageContent({ params }) {
 
             {/* Membres */}
             {board?.members?.length > 0 && (
-              <div className="flex items-center shrink-0">
-                <div className="flex -space-x-1.5">
-                  {board.members.slice(0, 4).map((member) => (
-                    <UserAvatar
-                      key={member.userId || member.id}
-                      src={member.image}
-                      name={member.name || member.email}
-                      size="xs"
-                      className="h-5 w-5 ring-1 ring-background"
-                    />
-                  ))}
-                  {board.members.length > 4 && (
-                    <div className="h-5 w-5 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-medium text-muted-foreground">
-                      +{board.members.length - 4}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <BoardMembersPresence
+                members={board.members}
+                workspaceId={workspaceId}
+              />
             )}
 
             {/* Spacer */}

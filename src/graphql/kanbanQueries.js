@@ -240,6 +240,16 @@ export const GET_ORGANIZATION_MEMBERS = gql`
   }
 `;
 
+export const GET_ORGANIZATION_MEMBERS_PRESENCE = gql`
+  query GetOrganizationMembersPresence($workspaceId: ID!) {
+    organizationMembersPresence(workspaceId: $workspaceId) {
+      userId
+      isOnline
+      lastSeenAt
+    }
+  }
+`;
+
 export const GET_TASKS = gql`
   query GetTasks($boardId: ID!, $columnId: ID, $workspaceId: ID) {
     tasks(boardId: $boardId, columnId: $columnId, workspaceId: $workspaceId) {
