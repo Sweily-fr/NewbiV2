@@ -2,7 +2,11 @@
 
 import React from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { generateDynamicFooter } from "@/src/utils/document-suggestions";
+import {
+  generateDynamicFooter,
+  getVatPaymentMention,
+  resolveVatPaymentCondition,
+} from "@/src/utils/document-suggestions";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { DELIVERY_NOTE_STATUS_LABELS } from "@/src/graphql/deliveryNoteQueries";
 
@@ -41,6 +45,51 @@ const formatDate = (dateInput) => {
     year: "numeric",
   });
 };
+
+// Couleur du bandeau de pied de page : teinte du tableau à 10 % (copie du
+// helper d'UniversalPreviewPDF)
+const applyOpacityToColor = (color, opacity) => {
+  if (!color) return `rgba(0, 0, 0, ${opacity})`;
+  if (color.startsWith("#")) {
+    const hex = color.replace("#", "");
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  }
+  if (color.startsWith("rgb")) {
+    const match = color.match(
+      /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/,
+    );
+    if (match) {
+      const [, r, g, b] = match;
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+  }
+  return color;
+};
+
+// Rendu ligne par ligne des notes (même mise en page que les devis)
+const renderLines = (text) =>
+  text.split("\n").map((line, index) =>
+    line.trim() ? (
+      <div
+        key={index}
+        className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap break-words"
+        data-no-break="true"
+        style={{
+          pageBreakInside: "avoid",
+          breakInside: "avoid",
+          wordWrap: "break-word",
+          overflowWrap: "break-word",
+        }}
+      >
+        {line}
+      </div>
+    ) : (
+      <div key={index} style={{ height: "0.5em" }} />
+    ),
+  );
 
 const formatQuantity = (value) => {
   const num = parseFloat(value);
@@ -103,7 +152,18 @@ const DeliveryNotePreview = ({
   const resolvedCompanyInfo = {
     ...data.companyInfo,
     vatFranchise: data.companyInfo?.vatFranchise ?? organization?.vatFranchise,
+    vatPaymentCondition: resolveVatPaymentCondition(
+      data.companyInfo?.vatPaymentCondition,
+      organization?.vatMode,
+    ),
   };
+  const vatPaymentMention = getVatPaymentMention(
+    resolvedCompanyInfo?.vatPaymentCondition,
+  );
+  const footerColor = applyOpacityToColor(
+    data.appearance?.headerBgColor || "#1d1d1b",
+    0.1,
+  );
 
   const rawCompanyLogo = data.companyInfo?.logo || organization?.logo;
   const companyLogo = rawCompanyLogo
@@ -411,11 +471,11 @@ const DeliveryNotePreview = ({
           {/* NOTES D'EN-TÊTE */}
           {data.headerNotes && (
             <div
-              className="mb-4 text-[10px] dark:text-[#0A0A0A] whitespace-pre-wrap break-words"
+              className="mb-4"
+              style={{ fontSize: "10px" }}
               data-pdf-section="header-notes"
-              data-no-break
             >
-              {data.headerNotes}
+              {renderLines(data.headerNotes)}
             </div>
           )}
 
@@ -642,28 +702,29 @@ const DeliveryNotePreview = ({
           </div>
         </div>
 
-        {/* PIED DE PAGE */}
+        {/* PIED DE PAGE : même bandeau que les devis / factures / BC */}
         <div
-          className="mt-auto px-14 pb-6 pt-2"
+          className="pt-8 pb-8 px-14 w-full"
+          style={{
+            background: `linear-gradient(${footerColor}, ${footerColor}), white`,
+            backgroundColor: footerColor,
+            ...(forPDF ? { marginTop: "auto" } : {}),
+          }}
           data-pdf-section="footer"
+          data-footer-color={footerColor}
+          data-repeat-on-page
           data-no-break
+          data-position="bottom"
         >
           {data.footerNotes && (
-            <div className="py-4 text-[10px]" data-pdf-section="footer-notes">
-              {data.footerNotes.split("\n").map((line, index) =>
-                line.trim() ? (
-                  <div
-                    key={index}
-                    className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap break-words"
-                  >
-                    {line}
-                  </div>
-                ) : (
-                  <div key={index} style={{ height: "0.5em" }} />
-                ),
-              )}
+            <div
+              className="mt-0 py-4 text-[10px]"
+              data-pdf-section="footer-notes"
+            >
+              {renderLines(data.footerNotes)}
             </div>
           )}
+
           <div
             className={`text-[10px] dark:text-[#0A0A0A] whitespace-pre-line ${
               data.footerNotes ? "border-t pt-2" : "pt-2"
@@ -671,6 +732,36 @@ const DeliveryNotePreview = ({
           >
             {generateDynamicFooter(resolvedCompanyInfo)}
           </div>
+
+          {vatPaymentMention && (
+            <div className="text-[10px] dark:text-[#0A0A0A]">
+              {vatPaymentMention}
+            </div>
+          )}
+
+          {(data.companyInfo?.regulatoryBody ||
+            data.companyInfo?.professionalNumber ||
+            data.companyInfo?.decennialInsurance ||
+            data.companyInfo?.professionalLiabilityInsurance) && (
+            <div className="text-[10px] dark:text-[#0A0A0A] whitespace-pre-line">
+              {[
+                data.companyInfo?.regulatoryBody
+                  ? `Organisme de rattachement : ${data.companyInfo.regulatoryBody}`
+                  : "",
+                data.companyInfo?.professionalNumber
+                  ? `Numéro professionnel : ${data.companyInfo.professionalNumber}`
+                  : "",
+                data.companyInfo?.decennialInsurance
+                  ? `Assurance décennale : ${data.companyInfo.decennialInsurance}`
+                  : "",
+                data.companyInfo?.professionalLiabilityInsurance
+                  ? `Assurance RC Pro : ${data.companyInfo.professionalLiabilityInsurance}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" • ")}
+            </div>
+          )}
         </div>
       </div>
     </div>
