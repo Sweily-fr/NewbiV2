@@ -1,85 +1,162 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { TextareaNew } from "@/src/components/ui/textarea-new";
+import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
+import { documentSuggestions } from "@/src/utils/document-suggestions";
+
+const LABEL_CLASS =
+  "text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55";
+
+// Suggestions propres aux remarques de livraison
+const DELIVERY_NOTE_SUGGESTIONS = [
+  "Marchandises livrées en bon état, sans réserve.",
+  "Livraison sur rendez-vous, merci de vérifier le nombre de colis à la réception.",
+  "Toute réserve doit être notifiée sur ce bon de livraison et confirmée par écrit sous 3 jours.",
+  "Colis fragiles : manipuler avec précaution.",
+];
 
 /**
- * Notes du bon de livraison : remarques de livraison (sous le tableau),
- * notes d'en-tête et de bas de page (mêmes emplacements que les devis).
+ * Notes du bon de livraison : même carte « Notes et bas de page » que les
+ * devis, factures et bons de commande (libellés, suggestions), avec en plus
+ * les remarques de livraison imprimées sous la liste des articles.
  */
 export default function NotesAndFooterSection({ canEdit }) {
   const {
+    watch,
+    setValue,
     register,
     formState: { errors },
   } = useFormContext();
+  const data = watch();
 
   return (
-    <div className="space-y-4">
-      <h3 className="font-medium text-lg">Notes</h3>
-
-      <div className="space-y-1">
-        <Label htmlFor="dn-notes">Remarques de livraison</Label>
-        <TextareaNew
-          id="dn-notes"
-          {...register("notes", {
-            maxLength: {
-              value: 2000,
-              message: "Les remarques ne doivent pas dépasser 2000 caractères",
-            },
-          })}
-          placeholder="Ex. Livraison sur rendez-vous, colis fragiles, réserves éventuelles..."
-          rows={3}
-          disabled={!canEdit}
-        />
-        {errors?.notes && (
-          <p className="text-xs text-red-500">{errors.notes.message}</p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Apparaît sous la liste des articles, avant la zone de réception.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <Label htmlFor="dn-header-notes">Notes d'en-tête</Label>
-          <TextareaNew
-            id="dn-header-notes"
-            {...register("headerNotes", {
-              maxLength: {
-                value: 1000,
-                message:
-                  "Les notes d'en-tête ne doivent pas dépasser 1000 caractères",
-              },
-            })}
-            placeholder="Texte affiché en haut du bon de livraison"
-            rows={3}
-            disabled={!canEdit}
-          />
-          {errors?.headerNotes && (
-            <p className="text-xs text-red-500">{errors.headerNotes.message}</p>
-          )}
+    <Card className="shadow-none border-none bg-transparent p-0 py-0!">
+      <CardHeader className="p-0">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+          Notes et bas de page
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4 p-0">
+        {/* Notes d'en-tête */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label htmlFor="header-notes" className={LABEL_CLASS}>
+              Notes d'en-tête
+            </Label>
+            <SuggestionDropdown
+              suggestions={documentSuggestions.headerNotes}
+              onSelect={(value) =>
+                setValue("headerNotes", value, { shouldDirty: true })
+              }
+              label="Suggestions"
+            />
+          </div>
+          <div className="space-y-1">
+            <TextareaNew
+              id="header-notes"
+              className={`mt-2 ${errors?.headerNotes ? "border-red-500" : ""}`}
+              {...register("headerNotes", {
+                maxLength: {
+                  value: 1000,
+                  message:
+                    "Les notes d'en-tête ne doivent pas dépasser 1000 caractères",
+                },
+              })}
+              defaultValue={data.headerNotes || ""}
+              placeholder="Notes qui apparaîtront en haut du bon de livraison..."
+              rows={3}
+              disabled={!canEdit}
+            />
+            {errors?.headerNotes && (
+              <p className="text-xs text-red-500">
+                {errors.headerNotes.message}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="space-y-1">
-          <Label htmlFor="dn-footer-notes">Notes de bas de page</Label>
-          <TextareaNew
-            id="dn-footer-notes"
-            {...register("footerNotes", {
-              maxLength: {
-                value: 2000,
-                message:
-                  "Les notes de bas de page ne doivent pas dépasser 2000 caractères",
-              },
-            })}
-            placeholder="Texte affiché en bas du bon de livraison"
-            rows={3}
-            disabled={!canEdit}
-          />
-          {errors?.footerNotes && (
-            <p className="text-xs text-red-500">{errors.footerNotes.message}</p>
-          )}
+
+        {/* Remarques de livraison */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label htmlFor="delivery-notes" className={LABEL_CLASS}>
+              Remarques de livraison
+            </Label>
+            <SuggestionDropdown
+              suggestions={DELIVERY_NOTE_SUGGESTIONS}
+              onSelect={(value) =>
+                setValue("notes", value, { shouldDirty: true })
+              }
+              label="Suggestions"
+            />
+          </div>
+          <div className="space-y-1">
+            <TextareaNew
+              id="delivery-notes"
+              className={`mt-2 ${errors?.notes ? "border-red-500" : ""}`}
+              {...register("notes", {
+                maxLength: {
+                  value: 2000,
+                  message:
+                    "Les remarques ne doivent pas dépasser 2000 caractères",
+                },
+              })}
+              defaultValue={data.notes || ""}
+              placeholder="Remarques imprimées sous la liste des articles (réserves, consignes...)"
+              rows={4}
+              disabled={!canEdit}
+            />
+            {errors?.notes && (
+              <p className="text-xs text-red-500">{errors.notes.message}</p>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+
+        {/* Notes de bas de page */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label htmlFor="footer-notes" className={LABEL_CLASS}>
+              Notes de bas de page
+            </Label>
+            <SuggestionDropdown
+              suggestions={documentSuggestions.footerNotes}
+              onSelect={(value) =>
+                setValue("footerNotes", value, { shouldDirty: true })
+              }
+              label="Suggestions"
+            />
+          </div>
+          <div className="space-y-1">
+            <TextareaNew
+              id="footer-notes"
+              className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
+              {...register("footerNotes", {
+                maxLength: {
+                  value: 2000,
+                  message:
+                    "Les notes de bas de page ne doivent pas dépasser 2000 caractères",
+                },
+              })}
+              defaultValue={data.footerNotes || ""}
+              placeholder="Notes qui apparaîtront en bas du bon de livraison..."
+              rows={3}
+              disabled={!canEdit}
+            />
+            {errors?.footerNotes && (
+              <p className="text-xs text-red-500">
+                {errors.footerNotes.message}
+              </p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
