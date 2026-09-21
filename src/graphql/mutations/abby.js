@@ -16,14 +16,14 @@ const ABBY_ACCOUNT_FIELDS = gql`
     importError
     stats {
       invoicesSynced
-      expensesSynced
+      quotesSynced
       clientsSynced
       clientInvoicesImported
       quotesImported
     }
     autoSync {
       invoices
-      supplierInvoices
+      quotes
       importClientInvoices
       importQuotes
     }
@@ -89,7 +89,7 @@ export const UPDATE_ABBY_AUTO_SYNC = gql`
         id
         autoSync {
           invoices
-          supplierInvoices
+          quotes
           importClientInvoices
           importQuotes
         }
@@ -123,10 +123,10 @@ export const SYNC_INVOICE_TO_ABBY = gql`
   }
 `;
 
-// Enregistrer une facture d'achat payée dans le livre des achats Abby
-export const SYNC_PURCHASE_INVOICE_TO_ABBY = gql`
-  mutation SyncPurchaseInvoiceToAbby($purchaseInvoiceId: ID!) {
-    syncPurchaseInvoiceToAbby(purchaseInvoiceId: $purchaseInvoiceId) {
+// Créer un devis Newbi dans Abby
+export const SYNC_QUOTE_TO_ABBY = gql`
+  mutation SyncQuoteToAbby($quoteId: ID!) {
+    syncQuoteToAbby(quoteId: $quoteId) {
       success
       message
       abbyId
@@ -142,8 +142,8 @@ export const SYNC_ALL_TO_ABBY = gql`
       message
       invoicesSynced
       invoicesErrors
-      expensesSynced
-      expensesErrors
+      quotesSynced
+      quotesErrors
     }
   }
 `;

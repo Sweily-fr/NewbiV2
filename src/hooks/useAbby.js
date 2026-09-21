@@ -8,7 +8,7 @@ import {
   UPDATE_ABBY_AUTO_SYNC,
   UPDATE_ABBY_INCOME_PRODUCT_TYPE,
   SYNC_INVOICE_TO_ABBY,
-  SYNC_PURCHASE_INVOICE_TO_ABBY,
+  SYNC_QUOTE_TO_ABBY,
   SYNC_ALL_TO_ABBY,
   IMPORT_FROM_ABBY,
 } from "@/src/graphql/mutations/abby";
@@ -39,9 +39,7 @@ export const useAbby = (organizationId) => {
     UPDATE_ABBY_INCOME_PRODUCT_TYPE,
   );
   const [syncInvoiceMutation] = useMutation(SYNC_INVOICE_TO_ABBY);
-  const [syncPurchaseInvoiceMutation] = useMutation(
-    SYNC_PURCHASE_INVOICE_TO_ABBY,
-  );
+  const [syncQuoteMutation] = useMutation(SYNC_QUOTE_TO_ABBY);
   const [syncAllMutation] = useMutation(SYNC_ALL_TO_ABBY);
   const [importFromAbbyMutation] = useMutation(IMPORT_FROM_ABBY);
 
@@ -130,14 +128,9 @@ export const useAbby = (organizationId) => {
     [run, syncInvoiceMutation],
   );
 
-  const syncPurchaseInvoice = useCallback(
-    (purchaseInvoiceId) =>
-      run(
-        syncPurchaseInvoiceMutation,
-        { purchaseInvoiceId },
-        (d) => d.syncPurchaseInvoiceToAbby,
-      ),
-    [run, syncPurchaseInvoiceMutation],
+  const syncQuote = useCallback(
+    (quoteId) => run(syncQuoteMutation, { quoteId }, (d) => d.syncQuoteToAbby),
+    [run, syncQuoteMutation],
   );
 
   const syncAll = useCallback(
@@ -182,7 +175,7 @@ export const useAbby = (organizationId) => {
     updateAutoSync,
     updateIncomeProductType,
     syncInvoice,
-    syncPurchaseInvoice,
+    syncQuote,
     syncAll,
     importFromAbby,
     refetchStatus,

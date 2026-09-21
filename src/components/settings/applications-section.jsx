@@ -136,7 +136,7 @@ const APPLICATIONS = [
     name: "Abby",
     author: "Abby",
     description:
-      "Enregistrez vos factures encaissées et vos achats dans les livres Abby, et récupérez les factures et devis créés dans Abby.",
+      "Envoyez vos devis et vos factures encaissées dans Abby, et récupérez les factures et devis créés dans Abby.",
     category: "accounting",
     beta: true,
     logo: `${BRANDFETCH_CDN}/abby.fr/w/400/h/400`,
@@ -1456,10 +1456,10 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
             </div>
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
               <p className="text-[11px] text-gray-400 mb-0.5">
-                Achats enregistrés
+                Devis créés dans Abby
               </p>
               <p className="text-lg font-semibold">
-                {actions.account.stats.expensesSynced}
+                {actions.account.stats.quotesSynced ?? 0}
               </p>
             </div>
             <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
@@ -1525,9 +1525,9 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
                     hint: "Ajoutées au livre des recettes Abby avec le PDF Newbi dès le paiement",
                   },
                   {
-                    key: "supplierInvoices",
-                    label: "Factures d'achat payées",
-                    hint: "Ajoutées au livre des achats Abby dès le paiement",
+                    key: "quotes",
+                    label: "Devis envoyés",
+                    hint: "Créés comme devis Abby dès l'envoi (numéro Newbi dans le titre), signés dans Abby dès leur acceptation",
                   },
                 ].map(({ key, label, hint }) => (
                   <label
@@ -1636,7 +1636,7 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
           >
             {syncResult.success
               ? syncResult.invoicesSynced != null
-                ? `${syncResult.invoicesSynced} recette${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.expensesSynced} achat${syncResult.expensesSynced > 1 ? "s" : ""} enregistré${syncResult.expensesSynced > 1 ? "s" : ""}${syncResult.invoicesErrors + syncResult.expensesErrors > 0 ? ` - ${syncResult.invoicesErrors + syncResult.expensesErrors} erreur${syncResult.invoicesErrors + syncResult.expensesErrors > 1 ? "s" : ""}` : ""}`
+                ? `${syncResult.invoicesSynced} recette${syncResult.invoicesSynced > 1 ? "s" : ""} enregistrée${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.quotesSynced} devis créé${syncResult.quotesSynced > 1 ? "s" : ""}${syncResult.invoicesErrors + syncResult.quotesErrors > 0 ? ` - ${syncResult.invoicesErrors + syncResult.quotesErrors} erreur${syncResult.invoicesErrors + syncResult.quotesErrors > 1 ? "s" : ""}` : ""}`
                 : "Synchronisation terminée"
               : syncResult.message}
           </p>
