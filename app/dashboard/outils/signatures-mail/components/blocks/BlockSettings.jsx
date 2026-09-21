@@ -49,6 +49,11 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { useImageUpload } from "../../hooks/useImageUpload";
 import { optimizeImage, validateImageFile } from "../../utils/imageOptimizer";
+import {
+  SOCIAL_ICON_COLORS,
+  SOCIAL_ICON_COLOR_PREVIEW,
+  SOCIAL_ICON_COLOR_LABELS,
+} from "../../utils/social-icons";
 import AlignmentSelector from "@/src/components/ui/alignment-selector";
 import { Button } from "@/src/components/ui/button";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
@@ -1426,18 +1431,8 @@ const ALLOWED_SOCIAL_NETWORKS = [
   "youtube",
 ];
 
-// Couleurs AUTORISÉES uniquement
-const ALLOWED_COLORS = [
-  "black",
-  "green",
-  "yellow",
-  "pink",
-  "sky",
-  "orange",
-  "blue",
-  "purple",
-  "indigo",
-];
+// Couleurs d'icônes = variantes réellement présentes sur R2 (source unique)
+const ALLOWED_COLORS = SOCIAL_ICON_COLORS;
 
 // Mapping des noms d'affichage pour les réseaux sociaux
 const socialNetworkLabels = {
@@ -1460,20 +1455,11 @@ const socialNetworkIcons = {
 };
 
 // Fonction pour obtenir une couleur de preview pour les sélecteurs
-const getColorPreview = (colorName) => {
-  const colorMap = {
-    black: "#000000",
-    green: "#22c55e",
-    yellow: "#eab308",
-    pink: "#ec4899",
-    sky: "#0ea5e9",
-    orange: "#f97316",
-    blue: "#3b82f6",
-    purple: "#a855f7",
-    indigo: "#6366f1",
-  };
-  return colorMap[colorName] || "#6b7280";
-};
+const getColorPreview = (colorName) =>
+  SOCIAL_ICON_COLOR_PREVIEW[colorName] || "#6b7280";
+const getColorLabel = (colorName) =>
+  SOCIAL_ICON_COLOR_LABELS[colorName] ||
+  colorName.charAt(0).toUpperCase() + colorName.slice(1);
 
 /**
  * Social icons settings - Full version with network management
@@ -1820,8 +1806,7 @@ function SocialSettings({ props, onUpdate }) {
                                       backgroundColor: getColorPreview(color),
                                     }}
                                   />
-                                  {color.charAt(0).toUpperCase() +
-                                    color.slice(1)}
+                                  {getColorLabel(color)}
                                 </div>
                               </SelectItem>
                             ))}
@@ -1858,13 +1843,19 @@ function SocialSettings({ props, onUpdate }) {
                           className="w-3 h-3 rounded border border-neutral-300"
                           style={{ backgroundColor: getColorPreview(color) }}
                         />
-                        {color.charAt(0).toUpperCase() + color.slice(1)}
+                        {getColorLabel(color)}
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
+            <p className="text-[11px] leading-snug text-neutral-500 dark:text-neutral-400">
+              En mode sombre, certains clients mail (Outlook) inversent les
+              icônes noires en carrés blancs. Une couleur donne un rendu
+              identique dans les deux thèmes.
+            </p>
 
             {/* Taille globale */}
             <div className="flex items-center justify-between">
