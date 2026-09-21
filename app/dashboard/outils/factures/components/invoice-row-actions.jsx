@@ -18,6 +18,7 @@ import {
   Import,
   BookTemplate,
   Link2,
+  Truck,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -40,6 +41,7 @@ import {
   INVOICE_STATUS,
 } from "@/src/graphql/invoiceQueries";
 import { useDeleteImportedInvoice } from "@/src/graphql/importedInvoiceQueries";
+import { useCreateDeliveryNoteFromInvoice } from "@/src/graphql/deliveryNoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -161,7 +163,35 @@ export default function InvoiceRowActions({
     router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
   };
 
-  const isLoading = markingAsPaid || changingStatus || isDeleting;
+  const { createFromInvoice, loading: creatingDeliveryNote } =
+    useCreateDeliveryNoteFromInvoice();
+
+  const handleCreateDeliveryNote = async () => {
+    try {
+      const dn = await createFromInvoice(invoice.id);
+      if (!dn?.id) throw new Error("Bon de livraison non créé");
+      toast.success("Bon de livraison créé à partir de la facture");
+      router.push(`/dashboard/outils/bons-de-livraison/${dn.id}/editer`);
+    } catch (error) {
+      console.error(
+        "[invoice-row-actions] create delivery note failed:",
+        error,
+      );
+      toast.error(
+        error?.message || "Erreur lors de la création du bon de livraison",
+      );
+    }
+  };
+
+  // Un bon de livraison se prépare pour toute facture émise (hors annulée)
+  const canCreateDeliveryNote =
+    !isImportedInvoice &&
+    (invoice.status === INVOICE_STATUS.PENDING ||
+      invoice.status === INVOICE_STATUS.COMPLETED ||
+      invoice.status === "OVERDUE");
+
+  const isLoading =
+    markingAsPaid || changingStatus || isDeleting || creatingDeliveryNote;
 
   // Menu d'actions pour les factures importées
   const { deleteImportedInvoice, loading: isDeletingImported } =
@@ -345,6 +375,16 @@ export default function InvoiceRowActions({
                     Créer un avoir
                   </DropdownMenuItem>
                 )}
+
+              {canCreateDeliveryNote && (
+                <DropdownMenuItem
+                  onClick={handleCreateDeliveryNote}
+                  disabled={isLoading || isReadOnly}
+                >
+                  <Truck className="mr-2 h-4 w-4" />
+                  Créer un bon de livraison
+                </DropdownMenuItem>
+              )}
 
               {invoice.status === INVOICE_STATUS.CANCELED &&
                 canCreateCreditNote && (

@@ -50,6 +50,7 @@ const tabs = [
     matchPaths: [
       "/dashboard/outils/factures",
       "/dashboard/outils/devis",
+      "/dashboard/outils/bons-de-livraison",
       "/dashboard/clients",
       "/dashboard/catalogues",
     ],
@@ -69,11 +70,16 @@ const ventesQuickCreate = [
     label: "Nouveau bon de commande",
     href: "/dashboard/outils/bons-commande/new",
   },
+  {
+    label: "Nouveau bon de livraison",
+    href: "/dashboard/outils/bons-de-livraison/new",
+  },
 ];
 
 const ventesNavigation = [
   { label: "Factures clients", href: "/dashboard/outils/factures" },
   { label: "Devis", href: "/dashboard/outils/devis" },
+  { label: "Bons de livraison", href: "/dashboard/outils/bons-de-livraison" },
   { label: "Liste clients (CRM)", href: "/dashboard/clients" },
   { label: "Catalogues", href: "/dashboard/catalogues" },
 ];

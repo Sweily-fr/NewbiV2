@@ -14,6 +14,7 @@ import { cn } from "@/src/lib/utils";
 import { QUOTE_STATUS_LABELS } from "@/src/graphql/quoteQueries";
 import { INVOICE_STATUS_LABELS } from "@/src/graphql/invoiceQueries";
 import { PURCHASE_ORDER_STATUS_LABELS } from "@/src/graphql/purchaseOrderQueries";
+import { DELIVERY_NOTE_STATUS_LABELS } from "@/src/graphql/deliveryNoteQueries";
 
 // Styles par statut identiques aux cellules "Statut" des tableaux
 // (use-quote-table.js, use-invoice-table.js, use-purchase-order-table.js).
@@ -59,6 +60,16 @@ const DOCUMENT_CONFIG = {
       VALIDATED: { icon: CheckCircle, style: STATUS_STYLES.emerald },
       IN_PROGRESS: { icon: Play, style: STATUS_STYLES.blue },
       DELIVERED: { icon: Truck, style: STATUS_STYLES.emerald },
+      CANCELED: { icon: XCircle, style: STATUS_STYLES.red },
+    },
+  },
+  deliveryNote: {
+    labels: DELIVERY_NOTE_STATUS_LABELS,
+    statuses: {
+      DRAFT: { icon: FileText, style: STATUS_STYLES.gray },
+      PENDING: { icon: Clock, style: STATUS_STYLES.amber },
+      SHIPPED: { icon: Truck, style: STATUS_STYLES.blue },
+      DELIVERED: { icon: CheckCircle, style: STATUS_STYLES.emerald },
       CANCELED: { icon: XCircle, style: STATUS_STYLES.red },
     },
   },

@@ -50,6 +50,7 @@ import {
   CornerDownLeft,
   ArrowUpDown,
   ShoppingCart,
+  Truck,
   RotateCcw,
   History,
 } from "lucide-react";
@@ -65,6 +66,10 @@ import {
   PURCHASE_ORDER_STATUS_LABELS,
 } from "@/src/graphql/purchaseOrderQueries";
 import { GET_CREDIT_NOTES } from "@/src/graphql/creditNoteQueries";
+import {
+  GET_DELIVERY_NOTES,
+  DELIVERY_NOTE_STATUS_LABELS,
+} from "@/src/graphql/deliveryNoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 // --- Helpers ---
@@ -192,6 +197,26 @@ const PurchaseOrderStatusIcon = ({ status }) => {
   return <IconWrapper>{icon}</IconWrapper>;
 };
 
+const DeliveryNoteStatusIcon = ({ status }) => {
+  const cls = "size-3.5";
+  let icon;
+  switch (status) {
+    case "DELIVERED":
+      icon = <CheckCircle2 className={`${cls} text-green-600`} />;
+      break;
+    case "PENDING":
+    case "SHIPPED":
+      icon = <Clock className={`${cls} text-blue-600`} />;
+      break;
+    case "CANCELED":
+      icon = <XCircle className={`${cls} text-red-600`} />;
+      break;
+    default:
+      icon = <Truck className={`${cls} text-gray-600`} />;
+  }
+  return <IconWrapper>{icon}</IconWrapper>;
+};
+
 const CreditNoteStatusIcon = ({ status }) => {
   const cls = "size-3.5";
   let icon;
@@ -271,6 +296,11 @@ export function SearchCommand() {
     { data: creditNotesData, loading: creditNotesLoading },
   ] = useLazyQuery(GET_CREDIT_NOTES, { fetchPolicy: "cache-and-network" });
 
+  const [
+    searchDeliveryNotes,
+    { data: deliveryNotesData, loading: deliveryNotesLoading },
+  ] = useLazyQuery(GET_DELIVERY_NOTES, { fetchPolicy: "cache-and-network" });
+
   const openSettings = React.useCallback((tab = "preferences") => {
     setSettingsInitialTab(tab);
     setSettingsModalOpen(true);
@@ -297,6 +327,7 @@ export function SearchCommand() {
       searchProducts(vars);
       searchPurchaseOrders(vars);
       searchCreditNotes(vars);
+      searchDeliveryNotes(vars);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -309,6 +340,7 @@ export function SearchCommand() {
     searchProducts,
     searchPurchaseOrders,
     searchCreditNotes,
+    searchDeliveryNotes,
   ]);
 
   // Global events + keyboard shortcut
@@ -345,6 +377,7 @@ export function SearchCommand() {
   const purchaseOrders =
     purchaseOrdersData?.purchaseOrders?.purchaseOrders || [];
   const creditNotes = creditNotesData?.creditNotes?.creditNotes || [];
+  const deliveryNotes = deliveryNotesData?.deliveryNotes?.deliveryNotes || [];
 
   const isLoading =
     clientsLoading ||
@@ -352,14 +385,16 @@ export function SearchCommand() {
     quotesLoading ||
     productsLoading ||
     purchaseOrdersLoading ||
-    creditNotesLoading;
+    creditNotesLoading ||
+    deliveryNotesLoading;
   const hasResults =
     clients.length > 0 ||
     invoices.length > 0 ||
     quotes.length > 0 ||
     products.length > 0 ||
     purchaseOrders.length > 0 ||
-    creditNotes.length > 0;
+    creditNotes.length > 0 ||
+    deliveryNotes.length > 0;
   const isSearching = searchQuery.length >= 2;
 
   // Status label for credit notes (no export from queries)
@@ -592,6 +627,55 @@ export function SearchCommand() {
                       </>
                     )}
 
+                    {/* Bons de livraison */}
+                    {deliveryNotes.length > 0 && (
+                      <>
+                        <CommandGroup heading="Bons de livraison">
+                          {deliveryNotes.map((dn) => (
+                            <CommandItem
+                              key={dn.id}
+                              onSelect={() =>
+                                runCommand(
+                                  () =>
+                                    router.push(
+                                      `/dashboard/outils/bons-de-livraison?id=${dn.id}`,
+                                    ),
+                                  {
+                                    id: `dn-${dn.id}`,
+                                    label:
+                                      dn.status === "DRAFT"
+                                        ? "Bon de livraison (brouillon)"
+                                        : `${dn.prefix}-${dn.number}`,
+                                    type: "livraison",
+                                    url: `/dashboard/outils/bons-de-livraison?id=${dn.id}`,
+                                  },
+                                )
+                              }
+                            >
+                              <DeliveryNoteStatusIcon status={dn.status} />
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">
+                                    {dn.status === "DRAFT"
+                                      ? "Brouillon"
+                                      : `${dn.prefix}-${dn.number}`}
+                                  </span>
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                    {DELIVERY_NOTE_STATUS_LABELS[dn.status]}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground truncate">
+                                  {dn.client?.name} •{" "}
+                                  {formatRelativeDate(dn.issueDate)}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        <CommandSeparator />
+                      </>
+                    )}
+
                     {/* Avoirs */}
                     {creditNotes.length > 0 && (
                       <>
@@ -753,6 +837,20 @@ export function SearchCommand() {
                       <CommandItem
                         onSelect={() =>
                           runCommand(() =>
+                            router.push(
+                              "/dashboard/outils/bons-de-livraison/new",
+                            ),
+                          )
+                        }
+                      >
+                        <IconWrapper>
+                          <Plus className="size-3.5 text-[#5b4eff]" />
+                        </IconWrapper>
+                        <span>Nouveau bon de livraison</span>
+                      </CommandItem>
+                      <CommandItem
+                        onSelect={() =>
+                          runCommand(() =>
                             router.push("/dashboard/clients?new=true"),
                           )
                         }
@@ -881,6 +979,18 @@ export function SearchCommand() {
                       <ShoppingCart className="size-3.5" />
                     </IconWrapper>
                     <span>Bons de commande</span>
+                  </CommandItem>
+                  <CommandItem
+                    onSelect={() =>
+                      runCommand(() =>
+                        router.push("/dashboard/outils/bons-de-livraison"),
+                      )
+                    }
+                  >
+                    <IconWrapper>
+                      <Truck className="size-3.5" />
+                    </IconWrapper>
+                    <span>Bons de livraison</span>
                   </CommandItem>
                   <CommandItem
                     onSelect={() =>

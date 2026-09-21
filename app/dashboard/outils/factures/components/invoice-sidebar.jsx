@@ -1675,6 +1675,58 @@ export default function InvoiceSidebar({
             </>
           )}
 
+          {/* Bon de livraison lié (BL à l'origine de cette facture) */}
+          {invoice.sourceDeliveryNote && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Bon de livraison lié
+                </p>
+                <div className="space-y-1">
+                  <LinkedDocumentRow
+                    type="deliveryNote"
+                    document={invoice.sourceDeliveryNote}
+                    onClick={() => {
+                      router.push(
+                        `/dashboard/outils/bons-de-livraison?id=${invoice.sourceDeliveryNote.id}`,
+                      );
+                      onClose();
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Bons de livraison générés depuis cette facture */}
+          {invoice.linkedDeliveryNotes &&
+            invoice.linkedDeliveryNotes.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Bons de livraison liés
+                  </p>
+                  <div className="space-y-1">
+                    {invoice.linkedDeliveryNotes.map((dn) => (
+                      <LinkedDocumentRow
+                        key={dn.id}
+                        type="deliveryNote"
+                        document={dn}
+                        onClick={() => {
+                          router.push(
+                            `/dashboard/outils/bons-de-livraison?id=${dn.id}`,
+                          );
+                          onClose();
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
           {/* Preview Thumbnail */}
           {/* <div className="space-y-3">
             <h3 className="font-medium">Aperçu</h3>

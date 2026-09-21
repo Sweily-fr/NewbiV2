@@ -4,6 +4,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { ARCHIVE_QUOTE_PDF } from "@/src/graphql/quoteQueries";
 import { ARCHIVE_CREDIT_NOTE_PDF } from "@/src/graphql/creditNoteQueries";
 import { ARCHIVE_PURCHASE_ORDER_PDF } from "@/src/graphql/purchaseOrderQueries";
+import { ARCHIVE_DELIVERY_NOTE_PDF } from "@/src/graphql/deliveryNoteQueries";
 import { buildDocumentPdfFile } from "@/src/utils/build-document-pdf";
 import { invalidatePdfCache } from "@/src/components/pdf/pdf-preview";
 
@@ -11,18 +12,21 @@ const MUTATIONS = {
   quote: ARCHIVE_QUOTE_PDF,
   creditNote: ARCHIVE_CREDIT_NOTE_PDF,
   purchaseOrder: ARCHIVE_PURCHASE_ORDER_PDF,
+  deliveryNote: ARCHIVE_DELIVERY_NOTE_PDF,
 };
 // nom de la variable id par type
 const ID_VAR = {
   quote: "quoteId",
   creditNote: "creditNoteId",
   purchaseOrder: "purchaseOrderId",
+  deliveryNote: "deliveryNoteId",
 };
 // statut brouillon non archivable (null = pas de brouillon → toujours archiver)
 const DRAFT_STATUS = {
   quote: "DRAFT",
   creditNote: null,
   purchaseOrder: "DRAFT",
+  deliveryNote: "DRAFT",
 };
 
 /**
@@ -30,7 +34,7 @@ const DRAFT_STATUS = {
  * sur Cloudflare R2. Génère le PDF (Factur-X pour les avoirs), puis l'upload.
  * NON BLOQUANT : tout échec est silencieux.
  *
- * @param {"quote"|"creditNote"|"purchaseOrder"} type
+ * @param {"quote"|"creditNote"|"purchaseOrder"|"deliveryNote"} type
  */
 export function useArchiveDocumentPdf(type) {
   const { workspaceId } = useRequiredWorkspace();

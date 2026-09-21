@@ -14,6 +14,7 @@ import {
   FileCheck,
   Mail,
   ShoppingCart,
+  Truck,
   BookTemplate,
   PenLine,
   Ban,
@@ -43,6 +44,7 @@ import {
   CANCEL_SIGNATURE,
 } from "@/src/graphql/esignatureQueries";
 import { useApolloClient } from "@apollo/client";
+import { useCreateDeliveryNoteFromQuote } from "@/src/graphql/deliveryNoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
@@ -265,10 +267,31 @@ export default function QuoteRowActions({
     }
   };
 
-  const isLoading = changingStatus || isDeleting;
+  const { createFromQuote, loading: creatingDeliveryNote } =
+    useCreateDeliveryNoteFromQuote();
+
+  const handleCreateDeliveryNote = async () => {
+    try {
+      const dn = await createFromQuote(quote.id);
+      if (!dn?.id) throw new Error("Bon de livraison non créé");
+      toast.success("Bon de livraison créé à partir du devis");
+      router.push(`/dashboard/outils/bons-de-livraison/${dn.id}/editer`);
+    } catch (error) {
+      console.error("[quote-row-actions] create delivery note failed:", error);
+      toast.error(
+        error?.message || "Erreur lors de la création du bon de livraison",
+      );
+    }
+  };
+
+  const isLoading = changingStatus || isDeleting || creatingDeliveryNote;
 
   // Logique pour déterminer quelles actions sont disponibles
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
+  // Un bon de livraison se prépare dès que le devis est envoyé ou accepté
+  const canCreateDeliveryNote =
+    quote.status === QUOTE_STATUS.PENDING ||
+    quote.status === QUOTE_STATUS.COMPLETED;
   // Un devis déjà facturé via un bon de commande ne peut plus être converti
   // directement en facture (même message que dans la sidebar).
   const canConvertToInvoice =
@@ -280,7 +303,8 @@ export default function QuoteRowActions({
     quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
     quote.status === QUOTE_STATUS.IMPORTED || // Accepter/Rejeter (devis importé)
     canConvertToInvoice ||
-    canConvertToPO;
+    canConvertToPO ||
+    canCreateDeliveryNote;
 
   // Origine import : préfixe vide (conservé après acceptation/refus). Un devis
   // importé reste supprimable quel que soit son statut, comme l'indique le logo.
@@ -406,6 +430,16 @@ export default function QuoteRowActions({
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Convertir en bon de commande
+                </DropdownMenuItem>
+              )}
+
+              {canCreateDeliveryNote && (
+                <DropdownMenuItem
+                  onClick={handleCreateDeliveryNote}
+                  disabled={isLoading || isReadOnly}
+                >
+                  <Truck className="mr-2 h-4 w-4" />
+                  Créer un bon de livraison
                 </DropdownMenuItem>
               )}
 
