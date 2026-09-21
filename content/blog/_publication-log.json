@@ -276,5 +276,12 @@
       "facturer-un-particulier-regles-mentions",
       "facture-electronique-b2c-particuliers-concerne"
     ]
+  },
+  {
+    "date": "2026-09-21",
+    "articles": [
+      "facture-developpeur-web-freelance",
+      "declaration-tva-ca3-ca12-guide"
+    ]
   }
 ]
