@@ -60,8 +60,7 @@ export default function EnhancedDeliveryNoteForm({
   const setCurrentStep = onStepChange || setInternalCurrentStep;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(
-    () =>
-      !!(data.receivedBy || data.signatureDataUrl || data.customFields?.length),
+    () => !!(data.receivedBy || data.signatureDataUrl),
   );
 
   const canEdit = !loading;
@@ -185,9 +184,7 @@ export default function EnhancedDeliveryNoteForm({
                 validationErrors={validationErrors}
               />
 
-              <NotesAndFooterSection canEdit={canEdit} />
-
-              {/* Options avancées : réception + champs personnalisés */}
+              {/* Options avancées : réception (comme les options avancées des devis) */}
               <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
                 <CollapsibleTrigger asChild>
                   <button
@@ -200,19 +197,24 @@ export default function EnhancedDeliveryNoteForm({
                         advancedOpen && "rotate-90",
                       )}
                     />
-                    Réception et champs personnalisés
+                    Options avancées
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="space-y-6 pt-2">
                     <ReceptionSection canEdit={canEdit} />
-                    <CustomFieldsSection
-                      canEdit={canEdit}
-                      validationErrors={validationErrors}
-                    />
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
+              {/* Champs personnalisés (même position que sur les devis) */}
+              <CustomFieldsSection
+                canEdit={canEdit}
+                validationErrors={validationErrors}
+              />
+
+              {/* Notes et bas de page */}
+              <NotesAndFooterSection canEdit={canEdit} />
             </>
           )}
         </div>

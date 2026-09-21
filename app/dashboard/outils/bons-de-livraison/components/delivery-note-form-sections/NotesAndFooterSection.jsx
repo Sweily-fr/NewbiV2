@@ -17,10 +17,23 @@ const LABEL_CLASS =
 
 // Suggestions propres aux remarques de livraison
 const DELIVERY_NOTE_SUGGESTIONS = [
-  "Marchandises livrées en bon état, sans réserve.",
-  "Livraison sur rendez-vous, merci de vérifier le nombre de colis à la réception.",
-  "Toute réserve doit être notifiée sur ce bon de livraison et confirmée par écrit sous 3 jours.",
-  "Colis fragiles : manipuler avec précaution.",
+  {
+    label: "Bon état, sans réserve",
+    value: "Marchandises livrées en bon état, sans réserve.",
+  },
+  {
+    label: "Vérification des colis",
+    value: "Merci de vérifier le nombre et l'état des colis à la réception.",
+  },
+  {
+    label: "Réserves sous 3 jours",
+    value:
+      "Toute réserve doit être notifiée sur ce bon de livraison et confirmée par écrit sous 3 jours.",
+  },
+  {
+    label: "Colis fragiles",
+    value: "Colis fragiles : manipuler avec précaution.",
+  },
 ];
 
 /**
