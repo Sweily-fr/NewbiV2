@@ -449,7 +449,7 @@ export default function SignaturePreviewModal({
   const [containerStructure, setContainerStructure] = useState(null);
   const previewRef = useRef(null);
 
-  // Copie avec execCommand pour une meilleure compatibilité email (Gmail/Outlook)
+  // Copie avec execCommand - fallback pour les navigateurs sans API Clipboard
   const copyWithExecCommand = (html) => {
     const container = document.createElement("div");
     container.style.position = "fixed";
@@ -459,6 +459,9 @@ export default function SignaturePreviewModal({
     container.style.height = "1px";
     container.style.overflow = "hidden";
     container.style.opacity = "0.01";
+    // Fond transparent : sans lui, le navigateur peut sérialiser le fond de la
+    // page dans le presse-papier → bloc blanc au collage en mode sombre
+    container.style.background = "transparent";
     container.setAttribute("contenteditable", "true");
     container.innerHTML = html;
     document.body.appendChild(container);
@@ -486,22 +489,28 @@ export default function SignaturePreviewModal({
     try {
       const signatureHTML = generatePreviewHTML(data, container);
 
-      // Essayer d'abord avec execCommand (meilleure compatibilité email)
-      const execSuccess = copyWithExecCommand(signatureHTML);
-      if (execSuccess) {
+      // API Clipboard en premier : elle copie le HTML brut de la signature, sans
+      // que le navigateur y injecte les styles de la page (fond blanc en dark mode)
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([signatureHTML], { type: "text/html" }),
+            "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
+              type: "text/plain",
+            }),
+          }),
+        ]);
         toast.success("Signature copiée avec succès !");
         return;
+      } catch (clipboardError) {
+        console.error("[copySignature] Clipboard API error:", clipboardError);
       }
 
-      // Fallback vers l'API Clipboard moderne
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([signatureHTML], { type: "text/html" }),
-          "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
-            type: "text/plain",
-          }),
-        }),
-      ]);
+      // Fallback execCommand pour les navigateurs sans ClipboardItem
+      const execSuccess = copyWithExecCommand(signatureHTML);
+      if (!execSuccess) {
+        throw new Error("execCommand copy failed");
+      }
 
       toast.success("Signature copiée avec succès !");
     } catch (error) {
