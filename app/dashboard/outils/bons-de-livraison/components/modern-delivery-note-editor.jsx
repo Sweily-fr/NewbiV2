@@ -40,6 +40,7 @@ export default function ModernDeliveryNoteEditor({
   const { client: preselectedClient } = useClient(clientIdFromUrl);
 
   const [showEditClient, setShowEditClient] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   const [debouncedPreview, setDebouncedPreview] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdDeliveryNote, setCreatedDeliveryNote] = useState(null);
@@ -161,7 +162,7 @@ export default function ModernDeliveryNoteEditor({
   // Émission / modification, puis retour à la liste avec toast + envoi email
   const handleSubmitWithEmail = async () => {
     const result = await onSubmit();
-    if (!result?.success || !result?.deliveryNote) return;
+    if (!result?.success || !result?.deliveryNote) return result;
     const dn = result.deliveryNote;
     const payload = {
       id: dn.id,
@@ -236,6 +237,8 @@ export default function ModernDeliveryNoteEditor({
                     nextDeliveryNumber={nextDeliveryNumber}
                     isDraft={isCreating || isDraft}
                     onEditClient={() => setShowEditClient(true)}
+                    currentStep={currentStep}
+                    onStepChange={setCurrentStep}
                   />
                 </FormProvider>
               </div>

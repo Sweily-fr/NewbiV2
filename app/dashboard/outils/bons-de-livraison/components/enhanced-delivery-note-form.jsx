@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ import {
   CollapsibleTrigger,
 } from "@/src/components/ui/collapsible";
 import { cn } from "@/src/lib/utils";
+import { toast } from "@/src/components/ui/sonner";
 import CustomFieldsSection from "@/app/dashboard/outils/devis/components/quote-form-sections/CustomFieldsSection";
 import ClientSection from "./delivery-note-form-sections/ClientSection";
 import DeliveryInfoSection from "./delivery-note-form-sections/DeliveryInfoSection";
@@ -27,8 +28,10 @@ import NotesAndFooterSection from "./delivery-note-form-sections/NotesAndFooterS
 import ReceptionSection from "./delivery-note-form-sections/ReceptionSection";
 
 /**
- * Formulaire de bon de livraison : une seule page scrollable (client, infos
- * de livraison, adresse, articles SANS prix, notes, réception).
+ * Formulaire de bon de livraison, en deux étapes comme les devis, factures et
+ * bons de commande :
+ *  1. client, informations de livraison, adresse ;
+ *  2. articles SANS prix, notes, réception et champs personnalisés.
  */
 export default function EnhancedDeliveryNoteForm({
   mode = "create",
@@ -43,13 +46,22 @@ export default function EnhancedDeliveryNoteForm({
   nextDeliveryNumber,
   isDraft = true,
   onEditClient,
+  currentStep: externalCurrentStep,
+  onStepChange,
 }) {
   const { watch } = useFormContext();
   const data = watch();
   const scrollContainerRef = useRef(null);
+  const [internalCurrentStep, setInternalCurrentStep] = useState(1);
+  const currentStep =
+    externalCurrentStep !== undefined
+      ? externalCurrentStep
+      : internalCurrentStep;
+  const setCurrentStep = onStepChange || setInternalCurrentStep;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(
-    () => !!(data.receivedBy || data.signatureDataUrl || data.customFields?.length),
+    () =>
+      !!(data.receivedBy || data.signatureDataUrl || data.customFields?.length),
   );
 
   const canEdit = !loading;
@@ -70,10 +82,58 @@ export default function EnhancedDeliveryNoteForm({
     }
   };
 
+  const scrollTop = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Étape 1 : un client et une date d'émission suffisent pour continuer
+  const isStep1Valid = () =>
+    !!data.client?.id &&
+    !!data.issueDate &&
+    !validationErrors?.client &&
+    !validationErrors?.issueDate &&
+    !validationErrors?.deliveryDate &&
+    !validationErrors?.deliveryAddress;
+
+  const handleNextStep = () => {
+    if (!isStep1Valid()) {
+      if (!data.client?.id) {
+        toast.error("Veuillez sélectionner un client pour continuer");
+        setValidationErrors?.((prev) => ({
+          ...prev,
+          client: "Veuillez sélectionner un client",
+        }));
+      }
+      setTimeout(scrollToFirstError, 50);
+      return;
+    }
+    setCurrentStep(2);
+    scrollTop();
+  };
+
+  const handlePreviousStep = () => {
+    setCurrentStep(1);
+    scrollTop();
+  };
+
   const handleSubmit = async () => {
-    await onSubmit?.();
+    const result = await onSubmit?.();
     // Les erreurs éventuelles sont posées par le hook : y amener l'utilisateur
-    setTimeout(scrollToFirstError, 50);
+    // (une erreur de l'étape 1 ramène sur l'étape 1)
+    if (result === false || result?.success === false) {
+      const keys = Object.keys(validationErrors || {});
+      if (
+        keys.some((k) =>
+          ["client", "issueDate", "deliveryDate", "deliveryAddress"].includes(
+            k,
+          ),
+        )
+      ) {
+        setCurrentStep(1);
+        scrollTop();
+      }
+      setTimeout(scrollToFirstError, 50);
+    }
   };
 
   const submitLabel = saving
@@ -93,55 +153,68 @@ export default function EnhancedDeliveryNoteForm({
         className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-20 lg:pb-12"
       >
         <div className="space-y-8 px-2 pt-4 md:pt-6">
-          <ClientSection
-            canEdit={canEdit}
-            validationErrors={validationErrors}
-            setValidationErrors={setValidationErrors}
-            onEditClient={onEditClient}
-          />
+          {/* Étape 1 : client, informations et adresse de livraison */}
+          {currentStep === 1 && (
+            <>
+              <ClientSection
+                canEdit={canEdit}
+                validationErrors={validationErrors}
+                setValidationErrors={setValidationErrors}
+                onEditClient={onEditClient}
+              />
 
-          <DeliveryInfoSection
-            canEdit={canEdit}
-            isDraft={isDraft}
-            nextDeliveryNumber={nextDeliveryNumber}
-            validationErrors={validationErrors}
-          />
+              <DeliveryInfoSection
+                canEdit={canEdit}
+                isDraft={isDraft}
+                nextDeliveryNumber={nextDeliveryNumber}
+                validationErrors={validationErrors}
+              />
 
-          <DeliveryAddressSection
-            canEdit={canEdit}
-            validationErrors={validationErrors}
-          />
+              <DeliveryAddressSection
+                canEdit={canEdit}
+                validationErrors={validationErrors}
+              />
+            </>
+          )}
 
-          <ItemsSection canEdit={canEdit} validationErrors={validationErrors} />
+          {/* Étape 2 : articles, notes, réception et champs personnalisés */}
+          {currentStep === 2 && (
+            <>
+              <ItemsSection
+                canEdit={canEdit}
+                validationErrors={validationErrors}
+              />
 
-          <NotesAndFooterSection canEdit={canEdit} />
+              <NotesAndFooterSection canEdit={canEdit} />
 
-          {/* Options avancées : réception + champs personnalisés */}
-          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <CollapsibleTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-3"
-              >
-                <ChevronRight
-                  className={cn(
-                    "size-3.5 transition-transform duration-200",
-                    advancedOpen && "rotate-90",
-                  )}
-                />
-                Réception et champs personnalisés
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="space-y-6 pt-2">
-                <ReceptionSection canEdit={canEdit} />
-                <CustomFieldsSection
-                  canEdit={canEdit}
-                  validationErrors={validationErrors}
-                />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+              {/* Options avancées : réception + champs personnalisés */}
+              <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-3"
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "size-3.5 transition-transform duration-200",
+                        advancedOpen && "rotate-90",
+                      )}
+                    />
+                    Réception et champs personnalisés
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-6 pt-2">
+                    <ReceptionSection canEdit={canEdit} />
+                    <CustomFieldsSection
+                      canEdit={canEdit}
+                      validationErrors={validationErrors}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </>
+          )}
         </div>
       </div>
 
@@ -169,6 +242,16 @@ export default function EnhancedDeliveryNoteForm({
             </div>
 
             <div className="flex gap-3">
+              {currentStep === 2 && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handlePreviousStep}
+                  disabled={!canEdit}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              )}
               {isDraft && (
                 <Button
                   variant="outline"
@@ -178,14 +261,27 @@ export default function EnhancedDeliveryNoteForm({
                   {saving ? "Sauvegarde..." : "Enregistrer brouillon"}
                 </Button>
               )}
-              <Button
-                variant="primary"
-                onClick={handleSubmit}
-                disabled={!canEdit || saving}
-                className="px-6"
-              >
-                {submitLabel}
-              </Button>
+              {currentStep === 1 && (
+                <Button
+                  variant="primary"
+                  onClick={handleNextStep}
+                  disabled={!canEdit}
+                  className="px-6"
+                >
+                  <span className="hidden sm:inline">Continuer</span>
+                  <ChevronRight className="h-4 w-4 sm:ml-2" />
+                </Button>
+              )}
+              {currentStep === 2 && (
+                <Button
+                  variant="primary"
+                  onClick={handleSubmit}
+                  disabled={!canEdit || saving}
+                  className="px-6"
+                >
+                  {submitLabel}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -201,7 +297,10 @@ export default function EnhancedDeliveryNoteForm({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelDialog(false)}
+            >
               Rester
             </Button>
             <Button
