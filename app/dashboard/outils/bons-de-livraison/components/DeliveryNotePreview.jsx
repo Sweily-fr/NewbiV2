@@ -146,7 +146,8 @@ const DeliveryNotePreview = ({
 
   // Adresse de livraison : celle du document, sinon celle du client
   const deliveryAddress =
-    data.deliveryAddress && (data.deliveryAddress.street || data.deliveryAddress.city)
+    data.deliveryAddress &&
+    (data.deliveryAddress.street || data.deliveryAddress.city)
       ? data.deliveryAddress
       : data.client?.hasDifferentShippingAddress && data.client?.shippingAddress
         ? data.client.shippingAddress
@@ -580,7 +581,9 @@ const DeliveryNotePreview = ({
                 .filter((f) => (f.key || f.name) && f.value)
                 .map((field, index) => (
                   <div key={index}>
-                    <span className="font-medium">{field.key || field.name} : </span>
+                    <span className="font-medium">
+                      {field.key || field.name} :{" "}
+                    </span>
                     <span>{field.value}</span>
                   </div>
                 ))}

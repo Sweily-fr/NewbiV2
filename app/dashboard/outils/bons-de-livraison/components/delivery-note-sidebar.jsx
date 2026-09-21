@@ -103,7 +103,9 @@ export default function DeliveryNoteSidebar({
       initialDeliveryNote?.id &&
       initialDeliveryNote?.status !== DELIVERY_NOTE_STATUS.DRAFT
     ) {
-      prefetchPdf(`/api/document-preview/deliveryNote/${initialDeliveryNote.id}`);
+      prefetchPdf(
+        `/api/document-preview/deliveryNote/${initialDeliveryNote.id}`,
+      );
     }
   }, [isOpen, initialDeliveryNote?.id, initialDeliveryNote?.status]);
 
@@ -127,7 +129,9 @@ export default function DeliveryNoteSidebar({
   const deliveryNote = fullDeliveryNote || initialDeliveryNote;
 
   const handleEdit = () => {
-    router.push(`/dashboard/outils/bons-de-livraison/${deliveryNote.id}/editer`);
+    router.push(
+      `/dashboard/outils/bons-de-livraison/${deliveryNote.id}/editer`,
+    );
     onClose();
   };
 
@@ -691,7 +695,10 @@ export default function DeliveryNoteSidebar({
             <Button
               variant="outline"
               onClick={() =>
-                changeTo(DELIVERY_NOTE_STATUS.CANCELED, "Bon de livraison annulé")
+                changeTo(
+                  DELIVERY_NOTE_STATUS.CANCELED,
+                  "Bon de livraison annulé",
+                )
               }
               disabled={isLoading}
               className="w-full font-normal"

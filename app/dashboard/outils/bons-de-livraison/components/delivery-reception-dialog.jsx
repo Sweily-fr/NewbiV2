@@ -65,7 +65,10 @@ export default function DeliveryReceptionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(value) => !loading && onOpenChange(value)}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => !loading && onOpenChange(value)}
+    >
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

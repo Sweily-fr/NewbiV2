@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { FormProvider } from "react-hook-form";
-import { X, LoaderCircle } from "lucide-react";
+import { X, LoaderCircle, Settings } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -25,6 +25,8 @@ import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/se
 import { formatDeliveryNoteReference } from "@/src/graphql/deliveryNoteQueries";
 import { useDeliveryNoteEditor } from "../hooks/use-delivery-note-editor";
 import EnhancedDeliveryNoteForm from "./enhanced-delivery-note-form";
+import DeliveryNoteSettingsView from "./delivery-note-settings-view";
+import { toast } from "@/src/components/ui/sonner";
 import DeliveryNotePreview from "./DeliveryNotePreview";
 
 const LIST_URL = "/dashboard/outils/bons-de-livraison";
@@ -41,6 +43,8 @@ export default function ModernDeliveryNoteEditor({
 
   const [showEditClient, setShowEditClient] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showSettings, setShowSettings] = useState(false);
+  const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
   const [debouncedPreview, setDebouncedPreview] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdDeliveryNote, setCreatedDeliveryNote] = useState(null);
@@ -99,7 +103,12 @@ export default function ModernDeliveryNoteEditor({
     enabled: mode !== "create" && !loading,
   });
 
-  if (mode !== "create" && !loading && !loadedDeliveryNote && deliveryNoteError) {
+  if (
+    mode !== "create" &&
+    !loading &&
+    !loadedDeliveryNote &&
+    deliveryNoteError
+  ) {
     return <ResourceNotFound listUrl={LIST_URL} homeUrl="/dashboard" />;
   }
 
@@ -198,10 +207,16 @@ export default function ModernDeliveryNoteEditor({
             <div className="flex items-center justify-between pb-4 md:pb-6 border-b">
               <div>
                 <h1 className="text-xl md:text-2xl font-medium mb-1">
-                  {isCreating && "Nouveau bon de livraison"}
-                  {!isCreating && "Modifier le bon de livraison"}
+                  {showSettings ? (
+                    "Paramètres du bon de livraison"
+                  ) : (
+                    <>
+                      {isCreating && "Nouveau bon de livraison"}
+                      {!isCreating && "Modifier le bon de livraison"}
+                    </>
+                  )}
                 </h1>
-                {!isCreating && loadedDeliveryNote && (
+                {!showSettings && !isCreating && loadedDeliveryNote && (
                   <p className="text-sm text-muted-foreground">
                     {formatDeliveryNoteReference(loadedDeliveryNote)}
                     {loadedDeliveryNote.sourceQuote?.number &&
@@ -211,35 +226,78 @@ export default function ModernDeliveryNoteEditor({
                   </p>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="h-8 w-8 p-0 md:hidden"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {!showSettings && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleBack}
+                      className="h-8 w-8 p-0 md:hidden"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowSettings(true)}
+                      title="Paramètres"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
+                {showSettings && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (closeSettingsHandler) closeSettingsHandler();
+                      else setShowSettings(false);
+                    }}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="flex-1 min-h-0 flex flex-col">
               <div className="flex-1 min-h-0">
                 <FormProvider {...form}>
-                  <EnhancedDeliveryNoteForm
-                    mode={mode}
-                    loading={loading}
-                    saving={saving}
-                    onSave={onSave}
-                    onSubmit={handleSubmitWithEmail}
-                    onLeave={leaveEditor}
-                    hasUserChanges={hasUserChanges}
-                    validationErrors={validationErrors}
-                    setValidationErrors={setValidationErrors}
-                    nextDeliveryNumber={nextDeliveryNumber}
-                    isDraft={isCreating || isDraft}
-                    onEditClient={() => setShowEditClient(true)}
-                    currentStep={currentStep}
-                    onStepChange={setCurrentStep}
-                  />
+                  {showSettings ? (
+                    <DeliveryNoteSettingsView
+                      onCancel={() => setShowSettings(false)}
+                      onCloseAttempt={setCloseSettingsHandler}
+                      onSave={() => {
+                        setShowSettings(false);
+                        toast.success("Paramètres appliqués");
+                      }}
+                      canEdit={!loading}
+                      saveLabel="Appliquer à ce bon de livraison"
+                      organization={organization}
+                      isDraft={isCreating || isDraft}
+                      nextDeliveryNumber={nextDeliveryNumber}
+                    />
+                  ) : (
+                    <EnhancedDeliveryNoteForm
+                      mode={mode}
+                      loading={loading}
+                      saving={saving}
+                      onSave={onSave}
+                      onSubmit={handleSubmitWithEmail}
+                      onLeave={leaveEditor}
+                      hasUserChanges={hasUserChanges}
+                      validationErrors={validationErrors}
+                      setValidationErrors={setValidationErrors}
+                      nextDeliveryNumber={nextDeliveryNumber}
+                      isDraft={isCreating || isDraft}
+                      onEditClient={() => setShowEditClient(true)}
+                      currentStep={currentStep}
+                      onStepChange={setCurrentStep}
+                    />
+                  )}
                 </FormProvider>
               </div>
             </div>
@@ -284,7 +342,9 @@ export default function ModernDeliveryNoteEditor({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={savingDraft}>Annuler</AlertDialogCancel>
+            <AlertDialogCancel disabled={savingDraft}>
+              Annuler
+            </AlertDialogCancel>
             <Button
               variant="outline"
               onClick={() => {

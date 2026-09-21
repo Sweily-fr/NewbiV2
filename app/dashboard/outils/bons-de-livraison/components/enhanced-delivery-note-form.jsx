@@ -24,7 +24,6 @@ import ClientSection from "./delivery-note-form-sections/ClientSection";
 import DeliveryInfoSection from "./delivery-note-form-sections/DeliveryInfoSection";
 import DeliveryAddressSection from "./delivery-note-form-sections/DeliveryAddressSection";
 import ItemsSection from "./delivery-note-form-sections/ItemsSection";
-import NotesAndFooterSection from "./delivery-note-form-sections/NotesAndFooterSection";
 import ReceptionSection from "./delivery-note-form-sections/ReceptionSection";
 
 /**
@@ -216,9 +215,6 @@ export default function EnhancedDeliveryNoteForm({
                 canEdit={canEdit}
                 validationErrors={validationErrors}
               />
-
-              {/* Notes et bas de page */}
-              <NotesAndFooterSection canEdit={canEdit} />
             </>
           )}
         </div>

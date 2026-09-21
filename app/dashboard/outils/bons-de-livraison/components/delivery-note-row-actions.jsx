@@ -62,7 +62,9 @@ export default function DeliveryNoteRowActions({
   };
 
   const handleEdit = () => {
-    router.push(`/dashboard/outils/bons-de-livraison/${deliveryNote.id}/editer`);
+    router.push(
+      `/dashboard/outils/bons-de-livraison/${deliveryNote.id}/editer`,
+    );
   };
 
   const handleDelete = async () => {
