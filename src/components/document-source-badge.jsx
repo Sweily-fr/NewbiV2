@@ -21,6 +21,12 @@ const EXTERNAL_SOURCES = {
     bg: "#2E1065",
     label: (doc) => `${doc} importé depuis Qonto`,
   },
+  ABBY: {
+    name: "Abby",
+    logo: `${BRANDFETCH_CDN}/abby.fr/w/400/h/400`,
+    bg: "#FFFFFF",
+    label: (doc) => `${doc} importé depuis Abby`,
+  },
   GMAIL: {
     name: "Gmail",
     logo: `${BRANDFETCH_CDN}/gmail.com/w/400/h/400`,
@@ -35,6 +41,14 @@ const EXTERNAL_SOURCES = {
     label: (doc) => `${doc} reçu par facturation électronique`,
   },
 };
+
+/**
+ * Fiche d'une plateforme externe (nom, logo, icône) ou null si le document
+ * vient de Newbi.
+ */
+export function getExternalSource(source) {
+  return EXTERNAL_SOURCES[String(source || "").toUpperCase()] || null;
+}
 
 export function isExternalSource(source) {
   return !!source && !!EXTERNAL_SOURCES[String(source).toUpperCase()];

@@ -10,6 +10,7 @@ import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { usePennylane } from "@/src/hooks/usePennylane";
 import { useQonto } from "@/src/hooks/useQonto";
+import { useAbby } from "@/src/hooks/useAbby";
 import { useInstalledApps } from "@/src/hooks/useInstalledApps";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useActiveOrganization } from "@/src/lib/organization-client";
@@ -129,6 +130,21 @@ const APPLICATIONS = [
     website: "https://qonto.com",
     docs: "https://docs.qonto.com",
     support: "https://qonto.com/contact",
+  },
+  {
+    id: "abby",
+    name: "Abby",
+    author: "Abby",
+    description:
+      "Envoyez vos devis et vos factures encaissées dans Abby, et récupérez les factures et devis créés dans Abby.",
+    category: "accounting",
+    beta: true,
+    logo: `${BRANDFETCH_CDN}/abby.fr/w/400/h/400`,
+    logoBg: "#FFFFFF",
+    verified: true,
+    website: "https://abby.fr",
+    docs: "https://docs.abby.fr",
+    support: "https://aide.abby.fr",
   },
   // ── À venir ──
   {
@@ -1320,6 +1336,484 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
   );
 }
 
+// ── Panneau de connexion Abby ──
+
+// Types de produit du référentiel Abby pour les recettes créées par Newbi
+const ABBY_PRODUCT_TYPES = [
+  { value: 1, label: "Vente de marchandises (BIC)" },
+  { value: 2, label: "Prestations de services (BNC)" },
+  {
+    value: 3,
+    label: "Prestations de services artisanales ou commerciales (BIC)",
+  },
+  { value: 4, label: "Vente de produits fabriqués (BIC)" },
+  { value: 5, label: "Débours" },
+];
+
+function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
+  const [apiKey, setApiKey] = useState("");
+  const [showSecret, setShowSecret] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
+  const canSubmit = apiKey.trim().length > 0;
+
+  const handleTest = async () => {
+    if (!canSubmit) return;
+    setIsTesting(true);
+    setTestResult(null);
+    const result = await actions.onTestConnection(apiKey.trim());
+    setTestResult(result);
+    setIsTesting(false);
+  };
+
+  const handleConnect = async () => {
+    if (!canSubmit) return;
+    const result = await actions.onConnect(apiKey.trim());
+    if (result.success) {
+      setApiKey("");
+      setTestResult(null);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    const result = await actions.onSyncAll();
+    setSyncResult(result);
+    setIsSyncing(false);
+  };
+
+  const handleImport = async () => {
+    setIsImporting(true);
+    setImportResult(null);
+    const result = await actions.onImportFromAbby();
+    setImportResult(result);
+    setIsImporting(false);
+  };
+
+  if (isConnected) {
+    return (
+      <div className="space-y-4">
+        {/* Statut connexion */}
+        <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+          <div className="flex items-center gap-3">
+            <AppLogo
+              src={app.logo}
+              name={app.name}
+              size="xs"
+              bgColor={app.logoBg}
+            />
+            <div>
+              <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                {connectionDetail || "Abby connecté"}
+              </p>
+              {actions.lastSyncAt && (
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Dernière sync :{" "}
+                  {new Date(actions.lastSyncAt).toLocaleString("fr-FR")}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {actions.account?.isTestMode && (
+              <span className="px-2 py-0.5 text-[10px] font-medium bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md flex-shrink-0">
+                Compte Abby en mode test
+              </span>
+            )}
+            {actions.syncStatus === "IN_PROGRESS" && (
+              <span className="px-2 py-0.5 text-[10px] font-medium bg-blue-50 border border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 rounded-md flex-shrink-0 flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Sync en cours
+              </span>
+            )}
+            {actions.syncStatus === "ERROR" && (
+              <span className="px-2 py-0.5 text-[10px] font-medium bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 rounded-md flex-shrink-0">
+                Erreur
+              </span>
+            )}
+            <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+              Active
+            </span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        {actions.account?.stats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Recettes enregistrées
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.invoicesSynced}
+              </p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Devis créés dans Abby
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.quotesSynced ?? 0}
+              </p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Factures reçues d'Abby
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.clientInvoicesImported ?? 0}
+              </p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">
+                Devis reçus d'Abby
+              </p>
+              <p className="text-lg font-semibold">
+                {actions.account.stats.quotesImported ?? 0}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Type de produit des recettes */}
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium text-gray-500">
+            Type de produit des recettes
+          </h4>
+          <p className="text-[11px] text-gray-400">
+            Type Abby attribué aux factures encaissées enregistrées par Newbi
+            dans le livre des recettes (il détermine le calcul des cotisations
+            dans Abby).
+          </p>
+          <select
+            value={actions.account?.incomeProductType || 2}
+            onChange={(e) => actions.onUpdateIncomeProductType(e.target.value)}
+            disabled={!actions.canManage || actions.isReadOnly}
+            className="w-full h-9 rounded-lg border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#141414] px-3 text-[13px] text-[#505154] dark:text-gray-300 disabled:opacity-60"
+          >
+            {ABBY_PRODUCT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Sync automatique */}
+        {actions.account?.autoSync && (
+          <div className="space-y-3">
+            <h4 className="text-xs font-medium text-gray-500">
+              Synchronisation automatique
+            </h4>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
+              <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323]">
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                  Newbi vers Abby
+                </span>
+              </div>
+              <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
+                {[
+                  {
+                    key: "invoices",
+                    label: "Factures clients encaissées",
+                    hint: "Ajoutées au livre des recettes Abby avec le PDF Newbi dès le paiement",
+                  },
+                  {
+                    key: "quotes",
+                    label: "Devis envoyés",
+                    hint: "Créés comme devis Abby dès l'envoi (numéro Newbi dans le titre), signés dans Abby dès leur acceptation",
+                  },
+                ].map(({ key, label, hint }) => (
+                  <label
+                    key={key}
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
+                  >
+                    <span className="flex flex-col">
+                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
+                        {label}
+                      </span>
+                      <span className="text-[11px] text-gray-400">{hint}</span>
+                    </span>
+                    <Checkbox
+                      checked={actions.account.autoSync[key]}
+                      onCheckedChange={(checked) =>
+                        actions.onUpdateAutoSync({ [key]: !!checked })
+                      }
+                      disabled={!actions.canManage}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
+              <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323] flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">
+                  Abby vers Newbi
+                </span>
+                <span className="text-[11px] text-gray-400 text-right">
+                  toutes les 15 min
+                  {actions.account.lastImportAt
+                    ? ` - dernier : ${new Date(actions.account.lastImportAt).toLocaleString("fr-FR")}`
+                    : ""}
+                </span>
+              </div>
+              <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
+                {[
+                  {
+                    key: "importClientInvoices",
+                    label: "Factures finalisées dans Abby",
+                    hint: "Ajoutées dans vos factures importées avec le PDF",
+                  },
+                  {
+                    key: "importQuotes",
+                    label: "Devis finalisés dans Abby",
+                    hint: "Ajoutés dans vos devis importés avec le PDF, acceptés dès leur signature",
+                  },
+                ].map(({ key, label, hint }) => (
+                  <label
+                    key={key}
+                    className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors"
+                  >
+                    <span className="flex flex-col">
+                      <span className="text-[13px] text-[#505154] dark:text-gray-400">
+                        {label}
+                      </span>
+                      <span className="text-[11px] text-gray-400">{hint}</span>
+                    </span>
+                    <Checkbox
+                      checked={!!actions.account.autoSync[key]}
+                      onCheckedChange={(checked) =>
+                        actions.onUpdateAutoSync({ [key]: !!checked })
+                      }
+                      disabled={!actions.canManage}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Erreur d'import */}
+        {actions.account?.importError && (
+          <p className="text-[11px] text-red-500 dark:text-red-400">
+            Import Abby : {actions.account.importError}
+          </p>
+        )}
+
+        {/* Résultat import */}
+        {importResult && (
+          <p
+            className={`text-[11px] ${importResult.success ? "text-gray-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"}`}
+          >
+            {importResult.message}
+          </p>
+        )}
+
+        {/* Erreur de sync */}
+        {actions.account?.syncError && (
+          <p className="text-[11px] text-red-500 dark:text-red-400">
+            {actions.account.syncError}
+          </p>
+        )}
+        {actions.error && (
+          <p className="text-[11px] text-red-500 dark:text-red-400">
+            {actions.error}
+          </p>
+        )}
+
+        {/* Résultat sync */}
+        {syncResult && (
+          <p
+            className={`text-[11px] ${syncResult.success ? "text-gray-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"}`}
+          >
+            {syncResult.success
+              ? syncResult.invoicesSynced != null
+                ? `${syncResult.invoicesSynced} recette${syncResult.invoicesSynced > 1 ? "s" : ""} enregistrée${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.quotesSynced} devis créé${syncResult.quotesSynced > 1 ? "s" : ""}${syncResult.invoicesErrors + syncResult.quotesErrors > 0 ? ` - ${syncResult.invoicesErrors + syncResult.quotesErrors} erreur${syncResult.invoicesErrors + syncResult.quotesErrors > 1 ? "s" : ""}` : ""}`
+                : "Synchronisation terminée"
+              : syncResult.message}
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSyncAll}
+            disabled={
+              actions.isReadOnly ||
+              isSyncing ||
+              actions.syncStatus === "IN_PROGRESS" ||
+              !actions.canManage
+            }
+            title={actions.readOnlyTooltip}
+            className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
+          >
+            {isSyncing ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {isSyncing ? "Synchronisation..." : "Envoyer vers Abby"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleImport}
+            disabled={actions.isReadOnly || isImporting || !actions.canManage}
+            title={actions.readOnlyTooltip}
+            className="cursor-pointer"
+          >
+            {isImporting ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {isImporting ? "Import..." : "Importer depuis Abby"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={actions.onDisconnect}
+            disabled={actions.isLoading || !actions.canManage}
+            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+          >
+            {actions.isLoading ? "..." : "Déconnecter"}
+          </Button>
+        </div>
+
+        {!actions.canManage && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Seuls les propriétaires et administrateurs peuvent gérer Abby
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Non connecté — formulaire de connexion
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-gray-500">
+          Clé API Abby
+        </label>
+        <p className="text-[11px] text-gray-400">
+          Dans Abby → Paramètres → Intégrations → Clés API : ajoutez une clé et
+          copiez-la (elle commence par suk_ et n'est affichée qu'une fois).
+        </p>
+        <div className="relative">
+          <Input
+            type={showSecret ? "text" : "password"}
+            placeholder="suk_…"
+            value={apiKey}
+            onChange={(e) => {
+              setApiKey(e.target.value);
+              setTestResult(null);
+            }}
+            disabled={!actions.canManage}
+            className="pr-10 font-mono text-xs"
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowSecret(!showSecret)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            {showSecret ? (
+              <EyeOff className="w-3.5 h-3.5" />
+            ) : (
+              <Eye className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Résultat du test */}
+      {testResult && (
+        <div
+          className={`px-3 py-2 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"}`}
+        >
+          <p
+            className={`text-xs ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+          >
+            {testResult.success
+              ? `Connexion réussie${testResult.companyName ? ` - ${testResult.companyName}` : ""}${testResult.isTestMode ? " (compte en mode test)" : ""}`
+              : testResult.message}
+          </p>
+        </div>
+      )}
+
+      {/* Erreur */}
+      {actions.error && !testResult && (
+        <div className="px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-xs text-red-600 dark:text-red-400">
+            {actions.error}
+          </p>
+        </div>
+      )}
+
+      {/* Boutons */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleTest}
+          disabled={
+            actions.isReadOnly || !canSubmit || isTesting || !actions.canManage
+          }
+          title={actions.readOnlyTooltip}
+          className="cursor-pointer"
+        >
+          {isTesting ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+          )}
+          {isTesting ? "Test..." : "Tester"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleConnect}
+          disabled={
+            actions.isReadOnly ||
+            !canSubmit ||
+            actions.isLoading ||
+            !actions.canManage
+          }
+          title={actions.readOnlyTooltip}
+          className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
+        >
+          {actions.isLoading ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+          )}
+          {actions.isLoading ? "Connexion..." : "Connecter"}
+        </Button>
+      </div>
+
+      {!actions.canManage && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Seuls les propriétaires et administrateurs peuvent connecter Abby
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Vue détail d'une app installée ──
 
 function AppDetailView({
@@ -1331,6 +1825,7 @@ function AppDetailView({
   bankingActions,
   pennylaneActions,
   qontoActions,
+  abbyActions,
   isInstalled,
   onInstall,
   onUninstall,
@@ -1654,11 +2149,22 @@ function AppDetailView({
                 />
               )}
 
+              {/* ── Abby ── */}
+              {app.id === "abby" && abbyActions && (
+                <AbbyConnectionPanel
+                  app={app}
+                  isConnected={isConnected}
+                  connectionDetail={connectionDetail}
+                  actions={abbyActions}
+                />
+              )}
+
               {/* ── Autres apps (générique) ── */}
               {app.id !== "stripe" &&
                 app.id !== "bridge" &&
                 app.id !== "pennylane" &&
-                app.id !== "qonto" && (
+                app.id !== "qonto" &&
+                app.id !== "abby" && (
                   <>
                     {isConnected ? (
                       <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
@@ -1990,6 +2496,23 @@ export function ApplicationsSection() {
     clearError: clearQontoError,
   } = useQonto(activeOrganization?.id || organizationId);
 
+  const {
+    isConnected: isAbbyConnected,
+    syncStatus: abbySyncStatus,
+    lastSyncAt: abbyLastSyncAt,
+    isLoading: isAbbyLoading,
+    account: abbyAccount,
+    testConnection: testAbbyConnection,
+    connect: connectAbby,
+    disconnect: disconnectAbby,
+    updateAutoSync: updateAbbyAutoSync,
+    updateIncomeProductType: updateAbbyIncomeProductType,
+    syncAll: syncAllToAbby,
+    importFromAbby: importFromAbbyAction,
+    error: abbyError,
+    clearError: clearAbbyError,
+  } = useAbby(activeOrganization?.id || organizationId);
+
   // Écouter l'événement de configuration Stripe complète
   useEffect(() => {
     const handleStripeConfigComplete = async () => {
@@ -2075,6 +2598,16 @@ export function ApplicationsSection() {
             : null,
         };
       }
+      if (app.id === "abby") {
+        return {
+          ...app,
+          installed,
+          connected: isAbbyConnected,
+          connectionDetail: isAbbyConnected
+            ? abbyAccount?.companyName || "Compte connecté"
+            : null,
+        };
+      }
       return { ...app, installed, connected: false };
     });
   }, [
@@ -2086,6 +2619,8 @@ export function ApplicationsSection() {
     pennylaneAccount,
     isQontoConnected,
     qontoAccount,
+    isAbbyConnected,
+    abbyAccount,
     isAppInstalled,
   ]);
 
@@ -2187,6 +2722,26 @@ export function ApplicationsSection() {
     onImportFromQonto: importFromQontoAction,
   };
 
+  // Actions Abby pour la vue détail
+  const abbyActions = {
+    canManage: canManageStripeConnect, // même permission owner/admin
+    isReadOnly,
+    readOnlyTooltip,
+    isLoading: isAbbyLoading,
+    account: abbyAccount,
+    syncStatus: abbySyncStatus,
+    lastSyncAt: abbyLastSyncAt,
+    error: abbyError,
+    clearError: clearAbbyError,
+    onTestConnection: testAbbyConnection,
+    onConnect: connectAbby,
+    onDisconnect: disconnectAbby,
+    onUpdateAutoSync: updateAbbyAutoSync,
+    onUpdateIncomeProductType: updateAbbyIncomeProductType,
+    onSyncAll: syncAllToAbby,
+    onImportFromAbby: importFromAbbyAction,
+  };
+
   // Toujours récupérer l'app fraîche depuis appsWithStatus (pour refléter install/uninstall)
   const currentApp = selectedApp
     ? appsWithStatus.find((a) => a.id === selectedApp.id) || selectedApp
@@ -2212,6 +2767,7 @@ export function ApplicationsSection() {
           bankingActions={bankingActions}
           pennylaneActions={pennylaneActions}
           qontoActions={qontoActions}
+          abbyActions={abbyActions}
           onBack={() => {
             setSelectedApp(null);
             setView("main");
