@@ -67,7 +67,10 @@ import {
   XCircle,
   Loader2,
   EllipsisVertical,
+  Calendar as CalendarIcon,
 } from "lucide-react";
+import { endOfDay, startOfDay, subDays } from "date-fns";
+import { DateFilterSubmenu } from "@/src/components/date-filter-submenu";
 import {
   useConvertImportedInvoice,
   useConvertImportedInvoices,
@@ -151,6 +154,7 @@ export default function PurchaseInvoiceTable({
   const [activeTab, setActiveTab] = useState("all");
   const [statusFilters, setStatusFilters] = useState([]);
   const [categoryFilters, setCategoryFilters] = useState([]);
+  const [dateRange, setDateRange] = useState({ from: null, to: null });
 
   // Pré-filtrage depuis l'URL (ex: ?status=TO_PAY depuis le dashboard)
   const searchParams = useSearchParams();
@@ -190,21 +194,56 @@ export default function PurchaseInvoiceTable({
     return counts;
   }, [invoices]);
 
-  const activeFiltersCount = statusFilters.length + categoryFilters.length;
+  const hasDateFilter = Boolean(dateRange.from || dateRange.to);
+  const activeFiltersCount =
+    statusFilters.length + categoryFilters.length + (hasDateFilter ? 1 : 0);
 
-  // Filtre catégorie : les catégories réellement présentes dans la liste
-  // (sous-catégorie fine si renseignée, sinon catégorie large), libellées
-  // comme la colonne du tableau.
-  const categoryFilterOptions = useMemo(() => {
-    const codes = new Set();
+  // Filtre catégorie : le référentiel complet (mêmes groupes que le tiroir
+  // de la facture), complété par les codes présents dans la liste mais
+  // absents du référentiel (anciennes catégories larges) pour rester
+  // filtrables.
+  const categoryFilterGroups = useMemo(() => {
+    const known = new Set(EXPENSE_CATEGORY_OPTIONS.map((o) => o.value));
+    const extra = new Set();
     (invoices || []).forEach((inv) => {
       const code = inv.subcategory || inv.category;
-      if (code) codes.add(code);
+      if (code && !known.has(code)) extra.add(code);
     });
-    return [...codes]
-      .map((code) => [code, getCategoryLabel(code) || code])
-      .sort((a, b) => a[1].localeCompare(b[1], "fr"));
+    if (extra.size === 0) return EXPENSE_CATEGORY_GROUPS;
+    return [
+      ...EXPENSE_CATEGORY_GROUPS,
+      {
+        heading: "Autres catégories",
+        options: [...extra]
+          .map((code) => ({
+            value: code,
+            label: getCategoryLabel(code) || code,
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label, "fr")),
+      },
+    ];
   }, [invoices]);
+
+  // Plages rapides du filtre calendrier (mêmes clés que DateFilterSubmenu)
+  const setQuickDateRange = (rangeType) => {
+    const today = startOfDay(new Date());
+    const ranges = {
+      today: { from: today, to: endOfDay(new Date()) },
+      yesterday: {
+        from: startOfDay(subDays(today, 1)),
+        to: endOfDay(subDays(today, 1)),
+      },
+      last7days: {
+        from: startOfDay(subDays(today, 6)),
+        to: endOfDay(new Date()),
+      },
+      last30days: {
+        from: startOfDay(subDays(today, 29)),
+        to: endOfDay(new Date()),
+      },
+    };
+    setDateRange(ranges[rangeType] || { from: null, to: null });
+  };
 
   const toggleStatusFilter = (status) => {
     setStatusFilters((prev) =>
@@ -225,6 +264,7 @@ export default function PurchaseInvoiceTable({
   const clearAllFilters = () => {
     setStatusFilters([]);
     setCategoryFilters([]);
+    setDateRange({ from: null, to: null });
   };
 
   // Filter by tab + advanced filters, then sort by issueDate desc
@@ -258,10 +298,22 @@ export default function PurchaseInvoiceTable({
       return d && !isNaN(d.getTime()) ? d.getTime() : 0;
     };
 
+    // Filtre calendrier sur la date d'émission (bornes inclusives, au jour)
+    if (dateRange.from || dateRange.to) {
+      const from = dateRange.from
+        ? startOfDay(dateRange.from).getTime()
+        : -Infinity;
+      const to = dateRange.to ? endOfDay(dateRange.to).getTime() : Infinity;
+      result = result.filter((inv) => {
+        const t = toTime(inv.issueDate);
+        return t > 0 && t >= from && t <= to;
+      });
+    }
+
     return [...result].sort(
       (a, b) => toTime(b.issueDate) - toTime(a.issueDate),
     );
-  }, [invoices, activeTab, statusFilters, categoryFilters]);
+  }, [invoices, activeTab, statusFilters, categoryFilters, dateRange]);
 
   const handleDeleteInvoice = async (id) => {
     const result = await deleteInvoice(id);
@@ -408,6 +460,27 @@ export default function PurchaseInvoiceTable({
 
                 <DropdownMenuSeparator />
 
+                {/* Date d'émission - sous-menu calendrier */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="whitespace-nowrap">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    Date d&apos;émission
+                    {hasDateFilter && (
+                      <Badge variant="secondary" className="ml-auto">
+                        1
+                      </Badge>
+                    )}
+                  </DropdownMenuSubTrigger>
+                  <DateFilterSubmenu
+                    dateRange={dateRange}
+                    onSelectRange={(range) =>
+                      setDateRange(range || { from: null, to: null })
+                    }
+                    onQuickRange={setQuickDateRange}
+                    onClear={() => setDateRange({ from: null, to: null })}
+                  />
+                </DropdownMenuSub>
+
                 {/* Statut - sous-menu */}
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger className="whitespace-nowrap">
@@ -447,23 +520,25 @@ export default function PurchaseInvoiceTable({
                       </Badge>
                     )}
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[220px] max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                    {categoryFilterOptions.length === 0 && (
-                      <p className="px-2 py-1.5 text-sm text-muted-foreground">
-                        Aucune catégorie
-                      </p>
-                    )}
-                    {categoryFilterOptions.map(([key, label]) => (
-                      <div
-                        key={key}
-                        className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                        onClick={() => toggleCategoryFilter(key)}
-                      >
-                        <Checkbox
-                          checked={categoryFilters.includes(key)}
-                          className="mr-2 pointer-events-none"
-                        />
-                        <span>{label}</span>
+                  <DropdownMenuSubContent className="w-[240px] max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                    {categoryFilterGroups.map((group) => (
+                      <div key={group.heading}>
+                        <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
+                          {group.heading}
+                        </DropdownMenuLabel>
+                        {group.options.map((opt) => (
+                          <div
+                            key={opt.value}
+                            className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                            onClick={() => toggleCategoryFilter(opt.value)}
+                          >
+                            <Checkbox
+                              checked={categoryFilters.includes(opt.value)}
+                              className="mr-2 pointer-events-none"
+                            />
+                            <span>{opt.label}</span>
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </DropdownMenuSubContent>
