@@ -42,6 +42,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useDeleteImportedInvoice } from "@/src/graphql/importedInvoiceQueries";
 import { useCreateDeliveryNoteFromInvoice } from "@/src/graphql/deliveryNoteQueries";
+import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -69,6 +70,7 @@ export default function InvoiceRowActions({
   const invoice = row.original;
   const { canCreate } = usePermissions();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -185,6 +187,7 @@ export default function InvoiceRowActions({
 
   // Un bon de livraison se prépare pour toute facture émise (hors annulée)
   const canCreateDeliveryNote =
+    deliveryNotesAllowed &&
     !isImportedInvoice &&
     (invoice.status === INVOICE_STATUS.PENDING ||
       invoice.status === INVOICE_STATUS.COMPLETED ||

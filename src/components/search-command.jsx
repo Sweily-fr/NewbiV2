@@ -71,6 +71,7 @@ import {
   DELIVERY_NOTE_STATUS_LABELS,
 } from "@/src/graphql/deliveryNoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 
 // --- Helpers ---
 
@@ -272,6 +273,7 @@ export function SearchCommand() {
   const [recents, setRecents] = React.useState([]);
   const router = useRouter();
   const { workspaceId } = useWorkspace();
+  const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
   // Lazy queries
   const [searchClients, { data: clientsData, loading: clientsLoading }] =
@@ -327,7 +329,7 @@ export function SearchCommand() {
       searchProducts(vars);
       searchPurchaseOrders(vars);
       searchCreditNotes(vars);
-      searchDeliveryNotes(vars);
+      if (deliveryNotesAllowed) searchDeliveryNotes(vars);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -341,6 +343,7 @@ export function SearchCommand() {
     searchPurchaseOrders,
     searchCreditNotes,
     searchDeliveryNotes,
+    deliveryNotesAllowed,
   ]);
 
   // Global events + keyboard shortcut
@@ -377,7 +380,9 @@ export function SearchCommand() {
   const purchaseOrders =
     purchaseOrdersData?.purchaseOrders?.purchaseOrders || [];
   const creditNotes = creditNotesData?.creditNotes?.creditNotes || [];
-  const deliveryNotes = deliveryNotesData?.deliveryNotes?.deliveryNotes || [];
+  const deliveryNotes = deliveryNotesAllowed
+    ? deliveryNotesData?.deliveryNotes?.deliveryNotes || []
+    : [];
 
   const isLoading =
     clientsLoading ||
@@ -834,20 +839,22 @@ export function SearchCommand() {
                         </IconWrapper>
                         <span>Nouveau bon de commande</span>
                       </CommandItem>
-                      <CommandItem
-                        onSelect={() =>
-                          runCommand(() =>
-                            router.push(
-                              "/dashboard/outils/bons-de-livraison/new",
-                            ),
-                          )
-                        }
-                      >
-                        <IconWrapper>
-                          <Plus className="size-3.5 text-[#5b4eff]" />
-                        </IconWrapper>
-                        <span>Nouveau bon de livraison</span>
-                      </CommandItem>
+                      {deliveryNotesAllowed && (
+                        <CommandItem
+                          onSelect={() =>
+                            runCommand(() =>
+                              router.push(
+                                "/dashboard/outils/bons-de-livraison/new",
+                              ),
+                            )
+                          }
+                        >
+                          <IconWrapper>
+                            <Plus className="size-3.5 text-[#5b4eff]" />
+                          </IconWrapper>
+                          <span>Nouveau bon de livraison</span>
+                        </CommandItem>
+                      )}
                       <CommandItem
                         onSelect={() =>
                           runCommand(() =>
@@ -980,18 +987,20 @@ export function SearchCommand() {
                     </IconWrapper>
                     <span>Bons de commande</span>
                   </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/bons-de-livraison"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <Truck className="size-3.5" />
-                    </IconWrapper>
-                    <span>Bons de livraison</span>
-                  </CommandItem>
+                  {deliveryNotesAllowed && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/bons-de-livraison"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <Truck className="size-3.5" />
+                      </IconWrapper>
+                      <span>Bons de livraison</span>
+                    </CommandItem>
+                  )}
                   <CommandItem
                     onSelect={() =>
                       runCommand(() =>

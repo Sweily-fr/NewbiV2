@@ -14,6 +14,7 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useDeliveryNoteStats } from "@/src/graphql/deliveryNoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { DeliveryNotesAccessGuard } from "./components/delivery-notes-access-guard";
 
 function DeliveryNotesContent() {
   const router = useRouter();
@@ -203,9 +204,11 @@ export default function DeliveryNotesPage() {
       pageName="Bons de livraison"
       fallback={<DeliveryNotePageSkeleton />}
     >
-      <CompanyInfoGuard fallback={<DeliveryNotePageSkeleton />}>
-        <DeliveryNotesContent />
-      </CompanyInfoGuard>
+      <DeliveryNotesAccessGuard fallback={<DeliveryNotePageSkeleton />}>
+        <CompanyInfoGuard fallback={<DeliveryNotePageSkeleton />}>
+          <DeliveryNotesContent />
+        </CompanyInfoGuard>
+      </DeliveryNotesAccessGuard>
     </ProRouteGuard>
   );
 }

@@ -6,6 +6,7 @@ import { DeliveryNoteEditorSkeleton } from "../components/delivery-note-editor-s
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { RBACRouteGuard } from "@/src/components/rbac";
+import { DeliveryNotesAccessGuard } from "../components/delivery-notes-access-guard";
 
 function NewDeliveryNoteContent() {
   return (
@@ -21,17 +22,19 @@ export default function NewDeliveryNotePage() {
       pageName="Nouveau bon de livraison"
       fallback={<DeliveryNoteEditorSkeleton />}
     >
-      <CompanyInfoGuard fallback={<DeliveryNoteEditorSkeleton />}>
-        <RBACRouteGuard
-          resource="deliveryNotes"
-          action="create"
-          fallbackUrl="/dashboard/outils/bons-de-livraison"
-          toastMessage="Vous n'avez pas la permission de créer des bons de livraison"
-          loadingComponent={<DeliveryNoteEditorSkeleton />}
-        >
-          <NewDeliveryNoteContent />
-        </RBACRouteGuard>
-      </CompanyInfoGuard>
+      <DeliveryNotesAccessGuard fallback={<DeliveryNoteEditorSkeleton />}>
+        <CompanyInfoGuard fallback={<DeliveryNoteEditorSkeleton />}>
+          <RBACRouteGuard
+            resource="deliveryNotes"
+            action="create"
+            fallbackUrl="/dashboard/outils/bons-de-livraison"
+            toastMessage="Vous n'avez pas la permission de créer des bons de livraison"
+            loadingComponent={<DeliveryNoteEditorSkeleton />}
+          >
+            <NewDeliveryNoteContent />
+          </RBACRouteGuard>
+        </CompanyInfoGuard>
+      </DeliveryNotesAccessGuard>
     </ProRouteGuard>
   );
 }

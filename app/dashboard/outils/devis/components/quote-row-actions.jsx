@@ -45,6 +45,7 @@ import {
 } from "@/src/graphql/esignatureQueries";
 import { useApolloClient } from "@apollo/client";
 import { useCreateDeliveryNoteFromQuote } from "@/src/graphql/deliveryNoteQueries";
+import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
@@ -111,6 +112,7 @@ export default function QuoteRowActions({
   const planLimits = getPlanLimits(subscription?.plan);
   const esignatureAccess = planLimits.esignature; // false | "ses" | "qes"
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const handleView = () => {
@@ -290,8 +292,9 @@ export default function QuoteRowActions({
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
   // Un bon de livraison se prépare dès que le devis est envoyé ou accepté
   const canCreateDeliveryNote =
-    quote.status === QUOTE_STATUS.PENDING ||
-    quote.status === QUOTE_STATUS.COMPLETED;
+    deliveryNotesAllowed &&
+    (quote.status === QUOTE_STATUS.PENDING ||
+      quote.status === QUOTE_STATUS.COMPLETED);
   // Un devis déjà facturé via un bon de commande ne peut plus être converti
   // directement en facture (même message que dans la sidebar).
   const canConvertToInvoice =

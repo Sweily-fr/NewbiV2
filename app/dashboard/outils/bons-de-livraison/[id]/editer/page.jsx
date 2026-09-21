@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import ModernDeliveryNoteEditor from "../../components/modern-delivery-note-editor";
 import { DeliveryNoteEditorSkeleton } from "../../components/delivery-note-editor-skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { DeliveryNotesAccessGuard } from "../../components/delivery-notes-access-guard";
 
 function EditDeliveryNoteContent() {
   const params = useParams();
@@ -16,7 +17,9 @@ export default function EditDeliveryNotePage() {
       pageName="Modifier bon de livraison"
       fallback={<DeliveryNoteEditorSkeleton />}
     >
-      <EditDeliveryNoteContent />
+      <DeliveryNotesAccessGuard fallback={<DeliveryNoteEditorSkeleton />}>
+        <EditDeliveryNoteContent />
+      </DeliveryNotesAccessGuard>
     </ProRouteGuard>
   );
 }
