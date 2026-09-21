@@ -380,11 +380,6 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6 p-0">
-        <p className="text-sm text-muted-foreground">
-          Un bon de livraison liste les produits et les quantités remises :
-          aucun prix ni TVA n'y figure.
-        </p>
-
         {/* Recherche catalogue + ajout d'un article */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch">
           <div className="flex-1 min-w-0 order-1 md:order-1">

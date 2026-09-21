@@ -51,7 +51,7 @@ export default function NotesAndFooterSection({ canEdit }) {
   const data = watch();
 
   return (
-    <Card className="shadow-none border-none bg-transparent p-0 py-0!">
+    <Card className="shadow-none border-none bg-transparent mb-0 mt-8 p-0">
       <CardHeader className="p-0">
         <CardTitle className="flex items-center gap-2 font-medium text-lg">
           Notes et bas de page

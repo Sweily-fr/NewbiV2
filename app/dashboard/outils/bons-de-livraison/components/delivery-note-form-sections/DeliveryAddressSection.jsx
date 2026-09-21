@@ -66,7 +66,9 @@ export default function DeliveryAddressSection({
           {client ? (
             shown.street || shown.city ? (
               <div className="space-y-0.5">
-                {shown.fullName && <p className="font-medium">{shown.fullName}</p>}
+                {shown.fullName && (
+                  <p className="font-medium">{shown.fullName}</p>
+                )}
                 {shown.street && <p>{shown.street}</p>}
                 <p>
                   {shown.postalCode} {shown.city}

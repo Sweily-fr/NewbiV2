@@ -151,7 +151,7 @@ export default function EnhancedDeliveryNoteForm({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-20 lg:pb-12"
       >
-        <div className="space-y-8 px-2 pt-4 md:pt-6">
+        <div className="space-y-6 px-2 pt-4 md:pt-6">
           {/* Étape 1 : client, informations et adresse de livraison */}
           {currentStep === 1 && (
             <>
@@ -185,7 +185,11 @@ export default function EnhancedDeliveryNoteForm({
               />
 
               {/* Options avancées : réception (comme les options avancées des devis) */}
-              <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+              <Collapsible
+                open={advancedOpen}
+                onOpenChange={setAdvancedOpen}
+                className="pt-2"
+              >
                 <CollapsibleTrigger asChild>
                   <button
                     type="button"

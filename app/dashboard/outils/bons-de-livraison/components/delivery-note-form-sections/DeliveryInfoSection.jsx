@@ -188,7 +188,10 @@ export default function DeliveryInfoSection({
           required
           value={issueDate}
           onChange={(v) =>
-            setValue("issueDate", v, { shouldDirty: true, shouldValidate: true })
+            setValue("issueDate", v, {
+              shouldDirty: true,
+              shouldValidate: true,
+            })
           }
           disabled={!canEdit}
           error={validationErrors?.issueDate}
