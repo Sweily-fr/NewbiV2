@@ -101,6 +101,7 @@ const Footer7 = ({
   const pathname = usePathname();
   // Titre du bloc CTA adapté à la LP facturation électronique
   const isFactElecLp = pathname === "/lp/facturation-electronique";
+  const isGestionLp = pathname === "/lp/gestion";
 
   // const { openCookieSettings } = useCookieConsent();
 
@@ -121,6 +122,12 @@ const Footer7 = ({
               {isFactElecLp ? (
                 <>
                   Conforme en un clic.
+                  <br className="hidden md:block" />
+                  <span className="md:hidden"> </span>Commence gratuitement.
+                </>
+              ) : isGestionLp ? (
+                <>
+                  Zéro Excel, dès aujourd'hui.
                   <br className="hidden md:block" />
                   <span className="md:hidden"> </span>Commence gratuitement.
                 </>

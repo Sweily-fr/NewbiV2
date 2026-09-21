@@ -7,7 +7,8 @@ import Link from "next/link";
 
 // `text` / `ctaHref` / `ctaLabel` sont surchargés par les LP Ads, qui gardent
 // le même visuel mais un message adapté. `ctaHref` à null masque le bouton,
-// `centered` centre le texte (la croix reste à droite).
+// `centered` centre le texte (la croix reste à droite), `href` rend le texte
+// cliquable (lien vers une page).
 export function FacturationBanner({
   text = (
     <>
@@ -18,6 +19,7 @@ export function FacturationBanner({
   ctaHref = "/produits/factures#features",
   ctaLabel = "Découvrir",
   centered = false,
+  href = null,
 }) {
   const [isVisible, setIsVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -45,7 +47,16 @@ export function FacturationBanner({
           <div className="bg-white/20 flex size-8 shrink-0 items-center justify-center rounded-full">
             <Zap className="text-[#202020]" size={14} />
           </div>
-          <p className="text-sm text-[#202020]">{text}</p>
+          {href ? (
+            <Link
+              href={href}
+              className="text-sm text-[#202020] hover:underline"
+            >
+              {text}
+            </Link>
+          ) : (
+            <p className="text-sm text-[#202020]">{text}</p>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {ctaHref && (

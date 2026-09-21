@@ -20,11 +20,16 @@ import { cn } from "@/src/lib/utils";
 // est visible ; il émet "banner-closed" quand l'utilisateur le ferme.
 // `footer` : "minimal" (défaut, mini-footer légal) ou "full" (Footer7, le
 // même que les pages produits).
+// `flushTop` : sur desktop, le contenu démarre tout en haut (sous la navbar
+// fixe) au lieu d'être décalé — pour un hero épinglé au scroll qui doit
+// démarrer à scroll 0. Le décalage à appliquer est exposé en CSS via
+// `--lp-top` (hauteur navbar + bannière visible).
 export default function LpShell({
   children,
   navbar = "minimal",
   banner,
   footer = "minimal",
+  flushTop = false,
 }) {
   const [showSticky, setShowSticky] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(!!banner);
@@ -87,10 +92,12 @@ export default function LpShell({
       {/* NewHeroNavbar fait 68px (py-4 + logo 36px), le header minimal 64px.
           Avec bannière visible : + 80px mobile / 58px desktop (cf. NewHeroNavbar). */}
       <div
+        style={{ "--lp-top": bannerVisible ? "126px" : "68px" }}
         className={cn(
           navbar !== "full" && "pt-16",
           navbar === "full" && !bannerVisible && "pt-[68px]",
           navbar === "full" && bannerVisible && "pt-[148px] sm:pt-[126px]",
+          flushTop && "lg:pt-0",
         )}
       >
         {children}
