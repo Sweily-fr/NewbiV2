@@ -15,6 +15,7 @@ import {
   Receipt,
   BarChart3,
   FolderOpen,
+  Truck,
   Command as CommandIcon,
 } from "lucide-react";
 
@@ -131,6 +132,11 @@ const data = {
       title: "Bons de commande",
       url: "/dashboard/outils/bons-commande",
       icon: ClipboardImportIcon,
+    },
+    {
+      title: "Bons de livraison",
+      url: "/dashboard/outils/bons-de-livraison",
+      icon: Truck,
     },
     {
       title: "Catalogues",

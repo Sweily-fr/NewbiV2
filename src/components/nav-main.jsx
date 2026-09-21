@@ -5,6 +5,7 @@ import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useQuery } from "@apollo/client";
 import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import {
   Crown,
   ChevronRight,
@@ -73,6 +74,7 @@ export function NavMain({
   const { getUserRole } = usePermissions();
   const userRole = getUserRole();
   const { workspaceId } = useWorkspace();
+  const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
   // ✅ DÉSACTIVÉ: Tous les utilisateurs connectés ont accès à toutes les fonctionnalités
   // La restriction Pro est gérée au niveau de l'abonnement, pas de la navigation
@@ -263,6 +265,18 @@ export function NavMain({
                       <Plus className="h-4 w-4" />
                     </Link>
                   </DropdownMenuItem>
+                  {deliveryNotesAllowed && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/dashboard/outils/bons-de-livraison/new"
+                        onClick={handleLinkClick}
+                        className="cursor-pointer flex justify-between w-full"
+                      >
+                        <span>Nouveau bon de livraison</span>
+                        <Plus className="h-4 w-4" />
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                 </>
               )}
@@ -1212,12 +1226,17 @@ export function NavMain({
             (() => {
               // Filtrer les items pour le comptable (pas de Catalogues)
               const accountantAllowedVentes = ["Factures clients", "Devis"];
-              const filteredNavVentes =
+              const filteredNavVentes = (
                 userRole === "accountant"
                   ? navVentes.filter((item) =>
                       accountantAllowedVentes.includes(item.title),
                     )
-                  : navVentes;
+                  : navVentes
+              ).filter(
+                (item) =>
+                  deliveryNotesAllowed ||
+                  item.url !== "/dashboard/outils/bons-de-livraison",
+              );
               return (
                 filteredNavVentes.length > 0 &&
                 renderVentesMenu(filteredNavVentes)

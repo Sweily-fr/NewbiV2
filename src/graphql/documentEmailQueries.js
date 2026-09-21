@@ -73,6 +73,24 @@ export function useSendPurchaseOrderEmail() {
   return useMutation(SEND_PURCHASE_ORDER_EMAIL);
 }
 
+export const SEND_DELIVERY_NOTE_EMAIL = gql`
+  mutation SendDeliveryNoteEmail(
+    $workspaceId: ID!
+    $input: SendDocumentEmailInput!
+  ) {
+    sendDeliveryNoteEmail(workspaceId: $workspaceId, input: $input) {
+      success
+      messageId
+      recipientEmail
+    }
+  }
+`;
+
+// Hook pour envoyer un bon de livraison par email
+export function useSendDeliveryNoteEmail() {
+  return useMutation(SEND_DELIVERY_NOTE_EMAIL);
+}
+
 // Subscription pour le tracking d'ouverture d'email en temps réel
 export const EMAIL_TRACKING_UPDATED_SUBSCRIPTION = gql`
   subscription EmailTrackingUpdated($workspaceId: ID!) {

@@ -244,6 +244,7 @@ function getOperationErrorMessage(operation, context) {
       quote: "Impossible de créer le devis",
       creditNote: "Impossible de créer l'avoir",
       purchaseOrder: "Impossible de créer le bon de commande",
+      deliveryNote: "Impossible de créer le bon de livraison",
     },
     update: {
       client: "Impossible de modifier le client",
@@ -251,6 +252,7 @@ function getOperationErrorMessage(operation, context) {
       quote: "Impossible de modifier le devis",
       creditNote: "Impossible de modifier l'avoir",
       purchaseOrder: "Impossible de modifier le bon de commande",
+      deliveryNote: "Impossible de modifier le bon de livraison",
     },
     delete: {
       client: "Impossible de supprimer le client",
@@ -258,11 +260,13 @@ function getOperationErrorMessage(operation, context) {
       quote: "Impossible de supprimer le devis",
       creditNote: "Impossible de supprimer l'avoir",
       purchaseOrder: "Impossible de supprimer le bon de commande",
+      deliveryNote: "Impossible de supprimer le bon de livraison",
     },
     send: {
       invoice: "Impossible d'envoyer la facture",
       quote: "Impossible d'envoyer le devis",
       purchaseOrder: "Impossible d'envoyer le bon de commande",
+      deliveryNote: "Impossible d'envoyer le bon de livraison",
     },
     block: {
       client: "Impossible de bloquer le contact. Veuillez réessayer.",

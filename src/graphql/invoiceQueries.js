@@ -192,6 +192,18 @@ export const INVOICE_FRAGMENT = gql`
       number
       status
     }
+    sourceDeliveryNote {
+      id
+      prefix
+      number
+      status
+    }
+    linkedDeliveryNotes {
+      id
+      prefix
+      number
+      status
+    }
   }
 `;
 

@@ -20,6 +20,10 @@ const GENERATE_PDF = {
     endpoint: "/api/purchase-orders/generate-pdf",
     idKey: "purchaseOrderId",
   },
+  deliveryNote: {
+    endpoint: "/api/delivery-notes/generate-pdf",
+    idKey: "deliveryNoteId",
+  },
 };
 
 function base64ToFile(base64, fileName) {
@@ -42,7 +46,7 @@ function arrayBufferToBase64(buffer) {
 /**
  * Construit le fichier PDF d'un document.
  * @param {Object} doc - L'objet document (même shape que la preview)
- * @param {string} type - "quote" | "creditNote" | "purchaseOrder"
+ * @param {string} type - "quote" | "creditNote" | "purchaseOrder" | "deliveryNote"
  * @returns {Promise<File|null>}
  */
 export async function buildDocumentPdfFile(doc, type) {

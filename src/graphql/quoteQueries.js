@@ -171,6 +171,12 @@ export const QUOTE_FRAGMENT = gql`
       finalTotalTTC
     }
     hasPurchaseOrderInvoices
+    linkedDeliveryNotes {
+      id
+      prefix
+      number
+      status
+    }
     emailTracking {
       emailSentAt
       emailOpenedAt
@@ -285,6 +291,12 @@ export const QUOTE_LIST_FRAGMENT = gql`
       finalTotalTTC
     }
     hasPurchaseOrderInvoices
+    linkedDeliveryNotes {
+      id
+      prefix
+      number
+      status
+    }
     emailTracking {
       emailSentAt
       emailOpenedAt

@@ -18,13 +18,14 @@ import { NextResponse } from "next/server";
 
 // Types dont l'archive PDF peut être réécrite après finalisation (cf. en-tête
 // Cache-Control plus bas).
-const MUTABLE_TYPES = new Set(["quote", "purchaseOrder"]);
+const MUTABLE_TYPES = new Set(["quote", "purchaseOrder", "deliveryNote"]);
 
 const UPSTREAM_PATHS = {
   invoice: (id) => `/invoices/${id}/document-pdf`,
   quote: (id) => `/documents/quote/${id}/document-pdf`,
   creditNote: (id) => `/documents/creditNote/${id}/document-pdf`,
   purchaseOrder: (id) => `/documents/purchaseOrder/${id}/document-pdf`,
+  deliveryNote: (id) => `/documents/deliveryNote/${id}/document-pdf`,
   // Documents importés : le fichier original (R2) est streamé par l'API,
   // jamais chargé via son URL publique (bloquée par frame-src en prod).
   importedInvoice: (id) => `/documents/imported/importedInvoice/${id}/file`,

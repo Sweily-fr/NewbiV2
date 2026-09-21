@@ -26,6 +26,7 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
+import { isDeliveryNotesAllowed } from "@/src/hooks/useDeliveryNotesAccess";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 
 // ─── Tab definitions ─────────────────────────────────────────────
@@ -50,6 +51,7 @@ const tabs = [
     matchPaths: [
       "/dashboard/outils/factures",
       "/dashboard/outils/devis",
+      "/dashboard/outils/bons-de-livraison",
       "/dashboard/clients",
       "/dashboard/catalogues",
     ],
@@ -69,11 +71,16 @@ const ventesQuickCreate = [
     label: "Nouveau bon de commande",
     href: "/dashboard/outils/bons-commande/new",
   },
+  {
+    label: "Nouveau bon de livraison",
+    href: "/dashboard/outils/bons-de-livraison/new",
+  },
 ];
 
 const ventesNavigation = [
   { label: "Factures clients", href: "/dashboard/outils/factures" },
   { label: "Devis", href: "/dashboard/outils/devis" },
+  { label: "Bons de livraison", href: "/dashboard/outils/bons-de-livraison" },
   { label: "Liste clients (CRM)", href: "/dashboard/clients" },
   { label: "Catalogues", href: "/dashboard/catalogues" },
 ];
@@ -399,27 +406,33 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
 
             {/* Navigation */}
             <div className="px-4 pt-1 pb-1">
-              {ventesNavigation.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname?.startsWith(item.href + "/");
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-between px-2 py-3.5 rounded-lg transition-colors",
-                      isActive ? "bg-accent" : "hover:bg-accent",
-                    )}
-                    onClick={() => setBillingOpen(false)}
-                  >
-                    <span className="text-sm font-medium text-foreground">
-                      {item.label}
-                    </span>
-                    <ChevronRight className="w-4 h-4 shrink-0 text-[#3D3E42]/40" />
-                  </Link>
-                );
-              })}
+              {ventesNavigation
+                .filter(
+                  (item) =>
+                    isDeliveryNotesAllowed(session?.user?.email) ||
+                    item.href !== "/dashboard/outils/bons-de-livraison",
+                )
+                .map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    pathname?.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center justify-between px-2 py-3.5 rounded-lg transition-colors",
+                        isActive ? "bg-accent" : "hover:bg-accent",
+                      )}
+                      onClick={() => setBillingOpen(false)}
+                    >
+                      <span className="text-sm font-medium text-foreground">
+                        {item.label}
+                      </span>
+                      <ChevronRight className="w-4 h-4 shrink-0 text-[#3D3E42]/40" />
+                    </Link>
+                  );
+                })}
             </div>
 
             {/* Separator */}
