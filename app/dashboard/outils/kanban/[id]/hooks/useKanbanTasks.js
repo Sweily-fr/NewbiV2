@@ -62,6 +62,7 @@ const INITIAL_TASK_FORM = Object.freeze({
   tags: [],
   checklist: [],
   assignedMembers: [],
+  linkedTasks: [],
   images: [],
   newTag: "",
   newChecklistItem: "",
@@ -311,6 +312,11 @@ export const useKanbanTasks = (boardId, board) => {
           // toujours la valeur locale (la vérité serveur est rétablie en cas
           // d'échec via le onError du flush).
           assignedMembers: prev.assignedMembers,
+          // Les liens sont posés des deux côtés côté serveur : un écho peut
+          // venir de la tâche d'en face, on prend donc la valeur du board.
+          linkedTasks: Array.isArray(remote.linkedTasks)
+            ? remote.linkedTasks
+            : prev.linkedTasks,
           images: Array.isArray(remote.images) ? remote.images : prev.images,
           timeTracking: remote.timeTracking ?? prev.timeTracking,
           // null = Claude a répondu (marqueur effacé) : on prend la valeur du
@@ -809,6 +815,9 @@ export const useKanbanTasks = (boardId, board) => {
               completed: item.completed || false,
             })),
             assignedMembers: assignedMembers,
+            linkedTaskIds: (taskForm.linkedTasks || [])
+              .map((t) => t?.id)
+              .filter(Boolean),
             ...(taskForm.timeTracking &&
             (taskForm.timeTracking.totalSeconds > 0 ||
               taskForm.timeTracking.hourlyRate ||
@@ -999,6 +1008,7 @@ export const useKanbanTasks = (boardId, board) => {
         assignedMembers: Array.isArray(task?.assignedMembers)
           ? task.assignedMembers
           : [],
+        linkedTasks: Array.isArray(task?.linkedTasks) ? task.linkedTasks : [],
         // Seed depuis le cache si dispo, sinon vide (rempli par fetchTaskDetails)
         comments: Array.isArray(cachedTask?.comments)
           ? cachedTask.comments
