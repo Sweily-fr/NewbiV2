@@ -146,6 +146,7 @@ export const GET_BOARD = gql`
           boardTitle
           columnId
           columnTitle
+          columnColor
           status
           priority
           dueDate
@@ -447,6 +448,7 @@ export const CREATE_TASK = gql`
         boardTitle
         columnId
         columnTitle
+        columnColor
         status
         priority
         dueDate
@@ -551,6 +553,7 @@ export const UPDATE_TASK = gql`
         boardTitle
         columnId
         columnTitle
+        columnColor
         status
         priority
         dueDate
@@ -656,6 +659,7 @@ export const LINKED_TASK_INFO_FRAGMENT = gql`
     boardTitle
     columnId
     columnTitle
+    columnColor
     status
     priority
     dueDate
@@ -698,6 +702,7 @@ export const GET_BOARDS_FOR_LINKING = gql`
         title
         color
         order
+        taskCount
       }
     }
   }
@@ -774,6 +779,7 @@ export const TASK_LIGHT_FRAGMENT = gql`
       boardTitle
       columnId
       columnTitle
+      columnColor
       status
       priority
       dueDate

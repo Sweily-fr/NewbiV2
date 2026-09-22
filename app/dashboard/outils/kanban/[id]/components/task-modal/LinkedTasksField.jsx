@@ -207,6 +207,25 @@ export function LinkedTasksField({
   );
 }
 
+// Teinte à partir de la couleur de colonne (#rgb ou #rrggbb) : fond et
+// bordure des pastilles de tâches liées reprennent la couleur de la colonne
+// où se trouve la tâche. Retourne null si la couleur est illisible, auquel
+// cas on retombe sur le style neutre.
+const tint = (color, alpha) => {
+  if (typeof color !== "string") return null;
+  const hex = color.trim().replace("#", "");
+  const full =
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : hex;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
 // La modale de tâche est un Radix Dialog : react-remove-scroll pose un
 // verrou de scroll sur le document et annule la molette pour tout ce qui est
 // hors de la modale. Le popover étant rendu dans un portail (donc hors de la
@@ -220,14 +239,15 @@ const stopScrollLock = {
 };
 
 function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
+  const background = tint(task.columnColor, 0.14);
+  const border = tint(task.columnColor, 0.4);
   const label = (
     <>
-      <Link2 className="h-3 w-3 shrink-0 text-muted-foreground" />
       <span className="truncate max-w-[10rem]">
         {task.title || "Sans titre"}
       </span>
       {isOtherBoard && task.boardTitle && (
-        <span className="shrink-0 rounded bg-muted px-1 text-[10px] text-muted-foreground truncate max-w-[6rem]">
+        <span className="shrink-0 rounded bg-background/60 px-1 text-[10px] text-muted-foreground truncate max-w-[6rem]">
           {task.boardTitle}
         </span>
       )}
@@ -240,20 +260,30 @@ function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
     : `${task.title}${task.columnTitle ? ` · ${task.columnTitle}` : ""}`;
 
   return (
-    <span className="group inline-flex max-w-full items-center gap-0.5 rounded-md border border-border/60 bg-muted/40 pr-0.5 text-xs">
+    <span
+      className={cn(
+        "group inline-flex max-w-full items-center gap-0.5 rounded-md border pr-0.5 text-xs",
+        !background && "border-border/60 bg-muted/40",
+      )}
+      style={
+        background
+          ? { backgroundColor: background, borderColor: border }
+          : undefined
+      }
+    >
       {onOpen ? (
         <button
           type="button"
           onClick={onOpen}
           title={title}
-          className="flex min-w-0 items-center gap-1 rounded-md py-0.5 pl-1.5 pr-1 bg-transparent border-0 cursor-pointer hover:bg-muted/70 transition-colors"
+          className="flex min-w-0 items-center gap-1 rounded-md py-0.5 pl-2 pr-1 bg-transparent border-0 cursor-pointer hover:bg-background/30 transition-colors"
         >
           {label}
         </button>
       ) : (
         <span
           title={title}
-          className="flex min-w-0 items-center gap-1 py-0.5 pl-1.5 pr-1"
+          className="flex min-w-0 items-center gap-1 py-0.5 pl-2 pr-1"
         >
           {label}
         </span>
@@ -263,7 +293,7 @@ function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
           type="button"
           onClick={onRemove}
           aria-label="Délier la tâche"
-          className="shrink-0 rounded p-0.5 text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors bg-transparent border-0 cursor-pointer"
+          className="shrink-0 rounded p-0.5 text-muted-foreground/60 hover:text-foreground hover:bg-background/40 transition-colors bg-transparent border-0 cursor-pointer"
         >
           <X className="h-3 w-3" />
         </button>
@@ -289,11 +319,14 @@ function LinkedTaskPicker({
   const [board, setBoard] = useState(currentBoard);
   const [column, setColumn] = useState(null);
 
+  // Tableaux + colonnes + nombre de tâches par colonne. Chargé dès
+  // l'ouverture : le compteur n'est pas dans GET_BOARD (l'ajouter casserait
+  // les écritures de cache faites par les subscriptions de colonnes).
   const { data: boardsData, loading: boardsLoading } = useQuery(
     GET_BOARDS_FOR_LINKING,
     {
       variables: { workspaceId },
-      skip: step !== "board" || !workspaceId,
+      skip: !workspaceId,
       fetchPolicy: "cache-and-network",
     },
   );
@@ -318,13 +351,14 @@ function LinkedTaskPicker({
     );
   }, [boardsData?.boards, currentBoard?.id]);
 
-  const sortedColumns = useMemo(
-    () =>
-      [...(board?.columns || [])].sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0),
-      ),
-    [board?.columns],
-  );
+  // Colonnes du tableau affiché : celles de la requête (avec compteur) dès
+  // qu'elles sont là, sinon celles déjà connues du tableau courant pour que
+  // la liste s'affiche tout de suite.
+  const sortedColumns = useMemo(() => {
+    const fetched = (boardsData?.boards || []).find((b) => b.id === board?.id);
+    const list = fetched?.columns?.length ? fetched.columns : board?.columns;
+    return [...(list || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, [boardsData?.boards, board?.id, board?.columns]);
 
   const tasks = tasksData?.searchTasks || [];
   const isCurrentBoard = board?.id === currentBoard?.id;
@@ -408,7 +442,11 @@ function LinkedTaskPicker({
                 setColumn(c);
                 setStep("tasks");
               }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer text-left bg-transparent border-0"
+              className="w-full flex items-center gap-2 px-2 py-1.5 mb-0.5 rounded-md border hover:brightness-95 dark:hover:brightness-110 transition-[filter] cursor-pointer text-left"
+              style={{
+                backgroundColor: tint(c.color, 0.12) || undefined,
+                borderColor: tint(c.color, 0.35) || "transparent",
+              }}
             >
               <span
                 className="h-2.5 w-2.5 rounded-full shrink-0"
@@ -417,6 +455,11 @@ function LinkedTaskPicker({
               <span className="flex-1 min-w-0 truncate text-sm">
                 {c.title}
               </span>
+              {typeof c.taskCount === "number" && (
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {c.taskCount}
+                </span>
+              )}
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             </button>
           ))}
