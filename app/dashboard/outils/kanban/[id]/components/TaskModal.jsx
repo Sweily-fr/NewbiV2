@@ -1644,6 +1644,21 @@ export function TaskModal({
                         </Popover>
                       </div>
                     </div>
+
+                    {/* Tâches liées (informatif, lien symétrique) */}
+                    <LinkedTasksField
+                      layout="row"
+                      taskId={isEditing ? taskId : null}
+                      boardId={boardId}
+                      boardTitle={board?.title || ""}
+                      columns={board?.columns || []}
+                      workspaceId={workspaceId}
+                      linkedTasks={taskForm.linkedTasks || []}
+                      onChange={handleLinkedTasksChange}
+                      onOpenTask={handleOpenLinkedTask}
+                      isEditing={isEditing}
+                      disabled={isReadOnly}
+                    />
                   </div>
 
                   {/* Description — sous la grille des propriétés */}
@@ -1714,18 +1729,6 @@ export function TaskModal({
                       />
                     )}
                   </div>
-
-                  {/* Tâches liées (informatif, lien symétrique) */}
-                  <LinkedTasksField
-                    taskId={isEditing ? taskId : null}
-                    boardId={boardId}
-                    workspaceId={workspaceId}
-                    linkedTasks={taskForm.linkedTasks || []}
-                    onChange={handleLinkedTasksChange}
-                    onOpenTask={handleOpenLinkedTask}
-                    isEditing={isEditing}
-                    disabled={isReadOnly}
-                  />
                 </div>
 
                 {/* Footer fixe — uniquement en mode création */}
@@ -2545,6 +2548,23 @@ export function TaskModal({
                     )
                   )}
 
+                  {/* Tâches liées (informatif, lien symétrique) */}
+                  <div className="mt-6">
+                    <LinkedTasksField
+                      layout="stacked"
+                      taskId={isEditing ? taskId : null}
+                      boardId={boardId}
+                      boardTitle={board?.title || ""}
+                      columns={board?.columns || []}
+                      workspaceId={workspaceId}
+                      linkedTasks={taskForm.linkedTasks || []}
+                      onChange={handleLinkedTasksChange}
+                      onOpenTask={handleOpenLinkedTask}
+                      isEditing={isEditing}
+                      disabled={isReadOnly}
+                    />
+                  </div>
+
                   {/* Checklist */}
                   <div className="space-y-3 mt-6">
                     <Checklist
@@ -2580,18 +2600,6 @@ export function TaskModal({
                       />
                     )}
                   </div>
-
-                  {/* Tâches liées (informatif, lien symétrique) */}
-                  <LinkedTasksField
-                    taskId={isEditing ? taskId : null}
-                    boardId={boardId}
-                    workspaceId={workspaceId}
-                    linkedTasks={taskForm.linkedTasks || []}
-                    onChange={handleLinkedTasksChange}
-                    onOpenTask={handleOpenLinkedTask}
-                    isEditing={isEditing}
-                    disabled={isReadOnly}
-                  />
                 </div>
 
                 {/* Footer fixe mobile — uniquement en mode création */}

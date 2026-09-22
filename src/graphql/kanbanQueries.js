@@ -146,6 +146,7 @@ export const GET_BOARD = gql`
           boardTitle
           columnId
           columnTitle
+          columnColor
           status
           priority
           dueDate
@@ -447,6 +448,7 @@ export const CREATE_TASK = gql`
         boardTitle
         columnId
         columnTitle
+        columnColor
         status
         priority
         dueDate
@@ -551,6 +553,7 @@ export const UPDATE_TASK = gql`
         boardTitle
         columnId
         columnTitle
+        columnColor
         status
         priority
         dueDate
@@ -656,6 +659,7 @@ export const LINKED_TASK_INFO_FRAGMENT = gql`
     boardTitle
     columnId
     columnTitle
+    columnColor
     status
     priority
     dueDate
@@ -666,6 +670,7 @@ export const SEARCH_TASKS = gql`
   query SearchTasks(
     $search: String
     $boardId: ID
+    $columnId: ID
     $excludeTaskId: ID
     $limit: Int
     $workspaceId: ID
@@ -673,6 +678,7 @@ export const SEARCH_TASKS = gql`
     searchTasks(
       search: $search
       boardId: $boardId
+      columnId: $columnId
       excludeTaskId: $excludeTaskId
       limit: $limit
       workspaceId: $workspaceId
@@ -681,6 +687,25 @@ export const SEARCH_TASKS = gql`
     }
   }
   ${LINKED_TASK_INFO_FRAGMENT}
+`;
+
+// Tableaux + colonnes du workspace, version légère pour le sélecteur de
+// tâches liées par étape (tableau → colonne → tâche)
+export const GET_BOARDS_FOR_LINKING = gql`
+  query GetBoardsForLinking($workspaceId: ID) {
+    boards(workspaceId: $workspaceId) {
+      id
+      title
+      emoji
+      columns {
+        id
+        title
+        color
+        order
+        taskCount
+      }
+    }
+  }
 `;
 
 export const LINK_TASK = gql`
@@ -754,6 +779,7 @@ export const TASK_LIGHT_FRAGMENT = gql`
       boardTitle
       columnId
       columnTitle
+      columnColor
       status
       priority
       dueDate
