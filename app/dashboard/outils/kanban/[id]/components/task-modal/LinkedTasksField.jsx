@@ -207,6 +207,18 @@ export function LinkedTasksField({
   );
 }
 
+// La modale de tâche est un Radix Dialog : react-remove-scroll pose un
+// verrou de scroll sur le document et annule la molette pour tout ce qui est
+// hors de la modale. Le popover étant rendu dans un portail (donc hors de la
+// modale), ses listes ne défilaient pas. On arrête la propagation avant que
+// le listener du document ne voie l'événement : le navigateur fait défiler
+// normalement. Même mécanique que les autres sélecteurs du produit
+// (client-combobox, category-search-select).
+const stopScrollLock = {
+  onWheel: (e) => e.stopPropagation(),
+  onTouchMove: (e) => e.stopPropagation(),
+};
+
 function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
   const label = (
     <>
@@ -325,7 +337,7 @@ function LinkedTaskPicker({
           backLabel="Étapes"
           title="Choisir un tableau"
         />
-        <div className="max-h-72 overflow-y-auto p-1.5">
+        <div className="max-h-72 overflow-y-auto p-1.5" {...stopScrollLock}>
           {boardsLoading && boards.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Chargement...
@@ -379,7 +391,10 @@ function LinkedTaskPicker({
             Choisir une étape
           </span>
         </div>
-        <div className="max-h-72 overflow-y-auto p-1.5 pt-0.5">
+        <div
+          className="max-h-72 overflow-y-auto p-1.5 pt-0.5"
+          {...stopScrollLock}
+        >
           {sortedColumns.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Aucune colonne
@@ -423,7 +438,7 @@ function LinkedTaskPicker({
         color={column?.color}
       />
       <CommandInput placeholder="Rechercher dans cette étape..." />
-      <CommandList className="max-h-64">
+      <CommandList className="max-h-64" {...stopScrollLock}>
         {tasksLoading && tasks.length === 0 ? (
           <div className="py-6 text-center text-sm text-muted-foreground">
             Chargement...
