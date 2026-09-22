@@ -106,13 +106,13 @@ export default function LpShell({
       {/* CTA sticky mobile : visible seulement quand le hero est sorti de l'écran */}
       <div
         aria-hidden={!showSticky}
-        className={`lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 bg-white/95 backdrop-blur border-t border-gray-200 transition-transform duration-300 ${
+        className={`lg:hidden fixed bottom-0 inset-x-0 z-40 px-3 pt-3 pb-5 transition-transform duration-300 ${
           showSticky ? "translate-y-0" : "translate-y-full"
         }`}
       >
         <Link
           href={SIGNUP_HREF}
-          className="flex flex-col items-center justify-center w-full rounded-xl bg-[#5b50FF] text-white py-3"
+          className="flex flex-col items-center justify-center w-full rounded-2xl bg-[#5b50FF] text-white py-3 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]"
         >
           <span className="text-base font-medium leading-tight">
             {CTA_LABEL}

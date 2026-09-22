@@ -11,7 +11,7 @@ export const CTA_SUBLABEL = "30 jours offerts · sans carte bancaire";
 // d'illustration en attendant la vraie photo). L'ordre est celui d'affichage.
 export const REVIEWS = [
   {
-    text: "Interface facile à utiliser. Service client hyperréactif. Rapport qualité/prix excellent.",
+    text: "Super expérience ! Interface hyper simple, très bon rapport qualité-prix et service client vraiment réactif. Je recommande !",
     name: "Maëva M.",
     role: "Graphiste",
     image: "/lp/avis/maeva.jpg",
