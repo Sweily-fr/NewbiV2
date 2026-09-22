@@ -13,7 +13,12 @@ const skipImages = process.argv.includes("--skip-images");
 const forceImages = process.argv.includes("--force-images");
 const ignoreLinks = process.argv.includes("--ignore-links");
 const forceFlag = forceImages ? " --force" : "";
-const count = imagesOnly ? 0 : parseInt(process.argv[2], 10) || 3;
+// Nombre explicite (`node scripts/publish-articles.js 5`) : ancien comportement.
+// Sans nombre : mode « dû », on publie tout article de la file dont la
+// publishDate est atteinte (voir plus bas). Un run de cron manqué est ainsi
+// rattrapé au run suivant au lieu de décaler tout le plan éditorial.
+const countArg = process.argv.slice(2).find((a) => /^\d+$/.test(a));
+const explicitCount = countArg === undefined ? null : parseInt(countArg, 10);
 
 const queue = JSON.parse(fs.readFileSync(QUEUE_PATH, "utf-8"));
 const log = fs.existsSync(LOG_PATH)
@@ -21,6 +26,15 @@ const log = fs.existsSync(LOG_PATH)
   : [];
 
 const today = new Date().toISOString().split("T")[0];
+
+// publishDate du frontmatter → "YYYY-MM-DD" (gray-matter rend une Date si la
+// valeur n'est pas entre quotes, une chaîne sinon).
+function plannedDate(data) {
+  const v = data.publishDate;
+  if (!v) return null;
+  const str = v instanceof Date ? v.toISOString() : String(v);
+  return /^\d{4}-\d{2}-\d{2}/.test(str) ? str.slice(0, 10) : null;
+}
 
 // --images-only: find all already-published articles and generate their images
 if (imagesOnly) {
@@ -104,6 +118,22 @@ for (const slug of queue.queue) {
     }
   }
   meta.set(slug, { data, content, deps, missing });
+}
+
+// Mode « dû » : le lot = tous les articles non publiés dont la date planifiée
+// est atteinte. Les jours normaux cela donne les 2 articles du jour ; après
+// une panne du cron, tout le retard d'un coup.
+const dueSlugs = [...meta.entries()]
+  .filter(([, { data }]) => {
+    const d = plannedDate(data);
+    return d !== null && d <= today;
+  })
+  .map(([slug]) => slug);
+const count = imagesOnly ? 0 : (explicitCount ?? dueSlugs.length);
+if (explicitCount === null) {
+  console.log(
+    `Mode « dû » : ${dueSlugs.length} article(s) planifié(s) au plus tard le ${today}.`,
+  );
 }
 
 // Build the dep graph over unpublished articles. Articles that mutually link
@@ -256,7 +286,10 @@ for (const slug of batch) {
   }
 
   data.published = true;
-  data.publishDate = today;
+  // Rattrapage : on garde la date planifiée (déjà passée) pour conserver la
+  // cadence affichée sur le blog ; sinon la date du jour comme avant.
+  const planned = plannedDate(data);
+  data.publishDate = planned && planned <= today ? planned : today;
 
   fs.writeFileSync(filePath, matter.stringify(content, data), "utf-8");
   published.push(slug);
