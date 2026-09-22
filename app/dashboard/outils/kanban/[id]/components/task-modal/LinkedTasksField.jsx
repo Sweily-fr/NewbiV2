@@ -207,11 +207,10 @@ export function LinkedTasksField({
   );
 }
 
-// Teinte à partir de la couleur de colonne (#rgb ou #rrggbb) : fond et
-// bordure des pastilles de tâches liées reprennent la couleur de la colonne
-// où se trouve la tâche. Retourne null si la couleur est illisible, auquel
-// cas on retombe sur le style neutre.
-const tint = (color, alpha) => {
+// Couleur de colonne (#rgb ou #rrggbb) utilisée comme couleur de TEXTE :
+// le titre d'une tâche liée prend la couleur de sa colonne, sans fond teinté.
+// Retourne null si la couleur est illisible → style neutre.
+const textColor = (color) => {
   if (typeof color !== "string") return null;
   const hex = color.trim().replace("#", "");
   const full =
@@ -221,9 +220,7 @@ const tint = (color, alpha) => {
           .map((c) => c + c)
           .join("")
       : hex;
-  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  return /^[0-9a-fA-F]{6}$/.test(full) ? `#${full}` : null;
 };
 
 // La modale de tâche est un Radix Dialog : react-remove-scroll pose un
@@ -239,8 +236,7 @@ const stopScrollLock = {
 };
 
 function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
-  const background = tint(task.columnColor, 0.14);
-  const border = tint(task.columnColor, 0.4);
+  const color = textColor(task.columnColor);
   const label = (
     <>
       <span className="truncate max-w-[10rem]">
@@ -261,22 +257,15 @@ function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
 
   return (
     <span
-      className={cn(
-        "group inline-flex max-w-full items-center gap-0.5 rounded-md border pr-0.5 text-xs",
-        !background && "border-border/60 bg-muted/40",
-      )}
-      style={
-        background
-          ? { backgroundColor: background, borderColor: border }
-          : undefined
-      }
+      className="group inline-flex max-w-full items-center gap-0.5 rounded-md border border-border/60 bg-muted/40 pr-0.5 text-xs"
+      style={color ? { color } : undefined}
     >
       {onOpen ? (
         <button
           type="button"
           onClick={onOpen}
           title={title}
-          className="flex min-w-0 items-center gap-1 rounded-md py-0.5 pl-2 pr-1 bg-transparent border-0 cursor-pointer hover:bg-background/30 transition-colors"
+          className="flex min-w-0 items-center gap-1 rounded-md py-0.5 pl-2 pr-1 bg-transparent border-0 cursor-pointer hover:underline transition-colors"
         >
           {label}
         </button>
@@ -293,7 +282,7 @@ function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
           type="button"
           onClick={onRemove}
           aria-label="Délier la tâche"
-          className="shrink-0 rounded p-0.5 text-muted-foreground/60 hover:text-foreground hover:bg-background/40 transition-colors bg-transparent border-0 cursor-pointer"
+          className="shrink-0 rounded p-0.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors bg-transparent border-0 cursor-pointer"
         >
           <X className="h-3 w-3" />
         </button>
@@ -442,17 +431,18 @@ function LinkedTaskPicker({
                 setColumn(c);
                 setStep("tasks");
               }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 mb-0.5 rounded-md border hover:brightness-95 dark:hover:brightness-110 transition-[filter] cursor-pointer text-left"
-              style={{
-                backgroundColor: tint(c.color, 0.12) || undefined,
-                borderColor: tint(c.color, 0.35) || "transparent",
-              }}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer text-left bg-transparent border-0"
             >
               <span
                 className="h-2.5 w-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: c.color || "#8D8D8D" }}
               />
-              <span className="flex-1 min-w-0 truncate text-sm">
+              <span
+                className="flex-1 min-w-0 truncate text-sm font-medium"
+                style={
+                  textColor(c.color) ? { color: textColor(c.color) } : undefined
+                }
+              >
                 {c.title}
               </span>
               {typeof c.taskCount === "number" && (
