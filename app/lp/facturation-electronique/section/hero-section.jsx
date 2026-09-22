@@ -73,14 +73,16 @@ export default function HeroSection({
           </p>
         </div>
 
-        {/* Mockup iPad « Factures clients », centré sous les CTA */}
+        {/* Mockup iPad « Factures clients », centré sous les CTA. Sur mobile,
+            l'image est agrandie et dépasse volontairement à droite (le layout
+            LP est en overflow-x-clip, pas de scroll horizontal). */}
         <div className="relative mx-auto mt-10 md:mt-14 w-full max-w-6xl">
           <img
             src="/lp/facturation-electronique/hero-ipad-factures.png"
             alt="Interface Newbi sur iPad : liste des factures clients avec statuts"
             width="2200"
             height="1268"
-            className="w-full h-auto"
+            className="w-[190%] max-w-none md:w-full md:max-w-full h-auto"
             loading="eager"
             fetchPriority="high"
           />

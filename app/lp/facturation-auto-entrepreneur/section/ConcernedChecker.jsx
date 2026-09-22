@@ -267,9 +267,9 @@ export default function ConcernedChecker() {
         {company && d && (
           <div
             ref={resultRef}
-            className="mt-10 md:mt-14 grid lg:grid-cols-2 gap-8 lg:gap-12 rounded-3xl bg-[#F4F4F5] p-7 md:p-10"
+            className="mt-10 md:mt-14 grid lg:grid-cols-2 gap-8 lg:gap-12 rounded-3xl bg-[#F4F4F5] p-6 md:p-10"
           >
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               <p className="text-sm font-medium text-gray-500 mb-4">Résultat</p>
               <h3 className="text-2xl md:text-3xl font-medium tracking-tight leading-snug text-gray-950 text-balance">
                 Tu es{" "}
@@ -302,8 +302,8 @@ export default function ConcernedChecker() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white p-6 md:p-7">
-              <p className="text-xl font-medium text-gray-950">
+            <div className="min-w-0 rounded-2xl bg-white p-5 md:p-7">
+              <p className="text-xl font-medium text-gray-950 break-words">
                 {company.nom_raison_sociale || company.nom_complet}
               </p>
               <p className="mt-1.5 text-sm text-gray-500">
@@ -356,10 +356,10 @@ export default function ConcernedChecker() {
                 ].map(([label, item]) => (
                   <div
                     key={label}
-                    className="flex items-center justify-between gap-4 py-3.5"
+                    className="flex flex-col items-start gap-2 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                   >
                     <dt className="text-[15px] text-gray-800">{label}</dt>
-                    <dd className="flex items-center gap-2">
+                    <dd className="flex items-center gap-2 shrink-0">
                       <span className="rounded-md bg-[#E4E2FF] px-2.5 py-1 text-[13px] font-medium text-[#5A50FF] whitespace-nowrap">
                         Concerné dès {item.when}
                       </span>
