@@ -16,6 +16,7 @@ import {
   CheckCircle,
   AlignLeft,
   Paperclip,
+  Link2,
   ZoomIn,
   Tag,
   X,
@@ -787,6 +788,45 @@ const TaskCard = memo(
                   </Tooltip>
                 )}
 
+                {/* Tâches liées (informatif) */}
+                {task.linkedTasks && task.linkedTasks.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-0.5">
+                        <Link2 className="h-3.5 w-3.5" />
+                        <span>{task.linkedTasks.length}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <div className="font-medium mb-0.5">
+                        {task.linkedTasks.length} tâche
+                        {task.linkedTasks.length > 1 ? "s" : ""} liée
+                        {task.linkedTasks.length > 1 ? "s" : ""}
+                      </div>
+                      <ul className="space-y-0.5">
+                        {task.linkedTasks.slice(0, 5).map((linked) => (
+                          <li key={linked.id} className="truncate">
+                            {linked.title}
+                            {linked.boardId !== task.boardId &&
+                              linked.boardTitle && (
+                                <span className="opacity-70">
+                                  {" "}
+                                  · {linked.boardTitle}
+                                </span>
+                              )}
+                          </li>
+                        ))}
+                        {task.linkedTasks.length > 5 && (
+                          <li className="opacity-70">
+                            +{task.linkedTasks.length - 5} autre
+                            {task.linkedTasks.length - 5 > 1 ? "s" : ""}
+                          </li>
+                        )}
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
                 {/* Claude est en train de répondre */}
                 <ClaudeWorkingBadge
                   claudeWorkingSince={task.claudeWorkingSince}
@@ -1190,7 +1230,9 @@ const TaskCard = memo(
         (pt.assignedMembers?.length ?? 0) ===
           (nt.assignedMembers?.length ?? 0)) &&
       (pt.images === nt.images ||
-        (pt.images?.length ?? 0) === (nt.images?.length ?? 0))
+        (pt.images?.length ?? 0) === (nt.images?.length ?? 0)) &&
+      (pt.linkedTasks === nt.linkedTasks ||
+        (pt.linkedTasks?.length ?? 0) === (nt.linkedTasks?.length ?? 0))
     );
   },
 );
