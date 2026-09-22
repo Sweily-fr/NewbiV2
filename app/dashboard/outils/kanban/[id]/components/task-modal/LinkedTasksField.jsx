@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import {
+  ArrowUpRight,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -67,6 +68,7 @@ export function LinkedTasksField({
   layout = "row",
 }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const [linkTask] = useMutation(LINK_TASK);
   const [unlinkTask] = useMutation(UNLINK_TASK);
@@ -161,9 +163,16 @@ export function LinkedTasksField({
     </Popover>
   );
 
+  // Au-delà de quelques liens, la ligne de propriété enflerait et pousserait
+  // la description : on replie le surplus derrière un « +N » dépliable.
+  const VISIBLE_CHIPS = 4;
+  const all = linkedTasks || [];
+  const hidden = expanded ? 0 : Math.max(0, all.length - VISIBLE_CHIPS);
+  const shown = hidden > 0 ? all.slice(0, VISIBLE_CHIPS) : all;
+
   const value = (
     <div className="flex flex-wrap items-center gap-1 min-w-0">
-      {(linkedTasks || []).map((task) => (
+      {shown.map((task) => (
         <LinkedTaskChip
           key={task.id}
           task={task}
@@ -172,6 +181,24 @@ export function LinkedTasksField({
           onRemove={disabled ? null : () => handleToggle(task)}
         />
       ))}
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          +{hidden}
+        </button>
+      )}
+      {expanded && all.length > VISIBLE_CHIPS && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="px-1 text-xs text-muted-foreground/70 hover:text-foreground transition-colors bg-transparent border-0 cursor-pointer"
+        >
+          Réduire
+        </button>
+      )}
       {trigger}
       {disabled && !hasLinks && (
         <span className="text-sm px-3 py-1" style={{ color: "#8D8D8D" }}>
@@ -207,10 +234,16 @@ export function LinkedTasksField({
   );
 }
 
-// Couleur de colonne (#rgb ou #rrggbb) utilisée comme couleur de TEXTE :
-// le titre d'une tâche liée prend la couleur de sa colonne, sans fond teinté.
-// Retourne null si la couleur est illisible → style neutre.
-const textColor = (color) => {
+// Couleur de colonne (#rgb ou #rrggbb) utilisée comme couleur de TEXTE : le
+// titre d'une tâche liée prend la couleur de sa colonne, sans fond teinté.
+//
+// Les couleurs de colonne sont choisies pour des pastilles, pas pour du
+// texte : un jaune clair devient illisible sur fond blanc, un bleu nuit sur
+// fond sombre. On renvoie donc DEUX variantes, assombrie ou éclaircie selon
+// la luminance, appliquées via des variables CSS (`--lt` / `--lt-dark`) pour
+// que le thème bascule sans re-render. Retourne null si la couleur est
+// illisible → style neutre.
+const parseHex = (color) => {
   if (typeof color !== "string") return null;
   const hex = color.trim().replace("#", "");
   const full =
@@ -220,8 +253,34 @@ const textColor = (color) => {
           .map((c) => c + c)
           .join("")
       : hex;
-  return /^[0-9a-fA-F]{6}$/.test(full) ? `#${full}` : null;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
 };
+
+const toHex = (rgb) =>
+  `#${rgb.map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("")}`;
+
+const mix = (rgb, target, ratio) =>
+  rgb.map((v, i) => v + (target[i] - v) * ratio);
+
+// Luminance perçue (0 = noir, 1 = blanc)
+const luminance = ([r, g, b]) => (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+
+export const columnTextColors = (color) => {
+  const rgb = parseHex(color);
+  if (!rgb) return null;
+  const l = luminance(rgb);
+  // Thème clair : on assombrit les couleurs trop claires
+  const light = l > 0.62 ? toHex(mix(rgb, [0, 0, 0], (l - 0.5) * 0.9)) : toHex(rgb);
+  // Thème sombre : on éclaircit les couleurs trop sombres
+  const dark =
+    l < 0.45 ? toHex(mix(rgb, [255, 255, 255], (0.6 - l) * 0.85)) : toHex(rgb);
+  return { light, dark };
+};
+
+const columnColors = (column) => columnTextColors(column?.color);
+const cssColorVars = (colors) =>
+  colors ? { "--lt": colors.light, "--lt-dark": colors.dark } : undefined;
 
 // La modale de tâche est un Radix Dialog : react-remove-scroll pose un
 // verrou de scroll sur le document et annule la molette pour tout ce qui est
@@ -236,16 +295,24 @@ const stopScrollLock = {
 };
 
 function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
-  const color = textColor(task.columnColor);
+  const colors = columnTextColors(task.columnColor);
   const label = (
     <>
-      <span className="truncate max-w-[10rem]">
+      <span
+        className={cn(
+          "truncate max-w-[10rem]",
+          colors && "text-[color:var(--lt)] dark:text-[color:var(--lt-dark)]",
+        )}
+      >
         {task.title || "Sans titre"}
       </span>
       {isOtherBoard && task.boardTitle && (
         <span className="shrink-0 rounded bg-background/60 px-1 text-[10px] text-muted-foreground truncate max-w-[6rem]">
           {task.boardTitle}
         </span>
+      )}
+      {onOpen && (
+        <ArrowUpRight className="h-3 w-3 shrink-0 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors" />
       )}
     </>
   );
@@ -257,15 +324,17 @@ function LinkedTaskChip({ task, isOtherBoard, onOpen, onRemove }) {
 
   return (
     <span
-      className="group inline-flex max-w-full items-center gap-0.5 rounded-md border border-border/60 bg-muted/40 pr-0.5 text-xs"
-      style={color ? { color } : undefined}
+      className="group inline-flex max-w-full items-center gap-0.5 rounded-md border border-border/60 bg-muted/40 pr-0.5 text-xs transition-colors hover:border-border"
+      style={
+        colors ? { "--lt": colors.light, "--lt-dark": colors.dark } : undefined
+      }
     >
       {onOpen ? (
         <button
           type="button"
           onClick={onOpen}
           title={title}
-          className="flex min-w-0 items-center gap-1 rounded-md py-0.5 pl-2 pr-1 bg-transparent border-0 cursor-pointer hover:underline transition-colors"
+          className="flex min-w-0 items-center gap-1 rounded-md py-0.5 pl-2 pr-1 bg-transparent border-0 cursor-pointer"
         >
           {label}
         </button>
@@ -362,8 +431,8 @@ function LinkedTaskPicker({
         />
         <div className="max-h-72 overflow-y-auto p-1.5" {...stopScrollLock}>
           {boardsLoading && boards.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Chargement...
+            <p className="py-6 text-center text-sm text-muted-foreground/70">
+              Chargement des tableaux...
             </p>
           )}
           {boards.map((b) => (
@@ -419,8 +488,8 @@ function LinkedTaskPicker({
           {...stopScrollLock}
         >
           {sortedColumns.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Aucune colonne
+            <p className="py-6 text-center text-sm text-muted-foreground/70">
+              Aucune colonne sur ce tableau
             </p>
           )}
           {sortedColumns.map((c) => (
@@ -438,19 +507,21 @@ function LinkedTaskPicker({
                 style={{ backgroundColor: c.color || "#8D8D8D" }}
               />
               <span
-                className="flex-1 min-w-0 truncate text-sm font-medium"
-                style={
-                  textColor(c.color) ? { color: textColor(c.color) } : undefined
-                }
+                className={cn(
+                  "flex-1 min-w-0 truncate text-sm font-medium",
+                  columnColors(c) &&
+                    "text-[color:var(--lt)] dark:text-[color:var(--lt-dark)]",
+                )}
+                style={cssColorVars(columnColors(c))}
               >
                 {c.title}
               </span>
               {typeof c.taskCount === "number" && (
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground tabular-nums">
                   {c.taskCount}
                 </span>
               )}
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
             </button>
           ))}
         </div>
@@ -473,8 +544,8 @@ function LinkedTaskPicker({
       <CommandInput placeholder="Rechercher dans cette étape..." />
       <CommandList className="max-h-64" {...stopScrollLock}>
         {tasksLoading && tasks.length === 0 ? (
-          <div className="py-6 text-center text-sm text-muted-foreground">
-            Chargement...
+          <div className="py-6 text-center text-sm text-muted-foreground/70">
+            Chargement des tâches...
           </div>
         ) : (
           <CommandEmpty>Aucune tâche dans cette étape</CommandEmpty>
@@ -489,14 +560,14 @@ function LinkedTaskPicker({
                   value={task.id}
                   keywords={[task.title || ""]}
                   onSelect={() => onToggle(task)}
-                  className="flex items-center gap-2"
+                  className="group flex items-center gap-2"
                 >
                   <span
                     className={cn(
-                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border",
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-colors",
                       isLinked
                         ? "border-[#5A50FF] bg-[#5A50FF] text-white"
-                        : "border-input",
+                        : "border-input/70 group-hover:border-input",
                     )}
                   >
                     {isLinked && <Check className="h-3 w-3" />}
