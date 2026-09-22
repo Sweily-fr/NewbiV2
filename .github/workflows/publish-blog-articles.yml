@@ -15,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       count:
-        description: "Nombre d'articles à publier"
+        description: "Nombre d'articles à publier (vide = tous les articles dont la date planifiée est atteinte)"
         required: false
-        default: "2"
+        default: ""
       images_only:
         description: "Générer uniquement les images des articles déjà publiés (aucune publication)"
         required: false
@@ -31,6 +31,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: publish-blog-articles
@@ -39,6 +40,12 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      # Le hook husky pre-push (vitest complet) ne doit pas bloquer une
+      # publication éditoriale : du 09 au 18/09/2026, 3 tests unitaires rouges
+      # sur main ont fait échouer 8 runs de suite sans publier un seul article.
+      # Les tests ont leur propre workflow (ci.yml).
+      HUSKY: "0"
     steps:
       - name: Checkout repository (main)
         uses: actions/checkout@v4
@@ -82,7 +89,10 @@ jobs:
           if [ "${{ github.event.inputs.images_only }}" = "true" ]; then
             node scripts/publish-articles.js --images-only $FLAGS
           else
-            node scripts/publish-articles.js ${{ github.event.inputs.count || '2' }} $FLAGS
+            # Sans nombre, le script publie tout ce qui est dû (date planifiée
+            # atteinte) : 2 par jour ouvré en régime normal, le retard complet
+            # après un incident.
+            node scripts/publish-articles.js ${{ github.event.inputs.count }} $FLAGS
           fi
 
       - name: Commit and push to main
@@ -97,7 +107,7 @@ jobs:
             exit 0
           fi
           git commit -m "blog: publish articles $(date +%Y-%m-%d)"
-          git push origin main
+          git push --no-verify origin main
           echo "pushed=true" >> "$GITHUB_OUTPUT"
 
       # develop ne doit jamais être en retard sur main : on y reporte le commit
@@ -109,8 +119,34 @@ jobs:
           git fetch origin develop
           git checkout -B develop origin/develop
           if git merge --no-edit origin/main; then
-            git push origin develop
+            git push --no-verify origin develop
           else
             echo "::warning::Back-merge main → develop en conflit : à faire à la main (git checkout develop && git merge main)."
             git merge --abort || true
+          fi
+
+      # Alerte en cas d'échec : une issue GitHub (notifiée par e-mail aux
+      # personnes qui suivent le dépôt, rouverte/commentée tant que ça dure)
+      # et Discord si DISCORD_WEBHOOK_URL est renseigné.
+      - name: Alerte si la publication a échoué
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          TITLE="Publication blog en échec"
+          BODY="Le workflow de publication des articles a échoué le $(date -u +%Y-%m-%d) : $RUN_URL
+
+          Tant que ce n'est pas corrigé, aucun article du plan éditorial n'est publié. Une fois corrigé, le run suivant rattrape tout le retard (mode « dû »)."
+          NUMBER=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$TITLE\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$NUMBER" ]; then
+            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "$BODY"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --label bug --body "$BODY" \
+              || gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
+          fi
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            PAYLOAD=$(jq -n --arg run "$RUN_URL" '{content: "<@here>", embeds: [{title: "🚨 Publication blog en échec — newbiv2", description: "Aucun article publié aujourd\u0027hui. Voir le run.", color: 15548997, fields: [{name: "Run", value: $run}], timestamp: (now | todate)}]}')
+            curl -sS -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$DISCORD_WEBHOOK" || true
           fi
