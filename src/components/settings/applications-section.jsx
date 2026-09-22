@@ -25,6 +25,16 @@ import {
   TabsNewContent,
 } from "@/src/components/ui/tabs-new";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import {
   Search,
   ChevronLeft,
   ChevronRight,
@@ -1814,6 +1824,10 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
   );
 }
 
+// Apps dont la désinstallation coupe aussi la connexion côté API
+// (cf. APP_INTEGRATIONS dans le resolver uninstallApp)
+const APPS_WITH_INTEGRATION = ["abby", "qonto", "pennylane"];
+
 // ── Vue détail d'une app installée ──
 
 function AppDetailView({
@@ -1835,6 +1849,12 @@ function AppDetailView({
   isReadOnly,
   readOnlyTooltip,
 }) {
+  const [isUninstallConfirmOpen, setIsUninstallConfirmOpen] = useState(false);
+  // Désinstaller coupe aussi la connexion (cf. resolver uninstallApp) : on le
+  // dit avant, sinon l'utilisateur perd sa clé API sans s'y attendre.
+  const uninstallDisconnects =
+    isConnected && APPS_WITH_INTEGRATION.includes(app.id);
+
   return (
     <div className="space-y-6">
       {/* Back */}
@@ -1893,7 +1913,7 @@ function AppDetailView({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => onUninstall(app.id)}
+                onClick={() => setIsUninstallConfirmOpen(true)}
                 disabled={uninstallLoading || !canManage}
                 className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
                 title={!canManage ? "Réservé aux owners et admins" : ""}
@@ -1928,6 +1948,35 @@ function AppDetailView({
           </div>
         )}
       </div>
+
+      <AlertDialog
+        open={isUninstallConfirmOpen}
+        onOpenChange={setIsUninstallConfirmOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Désinstaller {app.name} ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {uninstallDisconnects
+                ? `La connexion à ${app.name} sera coupée : la clé enregistrée sera supprimée et les synchronisations s'arrêteront. Les documents déjà importés sont conservés. Vous pourrez reconnecter ${app.name} en la réinstallant.`
+                : `L'application sera retirée de vos applications. Vous pourrez la réinstaller à tout moment.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => onUninstall(app.id)}
+              className="bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+            >
+              {uninstallDisconnects
+                ? "Désinstaller et déconnecter"
+                : "Désinstaller"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Tabs */}
       <TabsNew defaultValue={isInstalled ? "connexions" : "a-propos"}>
@@ -2475,6 +2524,7 @@ export function ApplicationsSection() {
     syncAll: syncAllToPennylane,
     error: pennylaneError,
     clearError: clearPennylaneError,
+    refetchStatus: refetchPennylaneStatus,
   } = usePennylane(activeOrganization?.id || organizationId);
 
   const {
@@ -2494,6 +2544,7 @@ export function ApplicationsSection() {
     importFromQonto: importFromQontoAction,
     error: qontoError,
     clearError: clearQontoError,
+    refetchStatus: refetchQontoStatus,
   } = useQonto(activeOrganization?.id || organizationId);
 
   const {
@@ -2511,7 +2562,21 @@ export function ApplicationsSection() {
     importFromAbby: importFromAbbyAction,
     error: abbyError,
     clearError: clearAbbyError,
+    refetchStatus: refetchAbbyStatus,
   } = useAbby(activeOrganization?.id || organizationId);
+
+  // La désinstallation coupe la connexion côté API : on rafraîchit le statut de
+  // l'intégration, sinon la carte reste affichée « Connecté » jusqu'au rechargement.
+  const handleUninstallApp = async (appId) => {
+    const result = await uninstallApp(appId);
+    const refetchByApp = {
+      abby: refetchAbbyStatus,
+      qonto: refetchQontoStatus,
+      pennylane: refetchPennylaneStatus,
+    };
+    await refetchByApp[appId]?.();
+    return result;
+  };
 
   // Écouter l'événement de configuration Stripe complète
   useEffect(() => {
@@ -2757,7 +2822,7 @@ export function ApplicationsSection() {
           connectionDetail={currentApp.connectionDetail}
           isInstalled={currentApp.installed}
           onInstall={installApp}
-          onUninstall={uninstallApp}
+          onUninstall={handleUninstallApp}
           installLoading={installLoading}
           uninstallLoading={uninstallLoading}
           canManage={canManageApps}
