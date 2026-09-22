@@ -92,6 +92,7 @@ import { TaskDescriptionField } from "./task-modal/TaskDescriptionField";
 import { isCollabDescriptionEnabled } from "./task-modal/collabConfig";
 import { useSession } from "@/src/lib/auth-client";
 import { TaskModalHeader } from "./task-modal/TaskModalHeader";
+import { LinkedTasksField } from "./task-modal/LinkedTasksField";
 import { computeAutoSaveSignature } from "../hooks/taskFormSignature";
 
 /**
@@ -206,6 +207,7 @@ export function TaskModal({
   removePendingComment,
   updatePendingComment,
   openEditTaskModal,
+  openLinkedTask,
   updateTask,
   initialFormRef: externalInitialFormRef,
   localMutationRef,
@@ -272,6 +274,24 @@ export function TaskModal({
       openEditTaskModal(nextTask);
     }
   }, [nextTask, openEditTaskModal]);
+
+  // Ouvrir une tâche liée : même mécanique que prev/next (on flushe la
+  // sauvegarde en attente avant de changer de tâche ou de tableau).
+  const handleOpenLinkedTask = useCallback(
+    (linkedTask) => {
+      if (!linkedTask || !openLinkedTask) return;
+      flushPendingSaveRef.current?.();
+      openLinkedTask(linkedTask);
+    },
+    [openLinkedTask],
+  );
+
+  const handleLinkedTasksChange = useCallback(
+    (nextLinkedTasks) => {
+      setTaskForm((prev) => ({ ...prev, linkedTasks: nextLinkedTasks }));
+    },
+    [setTaskForm],
+  );
 
   // Raccourcis clavier pour navigation
   useEffect(() => {
@@ -1694,6 +1714,18 @@ export function TaskModal({
                       />
                     )}
                   </div>
+
+                  {/* Tâches liées (informatif, lien symétrique) */}
+                  <LinkedTasksField
+                    taskId={isEditing ? taskId : null}
+                    boardId={boardId}
+                    workspaceId={workspaceId}
+                    linkedTasks={taskForm.linkedTasks || []}
+                    onChange={handleLinkedTasksChange}
+                    onOpenTask={handleOpenLinkedTask}
+                    isEditing={isEditing}
+                    disabled={isReadOnly}
+                  />
                 </div>
 
                 {/* Footer fixe — uniquement en mode création */}
@@ -2548,6 +2580,18 @@ export function TaskModal({
                       />
                     )}
                   </div>
+
+                  {/* Tâches liées (informatif, lien symétrique) */}
+                  <LinkedTasksField
+                    taskId={isEditing ? taskId : null}
+                    boardId={boardId}
+                    workspaceId={workspaceId}
+                    linkedTasks={taskForm.linkedTasks || []}
+                    onChange={handleLinkedTasksChange}
+                    onOpenTask={handleOpenLinkedTask}
+                    isEditing={isEditing}
+                    disabled={isReadOnly}
+                  />
                 </div>
 
                 {/* Footer fixe mobile — uniquement en mode création */}

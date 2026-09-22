@@ -118,6 +118,7 @@ export const GET_BOARD = gql`
         priority
         startDate
         dueDate
+        boardId
         columnId
         position
         userId
@@ -138,6 +139,17 @@ export const GET_BOARD = gql`
           completed
         }
         assignedMembers
+        linkedTasks {
+          id
+          title
+          boardId
+          boardTitle
+          columnId
+          columnTitle
+          status
+          priority
+          dueDate
+        }
         timeTracking {
           totalSeconds
           isRunning
@@ -409,6 +421,7 @@ export const CREATE_TASK = gql`
       priority
       startDate
       dueDate
+      boardId
       columnId
       position
       userId
@@ -427,6 +440,17 @@ export const CREATE_TASK = gql`
         completed
       }
       assignedMembers
+      linkedTasks {
+        id
+        title
+        boardId
+        boardTitle
+        columnId
+        columnTitle
+        status
+        priority
+        dueDate
+      }
       timeTracking {
         totalSeconds
         isRunning
@@ -501,6 +525,7 @@ export const UPDATE_TASK = gql`
       priority
       startDate
       dueDate
+      boardId
       columnId
       position
       userId
@@ -519,6 +544,17 @@ export const UPDATE_TASK = gql`
         completed
       }
       assignedMembers
+      linkedTasks {
+        id
+        title
+        boardId
+        boardTitle
+        columnId
+        columnTitle
+        status
+        priority
+        dueDate
+      }
       timeTracking {
         totalSeconds
         isRunning
@@ -611,6 +647,76 @@ export const MOVE_TASK = gql`
 `;
 
 // Fragment léger pour les cartes kanban et les subscriptions (sans comments/activity/entries)
+// Tâches liées (informatif, lien symétrique posé côté serveur)
+export const LINKED_TASK_INFO_FRAGMENT = gql`
+  fragment LinkedTaskInfoFields on LinkedTaskInfo {
+    id
+    title
+    boardId
+    boardTitle
+    columnId
+    columnTitle
+    status
+    priority
+    dueDate
+  }
+`;
+
+export const SEARCH_TASKS = gql`
+  query SearchTasks(
+    $search: String
+    $boardId: ID
+    $excludeTaskId: ID
+    $limit: Int
+    $workspaceId: ID
+  ) {
+    searchTasks(
+      search: $search
+      boardId: $boardId
+      excludeTaskId: $excludeTaskId
+      limit: $limit
+      workspaceId: $workspaceId
+    ) {
+      ...LinkedTaskInfoFields
+    }
+  }
+  ${LINKED_TASK_INFO_FRAGMENT}
+`;
+
+export const LINK_TASK = gql`
+  mutation LinkTask($taskId: ID!, $linkedTaskId: ID!, $workspaceId: ID) {
+    linkTask(
+      taskId: $taskId
+      linkedTaskId: $linkedTaskId
+      workspaceId: $workspaceId
+    ) {
+      id
+      updatedAt
+      linkedTasks {
+        ...LinkedTaskInfoFields
+      }
+    }
+  }
+  ${LINKED_TASK_INFO_FRAGMENT}
+`;
+
+export const UNLINK_TASK = gql`
+  mutation UnlinkTask($taskId: ID!, $linkedTaskId: ID!, $workspaceId: ID) {
+    unlinkTask(
+      taskId: $taskId
+      linkedTaskId: $linkedTaskId
+      workspaceId: $workspaceId
+    ) {
+      id
+      updatedAt
+      linkedTasks {
+        ...LinkedTaskInfoFields
+      }
+    }
+  }
+  ${LINKED_TASK_INFO_FRAGMENT}
+`;
+
 export const TASK_LIGHT_FRAGMENT = gql`
   fragment TaskLightFields on Task {
     id
@@ -620,6 +726,7 @@ export const TASK_LIGHT_FRAGMENT = gql`
     priority
     startDate
     dueDate
+    boardId
     columnId
     position
     userId
@@ -640,6 +747,17 @@ export const TASK_LIGHT_FRAGMENT = gql`
       completed
     }
     assignedMembers
+    linkedTasks {
+      id
+      title
+      boardId
+      boardTitle
+      columnId
+      columnTitle
+      status
+      priority
+      dueDate
+    }
     timeTracking {
       totalSeconds
       isRunning

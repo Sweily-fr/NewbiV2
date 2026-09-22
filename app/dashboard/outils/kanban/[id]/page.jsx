@@ -1094,6 +1094,32 @@ function KanbanBoardPageContent({ params }) {
     }
   }, [closeEditTaskModal, id, taskIdFromUrl]);
 
+  // Ouvrir une tâche liée depuis la modale : sur ce tableau on bascule la
+  // modale (comme prev/next), sinon on navigue vers son tableau avec ?task=
+  // qui rouvre la tâche à l'arrivée. Lecture de board.tasks via un ref pour
+  // ne pas faire dépendre la modale de la liste complète (re-rendue à chaque
+  // événement de subscription).
+  const boardTasksRef = React.useRef(board?.tasks);
+  boardTasksRef.current = board?.tasks;
+  const handleOpenLinkedTask = React.useCallback(
+    (linkedTask) => {
+      const targetId = linkedTask?.id;
+      if (!targetId) return;
+      const targetBoardId = linkedTask.boardId || id;
+      if (targetBoardId === id) {
+        const task = (boardTasksRef.current || []).find(
+          (t) => t.id === targetId,
+        );
+        if (task) {
+          handleOpenEditTaskModal(task);
+          return;
+        }
+      }
+      router.push(`/dashboard/outils/kanban/${targetBoardId}?task=${targetId}`);
+    },
+    [id, handleOpenEditTaskModal, router],
+  );
+
   // Fonction de filtrage combinée (recherche + membre)
   const filterTasks = React.useCallback(
     (tasks) => {
@@ -2010,6 +2036,7 @@ function KanbanBoardPageContent({ params }) {
           toggleChecklistItem={toggleChecklistItem}
           removeChecklistItem={removeChecklistItem}
           openEditTaskModal={handleOpenEditTaskModal}
+          openLinkedTask={handleOpenLinkedTask}
           updateTask={updateTask}
           initialFormRef={initialFormRef}
           localMutationRef={localMutationRef}
