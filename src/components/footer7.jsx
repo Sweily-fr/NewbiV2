@@ -317,6 +317,30 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/produits/facturation-electronique"
+                    >
+                      Facturation électronique
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/produits/tresorerie"
+                    >
+                      Trésorerie
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/produits/gestion-des-achats"
+                    >
+                      Achats et notes de frais
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href={"/produits/transfers"}
                     >
                       Transferts fichiers
@@ -389,13 +413,6 @@ const Footer7 = ({
                       Tarifs
                     </a>
                   </li>
-                </ul>
-              </div>
-              <div className="col-span-1">
-                <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
-                  Support
-                </h3>
-                <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
@@ -412,6 +429,72 @@ const Footer7 = ({
                       rel="noopener noreferrer"
                     >
                       Communauté
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div className="col-span-1">
+                <h3 className="text-sm/6 font-medium text-gray-700 mb-2 sm:mb-3 md:mb-6">
+                  Guides
+                </h3>
+                {/* Liens présents sur toutes les pages : ils transmettent
+                    l'autorité du site aux guides et aux articles qui visent
+                    la page 1 de Google (maillage interne, sept. 2026). */}
+                <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/guide-facturation-electronique"
+                    >
+                      Guide facturation électronique 2026
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/logiciel-facturation-gratuit"
+                    >
+                      Logiciel de facturation gratuit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/alternatives"
+                    >
+                      Comparatifs et alternatives
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/blog/facturation-electronique-obligatoire-2026"
+                    >
+                      Facturation électronique obligatoire
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/blog/mentions-obligatoires-facture"
+                    >
+                      Mentions obligatoires d'une facture
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/blog/modele-facture-gratuit-word-excel-pdf"
+                    >
+                      Modèle de facture gratuit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/blog/top-outils-scan-tickets-caisse-notes-frais"
+                    >
+                      Scanner ses notes de frais
                     </a>
                   </li>
                 </ul>
