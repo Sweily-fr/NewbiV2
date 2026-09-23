@@ -125,8 +125,6 @@ const MOBILE_LOAD_MORE_STEP = 20;
 // Attente de la facture d'achat créée par OCR après l'ajout d'un justificatif
 const RECEIPT_OCR_POLL_INTERVAL_MS = 2500;
 const RECEIPT_OCR_POLL_TIMEOUT_MS = 90000;
-// Délai sans nouvelle facture au bout duquel on arrête d'attendre les autres
-const RECEIPT_OCR_POLL_SETTLE_MS = 10000;
 
 // Fonction utilitaire pour formater les dates de manière sécurisée
 const safeFormatDate = (dateValue) => {
@@ -606,10 +604,10 @@ export default function TransactionTable({
   };
 
   // Attente de la facture d'achat créée par OCR après un upload. On interroge
-  // la transaction jusqu'à voir apparaître la ou les factures liées, au lieu
-  // d'un rafraîchissement unique après un délai fixe : la facture s'affiche
-  // dès qu'elle est prête (au lieu d'attendre la fin du délai) et n'est plus
-  // manquée quand l'OCR dépasse ce délai. Annulé au démontage.
+  // la transaction jusqu'à ce que les justificatifs déposés soient traités,
+  // au lieu d'un rafraîchissement unique après un délai fixe : la facture
+  // s'affiche dès qu'elle est prête et n'est plus manquée quand l'OCR dépasse
+  // ce délai. Annulé au démontage.
   const apolloClient = useApolloClient();
   const purchaseInvoicePollRef = useRef(null);
   useEffect(() => {
@@ -620,8 +618,8 @@ export default function TransactionTable({
     };
   }, []);
 
-  const waitForPurchaseInvoices = useCallback(
-    async (transactionId, previousCount, expectedCount) => {
+  const waitForReceiptsProcessed = useCallback(
+    async (transactionId, receiptIds) => {
       // Une seule attente à la fois : un nouvel upload annule la précédente.
       if (purchaseInvoicePollRef.current) {
         purchaseInvoicePollRef.current.cancelled = true;
@@ -630,8 +628,11 @@ export default function TransactionTable({
       purchaseInvoicePollRef.current = poll;
 
       const deadline = Date.now() + RECEIPT_OCR_POLL_TIMEOUT_MS;
-      let lastCount = previousCount;
-      let lastChangeAt = null;
+      // Un justificatif est traité quand l'API lui a posé un purchaseInvoiceId,
+      // que la facture ait été créée ou qu'il ait rejoint une facture
+      // existante. Signal plus fiable que le nombre de factures liées, qui ne
+      // bouge pas quand la déduplication rattache à une facture déjà liée.
+      const pending = new Set(receiptIds);
 
       while (!poll.cancelled && Date.now() < deadline) {
         await new Promise((resolve) =>
@@ -639,39 +640,33 @@ export default function TransactionTable({
         );
         if (poll.cancelled) return;
 
-        let linkedCount = null;
+        let files;
         try {
           const { data } = await apolloClient.query({
             query: GET_TRANSACTION,
             variables: { id: transactionId },
             fetchPolicy: "network-only",
           });
-          linkedCount = data?.transaction?.linkedPurchaseInvoices?.length;
+          files = data?.transaction?.receiptFiles;
         } catch {
           // Erreur réseau ponctuelle : nouvelle tentative au tour suivant
           continue;
         }
-        if (poll.cancelled || typeof linkedCount !== "number") continue;
+        if (poll.cancelled || !Array.isArray(files)) continue;
 
-        if (linkedCount > lastCount) {
-          lastCount = linkedCount;
-          lastChangeAt = Date.now();
-          refetch();
-          // Toutes les factures attendues sont là : plus rien à attendre.
-          if (linkedCount - previousCount >= expectedCount) return;
-        } else if (
-          lastChangeAt &&
-          Date.now() - lastChangeAt > RECEIPT_OCR_POLL_SETTLE_MS
-        ) {
-          // Plus rien de nouveau depuis un moment : la déduplication a pu
-          // rattacher plusieurs justificatifs à une même facture.
-          return;
+        let processed = false;
+        for (const file of files) {
+          if (file?.id && file.purchaseInvoiceId && pending.delete(file.id)) {
+            processed = true;
+          }
         }
+        if (processed) refetch();
+        if (pending.size === 0) return;
       }
 
-      // Délai dépassé sans rien voir venir : un dernier rafraîchissement, au
-      // cas où l'OCR aboutisse juste après.
-      if (!poll.cancelled && lastCount === previousCount) refetch();
+      // Délai dépassé : un dernier rafraîchissement, au cas où l'analyse
+      // aboutisse juste après.
+      if (!poll.cancelled) refetch();
     },
     [apolloClient, refetch],
   );
@@ -683,6 +678,12 @@ export default function TransactionTable({
         transaction.originalTransaction?.id || transaction.id;
 
       const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+
+      // Justificatifs déjà présents : sert à isoler ceux de cet upload dans la
+      // réponse (elle renvoie toute la liste de la transaction).
+      const knownReceiptIds = new Set(
+        (transaction.receiptFiles || []).map((f) => f?.id).filter(Boolean),
+      );
 
       const { data } = await uploadReceiptMutation({
         variables: {
@@ -707,19 +708,28 @@ export default function TransactionTable({
         });
       }
 
-      // Pour une dépense non rapprochée, le backend crée automatiquement
-      // une facture d'achat par OCR du justificatif (en tâche de fond)
+      // Pour une dépense, le backend crée automatiquement une facture d'achat
+      // par OCR de chaque nouveau justificatif (en tâche de fond), y compris
+      // quand la transaction a déjà des factures liées : plusieurs factures
+      // par transaction sont possibles, et un justificatif en double rejoint
+      // la facture existante. C'est donc le type de la transaction qui décide,
+      // pas l'absence de facture liée.
       const rawAmount = Number(
         transaction.originalTransaction?.amount ?? transaction.amount,
       );
-      const hasLinkedPurchaseInvoice =
-        (transaction.originalTransaction?.linkedPurchaseInvoices?.length ||
-          transaction.linkedPurchaseInvoices?.length ||
-          0) > 0;
-      const willCreatePurchaseInvoice =
-        rawAmount < 0 && !hasLinkedPurchaseInvoice;
+      const isExpense = rawAmount < 0;
+      // L'API renvoie toute la liste et ajoute les nouveaux fichiers à la fin
+      // ($push) : on prend donc la fin de liste, moins ceux déjà connus, pour
+      // ne pas attendre d'anciens justificatifs restés sans facture.
+      const uploadedReceiptIds = (
+        data.uploadTransactionReceipt.receiptFiles || []
+      )
+        .map((f) => f?.id)
+        .filter(Boolean)
+        .slice(-files.length)
+        .filter((id) => !knownReceiptIds.has(id));
 
-      if (willCreatePurchaseInvoice) {
+      if (isExpense) {
         toast.success(
           files.length === 1
             ? "Justificatif ajouté, création de la facture d'achat en cours (OCR)"
@@ -733,19 +743,12 @@ export default function TransactionTable({
         );
       }
       refetch();
-      if (willCreatePurchaseInvoice) {
-        // L'OCR prend quelques secondes : on attend la facture d'achat liée
-        // pour l'afficher dès qu'elle est créée.
-        const previousCount =
-          transaction.originalTransaction?.linkedPurchaseInvoices?.length ||
-          transaction.linkedPurchaseInvoices?.length ||
-          0;
-        waitForPurchaseInvoices(
-          transactionId,
-          previousCount,
-          files.length,
-        ).catch((pollError) =>
-          console.error("❌ [ATTACH RECEIPT] Suivi OCR:", pollError),
+      if (isExpense && uploadedReceiptIds.length > 0) {
+        // L'OCR prend quelques secondes : on attend que le justificatif soit
+        // traité pour afficher la facture d'achat dès qu'elle est prête.
+        waitForReceiptsProcessed(transactionId, uploadedReceiptIds).catch(
+          (pollError) =>
+            console.error("❌ [ATTACH RECEIPT] Suivi OCR:", pollError),
         );
       }
     } catch (error) {
