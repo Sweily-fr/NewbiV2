@@ -126,6 +126,55 @@ const MOBILE_LOAD_MORE_STEP = 20;
 const RECEIPT_OCR_POLL_INTERVAL_MS = 2500;
 const RECEIPT_OCR_POLL_TIMEOUT_MS = 90000;
 
+/**
+ * Message de fin d'analyse d'un justificatif déposé sur une transaction.
+ *
+ * Sans lui, un document en double semble simplement disparaître : l'API le
+ * rattache à une facture d'achat déjà liée à la transaction, donc le fichier
+ * quitte la section « Justificatif » sans qu'aucune carte n'apparaisse.
+ *
+ * @param {Array<{label: ?string, alreadyLinked: boolean}>} outcomes
+ * @param {number} unresolved justificatifs encore sans facture au bout du délai
+ */
+const announceReceiptOutcomes = (outcomes, unresolved) => {
+  const named = (label) =>
+    label ? `la facture d'achat ${label}` : "une facture d'achat";
+
+  if (outcomes.length === 1) {
+    const [{ label, alreadyLinked }] = outcomes;
+    if (alreadyLinked) {
+      toast.info("Justificatif déjà enregistré", {
+        description: `Ce document correspond à ${named(label)}, déjà liée à cette transaction. Le justificatif y a été rattaché, rien n'a été créé en double.`,
+      });
+    } else {
+      toast.success(`Justificatif rattaché à ${named(label)}`, {
+        description:
+          "Il n'apparaît plus comme fichier isolé : il est désormais porté par la carte de la facture, dans « Factures d'achat liées ».",
+      });
+    }
+  } else if (outcomes.length > 1) {
+    const duplicates = outcomes.filter((o) => o.alreadyLinked).length;
+    toast.success(`${outcomes.length} justificatifs analysés`, {
+      description:
+        duplicates > 0
+          ? `${duplicates} correspondaient à une facture d'achat déjà liée à cette transaction. Les autres sont portés par leur facture, dans « Factures d'achat liées ».`
+          : "Ils sont désormais portés par leurs factures, dans « Factures d'achat liées ».",
+    });
+  }
+
+  if (unresolved > 0) {
+    toast.info(
+      unresolved === 1
+        ? "Analyse du justificatif encore en cours"
+        : `Analyse de ${unresolved} justificatifs encore en cours`,
+      {
+        description:
+          "Le document est bien attaché à la transaction. Rechargez la page dans un moment pour voir la facture d'achat.",
+      },
+    );
+  }
+};
+
 // Fonction utilitaire pour formater les dates de manière sécurisée
 const safeFormatDate = (dateValue) => {
   if (!dateValue) return formatLocalDate();
@@ -619,7 +668,7 @@ export default function TransactionTable({
   }, []);
 
   const waitForReceiptsProcessed = useCallback(
-    async (transactionId, receiptIds) => {
+    async (transactionId, receiptIds, previousInvoiceIds) => {
       // Une seule attente à la fois : un nouvel upload annule la précédente.
       if (purchaseInvoicePollRef.current) {
         purchaseInvoicePollRef.current.cancelled = true;
@@ -633,6 +682,7 @@ export default function TransactionTable({
       // existante. Signal plus fiable que le nombre de factures liées, qui ne
       // bouge pas quand la déduplication rattache à une facture déjà liée.
       const pending = new Set(receiptIds);
+      const outcomes = [];
 
       while (!poll.cancelled && Date.now() < deadline) {
         await new Promise((resolve) =>
@@ -640,33 +690,52 @@ export default function TransactionTable({
         );
         if (poll.cancelled) return;
 
-        let files;
+        let transaction;
         try {
           const { data } = await apolloClient.query({
             query: GET_TRANSACTION,
             variables: { id: transactionId },
             fetchPolicy: "network-only",
           });
-          files = data?.transaction?.receiptFiles;
+          transaction = data?.transaction;
         } catch {
           // Erreur réseau ponctuelle : nouvelle tentative au tour suivant
           continue;
         }
-        if (poll.cancelled || !Array.isArray(files)) continue;
+        if (poll.cancelled || !Array.isArray(transaction?.receiptFiles)) {
+          continue;
+        }
 
         let processed = false;
-        for (const file of files) {
-          if (file?.id && file.purchaseInvoiceId && pending.delete(file.id)) {
-            processed = true;
+        for (const file of transaction.receiptFiles) {
+          if (
+            !file?.id ||
+            !file.purchaseInvoiceId ||
+            !pending.delete(file.id)
+          ) {
+            continue;
           }
+          processed = true;
+          const invoiceId = String(file.purchaseInvoiceId);
+          const invoice = (transaction.linkedPurchaseInvoices || []).find(
+            (pi) => String(pi?.id) === invoiceId,
+          );
+          outcomes.push({
+            label: invoice?.invoiceNumber || invoice?.supplierName || null,
+            // Facture déjà liée avant ce dépôt : document en double, aucune
+            // nouvelle carte n'apparaîtra, d'où le message explicite.
+            alreadyLinked: previousInvoiceIds.has(invoiceId),
+          });
         }
         if (processed) refetch();
-        if (pending.size === 0) return;
+        if (pending.size === 0) break;
       }
 
+      if (poll.cancelled) return;
+      announceReceiptOutcomes(outcomes, pending.size);
       // Délai dépassé : un dernier rafraîchissement, au cas où l'analyse
       // aboutisse juste après.
-      if (!poll.cancelled) refetch();
+      if (pending.size > 0) refetch();
     },
     [apolloClient, refetch],
   );
@@ -683,6 +752,18 @@ export default function TransactionTable({
       // réponse (elle renvoie toute la liste de la transaction).
       const knownReceiptIds = new Set(
         (transaction.receiptFiles || []).map((f) => f?.id).filter(Boolean),
+      );
+      // Factures d'achat déjà liées avant ce dépôt : un justificatif qui
+      // atterrit sur l'une d'elles est un document en double.
+      const previousInvoiceIds = new Set(
+        (
+          transaction.originalTransaction?.linkedPurchaseInvoices ||
+          transaction.linkedPurchaseInvoices ||
+          []
+        )
+          .map((pi) => pi?.id)
+          .filter(Boolean)
+          .map(String),
       );
 
       const { data } = await uploadReceiptMutation({
@@ -746,9 +827,12 @@ export default function TransactionTable({
       if (isExpense && uploadedReceiptIds.length > 0) {
         // L'OCR prend quelques secondes : on attend que le justificatif soit
         // traité pour afficher la facture d'achat dès qu'elle est prête.
-        waitForReceiptsProcessed(transactionId, uploadedReceiptIds).catch(
-          (pollError) =>
-            console.error("❌ [ATTACH RECEIPT] Suivi OCR:", pollError),
+        waitForReceiptsProcessed(
+          transactionId,
+          uploadedReceiptIds,
+          previousInvoiceIds,
+        ).catch((pollError) =>
+          console.error("❌ [ATTACH RECEIPT] Suivi OCR:", pollError),
         );
       }
     } catch (error) {
