@@ -22,7 +22,11 @@ const poppins = Poppins({
 
 // Export des metadata pour le SEO
 export const metadata = {
-  title: "Facturation Électronique 2026 | E-invoicing Conforme | newbi",
+  // `absolute` : le titre porte déjà la marque, sinon le layout racine
+  // ajoute un second « | Newbi ».
+  title: {
+    absolute: "Facturation électronique 2026 : e-invoicing conforme | Newbi",
+  },
   description:
     "Préparez-vous à la réforme de la facturation électronique 2026 avec newbi. Solution e-invoicing et e-reporting conforme, formats Factur-X, UBL, CII. Archivage légal 10 ans.",
   keywords:

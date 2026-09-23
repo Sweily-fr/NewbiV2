@@ -25,8 +25,11 @@ const GUIDE_CLUSTER = [
 ];
 
 export const metadata = {
-  title:
-    "Guide Facturation Électronique 2026 - Obligations, Calendrier & Checklist | Newbi",
+  // `absolute` : le titre porte déjà la marque (sinon « … | Newbi | Newbi »).
+  title: {
+    absolute:
+      "Guide facturation électronique 2026 : obligations et checklist | Newbi",
+  },
   description:
     "Téléchargez gratuitement le guide complet sur la facturation électronique obligatoire en 2026. Calendrier de la réforme, formats acceptés (Factur-X, UBL, CII), obligations par statut, PPF, PDP et checklist pratique pour votre entreprise.",
   keywords: [
