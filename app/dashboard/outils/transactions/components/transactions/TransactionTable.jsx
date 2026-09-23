@@ -43,6 +43,7 @@ import { columns } from "./columns/transactionColumns";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
 import CategorySearchSelect from "@/src/components/category-search-select";
 import { mapTransactionToExpense } from "./utils/mapTransactionToExpense";
+import { findCarryingPurchaseInvoice } from "./utils/receiptFiles";
 import { MobileToolbar } from "./components/MobileToolbar";
 import { MobileTable } from "./components/MobileTable";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
@@ -708,23 +709,23 @@ export default function TransactionTable({
 
         let processed = false;
         for (const file of transaction.receiptFiles) {
-          if (
-            !file?.id ||
-            !file.purchaseInvoiceId ||
-            !pending.delete(file.id)
-          ) {
-            continue;
-          }
-          processed = true;
-          const invoiceId = String(file.purchaseInvoiceId);
-          const invoice = (transaction.linkedPurchaseInvoices || []).find(
-            (pi) => String(pi?.id) === invoiceId,
+          if (!file?.id || !pending.has(file.id)) continue;
+          // Même règle d'appariement que l'affichage du tiroir : par
+          // purchaseInvoiceId, avec repli sur l'URL du fichier porté par la
+          // facture. Le repli couvre les liens antérieurs à l'exposition du
+          // champ, et une API qui ne le renverrait pas encore.
+          const invoice = findCarryingPurchaseInvoice(
+            file,
+            transaction.linkedPurchaseInvoices,
           );
+          if (!invoice) continue;
+          pending.delete(file.id);
+          processed = true;
           outcomes.push({
-            label: invoice?.invoiceNumber || invoice?.supplierName || null,
+            label: invoice.invoiceNumber || invoice.supplierName || null,
             // Facture déjà liée avant ce dépôt : document en double, aucune
             // nouvelle carte n'apparaîtra, d'où le message explicite.
-            alreadyLinked: previousInvoiceIds.has(invoiceId),
+            alreadyLinked: previousInvoiceIds.has(String(invoice.id)),
           });
         }
         if (processed) refetch();

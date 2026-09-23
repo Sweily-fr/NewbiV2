@@ -9,25 +9,32 @@
  * ni ne le liste une deuxième fois. Repli sur l'URL pour les liens créés
  * avant l'exposition du champ.
  */
-export const isReceiptCarriedByPurchaseInvoice = (
+export const findCarryingPurchaseInvoice = (
   receipt,
   linkedPurchaseInvoices,
 ) => {
-  if (!receipt || !Array.isArray(linkedPurchaseInvoices)) return false;
-  return linkedPurchaseInvoices.some((pi) => {
-    if (!pi) return false;
-    if (
-      receipt.purchaseInvoiceId &&
-      String(receipt.purchaseInvoiceId) === String(pi.id)
-    ) {
-      return true;
-    }
-    return (
-      !!receipt.url &&
-      (pi.files || []).some((f) => f?.url && f.url === receipt.url)
-    );
-  });
+  if (!receipt || !Array.isArray(linkedPurchaseInvoices)) return null;
+  return (
+    linkedPurchaseInvoices.find((pi) => {
+      if (!pi) return false;
+      if (
+        receipt.purchaseInvoiceId &&
+        String(receipt.purchaseInvoiceId) === String(pi.id)
+      ) {
+        return true;
+      }
+      return (
+        !!receipt.url &&
+        (pi.files || []).some((f) => f?.url && f.url === receipt.url)
+      );
+    }) || null
+  );
 };
+
+export const isReceiptCarriedByPurchaseInvoice = (
+  receipt,
+  linkedPurchaseInvoices,
+) => Boolean(findCarryingPurchaseInvoice(receipt, linkedPurchaseInvoices));
 
 /**
  * Fichiers déposés sur la transaction (legacy `files[]` en repli), sans ceux
