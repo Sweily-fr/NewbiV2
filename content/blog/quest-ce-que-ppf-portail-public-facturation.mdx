@@ -1,8 +1,8 @@
 ---
-title: Qu'est-ce que le PPF (Portail Public de Facturation) ?
+title: 'Portail public de facturation (PPF) : rôle et définition 2026'
 description: >-
-  Comprendre le PPF : rôle du portail public de facturation, fonctionnalités,
-  différence avec les PDP et comment il s'intègre à votre logiciel.
+  Portail public de facturation (PPF) : définition, rôle d'annuaire et de
+  concentrateur depuis la réforme, différence avec les PDP, impact logiciel.
 date: '2026-02-10'
 category: glossaire
 sector: null
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/quest-ce-que-ppf-portail-public-facturation/hero.webp
 published: true
 publishDate: '2026-05-04'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -27,9 +28,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-# Qu'est-ce que le PPF (Portail Public de Facturation) ?
+# Portail public de facturation (PPF) : rôle et définition 2026
 
-La réforme de la facturation électronique bouleverse le quotidien des entreprises françaises. Au coeur de ce dispositif se trouve le **PPF portail public facturation**, une plateforme gratuite mise en place par l'État pour centraliser les échanges de factures entre professionnels. Mais quel est exactement son rôle ? Quelles sont ses fonctionnalités ? Et surtout, est-il suffisant pour votre entreprise ou devez-vous passer par une PDP ? Ce guide complet répond à toutes vos questions.
+Le portail public de facturation (PPF) est la plateforme de l'État, opérée par l'AIFE, qui héberge l'annuaire des entreprises et concentre les données de facturation transmises à la DGFiP. Contrairement au projet initial, il ne sert plus à échanger gratuitement des factures : depuis octobre 2024, l'émission et la réception passent obligatoirement par une plateforme de dématérialisation partenaire (PDP).
+
+Vous trouverez ci-dessous la définition du PPF, ses rôles actuels, ce qu'il ne fait plus, la différence avec les PDP et la façon dont votre logiciel de facturation s'y raccorde.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure className="my-8">
@@ -55,9 +58,9 @@ La réforme de la facturation électronique bouleverse le quotidien des entrepri
 
 ## Définition du PPF : le portail public de facturation
 
-Le **Portail Public de Facturation (PPF)** est une plateforme numérique gratuite développée et gérée par l'**AIFE** (Agence pour l'Informatique Financière de l'État) sous la tutelle de la **DGFiP** (Direction Générale des Finances Publiques). Il s'appuie sur l'infrastructure existante de **Chorus Pro**, le portail déjà utilisé pour la facturation destinée au secteur public.
+Le **Portail Public de Facturation (PPF)** est une plateforme numérique développée et gérée par l'**AIFE** (Agence pour l'Informatique Financière de l'État) sous la tutelle de la **DGFiP** (Direction Générale des Finances Publiques). Il s'appuie sur l'infrastructure existante de **Chorus Pro**, le portail déjà utilisé pour la facturation destinée au secteur public.
 
-Concrètement, le PPF est le socle minimum garanti par l'État dans le cadre de la [facturation électronique obligatoire à partir de 2026](/blog/facturation-electronique-obligatoire-2026). Toute entreprise assujettie à la TVA en France pourra l'utiliser gratuitement pour envoyer et recevoir des factures au format électronique structuré.
+Dans le projet initial de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026), le PPF devait aussi proposer un service gratuit d'émission et de réception de factures, en concurrence des opérateurs privés. L'administration a abandonné ce volet en octobre 2024 : le PPF se concentre désormais sur l'annuaire des entreprises et la concentration des données vers l'administration fiscale, tandis que l'échange des factures est confié aux PDP.
 
 ## Les rôles fondamentaux du PPF
 
@@ -65,40 +68,37 @@ Le PPF remplit plusieurs missions essentielles dans l'écosystème de la factura
 
 ### 1. Annuaire centralisé des entreprises
 
-Le PPF gère un **annuaire centralisé** qui recense toutes les entreprises françaises assujetties à la TVA. Cet annuaire permet de savoir par quelle plateforme (PPF ou PDP) chaque entreprise souhaite recevoir ses factures. Il constitue le point de référence unique pour le routage des documents.
+Le PPF gère un **annuaire centralisé** qui recense toutes les entreprises françaises assujetties à la TVA. Cet annuaire indique par quelle PDP chaque entreprise reçoit ses factures. Il constitue le point de référence unique pour le routage des documents entre plateformes.
 
-### 2. Réception et émission de factures
+### 2. Concentrateur des données de facturation
 
-Le portail permet à toute entreprise d'**émettre des factures** à destination de ses clients professionnels (e-invoicing B2B) et de **recevoir des factures** de ses fournisseurs. Il joue le rôle d'intermédiaire neutre et gratuit pour ces échanges.
+Le PPF reçoit des PDP les **données des factures** échangées entre entreprises (e-invoicing B2B) ainsi que leurs statuts de cycle de vie. Il n'est pas un intermédiaire entre le fournisseur et son client : ce rôle d'échange revient aux PDP, qui lui remontent ensuite les informations utiles à l'administration.
 
 ### 3. Transmission des données fiscales à la DGFiP
 
-Le PPF collecte et transmet automatiquement les **données de facturation** à l'administration fiscale. Cette transmission concerne aussi bien les factures B2B (e-invoicing) que les données de transactions B2C et internationales via le mécanisme d'**e-reporting**.
+Le PPF transmet automatiquement les **données de facturation** à l'administration fiscale. Cette transmission concerne aussi bien les factures B2B (e-invoicing) que les données de transactions B2C et internationales via le mécanisme d'**e-reporting**.
 
 ### 4. E-reporting des transactions
 
-Pour les opérations qui ne relèvent pas du e-invoicing (ventes aux particuliers, transactions avec des partenaires étrangers), le PPF assure la collecte des données de **e-reporting** et leur transmission à la DGFiP. Ce mécanisme permet à l'administration fiscale de disposer d'une vision complète de l'activité économique.
+Pour les opérations qui ne relèvent pas du e-invoicing (ventes aux particuliers, transactions avec des partenaires étrangers), les PDP collectent les données de **e-reporting** et les transmettent au PPF, qui les centralise pour la DGFiP. Ce mécanisme permet à l'administration fiscale de disposer d'une vision complète de l'activité économique.
 
 <div className="not-prose my-6">
-  <Callout type="info" title="Le PPF est entièrement gratuit">
-    L'utilisation du Portail Public de Facturation est gratuite pour toutes les entreprises. C'est un service public financé par l'État, conçu pour garantir que chaque entreprise, quelle que soit sa taille, puisse se conformer à l'obligation de facturation électronique sans coût supplémentaire lié à la plateforme d'échange.
+  <Callout type="info" title="Le PPF reste gratuit, mais ne remplace pas une PDP">
+    L'annuaire et la concentration des données assurés par le PPF ne coûtent rien aux entreprises. En revanche, le PPF ne propose plus de service gratuit d'émission ou de réception de factures : chaque entreprise doit s'appuyer sur une PDP, le plus souvent via son logiciel de facturation.
   </Callout>
 </div>
 
 ## Fonctionnalités du PPF
 
-Le PPF offre un ensemble de fonctionnalités essentielles, bien que volontairement **basiques** :
+Depuis le recentrage d'octobre 2024, le PPF assure un socle volontairement **réduit** :
 
-- **Émission de factures** dans les formats structurés acceptés : [Factur-X](/blog/facturx-format-facture-electronique), UBL et CII
-- **Réception de factures** provenant de fournisseurs utilisant le PPF ou une PDP
-- **Consultation et archivage temporaire** des factures échangées
-- **Saisie manuelle** de factures directement sur le portail (pour les petites structures)
-- **Dépôt de fichiers** de factures au format structuré
-- **E-reporting** des transactions non couvertes par le e-invoicing
-- **Suivi du cycle de vie** des factures (envoyée, reçue, acceptée, refusée)
-- **Gestion de l'annuaire** : choix de la plateforme de réception
+- **Annuaire des entreprises** : identification de chaque destinataire et de sa PDP de réception
+- **Réception des données de factures** transmises par les PDP, dans les formats du socle ([Factur-X](/blog/facturx-format-facture-electronique), UBL et CII)
+- **Concentration et transmission à la DGFiP** des données d'e-invoicing et d'**e-reporting**
+- **Centralisation des statuts de cycle de vie** des factures (déposée, rejetée, refusée, encaissée)
+- **Interopérabilité** entre PDP grâce à l'annuaire et aux formats communs
 
-Le PPF ne propose pas de fonctionnalités avancées comme l'intégration automatique avec un ERP, la conversion de formats, l'enrichissement de données ou un accompagnement personnalisé. Pour ces besoins, il faut se tourner vers une [Plateforme de Dématérialisation Partenaire (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation).
+Le PPF ne propose ni interface d'envoi ou de saisie de factures pour les entreprises, ni intégration avec un ERP, ni conversion de formats, ni accompagnement personnalisé. Pour émettre et recevoir vos factures, il faut passer par une [Plateforme de Dématérialisation Partenaire (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation).
 
 ## PPF vs PDP : quelles différences ?
 
@@ -127,12 +127,12 @@ La distinction entre le PPF et les PDP est au coeur de la compréhension de la r
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Fonctionnalités</TableCell>
-        <TableCell>Basiques (envoi, réception, saisie)</TableCell>
-        <TableCell>Avancées (intégration ERP, conversion, enrichissement)</TableCell>
+        <TableCell>Annuaire, concentration des données pour la DGFiP</TableCell>
+        <TableCell>Émission, réception, intégration ERP, conversion, enrichissement</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Intégration logiciel</TableCell>
-        <TableCell>API limitée</TableCell>
+        <TableCell>Pas d'accès direct pour les entreprises (via les PDP)</TableCell>
         <TableCell>API complètes, connecteurs ERP, flux automatisés</TableCell>
       </TableRow>
       <TableRow>
@@ -151,66 +151,66 @@ La distinction entre le PPF et les PDP est au coeur de la compréhension de la r
         <TableCell>Archivage à valeur probante disponible</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell className="font-medium">Idéal pour</TableCell>
-        <TableCell>TPE, micro-entreprises, faible volume</TableCell>
-        <TableCell>PME, ETI, grandes entreprises, volumes importants</TableCell>
+        <TableCell className="font-medium">Qui l'utilise</TableCell>
+        <TableCell>Toutes les entreprises, indirectement (annuaire)</TableCell>
+        <TableCell>Toutes les entreprises, via un logiciel ou en direct</TableCell>
       </TableRow>
     </TableBody>
   </Table>
 </div>
 
-En résumé, le **PPF est le minimum gratuit** garanti par l'État, tandis que les **PDP apportent des services à valeur ajoutée** moyennant un coût. Les deux sont complémentaires dans l'écosystème de la facturation électronique.
+En résumé, le **PPF est l'infrastructure publique** (annuaire et concentrateur de données), tandis que les **PDP assurent l'échange des factures** et les services à valeur ajoutée, moyennant un coût. Les deux sont complémentaires dans l'écosystème de la facturation électronique.
 
-## Qui devrait utiliser le PPF plutôt qu'une PDP ?
+## Faut-il choisir entre le PPF et une PDP ?
 
-Le choix entre PPF et PDP dépend de la taille de votre entreprise, de votre volume de factures et de vos besoins en automatisation.
+La question ne se pose plus comme dans le projet initial : le choix d'une PDP est devenu obligatoire pour toutes les entreprises, quelle que soit leur taille. Le PPF n'est pas une option concurrente, mais une infrastructure commune qui fonctionne en arrière-plan.
 
-**Le PPF est adapté si vous :**
+**Ce que le PPF assure pour vous, sans démarche particulière :**
 
 <div className="not-prose my-4 space-y-2">
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Êtes une micro-entreprise ou une TPE avec un faible volume de factures</span>
+    <span>Votre référencement dans l'annuaire national des entreprises</span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>N'avez pas besoin d'intégration automatisée avec un logiciel comptable</span>
+    <span>Le routage de vos factures vers la bonne PDP de réception</span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Pouvez saisir ou déposer vos factures manuellement</span>
+    <span>La transmission de vos données de facturation à la DGFiP</span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Souhaitez une solution sans coût supplémentaire</span>
+    <span>La centralisation de votre e-reporting (ventes B2C, opérations internationales)</span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-    <span>Disposez du temps nécessaire pour gérer vos factures manuellement</span>
+    <span>Un service public sans coût pour l'entreprise</span>
   </div>
 </div>
 
-**Une PDP est recommandée si vous :**
+**Une PDP est nécessaire pour :**
 
-- Traitez un volume significatif de factures chaque mois
-- Avez besoin d'une intégration fluide avec votre logiciel de gestion ou ERP
-- Souhaitez automatiser vos flux de facturation de bout en bout
-- Avez besoin de services complémentaires (conversion de formats, archivage légal, tableau de bord avancé)
-- Voulez bénéficier d'un accompagnement personnalisé
+- Émettre vos factures électroniques vers vos clients professionnels
+- Recevoir les factures de vos fournisseurs
+- Transmettre vos données d'e-invoicing et d'e-reporting au PPF
+- Bénéficier de services complémentaires (conversion de formats, archivage légal, tableau de bord)
+- Obtenir un accompagnement personnalisé
 
-Pour les [PME soumises aux obligations de facturation électronique](/blog/obligations-facture-electronique-pme), le recours à une PDP ou à un logiciel connecté est souvent la solution la plus efficiente.
+Pour les [PME soumises aux obligations de facturation électronique](/blog/obligations-facture-electronique-pme) comme pour les micro-entreprises, le plus simple est un logiciel de facturation déjà connecté à une PDP.
 
 ## Comment s'inscrire sur le PPF ?
 
-L'inscription sur le PPF suivra un processus simple en plusieurs étapes :
+Une entreprise ne s'inscrit pas directement sur le PPF : c'est sa PDP qui la référence dans l'annuaire. Le parcours se déroule en quelques étapes :
 
-1. **Rendez-vous sur le portail** : le PPF sera accessible via une URL dédiée fournie par l'AIFE (évolution de Chorus Pro).
-2. **Identification de l'entreprise** : renseignez votre numéro SIREN/SIRET pour identifier votre structure.
-3. **Création du compte** : désignez un administrateur et créez votre espace entreprise.
-4. **Configuration de l'annuaire** : indiquez si vous souhaitez recevoir vos factures via le PPF directement ou via une PDP partenaire.
-5. **Paramétrage** : configurez vos préférences de réception, vos formats privilégiés et vos habilitations d'accès.
+1. **Choisir une PDP**, ou un logiciel de facturation connecté à une PDP.
+2. **Identification de l'entreprise** : renseignez votre numéro SIREN/SIRET pour que votre structure soit reconnue.
+3. **Référencement dans l'annuaire** : votre PDP déclare qu'elle reçoit les factures pour votre compte. Vous pouvez être référencé sur plusieurs PDP si nécessaire.
+4. **Vérification de l'annuaire** : contrôlez que vos clients et fournisseurs vous trouvent bien à la bonne adresse de réception.
+5. **Paramétrage** : configurez vos formats privilégiés, vos habilitations d'accès et vos règles de traitement des factures reçues.
 
-L'inscription sera ouverte progressivement selon le calendrier de la réforme, en commençant par l'obligation de **réception** pour toutes les entreprises, puis l'obligation d'**émission** selon la taille de l'entreprise.
+Ce référencement suit le calendrier de la réforme : obligation de **réception** pour toutes les entreprises depuis le 1er septembre 2026, obligation d'**émission** dès cette date pour les grandes entreprises et les ETI, puis à partir du 1er septembre 2027 pour les PME, TPE et micro-entreprises.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure className="my-8">
@@ -229,23 +229,23 @@ L'inscription sera ouverte progressivement selon le calendrier de la réforme, e
 
 ## Intégration du PPF avec votre logiciel de facturation
 
-L'un des enjeux majeurs pour les entreprises est la **connexion entre leur logiciel de gestion et le PPF**. Plusieurs scénarios sont possibles :
+L'un des enjeux majeurs pour les entreprises est la **connexion entre leur logiciel de gestion et l'écosystème PPF / PDP**. Voici comment les flux s'organisent :
 
-### Utilisation directe du PPF
+### Pas d'utilisation directe du PPF
 
-Vous accédez au portail web du PPF pour saisir, déposer ou consulter vos factures. Cette approche convient aux très petites structures mais devient vite chronophage au-delà de quelques factures par mois.
+Le PPF ne propose pas d'interface aux entreprises pour saisir, déposer ou consulter leurs factures. Ce volet, prévu au départ pour les très petites structures, a été abandonné : toute facture électronique part et arrive via une PDP.
 
-### Connexion via API
+### Connexion des PDP au PPF via API
 
-Le PPF met à disposition une **API** permettant aux éditeurs de logiciels de se connecter directement. Votre logiciel de facturation peut ainsi envoyer et recevoir des factures via le PPF de manière automatisée, sans intervention manuelle.
+Ce sont les PDP qui dialoguent avec le PPF par **API** : consultation de l'annuaire, remontée des données de facturation, des statuts et de l'e-reporting. Votre logiciel n'a pas à se connecter lui-même au portail public.
 
 ### Passage par une PDP connectée
 
-Votre logiciel se connecte à une PDP immatriculée, qui se charge ensuite de communiquer avec le PPF et l'annuaire centralisé. Cette option offre plus de souplesse et de fonctionnalités avancées.
+Votre logiciel se connecte à une PDP immatriculée, qui se charge ensuite d'échanger les factures avec la PDP de votre client et de communiquer avec le PPF et l'annuaire centralisé. C'est le seul circuit possible, et il offre le plus de souplesse et de fonctionnalités.
 
 <div className="not-prose my-6">
-  <Callout type="tip" title="Newbi se connecte au PPF et aux PDP">
-    Newbi est conçu pour s'intégrer nativement à l'écosystème de la facturation électronique. Que vous choisissiez de passer par le PPF directement ou par une PDP partenaire, Newbi génère vos factures aux formats conformes (Factur-X, UBL, CII) et assure la transmission automatique de vos documents. Vous n'avez pas à vous soucier de la complexité technique de la réforme.
+  <Callout type="tip" title="Newbi transmet vos factures via une PDP partenaire">
+    Newbi est conçu pour s'intégrer nativement à l'écosystème de la facturation électronique. Il génère vos factures au format conforme (Factur-X) et les transmet via une PDP partenaire, qui se charge de l'annuaire et des échanges avec le PPF. Vous n'avez pas à vous soucier de la complexité technique de la réforme : le détail est décrit sur la page [facturation électronique](/produits/facturation-electronique).
   </Callout>
 </div>
 
@@ -262,7 +262,7 @@ Le Portail Public de Facturation est une pièce centrale de la réforme de la fa
 <div className="not-prose my-4 space-y-2">
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-    <span>Le PPF est une plateforme <strong>gratuite</strong> gérée par l'État (AIFE/DGFiP)</span>
+    <span>Le PPF est une plateforme <strong>publique et gratuite</strong> gérée par l'État (AIFE/DGFiP)</span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
@@ -274,23 +274,23 @@ Le Portail Public de Facturation est une pièce centrale de la réforme de la fa
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-    <span>Il permet l'émission, la réception de factures et le <strong>e-reporting</strong></span>
+    <span>Il concentre les données de facturation et d'<strong>e-reporting</strong> transmises à la DGFiP</span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-    <span>Ses fonctionnalités restent <strong>basiques</strong> par rapport aux PDP</span>
+    <span>Il n'assure <strong>plus l'échange des factures</strong> : ce rôle revient aux PDP</span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-    <span>Il accepte les formats <strong>Factur-X, UBL et CII</strong></span>
+    <span>Les formats du socle sont <strong>Factur-X, UBL et CII</strong></span>
   </div>
   <div className="flex items-start gap-2">
     <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-    <span>Un logiciel comme <strong>Newbi</strong> peut s'y connecter automatiquement</span>
+    <span>Un logiciel comme <strong>Newbi</strong> s'y raccorde via une PDP partenaire</span>
   </div>
 </div>
 
-Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est de vous **préparer dès maintenant** à la facturation électronique. Choisir un logiciel compatible et générer vos factures dans les bons formats vous fera gagner un temps précieux le moment venu.
+Quelle que soit la PDP retenue, l'essentiel est de vous **préparer dès maintenant** à la facturation électronique. Choisir un logiciel compatible et générer vos factures dans les bons formats vous fera gagner un temps précieux le moment venu.
 
 <div className="not-prose my-8 text-center">
   <Button asChild size="lg">
@@ -305,19 +305,19 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
     <AccordionItem value="item-1">
       <AccordionTrigger>Le PPF est-il obligatoire pour toutes les entreprises ?</AccordionTrigger>
       <AccordionContent>
-        Non, le PPF n'est pas obligatoire en lui-même. Ce qui est obligatoire, c'est la facturation électronique. Chaque entreprise peut choisir de passer par le PPF (gratuit) ou par une PDP (Plateforme de Dématérialisation Partenaire) immatriculée. En revanche, toutes les entreprises seront référencées dans l'annuaire centralisé géré par le PPF.
+        Le PPF n'est pas une plateforme que vous choisissez : il s'impose à tous en arrière-plan. Ce qui est obligatoire, c'est la facturation électronique, et donc le passage par une PDP (Plateforme de Dématérialisation Partenaire) immatriculée pour émettre et recevoir vos factures. Toutes les entreprises sont référencées dans l'annuaire centralisé géré par le PPF et leurs données de facturation y transitent vers la DGFiP.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-2">
       <AccordionTrigger>Quelle est la différence entre le PPF et Chorus Pro ?</AccordionTrigger>
       <AccordionContent>
-        Chorus Pro est le portail utilisé depuis 2017 pour la facturation électronique à destination du secteur public (B2G). Le PPF est une évolution de Chorus Pro, étendue aux échanges entre entreprises privées (B2B). Le PPF reprend l'infrastructure technique de Chorus Pro tout en l'adaptant aux besoins de la facturation interentreprises et du e-reporting.
+        Chorus Pro est le portail utilisé depuis 2017 pour la facturation électronique à destination du secteur public (B2G) : il reste en service pour ces échanges. Le PPF reprend l'infrastructure technique de Chorus Pro pour la sphère privée (B2B), mais avec un périmètre différent : annuaire des entreprises, concentration des données de facturation et d'e-reporting vers la DGFiP. Les factures B2B elles-mêmes circulent entre PDP.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
       <AccordionTrigger>Peut-on utiliser le PPF et une PDP en même temps ?</AccordionTrigger>
       <AccordionContent>
-        Oui, c'est tout à fait possible. Vous pouvez par exemple choisir de recevoir vos factures via une PDP (pour bénéficier de ses services avancés) tout en utilisant le PPF pour certaines opérations. L'annuaire centralisé du PPF permet justement de définir votre plateforme de réception préférée.
+        La question ne se pose pas en termes de choix : vous utilisez forcément les deux. Votre PDP émet et reçoit vos factures, puis remonte au PPF les données destinées à l'administration ; le PPF, de son côté, tient l'annuaire qui permet à votre PDP de trouver celle de votre client. En revanche, vous ne pouvez pas utiliser le PPF seul pour échanger des factures, ce service n'existe plus.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-4">
@@ -327,9 +327,15 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-5">
-      <AccordionTrigger>Quand le PPF sera-t-il disponible ?</AccordionTrigger>
+      <AccordionTrigger>Qu'est-ce que le portail public de facturation ?</AccordionTrigger>
       <AccordionContent>
-        Le PPF est progressivement mis en place dans le cadre du calendrier de la réforme de la facturation électronique. L'obligation de réception des factures électroniques concerne toutes les entreprises dès septembre 2026. L'obligation d'émission sera ensuite étendue progressivement selon la taille de l'entreprise. Il est recommandé de se préparer dès maintenant en adoptant un logiciel compatible.
+        Le portail public de facturation (PPF) est la plateforme de l'État, gérée par l'AIFE sous la tutelle de la DGFiP, au centre de la réforme de la facturation électronique. Il tient l'annuaire national qui indique par quelle PDP chaque entreprise reçoit ses factures, et il concentre les données de facturation, les statuts et l'e-reporting que les PDP lui transmettent pour l'administration fiscale. Il ne sert pas à envoyer ou recevoir des factures.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Peut-on envoyer ses factures gratuitement sur le portail public de facturation ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le service gratuit d'émission et de réception de factures prévu à l'origine sur le PPF a été abandonné par l'administration en octobre 2024. Depuis, toute facture électronique entre professionnels doit passer par une PDP immatriculée, qui facture ses services par abonnement ou à la facture. Le plus simple pour une petite entreprise est d'utiliser un logiciel de facturation déjà connecté à une PDP, qui prend en charge la transmission sans manipulation.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -347,8 +353,8 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
 <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "Qu'est-ce que le PPF (Portail Public de Facturation) ?",
-  "description": "Comprendre le PPF : rôle du portail public de facturation, fonctionnalités, différence avec les PDP et comment il s'intègre à votre logiciel.",
+  "headline": "Portail public de facturation (PPF) : rôle et définition 2026",
+  "description": "Portail public de facturation (PPF) : définition, rôle d'annuaire et de concentrateur depuis la réforme, différence avec les PDP, impact logiciel.",
   "author": {
     "@type": "Organization",
     "name": "Newbi",
@@ -363,7 +369,7 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
     }
   },
   "datePublished": "2026-02-10",
-  "dateModified": "2026-02-10",
+  "dateModified": "2026-09-23",
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": "https://www.newbi.co/blog/quest-ce-que-ppf-portail-public-facturation"
@@ -381,7 +387,7 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
       "name": "Le PPF est-il obligatoire pour toutes les entreprises ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Non, le PPF n'est pas obligatoire en lui-même. Ce qui est obligatoire, c'est la facturation électronique. Chaque entreprise peut choisir de passer par le PPF (gratuit) ou par une PDP (Plateforme de Dématérialisation Partenaire) immatriculée. En revanche, toutes les entreprises seront référencées dans l'annuaire centralisé géré par le PPF."
+        "text": "Le PPF n'est pas une plateforme que vous choisissez : il s'impose à tous en arrière-plan. Ce qui est obligatoire, c'est la facturation électronique, et donc le passage par une PDP immatriculée pour émettre et recevoir vos factures. Toutes les entreprises sont référencées dans l'annuaire centralisé géré par le PPF."
       }
     },
     {
@@ -389,7 +395,7 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
       "name": "Quelle est la différence entre le PPF et Chorus Pro ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Chorus Pro est le portail utilisé depuis 2017 pour la facturation électronique à destination du secteur public (B2G). Le PPF est une évolution de Chorus Pro, étendue aux échanges entre entreprises privées (B2B). Le PPF reprend l'infrastructure technique de Chorus Pro tout en l'adaptant aux besoins de la facturation interentreprises et du e-reporting."
+        "text": "Chorus Pro est le portail utilisé depuis 2017 pour la facturation électronique à destination du secteur public (B2G) et reste en service. Le PPF reprend son infrastructure technique pour la sphère privée, avec un périmètre différent : annuaire des entreprises et concentration des données de facturation et d'e-reporting vers la DGFiP. Les factures B2B circulent entre PDP."
       }
     },
     {
@@ -397,7 +403,7 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
       "name": "Peut-on utiliser le PPF et une PDP en même temps ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Oui, c'est tout à fait possible. Vous pouvez par exemple choisir de recevoir vos factures via une PDP tout en utilisant le PPF pour certaines opérations. L'annuaire centralisé du PPF permet justement de définir votre plateforme de réception préférée."
+        "text": "Vous utilisez forcément les deux : votre PDP émet et reçoit vos factures puis remonte au PPF les données destinées à l'administration, et le PPF tient l'annuaire qui permet à votre PDP de trouver celle de votre client. Vous ne pouvez pas utiliser le PPF seul pour échanger des factures."
       }
     },
     {
@@ -410,10 +416,18 @@ Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est
     },
     {
       "@type": "Question",
-      "name": "Quand le PPF sera-t-il disponible ?",
+      "name": "Qu'est-ce que le portail public de facturation ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Le PPF est progressivement mis en place dans le cadre du calendrier de la réforme de la facturation électronique. L'obligation de réception des factures électroniques concerne toutes les entreprises dès septembre 2026. L'obligation d'émission sera ensuite étendue progressivement selon la taille de l'entreprise."
+        "text": "Le portail public de facturation (PPF) est la plateforme de l'État, gérée par l'AIFE sous la tutelle de la DGFiP. Il tient l'annuaire national qui indique par quelle PDP chaque entreprise reçoit ses factures et concentre les données de facturation, les statuts et l'e-reporting transmis par les PDP à l'administration fiscale. Il ne sert pas à envoyer ou recevoir des factures."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on envoyer ses factures gratuitement sur le portail public de facturation ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non. Le service gratuit d'émission et de réception de factures prévu à l'origine sur le PPF a été abandonné en octobre 2024. Toute facture électronique entre professionnels doit passer par une PDP immatriculée, le plus souvent via un logiciel de facturation déjà connecté."
       }
     }
   ]

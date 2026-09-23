@@ -1,8 +1,7 @@
 ---
-title: Qu'est-ce que le numéro SIRET et SIREN ? Différences et utilisation
+title: 'Numéro SIRET et SIREN : différence, exemple et où les trouver'
 description: >-
-  Comprendre la différence entre SIRET et SIREN : définition, comment les
-  obtenir, où les trouver et leur utilisation sur vos factures et devis.
+  SIREN (9 chiffres) ou SIRET (14 chiffres) : la différence, un exemple concret, où les trouver et lequel indiquer sur vos factures et devis.
 date: '2026-02-10'
 category: glossaire
 sector: null
@@ -11,6 +10,7 @@ author: Newbi
 image: /blog/quest-ce-que-numero-siret-siren/hero.webp
 published: true
 publishDate: '2026-06-22'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,7 +28,9 @@ import { Check } from "lucide-react"
   <Badge variant="outline">6 min de lecture</Badge>
 </div>
 
-Le **numéro SIRET** et le **numéro SIREN** sont deux identifiants attribués à toute entreprise en France. Ils apparaissent sur vos factures, devis, contrats et documents officiels. Pourtant, beaucoup d'entrepreneurs confondent les deux. Ce guide clarifie leurs différences, leur utilité et où les trouver.
+Le SIREN est le numéro à 9 chiffres qui identifie votre entreprise ; le SIRET, à 14 chiffres, identifie chacun de ses établissements. Le SIRET reprend le SIREN suivi d'un NIC à 5 chiffres : pour un SIREN 123 456 789, le SIRET du siège sera par exemple 123 456 789 00012. Une entreprise n'a qu'un SIREN, mais autant de SIRET que d'établissements.
+
+Vous trouverez ci-dessous la différence détaillée entre les deux numéros, un exemple décodé chiffre par chiffre, la marche à suivre pour les obtenir, où les retrouver et lequel indiquer sur vos factures et devis.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
@@ -127,8 +129,19 @@ Le NIC (Numéro Interne de Classement) identifie chaque établissement. Si votre
 </div>
 
 <Callout type="info">
-  Le SIREN est le minimum obligatoire sur vos [factures](/blog/mentions-obligatoires-facture). Cependant, il est recommandé d'indiquer le SIRET complet car il identifie précisément l'établissement émetteur. Avec la [facturation électronique 2026](/blog/facturation-electronique-obligatoire-2026), le SIREN du client deviendra également obligatoire.
+  Le SIREN est le minimum obligatoire sur vos [factures](/blog/mentions-obligatoires-facture). Cependant, il est recommandé d'indiquer le SIRET complet car il identifie précisément l'établissement émetteur. Avec la [facturation électronique](/blog/facturation-electronique-obligatoire-2026) (émission obligatoire pour les PME, TPE et micro-entreprises le 1er septembre 2027), le SIREN du client professionnel devient également une mention obligatoire.
 </Callout>
+
+## Exemple de numéro SIRET et SIREN décodé
+
+Prenons un exemple fictif de numéro SIRET : **123 456 789 00012**. Il se lit en deux blocs.
+
+- **123 456 789** : c'est le SIREN, les 9 premiers chiffres. Il est attribué par l'INSEE à l'entreprise elle-même et ne change jamais, quel que soit le nombre d'établissements ou les déménagements.
+- **00012** : c'est le NIC (numéro interne de classement), les 5 derniers chiffres. Il désigne un établissement précis. Le siège social reçoit en général le premier NIC (souvent 00011 ou 00012), et chaque établissement supplémentaire, ou chaque déménagement, en reçoit un nouveau.
+
+Le dernier chiffre du SIREN comme celui du NIC est une clé de contrôle calculée avec l'algorithme de Luhn : c'est ce qui permet aux outils de vérification en ligne de repérer une faute de frappe. Sur un document, vous pouvez donc écrire le numéro avec ou sans espaces (123456789 00012 ou 12345678900012), les deux formes sont acceptées.
+
+Concrètement, une boulangerie avec un fournil et deux boutiques aura un seul SIREN et trois SIRET différents, un par adresse. Si elle ferme une boutique et en ouvre une autre, le SIRET de l'ancienne adresse est clôturé et un nouveau SIRET est créé, mais le SIREN reste identique. Pour vérifier un numéro, saisissez-le sur annuaire-entreprises.data.gouv.fr : la fiche affiche le SIREN, la liste des établissements avec leur SIRET, l'adresse et le code APE.
 
 ## Comment obtenir son SIREN et SIRET ?
 
@@ -214,7 +227,7 @@ Le SIREN/SIRET doit figurer sur :
 - Le **SIREN** (9 chiffres) identifie votre entreprise, il est permanent
 - Le **SIRET** (14 chiffres = SIREN + NIC) identifie chaque établissement
 - Le SIREN est **obligatoire** sur vos factures, le SIRET est recommandé
-- Avec la **e-facturation 2026**, le SIREN du client devient aussi obligatoire
+- Avec la **facturation électronique** (émission obligatoire pour les TPE le 1er septembre 2027), le SIREN du client devient aussi obligatoire
 - Le code APE identifie votre activité, le numéro de TVA votre assujettissement
 
 Newbi intègre automatiquement votre SIREN/SIRET sur tous vos documents commerciaux pour garantir la conformité.
@@ -238,7 +251,7 @@ Newbi intègre automatiquement votre SIREN/SIRET sur tous vos documents commerci
     <AccordionItem value="faq-1">
       <AccordionTrigger>Faut-il mettre le SIREN ou le SIRET sur ses factures ?</AccordionTrigger>
       <AccordionContent>
-        Le SIREN est le minimum légal obligatoire. Cependant, il est fortement recommandé d'indiquer le SIRET complet (14 chiffres) qui identifie précisément l'établissement. Avec la facturation électronique 2026, le SIREN du client sera également requis.
+        Le SIREN est le minimum légal obligatoire. Cependant, il est fortement recommandé d'indiquer le SIRET complet (14 chiffres) qui identifie précisément l'établissement. Avec la facturation électronique (émission obligatoire pour les PME et TPE à partir du 1er septembre 2027), le SIREN du client professionnel est également requis.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-2">
@@ -257,6 +270,18 @@ Newbi intègre automatiquement votre SIREN/SIRET sur tous vos documents commerci
       <AccordionTrigger>Combien de temps faut-il pour obtenir son SIREN ?</AccordionTrigger>
       <AccordionContent>
         Le délai varie selon le type de structure : 1 à 4 semaines pour un auto-entrepreneur (après déclaration sur le guichet unique), quelques jours pour une société (après immatriculation au greffe). L'INSEE attribue le SIREN et vous envoie un avis de situation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Quelle est la différence entre le numéro SIRET et le numéro SIREN ?</AccordionTrigger>
+      <AccordionContent>
+        Le SIREN (9 chiffres) identifie l'entreprise en tant que personne juridique : il est unique et permanent. Le SIRET (14 chiffres) identifie un établissement précis de cette entreprise : il est composé du SIREN suivi d'un NIC à 5 chiffres. Une entreprise possède donc un seul SIREN mais un SIRET par adresse d'activité. Le SIREN suffit sur une facture, le SIRET est recommandé car il localise l'établissement émetteur.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-6">
+      <AccordionTrigger>À quoi ressemble un numéro SIRET ? Exemple</AccordionTrigger>
+      <AccordionContent>
+        Un numéro SIRET s'écrit sur 14 chiffres, par exemple 123 456 789 00012. Les 9 premiers chiffres (123 456 789) forment le SIREN de l'entreprise, les 5 derniers (00012) le NIC de l'établissement. Le siège social porte souvent le NIC 00011 ou 00012, et chaque établissement supplémentaire reçoit un NIC différent. Vous le trouvez sur votre avis de situation INSEE, votre Kbis ou sur annuaire-entreprises.data.gouv.fr.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -304,6 +329,22 @@ Newbi intègre automatiquement votre SIREN/SIRET sur tous vos documents commerci
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "1 à 4 semaines pour un auto-entrepreneur, quelques jours pour une société."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle est la différence entre le numéro SIRET et le numéro SIREN ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le SIREN (9 chiffres) identifie l'entreprise, il est unique et permanent. Le SIRET (14 chiffres) identifie un établissement : SIREN suivi d'un NIC à 5 chiffres. Une entreprise a un seul SIREN mais un SIRET par établissement."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "À quoi ressemble un numéro SIRET ? Exemple",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Un SIRET compte 14 chiffres, par exemple 123 456 789 00012 : les 9 premiers forment le SIREN de l'entreprise, les 5 derniers le NIC de l'établissement. Il figure sur l'avis de situation INSEE, le Kbis ou annuaire-entreprises.data.gouv.fr."
       }
     }
   ]

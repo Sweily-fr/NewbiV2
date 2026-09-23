@@ -1,8 +1,8 @@
 ---
-title: 'Connexion bancaire et rapprochement automatique : comment ça marche'
+title: 'Rapprochement bancaire automatique : comment ça marche en TPE'
 description: >-
-  Automatisez le rapprochement bancaire en connectant votre banque à votre
-  logiciel de gestion. Gain de temps, moins d'erreurs, trésorerie claire.
+  Le rapprochement bancaire automatique relie transactions et factures sans
+  pointage : fonctionnement, sécurité DSP2, gains et choix du logiciel en TPE.
 date: '2026-02-10'
 category: guide
 sector: null
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/connexion-bancaire-rapprochement-automatique/hero.webp
 published: true
 publishDate: '2026-05-11'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,7 +29,9 @@ import { Check } from "lucide-react"
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-Le **rapprochement bancaire automatique** est l'une des fonctionnalités les plus puissantes d'un logiciel de gestion. En connectant votre compte bancaire à votre outil de facturation, vous réconciliez automatiquement vos factures émises avec les paiements reçus. Fini la saisie manuelle, les oublis et les erreurs de pointage. Voici comment ça fonctionne et pourquoi c'est indispensable pour votre [gestion de trésorerie](/blog/comment-gerer-tresorerie-entreprise).
+Le rapprochement bancaire automatique consiste à laisser un logiciel connecté à votre banque associer chaque transaction à la facture ou à la dépense correspondante, sans pointage manuel. Pour une TPE, le pointage mensuel passe de 2 à 4 heures à une quinzaine de minutes, et les impayés se repèrent dès l'échéance.
+
+Cet article détaille le fonctionnement de la connexion bancaire (agrégateur DSP2, lecture seule), les quatre étapes du rapprochement dans Newbi, les gains concrets, les garanties de sécurité et les critères pour choisir un logiciel de rapprochement bancaire adapté à une petite entreprise, avec un effet direct sur votre [gestion de trésorerie](/blog/comment-gerer-tresorerie-entreprise).
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
@@ -78,7 +81,7 @@ Avec la **connexion bancaire automatique**, votre logiciel récupère vos transa
 
 ### Étape 1 : Connectez votre banque
 
-Newbi utilise des agrégateurs bancaires certifiés (conformes à la directive DSP2) pour se connecter de manière sécurisée à votre compte bancaire. Plus de 300 banques françaises sont compatibles.
+Newbi utilise des agrégateurs bancaires certifiés (conformes à la directive DSP2) pour se connecter de manière sécurisée à votre compte bancaire. Plus de 300 banques françaises sont compatibles. Le module complet est présenté sur la page [trésorerie de Newbi](/produits/tresorerie).
 
 ### Étape 2 : Synchronisation automatique
 
@@ -222,6 +225,12 @@ Newbi se connecte à plus de **300 banques** françaises, dont :
 - Qonto, Shine, Blank (néobanques)
 - La Banque Postale, CIC, HSBC
 
+## Comment choisir un logiciel de rapprochement bancaire pour une TPE
+
+Un logiciel de rapprochement bancaire pour TPE se juge sur six critères. Premier point : la connexion bancaire doit passer par un agrégateur agréé (DSP2), en lecture seule, avec une synchronisation au moins quotidienne. Deuxième point : le rapprochement doit couvrir vos deux sens de flux, les factures clients encaissées et les factures d'achat ou notes de frais payées, sinon vous pointez encore la moitié de vos mouvements à la main. Troisième point : les propositions de rapprochement doivent rester validables, avec la possibilité de gérer un paiement partiel, un regroupement de plusieurs factures sur un virement ou un libellé ambigu.
+
+Vérifiez ensuite la catégorisation automatique des dépenses, qui alimente votre suivi de trésorerie, l'export vers votre expert-comptable (FEC ou format de son cabinet) et le prix réel : certains outils facturent la connexion bancaire en option, d'autres l'incluent dans l'abonnement. Enfin, préférez un logiciel qui gère aussi vos devis et factures : le rapprochement n'a de valeur que s'il s'appuie sur des factures déjà présentes dans l'outil. Newbi réunit ces critères pour une TPE ou un indépendant, avec la [gestion des achats](/produits/gestion-des-achats) et la facturation au même endroit.
+
 ## En résumé
 
 La connexion bancaire et le rapprochement automatique transforment votre gestion quotidienne :
@@ -274,6 +283,18 @@ Avec Newbi, la connexion bancaire est incluse dans tous les abonnements. Connect
         Non, absolument pas. La connexion bancaire est strictement en lecture seule. Newbi récupère uniquement les transactions pour les afficher et les rapprocher de vos factures. Aucun virement, prélèvement ou opération bancaire ne peut être effectué depuis Newbi.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Quel logiciel de rapprochement bancaire choisir pour une TPE ?</AccordionTrigger>
+      <AccordionContent>
+        Choisissez un logiciel qui connecte votre banque via un agrégateur agréé DSP2 en lecture seule, synchronise les transactions chaque jour et rapproche aussi bien les factures clients que les factures d'achat. Il doit proposer une validation manuelle des cas ambigus, catégoriser les dépenses et exporter vers votre expert-comptable. Pour une TPE, un outil qui gère aussi devis et factures évite les doubles saisies : c'est le cas de Newbi, où la connexion bancaire est incluse dans l'abonnement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-6">
+      <AccordionTrigger>Comment fonctionnent les rapprochements bancaires automatisés ?</AccordionTrigger>
+      <AccordionContent>
+        Le logiciel récupère vos transactions bancaires puis compare chacune d'elles à vos factures selon trois critères : le montant, la date par rapport à l'échéance et le libellé bancaire par rapport au nom du client ou du fournisseur. Quand les trois concordent, la facture est marquée payée. Si un seul critère diverge (paiement partiel, regroupement, libellé tronqué), le rapprochement est proposé et vous le validez ou le corrigez en un clic.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -319,6 +340,22 @@ Avec Newbi, la connexion bancaire est incluse dans tous les abonnements. Connect
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Non, la connexion est strictement en lecture seule."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quel logiciel de rapprochement bancaire choisir pour une TPE ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Choisissez un logiciel qui connecte votre banque via un agrégateur agréé DSP2 en lecture seule, synchronise les transactions chaque jour, rapproche les factures clients comme les factures d'achat, propose une validation manuelle des cas ambigus, catégorise les dépenses et exporte vers votre expert-comptable. Un outil qui gère aussi devis et factures, comme Newbi, évite les doubles saisies."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment fonctionnent les rapprochements bancaires automatisés ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le logiciel récupère vos transactions bancaires puis compare chacune d'elles à vos factures selon le montant, la date par rapport à l'échéance et le libellé bancaire. Quand les critères concordent, la facture est marquée payée. Sinon, le rapprochement est proposé et vous le validez ou le corrigez en un clic."
       }
     }
   ]
