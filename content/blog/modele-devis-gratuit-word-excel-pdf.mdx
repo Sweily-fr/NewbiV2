@@ -39,6 +39,28 @@ Ce guide vous donne la structure exacte d'un modèle de devis conforme, les ment
   </Button>
 </div>
 
+
+<div className="not-prose my-8 rounded-xl border border-gray-200 p-6">
+  <p className="text-base font-medium text-gray-900 mb-1">Télécharger le modèle de devis</p>
+  <p className="text-sm text-gray-600 mb-4">
+    Fichier prêt à remplir, avec les mentions obligatoires déjà en place. Le classeur Excel calcule les totaux automatiquement.
+  </p>
+  <div className="flex flex-wrap gap-3">
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-devis.docx" download>Word (.docx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-devis.xlsx" download>Excel (.xlsx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-devis.pdf" download>PDF</a>
+    </Button>
+  </div>
+  <p className="text-xs text-gray-500 mt-4">
+    Sans inscription. Pour générer vos documents automatiquement et suivre vos paiements, <a href="/produits/factures" className="underline">essayez Newbi gratuitement 30 jours</a>.
+  </p>
+</div>
+
 ## Pourquoi formaliser vos propositions avec un modèle de devis
 
 Un devis engage juridiquement celui qui l'émet dès lors qu'il est accepté par le client, généralement par une signature ou une mention manuscrite "bon pour accord". Utiliser un modèle structuré, plutôt que de rédiger chaque proposition depuis une page blanche, vous fait gagner du temps et limite le risque d'oubli d'une information essentielle, comme le délai de validité ou les modalités de paiement.
