@@ -1,8 +1,7 @@
 ---
-title: Qu'est-ce que le FEC (Fichier des Écritures Comptables) ?
+title: 'Fichier des écritures comptables (FEC) : définition et 18 champs'
 description: >-
-  Tout savoir sur le FEC : définition, contenu obligatoire, format, contrôle
-  fiscal et comment le générer automatiquement depuis votre logiciel.
+  Fichier des écritures comptables (FEC) : qui doit le produire, les 18 champs obligatoires, le format TXT ou XML, l'amende de 5 000 € et sa génération.
 date: '2026-02-10'
 category: glossaire
 sector: null
@@ -11,6 +10,7 @@ author: Newbi
 image: /blog/quest-ce-que-fec-fichier-ecritures-comptables/hero.webp
 published: true
 publishDate: '2026-05-11'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -27,11 +27,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">7 min de lecture</Badge>
 </div>
 
-# Qu'est-ce que le FEC (Fichier des Écritures Comptables) ?
+# Fichier des écritures comptables (FEC) : définition et 18 champs
 
-Le **FEC fichier écritures comptables** est un document numérique normalisé que toute entreprise tenant une comptabilité informatisée doit pouvoir produire en cas de contrôle fiscal. Instauré par l'article L47 A-I du Livre des Procédures Fiscales (LPF), il constitue aujourd'hui une pièce maîtresse de la relation entre les entreprises et l'administration fiscale française.
+Le fichier des écritures comptables (FEC) est le fichier numérique, obligatoire depuis 2014, que toute entreprise tenant une comptabilité informatisée doit remettre à l'administration en cas de contrôle fiscal. Il regroupe toutes les écritures de l'exercice dans 18 champs normalisés, au format TXT tabulé ou XML, et son absence coûte 5 000 € par exercice vérifié.
 
-Que vous soyez entrepreneur, dirigeant de PME ou comptable, comprendre le FEC est indispensable pour rester en conformité et éviter de lourdes sanctions. Dans cet article, nous vous expliquons en détail sa définition, son contenu obligatoire, son format, les sanctions encourues et comment le générer facilement.
+Vous trouverez ici qui est concerné (et pourquoi les micro-entrepreneurs en sont dispensés), le détail des 18 colonnes, le format attendu, le déroulement du contrôle fiscal informatisé et la façon de générer un FEC conforme, seul ou avec votre expert-comptable.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
@@ -314,7 +314,7 @@ Le FEC s'inscrit plus largement dans vos obligations comptables globales, notamm
 
 ## En résumé
 
-Le **FEC fichier écritures comptables** est un fichier numérique normalisé, obligatoire depuis 2014 pour toute entreprise tenant une comptabilité informatisée. Il contient 18 champs précis couvrant l'ensemble des écritures d'un exercice et doit être produit en format TXT tabulé ou XML. En cas de contrôle fiscal, sa non-remise ou sa non-conformité expose l'entreprise à une amende de 5 000 euros ou 10 % des droits rappelés. Les micro-entrepreneurs en sont exemptés. Pour rester conforme sans effort, utilisez un logiciel capable de le générer automatiquement.
+Le fichier des écritures comptables (FEC) est un fichier numérique normalisé, obligatoire depuis 2014 pour toute entreprise tenant une comptabilité informatisée. Il contient 18 champs précis couvrant l'ensemble des écritures d'un exercice et doit être produit en format TXT tabulé ou XML. En cas de contrôle fiscal, sa non-remise ou sa non-conformité expose l'entreprise à une amende de 5 000 euros ou 10 % des droits rappelés. Les micro-entrepreneurs en sont exemptés. Pour rester conforme sans effort, utilisez un logiciel capable de le générer automatiquement.
 
 <div className="not-prose my-8">
   <Button asChild size="lg">
@@ -348,6 +348,18 @@ Le **FEC fichier écritures comptables** est un fichier numérique normalisé, o
       <AccordionTrigger>Comment générer un FEC conforme facilement ?</AccordionTrigger>
       <AccordionContent>
         Le moyen le plus simple est d'utiliser un logiciel comptable capable de générer automatiquement un FEC conforme, comme Newbi. Le logiciel structure vos écritures selon les 18 champs obligatoires, respecte le format tabulé et assure la cohérence des données. Vous n'avez qu'à exporter le fichier en un clic lorsque nécessaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il un expert-comptable pour produire le fichier des écritures comptables (FEC) ?</AccordionTrigger>
+      <AccordionContent>
+        Non, aucun texte n'impose de passer par un expert-comptable : le FEC est généré par le logiciel qui tient votre comptabilité, et l'entreprise reste responsable de sa conformité. En pratique, l'expert-comptable produit souvent le fichier pour ses clients à partir de son propre outil, et il est précieux pour le relire avant un contrôle : équilibre des écritures, continuité des numéros, cohérence avec les déclarations de TVA. Si vous tenez votre comptabilité vous-même, vérifiez que votre logiciel exporte bien les 18 champs au format attendu.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Le fichier FEC est-il obligatoire pour toute comptabilité ?</AccordionTrigger>
+      <AccordionContent>
+        Le FEC est obligatoire dès que la comptabilité est tenue avec un système informatisé (logiciel, tableur structuré, ERP) et que l'entreprise est soumise à une obligation de tenue de comptabilité : sociétés, entreprises individuelles au régime réel, professions libérales en déclaration contrôlée. Les micro-entrepreneurs, qui ne tiennent qu'un livre des recettes, en sont dispensés, tout comme une comptabilité tenue entièrement à la main. Le fichier n'est remis qu'en cas de contrôle, mais il doit pouvoir être produit à tout moment pour chaque exercice non prescrit.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -390,6 +402,22 @@ Le **FEC fichier écritures comptables** est un fichier numérique normalisé, o
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Le moyen le plus simple est d'utiliser un logiciel comptable capable de générer automatiquement un FEC conforme, comme Newbi. Le logiciel structure vos écritures selon les 18 champs obligatoires, respecte le format tabulé et assure la cohérence des données. Vous n'avez qu'à exporter le fichier en un clic lorsque nécessaire."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Faut-il un expert-comptable pour produire le fichier des écritures comptables (FEC) ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, aucun texte n'impose de passer par un expert-comptable : le FEC est généré par le logiciel qui tient votre comptabilité, et l'entreprise reste responsable de sa conformité. En pratique, l'expert-comptable produit souvent le fichier pour ses clients à partir de son propre outil, et il est précieux pour le relire avant un contrôle : équilibre des écritures, continuité des numéros, cohérence avec les déclarations de TVA. Si vous tenez votre comptabilité vous-même, vérifiez que votre logiciel exporte bien les 18 champs au format attendu."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Le fichier FEC est-il obligatoire pour toute comptabilité ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le FEC est obligatoire dès que la comptabilité est tenue avec un système informatisé (logiciel, tableur structuré, ERP) et que l'entreprise est soumise à une obligation de tenue de comptabilité : sociétés, entreprises individuelles au régime réel, professions libérales en déclaration contrôlée. Les micro-entrepreneurs, qui ne tiennent qu'un livre des recettes, en sont dispensés, tout comme une comptabilité tenue entièrement à la main. Le fichier n'est remis qu'en cas de contrôle, mais il doit pouvoir être produit à tout moment pour chaque exercice non prescrit."
           }
         }
       ]

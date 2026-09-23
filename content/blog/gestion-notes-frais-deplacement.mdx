@@ -1,8 +1,8 @@
 ---
-title: Comment gérer ses notes de frais et justificatifs de déplacement
+title: 'Gestion des notes de frais : numérisation OCR et règles 2026'
 description: >-
-  Simplifiez la gestion de vos notes de frais : scan des reçus, catégorisation
-  automatique et partage avec votre expert-comptable en un clic.
+  Gestion des notes de frais : justificatifs, numérisation OCR, catégorisation
+  automatique, partage avec l'expert-comptable et alternative à Pennylane.
 date: '2026-02-10'
 category: guide
 sector: null
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/gestion-notes-frais-deplacement/hero.webp
 published: true
 publishDate: '2026-05-11'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -22,16 +23,18 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
 import { Check } from "lucide-react"
 
-{/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <div className="not-prose flex items-center gap-2 mb-6">
   <Badge variant="secondary">Guide</Badge>
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-# Comment gérer ses notes de frais et justificatifs de déplacement
+# Gestion des notes de frais : numérisation OCR et règles 2026
 
-La **gestion notes de frais** est une tâche incontournable pour tout entrepreneur, freelance ou dirigeant de TPE/PME. Entre les tickets de restaurant, les billets de train, les factures d'hôtel et les pleins d'essence, les justificatifs s'accumulent rapidement et deviennent un véritable casse-tête administratif. Pourtant, une gestion rigoureuse de ces dépenses est indispensable pour maîtriser sa trésorerie, respecter ses obligations fiscales et faciliter le travail de son expert-comptable. Dans ce guide complet, nous vous expliquons comment passer d'une gestion manuelle chronophage à un processus automatisé, fiable et sans stress.
+Gérer ses notes de frais consiste à collecter chaque justificatif de dépense professionnelle (repas, transport, hôtel), le numériser, le catégoriser et le conserver 6 ans au titre fiscal et 10 ans au titre comptable. Une solution OCR photographie le ticket et en extrait le montant, la date, la TVA et le fournisseur, sans saisie manuelle.
 
+Vous trouverez ici la liste des frais concernés, le comparatif entre gestion manuelle et numérisation, le fonctionnement du scan OCR, le partage avec votre expert-comptable et les bonnes pratiques à adopter, avec Newbi comme alternative à Pennylane pour les notes de frais.
+
+{/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <Image
   src="/blog/gestion-notes-frais-deplacement/hero.webp"
   alt="Gestion des notes de frais et justificatifs de déplacement avec Newbi"
@@ -40,6 +43,7 @@ La **gestion notes de frais** est une tâche incontournable pour tout entreprene
   className="rounded-lg my-8"
   priority
 />
+*/}
 
 ## Qu'est-ce qu'une note de frais ?
 
@@ -106,7 +110,6 @@ Beaucoup d'entrepreneurs gèrent encore leurs notes de frais à l'ancienne : env
     </TableBody>
   </Table>
 </div>
-*/}
 
 <div className="not-prose my-6">
   <Callout type="tip" title="Bon à savoir">
@@ -114,7 +117,7 @@ Beaucoup d'entrepreneurs gèrent encore leurs notes de frais à l'ancienne : env
   </Callout>
 </div>
 
-## Le scan OCR : la révolution de la gestion notes de frais
+## Le scan OCR : la solution pour numériser ses notes de frais
 
 La technologie **OCR** (Optical Character Recognition) a transformé la manière dont les professionnels gèrent leurs dépenses. Plus besoin de recopier manuellement les informations de chaque ticket : il suffit de photographier le justificatif avec son smartphone pour que le système extraie automatiquement les données essentielles.
 
@@ -125,9 +128,8 @@ La technologie **OCR** (Optical Character Recognition) a transformé la manière
 3. **Vérification** : Les données extraites sont affichées pour que vous puissiez les valider ou les corriger si nécessaire
 4. **Enregistrement** : La dépense est automatiquement ajoutée à votre liste avec le justificatif numérisé rattaché
 
-Cette approche réduit considérablement le temps de saisie et minimise les erreurs de transcription. Pour en savoir plus sur le fonctionnement de l'OCR appliqué à la comptabilité, consultez notre article dédié sur l'[OCR pour les justificatifs comptables](/blog/ocr-justificatifs-comptables).
+Cette approche réduit considérablement le temps de saisie et minimise les erreurs de transcription. Pour en savoir plus sur le fonctionnement de l'OCR appliqué à la comptabilité, consultez notre article dédié sur l'[OCR pour les justificatifs comptables](/blog/ocr-justificatifs-comptables) et notre sélection d'[outils pour scanner tickets de caisse et notes de frais](/blog/top-outils-scan-tickets-caisse-notes-frais).
 
-{/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <div className="not-prose my-6">
   <Callout type="warning" title="Attention aux justificatifs thermiques">
     Les tickets imprimés sur papier thermique (tickets de caisse, reçus de carte bancaire) s'effacent avec le temps. Il est **indispensable** de les numériser rapidement après réception. Un ticket illisible ne sera pas accepté en cas de contrôle fiscal.
@@ -145,6 +147,7 @@ Une fois les données extraites par l'OCR, l'étape suivante consiste à **caté
 
 Avec Newbi, la catégorisation est largement automatisée. Le système analyse le fournisseur, le montant et le contexte pour proposer la bonne catégorie comptable. Vous gardez bien sûr la main pour ajuster si nécessaire. Combiné à la [connexion bancaire et au rapprochement automatique](/blog/connexion-bancaire-rapprochement-automatique), ce processus devient quasi transparent.
 
+{/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <Image
   src="/blog/gestion-notes-frais-deplacement/categorisation.webp"
   alt="Catégorisation automatique des notes de frais dans Newbi"
@@ -152,6 +155,7 @@ Avec Newbi, la catégorisation est largement automatisée. Le système analyse l
   height={630}
   className="rounded-lg my-8"
 />
+*/}
 
 ## Partager ses notes de frais avec son expert-comptable
 
@@ -171,11 +175,10 @@ Pour découvrir toutes les options de collaboration avec votre cabinet comptable
     <Link href="/produits/gestion-des-achats">Gérer mes notes de frais</Link>
   </Button>
 </div>
-*/}
 
 ## Pourquoi choisir Newbi pour la gestion de vos notes de frais ?
 
-Newbi a été conçu pour simplifier la vie administrative des indépendants, freelances et dirigeants de petites entreprises. Voici ce que notre solution vous apporte concrètement pour la gestion de vos notes de frais :
+Newbi a été conçu pour simplifier la vie administrative des indépendants, freelances et dirigeants de petites entreprises. Si vous cherchez une alternative à Pennylane pour les notes de frais, sans suite comptable complète (voir notre [comparatif Pennylane vs Newbi](/blog/pennylane-vs-newbi-comparatif)), voici ce que notre solution vous apporte concrètement :
 
 <div className="not-prose my-8 space-y-3">
   <div className="flex items-start gap-3">
@@ -212,7 +215,7 @@ Pour aller plus loin dans l'optimisation de votre gestion financière, découvre
 
 ## Les bonnes pratiques pour une gestion optimale
 
-Au-delà de l'outil, voici les règles d'or à respecter pour une **gestion notes de frais** irréprochable :
+Au-delà de l'outil, voici les règles d'or d'une gestion des notes de frais irréprochable :
 
 ### 1. Numérisez immédiatement
 
@@ -242,7 +245,7 @@ Même si l'archivage numérique est désormais reconnu, il est recommandé de co
 
 ## En résumé
 
-La **gestion notes de frais** ne devrait plus être une corvée. Grâce aux technologies modernes comme l'OCR, la catégorisation automatique et le partage numérique, vous pouvez transformer un processus chronophage en une tâche simple et rapide. Newbi réunit toutes ces fonctionnalités dans une interface intuitive, pensée pour les entrepreneurs qui veulent se concentrer sur leur coeur de métier plutôt que sur la paperasse.
+La gestion des notes de frais ne devrait plus être une corvée. Grâce aux technologies modernes comme l'OCR, la catégorisation automatique et le partage numérique, vous pouvez transformer un processus chronophage en une tâche simple et rapide. Newbi réunit toutes ces fonctionnalités dans une interface intuitive, pensée pour les entrepreneurs qui veulent se concentrer sur leur coeur de métier plutôt que sur la paperasse.
 
 En adoptant une solution automatisée, vous gagnez du temps, vous réduisez les erreurs, vous sécurisez vos justificatifs et vous facilitez la vie de votre expert-comptable. C'est un investissement qui se rentabilise dès le premier mois d'utilisation.
 
@@ -265,7 +268,7 @@ En adoptant une solution automatisée, vous gagnez du temps, vous réduisez les 
     <AccordionItem value="item-2">
       <AccordionTrigger>Combien de temps dois-je conserver mes justificatifs de frais ?</AccordionTrigger>
       <AccordionContent>
-        L'administration fiscale française impose une conservation minimale de 6 ans pour les justificatifs de dépenses professionnelles. Avec Newbi, vos documents sont archivés numériquement de façon sécurisée et conforme, ce qui vous garantit de respecter cette obligation sans effort.
+        L'administration fiscale française impose une conservation minimale de 6 ans pour les justificatifs de dépenses professionnelles, et le Code de commerce porte ce délai à 10 ans pour les pièces justificatives comptables. Avec Newbi, vos documents sont archivés numériquement de façon sécurisée et conforme, ce qui vous garantit de respecter cette obligation sans effort.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
@@ -286,6 +289,18 @@ En adoptant une solution automatisée, vous gagnez du temps, vous réduisez les 
         Absolument. Newbi prend en charge plusieurs devises, ce qui vous permet de saisir vos dépenses dans la monnaie locale. Le taux de change est appliqué automatiquement pour convertir le montant en euros. Vos justificatifs en langue étrangère sont également pris en charge par le moteur OCR.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Quelle solution OCR choisir pour ses notes de frais ?</AccordionTrigger>
+      <AccordionContent>
+        Une solution OCR pour notes de frais doit lire les tickets photographiés comme les PDF, extraire le montant TTC, la TVA, la date et le fournisseur, rattacher le justificatif à la dépense et l'archiver. Vérifiez aussi la catégorisation automatique, le rapprochement avec votre compte bancaire et l'export vers votre expert-comptable. Newbi réunit ces fonctions dans son module d'achats, avec un essai gratuit de 30 jours sans carte bancaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-7">
+      <AccordionTrigger>Newbi est-il une alternative à Pennylane pour les notes de frais ?</AccordionTrigger>
+      <AccordionContent>
+        Oui pour une TPE ou un indépendant qui veut numériser ses justificatifs, catégoriser ses dépenses, les rapprocher de sa banque et les partager avec son expert-comptable, sans souscrire à une suite comptable complète. Pennylane s'adresse plutôt aux entreprises qui tiennent leur comptabilité dans le même outil que leur cabinet. Newbi se concentre sur le pilotage quotidien : devis, factures, achats et trésorerie, avec un essai gratuit de 30 jours sans carte bancaire.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -295,8 +310,8 @@ En adoptant une solution automatisée, vous gagnez du temps, vous réduisez les 
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Comment gérer ses notes de frais et justificatifs de déplacement",
-      "description": "Simplifiez la gestion de vos notes de frais : scan des reçus, catégorisation automatique et partage avec votre expert-comptable en un clic.",
+      "headline": "Gestion des notes de frais : numérisation OCR et règles 2026",
+      "description": "Gestion des notes de frais : justificatifs, numérisation OCR, catégorisation automatique, partage avec l'expert-comptable et alternative à Pennylane.",
       "author": {
         "@type": "Organization",
         "name": "Newbi"
@@ -310,13 +325,13 @@ En adoptant une solution automatisée, vous gagnez du temps, vous réduisez les 
         }
       },
       "datePublished": "2026-02-10",
-      "dateModified": "2026-02-10",
+      "dateModified": "2026-09-23",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://www.newbi.tools/blog/gestion-notes-frais-deplacement"
       },
       "image": "https://www.newbi.tools/blog/gestion-notes-frais-deplacement/hero.webp",
-      "keywords": "gestion notes de frais, justificatifs de déplacement, notes de frais automatisées, OCR comptabilité, scan justificatifs"
+      "keywords": "gestion notes de frais, numérisation notes de frais, solution OCR notes de frais, justificatifs de déplacement, alternative Pennylane notes de frais"
     })
   }}
 />
@@ -341,7 +356,7 @@ En adoptant une solution automatisée, vous gagnez du temps, vous réduisez les 
           "name": "Combien de temps dois-je conserver mes justificatifs de frais ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "L'administration fiscale française impose une conservation minimale de 6 ans pour les justificatifs de dépenses professionnelles."
+            "text": "L'administration fiscale française impose une conservation minimale de 6 ans pour les justificatifs de dépenses professionnelles, et le Code de commerce porte ce délai à 10 ans pour les pièces justificatives comptables."
           }
         },
         {
@@ -366,6 +381,22 @@ En adoptant une solution automatisée, vous gagnez du temps, vous réduisez les 
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Absolument. Newbi prend en charge plusieurs devises, ce qui vous permet de saisir vos dépenses dans la monnaie locale. Le taux de change est appliqué automatiquement pour convertir le montant en euros."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle solution OCR choisir pour ses notes de frais ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Une solution OCR pour notes de frais doit lire les tickets photographiés comme les PDF, extraire le montant TTC, la TVA, la date et le fournisseur, rattacher le justificatif à la dépense et l'archiver. Vérifiez aussi la catégorisation automatique, le rapprochement bancaire et l'export vers votre expert-comptable."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Newbi est-il une alternative à Pennylane pour les notes de frais ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui pour une TPE ou un indépendant qui veut numériser ses justificatifs, catégoriser ses dépenses, les rapprocher de sa banque et les partager avec son expert-comptable, sans souscrire à une suite comptable complète. Newbi se concentre sur le pilotage quotidien : devis, factures, achats et trésorerie, avec un essai gratuit de 30 jours sans carte bancaire."
           }
         }
       ]

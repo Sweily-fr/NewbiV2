@@ -1,8 +1,8 @@
 ---
-title: 'Obligations de facturation en restauration rapide : ce qu''il faut savoir'
+title: 'Facturation en restauration rapide : obligations et TVA 2026'
 description: >-
-  Facturation en restauration rapide : obligation de ticket, seuil des 25€, TVA
-  vente à emporter, logiciel de caisse NF525 et bonnes pratiques.
+  Facturation en restauration rapide : ticket sur demande, note dès 25 € TTC,
+  facture B2B obligatoire, TVA 10 % ou 5,5 %, caisse NF525 et e-invoicing 2027.
 date: '2026-02-10'
 category: reglementaire
 sector: Restaurants / CHR
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/facture-restauration-rapide-obligations/hero.webp
 published: true
 publishDate: '2026-05-04'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,11 +29,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-# Obligations de facturation en restauration rapide : ce qu'il faut savoir
+# Facturation en restauration rapide : obligations et TVA 2026
 
-La **facturation restauration rapide** est soumise à des règles strictes qui évoluent régulièrement. Que vous exploitiez un fast-food, un food-truck, une sandwicherie ou une chaîne de burgers, vous devez respecter des obligations fiscales et comptables précises. Entre la réforme du ticket de caisse, les taux de TVA spécifiques à la vente à emporter, l'obligation du logiciel certifié NF525 et l'arrivée de la facturation électronique en 2026, il est essentiel de maîtriser le cadre réglementaire pour éviter les sanctions.
+En restauration rapide, vous devez remettre un ticket à tout client qui le demande, une note dès 25 € TTC pour un particulier et une facture pour tout client professionnel, quel que soit le montant. La TVA est de 10 % sur place comme à emporter pour une consommation immédiate, 5,5 % pour les produits conditionnés, 20 % sur l'alcool. La caisse doit être certifiée NF525.
 
-Ce guide complet vous explique toutes les obligations de **facturation en restauration rapide**, les règles de TVA applicables, les outils obligatoires et les bonnes pratiques pour rester en conformité.
+Cet article détaille chaque obligation pour un fast-food, un food-truck ou une sandwicherie : ticket, seuil des 25 €, règles B2B, ventilation de la TVA, Z de caisse, contrôle fiscal et facturation électronique (émission obligatoire pour les TPE et PME le 1er septembre 2027).
 
 <figure className="my-8">
   <Image
@@ -88,7 +89,7 @@ En restauration rapide, la majorité des ventes se font à des particuliers pour
 
 La note doit comporter au minimum : la date, le nom et l'adresse de l'établissement, le détail des prestations, les quantités, les prix unitaires HT, le taux de TVA appliqué et le montant TTC.
 
-Pour en savoir plus sur les éléments requis, consultez notre guide complet sur les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture).
+Pour en savoir plus sur les éléments requis, consultez notre article sur les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture).
 
 ## 3. TVA en restauration rapide : les taux applicables
 
@@ -106,46 +107,46 @@ La TVA en restauration rapide est un sujet complexe car **plusieurs taux coexist
     </TableHeader>
     <TableBody>
       <TableRow>
-        <TableCell className="font-medium">Vente à emporter (produits alimentaires)</TableCell>
-        <TableCell>5,5 %</TableCell>
-        <TableCell>Sandwich, salade, plat emballé à emporter</TableCell>
-      </TableRow>
-      <TableRow>
         <TableCell className="font-medium">Consommation sur place</TableCell>
         <TableCell>10 %</TableCell>
-        <TableCell>Repas servi sur place, menu consommé en salle</TableCell>
+        <TableCell>Repas servi sur place, menu consommé en salle ou en terrasse</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell className="font-medium">Boissons non alcoolisées (à emporter)</TableCell>
-        <TableCell>5,5 %</TableCell>
-        <TableCell>Eau, jus de fruit, soda à emporter</TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell className="font-medium">Boissons non alcoolisées (sur place)</TableCell>
+        <TableCell className="font-medium">Vente à emporter ou livrée pour consommation immédiate</TableCell>
         <TableCell>10 %</TableCell>
-        <TableCell>Eau, jus de fruit, soda servi en salle</TableCell>
+        <TableCell>Sandwich, burger, salade, plat chaud, frites à emporter</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Produits conditionnés pour une consommation différée</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Sandwich sous vide, chips, yaourt, confiseries, biscuits emballés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Boissons non alcoolisées servies pour consommation immédiate</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>Soda ou jus en gobelet, café, thé, boisson servie en salle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Boissons non alcoolisées en contenant fermé</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Bouteille d'eau, canette, brique de jus vendue fermée</TableCell>
       </TableRow>
       <TableRow>
         <TableCell className="font-medium">Boissons alcoolisées (sur place ou à emporter)</TableCell>
         <TableCell>20 %</TableCell>
         <TableCell>Bière, vin, cocktail</TableCell>
       </TableRow>
-      <TableRow>
-        <TableCell className="font-medium">Produits alimentaires pouvant se conserver (vente annexe)</TableCell>
-        <TableCell>5,5 %</TableCell>
-        <TableCell>Confiseries, biscuits emballés</TableCell>
-      </TableRow>
     </TableBody>
   </Table>
 </div>
 
-Le point clé à retenir : **la distinction entre consommation sur place et vente à emporter détermine le taux de TVA applicable**. En restauration rapide, cette distinction repose sur la possibilité pour le client de consommer immédiatement sur place (tables, comptoir, terrasse) ou d'emporter son repas.
+Le point clé à retenir : **c'est la destination du produit, consommation immédiate ou différée, qui détermine le taux de TVA**, pas le simple fait d'emporter. Un burger mangé sur place ou emporté pour être mangé tout de suite relève de 10 %. Seuls les produits conditionnés pour être conservés (emballage fermé, bouteille, canette) restent à 5,5 %.
 
-Pour approfondir le sujet des taux de TVA, consultez notre [guide complet sur les taux de TVA en France](/blog/taux-tva-france-guide-complet).
+Pour approfondir le sujet des taux de TVA, consultez notre [article sur les taux de TVA en France](/blog/taux-tva-france-guide-complet).
 
 ### Comment ventiler la TVA sur un ticket de caisse ?
 
-Votre logiciel de caisse doit être paramétré pour appliquer automatiquement le bon taux de TVA en fonction du mode de consommation. Lors de la prise de commande, l'opérateur doit indiquer si la vente est "sur place" ou "à emporter". Le ticket doit afficher clairement :
+Votre logiciel de caisse doit être paramétré pour appliquer automatiquement le bon taux de TVA en fonction du mode de consommation. Lors de la prise de commande, l'opérateur doit distinguer les produits destinés à une consommation immédiate (10 %) de ceux vendus conditionnés pour plus tard (5,5 %) et les boissons alcoolisées (20 %). Le ticket doit afficher clairement :
 
 - Le montant HT par taux de TVA.
 - Le montant de TVA par taux.
@@ -224,9 +225,9 @@ Ce document est indispensable en cas de contrôle fiscal. L'absence de Z de cais
 
 La réforme de la **facturation électronique** (e-invoicing) concerne aussi la restauration rapide, en particulier pour les transactions B2B. Le calendrier de déploiement prévoit :
 
-- **1er septembre 2026** : obligation de réception des factures électroniques pour toutes les entreprises.
-- **1er septembre 2026** : obligation d'émission pour les grandes entreprises et les ETI.
-- **1er septembre 2027** : obligation d'émission pour les PME et micro-entreprises.
+- **1er septembre 2026** : réception obligatoire des factures électroniques pour toutes les entreprises (en vigueur).
+- **1er septembre 2026** : émission obligatoire pour les grandes entreprises et les ETI.
+- **1er septembre 2027** : émission obligatoire pour les PME, TPE et micro-entreprises.
 
 Pour les restaurants rapides qui fournissent des prestations à d'autres professionnels (traiteur pour entreprises, livraison en gros, etc.), il faudra émettre des factures au format structuré via une **Plateforme de Dématérialisation Partenaire (PDP)** agréée.
 
@@ -239,7 +240,7 @@ L'administration fiscale peut effectuer un contrôle inopiné de votre système 
 - La présence du **certificat de conformité NF525** ou de l'attestation de l'éditeur.
 - La cohérence entre les Z de caisse, le grand livre comptable et les déclarations de TVA.
 - L'absence de logiciel de caisse frauduleux ("logiciel permissif" permettant de supprimer des lignes de vente).
-- La bonne ventilation des taux de TVA (sur place / à emporter).
+- La bonne ventilation des taux de TVA (consommation immédiate à 10 %, produits conservables à 5,5 %, alcool à 20 %).
 
 En cas d'anomalie, les sanctions vont de l'amende de 7 500 euros à un redressement fiscal complet avec pénalités de 40 % à 80 % des droits éludées.
 
@@ -255,7 +256,7 @@ Voici les points essentiels à vérifier pour être en règle :
     </li>
     <li className="flex items-start gap-3">
       <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-      <span>Paramétrer correctement les taux de TVA (5,5 % emporter, 10 % sur place, 20 % alcool).</span>
+      <span>Paramétrer correctement les taux de TVA (10 % sur place et à emporter pour consommation immédiate, 5,5 % produits conservables, 20 % alcool).</span>
     </li>
     <li className="flex items-start gap-3">
       <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -275,7 +276,7 @@ Voici les points essentiels à vérifier pour être en règle :
     </li>
     <li className="flex items-start gap-3">
       <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
-      <span>Conserver l'ensemble des justificatifs pendant 6 ans minimum.</span>
+      <span>Conserver les factures et pièces comptables pendant 10 ans, les données de caisse 6 ans minimum.</span>
     </li>
     <li className="flex items-start gap-3">
       <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
@@ -288,7 +289,7 @@ Voici les points essentiels à vérifier pour être en règle :
 
 Au-delà des obligations légales, voici les bonnes pratiques recommandées pour les établissements de restauration rapide :
 
-- **Former vos équipes** à la distinction sur place / à emporter lors de la prise de commande pour appliquer le bon taux de TVA.
+- **Former vos équipes** à la distinction consommation immédiate / produit conservable lors de la prise de commande pour appliquer le bon taux de TVA.
 - **Automatiser la ventilation TVA** via votre logiciel de caisse pour éviter les erreurs manuelles.
 - **Numériser vos Z de caisse** en complément de l'archivage papier pour sécuriser vos données.
 - **Rapprocher vos Z de caisse** avec votre comptabilité chaque mois pour détecter les écarts.
@@ -300,7 +301,7 @@ Pour une vision globale des obligations dans le secteur, consultez également no
 
 ## En résumé
 
-La **facturation en restauration rapide** obéit à un cadre réglementaire précis qui s'articule autour de plusieurs axes : la remise du ticket de caisse sur demande du client, le seuil de 25 euros TTC pour la note obligatoire, la ventilation correcte de la TVA selon le mode de consommation, l'utilisation d'un logiciel de caisse certifié NF525 et l'édition quotidienne du Z de caisse. Avec l'arrivée de la facturation électronique obligatoire dès 2026, il est crucial de s'équiper des bons outils dès maintenant.
+La facturation en restauration rapide obéit à un cadre réglementaire précis qui s'articule autour de plusieurs axes : la remise du ticket de caisse sur demande du client, le seuil de 25 euros TTC pour la note obligatoire, la facture systématique pour les clients professionnels, la ventilation correcte de la TVA selon la destination du produit, l'utilisation d'un logiciel de caisse certifié NF525 et l'édition quotidienne du Z de caisse. La réception des factures électroniques est obligatoire depuis septembre 2026 et leur émission le sera pour les TPE et PME en septembre 2027 : équipez-vous dès maintenant.
 
 <div className="not-prose my-8 flex flex-col sm:flex-row gap-4">
   <Button asChild size="lg">
@@ -326,7 +327,7 @@ La **facturation en restauration rapide** obéit à un cadre réglementaire pré
     <AccordionItem value="item-2">
       <AccordionTrigger>Quel est le taux de TVA pour la vente à emporter en restauration rapide ?</AccordionTrigger>
       <AccordionContent>
-        La vente à emporter de produits alimentaires et de boissons non alcoolisées est soumise au taux réduit de 5,5 %. La consommation sur place est taxée à 10 %. Les boissons alcoolisées restent toujours au taux normal de 20 %, qu'elles soient consommées sur place ou à emporter.
+        La vente à emporter de produits préparés pour une consommation immédiate (sandwich, burger, plat chaud, boisson en gobelet) est au taux de 10 %, comme la consommation sur place. Le taux réduit de 5,5 % ne s'applique qu'aux produits conditionnés pour une consommation différée : sandwich sous vide, chips, yaourt, boisson en bouteille ou canette fermée. Les boissons alcoolisées restent toujours au taux normal de 20 %, sur place comme à emporter.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-3">
@@ -344,7 +345,19 @@ La **facturation en restauration rapide** obéit à un cadre réglementaire pré
     <AccordionItem value="item-5">
       <AccordionTrigger>La facturation électronique concerne-t-elle les restaurants rapides ?</AccordionTrigger>
       <AccordionContent>
-        Oui, la facturation électronique concernera à terme tous les professionnels assujettis à la TVA. Dès septembre 2026, toutes les entreprises devront pouvoir recevoir des factures électroniques. L'obligation d'émission interviendra en septembre 2026 pour les grandes entreprises et ETI, puis en septembre 2027 pour les PME et micro-entreprises. Les ventes B2C (aux particuliers) ne sont pas concernées par l'e-invoicing mais par le e-reporting.
+        Oui, la facturation électronique concerne à terme tous les professionnels assujettis à la TVA. Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures électroniques. L'obligation d'émission s'applique depuis septembre 2026 aux grandes entreprises et ETI, puis à partir de septembre 2027 aux PME, TPE et micro-entreprises. Les ventes B2C (aux particuliers) ne sont pas concernées par l'e-invoicing mais par le e-reporting.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Quelles sont les règles et obligations de facturation B2B pour un restaurant rapide ?</AccordionTrigger>
+      <AccordionContent>
+        Dès que votre client est un professionnel (entreprise, association, collectivité), la facture est obligatoire quel que soit le montant, avec les mentions légales : identité et SIREN des deux parties, numéro chronologique, date, détail des prestations, TVA par taux, date d'échéance, pénalités de retard et indemnité forfaitaire de 40 € pour frais de recouvrement. Conservez-la 10 ans. Depuis septembre 2026, vous devez pouvoir recevoir des factures électroniques ; l'émission au format électronique s'imposera à votre établissement le 1er septembre 2027 s'il s'agit d'une TPE ou d'une PME.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-7">
+      <AccordionTrigger>Comment mettre en place une facturation rapide pour les commandes professionnelles ?</AccordionTrigger>
+      <AccordionContent>
+        Séparez les ventes au comptoir, enregistrées en caisse, des commandes professionnelles (plateaux-repas, traiteur, livraison en gros) facturées depuis un logiciel de facturation. Créez une fiche par client avec son SIREN et ses conditions de paiement, un catalogue de vos formules, puis générez la facture à partir d'un devis ou d'un bon de commande validé. Envoyez-la par e-mail et suivez le paiement dans l'outil. Vous gardez ainsi une numérotation continue et des documents prêts pour la facturation électronique.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -356,8 +369,8 @@ La **facturation en restauration rapide** obéit à un cadre réglementaire pré
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Obligations de facturation en restauration rapide : ce qu'il faut savoir",
-      "description": "Facturation en restauration rapide : obligation de ticket, seuil des 25 euros, TVA vente à emporter, logiciel de caisse NF525 et bonnes pratiques.",
+      "headline": "Facturation en restauration rapide : obligations et TVA 2026",
+      "description": "Facturation en restauration rapide : ticket sur demande, note dès 25 € TTC, facture B2B obligatoire, TVA 10 % ou 5,5 %, caisse NF525 et e-invoicing 2027.",
       "author": {
         "@type": "Organization",
         "name": "Newbi",
@@ -372,7 +385,7 @@ La **facturation en restauration rapide** obéit à un cadre réglementaire pré
         }
       },
       "datePublished": "2026-02-10",
-      "dateModified": "2026-02-10",
+      "dateModified": "2026-09-23",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://newbi.fr/blog/facture-restauration-rapide-obligations"
@@ -404,7 +417,7 @@ La **facturation en restauration rapide** obéit à un cadre réglementaire pré
           "name": "Quel est le taux de TVA pour la vente à emporter en restauration rapide ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "La vente à emporter de produits alimentaires et de boissons non alcoolisées est soumise au taux réduit de 5,5 %. La consommation sur place est taxée à 10 %. Les boissons alcoolisées sont toujours au taux normal de 20 %."
+            "text": "La vente à emporter de produits préparés pour une consommation immédiate (sandwich, burger, plat chaud, boisson en gobelet) est au taux de 10 %, comme la consommation sur place. Le taux réduit de 5,5 % ne s'applique qu'aux produits conditionnés pour une consommation différée. Les boissons alcoolisées sont toujours au taux normal de 20 %."
           }
         },
         {
@@ -428,7 +441,23 @@ La **facturation en restauration rapide** obéit à un cadre réglementaire pré
           "name": "La facturation électronique concerne-t-elle les restaurants rapides ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Oui. Dès septembre 2026, toutes les entreprises devront recevoir des factures électroniques. L'obligation d'émission sera progressive : septembre 2026 pour les grandes entreprises et ETI, septembre 2027 pour les PME et micro-entreprises. Les ventes B2C relèvent du e-reporting."
+            "text": "Oui. Depuis le 1er septembre 2026, toutes les entreprises doivent pouvoir recevoir des factures électroniques. L'obligation d'émission est progressive : septembre 2026 pour les grandes entreprises et ETI, septembre 2027 pour les PME, TPE et micro-entreprises. Les ventes B2C relèvent du e-reporting."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles sont les règles et obligations de facturation B2B pour un restaurant rapide ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Dès que votre client est un professionnel, la facture est obligatoire quel que soit le montant, avec les mentions légales : identité et SIREN des deux parties, numéro chronologique, date, détail des prestations, TVA par taux, date d'échéance, pénalités de retard et indemnité forfaitaire de 40 €. Conservez-la 10 ans. L'émission au format électronique s'imposera aux TPE et PME le 1er septembre 2027."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment mettre en place une facturation rapide pour les commandes professionnelles ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Séparez les ventes au comptoir, enregistrées en caisse, des commandes professionnelles facturées depuis un logiciel de facturation. Créez une fiche par client avec son SIREN, un catalogue de vos formules, puis générez la facture à partir d'un devis ou d'un bon de commande validé et suivez le paiement dans l'outil."
           }
         }
       ]
