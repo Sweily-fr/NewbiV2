@@ -226,7 +226,9 @@
   },
   {
     "date": "2026-08-17",
-    "articles": ["abby-vs-newbi-comparatif"]
+    "articles": [
+      "abby-vs-newbi-comparatif"
+    ]
   },
   {
     "date": "2026-08-31",
@@ -289,6 +291,29 @@
     "articles": [
       "plan-de-tresorerie-previsionnel-comment-faire",
       "alternatives-quickbooks-france-arret"
+    ]
+  },
+  {
+    "date": "2026-09-23",
+    "articles": [
+      "duree-validite-devis-regles",
+      "facture-electricien-guide",
+      "formats-ubl-cii-facturx-comparatif",
+      "modele-facture-sans-tva-franchise-en-base",
+      "facturer-client-etranger-ue-hors-ue",
+      "autoliquidation-tva-facture-mention",
+      "facture-osteopathe-guide",
+      "shine-vs-newbi-comparatif",
+      "bfr-besoin-en-fonds-de-roulement-calcul",
+      "devis-signe-valeur-juridique-engagement",
+      "facture-electronique-sanctions-amendes",
+      "facture-paysagiste-jardinier-guide",
+      "statuts-cycle-de-vie-facture-electronique",
+      "modele-facture-acompte-gratuit",
+      "facture-rectificative-comment-faire",
+      "annuler-une-facture-deja-emise",
+      "facture-redacteur-web-freelance",
+      "alternatives-pennylane"
     ]
   }
 ]
