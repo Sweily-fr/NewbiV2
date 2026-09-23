@@ -13,6 +13,8 @@ import WallOfFeatures from "./section/WallOfFeatures";
 import TeamsTabSection from "./section/TeamsTabSection";
 import CtaSection from "./section/CtaSection";
 import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import { JsonLd } from "@/src/components/seo/json-ld";
+import { productJsonLd } from "@/src/lib/product-jsonld";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -26,6 +28,8 @@ export const metadata = generateNextMetadata("kanban");
 export default function KanbanPage() {
   return (
     <>
+      {/* Données structurées : application + fil d'Ariane, rendues côté serveur */}
+      <JsonLd data={productJsonLd("kanban")} />
       <div className={`${poppins.variable} font-poppins`}>
         <NewHeroNavbar hasBanner={false} />
         <main>
