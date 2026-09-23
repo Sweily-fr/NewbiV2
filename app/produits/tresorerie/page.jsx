@@ -15,6 +15,8 @@ import TresorerieComponentsSection from "./section/TresorerieComponentsSection";
 import TresorerieInfoBanner from "./section/TresorerieInfoBanner";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
 import TresorerieFeaturesBanner from "./section/TresorerieFeaturesBanner";
+import { JsonLd } from "@/src/components/seo/json-ld";
+import { productJsonLd } from "@/src/lib/product-jsonld";
 
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
@@ -47,6 +49,8 @@ export const metadata = {
 export default function TresoreriePage() {
   return (
     <>
+      {/* Données structurées : application + fil d'Ariane, rendues côté serveur */}
+      <JsonLd data={productJsonLd("tresorerie")} />
       <div className={`${poppins.variable} font-poppins`}>
         {/* <TresorerieBanner /> */}
         <NewHeroNavbar hasBanner={false} />

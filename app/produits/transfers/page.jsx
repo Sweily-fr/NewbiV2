@@ -11,6 +11,8 @@ import TransfersGovernanceSection from "./section/TransfersGovernanceSection";
 import HowItWorksSection from "./section/HowItWorksSection";
 import MetiersSection from "@/app/(main)/new/lp-home/MetiersSection";
 import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import { JsonLd } from "@/src/components/seo/json-ld";
+import { productJsonLd } from "@/src/lib/product-jsonld";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -24,6 +26,8 @@ export const metadata = generateNextMetadata("transfers");
 export default function TransfersPage() {
   return (
     <>
+      {/* Données structurées : application + fil d'Ariane, rendues côté serveur */}
+      <JsonLd data={productJsonLd("transfers")} />
       <div className={`${poppins.variable} font-poppins`}>
         <NewHeroNavbar hasBanner={false} />
         <main>

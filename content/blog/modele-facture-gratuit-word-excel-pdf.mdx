@@ -39,6 +39,28 @@ Ce guide vous donne la structure exacte à reproduire, un exemple de facture com
   </Button>
 </div>
 
+
+<div className="not-prose my-8 rounded-xl border border-gray-200 p-6">
+  <p className="text-base font-medium text-gray-900 mb-1">Télécharger le modèle de facture</p>
+  <p className="text-sm text-gray-600 mb-4">
+    Fichier prêt à remplir, avec les mentions obligatoires déjà en place. Le classeur Excel calcule les totaux automatiquement.
+  </p>
+  <div className="flex flex-wrap gap-3">
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture.docx" download>Word (.docx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture.xlsx" download>Excel (.xlsx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture.pdf" download>PDF</a>
+    </Button>
+  </div>
+  <p className="text-xs text-gray-500 mt-4">
+    Sans inscription. Pour générer vos documents automatiquement et suivre vos paiements, <a href="/produits/factures" className="underline">essayez Newbi gratuitement 30 jours</a>.
+  </p>
+</div>
+
 ## Pourquoi utiliser un modèle de facture
 
 Un modèle de facture est une trame préremplie que vous complétez à chaque nouvelle vente ou prestation. Il permet de gagner du temps par rapport à une création depuis une page blanche, tout en garantissant une présentation cohérente d'une facture à l'autre. Pour un auto-entrepreneur qui démarre son activité ou un artisan qui facture ponctuellement, un modèle Word ou Excel constitue souvent le premier réflexe.
@@ -134,7 +156,7 @@ Le choix du format dépend surtout de votre usage. Un modèle **Word** convient 
 
 ### Cas particulier de l'auto-entrepreneur en franchise de TVA
 
-Si vous êtes micro-entrepreneur et que vous bénéficiez de la franchise en base de TVA, votre modèle de facture doit comporter une mention spécifique à la place du taux de TVA : "TVA non applicable, article 293 B du CGI". Cette franchise s'applique tant que votre chiffre d'affaires reste sous les seuils en vigueur en 2026, soit 37 500 € pour les prestations de services et 85 000 € pour les activités de vente, avec des seuils majorés respectivement à 41 250 € et 93 500 € permettant de rester en franchise l'année du dépassement. Au-delà, la TVA devient obligatoire dès le premier jour du mois de dépassement et votre modèle doit alors intégrer un taux de TVA classique, généralement 20 %.
+Si vous êtes micro-entrepreneur et que vous bénéficiez de la franchise en base de TVA, votre modèle de facture doit comporter une mention spécifique à la place du taux de TVA : "TVA non applicable, article 293 B du CGI". Cette franchise s'applique tant que votre chiffre d'affaires reste sous les seuils en vigueur en 2026, soit 37 500 € pour les prestations de services et 85 000 € pour les activités de vente, avec des seuils majorés respectivement à 41 250 € et 93 500 € permettant de rester en franchise l'année du dépassement. Au-delà, la TVA devient obligatoire dès le premier jour du mois de dépassement et votre modèle doit alors intégrer un taux de TVA classique, généralement 20 %. Tant que la franchise s'applique, la facture ne comporte ni colonne de TVA ni total TTC : notre [modèle de facture sans TVA avec la mention article 293 B](/blog/modele-facture-sans-tva-franchise-en-base) montre la présentation attendue des montants.
 
 ## Exemple de facture complétée
 
@@ -151,7 +173,7 @@ Pour bien comprendre comment remplir votre modèle, voici un exemple concret. Un
 - Date d'échéance : 15 octobre 2026 (30 jours)
 - Conditions : pénalité de retard au taux de 10 % annuel, indemnité forfaitaire de recouvrement de 40 €
 
-Ce niveau de détail doit apparaître systématiquement, même sur une facture à une seule ligne, pour rester conforme.
+Ce niveau de détail doit apparaître systématiquement, même sur une facture à une seule ligne, pour rester conforme. Si la mission démarre par un acompte, la même trame sert à la facture d'acompte, et la facture de solde doit ensuite déduire la somme déjà encaissée : notre [modèle de facture d'acompte, avec l'exemple du solde et les règles de TVA](/blog/modele-facture-acompte-gratuit) reprend ce calcul en détail.
 
 ## Les limites d'un modèle statique face à un logiciel
 

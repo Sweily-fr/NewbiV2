@@ -11,6 +11,8 @@ import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
 import FacturationElectroniqueComponentsSection from "./section/FacturationElectroniqueComponentsSection";
 import { FacturationBanner } from "@/app/produits/factures/section/FacturationBanner";
 import EInvoicingSection from "@/app/(main)/new/lp-home/EInvoicingSection";
+import { JsonLd } from "@/src/components/seo/json-ld";
+import { productJsonLd } from "@/src/lib/product-jsonld";
 
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
@@ -43,6 +45,8 @@ export const metadata = {
 export default function FacturationElectroniquePage() {
   return (
     <>
+      {/* Données structurées : application + fil d'Ariane, rendues côté serveur */}
+      <JsonLd data={productJsonLd("facturation-electronique")} />
       <div className={`${poppins.variable} font-poppins`}>
         <FacturationBanner />
         <NewHeroNavbar hasBanner={true} />
