@@ -265,6 +265,31 @@ export const seoData = {
   },
 
   // Page Kanban
+  "gestion-des-achats": {
+    title:
+      "Gestion des achats et notes de frais : factures fournisseurs | Newbi",
+    description:
+      "Scannez vos factures d'achat et vos notes de frais, laissez l'OCR remplir les montants et la TVA, et rapprochez-les de vos transactions bancaires. Inclus dans Newbi, 30 jours gratuits.",
+    keywords:
+      "gestion des achats, facture fournisseur, note de frais, OCR facture, justificatif comptable, rapprochement bancaire, dépenses entreprise, TPE",
+    canonical: `${baseUrl}/produits/gestion-des-achats`,
+    openGraph: {
+      title: "Achats, factures fournisseurs et notes de frais | Newbi",
+      description:
+        "Scannez, catégorisez et rapprochez vos dépenses automatiquement.",
+      image: `/images/op-newbi.png`,
+      type: "website",
+      locale: "fr_FR",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Achats et notes de frais | Newbi",
+      description:
+        "Scannez, catégorisez et rapprochez vos dépenses automatiquement.",
+      image: `/images/op-newbi.png`,
+    },
+  },
+
   kanban: {
     title: "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
     description:
@@ -517,6 +542,21 @@ export const seoData = {
   },
 
   // Page FAQ
+  contactPage: {
+    title: "Contact : parler à l'équipe Newbi",
+    description:
+      "Une question sur Newbi, un besoin d'accompagnement ou une demande de partenariat ? Écrivez-nous, l'équipe répond en français sous 24 heures ouvrées.",
+    keywords: "contact Newbi, support Newbi, aide facturation, assistance",
+    canonical: `${baseUrl}/contact`,
+    openGraph: {
+      title: "Contacter l'équipe Newbi",
+      description: "L'équipe répond en français sous 24 heures ouvrées.",
+      image: `/images/op-newbi.png`,
+      type: "website",
+      locale: "fr_FR",
+    },
+  },
+
   faq: {
     title: "FAQ - Questions Fréquentes sur Newbi",
     description:
@@ -1075,7 +1115,10 @@ export function generateNextMetadata(pageKey) {
   const seoConfig = getSEOData(pageKey);
 
   return {
-    title: seoConfig.title,
+    // `absolute` : les titres de seoData contiennent déjà « Newbi ». Sans lui,
+    // le template "%s | Newbi" du layout racine ajoutait un second suffixe
+    // (« … | Newbi | Newbi »), tronqué par Google.
+    title: { absolute: seoConfig.title },
     description: seoConfig.description,
     keywords: seoConfig.keywords,
     authors: [{ name: seoConfig.author || defaultSEO.author }],

@@ -26,7 +26,11 @@ const poppins = Poppins({
 
 // Export des metadata pour le SEO
 export const metadata = {
-  title: "Logiciel de Gestion de Trésorerie | Suivi Cash Flow PME | newbi",
+  // `absolute` : le titre porte déjà la marque, sinon le layout racine
+  // ajoute un second « | Newbi ».
+  title: {
+    absolute: "Logiciel de gestion de trésorerie : suivi et prévisions | Newbi",
+  },
   description:
     "Pilotez votre trésorerie en temps réel avec newbi. Synchronisation bancaire automatique, prévisions de cash flow, alertes personnalisées. Le logiciel de gestion de trésorerie pour PME et entrepreneurs.",
   keywords:
