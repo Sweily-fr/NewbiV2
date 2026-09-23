@@ -83,7 +83,16 @@ export const seoData = {
         contactType: "customer service",
         availableLanguage: ["French", "fr"],
       },
-      sameAs: ["https://www.instagram.com/newbi_fr?igsh=dnVwZ3NndTU3bWw5"],
+      sameAs: [
+      // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
+      // Google la reconnaît (panneau de marque). Repris du footer, seule source
+      // de vérité des liens sociaux.
+      "https://www.instagram.com/newbi_fr",
+      "https://fr.linkedin.com/company/newbi-france",
+      "https://www.tiktok.com/@newbi.fr",
+      "https://www.youtube.com/@Newbi_fr",
+      "https://fr.trustpilot.com/review/newbi.fr",
+    ],
       offers: {
         "@type": "Offer",
         description: "Essai gratuit de 30 jours",
@@ -713,7 +722,16 @@ export const homeJsonLd = [
       contactType: "customer service",
       availableLanguage: ["French"],
     },
-    sameAs: ["https://www.instagram.com/newbi_fr"],
+    sameAs: [
+      // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
+      // Google la reconnaît (panneau de marque). Repris du footer, seule source
+      // de vérité des liens sociaux.
+      "https://www.instagram.com/newbi_fr",
+      "https://fr.linkedin.com/company/newbi-france",
+      "https://www.tiktok.com/@newbi.fr",
+      "https://www.youtube.com/@Newbi_fr",
+      "https://fr.trustpilot.com/review/newbi.fr",
+    ],
   },
   {
     "@context": "https://schema.org",
