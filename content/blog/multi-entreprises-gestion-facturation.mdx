@@ -1,8 +1,7 @@
 ---
-title: Gérer plusieurs entreprises avec un seul logiciel de facturation
+title: "Facturation multi-entreprises : un logiciel pour plusieurs sociétés"
 description: >-
-  Comment gérer la facturation de plusieurs entreprises depuis un seul outil :
-  multi-comptes, séparation comptable et gain de temps avec Newbi.
+  Gérez la facturation de plusieurs sociétés depuis un seul logiciel : espaces séparés, numérotation propre, utilisateurs et activités multiples.
 date: '2026-02-10'
 category: guide
 sector: null
@@ -11,6 +10,7 @@ author: Newbi
 image: /blog/multi-entreprises-gestion-facturation/hero.webp
 published: true
 publishDate: '2026-07-06'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -27,9 +27,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">7 min de lecture</Badge>
 </div>
 
-# Gérer plusieurs entreprises avec un seul logiciel de facturation
+# Facturation multi-entreprises : un logiciel pour plusieurs sociétés
 
-La **multi-entreprises gestion facturation** est un enjeu majeur pour les entrepreneurs qui cumulent plusieurs structures juridiques. Qu'il s'agisse d'une holding et de ses filiales, d'une SCI couplée à une activité de consulting, ou tout simplement de plusieurs micro-entreprises, jongler entre différents outils de facturation devient vite un cauchemar administratif. Pourtant, il existe des solutions modernes qui permettent de centraliser la gestion de toutes vos entités depuis une seule interface, sans jamais mélanger les données comptables. Découvrez comment simplifier votre quotidien et gagner un temps précieux.
+Chaque société doit avoir sa propre numérotation de factures, ses mentions légales et sa comptabilité, mais rien n'oblige à utiliser un logiciel différent par entité : la facturation multi-entreprises consiste justement à gérer plusieurs sociétés depuis un seul outil, avec des données cloisonnées. Un compte unique, un espace par structure, et un basculement en un clic.
+
+Cet article passe en revue les profils concernés (holding, SCI, cumul de micro-entreprises), les obligations à respecter pour chaque entité, la différence entre multi-sociétés, multi-utilisateurs et multi-activités, et la mise en place concrète dans Newbi.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <div className="not-prose my-8">
@@ -285,9 +287,49 @@ Centraliser la facturation de plusieurs entreprises dans un seul outil ne se ré
 
 **Coût maîtrisé.** Au lieu de payer un abonnement complet pour chaque entreprise sur des outils différents, Newbi propose des formules multi-entreprises qui permettent de réduire significativement le budget logiciel.
 
+## Multi-utilisateurs et multi-activités : ne pas confondre
+
+Trois situations sont souvent regroupées sous le même mot « multi », alors qu'elles n'appellent pas la même organisation.
+
+- **Plusieurs sociétés** : chaque entité a son SIRET, sa numérotation et son régime de TVA. Il faut un espace séparé par société, sans aucun partage de données.
+- **Plusieurs utilisateurs sur une même société** : un dirigeant, une assistante et un comptable interviennent sur les mêmes devis et factures. Ce sont des rôles et des droits d'accès à l'intérieur d'un seul espace, pas des espaces différents.
+- **Plusieurs activités dans une même société** : du conseil et de la formation, ou de la vente et du service, sous un seul SIRET. La numérotation des factures reste unique et la comptabilité aussi ; la distinction se fait par le catalogue de produits et de services, pas par un second outil.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Multi-sociétés, multi-utilisateurs, multi-activités : ce qu'il faut et ce que Newbi propose</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[220px]">Situation</TableHead>
+        <TableHead>Ce qu'il faut</TableHead>
+        <TableHead>Dans Newbi</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Plusieurs sociétés</TableCell>
+        <TableCell>Un espace par entité, données et numérotation cloisonnées</TableCell>
+        <TableCell>Espaces de travail séparés, basculement en un clic</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Plusieurs utilisateurs</TableCell>
+        <TableCell>Des rôles et des permissions par personne</TableCell>
+        <TableCell>Invitation de collaborateurs sur chaque espace, permissions gérées espace par espace</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Plusieurs activités</TableCell>
+        <TableCell>Une seule numérotation, un catalogue organisé par activité</TableCell>
+        <TableCell>Base de produits et de services propre à chaque espace</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le bon réflexe : ne créez un nouvel espace que pour une nouvelle entité juridique. Pour tout le reste (collaborateurs, activités, canaux de vente), restez dans le même espace et organisez vos accès et votre catalogue.
+
 ## En résumé
 
-La **multi-entreprises gestion facturation** est un besoin réel pour un nombre croissant d'entrepreneurs en France. Que vous gériez une holding, une SCI en parallèle de votre activité principale, ou simplement plusieurs projets entrepreneuriaux, il est essentiel de disposer d'un outil qui garantit la séparation légale des données tout en offrant une expérience unifiée et fluide. Newbi a été conçu pour répondre exactement à ce besoin : des espaces de travail indépendants, un basculement instantané, un tableau de bord global et une conformité légale assurée pour chaque entité. Fini les tableurs croisés et les connexions multiples, place à une gestion sereine et professionnelle de toutes vos entreprises.
+La facturation multi-entreprises est un besoin réel pour un nombre croissant d'entrepreneurs en France. Que vous gériez une holding, une SCI en parallèle de votre activité principale, ou simplement plusieurs projets entrepreneuriaux, il est essentiel de disposer d'un outil qui garantit la séparation légale des données tout en offrant une expérience unifiée et fluide. Newbi a été conçu pour répondre exactement à ce besoin : des espaces de travail indépendants, un basculement instantané, un tableau de bord global et une conformité légale assurée pour chaque entité. Fini les tableurs croisés et les connexions multiples, place à une gestion sereine et professionnelle de toutes vos entreprises.
 
 <div className="not-prose my-8">
   <Button asChild size="lg">
@@ -323,14 +365,26 @@ La **multi-entreprises gestion facturation** est un besoin réel pour un nombre 
         Oui. Chaque espace de travail dispose de ses propres paramètres de personnalisation : logo, couleurs, mentions légales, conditions générales de vente, coordonnées bancaires et modèles de documents. Vos factures reflètent fidèlement l'identité de chaque entreprise, tout en étant gérées depuis la même interface.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Un logiciel de facturation multi-utilisateur, c'est quoi exactement ?</AccordionTrigger>
+      <AccordionContent>
+        C'est un logiciel où plusieurs personnes travaillent sur la facturation d'une même entreprise, chacune avec son propre accès et ses droits : le dirigeant crée et valide, une assistante prépare les devis, le comptable consulte et exporte. Cela n'a rien à voir avec la gestion de plusieurs sociétés. Dans Newbi, vous invitez des collaborateurs sur chaque espace de travail et définissez leurs permissions espace par espace, ce qui couvre les deux besoins avec un seul compte.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-6">
+      <AccordionTrigger>Peut-on gérer plusieurs activités dans une seule entreprise avec le même outil ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Tant que vos activités relèvent du même SIRET, elles partagent une seule numérotation de factures, un seul régime de TVA et une seule comptabilité : il n'y a aucune raison de créer plusieurs espaces. Organisez plutôt votre catalogue de produits et de services par activité (conseil, formation, vente) pour retrouver rapidement vos prestations et suivre ce que rapporte chacune. Un espace distinct ne se justifie que pour une entité juridique distincte.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
 <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "Gérer plusieurs entreprises avec un seul logiciel de facturation",
-  "description": "Comment gérer la facturation de plusieurs entreprises depuis un seul outil : multi-comptes, séparation comptable et gain de temps avec Newbi.",
+  "headline": "Facturation multi-entreprises : un logiciel pour plusieurs sociétés",
+  "description": "Gérez la facturation de plusieurs sociétés depuis un seul logiciel : espaces séparés, numérotation propre, utilisateurs et activités multiples.",
   "author": {
     "@type": "Organization",
     "name": "Newbi",
@@ -345,7 +399,7 @@ La **multi-entreprises gestion facturation** est un besoin réel pour un nombre 
     }
   },
   "datePublished": "2026-02-10",
-  "dateModified": "2026-02-10",
+  "dateModified": "2026-09-23",
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": "https://newbi.fr/blog/multi-entreprises-gestion-facturation"
@@ -386,6 +440,22 @@ La **multi-entreprises gestion facturation** est un besoin réel pour un nombre 
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Oui. Chaque espace de travail dispose de ses propres paramètres de personnalisation : logo, couleurs, mentions légales, conditions générales de vente, coordonnées bancaires et modèles de documents."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Un logiciel de facturation multi-utilisateur, c'est quoi exactement ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "C'est un logiciel où plusieurs personnes travaillent sur la facturation d'une même entreprise, chacune avec son propre accès et ses droits. Cela n'a rien à voir avec la gestion de plusieurs sociétés. Dans Newbi, vous invitez des collaborateurs sur chaque espace de travail et définissez leurs permissions espace par espace."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Peut-on gérer plusieurs activités dans une seule entreprise avec le même outil ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui. Tant que vos activités relèvent du même SIRET, elles partagent une seule numérotation de factures, un seul régime de TVA et une seule comptabilité. Organisez votre catalogue de produits et de services par activité plutôt que de créer plusieurs espaces : un espace distinct ne se justifie que pour une entité juridique distincte."
         }
       }
     ]

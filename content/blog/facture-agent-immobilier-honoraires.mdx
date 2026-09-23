@@ -1,8 +1,8 @@
 ---
-title: Comment facturer ses honoraires en tant qu'agent immobilier
+title: "Facture d'agent immobilier : modèle, honoraires, TVA et mentions"
 description: >-
-  Guide de facturation pour agents immobiliers : honoraires d'agence, TVA
-  immobilière, mentions Alur et modèle de facture d'honoraires.
+  Modèle de facture d'agent immobilier rempli, honoraires de vente et de location,
+  TVA à 20 %, mentions loi Alur et cas de l'agent commercial indépendant.
 date: '2026-02-10'
 category: guide
 sector: Agents immobiliers
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/facture-agent-immobilier-honoraires/hero.webp
 published: true
 publishDate: '2026-06-08'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,11 +29,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-# Comment facturer ses honoraires en tant qu'agent immobilier
+# Facture d'agent immobilier : modèle, honoraires, TVA et mentions
 
-La **facture honoraires agent immobilier** est un document essentiel qui encadre la relation commerciale entre le professionnel de l'immobilier et ses clients. Que vous soyez agent immobilier indépendant, gérant d'agence ou mandataire, savoir établir une facture conforme est indispensable pour exercer en toute légalité. Entre la loi Alur, la TVA sur les honoraires et les mentions obligatoires spécifiques au secteur, les règles de facturation dans l'immobilier comportent de nombreuses particularités qu'il faut maîtriser.
+Une facture d'agent immobilier est une facture classique à laquelle s'ajoutent trois éléments : le numéro de carte professionnelle (ou d'attestation d'habilitation pour un agent commercial), la référence du mandat et la TVA à 20 % sur les honoraires. Sans mandat écrit et signé, aucun honoraire ne peut être réclamé.
 
-Ce guide complet vous explique comment facturer vos honoraires immobiliers, quelles mentions inclure et comment vous conformer à la réglementation en vigueur.
+Vous trouverez ici les règles par type de prestation (vente, location plafonnée par la loi Alur, gestion locative), un modèle de facture d'honoraires rempli sur une vente à 250 000 €, la liste des mentions obligatoires et le cas de l'agent commercial indépendant, qui facture l'agence et non le client.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
@@ -303,6 +304,57 @@ N'oubliez pas non plus de bien gérer vos [délais de paiement](/blog/quest-ce-q
   </div>
 </div>
 
+## Modèle de facture d'agent immobilier (exemple rempli)
+
+Prenons la vente d'un appartement à 250 000 € avec des honoraires de 4 % TTC à la charge de l'acquéreur, comme le prévoit le mandat. Les honoraires s'élèvent à 10 000 € TTC, soit 8 333,33 € HT et 1 666,67 € de TVA. La facture est émise après la signature de l'acte authentique.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de facture d'honoraires pour une vente à 250 000 € (honoraires 4 % TTC)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Désignation</TableHead>
+        <TableHead className="text-right">Montant</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Honoraires de négociation et d'entremise, vente d'un appartement 3 pièces, 12 rue des Lilas, 69003 Lyon, mandat de vente n° 2026-041 du 15/03/2026, base : 250 000 € x 4 % TTC</TableCell>
+        <TableCell className="text-right">8 333,33 € HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>TVA 20 %</TableCell>
+        <TableCell className="text-right">1 666,67 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Total TTC à régler par l'acquéreur</TableCell>
+        <TableCell className="text-right font-medium">10 000,00 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Autour de ce tableau, la facture doit faire figurer :
+
+- **En-tête** : raison sociale et forme juridique de l'agence, SIREN, adresse du siège, numéro de TVA intracommunautaire, numéro de carte professionnelle « Transaction » délivrée par la CCI, garantie financière (organisme et montant) et assureur responsabilité civile professionnelle
+- **Client facturé** : nom, prénom et adresse de l'acquéreur (ou du vendeur si le mandat met les honoraires à sa charge)
+- **Numéro de facture** unique et chronologique, date d'émission, date d'échéance
+- **Référence du mandat** (numéro et date) et **désignation du bien** (adresse, nature)
+- **Mention de la charge des honoraires** telle qu'indiquée dans l'annonce et le mandat
+- **Conditions de paiement**, pénalités de retard et indemnité forfaitaire de recouvrement de 40 €
+
+Si l'agent est en franchise en base de TVA, la ligne TVA disparaît et la mention « TVA non applicable, article 293 B du CGI » remplace le taux.
+
+## Agent commercial immobilier indépendant : qui facture qui ?
+
+L'agent commercial immobilier, souvent appelé mandataire ou négociateur indépendant, n'est pas titulaire de la carte professionnelle. Il exerce sous une **attestation d'habilitation** (attestation de collaborateur) délivrée par la CCI à la demande du titulaire de la carte T, est inscrit au registre spécial des agents commerciaux (RSAC) et relève très souvent du régime de la micro-entreprise. Cette situation change qui facture qui, en trois points.
+
+1. **Il ne facture jamais le client final.** Le vendeur ou l'acquéreur est facturé par l'agence ou le réseau qui détient la carte T, seul habilité à percevoir les honoraires. L'agent commercial ne doit encaisser aucune somme pour le compte d'un client.
+2. **Il facture sa rétrocession d'honoraires à l'agence ou au réseau.** Une fois la vente signée et les honoraires encaissés par le titulaire de la carte, l'agent émet une facture de rétrocession selon le pourcentage prévu dans son contrat d'agent commercial. Sur les 8 333,33 € HT de l'exemple ci-dessus, une rétrocession de 70 % donne 5 833,33 € HT facturés au réseau, avec la référence de la vente, son numéro RSAC et son numéro d'attestation d'habilitation.
+3. **La TVA dépend de son régime.** En franchise en base, il facture 5 833,33 € sans TVA avec la mention « TVA non applicable, article 293 B du CGI » ; au-delà des seuils ou sur option, il ajoute la TVA à 20 %, que le réseau récupère.
+
+Le contrat d'agent commercial doit préciser le pourcentage de rétrocession, le fait générateur (encaissement des honoraires par le réseau) et le délai de paiement, qui sert de base à la facture.
+
 ## En résumé
 
 La facturation des honoraires en tant qu'agent immobilier répond à des règles strictes imposées par la loi Hoguet, la loi Alur et le Code de commerce. Chaque facture doit refléter les termes du mandat, mentionner le numéro de carte professionnelle CCI, respecter le plafonnement des honoraires de location et afficher clairement la TVA à 20 %. Que vous facturiez une vente, une location ou de la gestion locative, la conformité de vos factures est un gage de professionnalisme et de sécurité juridique.
@@ -349,6 +401,12 @@ En utilisant un outil de facturation adapté comme Newbi, vous vous assurez de n
         Oui, le numéro de carte professionnelle délivrée par la Chambre de Commerce et d'Industrie (CCI) doit figurer sur tous les documents commerciaux de l'agent immobilier, y compris les factures. Cette carte atteste que le professionnel remplit les conditions légales pour exercer l'activité d'agent immobilier (garantie financière, assurance RCP, aptitude professionnelle). Son absence sur une facture constitue un manquement réglementaire.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Comment facture un agent commercial immobilier indépendant ?</AccordionTrigger>
+      <AccordionContent>
+        L'agent commercial immobilier ne facture pas le client final : c'est l'agence ou le réseau titulaire de la carte T qui facture et encaisse les honoraires. L'agent émet ensuite une facture de rétrocession d'honoraires à ce réseau, au pourcentage prévu par son contrat d'agent commercial, en indiquant son numéro RSAC, son numéro d'attestation d'habilitation et la référence de la vente. En franchise en base de TVA, il ajoute la mention « TVA non applicable, article 293 B du CGI » ; sinon il applique la TVA à 20 %.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -357,8 +415,8 @@ En utilisant un outil de facturation adapté comme Newbi, vous vous assurez de n
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Comment facturer ses honoraires en tant qu'agent immobilier",
-      "description": "Guide de facturation pour agents immobiliers : honoraires d'agence, TVA immobilière, mentions Alur et modèle de facture d'honoraires.",
+      "headline": "Facture d'agent immobilier : modèle, honoraires, TVA et mentions",
+      "description": "Modèle de facture d'agent immobilier rempli, honoraires de vente et de location, TVA à 20 %, mentions loi Alur et cas de l'agent commercial indépendant.",
       "author": {
         "@type": "Organization",
         "name": "Newbi",
@@ -373,7 +431,7 @@ En utilisant un outil de facturation adapté comme Newbi, vous vous assurez de n
         }
       },
       "datePublished": "2026-02-10",
-      "dateModified": "2026-02-10",
+      "dateModified": "2026-09-23",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://newbi.co/blog/facture-agent-immobilier-honoraires"
@@ -428,6 +486,14 @@ En utilisant un outil de facturation adapté comme Newbi, vous vous assurez de n
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Oui, le numéro de carte professionnelle délivrée par la CCI doit figurer sur tous les documents commerciaux de l'agent immobilier, y compris les factures. Son absence constitue un manquement réglementaire."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment facture un agent commercial immobilier indépendant ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'agent commercial immobilier ne facture pas le client final : l'agence ou le réseau titulaire de la carte T facture et encaisse les honoraires. L'agent émet ensuite une facture de rétrocession d'honoraires au réseau, avec son numéro RSAC, son numéro d'attestation d'habilitation et la référence de la vente. En franchise en base, il ajoute la mention « TVA non applicable, article 293 B du CGI » ; sinon il applique la TVA à 20 %."
           }
         }
       ]

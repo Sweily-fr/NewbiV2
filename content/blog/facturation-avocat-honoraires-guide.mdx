@@ -1,8 +1,8 @@
 ---
-title: 'Facturation des honoraires d''avocat : obligations et modèles'
+title: "Facture d'avocat : modèle d'honoraires, convention, TVA et mentions"
 description: >-
-  Guide complet de facturation pour avocats : convention d'honoraires, TVA,
-  mentions obligatoires et modèle de facture d'honoraires conforme.
+  Modèle de facture d'avocat chiffré, convention d'honoraires obligatoire,
+  TVA à 20 %, débours et mentions du barreau pour facturer vos honoraires.
 date: '2026-02-10'
 category: guide
 sector: Avocats / Juristes
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/facturation-avocat-honoraires-guide/hero.webp
 published: true
 publishDate: '2026-05-25'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,9 +29,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">9 min de lecture</Badge>
 </div>
 
-# Facturation des honoraires d'avocat : obligations et modèles
+# Facture d'avocat : modèle d'honoraires, convention, TVA et mentions
 
-La **facturation honoraires avocat** est un exercice encadré par des règles strictes, bien différentes de celles qui s'appliquent aux autres professions libérales. Entre la convention d'honoraires obligatoire, les mentions spécifiques liées au barreau et les particularités de la TVA, un avocat doit maîtriser un cadre réglementaire dense pour émettre des factures conformes. Ce guide complet vous accompagne pas à pas dans la facturation de vos honoraires, que vous exerciez en cabinet ou en individuel.
+La facture d'un avocat doit s'appuyer sur une convention d'honoraires écrite, obligatoire depuis la loi Macron de 2015, porter la TVA à 20 % et distinguer clairement honoraires, débours et frais. Le détail des diligences (nature, durée, date) est ce qui évite une contestation devant le Bâtonnier.
+
+Vous trouverez ici les modes de facturation (temps passé, forfait, résultat, abonnement), les règles de TVA, les mentions propres au barreau, la gestion des provisions et de l'aide juridictionnelle, ainsi qu'un modèle de facture d'honoraires chiffré à reprendre tel quel, que vous exerciez en cabinet ou en individuel.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
@@ -254,6 +257,82 @@ Pour en savoir plus sur l'organisation globale de la facturation en cabinet, con
 - **Émettre des factures sans numérotation chronologique** : les factures doivent suivre une séquence ininterrompue
 - **Ignorer les mentions obligatoires** : l'absence du numéro de TVA ou du numéro de barreau peut invalider la facture
 
+## Modèle de facture d'honoraires d'avocat (exemple)
+
+Voici une facture de fin de mission pour un dossier de rupture conventionnelle contestée, avec des honoraires au temps passé, un forfait de rédaction, un débours hors TVA et une provision déjà versée par le client.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de facture d'honoraires d'avocat, dossier n° 2026-118</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Désignation</TableHead>
+        <TableHead className="text-right">Quantité</TableHead>
+        <TableHead className="text-right">Prix unitaire HT</TableHead>
+        <TableHead className="text-right">Montant</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Honoraires au temps passé (rendez-vous, audience devant le conseil de prud'hommes, correspondances), détail des diligences en annexe</TableCell>
+        <TableCell className="text-right">6 h</TableCell>
+        <TableCell className="text-right">250,00 €</TableCell>
+        <TableCell className="text-right">1 500,00 € HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Forfait rédaction d'un protocole transactionnel</TableCell>
+        <TableCell className="text-right">1</TableCell>
+        <TableCell className="text-right">800,00 €</TableCell>
+        <TableCell className="text-right">800,00 € HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Total honoraires HT</TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell className="text-right font-medium">2 300,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>TVA 20 %</TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell className="text-right">460,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Débours : droit de plaidoirie, non soumis à TVA</TableCell>
+        <TableCell className="text-right">1</TableCell>
+        <TableCell className="text-right">13,00 €</TableCell>
+        <TableCell className="text-right">13,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Total TTC</TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell className="text-right font-medium">2 773,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Provision versée le 02/09/2026 (reçu n° P-2026-057)</TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell className="text-right">- 1 000,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Net à payer</TableCell>
+        <TableCell></TableCell>
+        <TableCell></TableCell>
+        <TableCell className="text-right font-semibold">1 773,00 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le débours est facturé à l'euro près, hors de la base de TVA, parce qu'il a été avancé pour le compte du client ; un frais du cabinet refacturé (déplacement, copies) serait au contraire soumis à la TVA. En plus des mentions communes à toute facture, cette facture d'honoraires doit indiquer :
+
+- Le nom de l'avocat, le **barreau d'inscription** (par exemple « Avocat au Barreau de Lyon ») et le numéro de toque
+- Le **numéro et la date de la convention d'honoraires** sur laquelle la facture s'appuie
+- La **référence du dossier** et l'identité du client
+- La mention « **débours** » sur chaque somme avancée, séparée des honoraires et des frais
+- Le détail des diligences (annexe ou lignes de facture) et les provisions déjà perçues, avec leur date
+
 ## En résumé
 
 La **facturation honoraires avocat** répond à un cadre juridique précis qui combine le droit commun de la facturation et les règles déontologiques propres à la profession. La convention d'honoraires constitue la pierre angulaire de toute facturation, tandis que le détail des diligences, les mentions spécifiques (barreau, toque, CARPA) et la bonne application de la TVA à 20 % sont autant d'éléments qui garantissent la conformité de vos factures.
@@ -300,6 +379,12 @@ Un logiciel de facturation adapté vous permet de générer des factures conform
         En cas d'aide juridictionnelle totale, l'avocat perçoit une indemnité de l'État selon un barème fixe et ne peut pas facturer d'honoraires complémentaires au client (sauf autorisation du Bâtonnier). En cas d'aide juridictionnelle partielle, un complément d'honoraires peut être facturé au client, conformément à la convention d'honoraires signée.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Existe-t-il un modèle de facture d'avocat gratuit ?</AccordionTrigger>
+      <AccordionContent>
+        Oui : l'exemple chiffré présenté dans cet article (honoraires au temps passé, forfait, débours hors TVA, provision déduite) peut être repris tel quel dans un tableur, en y ajoutant vos mentions de barreau et la référence de votre convention d'honoraires. Un logiciel de facturation comme <a href="/produits/factures">Newbi</a> va plus loin : il génère une facture conforme avec numérotation chronologique, suivi du temps par dossier, gestion des provisions et relances automatiques, avec un essai gratuit de 30 jours sans carte bancaire.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -309,8 +394,8 @@ Un logiciel de facturation adapté vous permet de générer des factures conform
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Facturation des honoraires d'avocat : obligations et modeles",
-      "description": "Guide complet de facturation pour avocats : convention d'honoraires, TVA, mentions obligatoires et modele de facture d'honoraires conforme.",
+      "headline": "Facture d'avocat : modèle d'honoraires, convention, TVA et mentions",
+      "description": "Modèle de facture d'avocat chiffré, convention d'honoraires obligatoire, TVA à 20 %, débours et mentions du barreau pour facturer vos honoraires.",
       "author": {
         "@type": "Organization",
         "name": "Newbi"
@@ -324,7 +409,7 @@ Un logiciel de facturation adapté vous permet de générer des factures conform
         }
       },
       "datePublished": "2026-02-10",
-      "dateModified": "2026-02-10",
+      "dateModified": "2026-09-23",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://newbi.fr/blog/facturation-avocat-honoraires-guide"
@@ -379,6 +464,14 @@ Un logiciel de facturation adapté vous permet de générer des factures conform
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "En cas d'aide juridictionnelle totale, l'avocat perçoit une indemnité de l'État et ne peut pas facturer d'honoraires complémentaires au client sauf autorisation du Bâtonnier. En cas d'aide partielle, un complément peut être facturé."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Existe-t-il un modèle de facture d'avocat gratuit ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui : l'exemple chiffré de cet article (honoraires au temps passé, forfait, débours hors TVA, provision déduite) peut être repris dans un tableur avec vos mentions de barreau et la référence de votre convention d'honoraires. Un logiciel comme Newbi génère la facture conforme avec suivi du temps par dossier, gestion des provisions et relances, avec un essai gratuit de 30 jours."
           }
         }
       ]

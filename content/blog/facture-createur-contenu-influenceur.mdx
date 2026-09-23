@@ -1,8 +1,7 @@
 ---
-title: Comment facturer en tant que créateur de contenu ou influenceur
+title: "Facture d'influenceur ou créateur de contenu : modèle, statut, TVA"
 description: >-
-  Guide de facturation pour créateurs de contenu : partenariats, affiliation,
-  droits à l'image, TVA et statut juridique. Modèle de facture inclus.
+  Facturez vos partenariats d'influenceur : SIRET, contrat obligatoire, BNC ou BIC, TVA ou franchise en base, avec un modèle par type de revenu.
 date: '2026-02-10'
 category: guide
 sector: Photographes / Créatifs
@@ -11,6 +10,7 @@ author: Newbi
 image: /blog/facture-createur-contenu-influenceur/hero.webp
 published: true
 publishDate: '2026-08-03'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,11 +28,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">9 min de lecture</Badge>
 </div>
 
-# Comment facturer en tant que créateur de contenu ou influenceur
+# Facture d'influenceur ou créateur de contenu : modèle, statut, TVA
 
-Vous venez de décrocher votre premier partenariat avec une marque, ou vos revenus d'affiliation commencent à décoller ? Félicitations. Mais avant d'encaisser, encore faut-il savoir **facturer créateur contenu** correctement. Entre la loi influenceurs de 2023, les obligations de transparence, la TVA et les multiples sources de revenus, la facturation des créateurs de contenu et influenceurs est un véritable casse-tête administratif.
+Un influenceur facture ses partenariats comme n'importe quel prestataire, avec un SIRET, la TVA (ou la franchise en base) et, depuis la loi du 9 juin 2023, un contrat écrit obligatoire au-delà d'un certain montant. La facture d'un créateur de contenu doit en plus préciser la nature de la collaboration commerciale et, le cas échéant, les droits d'utilisation cédés à la marque.
 
-Ce guide complet vous accompagne pas à pas pour facturer vos partenariats, vos contenus UGC, vos revenus d'affiliation et vos droits à l'image, en toute conformité avec la réglementation française.
+Cet article passe en revue les obligations de la loi influenceurs, la facturation de chaque type de revenu (partenariat, affiliation, UGC, droits à l'image, ventes), le choix entre BNC et BIC, le statut juridique, la TVA et les clients étrangers.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
@@ -76,7 +76,7 @@ Les principales obligations incluent :
 
 ## Les différents types de revenus des créateurs de contenu
 
-Les sources de revenus d'un créateur de contenu sont multiples et chacune implique des règles de facturation spécifiques. Comprendre ces distinctions est essentiel pour **facturer créateur contenu influenceur** dans les règles.
+Les sources de revenus d'un créateur de contenu sont multiples et chacune implique des règles de facturation spécifiques. Comprendre ces distinctions est essentiel pour facturer dans les règles en tant que créateur de contenu ou influenceur.
 
 ### 1. Partenariats avec des marques
 
@@ -115,7 +115,7 @@ Beaucoup de créateurs développent leurs propres produits : formations en ligne
       <TableRow>
         <TableCell className="font-medium">Partenariat marque</TableCell>
         <TableCell>Facture de prestation de service détaillant le contenu créé, les plateformes et la durée</TableCell>
-        <TableCell>Franchise en base si CA &lt; 36 800 euros ; sinon TVA 20 %</TableCell>
+        <TableCell>Franchise en base si CA &lt; 37 500 euros ; sinon TVA 20 %</TableCell>
         <TableCell>Mention "Collaboration commerciale" + nature du partenariat</TableCell>
       </TableRow>
       <TableRow>
@@ -167,8 +167,8 @@ Pour une analyse détaillée de la TVA selon votre statut, consultez notre guide
 ## TVA : franchise en base ou collecte ?
 
 En micro-entreprise, vous bénéficiez de la **franchise en base de TVA** si votre chiffre d'affaires ne dépasse pas :
-- **36 800 euros** pour les prestations de service
-- **91 900 euros** pour les activités de vente
+- **37 500 euros** pour les prestations de service
+- **85 000 euros** pour les activités de vente
 
 Tant que vous restez sous ces seuils, vous ne facturez pas de TVA et devez indiquer sur vos factures : *"TVA non applicable, article 293 B du Code général des impôts"*.
 
@@ -273,9 +273,57 @@ La facturation aux marques et agences répond à des standards professionnels pr
 4. **Incluez vos coordonnées bancaires** (IBAN/BIC) pour faciliter le virement.
 5. **Envoyez la facture en PDF** via l'adresse email comptabilité dédiée de l'agence, pas au contact marketing.
 
+## Influenceur : BNC ou BIC ?
+
+La question revient sans cesse, parce que la réponse dépend de la nature de chaque revenu et non du métier en lui-même. Les prestations intellectuelles (création de contenu, partenariats rémunérés, UGC) relèvent en principe des bénéfices non commerciaux (BNC) : vous vendez un travail de création et votre image. L'achat-revente de produits (merchandising, boutique en ligne) et, plus largement, une activité commerciale relèvent des bénéfices industriels et commerciaux (BIC). L'affiliation, qui rémunère une mise en relation à la commission, est le plus souvent rattachée aux BNC.
+
+En micro-entreprise, ce classement détermine l'abattement forfaitaire appliqué à votre chiffre d'affaires pour calculer l'impôt sur le revenu, ainsi que le plafond de chiffre d'affaires du régime.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Régime fiscal, abattement et plafond micro-entreprise selon le type de revenu</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[260px]">Type de revenu</TableHead>
+        <TableHead>Régime</TableHead>
+        <TableHead>Abattement micro</TableHead>
+        <TableHead>Plafond de CA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Partenariats, UGC, création de contenu</TableCell>
+        <TableCell>BNC</TableCell>
+        <TableCell>34 %</TableCell>
+        <TableCell>77 700 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Affiliation (commissions)</TableCell>
+        <TableCell>BNC le plus souvent</TableCell>
+        <TableCell>34 %</TableCell>
+        <TableCell>77 700 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prestations de services commerciales</TableCell>
+        <TableCell>BIC</TableCell>
+        <TableCell>50 %</TableCell>
+        <TableCell>77 700 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Achat-revente de produits, merchandising</TableCell>
+        <TableCell>BIC</TableCell>
+        <TableCell>71 %</TableCell>
+        <TableCell>188 700 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Si vous cumulez plusieurs natures de revenus (partenariats et merchandising, par exemple), vous êtes en activité mixte : chaque part est déclarée dans sa catégorie, avec un plafond global de 188 700 € dont 77 700 € au maximum pour les prestations. Le classement se joue à l'immatriculation, dans la description de votre activité, et il conditionne aussi vos cotisations sociales. Selon votre mix de revenus, vérifiez votre situation avec l'URSSAF ou un expert-comptable avant de choisir.
+
 ## En résumé
 
-**Facturer créateur contenu** correctement n'est pas qu'une formalité administrative : c'est une obligation légale renforcée par la loi influenceurs de 2023. Que vous soyez micro-entrepreneur ou en société, chaque type de revenu (partenariat, affiliation, UGC, droits à l'image, vente) nécessite une facturation adaptée avec des mentions spécifiques.
+Facturer correctement en tant que créateur de contenu n'est pas qu'une formalité administrative : c'est une obligation légale renforcée par la loi influenceurs de 2023. Que vous soyez micro-entrepreneur ou en société, chaque type de revenu (partenariat, affiliation, UGC, droits à l'image, vente) nécessite une facturation adaptée avec des mentions spécifiques.
 
 Les points essentiels à retenir :
 - Choisissez le statut juridique adapté à votre volume d'activité
@@ -313,7 +361,7 @@ Avec Newbi, vous pouvez générer des factures conformes en quelques clics, gér
     <AccordionItem value="item-3">
       <AccordionTrigger>Dois-je facturer la TVA sur mes revenus d'affiliation ?</AccordionTrigger>
       <AccordionContent>
-        Cela dépend de votre statut et de votre chiffre d'affaires. En micro-entreprise, si votre CA annuel en prestations de service reste inférieur à 36 800 euros, vous bénéficiez de la franchise en base de TVA et n'avez pas à la facturer. Au-delà de ce seuil, ou si vous êtes en société, vous devez appliquer la TVA à 20 % sur vos commissions d'affiliation.
+        Cela dépend de votre statut et de votre chiffre d'affaires. En micro-entreprise, si votre CA annuel en prestations de service reste inférieur à 37 500 euros, vous bénéficiez de la franchise en base de TVA et n'avez pas à la facturer. Au-delà de ce seuil, ou si vous êtes en société, vous devez appliquer la TVA à 20 % sur vos commissions d'affiliation.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="item-4">
@@ -328,6 +376,12 @@ Avec Newbi, vous pouvez générer des factures conformes en quelques clics, gér
         La loi du 9 juin 2023 prévoit des sanctions sévères : jusqu'à 2 ans d'emprisonnement et 300 000 euros d'amende pour le non-respect des obligations de transparence. Les marques et agences partagent la responsabilité avec l'influenceur. Au-delà des sanctions pénales, la DGCCRF peut également prononcer des amendes administratives. Il est donc crucial de mentionner le caractère commercial de vos partenariats sur vos contenus et de tenir une facturation rigoureuse.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Influenceur : faut-il déclarer en BNC ou en BIC ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de ce que vous facturez. Les partenariats, la création de contenu et l'UGC sont des prestations intellectuelles, en principe imposées en BNC (abattement micro de 34 %, plafond de 77 700 €). L'achat-revente de produits ou de merchandising relève des BIC (abattement de 71 %, plafond de 188 700 €). L'affiliation est le plus souvent classée en BNC. Si vous mélangez les deux, chaque part est déclarée dans sa catégorie : faites valider le classement par l'URSSAF ou un expert-comptable.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -337,8 +391,8 @@ Avec Newbi, vous pouvez générer des factures conformes en quelques clics, gér
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Comment facturer en tant que créateur de contenu ou influenceur",
-      "description": "Guide de facturation pour créateurs de contenu : partenariats, affiliation, droits à l'image, TVA et statut juridique. Modèle de facture inclus.",
+      "headline": "Facture d'influenceur ou créateur de contenu : modèle, statut, TVA",
+      "description": "Facturez vos partenariats d'influenceur : SIRET, contrat obligatoire, BNC ou BIC, TVA ou franchise en base, avec un modèle par type de revenu.",
       "author": {
         "@type": "Organization",
         "name": "Newbi"
@@ -352,13 +406,13 @@ Avec Newbi, vous pouvez générer des factures conformes en quelques clics, gér
         }
       },
       "datePublished": "2026-02-10",
-      "dateModified": "2026-02-10",
+      "dateModified": "2026-09-23",
       "image": "https://newbi.fr/blog/facture-createur-contenu-influenceur/hero.webp",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://newbi.fr/blog/facture-createur-contenu-influenceur"
       },
-      "keywords": "facturer créateur contenu influenceur, facture influenceur, facturation créateur de contenu, loi influenceurs 2023",
+      "keywords": "facture influenceur, facturer créateur de contenu, influenceur BNC ou BIC, loi influenceurs 2023",
       "articleSection": "Guide"
     })
   }}
@@ -392,7 +446,7 @@ Avec Newbi, vous pouvez générer des factures conformes en quelques clics, gér
           "name": "Dois-je facturer la TVA sur mes revenus d'affiliation ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "En micro-entreprise, si votre CA annuel en prestations de service reste inférieur à 36 800 euros, vous bénéficiez de la franchise en base de TVA. Au-delà de ce seuil, vous devez appliquer la TVA à 20 % sur vos commissions d'affiliation."
+            "text": "En micro-entreprise, si votre CA annuel en prestations de service reste inférieur à 37 500 euros, vous bénéficiez de la franchise en base de TVA. Au-delà de ce seuil, vous devez appliquer la TVA à 20 % sur vos commissions d'affiliation."
           }
         },
         {
@@ -409,6 +463,14 @@ Avec Newbi, vous pouvez générer des factures conformes en quelques clics, gér
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "La loi prévoit jusqu'à 2 ans d'emprisonnement et 300 000 euros d'amende pour le non-respect des obligations de transparence. Les marques et agences partagent la responsabilité avec l'influenceur. La DGCCRF peut également prononcer des amendes administratives."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Influenceur : faut-il déclarer en BNC ou en BIC ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les partenariats, la création de contenu et l'UGC sont des prestations intellectuelles, en principe imposées en BNC (abattement micro de 34 %, plafond de 77 700 €). L'achat-revente de produits ou de merchandising relève des BIC (abattement de 71 %, plafond de 188 700 €). L'affiliation est le plus souvent classée en BNC. En cas de revenus mixtes, chaque part est déclarée dans sa catégorie."
           }
         }
       ]

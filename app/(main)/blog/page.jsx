@@ -1,5 +1,4 @@
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
-import Footer7 from "@/src/components/footer7";
 import { BlogHeroSlider } from "@/src/components/blog/blog-hero-slider";
 import { BlogRecentArticles } from "@/src/components/blog/blog-recent-articles";
 import { BlogHubNav } from "@/src/components/blog/blog-hub-nav";
@@ -31,7 +30,6 @@ export default function BlogPage() {
       {recentPosts.length > 0 && (
         <BlogRecentArticles posts={recentPosts} lastUpdate={lastUpdate} />
       )}
-      <Footer7 />
     </div>
   );
 }

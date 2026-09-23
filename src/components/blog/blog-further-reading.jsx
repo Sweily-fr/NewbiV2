@@ -2,7 +2,9 @@ import Link from "next/link";
 import { getAllPosts, categoryLabel } from "@/src/lib/blog";
 
 /**
- * Articles mis en avant sur chaque page produit (« Pour aller plus loin »).
+ * Articles mis en avant sur chaque page produit (« Pour aller plus loin »),
+ * 6 par produit depuis sept. 2026 : les 3 piliers du thème + les articles
+ * en position 10-30 dans la Search Console, à pousser vers la page 1.
  * Les pages produits sont les pages les plus fortes du site : ces liens
  * transmettent leur autorité aux articles piliers et inversement, le blog
  * ramène vers le produit via ses liens contextuels.
@@ -12,36 +14,57 @@ const FURTHER_READING = {
     "mentions-obligatoires-facture",
     "comment-creer-facture-auto-entrepreneur",
     "erreurs-facturation-independants",
+    "modele-facture-gratuit-word-excel-pdf",
+    "facturer-prestation-service-consultant",
+    "multi-entreprises-gestion-facturation",
   ],
   "facturation-electronique": [
     "facturation-electronique-obligatoire-2026",
     "quest-ce-que-pdp-plateforme-dematerialisation",
     "facturx-format-facture-electronique",
+    "facture-electronique-reception-1er-septembre-2026",
+    "facture-electronique-auto-entrepreneur-2027",
+    "nouvelles-mentions-obligatoires-facture-electronique",
   ],
   "gestion-des-achats": [
     "ocr-justificatifs-comptables",
     "gestion-notes-frais-deplacement",
     "comment-partager-documents-expert-comptable",
+    "top-outils-scan-tickets-caisse-notes-frais",
+    "quest-ce-que-tva-intracommunautaire",
+    "erreurs-declaration-tva-eviter",
   ],
   tresorerie: [
     "comment-gerer-tresorerie-entreprise",
     "connexion-bancaire-rapprochement-automatique",
     "conseils-reduire-delais-paiement",
+    "erreurs-gestion-tresorerie-eviter",
+    "gestion-tresorerie-commerce-detail",
+    "alternatives-excel-gestion-entreprise",
   ],
   kanban: [
     "gestion-projet-kanban-independant",
     "top-outils-gestion-projet-freelance",
     "gestion-administrative-office-manager-guide",
+    "meilleurs-logiciels-office-manager",
+    "crm-gestion-client-independant",
+    "comment-creer-catalogue-produits-services",
   ],
   signatures: [
     "signature-mail-professionnelle-guide",
     "conseils-ameliorer-signature-email",
     "crm-gestion-client-independant",
+    "relance-facture-impayee-modele",
+    "quest-ce-que-conditions-generales-vente",
+    "meilleures-pratiques-relance-client",
   ],
   transfers: [
     "transfert-fichiers-securise-professionnel",
     "comment-partager-documents-expert-comptable",
     "top-outils-scan-tickets-caisse-notes-frais",
+    "gestion-notes-frais-deplacement",
+    "facture-photographe-droits-auteur",
+    "facture-graphiste-designer-freelance",
   ],
 };
 

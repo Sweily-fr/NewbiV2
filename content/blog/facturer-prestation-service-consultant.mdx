@@ -1,8 +1,7 @@
 ---
-title: Comment facturer une prestation de service en tant que consultant
+title: "Facture de consultant : TJM, mentions, TVA et modèle de prestation"
 description: >-
-  Guide complet pour facturer vos prestations de conseil : calcul du TJM,
-  mentions obligatoires, TVA et modèle de facture de prestation.
+  Facturez vos prestations de conseil : calcul du TJM, mentions obligatoires, TVA et autoliquidation en UE, avec un modèle de facture chiffré.
 date: '2026-02-10'
 category: guide
 sector: Consultants / Freelances IT
@@ -11,6 +10,7 @@ author: Newbi
 image: /blog/facturer-prestation-service-consultant/hero.webp
 published: true
 publishDate: '2026-04-20'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,7 +28,9 @@ import { Check } from "lucide-react"
   <Badge variant="outline">9 min de lecture</Badge>
 </div>
 
-**Facturer une prestation de service** en tant que consultant soulève de nombreuses questions : comment calculer son TJM, quelles mentions spécifiques inclure, comment gérer la TVA sur les prestations de service, et comment structurer sa facture pour inspirer confiance au client. Ce guide complet répond à toutes ces questions pour vous permettre de facturer vos prestations de conseil de manière professionnelle et conforme.
+La facture d'un consultant indique le nombre de jours ou d'heures, le TJM ou le taux horaire, les frais refacturés à part, et la TVA à 20 % (ou la mention de franchise en base en micro-entreprise). Pour un client professionnel établi dans un autre pays de l'Union européenne, elle est émise hors taxes avec la mention d'autoliquidation.
+
+Vous trouverez ici comment fixer votre tarif, les mentions propres à une prestation de conseil, les règles de TVA en France et dans l'UE, un modèle de facture chiffré avec acompte et frais, et les bonnes pratiques pour être payé sans retard.
 
 <div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
   <Image
@@ -167,7 +169,7 @@ Pour les prestations de service, la TVA est exigible :
 
 Si vous facturez des prestations à des clients dans l'UE :
 
-- **Client professionnel (B2B)** : TVA autoliquidée par le client, vous facturez HT avec mention « Autoliquidation — Art. 283-1 du CGI »
+- **Client professionnel (B2B)** : TVA autoliquidée par le client, vous facturez HT avec la mention « Autoliquidation, article 196 de la directive 2006/112/CE » (détails dans la section dédiée plus bas)
 - **Client particulier (B2C)** : TVA française applicable
 
 Pour les clients hors UE, la prestation est généralement exonérée de TVA.
@@ -195,11 +197,23 @@ Consultez notre guide sur la [TVA intracommunautaire](/blog/quest-ce-que-tva-int
   </Button>
 </div>
 
+## Facturer un client professionnel dans l'Union européenne
+
+Un consultant français qui facture une entreprise établie dans un autre État membre applique la règle générale des prestations de services entre assujettis : la TVA est due dans le pays du client, qui l'autoliquide. Vous facturez donc hors taxes, sans TVA française, et vous portez sur la facture la mention « Autoliquidation, article 196 de la directive 2006/112/CE », votre numéro de TVA intracommunautaire et celui du client.
+
+Trois vérifications avant d'envoyer la facture :
+
+1. **Le numéro de TVA intracommunautaire du client.** Contrôlez-le sur VIES, le service en ligne de la Commission européenne, et conservez une trace de la vérification. Sans numéro valide, le client est traité comme un non-assujetti et la TVA française s'applique.
+2. **Votre propre numéro.** Même en franchise en base, un numéro de TVA intracommunautaire est obligatoire dès la première prestation à un client assujetti dans l'UE. Il s'obtient gratuitement auprès de votre service des impôts des entreprises, sans remettre en cause votre franchise.
+3. **La déclaration européenne de services (DES).** Chaque mois où vous avez émis ce type de facture, vous déposez une DES en ligne sur le portail des douanes, au plus tard le 10e jour ouvrable du mois suivant. Elle récapitule le montant facturé par client.
+
+Pour un client particulier dans l'UE, c'est la TVA française qui s'applique. Pour un client professionnel hors UE, la prestation n'est en général pas soumise à la TVA française (mention « TVA non applicable, article 259-1 du CGI »). Les mécanismes de la TVA entre États membres sont détaillés dans notre article sur la [TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire).
+
 ## Les bonnes pratiques de facturation pour consultants
 
 ### 1. Facturez régulièrement
 
-Pour les missions longues, ne attendez pas la fin de la mission pour facturer. Établissez un rythme de facturation :
+Pour les missions longues, n'attendez pas la fin de la mission pour facturer. Établissez un rythme de facturation :
 
 - **Mensuel** pour les missions en régie
 - **Par jalon** pour les missions au forfait (30 % au démarrage, 40 % à mi-parcours, 30 % à la livraison)
@@ -248,6 +262,68 @@ Consultez notre classement des [meilleurs logiciels de facturation pour freelanc
     </li>
   </ul>
 </div>
+
+## Modèle de facture de prestation de conseil (exemple)
+
+Voici à quoi ressemble le corps d'une facture de consultant pour une mission de 8 jours, avec des frais refacturés au réel et un acompte de 30 % déjà versé à la signature du devis.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Exemple de facture de solde pour une mission de conseil (TVA 20 %)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Désignation</TableHead>
+        <TableHead>Quantité</TableHead>
+        <TableHead>Prix unitaire HT</TableHead>
+        <TableHead>Montant</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Prestation de conseil en organisation, mission du 02/03/2026 au 13/03/2026 (bon de commande BC-2026-087)</TableCell>
+        <TableCell>8 jours</TableCell>
+        <TableCell>600,00 €</TableCell>
+        <TableCell>4 800,00 € HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Frais de déplacement refacturés au réel (train et hôtel, justificatifs joints)</TableCell>
+        <TableCell>1</TableCell>
+        <TableCell>240,00 €</TableCell>
+        <TableCell>240,00 € HT</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold" colSpan={3}>Total HT</TableCell>
+        <TableCell className="font-semibold">5 040,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell colSpan={3}>TVA 20 %</TableCell>
+        <TableCell>1 008,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold" colSpan={3}>Total TTC</TableCell>
+        <TableCell className="font-semibold">6 048,00 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell colSpan={3}>Acompte de 30 % versé le 02/03/2026 (facture d'acompte FA-2026-014)</TableCell>
+        <TableCell>- 1 814,40 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold" colSpan={3}>Net à payer</TableCell>
+        <TableCell className="font-semibold">4 233,60 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Les frais refacturés au réel font partie de la base imposable : ils supportent la TVA à 20 % comme les honoraires. En micro-entreprise en franchise, remplacez la ligne de TVA par la mention « TVA non applicable, art. 293 B du CGI » et le net à payer devient 5 040 € moins l'acompte.
+
+Au-delà des mentions communes à toutes les factures, une facture de prestation de conseil doit préciser :
+
+- la **référence du contrat, du devis signé ou du bon de commande** du client, qui accélère la validation par son service comptable ;
+- la **période de la mission** et, pour une facture de solde, le rappel des acomptes ou des situations déjà facturés ;
+- la **date d'échéance** et les conditions de paiement (30 jours par défaut entre professionnels) ;
+- le **taux des pénalités de retard** (au minimum trois fois le taux d'intérêt légal) et l'**indemnité forfaitaire de 40 €** pour frais de recouvrement ;
+- l'**escompte** pour paiement anticipé, ou la mention « néant ».
 
 ## En résumé
 
@@ -301,6 +377,12 @@ Newbi simplifie la facturation des consultants avec des modèles adaptés, la ge
         Pour les missions longues en régie, facturez mensuellement en détaillant les jours travaillés dans le mois. Newbi permet de créer des factures récurrentes avec un modèle pré-rempli, que vous ajustez chaque mois en fonction du nombre de jours réellement travaillés.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Quel logiciel de facturation pour un consultant indépendant ?</AccordionTrigger>
+      <AccordionContent>
+        Un consultant a besoin d'un outil qui facture au jour ou à l'heure depuis un catalogue de prestations, gère les factures d'acompte et de solde, isole les frais refacturés sur des lignes distinctes, applique la mention d'autoliquidation pour les clients européens, relance automatiquement les impayés et suit les paiements. Il doit aussi être prêt pour la facture électronique, obligatoire à l'émission pour les indépendants au 1er septembre 2027. La [facturation Newbi](/produits/factures) couvre ces besoins, avec un essai gratuit de 30 jours.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -346,6 +428,14 @@ Newbi simplifie la facturation des consultants avec des modèles adaptés, la ge
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Facturez mensuellement avec un modèle pré-rempli ajusté chaque mois."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quel logiciel de facturation pour un consultant indépendant ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Un outil qui facture au jour ou à l'heure depuis un catalogue de prestations, gère acomptes et soldes, isole les frais refacturés, applique l'autoliquidation pour les clients européens, relance les impayés et prépare la facture électronique obligatoire au 1er septembre 2027. Newbi couvre ces besoins avec un essai gratuit de 30 jours."
       }
     }
   ]

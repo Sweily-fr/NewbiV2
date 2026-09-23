@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
-import Footer7 from "@/src/components/footer7";
 import { BlogRecentArticles } from "@/src/components/blog/blog-recent-articles";
 import { BlogHubNav } from "@/src/components/blog/blog-hub-nav";
 import { formatPostForList } from "@/src/lib/blog-format";
@@ -87,7 +86,6 @@ export default async function CategoryPage({ params }) {
         title={`${posts.length} article${posts.length > 1 ? "s" : ""}`}
         description={`Tous nos contenus « ${label} », du plus récent au plus ancien.`}
       />
-      <Footer7 />
     </div>
   );
 }

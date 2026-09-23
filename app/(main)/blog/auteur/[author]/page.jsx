@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
-import Footer7 from "@/src/components/footer7";
 import { BlogRecentArticles } from "@/src/components/blog/blog-recent-articles";
 import { formatPostForList } from "@/src/lib/blog-format";
 import { getAllPosts } from "@/src/lib/blog";
@@ -81,7 +80,6 @@ export default async function AuthorPage({ params }) {
         title={`${posts.length} article${posts.length > 1 ? "s" : ""}`}
         description={`Tous les articles signés ${profile.name}, du plus récent au plus ancien.`}
       />
-      <Footer7 />
     </div>
   );
 }
