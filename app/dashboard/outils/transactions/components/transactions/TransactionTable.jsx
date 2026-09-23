@@ -27,7 +27,7 @@ import {
 } from "@/src/hooks/useExpenses";
 import { useUpdateTransaction } from "@/src/hooks/useTransactions";
 import { useTransactionsPage } from "@/src/hooks/useTransactionsPage";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useApolloClient, useLazyQuery, useMutation } from "@apollo/client";
 import {
   GET_TRANSACTION,
   GET_TRANSACTIONS,
@@ -121,6 +121,12 @@ import { fr } from "date-fns/locale";
 // scroll infini mobile agrandit la page courante par paliers jusqu'à ce cap.
 const MOBILE_PAGE_SIZE_MAX = 100;
 const MOBILE_LOAD_MORE_STEP = 20;
+
+// Attente de la facture d'achat créée par OCR après l'ajout d'un justificatif
+const RECEIPT_OCR_POLL_INTERVAL_MS = 2500;
+const RECEIPT_OCR_POLL_TIMEOUT_MS = 90000;
+// Délai sans nouvelle facture au bout duquel on arrête d'attendre les autres
+const RECEIPT_OCR_POLL_SETTLE_MS = 10000;
 
 // Fonction utilitaire pour formater les dates de manière sécurisée
 const safeFormatDate = (dateValue) => {
@@ -599,16 +605,76 @@ export default function TransactionTable({
     setEditingTransaction(null);
   };
 
-  // Refetch différé après upload (OCR) : nettoyé au démontage pour ne pas
-  // déclencher un refetch sur un composant démonté.
-  const deferredRefetchTimeoutRef = useRef(null);
+  // Attente de la facture d'achat créée par OCR après un upload. On interroge
+  // la transaction jusqu'à voir apparaître la ou les factures liées, au lieu
+  // d'un rafraîchissement unique après un délai fixe : la facture s'affiche
+  // dès qu'elle est prête (au lieu d'attendre la fin du délai) et n'est plus
+  // manquée quand l'OCR dépasse ce délai. Annulé au démontage.
+  const apolloClient = useApolloClient();
+  const purchaseInvoicePollRef = useRef(null);
   useEffect(() => {
     return () => {
-      if (deferredRefetchTimeoutRef.current) {
-        clearTimeout(deferredRefetchTimeoutRef.current);
+      if (purchaseInvoicePollRef.current) {
+        purchaseInvoicePollRef.current.cancelled = true;
       }
     };
   }, []);
+
+  const waitForPurchaseInvoices = useCallback(
+    async (transactionId, previousCount, expectedCount) => {
+      // Une seule attente à la fois : un nouvel upload annule la précédente.
+      if (purchaseInvoicePollRef.current) {
+        purchaseInvoicePollRef.current.cancelled = true;
+      }
+      const poll = { cancelled: false };
+      purchaseInvoicePollRef.current = poll;
+
+      const deadline = Date.now() + RECEIPT_OCR_POLL_TIMEOUT_MS;
+      let lastCount = previousCount;
+      let lastChangeAt = null;
+
+      while (!poll.cancelled && Date.now() < deadline) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, RECEIPT_OCR_POLL_INTERVAL_MS),
+        );
+        if (poll.cancelled) return;
+
+        let linkedCount = null;
+        try {
+          const { data } = await apolloClient.query({
+            query: GET_TRANSACTION,
+            variables: { id: transactionId },
+            fetchPolicy: "network-only",
+          });
+          linkedCount = data?.transaction?.linkedPurchaseInvoices?.length;
+        } catch {
+          // Erreur réseau ponctuelle : nouvelle tentative au tour suivant
+          continue;
+        }
+        if (poll.cancelled || typeof linkedCount !== "number") continue;
+
+        if (linkedCount > lastCount) {
+          lastCount = linkedCount;
+          lastChangeAt = Date.now();
+          refetch();
+          // Toutes les factures attendues sont là : plus rien à attendre.
+          if (linkedCount - previousCount >= expectedCount) return;
+        } else if (
+          lastChangeAt &&
+          Date.now() - lastChangeAt > RECEIPT_OCR_POLL_SETTLE_MS
+        ) {
+          // Plus rien de nouveau depuis un moment : la déduplication a pu
+          // rattacher plusieurs justificatifs à une même facture.
+          return;
+        }
+      }
+
+      // Délai dépassé sans rien voir venir : un dernier rafraîchissement, au
+      // cas où l'OCR aboutisse juste après.
+      if (!poll.cancelled && lastCount === previousCount) refetch();
+    },
+    [apolloClient, refetch],
+  );
 
   // Attacher un (ou plusieurs) reçu(s) à une transaction bancaire (upload via GraphQL)
   const handleAttachReceipt = async (transaction, fileOrFiles) => {
@@ -668,12 +734,19 @@ export default function TransactionTable({
       }
       refetch();
       if (willCreatePurchaseInvoice) {
-        // L'OCR prend quelques secondes : refetch différé pour voir
-        // apparaître la facture d'achat liée
-        if (deferredRefetchTimeoutRef.current) {
-          clearTimeout(deferredRefetchTimeoutRef.current);
-        }
-        deferredRefetchTimeoutRef.current = setTimeout(() => refetch(), 15000);
+        // L'OCR prend quelques secondes : on attend la facture d'achat liée
+        // pour l'afficher dès qu'elle est créée.
+        const previousCount =
+          transaction.originalTransaction?.linkedPurchaseInvoices?.length ||
+          transaction.linkedPurchaseInvoices?.length ||
+          0;
+        waitForPurchaseInvoices(
+          transactionId,
+          previousCount,
+          files.length,
+        ).catch((pollError) =>
+          console.error("❌ [ATTACH RECEIPT] Suivi OCR:", pollError),
+        );
       }
     } catch (error) {
       console.error("❌ [ATTACH RECEIPT] Error:", error);
