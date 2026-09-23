@@ -27,10 +27,18 @@ function buildXlsx(m, commun) {
   m.meta.forEach(([k, v]) => rows.push([k, v]));
   rows.push([]);
 
-  const headIdx = rows.length;
   rows.push(m.colonnes);
   const firstLine = rows.length;
-  m.lignes.forEach((l) => rows.push(l));
+  // Dans le classeur, les montants doivent être de vrais nombres, sinon les
+  // formules ne calculent rien. Le PDF garde lui les chaînes formatées.
+  const num = (c) => {
+    if (typeof c !== "string") return c;
+    const t = c.replace(/\u00a0/g, " ").trim();
+    if (!/^[\d  ]+(,\d+)?$/.test(t)) return c;
+    const v = parseFloat(t.replace(/[  ]/g, "").replace(",", "."));
+    return Number.isNaN(v) ? c : v;
+  };
+  m.lignes.forEach((l) => rows.push(l.map(num)));
   const lastLine = rows.length;
   rows.push([]);
   const totalsStart = rows.length;
@@ -56,17 +64,54 @@ function buildXlsx(m, commun) {
   const puCol = m.colonnes.findIndex((c) => /prix unitaire/i.test(c));
   const totCol = nCols - 1;
   if (qteCol > 0 && puCol > 0) {
+    // SheetJS n'écrit une formule que si la cellule porte aussi une valeur :
+    // on met le résultat calculé, qu'Excel recalculera à la première saisie.
+    let somme = 0;
     for (let r = firstLine; r < lastLine; r++) {
       const ref = XLSX.utils.encode_cell({ r, c: totCol });
       const q = XLSX.utils.encode_cell({ r, c: qteCol });
       const p = XLSX.utils.encode_cell({ r, c: puCol });
-      ws[ref] = { t: "n", f: `IF(${q}="","",${q}*${p})` };
+      const qv = rows[r][qteCol];
+      const pv = rows[r][puCol];
+      const v = typeof qv === "number" && typeof pv === "number" ? qv * pv : 0;
+      somme += v;
+      ws[ref] = { t: "n", v, f: `IF(${q}="",0,${q}*${p})`, z: "#  ##0.00" };
     }
-    // Somme de la colonne Total sur la première ligne de totaux
-    const sumRef = XLSX.utils.encode_cell({ r: totalsStart, c: 1 });
     const from = XLSX.utils.encode_cell({ r: firstLine, c: totCol });
     const to = XLSX.utils.encode_cell({ r: lastLine - 1, c: totCol });
-    ws[sumRef] = { t: "n", f: `SUM(${from}:${to})` };
+    const sumRef = XLSX.utils.encode_cell({ r: totalsStart, c: 1 });
+    ws[sumRef] = {
+      t: "n",
+      v: somme,
+      f: `SUM(${from}:${to})`,
+      z: "#  ##0.00",
+    };
+
+    // TVA et total TTC suivent le total HT : si l'utilisateur change une
+    // ligne, tout se recalcule. Le taux est lu dans le libellé (« TVA 20 % »).
+    const htRef = sumRef;
+    let htVal = somme;
+    let tvaRef = null;
+    let tvaVal = 0;
+    m.totaux.forEach(([libelle], i) => {
+      if (i === 0) return;
+      const ref = XLSX.utils.encode_cell({ r: totalsStart + i, c: 1 });
+      const taux = /TVA\s*(\d+(?:[.,]\d+)?)\s*%/i.exec(libelle);
+      if (taux) {
+        const t = parseFloat(taux[1].replace(",", ".")) / 100;
+        tvaVal = Math.round(htVal * t * 100) / 100;
+        tvaRef = ref;
+        ws[ref] = { t: "n", v: tvaVal, f: `${htRef}*${t}`, z: "#  ##0.00" };
+      } else if (/TTC/i.test(libelle)) {
+        const f = tvaRef ? `${htRef}+${tvaRef}` : htRef;
+        ws[ref] = {
+          t: "n",
+          v: Math.round((htVal + tvaVal) * 100) / 100,
+          f,
+          z: "#  ##0.00",
+        };
+      }
+    });
   }
 
   ws["!ref"] = XLSX.utils.encode_range({
@@ -160,11 +205,13 @@ function buildPdf(m, commun) {
   });
   y += 4;
 
-  m.totaux.forEach(([k, v], i) => {
-    const last = i === m.totaux.length - 1;
-    text(k, 120, y, { size: last ? 11 : 9, bold: last });
-    text(`${v} €`, R, y, { size: last ? 11 : 9, bold: last, align: "right" });
-    y += last ? 7 : 5.5;
+  // Le libellé démarre assez à gauche pour ne pas heurter le montant, qui est
+  // aligné à droite (cas « Acompte à la commande [30 %] » sur le devis).
+  m.totaux.forEach(([k, v]) => {
+    const fort = /TTC|à payer/i.test(k);
+    text(k, 98, y, { size: fort ? 11 : 9, bold: fort });
+    text(`${v} €`, R, y, { size: fort ? 11 : 9, bold: fort, align: "right" });
+    y += fort ? 7 : 5.5;
   });
   y += 4;
 
