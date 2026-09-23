@@ -5,7 +5,6 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import { Badge } from "@/src/components/ui/badge";
 import { Calendar } from "lucide-react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
-import Footer7 from "@/src/components/footer7";
 import { BlogArticleLayout } from "@/src/components/blog/blog-article-layout";
 import { BlogRelatedPosts } from "@/src/components/blog/blog-related-posts";
 import {
@@ -40,7 +39,9 @@ export async function generateMetadata({
   const ogImage = post.image || DEFAULT_OG_IMAGE;
 
   return {
-    title: `${post.title} | Blog Newbi`,
+    // `absolute` : sans lui le template du layout racine ajoute un second
+    // « | Newbi » (titre affiché « … | Blog Newbi | Newbi », tronqué par Google).
+    title: { absolute: `${post.title} | Newbi` },
     description: post.description,
     authors: [
       { name: author.name, url: `/blog/auteur/${authorSlug(post.author)}` },
@@ -261,7 +262,6 @@ export default async function BlogPostPage({
           </div>
         </article>
       </BlogArticleLayout>
-      <Footer7 />
     </div>
   );
 }

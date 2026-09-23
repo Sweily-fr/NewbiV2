@@ -48,7 +48,7 @@ const SOMMAIRE = [
   "Les sanctions en cas de non-conformité",
 ];
 
-export default function GuideFacturationElectroniquePage() {
+export default function GuideFacturationElectroniquePage({ related = [] }) {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -421,6 +421,44 @@ export default function GuideFacturationElectroniquePage() {
           </div>
         </div>
       </section>
+
+      {/* Pour approfondir : articles du cluster facturation électronique */}
+      {related.length > 0 && (
+        <section
+          aria-labelledby="guide-related-heading"
+          className="px-5 pb-16"
+        >
+          <div className="max-w-[1200px] mx-auto">
+            <h2
+              id="guide-related-heading"
+              className="text-2xl sm:text-3xl font-normal text-black mb-2"
+            >
+              Pour approfondir
+            </h2>
+            <p className="text-gray-600 mb-8 max-w-2xl">
+              Les articles du blog qui détaillent chaque point du guide :
+              calendrier, plateformes, formats, mentions et sanctions.
+            </p>
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {related.map((post) => (
+                <li key={post.slug}>
+                  <Link
+                    href={`/blog/${post.slug}`}
+                    className="group block h-full rounded-xl border border-gray-200 p-5 hover:border-[#5a50ff] transition-colors"
+                  >
+                    <h3 className="text-base font-medium text-gray-900 group-hover:text-[#5a50ff] mb-2">
+                      {post.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 line-clamp-3">
+                      {post.description}
+                    </p>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       {/* Section CTA Newbi */}
       <section className="px-5 pb-20">

@@ -1,4 +1,28 @@
 import GuideFacturationElectroniquePage from "./guide-content";
+import { getAllPosts } from "@/src/lib/blog";
+
+// Articles du cluster « facturation électronique » reliés au guide (page
+// pilier) : seuls ceux déjà publiés sont rendus.
+const GUIDE_CLUSTER = [
+  "facturation-electronique-obligatoire-2026",
+  "facture-electronique-reception-1er-septembre-2026",
+  "facture-electronique-auto-entrepreneur-2027",
+  "obligations-facture-electronique-pme",
+  "quest-ce-que-pdp-plateforme-dematerialisation",
+  "comment-choisir-sa-pdp-plateforme-dematerialisation",
+  "quest-ce-que-ppf-portail-public-facturation",
+  "od-vs-pdp-operateur-dematerialisation-difference",
+  "facturx-format-facture-electronique",
+  "formats-ubl-cii-facturx-comparatif",
+  "e-reporting-definition-obligations-calendrier",
+  "nouvelles-mentions-obligatoires-facture-electronique",
+  "statuts-cycle-de-vie-facture-electronique",
+  "facture-electronique-sanctions-amendes",
+  "facture-electronique-b2c-particuliers-concerne",
+  "combien-coute-facturation-electronique",
+  "facture-pdf-email-jusqu-a-quand",
+  "facture-electronique-checklist-tpe-12-points",
+];
 
 export const metadata = {
   title:
@@ -54,5 +78,9 @@ export const metadata = {
 };
 
 export default function Page() {
-  return <GuideFacturationElectroniquePage />;
+  const bySlug = new Map(getAllPosts().map((p) => [p.slug, p]));
+  const related = GUIDE_CLUSTER.map((slug) => bySlug.get(slug))
+    .filter(Boolean)
+    .map((p) => ({ slug: p.slug, title: p.title, description: p.description }));
+  return <GuideFacturationElectroniquePage related={related} />;
 }

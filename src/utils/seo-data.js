@@ -92,9 +92,9 @@ export const seoData = {
 
   // Page Factures
   factures: {
-    title: "Logiciel de Facturation Professionnel - Newbi",
+    title: "Logiciel de facturation en ligne : devis, factures, avoirs | Newbi",
     description:
-      "Créez, envoyez et gérez vos factures professionnelles en quelques clics. Suivi des paiements, relances automatiques et conformité légale garantie.",
+      "Créez devis, factures et avoirs conformes en 2 minutes, suivez les paiements et relancez vos clients. Compatible facturation électronique 2026. 30 jours gratuits, sans carte bancaire.",
     keywords:
       "logiciel facturation, facture professionnelle, gestion factures, suivi paiements, relance automatique, TVA, comptabilité, facturation en ligne, auto-entrepreneur",
     canonical: `${baseUrl}/produits/factures`,
@@ -266,12 +266,12 @@ export const seoData = {
 
   // Page Kanban
   kanban: {
-    title: "Tableau Kanban - Gestion de Projets Agile - Newbi",
+    title: "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
     description:
-      "Organisez vos projets avec des tableaux Kanban intuitifs. Collaboration en équipe, suivi des tâches et productivité optimisée. Outil gratuit.",
+      "Organisez vos projets et vos tâches sur des tableaux kanban simples, partagés avec votre équipe et reliés à vos clients et à vos factures. Inclus dans Newbi, 30 jours gratuits.",
     keywords:
       "kanban, gestion projet, organisation, productivité, collaboration équipe, suivi tâches, méthode agile, tableau kanban, outil gratuit",
-    canonical: `${baseUrl}/dashboard/outils/kanban`,
+    canonical: `${baseUrl}/produits/kanban`,
     openGraph: {
       title: "Gestion de Projets Kanban - Newbi",
       description:
@@ -328,7 +328,7 @@ export const seoData = {
       "Partagez vos fichiers volumineux en toute sécurité. Transferts cryptés, liens temporaires et suivi des téléchargements pour professionnels.",
     keywords:
       "transfert fichiers, partage sécurisé, envoi gros fichiers, partage professionnel, cryptage, sécurité données, wetransfer alternatif",
-    canonical: `${baseUrl}/dashboard/outils/transferts`,
+    canonical: `${baseUrl}/produits/transfers`,
     openGraph: {
       title: "Transfert de Fichiers Sécurisé - Newbi",
       description:
@@ -443,7 +443,7 @@ export const seoData = {
     keywords:
       "politique confidentialité, protection données, RGPD, vie privée, cookies, données personnelles",
     robots: "index,nofollow",
-    canonical: `${baseUrl}/politique-confidentialite`,
+    canonical: `${baseUrl}/politique-de-confidentialite`,
     openGraph: {
       title: "Politique de Confidentialité - Newbi",
       description:
