@@ -62,7 +62,7 @@ jobs:
       # Python n'est utile qu'avec une clé OpenAI, mais l'installation coûte
       # quelques secondes : on la garde inconditionnelle pour rester simple.
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
