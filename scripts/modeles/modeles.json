@@ -1,0 +1,163 @@
+{
+  "commun": {
+    "emetteur": [
+      "[Votre dénomination sociale ou nom et prénom]",
+      "[Adresse complète]",
+      "[Code postal] [Ville]",
+      "SIRET : [14 chiffres]",
+      "[Forme juridique et capital social, pour une société]",
+      "[RCS de Ville, pour une société commerciale]",
+      "Téléphone : [.....]   Courriel : [.....]"
+    ],
+    "client": [
+      "[Dénomination ou nom et prénom du client]",
+      "[Adresse de facturation]",
+      "[Code postal] [Ville]",
+      "SIRET : [si le client est un professionnel]"
+    ]
+  },
+  "modeles": [
+    {
+      "slug": "modele-facture",
+      "nom": "Modèle de facture",
+      "titre": "FACTURE",
+      "article": "modele-facture-gratuit-word-excel-pdf",
+      "intro": "Remplacez les champs entre crochets par vos informations. Les mentions en bas de page sont obligatoires entre professionnels.",
+      "meta": [
+        ["Numéro de facture", "[2026-001]"],
+        ["Date d'émission", "[JJ/MM/AAAA]"],
+        ["Date de la vente ou de la prestation", "[JJ/MM/AAAA]"],
+        ["Date d'échéance", "[JJ/MM/AAAA]"]
+      ],
+      "colonnes": ["Désignation", "Quantité", "Prix unitaire HT", "TVA", "Total HT"],
+      "lignes": [
+        ["[Description de la prestation ou du produit]", "1", "1 000,00", "20 %", "1 000,00"],
+        ["[Deuxième ligne]", "2", "250,00", "20 %", "500,00"],
+        ["[Troisième ligne]", "", "", "", ""]
+      ],
+      "totaux": [
+        ["Total HT", "1 500,00"],
+        ["TVA 20 %", "300,00"],
+        ["Total TTC", "1 800,00"]
+      ],
+      "mentions": [
+        "Conditions de règlement : paiement à [30] jours à compter de la date d'émission.",
+        "En cas de retard de paiement, pénalités au taux de [3 fois le taux d'intérêt légal] et indemnité forfaitaire pour frais de recouvrement de 40 €.",
+        "Escompte pour paiement anticipé : [néant].",
+        "TVA intracommunautaire : [FR00 000000000]"
+      ]
+    },
+    {
+      "slug": "modele-devis",
+      "nom": "Modèle de devis",
+      "titre": "DEVIS",
+      "article": "modele-devis-gratuit-word-excel-pdf",
+      "intro": "Un devis engage sur le prix et le périmètre décrits. Faites-le signer avec la mention « Bon pour accord » avant de démarrer.",
+      "meta": [
+        ["Numéro de devis", "[D-2026-001]"],
+        ["Date d'établissement", "[JJ/MM/AAAA]"],
+        ["Durée de validité", "[3 mois à compter de cette date]"],
+        ["Date de début des travaux", "[JJ/MM/AAAA]"]
+      ],
+      "colonnes": ["Désignation", "Quantité", "Prix unitaire HT", "TVA", "Total HT"],
+      "lignes": [
+        ["[Description détaillée de la prestation]", "1", "1 000,00", "20 %", "1 000,00"],
+        ["[Deuxième poste]", "2", "250,00", "20 %", "500,00"],
+        ["[Troisième poste]", "", "", "", ""]
+      ],
+      "totaux": [
+        ["Total HT", "1 500,00"],
+        ["TVA 20 %", "300,00"],
+        ["Total TTC", "1 800,00"],
+        ["Acompte à la commande [30 %]", "540,00"]
+      ],
+      "mentions": [
+        "Devis gratuit et non contractuel tant qu'il n'est pas signé.",
+        "Modalités de règlement : [acompte de 30 % à la commande, solde à la livraison].",
+        "Le devis doit être daté, signé et porter la mention manuscrite « Bon pour accord ».",
+        "Signature du client précédée de la mention « Bon pour accord » :"
+      ]
+    },
+    {
+      "slug": "modele-facture-auto-entrepreneur",
+      "nom": "Modèle de facture auto-entrepreneur",
+      "titre": "FACTURE",
+      "article": "modele-facture-auto-entrepreneur-gratuit",
+      "intro": "Modèle pour un auto-entrepreneur en franchise en base de TVA. Les montants sont exprimés hors taxes et la mention de l'article 293 B est obligatoire.",
+      "meta": [
+        ["Numéro de facture", "[2026-001]"],
+        ["Date d'émission", "[JJ/MM/AAAA]"],
+        ["Date de la prestation", "[JJ/MM/AAAA]"],
+        ["Date d'échéance", "[JJ/MM/AAAA]"]
+      ],
+      "colonnes": ["Désignation", "Quantité", "Prix unitaire", "Total"],
+      "lignes": [
+        ["[Description de la prestation]", "1", "800,00", "800,00"],
+        ["[Deuxième ligne]", "2", "150,00", "300,00"],
+        ["[Troisième ligne]", "", "", ""]
+      ],
+      "totaux": [["Total à payer", "1 100,00"]],
+      "mentions": [
+        "TVA non applicable, article 293 B du Code général des impôts.",
+        "Conditions de règlement : paiement à [30] jours à compter de la date d'émission.",
+        "En cas de retard, pénalités au taux de [3 fois le taux d'intérêt légal] et indemnité forfaitaire pour frais de recouvrement de 40 € pour un client professionnel.",
+        "Dispense d'immatriculation au RCS et au RM, le cas échéant."
+      ]
+    },
+    {
+      "slug": "modele-facture-acompte",
+      "nom": "Modèle de facture d'acompte",
+      "titre": "FACTURE D'ACOMPTE",
+      "article": "modele-facture-acompte-gratuit",
+      "intro": "Une facture d'acompte s'émet à l'encaissement de l'acompte. La facture de solde qui suit doit déduire le montant déjà réglé : l'exemple figure en bas de page.",
+      "meta": [
+        ["Numéro de facture d'acompte", "[2026-001-A]"],
+        ["Date d'émission", "[JJ/MM/AAAA]"],
+        ["Référence du devis ou de la commande", "[D-2026-001]"],
+        ["Date d'échéance", "[JJ/MM/AAAA]"]
+      ],
+      "colonnes": ["Désignation", "Base HT", "TVA", "Total HT"],
+      "lignes": [
+        ["Acompte de [30 %] sur [libellé du devis]", "5 000,00", "20 %", "1 500,00"],
+        ["[Ligne complémentaire]", "", "", ""]
+      ],
+      "totaux": [
+        ["Total HT", "1 500,00"],
+        ["TVA 20 %", "300,00"],
+        ["Total TTC de l'acompte", "1 800,00"]
+      ],
+      "mentions": [
+        "Cette facture d'acompte se rapporte au devis [D-2026-001] d'un montant total de [5 000,00 € HT].",
+        "La facture de solde déduira l'acompte : Total HT 5 000,00 € - acompte 1 500,00 € = 3 500,00 € HT à facturer.",
+        "Conditions de règlement : paiement à réception.",
+        "En cas de retard, pénalités au taux de [3 fois le taux d'intérêt légal] et indemnité forfaitaire de 40 €."
+      ]
+    },
+    {
+      "slug": "modele-facture-sans-tva",
+      "nom": "Modèle de facture sans TVA",
+      "titre": "FACTURE",
+      "article": "modele-facture-sans-tva-franchise-en-base",
+      "intro": "Modèle pour une entreprise en franchise en base de TVA. Aucune colonne de TVA, aucun total TTC : seuls des montants nets figurent sur le document.",
+      "meta": [
+        ["Numéro de facture", "[2026-001]"],
+        ["Date d'émission", "[JJ/MM/AAAA]"],
+        ["Date de la vente ou de la prestation", "[JJ/MM/AAAA]"],
+        ["Date d'échéance", "[JJ/MM/AAAA]"]
+      ],
+      "colonnes": ["Désignation", "Quantité", "Prix unitaire", "Total"],
+      "lignes": [
+        ["[Description de la prestation ou du produit]", "1", "1 200,00", "1 200,00"],
+        ["[Deuxième ligne]", "3", "100,00", "300,00"],
+        ["[Troisième ligne]", "", "", ""]
+      ],
+      "totaux": [["Total à payer", "1 500,00"]],
+      "mentions": [
+        "TVA non applicable, article 293 B du Code général des impôts.",
+        "La TVA n'est ni facturée ni récupérable sur les achats tant que la franchise s'applique.",
+        "Conditions de règlement : paiement à [30] jours à compter de la date d'émission.",
+        "En cas de retard, pénalités au taux de [3 fois le taux d'intérêt légal] et indemnité forfaitaire pour frais de recouvrement de 40 €."
+      ]
+    }
+  ]
+}

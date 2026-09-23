@@ -39,6 +39,28 @@ Ce guide vous donne la structure exacte à reproduire, un exemple de facture com
   </Button>
 </div>
 
+
+<div className="not-prose my-8 rounded-xl border border-gray-200 p-6">
+  <p className="text-base font-medium text-gray-900 mb-1">Télécharger le modèle de facture</p>
+  <p className="text-sm text-gray-600 mb-4">
+    Fichier prêt à remplir, avec les mentions obligatoires déjà en place. Le classeur Excel calcule les totaux automatiquement.
+  </p>
+  <div className="flex flex-wrap gap-3">
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture.docx" download>Word (.docx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture.xlsx" download>Excel (.xlsx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-facture.pdf" download>PDF</a>
+    </Button>
+  </div>
+  <p className="text-xs text-gray-500 mt-4">
+    Sans inscription. Pour générer vos documents automatiquement et suivre vos paiements, <a href="/produits/factures" className="underline">essayez Newbi gratuitement 30 jours</a>.
+  </p>
+</div>
+
 ## Pourquoi utiliser un modèle de facture
 
 Un modèle de facture est une trame préremplie que vous complétez à chaque nouvelle vente ou prestation. Il permet de gagner du temps par rapport à une création depuis une page blanche, tout en garantissant une présentation cohérente d'une facture à l'autre. Pour un auto-entrepreneur qui démarre son activité ou un artisan qui facture ponctuellement, un modèle Word ou Excel constitue souvent le premier réflexe.
