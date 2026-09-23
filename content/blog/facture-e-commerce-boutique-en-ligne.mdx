@@ -1,8 +1,7 @@
 ---
-title: 'Facturation e-commerce : obligations pour les boutiques en ligne'
+title: 'Facturation e-commerce : règles, TVA, facture électronique 2026'
 description: >-
-  Tout savoir sur la facturation e-commerce : obligation de facturer, mentions
-  B2C, TVA, paiement en ligne et automatisation des factures.
+  Facture e-commerce : note dès 25 € TTC en B2C, facture obligatoire en B2B, mentions boutique en ligne, TVA OSS et calendrier de la facture électronique.
 date: '2026-02-10'
 category: guide
 sector: Commerces / Retail
@@ -11,6 +10,7 @@ author: Newbi
 image: /blog/facture-e-commerce-boutique-en-ligne/hero.webp
 published: true
 publishDate: '2026-07-13'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,9 +28,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-# Facturation e-commerce : obligations pour les boutiques en ligne
+# Facturation e-commerce : règles, TVA, facture électronique 2026
 
-La **facturation e-commerce** est un sujet incontournable pour tout entrepreneur qui vend en ligne. Que vous gériez une boutique Shopify, un site WooCommerce ou une marketplace, vous devez respecter des règles précises en matière de facturation. Entre les obligations B2C, les mentions spécifiques au commerce en ligne, la TVA intracommunautaire et les nouvelles exigences de facturation électronique, il est facile de s'y perdre. Ce guide complet vous explique tout ce que vous devez savoir pour facturer correctement depuis votre boutique en ligne.
+En e-commerce, la facture est obligatoire pour toute vente à un professionnel ; pour un particulier, une note ou un ticket est obligatoire dès 25 € TTC et la facture doit être remise dès qu'il la demande. Le document doit porter les mentions classiques plus celles de la vente à distance : droit de rétractation de 14 jours, frais de livraison détaillés et identité complète du vendeur.
+
+Vous trouverez ci-dessous les obligations B2C et B2B, la TVA intracommunautaire (OSS et IOSS), les règles des marketplaces, l'automatisation depuis Shopify ou WooCommerce et le calendrier de la facture électronique et du e-reporting.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
@@ -54,10 +56,10 @@ La **facturation e-commerce** est un sujet incontournable pour tout entrepreneur
 
 Contrairement à une idée reçue, la facture n'est **pas toujours obligatoire** pour les ventes aux particuliers en e-commerce. Voici les règles à retenir :
 
-- **La facture est obligatoire** si le montant de la transaction dépasse **25 euros TTC**.
-- **La facture doit être émise sur demande** du client, même pour un montant inférieur à 25 euros.
+- **Une note ou un ticket est obligatoire** dès que le montant de la transaction atteint **25 euros TTC** ; en dessous, le client peut l'exiger.
+- **La facture doit être émise sur demande** du client, quel que soit le montant.
 - Pour les **ventes à distance intracommunautaires**, la facture est systématiquement obligatoire, quel que soit le montant.
-- Un **ticket de caisse ou une note** peut suffire pour les petites transactions B2C en dessous du seuil, à condition que le client ne demande pas de facture.
+- En dehors de ces cas, un **ticket de caisse ou une note** suffit pour une vente B2C, à condition que le client ne demande pas de facture.
 
 En pratique, la plupart des plateformes e-commerce génèrent automatiquement un document de vente pour chaque commande. Il est donc recommandé de toujours émettre une facture, ne serait-ce que pour assurer une traçabilité comptable irréprochable.
 
@@ -78,7 +80,7 @@ Pour les ventes B2B, la facture est **toujours obligatoire**, sans exception. El
     <TableBody>
       <TableRow>
         <TableCell className="font-medium">Facture obligatoire</TableCell>
-        <TableCell>Oui si montant &gt; 25 EUR TTC ou sur demande</TableCell>
+        <TableCell>Note dès 25 EUR TTC, facture sur demande</TableCell>
         <TableCell>Oui, systématiquement</TableCell>
       </TableRow>
       <TableRow>
@@ -107,8 +109,8 @@ Pour les ventes B2B, la facture est **toujours obligatoire**, sans exception. El
         <TableCell>Jusqu'à 60 jours (mentions pénalités obligatoires)</TableCell>
       </TableRow>
       <TableRow>
-        <TableCell className="font-medium">E-reporting 2026</TableCell>
-        <TableCell>Obligatoire (transmission des données)</TableCell>
+        <TableCell className="font-medium">Réforme 2026-2027</TableCell>
+        <TableCell>E-reporting des ventes (transmission des données)</TableCell>
         <TableCell>E-invoicing obligatoire (format structuré)</TableCell>
       </TableRow>
     </TableBody>
@@ -138,7 +140,7 @@ La facture e-commerce doit mentionner l'identité complète du vendeur : dénomi
 
 ## TVA e-commerce : régime OSS et IOSS
 
-La gestion de la TVA est l'un des aspects les plus complexes de la **facturation e-commerce boutique en ligne**, surtout lorsque vous vendez à des clients situés dans d'autres pays de l'Union européenne. Consultez notre [guide complet sur les taux de TVA en France](/blog/taux-tva-france-guide-complet) pour maîtriser les bases.
+La gestion de la TVA est l'un des aspects les plus complexes de la facturation d'une boutique en ligne, surtout lorsque vous vendez à des clients situés dans d'autres pays de l'Union européenne. Consultez notre [guide des taux de TVA en France](/blog/taux-tva-france-guide-complet) pour maîtriser les bases.
 
 ### Le guichet unique OSS (One Stop Shop)
 
@@ -155,8 +157,8 @@ Ce régime s'applique dès que le seuil de **10 000 euros de ventes annuelles** 
 Pour les ventes de biens importés de pays hors UE d'une valeur inférieure à **150 euros**, le régime **IOSS** permet de collecter et reverser la TVA au moment de la vente, évitant ainsi que le client final ne paie la TVA à l'importation.
 
 <div className="not-prose my-8">
-  <Callout variant="warning" title="E-reporting obligatoire dès 2026">
-    À partir de **septembre 2026**, toutes les entreprises assujetties à la TVA en France devront transmettre leurs données de facturation B2C à l'administration fiscale via le **e-reporting**. Pour les transactions B2B, c'est la **facturation électronique** (e-invoicing) qui devient obligatoire. Anticipez dès maintenant en adoptant un outil de facturation conforme. Découvrez notre article sur la [facturation électronique obligatoire 2026](/blog/facturation-electronique-obligatoire-2026).
+  <Callout variant="warning" title="Facture électronique et e-reporting : le calendrier">
+    Depuis le **1er septembre 2026**, toutes les entreprises doivent pouvoir recevoir des factures électroniques. L'émission des factures B2B au format électronique et le **e-reporting** des ventes B2C s'appliquent aux grandes entreprises et aux ETI depuis le 1er septembre 2026, et aux PME, TPE et micro-entreprises à partir du **1er septembre 2027**. Anticipez dès maintenant en adoptant un outil de facturation conforme. Découvrez notre article sur la [facturation électronique obligatoire 2026](/blog/facturation-electronique-obligatoire-2026).
   </Callout>
 </div>
 
@@ -243,28 +245,28 @@ Newbi est une solution de facturation pensée pour les entrepreneurs et les TPE/
   </Button>
 </div>
 
-## E-reporting 2026 : ce qui change pour le e-commerce
+## Facture électronique et e-reporting : ce qui change pour le e-commerce
 
 L'entrée en vigueur progressive de la **facturation électronique obligatoire** et du **e-reporting** impacte directement les boutiques en ligne :
 
-- **Grandes entreprises** : obligation de réception et d'émission des e-factures dès septembre 2026.
-- **ETI et PME** : obligation d'émission échelonnée entre 2026 et 2027.
-- **Micro-entreprises** : obligation de réception dès septembre 2026, émission à partir de septembre 2027.
+- **Toutes les entreprises** : obligation de recevoir les factures électroniques depuis le 1er septembre 2026.
+- **Grandes entreprises et ETI** : émission des e-factures et e-reporting depuis le 1er septembre 2026.
+- **PME, TPE et micro-entreprises** : émission des e-factures et e-reporting à partir du 1er septembre 2027.
 
 Pour le e-commerce B2C, le **e-reporting** impose de transmettre les données de transaction (montant, TVA, date) à l'administration fiscale via une **plateforme de dématérialisation partenaire (PDP)**. Il ne s'agit pas d'envoyer la facture elle-même, mais les données structurées associées.
 
-Préparez-vous dès maintenant en choisissant un outil de facturation compatible avec ces nouvelles obligations. Retrouvez tous les détails dans notre article dédié à la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026).
+Préparez-vous dès maintenant en choisissant un outil de facturation compatible avec ces nouvelles obligations, comme la [facturation électronique Newbi](/produits/facturation-electronique). Retrouvez tous les détails dans notre article dédié à la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026).
 
 ## En résumé
 
 La **facturation e-commerce** obéit à des règles précises qu'il est essentiel de maîtriser pour éviter les sanctions et assurer la confiance de vos clients. Voici les points clés à retenir :
 
-- La facture est obligatoire en B2C au-dessus de 25 euros TTC et toujours en B2B.
+- En B2C, une note est obligatoire dès 25 euros TTC et la facture sur demande ; en B2B, la facture est toujours obligatoire.
 - Les mentions spécifiques e-commerce (droit de rétractation, frais de livraison) doivent figurer sur vos documents.
 - La TVA intracommunautaire se gère via les régimes OSS et IOSS pour simplifier vos obligations.
 - Les vendeurs sur marketplace doivent rester vigilants quant à la répartition des responsabilités fiscales.
 - L'automatisation de la facturation est indispensable pour gérer le volume de commandes.
-- Le e-reporting 2026 impose de nouvelles obligations de transmission des données : anticipez dès maintenant.
+- La facture électronique et le e-reporting s'appliquent depuis septembre 2026 aux grandes entreprises et ETI, et à partir de septembre 2027 aux PME, TPE et micro-entreprises : anticipez dès maintenant.
 
 <div className="not-prose flex justify-center my-10">
   <Button asChild size="lg">
@@ -279,7 +281,7 @@ La **facturation e-commerce** obéit à des règles précises qu'il est essentie
     <AccordionItem value="faq-1">
       <AccordionTrigger>Suis-je obligé d'émettre une facture pour chaque vente en ligne ?</AccordionTrigger>
       <AccordionContent>
-        En B2C, la facture est obligatoire si le montant dépasse 25 euros TTC ou si le client en fait la demande. En B2B, la facture est systématiquement obligatoire. En pratique, il est recommandé de générer une facture pour chaque transaction afin de garantir une traçabilité comptable complète.
+        En B2C, une note ou un ticket est obligatoire dès 25 euros TTC et la facture doit être fournie si le client la demande. En B2B, la facture est systématiquement obligatoire. En pratique, il est recommandé de générer une facture pour chaque transaction afin de garantir une traçabilité comptable complète.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-2">
@@ -297,13 +299,25 @@ La **facturation e-commerce** obéit à des règles précises qu'il est essentie
     <AccordionItem value="faq-4">
       <AccordionTrigger>Qu'est-ce que le e-reporting et quand entre-t-il en vigueur ?</AccordionTrigger>
       <AccordionContent>
-        Le e-reporting est l'obligation de transmettre les données de vos transactions B2C (montant, TVA, date) à l'administration fiscale via une plateforme de dématérialisation partenaire. Il entre en vigueur à partir de septembre 2026 pour les grandes entreprises, puis progressivement pour les PME et micro-entreprises. Cette obligation concerne directement les boutiques e-commerce.
+        Le e-reporting est l'obligation de transmettre les données de vos transactions B2C (montant, TVA, date) à l'administration fiscale via une plateforme de dématérialisation partenaire. Il s'applique depuis le 1er septembre 2026 aux grandes entreprises et aux ETI, et à partir du 1er septembre 2027 aux PME, TPE et micro-entreprises. Cette obligation concerne directement les boutiques e-commerce.
       </AccordionContent>
     </AccordionItem>
     <AccordionItem value="faq-5">
       <AccordionTrigger>Puis-je automatiser la facturation de ma boutique en ligne avec Newbi ?</AccordionTrigger>
       <AccordionContent>
-        Oui, Newbi vous permet de créer des factures conformes automatiquement, avec toutes les mentions obligatoires, la gestion multi-taux de TVA et la numérotation séquentielle. Vous pouvez centraliser la facturation de tous vos canaux de vente et vous préparer au e-reporting 2026 en toute sérénité.
+        Oui, Newbi vous permet de créer des factures conformes automatiquement, avec toutes les mentions obligatoires, la gestion multi-taux de TVA et la numérotation séquentielle. Vous pouvez centraliser la facturation de tous vos canaux de vente et vous préparer à la facture électronique et au e-reporting en toute sérénité.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-6">
+      <AccordionTrigger>Quel logiciel de facturation électronique pour une boutique en ligne ?</AccordionTrigger>
+      <AccordionContent>
+        Choisissez un logiciel qui génère des factures aux formats structurés de la réforme (Factur-X, UBL ou CII), qui les transmet via une plateforme agréée par l'administration et qui gère le e-reporting de vos ventes aux particuliers. Vérifiez aussi qu'il centralise vos commandes multicanales (site, marketplaces), applique les bons taux de TVA (France, OSS) et exporte vos écritures vers votre comptable. Newbi couvre ces besoins pour les TPE et PME qui vendent en ligne, avec un essai gratuit de 30 jours sans carte bancaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-7">
+      <AccordionTrigger>Une facture e-commerce doit-elle être une facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend du client. Pour une vente à un professionnel établi en France, la facture doit être émise au format électronique via une plateforme agréée : depuis le 1er septembre 2026 pour les grandes entreprises et ETI, à partir du 1er septembre 2027 pour les PME, TPE et micro-entreprises. Pour un particulier, aucune facture électronique n'est exigée : c'est le e-reporting qui s'applique (transmission des données de vente selon le même calendrier). Un PDF envoyé par e-mail n'est pas une facture électronique au sens de la réforme.
       </AccordionContent>
     </AccordionItem>
   </Accordion>
@@ -315,8 +329,8 @@ La **facturation e-commerce** obéit à des règles précises qu'il est essentie
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Facturation e-commerce : obligations pour les boutiques en ligne",
-      "description": "Tout savoir sur la facturation e-commerce : obligation de facturer, mentions B2C, TVA, paiement en ligne et automatisation des factures.",
+      "headline": "Facturation e-commerce : règles, TVA, facture électronique 2026",
+      "description": "Facture e-commerce : note dès 25 € TTC en B2C, facture obligatoire en B2B, mentions boutique en ligne, TVA OSS et calendrier de la facture électronique.",
       "image": "https://newbi.fr/blog/facture-e-commerce-boutique-en-ligne/hero.webp",
       "author": {
         "@type": "Organization",
@@ -332,7 +346,7 @@ La **facturation e-commerce** obéit à des règles précises qu'il est essentie
         }
       },
       "datePublished": "2026-02-10",
-      "dateModified": "2026-02-10",
+      "dateModified": "2026-09-23",
       "mainEntityOfPage": {
         "@type": "WebPage",
         "@id": "https://newbi.fr/blog/facture-e-commerce-boutique-en-ligne"
@@ -356,7 +370,7 @@ La **facturation e-commerce** obéit à des règles précises qu'il est essentie
           "name": "Suis-je obligé d'émettre une facture pour chaque vente en ligne ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "En B2C, la facture est obligatoire si le montant dépasse 25 euros TTC ou si le client en fait la demande. En B2B, la facture est systématiquement obligatoire. En pratique, il est recommandé de générer une facture pour chaque transaction afin de garantir une traçabilité comptable complète."
+            "text": "En B2C, une note ou un ticket est obligatoire dès 25 euros TTC et la facture doit être fournie si le client la demande. En B2B, la facture est systématiquement obligatoire. En pratique, il est recommandé de générer une facture pour chaque transaction afin de garantir une traçabilité comptable complète."
           }
         },
         {
@@ -380,7 +394,7 @@ La **facturation e-commerce** obéit à des règles précises qu'il est essentie
           "name": "Qu'est-ce que le e-reporting et quand entre-t-il en vigueur ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Le e-reporting est l'obligation de transmettre les données de vos transactions B2C à l'administration fiscale via une plateforme de dématérialisation partenaire. Il entre en vigueur à partir de septembre 2026 pour les grandes entreprises, puis progressivement pour les PME et micro-entreprises."
+            "text": "Le e-reporting est l'obligation de transmettre les données de vos transactions B2C à l'administration fiscale via une plateforme de dématérialisation partenaire. Il s'applique depuis le 1er septembre 2026 aux grandes entreprises et aux ETI, et à partir du 1er septembre 2027 aux PME, TPE et micro-entreprises."
           }
         },
         {
@@ -388,7 +402,23 @@ La **facturation e-commerce** obéit à des règles précises qu'il est essentie
           "name": "Puis-je automatiser la facturation de ma boutique en ligne avec Newbi ?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Oui, Newbi vous permet de créer des factures conformes automatiquement, avec toutes les mentions obligatoires, la gestion multi-taux de TVA et la numérotation séquentielle. Vous pouvez centraliser la facturation de tous vos canaux de vente et vous préparer au e-reporting 2026."
+            "text": "Oui, Newbi vous permet de créer des factures conformes automatiquement, avec toutes les mentions obligatoires, la gestion multi-taux de TVA et la numérotation séquentielle. Vous pouvez centraliser la facturation de tous vos canaux de vente et vous préparer à la facture électronique et au e-reporting."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel logiciel de facturation électronique pour une boutique en ligne ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Choisissez un logiciel qui génère des factures aux formats Factur-X, UBL ou CII, les transmet via une plateforme agréée, gère le e-reporting des ventes aux particuliers, centralise vos canaux de vente, applique les bons taux de TVA (France, OSS) et exporte vos écritures vers votre comptable."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Une facture e-commerce doit-elle être une facture électronique ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pour une vente à un professionnel établi en France, oui, selon le calendrier : 1er septembre 2026 pour les grandes entreprises et ETI, 1er septembre 2027 pour les PME, TPE et micro-entreprises. Pour un particulier, c'est le e-reporting des données de vente qui s'applique, pas la facture électronique."
           }
         }
       ]

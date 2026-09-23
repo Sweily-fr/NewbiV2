@@ -1,8 +1,8 @@
 ---
-title: 'Gérer la facturation d''un cabinet d''avocats : outils et bonnes pratiques'
+title: "Facturation cabinet d'avocats : honoraires, CARPA et outils"
 description: >-
-  Optimisez la facturation de votre cabinet d'avocats : suivi des heures,
-  honoraires, provisions, facturation au temps passé et logiciels adaptés.
+  Facturation d'un cabinet d'avocats : convention d'honoraires, suivi du temps
+  passé, provisions CARPA, mentions obligatoires et logiciels adaptés.
 date: '2026-02-10'
 category: guide
 sector: Avocats / Juristes
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/facturation-cabinet-avocat-gestion/hero.webp
 published: true
 publishDate: '2026-05-25'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -28,13 +29,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">9 min de lecture</Badge>
 </div>
 
-# Gérer la facturation d'un cabinet d'avocats : outils et bonnes pratiques
+# Facturation cabinet d'avocats : honoraires, CARPA et outils
 
-La **facturation cabinet avocat** est un exercice bien plus complexe qu'il n'y paraît. Entre le suivi des heures passées sur chaque dossier, la gestion des provisions sur le compte CARPA, la répartition des honoraires entre associés et le respect des obligations déontologiques, les cabinets d'avocats font face à des défis de facturation uniques dans le monde des professions libérales.
+La facturation d'un cabinet d'avocats repose sur trois obligations : une convention d'honoraires signée avant toute mission, un relevé du temps passé par dossier et par intervenant, et un circuit de provisions qui transite par le compte CARPA avant tout virement vers le compte professionnel.
 
-Que vous soyez avocat individuel ou que vous gériez un cabinet multi-associés, maîtriser votre processus de facturation est essentiel pour garantir la rentabilité de votre activité, maintenir la confiance de vos clients et rester en conformité avec les règles de l'Ordre des avocats.
-
-Dans ce guide complet, nous passons en revue les spécificités de la facturation pour les cabinets d'avocats, les bonnes pratiques à adopter et les outils qui vous feront gagner un temps précieux.
+Vous trouverez ici les modes de facturation possibles (temps passé, forfait, honoraire de résultat, abonnement), les règles de suivi du temps, la gestion des provisions, la répartition entre associés, les mentions obligatoires de vos factures et les outils qui vous feront gagner du temps.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure className="my-8">
@@ -239,7 +238,7 @@ Un bon [CRM et outil de gestion client](/blog/crm-gestion-client-independant) in
 
 ### TVA et avocats
 
-Les avocats sont assujettis à la **TVA au taux normal de 20 %** sur leurs honoraires. L'aide juridictionnelle est exonérée. Attention : si vous bénéficiez de la franchise en base de TVA (micro-BNC), vos factures ne doivent pas mentionner de TVA mais doivent porter la mention "TVA non applicable, article 293 B du CGI".
+Les avocats sont assujettis à la **TVA au taux normal de 20 %** sur leurs honoraires. L'aide juridictionnelle est exonérée. Attention : si vous bénéficiez de la franchise en base de TVA (jusqu'à 37 500 euros de chiffre d'affaires en 2026 pour les professions libérales, seuil majoré à 41 250 euros), vos factures ne doivent pas mentionner de TVA mais doivent porter la mention "TVA non applicable, article 293 B du CGI".
 
 ### Mentions obligatoires sur les factures
 
@@ -310,6 +309,18 @@ Un logiciel de facturation conçu pour les professions juridiques vous fera gagn
         Plusieurs modèles existent : répartition au prorata des heures facturées par chaque associé, attribution selon l'apporteur du dossier, clé de répartition fixe définie dans le pacte d'associés, ou système mixte. L'essentiel est de disposer d'un outil qui trace précisément la contribution de chaque intervenant (associés et collaborateurs) sur chaque dossier, avec des taux horaires différenciés, pour générer des rapports de répartition fiables et éviter les conflits.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Quel logiciel de gestion choisir pour un cabinet d'avocats ?</AccordionTrigger>
+      <AccordionContent>
+        Retenez un outil capable de suivre le temps passé par dossier et par intervenant, de générer des relevés de diligences joints aux factures, de gérer plusieurs taux horaires et de tracer les provisions CARPA. Vérifiez aussi la conformité des mentions obligatoires, le suivi des impayés et l'export des pièces vers votre expert-comptable. Un cabinet de petite taille peut combiner un outil de facturation conforme et un suivi du temps rigoureux.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-7">
+      <AccordionTrigger>Un logiciel de gestion de cabinet comptable convient-il à un cabinet d'avocats ?</AccordionTrigger>
+      <AccordionContent>
+        Partiellement seulement. Les logiciels de gestion interne de cabinet d'expertise comptable sont construits autour de la révision, des liasses fiscales et des échéances déclaratives des clients. Un cabinet d'avocats a besoin de fonctions différentes : convention d'honoraires, facturation au temps passé par dossier, relevés de diligences, provisions CARPA et répartition entre associés. Les briques communes sont la facturation, le suivi des encaissements et le partage des pièces comptables.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -318,8 +329,8 @@ Un logiciel de facturation conçu pour les professions juridiques vous fera gagn
     __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Article",
-      "headline": "Gérer la facturation d'un cabinet d'avocats : outils et bonnes pratiques",
-      "description": "Optimisez la facturation de votre cabinet d'avocats : suivi des heures, honoraires, provisions, facturation au temps passé et logiciels adaptés.",
+      "headline": "Facturation cabinet d'avocats : honoraires, CARPA et outils",
+      "description": "Facturation d'un cabinet d'avocats : convention d'honoraires, suivi du temps passé, provisions CARPA, mentions obligatoires et logiciels adaptés.",
       "author": {
         "@type": "Organization",
         "name": "Newbi",
@@ -334,7 +345,7 @@ Un logiciel de facturation conçu pour les professions juridiques vous fera gagn
         }
       },
       "datePublished": "2026-02-10",
-      "dateModified": "2026-02-10",
+      "dateModified": "2026-09-23",
       "image": "https://www.newbi.co/blog/facturation-cabinet-avocat-gestion/hero.webp",
       "mainEntityOfPage": {
         "@type": "WebPage",
@@ -390,6 +401,22 @@ Un logiciel de facturation conçu pour les professions juridiques vous fera gagn
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Plusieurs modèles existent : répartition au prorata des heures facturées, attribution selon l'apporteur du dossier, clé de répartition fixe définie dans le pacte d'associés, ou système mixte. L'essentiel est de disposer d'un outil qui trace précisément la contribution de chaque intervenant."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel logiciel de gestion choisir pour un cabinet d'avocats ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Retenez un outil capable de suivre le temps passé par dossier et par intervenant, de générer des relevés de diligences joints aux factures, de gérer plusieurs taux horaires et de tracer les provisions CARPA. Vérifiez aussi la conformité des mentions obligatoires, le suivi des impayés et l'export des pièces vers votre expert-comptable."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un logiciel de gestion de cabinet comptable convient-il à un cabinet d'avocats ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Partiellement seulement. Les logiciels de gestion interne de cabinet d'expertise comptable sont construits autour de la révision, des liasses fiscales et des échéances déclaratives. Un cabinet d'avocats a besoin de la convention d'honoraires, de la facturation au temps passé, des relevés de diligences, des provisions CARPA et de la répartition entre associés."
           }
         }
       ]

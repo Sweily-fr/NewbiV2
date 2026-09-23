@@ -1,8 +1,8 @@
 ---
-title: 'Factur-X : comprendre le format de facture électronique français'
+title: 'Factur-X : le format de facture électronique expliqué (PDF + XML)'
 description: >-
-  Tout savoir sur Factur-X : définition du format hybride PDF/XML, profils,
-  compatibilité et comment générer des factures Factur-X conformes.
+  Factur-X, le format hybride PDF/A-3 + XML accepté par les plateformes
+  agréées : définition, 5 profils, différences avec UBL et CII et génération conforme.
 date: '2026-02-10'
 category: glossaire
 sector: null
@@ -11,6 +11,7 @@ author: Newbi
 image: /blog/facturx-format-facture-electronique/hero.webp
 published: true
 publishDate: '2026-05-04'
+updated: '2026-09-23'
 ---
 
 import Image from "next/image"
@@ -27,9 +28,11 @@ import { Check } from "lucide-react"
   <Badge variant="outline">8 min de lecture</Badge>
 </div>
 
-# Factur-X : comprendre le format de facture électronique français
+# Factur-X : le format de facture électronique expliqué (PDF + XML)
 
-**Factur-X** est le format de facture électronique hybride qui s'impose comme la référence en France pour la transition vers la dématérialisation obligatoire. Combinant un fichier PDF lisible par l'humain et des données XML structurées exploitables par les machines, Factur-X représente la solution idéale pour les entreprises qui souhaitent se conformer aux nouvelles obligations légales tout en conservant la simplicité d'usage d'un document PDF classique.
+Factur-X est un format de facture électronique hybride : un PDF/A-3 lisible par n'importe qui, dans lequel est embarqué un fichier XML structuré conforme à la norme européenne EN 16931. C'est l'un des trois formats acceptés en France pour la facturation électronique obligatoire, avec UBL et CII.
+
+Cet article explique d'où vient Factur-X, ce que contiennent ses cinq profils, ce qui le distingue des formats XML purs, ce que change la réforme 2026-2027 pour vos factures et comment produire un fichier Factur-X conforme sans compétence technique.
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <figure>
@@ -126,9 +129,9 @@ Le profil **EN 16931 (Comfort)** est celui qui correspond le mieux aux exigences
 
 C'est la force principale de Factur-X. Contrairement aux formats purement structurés comme l'UBL ou le CII pur (qui ne produisent que du XML), Factur-X conserve une représentation visuelle en PDF. Vos équipes commerciales, vos clients et vos fournisseurs peuvent ouvrir la facture avec n'importe quel lecteur PDF, sans logiciel spécialisé. En parallèle, votre logiciel comptable extrait automatiquement les données XML pour alimenter vos écritures.
 
-### Conformité avec la réforme 2026
+### Conformité avec la réforme 2026-2027
 
-La réforme de la [facturation électronique obligatoire](/blog/obligations-facture-electronique-pme) impose aux entreprises françaises d'émettre et de recevoir des factures dans des formats structurés ou hybrides. Factur-X fait partie des trois formats acceptés par le [Portail Public de Facturation (PPF)](/blog/quest-ce-que-ppf-portail-public-facturation) et les [Plateformes de Dématérialisation Partenaires (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation) :
+La réforme de la [facturation électronique obligatoire](/blog/obligations-facture-electronique-pme) impose à toutes les entreprises françaises de recevoir des factures électroniques depuis le 1er septembre 2026. L'obligation d'émettre s'applique depuis le 1er septembre 2026 aux grandes entreprises et aux ETI, et à partir du 1er septembre 2027 aux PME, TPE et micro-entreprises. Ces factures circulent dans des formats structurés ou hybrides : Factur-X fait partie des trois formats du socle de la réforme, reconnus par le [Portail Public de Facturation (PPF)](/blog/quest-ce-que-ppf-portail-public-facturation) et les [Plateformes de Dématérialisation Partenaires (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation) :
 
 <div className="not-prose my-6 space-y-3">
   <div className="flex items-start gap-3">
@@ -144,6 +147,8 @@ La réforme de la [facturation électronique obligatoire](/blog/obligations-fact
     <span><strong>CII (Cross Industry Invoice)</strong> format XML pur conforme à la norme UN/CEFACT</span>
   </div>
 </div>
+
+La facture électronique ne modifie pas les [délais de paiement](/blog/quest-ce-que-delai-paiement-facture) légaux (30 jours par défaut, 60 jours maximum à compter de l'émission), mais les statuts transmis par la plateforme (déposée, rejetée, refusée, encaissée) vous permettent de suivre chaque échéance sans relancer à l'aveugle. Les boutiques en ligne qui vendent à des professionnels sont concernées au même titre : notre guide de la [facture e-commerce](/blog/facture-e-commerce-boutique-en-ligne) détaille leurs particularités.
 
 ### Interopérabilité européenne
 
@@ -188,7 +193,7 @@ En résumé, si vous cherchez la simplicité et la conformité, **Factur-X au pr
 
 ## Comment Newbi génère vos factures au format Factur-X
 
-Avec **Newbi**, la génération de factures Factur-X est entièrement automatique. Vous n'avez aucune manipulation technique à effectuer : il vous suffit de créer votre facture depuis l'interface, et Newbi se charge du reste.
+Avec **Newbi**, la génération de factures Factur-X est entièrement automatique. Vous n'avez aucune manipulation technique à effectuer : il vous suffit de créer votre facture depuis l'interface, et Newbi se charge du reste. Le raccordement à une plateforme agréée est décrit sur la page [facturation électronique de Newbi](/produits/facturation-electronique).
 
 <div className="not-prose my-8">
   <Callout type="tip" title="Génération automatique avec Newbi">
@@ -272,6 +277,18 @@ Avec Newbi, vous générez automatiquement des factures Factur-X conformes, sans
         Avec un logiciel de facturation comme Newbi, la génération de factures Factur-X est entièrement automatisée. Vous créez votre facture normalement en renseignant les informations habituelles (client, produits, TVA), et le logiciel produit automatiquement un fichier PDF/A-3 avec le XML CII embarqué au profil EN 16931. Aucune manipulation technique n'est nécessaire.
       </AccordionContent>
     </AccordionItem>
+    <AccordionItem value="item-6">
+      <AccordionTrigger>Quel format de facture électronique choisir : Factur-X, UBL ou CII ?</AccordionTrigger>
+      <AccordionContent>
+        Les trois formats sont acceptés par la réforme et votre plateforme agréée convertit si besoin. Factur-X convient à la grande majorité des TPE et PME : la facture reste un PDF lisible et le XML embarqué est traité automatiquement. UBL est à privilégier si vos clients ou fournisseurs l'utilisent déjà (Europe du Nord, grands comptes). CII pur est réservé aux échanges automatisés entre systèmes d'information. Dans le doute, choisissez Factur-X au profil EN 16931.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-7">
+      <AccordionTrigger>Qu'est-ce que le PPF dans la facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF (Portail public de facturation) est la plateforme de l'État, adossée à Chorus Pro. Depuis octobre 2024, son rôle est recentré sur l'annuaire des entreprises et la collecte des données de facturation pour l'administration : l'émission et la réception des factures entre entreprises passent par une plateforme agréée (PDP). Une facture Factur-X émise depuis votre logiciel transite donc par votre PDP, qui la remet au destinataire et transmet les données au PPF.
+      </AccordionContent>
+    </AccordionItem>
   </Accordion>
 </div>
 
@@ -320,6 +337,22 @@ Avec Newbi, vous générez automatiquement des factures Factur-X conformes, sans
           "acceptedAnswer": {
             "@type": "Answer",
             "text": "Avec un logiciel de facturation comme Newbi, la génération de factures Factur-X est entièrement automatisée. Vous créez votre facture normalement en renseignant les informations habituelles (client, produits, TVA), et le logiciel produit automatiquement un fichier PDF/A-3 avec le XML CII embarqué au profil EN 16931. Aucune manipulation technique n'est nécessaire."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel format de facture électronique choisir : Factur-X, UBL ou CII ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les trois formats sont acceptés par la réforme et votre plateforme agréée convertit si besoin. Factur-X convient à la grande majorité des TPE et PME : la facture reste un PDF lisible et le XML embarqué est traité automatiquement. UBL est à privilégier si vos partenaires l'utilisent déjà, CII pur est réservé aux échanges automatisés entre systèmes. Dans le doute, choisissez Factur-X au profil EN 16931."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que le PPF dans la facture électronique ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le PPF (Portail public de facturation) est la plateforme de l'État, adossée à Chorus Pro. Depuis octobre 2024, son rôle est recentré sur l'annuaire des entreprises et la collecte des données de facturation pour l'administration : l'émission et la réception des factures entre entreprises passent par une plateforme agréée (PDP), qui transmet ensuite les données au PPF."
           }
         }
       ]
