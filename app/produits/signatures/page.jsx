@@ -13,6 +13,8 @@ import MetiersSection from "@/app/(main)/new/lp-home/MetiersSection";
 import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
 import SignaturesComponentsSection from "./section/SignaturesComponentsSection";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
+import { JsonLd } from "@/src/components/seo/json-ld";
+import { productJsonLd } from "@/src/lib/product-jsonld";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -26,6 +28,8 @@ export const metadata = generateNextMetadata("signatures");
 export default function SignaturesPage() {
   return (
     <>
+      {/* Données structurées : application + fil d'Ariane, rendues côté serveur */}
+      <JsonLd data={productJsonLd("signatures")} />
       <div className={`${poppins.variable} font-poppins`}>
         <NewHeroNavbar hasBanner={false} />
         <main>

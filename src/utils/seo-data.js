@@ -29,6 +29,11 @@ export const defaultSEO = {
 };
 
 // Données SEO pour chaque page
+// ATTENTION : les blocs `jsonLd` ci-dessous ne sont PAS rendus. Les données
+// structurées des pages produit vivent dans `src/lib/product-jsonld.js`, qui
+// s'appuie sur les tarifs réels de `plans-display.js`. Les `aggregateRating`
+// qui figuraient ici (4,5 à 4,9 sur 80 à 200 avis) étaient inventés : ils ont
+// été retirés le 23/09/2026, ne pas les réintroduire sans source d'avis réelle.
 export const seoData = {
   // Page d'accueil
   home: {
@@ -78,7 +83,16 @@ export const seoData = {
         contactType: "customer service",
         availableLanguage: ["French", "fr"],
       },
-      sameAs: ["https://www.instagram.com/newbi_fr?igsh=dnVwZ3NndTU3bWw5"],
+      sameAs: [
+      // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
+      // Google la reconnaît (panneau de marque). Repris du footer, seule source
+      // de vérité des liens sociaux.
+      "https://www.instagram.com/newbi_fr",
+      "https://fr.linkedin.com/company/newbi-france",
+      "https://www.tiktok.com/@newbi.fr",
+      "https://www.youtube.com/@Newbi_fr",
+      "https://fr.trustpilot.com/review/newbi.fr",
+    ],
       offers: {
         "@type": "Offer",
         description: "Essai gratuit de 30 jours",
@@ -140,11 +154,6 @@ export const seoData = {
         "Gestion de la TVA",
         "Templates personnalisables",
       ],
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.8",
-        reviewCount: "150",
-      },
     },
   },
 
@@ -197,11 +206,6 @@ export const seoData = {
         "Recherche d'entreprises françaises",
         "Calcul automatique de TVA",
       ],
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.7",
-        reviewCount: "120",
-      },
     },
   },
 
@@ -256,11 +260,6 @@ export const seoData = {
         "Export HTML/CSS",
         "Prévisualisation en temps réel",
       ],
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.9",
-        reviewCount: "200",
-      },
     },
   },
 
@@ -338,11 +337,6 @@ export const seoData = {
         "Interface drag & drop",
         "Organisation par colonnes",
       ],
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.6",
-        reviewCount: "95",
-      },
     },
   },
 
@@ -396,11 +390,6 @@ export const seoData = {
         "Stockage cloud sécurisé",
         "Interface drag & drop",
       ],
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.5",
-        reviewCount: "80",
-      },
     },
   },
 
@@ -733,7 +722,16 @@ export const homeJsonLd = [
       contactType: "customer service",
       availableLanguage: ["French"],
     },
-    sameAs: ["https://www.instagram.com/newbi_fr"],
+    sameAs: [
+      // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
+      // Google la reconnaît (panneau de marque). Repris du footer, seule source
+      // de vérité des liens sociaux.
+      "https://www.instagram.com/newbi_fr",
+      "https://fr.linkedin.com/company/newbi-france",
+      "https://www.tiktok.com/@newbi.fr",
+      "https://www.youtube.com/@Newbi_fr",
+      "https://fr.trustpilot.com/review/newbi.fr",
+    ],
   },
   {
     "@context": "https://schema.org",

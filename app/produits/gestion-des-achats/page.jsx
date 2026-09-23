@@ -13,6 +13,8 @@ import MetiersSection from "@/app/(main)/new/lp-home/MetiersSection";
 import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
 import GestionAchatsComponentsSection from "./section/GestionAchatsComponentsSection";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
+import { JsonLd } from "@/src/components/seo/json-ld";
+import { productJsonLd } from "@/src/lib/product-jsonld";
 
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
@@ -28,6 +30,8 @@ export const metadata = generateNextMetadata("gestion-des-achats");
 export default function GestionDesAchatsPage() {
   return (
     <>
+      {/* Données structurées : application + fil d'Ariane, rendues côté serveur */}
+      <JsonLd data={productJsonLd("gestion-des-achats")} />
       <div className={`${poppins.variable} font-poppins`}>
         <NewHeroNavbar />
         <main>
