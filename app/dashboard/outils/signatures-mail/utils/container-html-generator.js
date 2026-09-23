@@ -10,59 +10,11 @@
 
 import { ELEMENT_TYPES } from "./block-registry";
 
-// Cloudflare R2 base URL for social icons (même URL que BlockElement.jsx)
-const CLOUDFLARE_SOCIAL_BASE =
-  "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social";
-
-// Function to get social icon URL from Cloudflare
-const getSocialIconUrl = (platform, color = "black") => {
-  // x -> twitter pour le nom du fichier
-  const cloudflareplatform = platform === "x" ? "twitter" : platform;
-  return `${CLOUDFLARE_SOCIAL_BASE}/${cloudflareplatform}/${cloudflareplatform}-${color}.png`;
-};
-
-// Function to convert hex color to color name for Cloudflare (même logique que BlockElement.jsx)
-const getColorName = (colorInput) => {
-  if (!colorInput) return "black";
-  const color = colorInput.toLowerCase().trim();
-
-  // Si c'est déjà un nom de couleur valide
-  const validColorNames = [
-    "blue",
-    "pink",
-    "purple",
-    "black",
-    "red",
-    "green",
-    "yellow",
-    "orange",
-    "indigo",
-    "sky",
-    "white",
-  ];
-  if (validColorNames.includes(color)) return color;
-
-  // Conversion hex -> nom de couleur
-  const hexColor = color.replace("#", "");
-  const colorMap = {
-    "0077b5": "blue",
-    "1877f2": "blue",
-    e4405f: "pink",
-    "833ab4": "purple",
-    "000000": "black",
-    171717: "black",
-    "1da1f2": "blue",
-    ff0000: "red",
-    333333: "black",
-    "5a50ff": "purple",
-    "3b82f6": "blue",
-    ef4444: "red",
-    "22c55e": "green",
-    f59e0b: "orange",
-    ffffff: "white",
-  };
-  return colorMap[hexColor] || "black";
-};
+import {
+  getSocialIconUrl,
+  getSocialColorName as getColorName,
+  getContactIconUrl,
+} from "./social-icons";
 
 /**
  * Helper to escape text for Gmail (prevent auto-link detection)
@@ -218,7 +170,7 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/${type === ELEMENT_TYPES.PHONE ? "phone" : "smartphone"}-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl(type === ELEMENT_TYPES.PHONE ? "phone" : "smartphone", iconColor)}" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
         : "";
 
       return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${escapeForGmail(value, "phone")}</span></div>`;
@@ -236,7 +188,7 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/mail-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl("mail", iconColor)}" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
         : "";
 
       return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="mailto:${email}" style="color: ${color}; text-decoration: none;">${escapeForGmail(email, "email")}</a></div>`;
@@ -254,7 +206,7 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/globe-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl("globe", iconColor)}" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
         : "";
       const href = website.startsWith("http") ? website : `https://${website}`;
 
@@ -273,7 +225,7 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/map-pin-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl("map-pin", iconColor)}" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
         : "";
 
       return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${address}</span></div>`;
