@@ -255,6 +255,11 @@ function ComparisonSection() {
 function GuidesSection() {
   const guides = [
     {
+      href: "/outils/generateur-de-facture",
+      title: "Générateur de facture gratuit",
+      desc: "Créez et téléchargez une facture conforme en ligne, sans inscription.",
+    },
+    {
       href: "/blog/mentions-obligatoires-facture",
       title: "Les mentions obligatoires d'une facture",
       desc: "La liste complète, avec les mentions propres aux micro-entrepreneurs et aux ventes B2B.",
