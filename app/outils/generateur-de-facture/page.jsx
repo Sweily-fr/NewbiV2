@@ -3,7 +3,8 @@ import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { JsonLd } from "@/src/components/seo/json-ld";
 import { SITE_URL } from "@/src/lib/site";
-import InvoiceGenerator from "./InvoiceGenerator";
+import DocumentGenerator from "../_components/DocumentGenerator";
+import { FACTURE_CONFIG } from "../_components/configs";
 
 export const metadata = {
   title: {
@@ -48,7 +49,7 @@ const FAQ = [
   },
   {
     q: "Puis-je créer un devis avec cet outil ?",
-    r: "Pas encore. En attendant, notre modèle de devis est téléchargeable en Word, Excel et PDF, et Newbi permet de transformer un devis signé en facture en un clic.",
+    r: "Oui, avec notre générateur de devis, qui fonctionne de la même façon et gère la durée de validité et la mention « Bon pour accord ». Le modèle de devis est aussi téléchargeable en Word, Excel et PDF. Dans Newbi, un devis accepté se transforme en facture en un clic, sans ressaisie.",
   },
 ];
 
@@ -141,7 +142,7 @@ export default function GenerateurDeFacturePage() {
             </p>
           </header>
 
-          <InvoiceGenerator />
+          <DocumentGenerator config={FACTURE_CONFIG} />
 
           {/* --------------------------- Contenu SEO --------------------------- */}
           <section className="mt-20 max-w-3xl">
@@ -202,7 +203,7 @@ export default function GenerateurDeFacturePage() {
               {[
                 ["/modeles/modele-facture.xlsx", "Modèle de facture Excel", "Le même document à remplir hors ligne, avec calcul automatique."],
                 ["/blog/modele-facture-gratuit-word-excel-pdf", "Modèle de facture à télécharger", "Word, Excel et PDF, avec un exemple rempli."],
-                ["/blog/quest-ce-que-numero-facture", "Bien numéroter ses factures", "Les règles de la séquence continue et les erreurs à éviter."],
+                ["/outils/generateur-de-devis", "Générateur de devis", "Chiffrez d\'abord, facturez ensuite : le même outil pour vos devis."],
                 ["/produits/facturation-electronique", "Facturation électronique 2026-2027", "Ce qui devient obligatoire, et quand."],
               ].map(([href, titre, desc]) => (
                 <li key={href}>
