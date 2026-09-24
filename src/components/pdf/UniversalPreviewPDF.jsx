@@ -98,6 +98,12 @@ const UniversalPreviewPDF = ({
   // (émission ramenée au jour J, échéance/validité décalée d'autant). N'est
   // jamais activé par les générateurs PDF, donc le PDF généré reste inchangé.
   recalcDraftDates = false,
+  // Générateurs publics (/outils/*) : le document ne doit refléter QUE la
+  // saisie du visiteur. Sans cela, six champs retombent sur l'organisation
+  // de la personne connectée (logo, forme juridique, régime de TVA…), et un
+  // utilisateur Newbi qui teste le générateur voit le logo de SA société
+  // apparaître sur un document censé être vierge.
+  ignoreOrganization = false,
 }) => {
   // Calculer le montant marché HT (total à 100% sans avancement) pour les factures de situation
   const calculateMontantMarcheHT = () => {
@@ -135,7 +141,8 @@ const UniversalPreviewPDF = ({
 
   const montantMarcheHT = calculateMontantMarcheHT();
   const { data: session } = useSession();
-  const { organization } = useWorkspace();
+  const { organization: liveOrganization } = useWorkspace();
+  const organization = ignoreOrganization ? null : liveOrganization;
   const documentRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [containerHeight, setContainerHeight] = useState("auto");
@@ -634,11 +641,14 @@ const UniversalPreviewPDF = ({
         const parts = [];
         if (address.fullName) parts.push(String(address.fullName));
         if (address.street) parts.push(String(address.street));
-        if (address.postalCode && address.city) {
-          parts.push(`${String(address.postalCode)} ${String(address.city)}`);
-        } else if (address.city) {
-          parts.push(String(address.city));
-        }
+        // Chaque partie renseignée doit s'afficher, même seule : un code
+        // postal sans ville était auparavant purement ignoré, et disparaissait
+        // donc du document sans que personne ne le voie.
+        const ligneVille = [address.postalCode, address.city]
+          .filter(Boolean)
+          .map(String)
+          .join(" ");
+        if (ligneVille) parts.push(ligneVille);
         if (address.country) parts.push(String(address.country));
         return parts.join("\n") || "";
       } catch (error) {

@@ -191,9 +191,19 @@ export default function DocumentGenerator({ config }) {
         vatRate: emetteur.franchise ? 0 : Number(it.vatRate) || 0,
         unit: it.unit || "unité",
       })),
-      termsAndConditions: emetteur.franchise
-        ? `TVA non applicable, article 293 B du Code général des impôts. ${doc.terms}`
-        : doc.terms,
+      // La mention d'origine est ajoutée au bloc des conditions plutôt qu'aux
+      // `footerNotes` : le gabarit impose une hauteur de 1200 px pour une page
+      // A4 qui en fait 1123, si bien qu'un bloc supplémentaire en pied de
+      // document tombe sur le bord de la page et n'est pas lisible.
+      termsAndConditions: [
+        emetteur.franchise
+          ? "TVA non applicable, article 293 B du Code général des impôts."
+          : null,
+        doc.terms,
+        "Document créé gratuitement sur newbi.fr",
+      ]
+        .filter(Boolean)
+        .join("\n"),
     }),
     [emetteur, client, doc, items, isQuote]
   );
@@ -416,7 +426,10 @@ export default function DocumentGenerator({ config }) {
                   <Input
                     type="number"
                     min="0"
-                    step="0.01"
+                    // Une quantité se compte en unités : les flèches montent
+                    // de 1 en 1. La saisie de décimales reste possible pour
+                    // les heures ou les mètres carrés.
+                    step="1"
                     value={it.quantity}
                     onChange={(e) => setItem(i, { quantity: e.target.value })}
                     className="h-9"
@@ -566,7 +579,11 @@ export default function DocumentGenerator({ config }) {
             style={{ transform: `scale(${frame.scale})` }}
           >
             <div ref={previewRef}>
-              <UniversalPreviewPDF data={previewData} type={config.type} />
+              <UniversalPreviewPDF
+                data={previewData}
+                type={config.type}
+                ignoreOrganization
+              />
             </div>
           </div>
         </div>
