@@ -51,6 +51,16 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/outils`,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/outils/generateur-de-facture`,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/logiciel-facturation-gratuit`,
       changeFrequency: "monthly",
       priority: 0.9,
