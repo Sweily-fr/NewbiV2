@@ -184,6 +184,7 @@ export function TransactionDetailDrawer({
   onOpenChange,
   onEdit,
   onAttachReceipt,
+  isAnalyzingReceipt = false,
   onRefresh,
   onSubmit,
   isCreating = false,
@@ -462,8 +463,26 @@ export function TransactionDetailDrawer({
     (transaction?.linkedInvoices?.length || 0) > 0 ||
     linkedImportedInvoices.length > 0;
   // Factures d'achat liées (lien par référence — le justificatif est sur la
-  // facture, accessible via ce lien).
-  const linkedPurchaseInvoices = transaction?.linkedPurchaseInvoices || [];
+  // facture, accessible via ce lien). Triées de la plus récemment rattachée à
+  // la plus ancienne : le justificatif qu'on vient de déposer doit arriver en
+  // tête. La date vient de reconciliationLinks, qui enregistre le moment du
+  // rattachement (et non la date de la facture, qui peut être ancienne).
+  const linkedPurchaseInvoices = useMemo(() => {
+    const list = transaction?.linkedPurchaseInvoices || [];
+    if (list.length < 2) return list;
+    const linkedAt = new Map(
+      (transaction?.reconciliationLinks || [])
+        .filter((l) => l?.documentType === "PURCHASE_INVOICE" && l?.documentId)
+        .map((l) => [
+          String(l.documentId),
+          new Date(l.linkedAt || 0).getTime() || 0,
+        ]),
+    );
+    return [...list].sort(
+      (a, b) =>
+        (linkedAt.get(String(b?.id)) || 0) - (linkedAt.get(String(a?.id)) || 0),
+    );
+  }, [transaction?.linkedPurchaseInvoices, transaction?.reconciliationLinks]);
   // Rattachement manuel possible : entrée d'argent. Les transactions
   // manuelles de type EXPENSE (montant positif possible) sont exclues.
   const canPickInvoice =
@@ -1893,109 +1912,128 @@ export function TransactionDetailDrawer({
             {/* Factures d'achat liées (lien par référence — le justificatif
                 reste sur la facture, accessible via ce lien). N↔N : plusieurs
                 factures possibles, détachement unitaire. */}
-            {!isCreateMode && linkedPurchaseInvoices.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-normal text-muted-foreground">
-                      {linkedPurchaseInvoices.length > 1
-                        ? "Factures d'achat liées"
-                        : "Facture d'achat liée"}
-                    </p>
+            {!isCreateMode &&
+              (linkedPurchaseInvoices.length > 0 || isAnalyzingReceipt) && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm font-normal text-muted-foreground">
+                        {linkedPurchaseInvoices.length > 1
+                          ? "Factures d'achat liées"
+                          : "Facture d'achat liée"}
+                      </p>
+                    </div>
+                    {/* Rien n'est encore rapproché tant que la section ne
+                        contient que le loader d'analyse */}
+                    {linkedPurchaseInvoices.length > 0 && (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                        <Link2 className="w-3 h-3" />
+                        Rapprochée
+                      </span>
+                    )}
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                    <Link2 className="w-3 h-3" />
-                    Rapprochée
-                  </span>
-                </div>
 
-                {linkedPurchaseInvoices.map((pi) => (
-                  <div
-                    key={pi.id}
-                    onClick={() =>
-                      pi.files?.some((f) => f?.url)
-                        ? handleViewPurchaseInvoiceReceipt(pi)
-                        : handleViewPurchaseInvoice(pi)
-                    }
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors duration-[120ms] ${
-                      isLinkedPreviewed(`pi-${pi.id}`)
-                        ? "bg-muted/70 ring-1 ring-border"
-                        : "bg-muted/30 hover:bg-muted/50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium truncate">
-                            {pi.invoiceNumber || "Facture d'achat"}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {pi.supplierName || "Fournisseur"}
+                  {isAnalyzingReceipt && (
+                    <div className="p-3 border rounded-lg bg-muted/30 flex items-center gap-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          Analyse du justificatif en cours
                         </p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span>{formatAmount(pi.amountTTC)}</span>
-                          {pi.issueDate && (
-                            <>
-                              <span>•</span>
-                              <span>{formatDate(pi.issueDate)}</span>
-                            </>
-                          )}
-                        </div>
-                        <LinkOriginTag
-                          className="mt-1.5"
-                          links={transaction?.reconciliationLinks}
-                          documentType="PURCHASE_INVOICE"
-                          documentId={pi.id}
-                        />
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <EyeButton
-                          active={isLinkedPreviewed(`pi-${pi.id}`)}
-                          disabled={!pi.files?.some((f) => f?.url)}
-                          onClick={() => handleViewPurchaseInvoiceReceipt(pi)}
-                          label="Voir le justificatif"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewPurchaseInvoice(pi);
-                          }}
-                          title="Ouvrir la facture d'achat"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUnlinkPurchaseInvoice(pi);
-                          }}
-                          disabled={
-                            isReadOnly || unlinkingPurchaseInvoiceId !== null
-                          }
-                          title={
-                            readOnlyTooltip || "Détacher la facture d'achat"
-                          }
-                        >
-                          {unlinkingPurchaseInvoiceId === pi.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Unlink className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <p className="text-sm text-muted-foreground">
+                          La facture d'achat apparaîtra ici dès qu'elle est
+                          prête.
+                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  )}
+                  {linkedPurchaseInvoices.map((pi) => (
+                    <div
+                      key={pi.id}
+                      onClick={() =>
+                        pi.files?.some((f) => f?.url)
+                          ? handleViewPurchaseInvoiceReceipt(pi)
+                          : handleViewPurchaseInvoice(pi)
+                      }
+                      className={`p-3 border rounded-lg cursor-pointer transition-colors duration-[120ms] ${
+                        isLinkedPreviewed(`pi-${pi.id}`)
+                          ? "bg-muted/70 ring-1 ring-border"
+                          : "bg-muted/30 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium truncate">
+                              {pi.invoiceNumber || "Facture d'achat"}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {pi.supplierName || "Fournisseur"}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span>{formatAmount(pi.amountTTC)}</span>
+                            {pi.issueDate && (
+                              <>
+                                <span>•</span>
+                                <span>{formatDate(pi.issueDate)}</span>
+                              </>
+                            )}
+                          </div>
+                          <LinkOriginTag
+                            className="mt-1.5"
+                            links={transaction?.reconciliationLinks}
+                            documentType="PURCHASE_INVOICE"
+                            documentId={pi.id}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <EyeButton
+                            active={isLinkedPreviewed(`pi-${pi.id}`)}
+                            disabled={!pi.files?.some((f) => f?.url)}
+                            onClick={() => handleViewPurchaseInvoiceReceipt(pi)}
+                            label="Voir le justificatif"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewPurchaseInvoice(pi);
+                            }}
+                            title="Ouvrir la facture d'achat"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUnlinkPurchaseInvoice(pi);
+                            }}
+                            disabled={
+                              isReadOnly || unlinkingPurchaseInvoiceId !== null
+                            }
+                            title={
+                              readOnlyTooltip || "Détacher la facture d'achat"
+                            }
+                          >
+                            {unlinkingPurchaseInvoiceId === pi.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Unlink className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
             {/* Rattacher une facture d'achat existante (dépenses) : recours
                 au dépôt de justificatif quand la facture existe déjà (saisie,
