@@ -660,6 +660,9 @@ export default function TransactionTable({
   // ce délai. Annulé au démontage.
   const apolloClient = useApolloClient();
   const purchaseInvoicePollRef = useRef(null);
+  // Transaction dont les justificatifs sont en cours d'analyse : alimente le
+  // loader du tiroir, pour que l'attente ne soit pas un écran qui ne bouge pas.
+  const [analyzingTransactionId, setAnalyzingTransactionId] = useState(null);
   useEffect(() => {
     return () => {
       if (purchaseInvoicePollRef.current) {
@@ -676,67 +679,76 @@ export default function TransactionTable({
       }
       const poll = { cancelled: false };
       purchaseInvoicePollRef.current = poll;
+      setAnalyzingTransactionId(transactionId);
 
-      const deadline = Date.now() + RECEIPT_OCR_POLL_TIMEOUT_MS;
-      // Un justificatif est traité quand l'API lui a posé un purchaseInvoiceId,
-      // que la facture ait été créée ou qu'il ait rejoint une facture
-      // existante. Signal plus fiable que le nombre de factures liées, qui ne
-      // bouge pas quand la déduplication rattache à une facture déjà liée.
-      const pending = new Set(receiptIds);
-      const outcomes = [];
+      try {
+        const deadline = Date.now() + RECEIPT_OCR_POLL_TIMEOUT_MS;
+        // Un justificatif est traité quand l'API lui a posé un purchaseInvoiceId,
+        // que la facture ait été créée ou qu'il ait rejoint une facture
+        // existante. Signal plus fiable que le nombre de factures liées, qui ne
+        // bouge pas quand la déduplication rattache à une facture déjà liée.
+        const pending = new Set(receiptIds);
+        const outcomes = [];
 
-      while (!poll.cancelled && Date.now() < deadline) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, RECEIPT_OCR_POLL_INTERVAL_MS),
-        );
-        if (poll.cancelled) return;
-
-        let transaction;
-        try {
-          const { data } = await apolloClient.query({
-            query: GET_TRANSACTION,
-            variables: { id: transactionId },
-            fetchPolicy: "network-only",
-          });
-          transaction = data?.transaction;
-        } catch {
-          // Erreur réseau ponctuelle : nouvelle tentative au tour suivant
-          continue;
-        }
-        if (poll.cancelled || !Array.isArray(transaction?.receiptFiles)) {
-          continue;
-        }
-
-        let processed = false;
-        for (const file of transaction.receiptFiles) {
-          if (!file?.id || !pending.has(file.id)) continue;
-          // Même règle d'appariement que l'affichage du tiroir : par
-          // purchaseInvoiceId, avec repli sur l'URL du fichier porté par la
-          // facture. Le repli couvre les liens antérieurs à l'exposition du
-          // champ, et une API qui ne le renverrait pas encore.
-          const invoice = findCarryingPurchaseInvoice(
-            file,
-            transaction.linkedPurchaseInvoices,
+        while (!poll.cancelled && Date.now() < deadline) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, RECEIPT_OCR_POLL_INTERVAL_MS),
           );
-          if (!invoice) continue;
-          pending.delete(file.id);
-          processed = true;
-          outcomes.push({
-            label: invoice.invoiceNumber || invoice.supplierName || null,
-            // Facture déjà liée avant ce dépôt : document en double, aucune
-            // nouvelle carte n'apparaîtra, d'où le message explicite.
-            alreadyLinked: previousInvoiceIds.has(String(invoice.id)),
-          });
-        }
-        if (processed) refetch();
-        if (pending.size === 0) break;
-      }
+          if (poll.cancelled) return;
 
-      if (poll.cancelled) return;
-      announceReceiptOutcomes(outcomes, pending.size);
-      // Délai dépassé : un dernier rafraîchissement, au cas où l'analyse
-      // aboutisse juste après.
-      if (pending.size > 0) refetch();
+          let transaction;
+          try {
+            const { data } = await apolloClient.query({
+              query: GET_TRANSACTION,
+              variables: { id: transactionId },
+              fetchPolicy: "network-only",
+            });
+            transaction = data?.transaction;
+          } catch {
+            // Erreur réseau ponctuelle : nouvelle tentative au tour suivant
+            continue;
+          }
+          if (poll.cancelled || !Array.isArray(transaction?.receiptFiles)) {
+            continue;
+          }
+
+          let processed = false;
+          for (const file of transaction.receiptFiles) {
+            if (!file?.id || !pending.has(file.id)) continue;
+            // Même règle d'appariement que l'affichage du tiroir : par
+            // purchaseInvoiceId, avec repli sur l'URL du fichier porté par la
+            // facture. Le repli couvre les liens antérieurs à l'exposition du
+            // champ, et une API qui ne le renverrait pas encore.
+            const invoice = findCarryingPurchaseInvoice(
+              file,
+              transaction.linkedPurchaseInvoices,
+            );
+            if (!invoice) continue;
+            pending.delete(file.id);
+            processed = true;
+            outcomes.push({
+              label: invoice.invoiceNumber || invoice.supplierName || null,
+              // Facture déjà liée avant ce dépôt : document en double, aucune
+              // nouvelle carte n'apparaîtra, d'où le message explicite.
+              alreadyLinked: previousInvoiceIds.has(String(invoice.id)),
+            });
+          }
+          if (processed) refetch();
+          if (pending.size === 0) break;
+        }
+
+        if (poll.cancelled) return;
+        announceReceiptOutcomes(outcomes, pending.size);
+        // Délai dépassé : un dernier rafraîchissement, au cas où l'analyse
+        // aboutisse juste après.
+        if (pending.size > 0) refetch();
+      } finally {
+        // Une attente annulée l'a été par une plus récente, qui garde la main
+        // sur le loader.
+        if (purchaseInvoicePollRef.current === poll) {
+          setAnalyzingTransactionId(null);
+        }
+      }
     },
     [apolloClient, refetch],
   );
@@ -1672,6 +1684,12 @@ export default function TransactionTable({
             onOpenChange={handleCloseDetailDrawer}
             onEdit={handleEditFromDrawer}
             onAttachReceipt={handleAttachReceipt}
+            isAnalyzingReceipt={
+              !!analyzingTransactionId &&
+              analyzingTransactionId ===
+                (selectedTransaction?.originalTransaction?.id ||
+                  selectedTransaction?.id)
+            }
             onRefresh={refetch}
             onSubmit={handleSaveTransaction}
           />
