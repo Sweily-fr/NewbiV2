@@ -6,14 +6,47 @@ fichiers réellement servis depuis `public/modeles/`.
 
 ## Régénérer
 
+### PDF : le vrai gabarit Newbi
+
+Les PDF ne sont PAS dessinés à la main : ils sont rendus par le gabarit du
+produit (`UniversalPreviewPDF`), pour que le modèle téléchargé soit exactement
+la facture que Newbi génère. Le script pilote Chrome sur la page
+`/pdf-generator/<type>/preview`, qui lit ses données dans
+`window.__PREVIEW_DATA`, puis récupère le PDF vectoriel, comme le fait la route
+`POST /api/invoices/preview-pdf`.
+
+Prérequis : le serveur de développement doit tourner sur le port 3000, et
+`CHROME_PATH` doit pointer vers un binaire Chrome (voir `.env.local`).
+
+```bash
+npm run dev   # dans un autre terminal
+
+cp scripts/modeles/render-pdf-newbi.cjs ./.render.cjs
+CHROME_PATH="$(grep '^CHROME_PATH=' .env.local | cut -d= -f2- | tr -d '"')" \
+  node ./.render.cjs public/modeles scripts/modeles/rendus.json
+rm ./.render.cjs
+```
+
+`rendus.json` contient les données d'exemple de chaque modèle : société,
+client, lignes, conditions. Le gabarit en déduit le titre (Facture, Devis,
+Facture d'acompte), la mention de franchise de TVA et le pied de page légal.
+
+### Word et Excel
+
+Ces deux formats sont des documents modifiables, générés hors ligne :
+
 ```bash
 # Word (.docx) : nécessite uniquement Python 3
 python3 scripts/modeles/generate-docx.py
 
-# Excel (.xlsx) et PDF : depuis la racine du projet, pour que xlsx et jspdf
-# soient résolus depuis node_modules
+# Excel (.xlsx) : depuis la racine du projet, pour que xlsx soit résolu
+# depuis node_modules
 cp scripts/modeles/generate-xlsx-pdf.cjs ./.gen.cjs && node ./.gen.cjs . scripts/modeles/modeles.json && rm ./.gen.cjs
 ```
+
+Attention : `generate-xlsx-pdf.cjs` écrit aussi des PDF, dessinés avec jsPDF.
+Ils sont écrasés par le rendu au gabarit ci-dessus, qui fait foi. Lancer les
+deux commandes dans cet ordre : Excel d'abord, PDF au gabarit ensuite.
 
 ## Contenu
 
