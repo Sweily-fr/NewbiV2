@@ -3,7 +3,7 @@ import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { JsonLd } from "@/src/components/seo/json-ld";
 import { SITE_URL } from "@/src/lib/site";
-import { FileText, Download } from "lucide-react";
+import { FileText, FileSignature, Download } from "lucide-react";
 
 // Section « Outils » : pages publiques et gratuites, utilisables sans compte.
 // Elle a vocation à accueillir d'autres outils (calculateur de TVA,
@@ -15,12 +15,12 @@ export const metadata = {
     absolute: "Outils gratuits pour facturer et gérer son activité | Newbi",
   },
   description:
-    "Des outils gratuits et sans inscription pour les indépendants et les TPE : générateur de facture en ligne et modèles de facture et de devis à télécharger.",
+    "Des outils gratuits et sans inscription pour les indépendants et les TPE : générateurs de facture et de devis en ligne, et modèles à télécharger en Word, Excel et PDF.",
   alternates: { canonical: "/outils" },
   openGraph: {
     title: "Outils gratuits pour facturer | Newbi",
     description:
-      "Générateur de facture en ligne et modèles à télécharger, gratuits et sans inscription.",
+      "Générateurs de facture et de devis en ligne, et modèles à télécharger. Gratuits, sans inscription.",
     url: "/outils",
     siteName: "Newbi",
     type: "website",
@@ -35,6 +35,13 @@ const OUTILS = [
     icon: FileText,
     title: "Générateur de facture",
     desc: "Remplissez, prévisualisez et téléchargez une facture conforme en PDF. Sans inscription, rien n'est enregistré.",
+    tag: "En ligne",
+  },
+  {
+    href: "/outils/generateur-de-devis",
+    icon: FileSignature,
+    title: "Générateur de devis",
+    desc: "Créez un devis professionnel avec sa durée de validité et sa mention d'accord, puis téléchargez-le en PDF.",
     tag: "En ligne",
   },
   {

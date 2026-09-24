@@ -460,6 +460,14 @@ const Footer7 = ({
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
+                      href="/outils/generateur-de-devis"
+                    >
+                      Générateur de devis gratuit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
                       href="/logiciel-facturation-gratuit"
                     >
                       Logiciel de facturation gratuit

@@ -11,18 +11,22 @@ import { generatePDFFromElement } from "@/src/utils/generatePDF";
 import { Plus, Trash2, Download, Loader2 } from "lucide-react";
 
 /**
- * Générateur de facture public, utilisable sans compte.
+ * Générateur de document public (facture ou devis), utilisable sans compte.
  *
  * Tout se passe dans le navigateur : la saisie n'est jamais envoyée au
  * serveur et le PDF est produit localement (generatePDFFromElement, le même
  * utilitaire que le produit). Conséquence voulue : le coût serveur est nul
- * quel que soit le nombre de factures générées, et aucune donnée d'un
+ * quel que soit le nombre de documents générés, et aucune donnée d'un
  * visiteur anonyme n'est stockée.
  *
- * L'aperçu réutilise UniversalPreviewPDF, le gabarit du produit : la facture
- * téléchargée est exactement celle que Newbi génère. Le composant appelle
+ * L'aperçu réutilise UniversalPreviewPDF, le gabarit du produit : le document
+ * téléchargé est exactement celui que Newbi génère. Le composant appelle
  * useSession/useWorkspace, qui renvoient simplement null hors connexion (la
  * page /pdf-generator/invoice/preview repose déjà sur ce comportement).
+ *
+ * Facture et devis partagent ce composant : ils ne diffèrent que par le type
+ * passé au gabarit, le libellé de la seconde date (échéance ou validité), les
+ * avertissements légaux et le texte d'accroche. Tout cela vient de `config`.
  */
 
 const TVA_RATES = [20, 10, 5.5, 2.1, 0];
@@ -39,9 +43,9 @@ function aujourdhui() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function dansTrenteJours() {
+function dansNJours(n) {
   const d = new Date();
-  d.setDate(d.getDate() + 30);
+  d.setDate(d.getDate() + n);
   return d.toISOString().slice(0, 10);
 }
 
@@ -69,7 +73,8 @@ function Champ({ label, value, onChange, placeholder, type = "text", className =
   );
 }
 
-export default function InvoiceGenerator() {
+export default function DocumentGenerator({ config }) {
+  const isQuote = config.type === "quote";
   const previewRef = useRef(null);
   const frameRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -118,12 +123,11 @@ export default function InvoiceGenerator() {
   });
 
   const [doc, setDoc] = useState({
-    prefix: `F-${new Date().getFullYear()}`,
+    prefix: `${config.prefix}-${new Date().getFullYear()}`,
     number: "001",
     issueDate: aujourdhui(),
-    dueDate: dansTrenteJours(),
-    terms:
-      "Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros.",
+    secondDate: dansNJours(config.secondDate.defaultDays),
+    terms: config.defaultTerms,
   });
 
   const [items, setItems] = useState([ligneVide()]);
@@ -150,7 +154,9 @@ export default function InvoiceGenerator() {
       status: "PENDING",
       issueDate: doc.issueDate,
       executionDate: doc.issueDate,
-      dueDate: doc.dueDate,
+      // Le gabarit lit `validUntil` pour un devis et `dueDate` pour une
+      // facture : une seule saisie alimente l'un ou l'autre.
+      ...(isQuote ? { validUntil: doc.secondDate } : { dueDate: doc.secondDate }),
       companyInfo: {
         name: emetteur.name || "Votre entreprise",
         address: {
@@ -189,7 +195,7 @@ export default function InvoiceGenerator() {
         ? `TVA non applicable, article 293 B du Code général des impôts. ${doc.terms}`
         : doc.terms,
     }),
-    [emetteur, client, doc, items]
+    [emetteur, client, doc, items, isQuote]
   );
 
   const telecharger = useCallback(async () => {
@@ -347,7 +353,7 @@ export default function InvoiceGenerator() {
           </div>
         </Section>
 
-        <Section title="La facture">
+        <Section title={config.sectionTitle}>
           <div className="grid sm:grid-cols-2 gap-3">
             <Champ
               label="Préfixe"
@@ -368,10 +374,10 @@ export default function InvoiceGenerator() {
               onChange={(v) => setDoc({ ...doc, issueDate: v })}
             />
             <Champ
-              label="Date d'échéance"
+              label={config.secondDate.label}
               type="date"
-              value={doc.dueDate}
-              onChange={(v) => setDoc({ ...doc, dueDate: v })}
+              value={doc.secondDate}
+              onChange={(v) => setDoc({ ...doc, secondDate: v })}
             />
           </div>
           <div className="mt-3">
@@ -489,27 +495,15 @@ export default function InvoiceGenerator() {
         </Section>
 
         {/* ------------------------- Téléchargement ------------------------- */}
-        <Section title="Télécharger votre facture">
+        <Section title={config.downloadTitle}>
           <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
-            <p className="font-medium mb-2">Trois points restent à votre charge</p>
+            <p className="font-medium mb-2">{config.warnings.title}</p>
             <ul className="space-y-1.5 list-disc pl-5">
-              <li>
-                <strong>La numérotation.</strong> Elle doit être continue et
-                chronologique, sans trou ni doublon. Cet outil ne garde aucune
-                mémoire d'une facture à l'autre : c'est à vous de tenir le
-                compteur.
-              </li>
-              <li>
-                <strong>La conservation.</strong> Vous devez garder chaque
-                facture dix ans. Rien n'est enregistré ici, pensez à archiver le
-                fichier.
-              </li>
-              <li>
-                <strong>L'échéance de 2027.</strong> À partir du 1er septembre
-                2027, les TPE devront émettre leurs factures entre
-                professionnels au format électronique, via une plateforme
-                agréée. Un PDF envoyé par courriel ne suffira plus.
-              </li>
+              {config.warnings.items.map((w) => (
+                <li key={w.label}>
+                  <strong>{w.label}</strong> {w.text}
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -521,8 +515,7 @@ export default function InvoiceGenerator() {
               className="mt-0.5"
             />
             <label htmlFor="consent" className="text-sm text-gray-700 leading-snug">
-              J'ai compris que la numérotation, l'archivage et la conformité
-              2027 restent de ma responsabilité.
+{config.warnings.consent}
             </label>
           </div>
 
@@ -539,7 +532,7 @@ export default function InvoiceGenerator() {
               </>
             ) : (
               <>
-                <Download className="size-4 mr-2" /> Télécharger la facture en PDF
+                <Download className="size-4 mr-2" /> {config.downloadLabel}
               </>
             )}
           </Button>
@@ -552,15 +545,8 @@ export default function InvoiceGenerator() {
 
         {/* ---------------------------- Accroche ---------------------------- */}
         <div className="rounded-xl bg-[#5A50FF] p-6 text-white">
-          <p className="text-lg font-medium leading-snug">
-            Vous voulez créer vos factures plus vite, sans retaper vos clients
-            ni surveiller votre numérotation ? Rejoignez Newbi.
-          </p>
-          <p className="mt-2 text-sm text-white/85">
-            Numérotation automatique, clients et produits enregistrés, relances
-            des impayés et facturation électronique incluse. 30 jours gratuits,
-            sans carte bancaire.
-          </p>
+          <p className="text-lg font-medium leading-snug">{config.cta.title}</p>
+          <p className="mt-2 text-sm text-white/85">{config.cta.subtitle}</p>
           <Button asChild variant="secondary" size="lg" className="mt-4">
             <Link href="/auth/signup">Créer mon compte gratuitement</Link>
           </Button>
@@ -580,7 +566,7 @@ export default function InvoiceGenerator() {
             style={{ transform: `scale(${frame.scale})` }}
           >
             <div ref={previewRef}>
-              <UniversalPreviewPDF data={previewData} type="invoice" />
+              <UniversalPreviewPDF data={previewData} type={config.type} />
             </div>
           </div>
         </div>
