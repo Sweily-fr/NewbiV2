@@ -459,11 +459,6 @@ const nextConfig = {
 
       // Redirections des anciens outils/générateurs
       {
-        source: "/outils",
-        destination: "/produits/factures",
-        permanent: true,
-      },
-      {
         source: "/generator-politique-confidentialite",
         destination: "/",
         permanent: true,
