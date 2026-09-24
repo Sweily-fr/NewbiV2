@@ -86,7 +86,10 @@ import {
 } from "@/src/hooks/usePurchaseInvoices";
 import { useRouter } from "next/navigation";
 import { PreviewImage } from "@/src/components/ui/preview-image";
-import { getStandaloneReceipts } from "./transactions/utils/receiptFiles";
+import {
+  findCarryingPurchaseInvoice,
+  getStandaloneReceipts,
+} from "./transactions/utils/receiptFiles";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
@@ -462,6 +465,31 @@ export function TransactionDetailDrawer({
   const hasLinkedInvoices =
     (transaction?.linkedInvoices?.length || 0) > 0 ||
     linkedImportedInvoices.length > 0;
+  // Titre d'une carte de facture d'achat liée : le nom du justificatif déposé
+  // d'abord, la référence lue par l'analyse ensuite. Sans cela la carte, qui
+  // n'affiche que des champs de facture, ne permettait plus de reconnaître le
+  // fichier qu'on venait de déposer : la référence imprimée sur le document
+  // n'a souvent rien à voir avec son nom de fichier.
+  const describePurchaseInvoice = (pi) => {
+    const receipt = (transaction?.receiptFiles || []).find((r) =>
+      findCarryingPurchaseInvoice(r, [pi]),
+    );
+    const fileName =
+      receipt?.originalFilename ||
+      receipt?.filename ||
+      pi?.files?.[0]?.filename ||
+      null;
+    const supplier = pi?.supplierName || "Fournisseur";
+    return {
+      title: fileName || pi?.invoiceNumber || "Facture d'achat",
+      // La référence n'est répétée en sous-titre que si le titre est le fichier
+      subtitle:
+        fileName && pi?.invoiceNumber
+          ? `${pi.invoiceNumber} • ${supplier}`
+          : supplier,
+    };
+  };
+
   // Factures d'achat liées (lien par référence — le justificatif est sur la
   // facture, accessible via ce lien). Triées de la plus récemment rattachée à
   // la plus ancienne : le justificatif qu'on vient de déposer doit arriver en
@@ -1966,11 +1994,11 @@ export function TransactionDetailDrawer({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium truncate">
-                              {pi.invoiceNumber || "Facture d'achat"}
+                              {describePurchaseInvoice(pi).title}
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground truncate">
-                            {pi.supplierName || "Fournisseur"}
+                            {describePurchaseInvoice(pi).subtitle}
                           </p>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <span>{formatAmount(pi.amountTTC)}</span>
