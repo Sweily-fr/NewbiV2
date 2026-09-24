@@ -20,8 +20,8 @@ import { useEffect, useState } from "react";
 // sur un toast custom le <li> n'est pas stylé (data-styled=false), donc le
 // texte débordait hors du fond noir, sans style. On la rend nous-mêmes et on
 // retire l'option des données passées à sonner (cf. buildToastProps).
-// Le padding gauche aligne la description sur le titre, dont l'icône est en
-// inline-flex avec me-3 : largeur de l'icône + 0.75rem.
+// Le padding gauche aligne la description sur le titre, dont l'icône est le
+// premier élément d'une rangée flex : largeur de l'icône + 0.75rem de gap.
 const ToastDescription = ({ description, isMobile }) => {
   if (!description) return null;
   return (
@@ -45,15 +45,15 @@ const SuccessToast = ({ message, isMobile, description }) => (
   >
     <div className="flex gap-2 items-center">
       <p
-        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+        className={`grow flex items-start gap-3 ${isMobile ? "text-sm" : "text-sm"}`}
         style={{ color: "#ffffff" }}
       >
         <CircleCheck
-          className="me-3 -mt-0.5 inline-flex text-green-600"
+          className="mt-0.5 shrink-0 text-green-600"
           size={isMobile ? 18 : 16}
           aria-hidden="true"
         />
-        {message}
+        <span className="min-w-0">{message}</span>
       </p>
       <Button
         variant="ghost"
@@ -101,15 +101,15 @@ const ErrorToast = ({ message, isMobile, details, description }) => {
     >
       <div className="flex gap-2 items-center">
         <p
-          className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+          className={`grow flex items-start gap-3 ${isMobile ? "text-sm" : "text-sm"}`}
           style={{ color: "#ffffff" }}
         >
           <AlertCircleIcon
-            className="me-3 -mt-0.5 inline-flex text-red-500"
+            className="mt-0.5 shrink-0 text-red-500"
             size={isMobile ? 18 : 16}
             aria-hidden="true"
           />
-          {message}
+          <span className="min-w-0">{message}</span>
         </p>
         <div className="flex items-center gap-0.5 shrink-0">
           {details && (
@@ -209,15 +209,15 @@ const InfoToast = ({ message, isMobile, description }) => (
   >
     <div className="flex gap-2 items-center">
       <p
-        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+        className={`grow flex items-start gap-3 ${isMobile ? "text-sm" : "text-sm"}`}
         style={{ color: "#ffffff" }}
       >
         <InfoIcon
-          className="me-3 -mt-0.5 inline-flex text-blue-500"
+          className="mt-0.5 shrink-0 text-blue-500"
           size={isMobile ? 18 : 16}
           aria-hidden="true"
         />
-        {message}
+        <span className="min-w-0">{message}</span>
       </p>
       <Button
         variant="ghost"
@@ -245,15 +245,15 @@ const LoadingToast = ({ message, isMobile, description }) => (
   >
     <div className="flex gap-2 items-center">
       <p
-        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+        className={`grow flex items-start gap-3 ${isMobile ? "text-sm" : "text-sm"}`}
         style={{ color: "#ffffff" }}
       >
         <LoaderCircle
-          className="me-3 -mt-0.5 inline-flex text-white animate-spin"
+          className="mt-0.5 shrink-0 text-white animate-spin"
           size={isMobile ? 18 : 16}
           aria-hidden="true"
         />
-        {message}
+        <span className="min-w-0">{message}</span>
       </p>
     </div>
     <ToastDescription description={description} isMobile={isMobile} />
