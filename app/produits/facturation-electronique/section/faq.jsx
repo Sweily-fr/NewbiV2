@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/src/components/ui/accordion";
+import PublicFaq, { faqJsonLd } from "@/src/components/public-faq";
 
 const faqData = [
   {
@@ -17,7 +12,7 @@ const faqData = [
     id: "item-2",
     title: "Quand la facturation électronique devient-elle obligatoire ?",
     content:
-      "La réforme de la facturation électronique en France se déploie progressivement : à partir du 1er septembre 2026, toutes les entreprises devront être en mesure de recevoir des factures électroniques. L'obligation d'émettre des factures électroniques s'appliquera selon la taille de l'entreprise : grandes entreprises et ETI en 2026, PME et micro-entreprises en 2027.",
+      "La réforme se déploie en deux temps. Depuis le 1er septembre 2026, toutes les entreprises, quelle que soit leur taille, doivent être en mesure de recevoir une facture électronique : cette obligation est déjà en vigueur. L'obligation d'émettre suit ensuite la taille de l'entreprise : grandes entreprises et ETI depuis le 1er septembre 2026, TPE, PME et micro-entreprises à partir du 1er septembre 2027.",
   },
   {
     id: "item-3",
@@ -29,7 +24,7 @@ const faqData = [
     id: "item-4",
     title: "Qu'est-ce que le Portail Public de Facturation (PPF) ?",
     content:
-      "Le Portail Public de Facturation (PPF) est la plateforme mise en place par l'État français pour centraliser les échanges de factures électroniques. Il permet de transmettre, recevoir et archiver les factures, ainsi que de communiquer les données de transaction à l'administration fiscale. newbi s'interface directement avec le PPF.",
+      "Le Portail Public de Facturation (PPF) est la plateforme mise en place par l'État français pour centraliser les échanges de factures électroniques. Il permet de transmettre, recevoir et archiver les factures, ainsi que de communiquer les données de transaction à l'administration fiscale. Newbi est un opérateur de dématérialisation : vos factures transitent par une plateforme de dématérialisation partenaire (PDP) immatriculée, qui dialogue avec l'annuaire et l'administration. Vous n'avez donc aucune démarche à faire auprès du portail public.",
   },
   {
     id: "item-5",
@@ -59,6 +54,18 @@ const faqData = [
 
 export default function FAQ() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            faqJsonLd(faqData.map((item) => ({
+              question: item.title ?? item.question,
+              answer: item.content ?? item.answer,
+            })))
+          ),
+        }}
+      />
     <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-10 md:pt-20 lg:pt-22 pb-16">
       <div className="space-y-2 text-center">
         <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
@@ -73,27 +80,12 @@ export default function FAQ() {
           .
         </p>
       </div>
-      <Accordion
-        type="single"
-        collapsible
-        className="bg-card dark:bg-card/50 w-full -space-y-px rounded-lg"
-        defaultValue="item-1"
-      >
-        {faqData.map((item) => (
-          <AccordionItem
-            value={item.id}
-            key={item.id}
-            className="relative border-x first:rounded-t-lg first:border-t last:rounded-b-lg last:border-b"
-          >
-            <AccordionTrigger className="px-4 py-4 text-[15px] leading-6 hover:no-underline font-normal">
-              {item.title}
-            </AccordionTrigger>
-            <AccordionContent className="text-muted-foreground pb-4 px-4 whitespace-pre-line">
-              {item.content}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      <PublicFaq
+        items={faqData.map((item) => ({
+          question: item.title ?? item.question,
+          answer: item.content ?? item.answer,
+        }))}
+      />
       <p className="text-muted-foreground">
         Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
         <a
@@ -104,5 +96,6 @@ export default function FAQ() {
         </a>
       </p>
     </div>
+    </>
   );
 }

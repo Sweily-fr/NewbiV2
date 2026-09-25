@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/src/components/ui/accordion";
+import PublicFaq, { faqJsonLd } from "@/src/components/public-faq";
 
 const questions = [
   {
@@ -63,6 +58,18 @@ const questions = [
 
 export default function FAQ() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            faqJsonLd(questions.map((item) => ({
+              question: item.title ?? item.question,
+              answer: item.content ?? item.answer,
+            })))
+          ),
+        }}
+      />
     <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-16 pb-16">
       <div className="space-y-2 text-center">
         <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
@@ -77,27 +84,12 @@ export default function FAQ() {
           .
         </p>
       </div>
-      <Accordion
-        type="single"
-        collapsible
-        className="bg-card dark:bg-card/50 w-full -space-y-px rounded-lg"
-        defaultValue="item-1"
-      >
-        {questions.map((item) => (
-          <AccordionItem
-            value={item.id}
-            key={item.id}
-            className="relative border-x first:rounded-t-lg first:border-t last:rounded-b-lg last:border-b"
-          >
-            <AccordionTrigger className="px-4 py-4 text-[15px] leading-6 hover:no-underline font-normal">
-              {item.title}
-            </AccordionTrigger>
-            <AccordionContent className="text-muted-foreground pb-4 px-4 whitespace-pre-line">
-              {item.content}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      <PublicFaq
+        items={questions.map((item) => ({
+          question: item.title ?? item.question,
+          answer: item.content ?? item.answer,
+        }))}
+      />
       <p className="text-muted-foreground">
         Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
         <a
@@ -108,5 +100,6 @@ export default function FAQ() {
         </a>
       </p>
     </div>
+    </>
   );
 }
