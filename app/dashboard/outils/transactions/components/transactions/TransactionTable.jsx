@@ -142,8 +142,13 @@ const announceReceiptOutcomes = (outcomes, unresolved) => {
     label ? `la facture d'achat ${label}` : "une facture d'achat";
 
   if (outcomes.length === 1) {
-    const [{ label, alreadyLinked }] = outcomes;
-    if (alreadyLinked) {
+    const [{ label, alreadyLinked, notCovered }] = outcomes;
+    if (notCovered) {
+      toast.info("Dépense toujours à rapprocher", {
+        description:
+          "Ce document correspond à une facture d'achat déjà réglée par un autre prélèvement. Le justificatif y a été rattaché, mais cette dépense-ci attend encore sa propre facture.",
+      });
+    } else if (alreadyLinked) {
       toast.info("Justificatif déjà enregistré", {
         description: `Ce document correspond à ${named(label)}, déjà liée à cette transaction. Le justificatif y a été rattaché, rien n'a été créé en double.`,
       });
@@ -154,13 +159,24 @@ const announceReceiptOutcomes = (outcomes, unresolved) => {
       });
     }
   } else if (outcomes.length > 1) {
+    const notCovered = outcomes.filter((o) => o.notCovered).length;
     const duplicates = outcomes.filter((o) => o.alreadyLinked).length;
-    toast.success(`${outcomes.length} justificatifs analysés`, {
-      description:
-        duplicates > 0
-          ? `${duplicates} correspondaient à une facture d'achat déjà liée à cette transaction. Les autres sont portés par leur facture, dans « Factures d'achat liées ».`
-          : "Ils sont désormais portés par leurs factures, dans « Factures d'achat liées ».",
-    });
+    if (notCovered > 0) {
+      toast.info(
+        `${outcomes.length} justificatifs analysés, ${notCovered} dépense(s) toujours à rapprocher`,
+        {
+          description:
+            "Les documents concernés correspondent à des factures d'achat déjà réglées par d'autres prélèvements.",
+        },
+      );
+    } else {
+      toast.success(`${outcomes.length} justificatifs analysés`, {
+        description:
+          duplicates > 0
+            ? `${duplicates} correspondaient à une facture d'achat déjà liée à cette transaction. Les autres sont portés par leur facture, dans « Factures d'achat liées ».`
+            : "Ils sont désormais portés par leurs factures, dans « Factures d'achat liées ».",
+      });
+    }
   }
 
   if (unresolved > 0) {
@@ -723,14 +739,24 @@ export default function TransactionTable({
               file,
               transaction.linkedPurchaseInvoices,
             );
-            if (!invoice) continue;
+            // Justificatif rattaché à une facture qui n'est pas liée à cette
+            // transaction : l'API a refusé d'y ajouter ce prélèvement parce
+            // que la facture est déjà couverte (justificatif du mauvais
+            // mois). Le traitement est terminé, mais la dépense reste à
+            // rapprocher.
+            const attachedElsewhere =
+              !invoice && Boolean(file.purchaseInvoiceId);
+            if (!invoice && !attachedElsewhere) continue;
             pending.delete(file.id);
             processed = true;
             outcomes.push({
-              label: invoice.invoiceNumber || invoice.supplierName || null,
+              label: invoice?.invoiceNumber || invoice?.supplierName || null,
               // Facture déjà liée avant ce dépôt : document en double, aucune
               // nouvelle carte n'apparaîtra, d'où le message explicite.
-              alreadyLinked: previousInvoiceIds.has(String(invoice.id)),
+              alreadyLinked: invoice
+                ? previousInvoiceIds.has(String(invoice.id))
+                : false,
+              notCovered: attachedElsewhere,
             });
           }
           if (processed) refetch();
