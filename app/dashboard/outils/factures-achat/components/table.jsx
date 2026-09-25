@@ -128,6 +128,7 @@ const multiColumnFilterFn = (row, columnId, filterValue) => {
 export default function PurchaseInvoiceTable({
   invoices = [],
   loading,
+  loadingHistory,
   refetch,
   refetchStats,
   onRowClick,
@@ -810,10 +811,21 @@ export default function PurchaseInvoiceTable({
 
             {/* Pagination */}
             <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-[#eeeff1] dark:border-[#232323] bg-background sticky bottom-0 z-10">
-              <div className="flex-1 text-xs font-normal text-muted-foreground">
-                {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-                {table.getFilteredRowModel().rows.length} ligne(s)
-                sélectionnée(s).
+              <div className="flex-1 flex items-center gap-3 text-xs font-normal text-muted-foreground">
+                <span>
+                  {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+                  {table.getFilteredRowModel().rows.length} ligne(s)
+                  sélectionnée(s).
+                </span>
+                {/* Les pages suivantes arrivent en arrière-plan : tant que
+                    l'historique n'est pas complet, filtres, compteurs et
+                    export ne portent que sur les factures déjà chargées. */}
+                {loadingHistory && (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Chargement de l'historique...
+                  </span>
+                )}
               </div>
               <div className="flex items-center space-x-4 lg:space-x-6">
                 <div className="flex items-center gap-1.5">

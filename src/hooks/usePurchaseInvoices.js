@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TRANSACTION_LIST_REFETCH_QUERIES } from "@/src/graphql/queries/banking";
 import {
   GET_TRANSACTIONS_FOR_PURCHASE_INVOICE,
@@ -41,25 +41,90 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 export const usePurchaseInvoices = (filters = {}) => {
   const { workspaceId } = useRequiredWorkspace();
+  // loadAll : enchaîner les pages suivantes jusqu'à l'historique complet.
+  // La page Factures d'achat filtre, compte et exporte côté client : tant que
+  // la liste s'arrête à la première page, les factures les plus anciennes sont
+  // introuvables (invisibles dans le tableau, absentes des filtres et de
+  // l'export) alors qu'elles existent bien en base.
+  const { loadAll = false, ...queryFilters } = filters;
 
-  const { data, loading, error, refetch } = useQuery(GET_PURCHASE_INVOICES, {
-    variables: {
-      workspaceId,
-      page: 1,
-      limit: 50,
-      ...filters,
+  const { data, loading, error, refetch, fetchMore } = useQuery(
+    GET_PURCHASE_INVOICES,
+    {
+      variables: {
+        workspaceId,
+        page: 1,
+        limit: 50,
+        ...queryFilters,
+      },
+      skip: !workspaceId,
+      fetchPolicy: "cache-and-network",
     },
-    skip: !workspaceId,
-    fetchPolicy: "cache-and-network",
-  });
+  );
+
+  const currentPage = data?.purchaseInvoices?.currentPage || 1;
+  const hasNextPage = data?.purchaseInvoices?.hasNextPage || false;
+
+  // Une requête en vol à la fois : le hook est re-rendu à chaque page reçue,
+  // ce qui déclenche la suivante. La ref mémorise la page en cours de
+  // chargement (0 = aucune) pour ne pas la redemander en double, tout en
+  // laissant repartir la boucle après un refetch (qui revient à la page 1).
+  const inFlightPageRef = useRef(0);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    if (!loadAll || !workspaceId) return;
+    if (!hasNextPage) {
+      setLoadingHistory(false);
+      return;
+    }
+    const nextPage = currentPage + 1;
+    if (inFlightPageRef.current === nextPage) return;
+    inFlightPageRef.current = nextPage;
+    setLoadingHistory(true);
+    fetchMore({
+      variables: { page: nextPage },
+      updateQuery: (prev, { fetchMoreResult }) => {
+        if (!fetchMoreResult) return prev;
+        const previousItems = prev?.purchaseInvoices?.items || [];
+        // Dédoublonnage : une création concurrente décale la pagination et
+        // pourrait renvoyer deux fois la même facture d'une page à l'autre.
+        const seen = new Set(previousItems.map((inv) => inv.id));
+        return {
+          purchaseInvoices: {
+            ...fetchMoreResult.purchaseInvoices,
+            items: [
+              ...previousItems,
+              ...fetchMoreResult.purchaseInvoices.items.filter(
+                (inv) => !seen.has(inv.id),
+              ),
+            ],
+          },
+        };
+      },
+    })
+      .catch((err) => {
+        console.error(
+          "Erreur lors du chargement de l'historique des factures d'achat:",
+          err,
+        );
+        setLoadingHistory(false);
+      })
+      .finally(() => {
+        if (inFlightPageRef.current === nextPage) inFlightPageRef.current = 0;
+      });
+  }, [loadAll, workspaceId, hasNextPage, currentPage, fetchMore]);
 
   return {
     invoices: data?.purchaseInvoices?.items || [],
     totalCount: data?.purchaseInvoices?.totalCount || 0,
-    currentPage: data?.purchaseInvoices?.currentPage || 1,
+    currentPage,
     totalPages: data?.purchaseInvoices?.totalPages || 1,
-    hasNextPage: data?.purchaseInvoices?.hasNextPage || false,
+    hasNextPage,
     loading,
+    // Vrai tant qu'il reste des pages à charger : la liste affichée est encore
+    // partielle (compteurs et export incomplets).
+    loadingHistory,
     error,
     refetch,
   };
