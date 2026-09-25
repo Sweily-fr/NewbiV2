@@ -45,7 +45,7 @@ const OUTILS = [
     tag: "En ligne",
   },
   {
-    href: "/blog/modele-facture-gratuit-word-excel-pdf",
+    href: "/modeles",
     icon: Download,
     title: "Modèles de facture et de devis",
     desc: "Cinq modèles prêts à remplir en Word, Excel et PDF : facture, devis, acompte, auto-entrepreneur et facture sans TVA.",

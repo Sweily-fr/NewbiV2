@@ -66,6 +66,11 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/modeles`,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/logiciel-facturation-gratuit`,
       changeFrequency: "monthly",
       priority: 0.9,
