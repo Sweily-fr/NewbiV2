@@ -322,5 +322,13 @@
       "dso-delai-moyen-paiement-clients-calcul",
       "devis-payant-est-ce-legal"
     ]
+  },
+  {
+    "date": "2026-09-25",
+    "articles": [
+      "tva-deductible-quelles-depenses",
+      "facture-pdf-email-jusqu-a-quand",
+      "facture-vtc-chauffeur-guide"
+    ]
   }
 ]
