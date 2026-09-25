@@ -126,6 +126,7 @@ export const GET_TRANSACTIONS = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        ocrError
         url
         key
         filename
@@ -154,6 +155,7 @@ export const GET_TRANSACTIONS = gql`
         status
         amountTTC
         issueDate
+        extractionQuality
         files {
           id
           url
@@ -255,6 +257,7 @@ export const GET_TRANSACTIONS_PAGE = gql`
         receiptFiles {
           id
           purchaseInvoiceId
+          ocrError
           url
           key
           filename
@@ -283,6 +286,7 @@ export const GET_TRANSACTIONS_PAGE = gql`
           status
           amountTTC
           issueDate
+          extractionQuality
           files {
             id
             url
@@ -362,6 +366,7 @@ export const GET_TRANSACTION = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        ocrError
         url
         key
         filename
@@ -390,6 +395,7 @@ export const GET_TRANSACTION = gql`
         status
         amountTTC
         issueDate
+        extractionQuality
         files {
           id
           url
@@ -526,6 +532,7 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        ocrError
         url
         key
         filename
@@ -538,6 +545,7 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
         receiptFiles {
           id
           purchaseInvoiceId
+          ocrError
           url
           filename
         }
@@ -566,6 +574,7 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        ocrError
         url
         key
         filename
@@ -578,6 +587,7 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
         receiptFiles {
           id
           purchaseInvoiceId
+          ocrError
           url
           filename
         }
