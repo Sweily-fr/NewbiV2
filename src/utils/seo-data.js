@@ -2,6 +2,7 @@
  * Configuration SEO centralisée pour toutes les pages du site
  * Contient les métadonnées, descriptions, mots-clés et données structurées
  */
+import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
 const baseUrl =
   process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.newbi.fr";
@@ -791,12 +792,34 @@ export const homeJsonLd = [
       "@type": "Organization",
       name: "Newbi",
     },
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "EUR",
-      description: "Essai gratuit de 30 jours",
-    },
+    // Le seul prix déclaré en machine était « 0 », celui de l'essai : un
+    // assistant interrogé sur le tarif de Newbi ne trouvait donc que la
+    // gratuité. On déclare l'essai ET les trois formules réelles, dérivées
+    // de plans-display.js pour ne pas réintroduire de prix en dur.
+    offers: [
+      {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "EUR",
+        description: "Essai gratuit de 30 jours, sans carte bancaire",
+      },
+      ...PLANS_DISPLAY.flatMap((plan) => [
+        {
+          "@type": "Offer",
+          name: plan.displayName,
+          price: plan.monthlyPrice.toFixed(2),
+          priceCurrency: "EUR",
+          description: `${plan.description} · abonnement mensuel TTC`,
+        },
+        {
+          "@type": "Offer",
+          name: `${plan.displayName} (engagement annuel)`,
+          price: plan.annualMonthlyPrice.toFixed(2),
+          priceCurrency: "EUR",
+          description: `${plan.description} · par mois TTC en réglant à l'année`,
+        },
+      ]),
+    ],
     featureList: [
       "Facturation et devis professionnels",
       "Facturation électronique (Factur-X)",
