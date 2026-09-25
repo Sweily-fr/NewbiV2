@@ -1,19 +1,25 @@
 # Modèles téléchargeables (Word, Excel, PDF)
 
-Les cinq articles « modèle » du blog promettaient un fichier à télécharger
-alors qu'ils ne proposaient qu'un tableau à recopier. Ces scripts génèrent les
-fichiers réellement servis depuis `public/modeles/`.
+Les cinq articles « modèle » du blog et la page `/modeles` promettent un
+fichier à télécharger. Ces scripts génèrent les quinze fichiers réellement
+servis depuis `public/modeles/`.
+
+Les trois formats montrent **le même document, au gabarit Newbi** : titre à
+droite, méta sous le titre, blocs émetteur et client côte à côte, tableau à
+en-tête noir, totaux à droite avec le TTC sur fond gris, conditions, puis
+bande de pied de page. `rendus.json` en est la source unique et
+`modele-document.cjs` en dérive la structure commune aux trois générateurs.
 
 ## Régénérer
 
-### PDF : le vrai gabarit Newbi
+### PDF : le vrai gabarit du produit
 
-Les PDF ne sont PAS dessinés à la main : ils sont rendus par le gabarit du
+Les PDF ne sont pas dessinés à la main : ils sont rendus par le gabarit du
 produit (`UniversalPreviewPDF`), pour que le modèle téléchargé soit exactement
 la facture que Newbi génère. Le script pilote Chrome sur la page
 `/pdf-generator/<type>/preview`, qui lit ses données dans
-`window.__PREVIEW_DATA`, puis récupère le PDF vectoriel, comme le fait la route
-`POST /api/invoices/preview-pdf`.
+`window.__PREVIEW_DATA`, puis récupère le PDF vectoriel, comme le fait la
+route `POST /api/invoices/preview-pdf`.
 
 Prérequis : le serveur de développement doit tourner sur le port 3000, et
 `CHROME_PATH` doit pointer vers un binaire Chrome (voir `.env.local`).
@@ -27,45 +33,43 @@ CHROME_PATH="$(grep '^CHROME_PATH=' .env.local | cut -d= -f2- | tr -d '"')" \
 rm ./.render.cjs
 ```
 
-`rendus.json` contient les données d'exemple de chaque modèle : société,
-client, lignes, conditions. Le gabarit en déduit le titre (Facture, Devis,
-Facture d'acompte), la mention de franchise de TVA et le pied de page légal.
-
 ### Word et Excel
 
-Ces deux formats sont des documents modifiables, générés hors ligne :
+Hors ligne, sans serveur :
 
 ```bash
-# Word (.docx) : nécessite uniquement Python 3
-python3 scripts/modeles/generate-docx.py
-
-# Excel (.xlsx) : depuis la racine du projet, pour que xlsx soit résolu
-# depuis node_modules
-cp scripts/modeles/generate-xlsx-pdf.cjs ./.gen.cjs && node ./.gen.cjs . scripts/modeles/modeles.json && rm ./.gen.cjs
+node scripts/modeles/generate-docx-newbi.cjs . scripts/modeles/rendus.json
+node scripts/modeles/generate-xlsx-newbi.cjs . scripts/modeles/rendus.json
+node scripts/modeles/verifier-docx.cjs public/modeles
 ```
 
-Attention : `generate-xlsx-pdf.cjs` écrit aussi des PDF, dessinés avec jsPDF.
-Ils sont écrasés par le rendu au gabarit ci-dessus, qui fait foi. Lancer les
-deux commandes dans cet ordre : Excel d'abord, PDF au gabarit ensuite.
+## Pourquoi tout est écrit à la main
 
-## Contenu
+**Word.** `textutil`, le convertisseur natif de macOS, produit un `.docx`
+valide mais perd les tableaux, or un modèle de facture en est un.
+`squelette.docx` est un document minimal généré par `textutil` : on en
+réutilise l'archive (types de contenu, relations, thème, propriétés) et on
+écrit `word/document.xml` et `word/footer1.xml`. Le pied de page est un vrai
+pied de page Word, référencé dans `sectPr`, pour qu'il reste en bas de page
+comme sur le PDF.
 
-`modeles.json` décrit les cinq modèles : blocs émetteur et client communs,
-puis par modèle le titre, l'introduction, les métadonnées (numéro, dates), les
-colonnes du tableau, des lignes d'exemple, les totaux et les mentions
-obligatoires. Modifier ce fichier puis régénérer suffit à mettre les quinze
-fichiers à jour.
+Attention, le schéma OOXML impose l'ORDRE des enfants de `rPr`, `pPr`, `tcPr`,
+`tblPr`, `tcBorders` et `sectPr`. Word n'est pas tolérant : un élément hors
+séquence déclenche « Word a détecté un problème de contenu » et le document
+s'ouvre vide. Aucun validateur n'étant installé sur les machines de l'équipe,
+`verifier-docx.cjs` contrôle ces séquences ; le lancer après toute
+modification du générateur.
 
-## Pourquoi un squelette Word
-
-`textutil`, le convertisseur natif de macOS, produit un `.docx` valide mais
-perd les tableaux, or un modèle de facture en est un. `squelette.docx` est un
-document minimal généré par `textutil` : on en réutilise l'archive (types de
-contenu, relations, thème, propriétés) et on remplace `word/document.xml` par
-un corps écrit à la main, tableaux compris. Le script valide ensuite l'archive
-et le XML produits.
+**Excel.** Le paquet `xlsx` installé est l'édition communautaire de SheetJS :
+elle lit les styles mais ne les écrit pas, c'est réservé à l'édition Pro. Or
+l'en-tête noir et la bande grise du total TTC font toute la différence entre
+un tableur quelconque et un document Newbi. Le classeur est donc écrit
+directement en OOXML, ce qui donne au passage la main sur les formules : la
+colonne « Total HT » multiplie quantité et prix unitaire, le total HT somme la
+colonne, la TVA et le TTC suivent. Trois lignes vierges sont prêtes à être
+remplies.
 
 Les montants et les taux des exemples suivent les règles françaises en vigueur
-en 2026 : indemnité forfaitaire de recouvrement de 40 €, pénalités d'au moins
-trois fois le taux d'intérêt légal, mention de l'article 293 B du CGI pour la
-franchise en base.
+en 2026 : indemnité forfaitaire de recouvrement de 40 euros, pénalités d'au
+moins trois fois le taux d'intérêt légal, mention de l'article 293 B du CGI
+pour la franchise en base.
