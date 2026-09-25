@@ -124,10 +124,11 @@ function ArrowLink({ href, children, sub }) {
   );
 }
 
-export default function HomePricingSection() {
+// `maxWidth` : les LP gardent max-w-6xl, la home passe en max-w-7xl
+export default function HomePricingSection({ maxWidth = "max-w-6xl" }) {
   return (
     <div id="pricing" className="w-full pt-16 lg:pt-20 pb-10">
-      <div className="container max-w-6xl mx-auto px-4">
+      <div className={`container ${maxWidth} mx-auto px-4`}>
         {/* Titre centré */}
         <div className="text-center mb-12 md:mb-16">
           <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-gray-950 dark:text-gray-50 mb-4">

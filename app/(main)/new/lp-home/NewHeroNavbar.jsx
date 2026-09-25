@@ -17,6 +17,7 @@ import {
   Info,
   Award,
   ArrowRight,
+  ChevronDown,
   HelpCircle,
   Quote,
 } from "lucide-react";
@@ -29,7 +30,11 @@ import { SIGNUP_HREF, CTA_LABEL } from "@/app/lp/_components/lp-config";
 
 // Landing pages Ads sur lesquelles la navbar adapte ses CTA (libellé +
 // couleur du bouton d'inscription). À étendre si d'autres LP l'utilisent.
-const ADS_LP_PATHS = ["/lp/facturation-electronique", "/lp/gestion"];
+const ADS_LP_PATHS = [
+  "/lp/facturation-electronique",
+  "/lp/facturation-auto-entrepreneur",
+  "/lp/gestion",
+];
 
 const menuItems = [
   {
@@ -156,9 +161,10 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
   const isLoggedIn = !!session?.user;
   const pathname = usePathname();
   const isAdsLp = ADS_LP_PATHS.includes(pathname);
-  // Sur une LP Ads : « Commencer gratuitement » en violet, sinon « Inscription » noir.
+  // CTA d'inscription : toujours en violet Newbi. Sur une LP Ads, il reprend le
+  // libellé partagé des LP (« Commencer gratuitement »).
   const signupHref = isAdsLp ? SIGNUP_HREF : "/auth/signup";
-  const signupLabel = isAdsLp ? CTA_LABEL : "Inscription";
+  const signupLabel = isAdsLp ? CTA_LABEL : "Essayer Newbi gratuitement";
 
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -217,7 +223,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
               "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800",
           )}
         >
-          <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-6xl mx-auto">
+          <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-7xl mx-auto">
             <div className="flex w-full justify-between lg:w-auto">
               <Link
                 href="/"
@@ -267,15 +273,22 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                   <li key={index} className="relative group">
                     {item.hasDropdown ? (
                       <span
-                        className="text-muted-foreground hover:text-accent-foreground cursor-pointer duration-150"
+                        className="flex items-center gap-1 text-[#202020] hover:opacity-70 cursor-pointer duration-150"
                         onMouseEnter={() => setOpenDropdown(index)}
                       >
                         {item.name}
+                        <ChevronDown
+                          className={cn(
+                            "size-4 transition-transform duration-200",
+                            openDropdown === index && "rotate-180",
+                          )}
+                          aria-hidden="true"
+                        />
                       </span>
                     ) : (
                       <Link
                         href={item.href}
-                        className="text-muted-foreground hover:text-accent-foreground block duration-150"
+                        className="text-[#202020] hover:opacity-70 block duration-150"
                       >
                         <span>{item.name}</span>
                       </Link>
@@ -376,8 +389,10 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                                 />
                               </div>
 
+                              {/* Noir plutôt que le vert WhatsApp : le bouton
+                                  reste discret dans le menu déroulant */}
                               <WhatsAppContactButton
-                                className="w-full rounded-md text-sm font-medium px-4 py-2 h-auto"
+                                className="w-full rounded-md text-sm font-medium px-4 py-2 h-auto bg-[#202020] hover:bg-[#333] active:bg-[#111] dark:bg-[#202020] dark:hover:bg-[#333] dark:active:bg-[#111]"
                                 onClick={() => setOpenDropdown(null)}
                               />
                             </div>
@@ -405,11 +420,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       <span>Connexion</span>
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    size="md"
-                    variant={isAdsLp ? "primary" : "default"}
-                  >
+                  <Button asChild size="md" variant="primary" className="px-4">
                     <Link href={signupHref}>
                       <span>{signupLabel}</span>
                     </Link>
@@ -442,7 +453,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                             }
                             className="flex items-center justify-between w-full px-6 py-3.5 text-left"
                           >
-                            <span className="text-base font-normal text-black">
+                            <span className="text-base font-normal text-[#202020]">
                               {item.name}
                             </span>
                             <svg
@@ -506,7 +517,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                           className="flex items-center w-full px-6 py-3.5"
                           onClick={() => setMenuState(false)}
                         >
-                          <span className="text-base font-normal text-black">
+                          <span className="text-base font-normal text-[#202020]">
                             {item.name}
                           </span>
                         </Link>
@@ -538,11 +549,8 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       <Button
                         asChild
                         size="lg"
-                        variant={isAdsLp ? "primary" : "default"}
-                        className={cn(
-                          "w-full rounded-lg py-2 text-sm",
-                          !isAdsLp && "bg-[#202020]",
-                        )}
+                        variant="primary"
+                        className="w-full rounded-lg py-2 text-sm"
                       >
                         <Link
                           href={signupHref}

@@ -7,8 +7,7 @@ export const CTA_LABEL = "Commencer gratuitement";
 export const CTA_SUBLABEL = "30 jours offerts · sans carte bancaire";
 
 // Témoignages clients affichés sur les LP. `image` : portrait affiché par le
-// carrousel (Maëva et Mustafa : photos réelles ; Pedro est un portrait
-// d'illustration en attendant la vraie photo). L'ordre est celui d'affichage.
+// carrousel (photos réelles des clients). L'ordre est celui d'affichage.
 export const REVIEWS = [
   {
     text: "Super expérience ! Interface hyper simple, très bon rapport qualité-prix et service client vraiment réactif. Je recommande !",
@@ -20,8 +19,7 @@ export const REVIEWS = [
     text: "Le logiciel est indispensable pour une bonne gestion, très facile à prendre en main.",
     name: "Pedro Ds.",
     role: "Commerçant",
-    image:
-      "https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?w=900&auto=format&fit=crop&q=60",
+    image: "/lp/avis/pedro.jpg",
   },
   {
     text: "Tout est automatisé et professionnel. Un vrai gain de temps pour mon entreprise de bâtiment.",

@@ -1,5 +1,7 @@
 import React from "react";
 import { homeJsonLd } from "@/src/utils/seo-data";
+import LpTestimonials from "../lp/_components/LpTestimonials";
+import LpFinalCta from "../lp/_components/LpFinalCta";
 import { buildHomeFaqJsonLd } from "./new/lp-home/FAQSection";
 
 // Import des sections depuis le dossier lp-home
@@ -10,6 +12,11 @@ import {
   ComponentsSection,
   ComplianceSection,
   NewGovernanceSection,
+  InvoicingTrioSection,
+  ProfilesSection,
+  SupportSection,
+  IntegrationsSection,
+  ToolsSection,
   EInvoicingSection,
   HomePricingSection,
   NewPricingSection,
@@ -74,10 +81,27 @@ export default function Home() {
         {/* <ComponentsSection /> */}
         {/* <ComplianceSection /> */}
         <NewGovernanceSection />
-        <EInvoicingSection />
+        {/* <ProfilesSection /> */}
+        <SupportSection />
+        <InvoicingTrioSection />
+        <IntegrationsSection />
+        <ToolsSection />
+        {/* <EInvoicingSection /> */}
         {/* <NewPricingSection /> */}
-        {/* <TestimonialsSplit /> */}
-        <HomePricingSection />
+        <LpTestimonials maxWidth="max-w-7xl" />
+        <HomePricingSection maxWidth="max-w-7xl" />
+        <LpFinalCta
+          title={
+            <>
+              Ferme ton Excel,
+              <br className="hidden md:block" /> ouvre Newbi
+            </>
+          }
+          subtitle="Crée ton compte et envoie ta première facture aujourd'hui. 30 jours pour tester, sans carte bancaire."
+          image="/lp/facturation-electronique/cta-laptop.jpg"
+          imageAlt="Un indépendant gère ses factures dans Newbi sur son ordinateur portable"
+          maxWidth="max-w-7xl"
+        />
         <FAQSection />
       </div>
     </>

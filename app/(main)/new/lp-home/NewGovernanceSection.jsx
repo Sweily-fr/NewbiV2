@@ -62,9 +62,17 @@ const images = [
   "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=256&q=80",
 ];
 
+// Mêmes jetons visuels que le bento « Ce que tu ne feras plus jamais à la
+// main » de /lp/gestion : cartes en dégradé gris, sans bordure, coins 3xl.
+const CARD =
+  "rounded-3xl bg-gradient-to-b from-[#F4F4F6] to-[#FAFAFB] p-7 md:p-8 flex flex-col overflow-hidden";
+const TITLE =
+  "text-xl md:text-2xl font-medium tracking-tight text-gray-950 mb-3";
+const TEXT = "text-[15px] leading-relaxed text-gray-700";
+
 export default function NewGovernanceSection() {
   return (
-    <section className="pt-0 -mt-4 md:-mt-10 lg:-mt-16 relative overflow-hidden">
+    <section className="relative overflow-hidden px-0 py-14 md:py-20">
       <style>{`
         @keyframes growBar {
           0%, 5% { width: 0%; }
@@ -130,56 +138,96 @@ export default function NewGovernanceSection() {
           78%, 100% { transform: translateY(200px); }
         }
       `}</style>
-      <div className="max-w-6xl px-4 md:px-8 mx-auto">
-        {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
-            SOLUTION TOUT-EN-UN
-          </span>
-          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 dark:text-gray-50 mb-4">
-            Garde le contrôle de ton activité
-          </h2>
-          <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
-            Centralise toutes tes opérations financières et administratives sur
-            une seule plateforme intuitive. Prends des{" "}
-            <span className="text-[#5A50FF] font-medium">
-              décisions éclairées
-            </span>{" "}
-            grâce à une vue d'ensemble complète de ton activité.
-          </p>
-        </div>
+      <div className="max-w-7xl mx-auto px-5">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
+          Garde le contrôle de ton activité
+        </h2>
+        <p className="text-[17px] leading-relaxed text-gray-600 max-w-2xl mb-10 md:mb-14">
+          Centralise toutes tes opérations financières et administratives sur
+          une seule plateforme. Devis, factures, dépenses et banque se parlent
+          enfin entre eux.
+        </p>
 
-        {/* Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 border-y border-neutral-200 dark:border-neutral-800 divide-neutral-200 dark:divide-neutral-800">
-          <DashboardCard />
-          <TresorerieCard />
-          <MultiCompteCard />
-          <RapportsCard />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
+          {/* Ligne 1 — le tableau de bord en grand, puis la carte photo */}
+          <article
+            className={`${CARD} md:col-span-7 min-h-[420px] pb-0 md:pb-0`}
+          >
+            <h3 className={TITLE}>Tableau de bord en temps réel</h3>
+            <p className={`${TEXT} max-w-lg`}>
+              Suis tous tes indicateurs clés en un coup d&apos;œil. Chiffre
+              d&apos;affaires, trésorerie, factures en attente : tout est
+              centralisé.
+            </p>
+            <div className="relative flex-1 min-h-[300px] mt-6 -mx-7 md:-mx-8">
+              <DashboardVisual />
+            </div>
+          </article>
+
+          <article className="relative rounded-3xl overflow-hidden min-h-[320px] md:col-span-5 flex flex-col justify-end p-7 md:p-8 text-white">
+            <img
+              src="/lp/facturation-electronique/cta-laptop.jpg"
+              alt=""
+              className="absolute inset-0 size-full object-cover object-[60%_center]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/10" />
+            <div className="relative">
+              <h3 className="text-xl md:text-2xl font-medium tracking-tight mb-3">
+                Une seule plateforme, zéro ressaisie
+              </h3>
+              <p className="text-[15px] leading-relaxed text-white/85">
+                Devis, factures, dépenses, banque et facturation électronique
+                communiquent entre eux. Tu saisis une fois, Newbi s&apos;occupe
+                du reste.
+              </p>
+            </div>
+          </article>
+
+          {/* Ligne 2 — trésorerie, paiements et dépenses */}
+          <article className={`${CARD} md:col-span-4 pb-0 md:pb-0`}>
+            <h3 className={TITLE}>Pilote tes chiffres</h3>
+            <p className={TEXT}>
+              Centralise tes données financières et prends les bonnes décisions
+              grâce à des indicateurs clairs sur ton activité.
+            </p>
+            <div className="relative flex-1 min-h-[230px] mt-6 -mx-7 md:-mx-8">
+              <TresorerieVisual />
+            </div>
+          </article>
+          <article className={`${CARD} md:col-span-4 pb-0 md:pb-0`}>
+            <h3 className={TITLE}>Tes paiements, sous contrôle</h3>
+            <p className={TEXT}>
+              Synchronise tes transactions et relance les retards en quelques
+              clics.
+            </p>
+            <div className="relative flex-1 min-h-[260px] mt-6 -mx-7 md:-mx-8">
+              <MultiCompteVisual />
+            </div>
+          </article>
+          <article className={`${CARD} md:col-span-4 pb-0 md:pb-0`}>
+            <h3 className={TITLE}>Gère toutes tes dépenses</h3>
+            <p className={TEXT}>
+              Catégorise automatiquement tes dépenses, scanne tes justificatifs
+              et garde un œil sur chaque euro dépensé.
+            </p>
+            <div className="relative flex-1 min-h-[260px] mt-6 -mx-7 md:-mx-8">
+              <RapportsVisual />
+            </div>
+          </article>
         </div>
       </div>
     </section>
   );
 }
 
-function DashboardCard() {
+function DashboardVisual() {
   return (
-    <div className="md:border-r border-b border-neutral-200 dark:border-neutral-800">
-      <div className="p-4 md:p-8">
-        <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Tableau de bord en temps réel
-        </h2>
-        <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Suis tous tes indicateurs clés en un coup d'oeil. Chiffre d'affaires,
-          trésorerie, factures en attente : tout est centralisé.
-        </p>
-      </div>
-      <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden">
-        <img
-          src="/sectionNewGov1.png"
-          alt="Dashboard newbi"
-          className="absolute left-10 bottom-0 w-[140%] max-w-none rounded-tl-2xl object-cover object-left-top shadow-xs border border-neutral-200"
-        />
-      </div>
+    <div className="absolute inset-0 overflow-hidden">
+      <img
+        src="/sectionNewGov1.png"
+        alt="Tableau de bord Newbi"
+        className="absolute left-10 top-10 w-[130%] max-w-none rounded-tl-2xl object-cover object-left-top shadow-xs border border-neutral-200"
+      />
     </div>
   );
 }
@@ -232,205 +280,183 @@ function Badge({ type, value }) {
   return null;
 }
 
-function TresorerieCard() {
+function TresorerieVisual() {
   return (
-    <div className="border-b border-neutral-200 dark:border-neutral-800">
-      <div className="p-4 md:p-8">
-        <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Pilote tes chiffres, anticipe ta croissance
-        </h2>
-        <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Centralise tes données financières et prends les bonnes décisions
-          grâce à des indicateurs clairs sur ton activité.
-        </p>
-      </div>
-      <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden">
-        <div className="flex-1 flex items-center justify-center px-2 sm:px-8">
-          <svg
-            viewBox="0 0 400 200"
-            className="w-full max-w-none sm:max-w-xl"
-            fill="none"
-          >
-            {/* Durée totale du cycle: 6s (1s grille + 2s courbe + 1s pause + 2s fade out/reset) */}
+    <div className="absolute inset-0 flex flex-col overflow-hidden">
+      <div className="flex-1 flex items-center justify-center">
+        <svg viewBox="0 0 400 200" className="w-[92%] max-w-none" fill="none">
+          {/* Durée totale du cycle: 6s (1s grille + 2s courbe + 1s pause + 2s fade out/reset) */}
 
-            {/* Grille de fond - lignes apparaissent de bas en haut avec rebond */}
-            {[4, 3, 2, 1, 0].map((i, idx) => {
-              const targetY = 30 + i * 35;
-              const startY = targetY + 15;
-              const bounceY = targetY - 4;
-              return (
-                <line
-                  key={`h-${i}`}
-                  x1="40"
-                  y1={startY}
-                  x2="380"
-                  y2={startY}
-                  stroke="#e5e5e5"
-                  strokeWidth="0.5"
-                  opacity="0"
-                >
-                  <animate
-                    attributeName="opacity"
-                    values="0;1;1;1;0;0"
-                    keyTimes="0;0.02;0.55;0.75;0.85;1"
-                    dur="7s"
-                    begin={`${idx * 0.18}s`}
-                    repeatCount="indefinite"
-                  />
-                  <animate
-                    attributeName="y1"
-                    values={`${startY};${bounceY};${targetY + 2};${targetY};${targetY};${startY}`}
-                    keyTimes="0;0.04;0.055;0.065;0.85;1"
-                    dur="7s"
-                    begin={`${idx * 0.18}s`}
-                    repeatCount="indefinite"
-                    calcMode="spline"
-                    keySplines="0.2 0 0.2 1;0.4 0 0.6 1;0.4 0 0.2 1;0 0 1 1;0 0 1 1"
-                  />
-                  <animate
-                    attributeName="y2"
-                    values={`${startY};${bounceY};${targetY + 2};${targetY};${targetY};${startY}`}
-                    keyTimes="0;0.04;0.055;0.065;0.85;1"
-                    dur="7s"
-                    begin={`${idx * 0.18}s`}
-                    repeatCount="indefinite"
-                    calcMode="spline"
-                    keySplines="0.2 0 0.2 1;0.4 0 0.6 1;0.4 0 0.2 1;0 0 1 1;0 0 1 1"
-                  />
-                </line>
-              );
-            })}
-
-            {/* Labels Y - apparaissent avec leurs lignes de bas en haut */}
-            {[
-              { y: 175, label: "0", idx: 0 },
-              { y: 140, label: "3k", idx: 1 },
-              { y: 105, label: "6k", idx: 2 },
-              { y: 70, label: "9k", idx: 3 },
-              { y: 35, label: "12k", idx: 4 },
-            ].map((item) => (
-              <text
-                key={item.label}
-                x="20"
-                y={item.y}
-                fontSize="10"
-                textAnchor="middle"
-                style={{ fill: "#a3a3a3" }}
+          {/* Grille de fond - lignes apparaissent de bas en haut avec rebond */}
+          {[4, 3, 2, 1, 0].map((i, idx) => {
+            const targetY = 30 + i * 35;
+            const startY = targetY + 15;
+            const bounceY = targetY - 4;
+            return (
+              <line
+                key={`h-${i}`}
+                x1="40"
+                y1={startY}
+                x2="380"
+                y2={startY}
+                stroke="#e5e5e5"
+                strokeWidth="0.5"
                 opacity="0"
               >
-                {item.label}
                 <animate
                   attributeName="opacity"
                   values="0;1;1;1;0;0"
                   keyTimes="0;0.02;0.55;0.75;0.85;1"
                   dur="7s"
-                  begin={`${item.idx * 0.18}s`}
+                  begin={`${idx * 0.18}s`}
                   repeatCount="indefinite"
                 />
-              </text>
-            ))}
+                <animate
+                  attributeName="y1"
+                  values={`${startY};${bounceY};${targetY + 2};${targetY};${targetY};${startY}`}
+                  keyTimes="0;0.04;0.055;0.065;0.85;1"
+                  dur="7s"
+                  begin={`${idx * 0.18}s`}
+                  repeatCount="indefinite"
+                  calcMode="spline"
+                  keySplines="0.2 0 0.2 1;0.4 0 0.6 1;0.4 0 0.2 1;0 0 1 1;0 0 1 1"
+                />
+                <animate
+                  attributeName="y2"
+                  values={`${startY};${bounceY};${targetY + 2};${targetY};${targetY};${startY}`}
+                  keyTimes="0;0.04;0.055;0.065;0.85;1"
+                  dur="7s"
+                  begin={`${idx * 0.18}s`}
+                  repeatCount="indefinite"
+                  calcMode="spline"
+                  keySplines="0.2 0 0.2 1;0.4 0 0.6 1;0.4 0 0.2 1;0 0 1 1;0 0 1 1"
+                />
+              </line>
+            );
+          })}
 
-            {/* Zone remplie sous la courbe */}
-            <path
-              d="M40,140 C80,130 100,90 140,85 C180,80 200,100 220,70 C240,40 260,50 280,35 C300,25 340,30 380,28 L380,170 L40,170 Z"
-              fill="url(#areaGradient)"
+          {/* Labels Y - apparaissent avec leurs lignes de bas en haut */}
+          {[
+            { y: 175, label: "0", idx: 0 },
+            { y: 140, label: "3k", idx: 1 },
+            { y: 105, label: "6k", idx: 2 },
+            { y: 70, label: "9k", idx: 3 },
+            { y: 35, label: "12k", idx: 4 },
+          ].map((item) => (
+            <text
+              key={item.label}
+              x="20"
+              y={item.y}
+              fontSize="10"
+              textAnchor="middle"
+              style={{ fill: "#a3a3a3" }}
               opacity="0"
             >
+              {item.label}
               <animate
                 attributeName="opacity"
-                values="0;0;1;1;0;0"
-                keyTimes="0;0.15;0.45;0.75;0.85;1"
+                values="0;1;1;1;0;0"
+                keyTimes="0;0.02;0.55;0.75;0.85;1"
                 dur="7s"
+                begin={`${item.idx * 0.18}s`}
                 repeatCount="indefinite"
               />
-            </path>
+            </text>
+          ))}
 
-            {/* Courbe principale animée */}
-            <path
-              d="M40,140 C80,130 100,90 140,85 C180,80 200,100 220,70 C240,40 260,50 280,35 C300,25 340,30 380,28"
-              stroke="#22c55e"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray="600"
-              strokeDashoffset="600"
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                values="600;600;0;0;600;600"
-                keyTimes="0;0.1;0.5;0.75;0.85;1"
-                dur="7s"
-                repeatCount="indefinite"
-                calcMode="spline"
-                keySplines="0 0 1 1;0.4 0 0.2 1;0 0 1 1;0 0 1 1;0 0 1 1"
-              />
-            </path>
+          {/* Zone remplie sous la courbe */}
+          <path
+            d="M40,140 C80,130 100,90 140,85 C180,80 200,100 220,70 C240,40 260,50 280,35 C300,25 340,30 380,28 L380,170 L40,170 Z"
+            fill="url(#areaGradient)"
+            opacity="0"
+          >
+            <animate
+              attributeName="opacity"
+              values="0;0;1;1;0;0"
+              keyTimes="0;0.15;0.45;0.75;0.85;1"
+              dur="7s"
+              repeatCount="indefinite"
+            />
+          </path>
 
-            {/* Points clés */}
-            {[
-              { cx: 140, cy: 85, on: "0.25" },
-              { cx: 220, cy: 70, on: "0.32" },
-              { cx: 280, cy: 35, on: "0.38" },
-              { cx: 380, cy: 28, on: "0.45" },
-            ].map((pt, i) => (
-              <g key={i}>
-                <circle cx={pt.cx} cy={pt.cy} r="6" fill="#22c55e" opacity="0">
-                  <animate
-                    attributeName="opacity"
-                    values={`0;0;0.15;0.15;0;0`}
-                    keyTimes={`0;${pt.on};${Number(pt.on) + 0.03};0.75;0.85;1`}
-                    dur="7s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-                <circle cx={pt.cx} cy={pt.cy} r="3" fill="#22c55e" opacity="0">
-                  <animate
-                    attributeName="opacity"
-                    values={`0;0;1;1;0;0`}
-                    keyTimes={`0;${pt.on};${Number(pt.on) + 0.03};0.75;0.85;1`}
-                    dur="7s"
-                    repeatCount="indefinite"
-                  />
-                </circle>
-              </g>
-            ))}
+          {/* Courbe principale animée */}
+          <path
+            d="M40,140 C80,130 100,90 140,85 C180,80 200,100 220,70 C240,40 260,50 280,35 C300,25 340,30 380,28"
+            stroke="#22c55e"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeDasharray="600"
+            strokeDashoffset="600"
+          >
+            <animate
+              attributeName="stroke-dashoffset"
+              values="600;600;0;0;600;600"
+              keyTimes="0;0.1;0.5;0.75;0.85;1"
+              dur="7s"
+              repeatCount="indefinite"
+              calcMode="spline"
+              keySplines="0 0 1 1;0.4 0 0.2 1;0 0 1 1;0 0 1 1;0 0 1 1"
+            />
+          </path>
 
-            {/* Tooltip flottant */}
-            <g opacity="0">
-              <animate
-                attributeName="opacity"
-                values="0;0;1;1;0;0"
-                keyTimes="0;0.45;0.48;0.75;0.85;1"
-                dur="7s"
-                repeatCount="indefinite"
-              />
-              <rect
-                x="340"
-                y="0"
-                width="55"
-                height="20"
-                rx="4"
-                fill="#202020"
-              />
-              <text
-                x="367"
-                y="13"
-                fontSize="9"
-                fill="white"
-                textAnchor="middle"
-                fontWeight="600"
-              >
-                +34%
-              </text>
+          {/* Points clés */}
+          {[
+            { cx: 140, cy: 85, on: "0.25" },
+            { cx: 220, cy: 70, on: "0.32" },
+            { cx: 280, cy: 35, on: "0.38" },
+            { cx: 380, cy: 28, on: "0.45" },
+          ].map((pt, i) => (
+            <g key={i}>
+              <circle cx={pt.cx} cy={pt.cy} r="6" fill="#22c55e" opacity="0">
+                <animate
+                  attributeName="opacity"
+                  values={`0;0;0.15;0.15;0;0`}
+                  keyTimes={`0;${pt.on};${Number(pt.on) + 0.03};0.75;0.85;1`}
+                  dur="7s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+              <circle cx={pt.cx} cy={pt.cy} r="3" fill="#22c55e" opacity="0">
+                <animate
+                  attributeName="opacity"
+                  values={`0;0;1;1;0;0`}
+                  keyTimes={`0;${pt.on};${Number(pt.on) + 0.03};0.75;0.85;1`}
+                  dur="7s"
+                  repeatCount="indefinite"
+                />
+              </circle>
             </g>
+          ))}
 
-            <defs>
-              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#22c55e" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
+          {/* Tooltip flottant */}
+          <g opacity="0">
+            <animate
+              attributeName="opacity"
+              values="0;0;1;1;0;0"
+              keyTimes="0;0.45;0.48;0.75;0.85;1"
+              dur="7s"
+              repeatCount="indefinite"
+            />
+            <rect x="340" y="0" width="55" height="20" rx="4" fill="#202020" />
+            <text
+              x="367"
+              y="13"
+              fontSize="9"
+              fill="white"
+              textAnchor="middle"
+              fontWeight="600"
+            >
+              +34%
+            </text>
+          </g>
+
+          <defs>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#22c55e" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
       </div>
     </div>
   );
@@ -463,96 +489,83 @@ function GridItem({ img, icon }) {
   );
 }
 
-function RapportsCard() {
+function RapportsVisual() {
   return (
-    <div className="dark:border-neutral-800">
-      <div className="p-4 md:p-8">
-        <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Gère l'ensemble de tes dépenses
-        </h2>
-        <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Catégorise automatiquement tes dépenses, scanne tes justificatifs et
-          garde un oeil sur chaque euro dépensé.
-        </p>
-      </div>
-      <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
-        <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 w-full h-full absolute inset-y-2 left-[-5%] right-4 pt-2 pl-[9%] pr-2">
-          <div className="shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-tl-[16px] rounded-tr-[16px] ring-black/10 flex flex-col flex-1 overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-neutral-100 py-2.5 px-4">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-neutral-200 dark:bg-neutral-700" />
-                <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                  Dépenses par catégorie
-                </p>
-              </div>
-              <p className="text-[10px] text-neutral-400">Ce mois</p>
-            </div>
-
-            {/* Lignes de dépenses */}
-            <div className="flex flex-col">
-              {[
-                {
-                  label: "Logiciels",
-                  amount: "1 540 €",
-                  pct: "36%",
-                  color: "bg-indigo-500",
-                  barW: "w-[62%]",
-                },
-                {
-                  label: "Abonnements",
-                  amount: "1 140 €",
-                  pct: "27%",
-                  color: "bg-blue-500",
-                  barW: "w-[46%]",
-                },
-                {
-                  label: "Transport",
-                  amount: "880 €",
-                  pct: "21%",
-                  color: "bg-amber-500",
-                  barW: "w-[35%]",
-                },
-                {
-                  label: "Repas",
-                  amount: "720 €",
-                  pct: "16%",
-                  color: "bg-emerald-500",
-                  barW: "w-[28%]",
-                },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-4 py-2.5 border-b border-neutral-50"
-                >
-                  <div
-                    className={`w-2 h-2 rounded-sm ${item.color} shrink-0`}
-                  />
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 w-20 shrink-0">
-                    {item.label}
-                  </p>
-                  <div className="flex-1 h-2 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${item.color} rounded-full ${item.barW}`}
-                    />
-                  </div>
-                  <p className="text-[10px] text-neutral-400 w-8 text-right shrink-0">
-                    {item.pct}
-                  </p>
-                  <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200 w-16 text-right shrink-0">
-                    {item.amount}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Total */}
-            <div className="flex items-center justify-between px-4 py-3 mt-auto border-t border-neutral-200 dark:border-neutral-700">
-              <p className="text-xs font-medium text-neutral-500">Total</p>
-              <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
-                4 280 €
+    <div className="absolute inset-0 flex flex-col overflow-hidden perspective-distant">
+      <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 w-full h-full absolute inset-y-2 left-[-5%] right-4 pt-2 pl-[9%] pr-2">
+        <div className="shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-tl-[16px] rounded-tr-[16px] ring-black/10 flex flex-col flex-1 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-neutral-100 py-2.5 px-4">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-neutral-200 dark:bg-neutral-700" />
+              <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+                Dépenses par catégorie
               </p>
             </div>
+            <p className="text-[10px] text-neutral-400">Ce mois</p>
+          </div>
+
+          {/* Lignes de dépenses */}
+          <div className="flex flex-col">
+            {[
+              {
+                label: "Logiciels",
+                amount: "1 540 €",
+                pct: "36%",
+                color: "bg-indigo-500",
+                barW: "w-[62%]",
+              },
+              {
+                label: "Abonnements",
+                amount: "1 140 €",
+                pct: "27%",
+                color: "bg-blue-500",
+                barW: "w-[46%]",
+              },
+              {
+                label: "Transport",
+                amount: "880 €",
+                pct: "21%",
+                color: "bg-amber-500",
+                barW: "w-[35%]",
+              },
+              {
+                label: "Repas",
+                amount: "720 €",
+                pct: "16%",
+                color: "bg-emerald-500",
+                barW: "w-[28%]",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 px-4 py-2.5 border-b border-neutral-50"
+              >
+                <div className={`w-2 h-2 rounded-sm ${item.color} shrink-0`} />
+                <p className="text-xs text-neutral-600 dark:text-neutral-400 w-20 shrink-0">
+                  {item.label}
+                </p>
+                <div className="flex-1 h-2 bg-neutral-100 dark:bg-neutral-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${item.color} rounded-full ${item.barW}`}
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-400 w-8 text-right shrink-0">
+                  {item.pct}
+                </p>
+                <p className="text-xs font-medium text-neutral-800 dark:text-neutral-200 w-16 text-right shrink-0">
+                  {item.amount}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Total */}
+          <div className="flex items-center justify-between px-4 py-3 mt-auto border-t border-neutral-200 dark:border-neutral-700">
+            <p className="text-xs font-medium text-neutral-500">Total</p>
+            <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">
+              4 280 €
+            </p>
           </div>
         </div>
       </div>
@@ -560,159 +573,42 @@ function RapportsCard() {
   );
 }
 
-function MultiCompteCard() {
+function MultiCompteVisual() {
   return (
-    <div className="border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800">
-      <div className="p-4 md:p-8">
-        <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
-          Tes paiements, sous contrôle
-        </h2>
-        <p className="text-neutral-600 dark:text-neutral-400 mt-2 max-w-md text-balance">
-          Synchronise tes transactions et relance les retards en quelques clics.
-        </p>
-      </div>
-      <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
-        <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 dark:bg-neutral-800 dark:border-neutral-700 border border-neutral-200 max-w-[20rem] lg:max-w-sm mx-auto w-full h-full absolute inset-x-0 inset-y-2 p-2 overflow-hidden">
-          {/* Wrapper height animation — pousse cards 3+4 vers le bas */}
-          <div style={{ animation: "insertCards 5s ease-out infinite" }}>
-            {/* Card 1 - Virement bancaire */}
-            <div
-              className="p-5 mb-2 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3"
-              style={{ animation: "slideCard1 5s ease-out infinite" }}
-            >
-              <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
-                <img
-                  src="/bnp-logo.png"
-                  alt="BNP Paribas"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0 space-y-2.5">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                  Virement reçu
-                </p>
-                <p className="text-xs text-neutral-400">
-                  Reçu le 23 novembre 2025
-                </p>
-              </div>
-              <p className="text-base font-medium text-green-600 shrink-0">
-                2 880,00 €
-              </p>
-            </div>
-
-            {/* Card 2 - Facture */}
-            <div
-              className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-0"
-              style={{ animation: "slideCard2 5s ease-out infinite" }}
-            >
-              <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#525252"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                  <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0 space-y-2.5">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                  Facture F-0027
-                </p>
-                <p className="text-xs text-neutral-400">Julien Marchand</p>
-              </div>
-              <p className="text-base font-medium text-neutral-800 shrink-0">
-                2 880,00 €
-              </p>
-            </div>
-          </div>
-
-          {/* Sync badge — absolute entre les deux cards */}
-          <div className="absolute left-1/2 top-[72px] -translate-x-1/2 z-20">
-            <div
-              className="h-[64px] rounded-full bg-white flex items-center justify-center relative overflow-hidden"
-              style={{
-                animation: "outerPill 5s ease-out infinite",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
-              }}
-            >
-              <div
-                className="h-[52px] rounded-full bg-[#22c55e] absolute flex items-center px-3.5 gap-2.5"
-                style={{ animation: "greenPill 5s ease-out infinite" }}
-              >
-                <div
-                  className="size-8 shrink-0 rounded-full bg-white flex items-center justify-center"
-                  style={{ animation: "checkIcon 5s ease-out infinite" }}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#22c55e"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                </div>
-                <span
-                  className="text-lg font-semibold text-white whitespace-nowrap pr-1"
-                  style={{ animation: "associeText 5s ease-out infinite" }}
-                >
-                  Associée
-                </span>
-              </div>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#525252"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="absolute"
-                style={{
-                  animation:
-                    "syncIcon 5s ease-out infinite, spinSync 1s linear infinite",
-                }}
-              >
-                <path d="M21 2v6h-6M3 12a9 9 0 0115.4-6.4L21 8M3 22v-6h6M21 12a9 9 0 01-15.4 6.4L3 16" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Card 3 - Prélèvement (pushed down by wrapper) */}
-          <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
-            <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white overflow-hidden">
+    <div className="absolute inset-0 flex flex-col overflow-hidden perspective-distant">
+      <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 dark:bg-neutral-800 dark:border-neutral-700 border border-neutral-200 max-w-[16.5rem] lg:max-w-[17.5rem] mx-auto w-full h-full absolute inset-x-0 inset-y-2 p-2 overflow-hidden">
+        {/* Wrapper height animation — pousse cards 3+4 vers le bas */}
+        <div style={{ animation: "insertCards 5s ease-out infinite" }}>
+          {/* Card 1 - Virement bancaire */}
+          <div
+            className="p-5 mb-2 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3"
+            style={{ animation: "slideCard1 5s ease-out infinite" }}
+          >
+            <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
               <img
-                src="/urssaf-logo.png"
-                alt="URSSAF"
+                src="/bnp-logo.png"
+                alt="BNP Paribas"
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="flex-1 min-w-0 space-y-2.5">
               <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                Prélèvement URSSAF
+                Virement reçu
               </p>
               <p className="text-xs text-neutral-400">
-                Débité le 15 décembre 2025
+                Reçu le 23 novembre 2025
               </p>
             </div>
-            <p className="text-base font-medium text-neutral-800 shrink-0">
-              1 240,00 €
+            <p className="text-base font-medium text-green-600 shrink-0">
+              2 880,00 €
             </p>
           </div>
 
-          {/* Card 4 - Devis (pushed down by wrapper) */}
-          <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
+          {/* Card 2 - Facture */}
+          <div
+            className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-0"
+            style={{ animation: "slideCard2 5s ease-out infinite" }}
+          >
             <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200">
               <svg
                 width="14"
@@ -724,43 +620,150 @@ function MultiCompteCard() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
-                <rect x="9" y="3" width="6" height="4" rx="1" />
-                <path d="M9 14l2 2 4-4" />
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
               </svg>
             </div>
             <div className="flex-1 min-w-0 space-y-2.5">
               <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                Devis D-0041
+                Facture F-0027
               </p>
-              <p className="text-xs text-neutral-400">Sophie Lemaire</p>
-            </div>
-            <p className="text-base font-medium text-green-600 shrink-0">
-              4 500,00 €
-            </p>
-          </div>
-
-          {/* Card 5 - Dépense Vercel */}
-          <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
-            <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
-              <img
-                src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1746435914582"
-                alt="Stripe"
-                className="w-6 h-6 object-contain"
-              />
-            </div>
-            <div className="flex-1 min-w-0 space-y-2.5">
-              <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                Stripe - Commission
-              </p>
-              <p className="text-xs text-neutral-400">
-                Débité le 1er décembre 2025
-              </p>
+              <p className="text-xs text-neutral-400">Julien Marchand</p>
             </div>
             <p className="text-base font-medium text-neutral-800 shrink-0">
-              45,90 €
+              2 880,00 €
             </p>
           </div>
+        </div>
+
+        {/* Sync badge — absolute entre les deux cards */}
+        <div className="absolute left-1/2 top-[72px] -translate-x-1/2 z-20">
+          <div
+            className="h-[64px] rounded-full bg-white flex items-center justify-center relative overflow-hidden"
+            style={{
+              animation: "outerPill 5s ease-out infinite",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+            }}
+          >
+            <div
+              className="h-[52px] rounded-full bg-[#22c55e] absolute flex items-center px-3.5 gap-2.5"
+              style={{ animation: "greenPill 5s ease-out infinite" }}
+            >
+              <div
+                className="size-8 shrink-0 rounded-full bg-white flex items-center justify-center"
+                style={{ animation: "checkIcon 5s ease-out infinite" }}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#22c55e"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <span
+                className="text-lg font-semibold text-white whitespace-nowrap pr-1"
+                style={{ animation: "associeText 5s ease-out infinite" }}
+              >
+                Associée
+              </span>
+            </div>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#525252"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="absolute"
+              style={{
+                animation:
+                  "syncIcon 5s ease-out infinite, spinSync 1s linear infinite",
+              }}
+            >
+              <path d="M21 2v6h-6M3 12a9 9 0 0115.4-6.4L21 8M3 22v-6h6M21 12a9 9 0 01-15.4 6.4L3 16" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Card 3 - Prélèvement (pushed down by wrapper) */}
+        <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
+          <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white overflow-hidden">
+            <img
+              src="/urssaf-logo.png"
+              alt="URSSAF"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="flex-1 min-w-0 space-y-2.5">
+            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              Prélèvement URSSAF
+            </p>
+            <p className="text-xs text-neutral-400">
+              Débité le 15 décembre 2025
+            </p>
+          </div>
+          <p className="text-base font-medium text-neutral-800 shrink-0">
+            1 240,00 €
+          </p>
+        </div>
+
+        {/* Card 4 - Devis (pushed down by wrapper) */}
+        <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
+          <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#525252"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+              <rect x="9" y="3" width="6" height="4" rx="1" />
+              <path d="M9 14l2 2 4-4" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0 space-y-2.5">
+            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              Devis D-0041
+            </p>
+            <p className="text-xs text-neutral-400">Sophie Lemaire</p>
+          </div>
+          <p className="text-base font-medium text-green-600 shrink-0">
+            4 500,00 €
+          </p>
+        </div>
+
+        {/* Card 5 - Dépense Vercel */}
+        <div className="p-5 shadow-black/10 border bg-white dark:bg-neutral-900 border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3 relative z-10">
+          <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
+            <img
+              src="https://cdn.brandfetch.io/idxAg10C0L/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1746435914582"
+              alt="Stripe"
+              className="w-6 h-6 object-contain"
+            />
+          </div>
+          <div className="flex-1 min-w-0 space-y-2.5">
+            <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+              Stripe - Commission
+            </p>
+            <p className="text-xs text-neutral-400">
+              Débité le 1er décembre 2025
+            </p>
+          </div>
+          <p className="text-base font-medium text-neutral-800 shrink-0">
+            45,90 €
+          </p>
         </div>
       </div>
     </div>

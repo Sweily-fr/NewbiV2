@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { XIcon, Settings } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
+import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 import CookiePreferencesModal from "./CookiePreferencesModal";
 
 export default function CookieManager() {
@@ -90,57 +90,69 @@ export default function CookieManager() {
 
   return (
     <>
-      {/* Cookie Banner */}
+      {/* Fenêtre de consentement centrée : carte blanche large à coins très
+          arrondis, lien vers la politique à gauche et les deux actions à
+          droite — « Tout accepter » sur une pastille grise. */}
       {isVisible && (
         <div
-          className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ease-in-out ${
-            isAnimating
-              ? "translate-y-0 opacity-100"
-              : "translate-y-full opacity-0"
+          className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-300 ${
+            isAnimating ? "opacity-100" : "opacity-0"
           }`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cookie-title"
         >
-          <div className="bg-background max-w-[400px] rounded-md border p-4 shadow-lg">
-            <div className="flex gap-2">
-              <div className="flex grow flex-col gap-3">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">
-                    Nous respectons votre vie privée 🍪
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    Nous utilisons des cookies pour améliorer votre expérience
-                    et afficher du contenu personnalisé.
-                  </p>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button size="sm" onClick={handleAccept}>
-                    Accepter
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleDecline}>
-                    Refuser
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCustomize}
-                    className="gap-1"
-                  >
-                    <Settings className="w-3 h-3" />
-                    Personnaliser
-                  </Button>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                className="group -my-1.5 -me-2 size-8 shrink-0 p-0 hover:bg-transparent"
-                aria-label="Fermer la notification"
-                onClick={closeBanner}
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+
+          <div
+            className={`relative w-full max-w-[780px] rounded-[28px] bg-white px-8 py-8 md:px-11 md:py-10 shadow-[0_24px_70px_rgba(0,0,0,0.20)] transition-all duration-300 ease-out ${
+              isAnimating ? "translate-y-0 scale-100" : "translate-y-3 scale-95"
+            }`}
+          >
+            <h2
+              id="cookie-title"
+              className="text-[20px] md:text-[22px] font-semibold tracking-tight text-gray-950"
+            >
+              On utilise des cookies 🍪
+            </h2>
+            <p className="mt-4 text-[15px] md:text-[16px] leading-relaxed text-gray-600 max-w-[34rem]">
+              Pour améliorer ton expérience sur Newbi, on utilise des cookies
+              pour la mesure d&apos;audience, la personnalisation et la sécurité
+              des transactions.
+            </p>
+
+            <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+              <Link
+                href="/politique-de-confidentialite"
+                className="inline-flex items-center gap-2 whitespace-nowrap text-[15px] font-medium text-gray-950 underline underline-offset-4 decoration-1 hover:opacity-70 transition-opacity"
               >
-                <XIcon
-                  size={16}
-                  className="opacity-60 transition-opacity group-hover:opacity-100"
-                  aria-hidden="true"
-                />
-              </Button>
+                Politique de confidentialité
+                <ChevronRight className="size-4" strokeWidth={2} />
+              </Link>
+
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={handleDecline}
+                  className="whitespace-nowrap rounded-2xl px-3.5 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-black/[0.04]"
+                >
+                  Fermer &amp; refuser
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCustomize}
+                  className="whitespace-nowrap rounded-2xl px-3.5 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-black/[0.04]"
+                >
+                  Personnaliser
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAccept}
+                  className="whitespace-nowrap rounded-2xl bg-[#e6e6e6] px-6 py-3.5 text-[13px] font-medium uppercase tracking-wide text-gray-950 transition-colors hover:bg-[#dcdcdc]"
+                >
+                  Tout accepter
+                </button>
+              </div>
             </div>
           </div>
         </div>

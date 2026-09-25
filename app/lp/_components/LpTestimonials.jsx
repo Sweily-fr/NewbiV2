@@ -13,6 +13,8 @@ export default function LpTestimonials({
   title = "Ce que disent nos clients",
   reviews = REVIEWS,
   proofs,
+  // les LP restent en max-w-6xl ; la home passe en max-w-7xl
+  maxWidth = "max-w-6xl",
 }) {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -25,7 +27,9 @@ export default function LpTestimonials({
 
   return (
     <section className="px-5 py-14 md:py-20 bg-[#F4F4F5]">
-      <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-10 lg:gap-12">
+      <div
+        className={`${maxWidth} mx-auto grid lg:grid-cols-12 gap-10 lg:gap-12`}
+      >
         {/* Colonne texte */}
         <div className="lg:col-span-7 flex flex-col">
           <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
@@ -95,7 +99,9 @@ export default function LpTestimonials({
       </div>
 
       {proofs?.length > 0 && (
-        <div className="max-w-6xl mx-auto mt-14 md:mt-20 grid md:grid-cols-3 gap-4 md:gap-5">
+        <div
+          className={`${maxWidth} mx-auto mt-14 md:mt-20 grid md:grid-cols-3 gap-4 md:gap-5`}
+        >
           {proofs.map((item) => (
             <article
               key={item.title}

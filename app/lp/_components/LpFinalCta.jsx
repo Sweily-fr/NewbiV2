@@ -3,11 +3,19 @@ import LpCtaButton from "./LpCtaButton";
 // Dernier bloc avant le footer : rappel de la promesse + CTA.
 // Avec `image`, la carte devient une bannière photo pleine largeur (texte à
 // gauche sur un voile sombre, bouton blanc) ; sinon, fond violet clair.
-export default function LpFinalCta({ title, subtitle, image, imageAlt = "" }) {
+export default function LpFinalCta({
+  title,
+  subtitle,
+  image,
+  imageAlt = "",
+  maxWidth = "max-w-6xl",
+}) {
   if (image) {
     return (
       <section className="px-5 pt-6 md:pt-10 pb-16 md:pb-24">
-        <div className="relative max-w-6xl mx-auto rounded-3xl overflow-hidden min-h-[420px] md:min-h-[520px] flex items-center">
+        <div
+          className={`relative ${maxWidth} mx-auto rounded-3xl overflow-hidden min-h-[420px] md:min-h-[520px] flex items-center`}
+        >
           <img
             src={image}
             alt={imageAlt}
@@ -36,7 +44,9 @@ export default function LpFinalCta({ title, subtitle, image, imageAlt = "" }) {
 
   return (
     <section className="px-5 pb-16 md:pb-24">
-      <div className="max-w-6xl mx-auto rounded-3xl bg-gradient-to-br from-[#F0EEFF] via-[#F7F6FF] to-[#EDE9FF] px-6 py-14 md:py-20 text-center">
+      <div
+        className={`${maxWidth} mx-auto rounded-3xl bg-gradient-to-br from-[#F0EEFF] via-[#F7F6FF] to-[#EDE9FF] px-6 py-14 md:py-20 text-center`}
+      >
         <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
           {title}
         </h2>

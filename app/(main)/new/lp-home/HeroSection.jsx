@@ -1,189 +1,250 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { Instrument_Serif } from "next/font/google";
+import { Button } from "@/src/components/ui/button";
+import HeroDemo from "./hero-demo/HeroDemo";
+import RotatingPill from "./RotatingPill";
 
-// Serif réservée au surtitre et à l'accroche "deuxième métier" du H1
-// (Instrument Serif n'existe qu'en 400).
-const accentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: ["400"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
+// Mots qui défilent dans la pastille du H1 : les formes d'activité de nos
+// utilisateurs, chacune avec son duo pastel (fond + point). Ordre = ordre
+// d'affichage ; on ouvre sur le violet Newbi.
+const BUSINESSES = [
+  { label: "ta boîte", bg: "#E4E2FF", dot: "#5A50FF" },
+  { label: "ton agence", bg: "#FFE1EC", dot: "#E8558A" },
+  { label: "ton atelier", bg: "#FFEBD6", dot: "#E8883A" },
+  { label: "ton studio", bg: "#D9F2E4", dot: "#2AA37A" },
+  { label: "ton cabinet", bg: "#DCEBFF", dot: "#3B82F6" },
+];
 
+// Portraits affichés sous les CTA : des clients (Maëva, Pedro, Mustafa) et
+// une photo de la série « about ». `position` recadre chaque photo sur le
+// visage (les cadrages d'origine sont très différents).
+const PROOF_AVATARS = [
+  {
+    src: "/lp/avis/maeva.jpg",
+    alt: "Maëva, graphiste, cliente Newbi",
+    position: "50% 18%",
+  },
+  {
+    // Vignette carrée dédiée : dans la photo d'origine son visage est trop bas
+    // pour tenir dans un rond.
+    src: "/lp/avis/pedro-avatar.jpg",
+    alt: "Pedro, commerçant, client Newbi",
+    position: "50% 35%",
+  },
+  {
+    src: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    alt: "Mustafa, artisan du bâtiment, client Newbi",
+    position: "50% 20%",
+  },
+  {
+    src: "/lp/about/about-11.jpeg",
+    alt: "Une cliente Newbi",
+    position: "50% 25%",
+  },
+];
 export default function HeroSection() {
   return (
-    <div className="relative w-full overflow-x-clip bg-[#FDFDFD] px-5 pb-6 md:pb-10 lg:pb-0">
+    <div className="relative w-full overflow-x-clip bg-[#FDFDFD] px-5 pb-6 md:pb-10 lg:pb-16">
       {/* Conteneur principal avec max-width comme Qonto */}
       <div className="max-w-[1200px] mx-auto relative lg:block flex flex-col md:flex-row">
         {/* Grille pour le contenu texte - Structure Qonto */}
-        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-32 md:pt-24 lg:pt-32 md:flex-1">
+        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-40 md:pt-36 lg:pt-44 md:flex-1">
+          {/* Titre sur toute la largeur : à 5rem, il tient en deux lignes
+              seulement s'il dispose des 1200px du conteneur. */}
+          <div className="col-span-12 text-center">
+            {/* Coupure forcée à partir de sm : la pastille tombe en deuxième
+                ligne, comme sur la référence. Sur mobile, le titre coule. */}
+            <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
+              Là où la gestion de
+              <br className="hidden sm:block" />{" "}
+              <RotatingPill words={BUSINESSES} /> redevient simple.
+            </h1>
+          </div>
+
           {/* Contenu central */}
           <div className="col-span-12 lg:col-span-10 lg:col-start-2 text-center">
-            {/* Badge animé */}
-            <p
-              className="relative inline-block bg-[length:250%_100%,auto] bg-clip-text text-transparent [background-repeat:no-repeat,padding-box] text-sm font-normal mb-6"
-              style={{
-                "--spread": "68px",
-                "--base-color": "#6366f1",
-                "--base-gradient-color": "#ffffff",
-                backgroundImage:
-                  "linear-gradient(90deg, transparent calc(50% - 68px), #ffffff, transparent calc(50% + 68px)), linear-gradient(#6366f1, #6366f1)",
-                backgroundPosition: "0% center",
-                animation: "shimmer 3s ease-in-out infinite",
-              }}
-            >
-              Pour les indépendants et les petites équipes
-            </p>
-
-            {/* Titre principal H1 */}
-            {/* Sur mobile le titre coule librement (text-balance équilibre les
-                lignes, seule l'accroche reste insécable). À partir de sm, chaque
-                segment est insécable : coupure uniquement entre groupes de sens. */}
-            <h1 className="text-[2rem] leading-[1.1] sm:text-5xl sm:leading-tight lg:text-6xl font-extrabold tracking-tight text-black dark:text-white mb-6 text-balance">
-              <span className="sm:inline-block">Gérer sa boîte,</span>{" "}
-              <span className="sm:inline-block">ce n'est pas censé être</span>{" "}
-              <span className="sm:inline-block">
-                un{" "}
-                <span
-                  className={`${accentSerif.className} italic font-normal whitespace-nowrap text-indigo-600 text-[1.15em] leading-none`}
-                >
-                  deuxième métier
-                </span>
-                .
-              </span>
-            </h1>
-
             {/* Sous-titre */}
-            <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
+            <h2 className="text-lg md:text-xl font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-4xl">
               Tes devis, tes factures, tes clients et tes reçus au même endroit.
               Tu peux fermer ton Excel.
             </h2>
 
-            {/* Bouton CTA */}
-            <div className="flex items-center justify-center mb-8">
-              <Link
-                href="/auth/signup"
-                className="flex flex-col items-center rounded-xl px-8 py-3 text-center transition duration-200 active:scale-[0.98] bg-[#5b50FF] text-white hover:bg-[#4a40e6] w-full sm:w-auto"
+            {/* Boutons CTA : même gabarit que celui de la navbar (variante
+                « primary », taille md, px-4). Le second reprend la forme du
+                premier en violet pastel, texte violet Newbi. */}
+            <div className="mb-8 flex flex-col items-center gap-3 sm:mx-auto sm:grid sm:w-fit sm:grid-cols-2">
+              <Button
+                asChild
+                size="md"
+                variant="primary"
+                className="h-auto w-auto px-4 py-1.5 text-[17px] sm:w-full"
               >
-                <span className="text-base font-medium leading-tight">
-                  Commencer gratuitement
-                </span>
-                <span className="text-xs font-normal text-white/75 leading-tight">
-                  sans carte bancaire
-                </span>
-              </Link>
+                <Link href="/auth/signup">
+                  <span>Essayer Newbi gratuitement</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="md"
+                variant="primary"
+                className="h-auto w-auto px-4 py-1.5 text-[17px] sm:w-full bg-[#E4E2FF] text-[#5A50FF] hover:bg-[#D6D3FF] active:bg-[#C8C4FF] [box-shadow:none]"
+              >
+                <Link href="/contact">
+                  <span>Demander une démo</span>
+                </Link>
+              </Button>
             </div>
 
-            {/* Section preuve sociale */}
-            <p className="text-xs sm:text-sm text-gray-600">
-              <span className="text-gray-900 font-medium">
-                + 140 indépendants
-              </span>
-              <span className="mx-2 text-gray-300">·</span>+ 12 000 factures
-              émises
-            </p>
+            {/* Section preuve sociale : 4 portraits de clients superposés,
+                puis le compteur */}
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex -space-x-2.5">
+                {PROOF_AVATARS.map((avatar) => (
+                  <img
+                    key={avatar.src}
+                    src={avatar.src}
+                    alt={avatar.alt}
+                    style={{ objectPosition: avatar.position }}
+                    className="size-7 sm:size-8 rounded-full border-2 border-[#FDFDFD] object-cover"
+                    loading="lazy"
+                  />
+                ))}
+              </div>
+              <p className="text-xs sm:text-sm text-gray-600 text-left">
+                <span className="text-gray-900 font-medium">
+                  + 140 indépendants
+                </span>
+                <span className="mx-2 text-gray-300">·</span>+ 12 000 factures
+                émises
+              </p>
+            </div>
+          </div>
+
+          {/* Démo animée de l'interface, sur toute la largeur du hero.
+              Sur mobile on garde la capture : la maquette animée y serait
+              illisible. */}
+          <div className="col-span-12">
+            <div className="relative mx-auto mt-10 md:mt-14 w-full">
+              <img
+                src="/lp/facturation-electronique/hero-ipad-factures.png"
+                alt="Interface Newbi : liste des factures clients avec statuts"
+                width="2200"
+                height="1268"
+                className="w-[190%] max-w-none h-auto md:hidden"
+                loading="eager"
+                fetchPriority="high"
+              />
+              <HeroDemo className="hidden md:grid" />
+            </div>
 
             {/* Mobile: Image mockup + label facturation électronique superposé */}
-            <div className="lg:hidden mt-10 relative overflow-hidden">
-              <div className="relative">
-                <img
-                  src="/factures-hero-section.png"
-                  alt="Dashboard Newbi - Gestion des factures"
-                  style={{
-                    width: "120%",
-                    maxWidth: "none",
-                    marginLeft: "5%",
-                  }}
-                  className="object-contain rounded-md"
-                />
-                {/* Gradient fade bottom */}
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-                  style={{
-                    background:
-                      "linear-gradient(to top, #ffffff 0%, #ffffff 30%, transparent 100%)",
-                  }}
-                />
+            {/* Désactivé le temps de la refonte du hero */}
+            {false && (
+              <div className="lg:hidden mt-10 relative overflow-hidden">
+                <div className="relative">
+                  <img
+                    src="/factures-hero-section.png"
+                    alt="Dashboard Newbi - Gestion des factures"
+                    style={{
+                      width: "120%",
+                      maxWidth: "none",
+                      marginLeft: "5%",
+                    }}
+                    className="object-contain rounded-md"
+                  />
+                  {/* Gradient fade bottom */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(to top, #ffffff 0%, #ffffff 30%, transparent 100%)",
+                    }}
+                  />
+                </div>
+                {/* Label superposé en bas à gauche */}
+                <Link
+                  href="/produits/facturation-electronique"
+                  className="absolute bottom-20 left-0 z-10 inline-flex items-center gap-2 bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:shadow-md transition-shadow"
+                >
+                  <img
+                    src="/logo_Compatible_Facturation_electronique-footer.png"
+                    alt="Conforme Facturation électronique 2026"
+                    className="h-10 w-auto object-contain"
+                  />
+                </Link>
               </div>
-              {/* Label superposé en bas à gauche */}
-              <Link
-                href="/produits/facturation-electronique"
-                className="absolute bottom-20 left-0 z-10 inline-flex items-center gap-2 bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:shadow-md transition-shadow"
-              >
-                <img
-                  src="/logo_Compatible_Facturation_electronique-footer.png"
-                  alt="Conforme Facturation électronique 2026"
-                  className="h-10 w-auto object-contain"
-                />
-              </Link>
-            </div>
+            )}
           </div>
         </div>
 
         {/* Conteneur des images - Hauteur fixe sur desktop comme Qonto */}
-        <div className="hidden lg:block h-[500px]">
-          {/* Mockup Mac - Position absolue à droite, en bas */}
-          <img
-            src="/transactions-hero-section.png"
-            alt="Dashboard Newbi, transactions"
-            className="absolute object-contain rounded-md"
-            style={{
-              bottom: "110px",
-              right: "-35%",
-              width: "60%",
-            }}
-          />
-          {/* Gradient blanc en bas du Mac */}
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              bottom: "110px",
-              right: "-35%",
-              width: "60%",
-              height: "260px",
-              background:
-                "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
-            }}
-          />
+        {/* Désactivé le temps de la refonte du hero */}
+        {false && (
+          <div className="hidden lg:block h-[500px]">
+            {/* Mockup Mac - Position absolue à droite, en bas */}
+            <img
+              src="/transactions-hero-section.png"
+              alt="Dashboard Newbi, transactions"
+              className="absolute object-contain rounded-md"
+              style={{
+                bottom: "110px",
+                right: "-35%",
+                width: "60%",
+              }}
+            />
+            {/* Gradient blanc en bas du Mac */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                bottom: "110px",
+                right: "-35%",
+                width: "60%",
+                height: "260px",
+                background:
+                  "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
+              }}
+            />
 
-          {/* Mockup iPhone - Position absolue à gauche, en bas */}
-          <img
-            src="/mockup-iphone-factures-clients.png"
-            alt="Application mobile Newbi, factures clients"
-            className="absolute object-contain rounded-md"
-            style={{
-              bottom: "30px",
-              left: "-2.5%",
-              width: "21%",
-            }}
-          />
-          {/* Gradient blanc en bas de l'iPhone */}
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              bottom: "30px",
-              left: "-2.5%",
-              width: "21%",
-              height: "360px",
-              background:
-                "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
-            }}
-          />
-        </div>
+            {/* Mockup iPhone - Position absolue à gauche, en bas */}
+            <img
+              src="/mockup-iphone-factures-clients.png"
+              alt="Application mobile Newbi, factures clients"
+              className="absolute object-contain rounded-md"
+              style={{
+                bottom: "30px",
+                left: "-2.5%",
+                width: "21%",
+              }}
+            />
+            {/* Gradient blanc en bas de l'iPhone */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                bottom: "30px",
+                left: "-2.5%",
+                width: "21%",
+                height: "360px",
+                background:
+                  "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Carte Activité récente - Style Qonto pastel - EN DEHORS du conteneur overflow-hidden */}
-      <div
-        className="hidden lg:block absolute left-1/2 -translate-x-1/2 z-50"
-        style={{ bottom: "180px" }}
-      >
-        <div className="relative" style={{ overflow: "visible" }}>
-          <div className="w-[400px] rounded-2xl bg-[#2F2F2D] border border-gray-700 shadow-xs overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-end gap-2 border-b border-gray-600 py-3 px-4">
-              {/* <div className="w-4 h-4 rounded bg-[#5A50FF]/10 flex items-center justify-center">
+      {/* Désactivé le temps de la refonte du hero */}
+      {false && (
+        <div
+          className="hidden lg:block absolute left-1/2 -translate-x-1/2 z-50"
+          style={{ bottom: "180px" }}
+        >
+          <div className="relative" style={{ overflow: "visible" }}>
+            <div className="w-[400px] rounded-2xl bg-[#2F2F2D] border border-gray-700 shadow-xs overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-end gap-2 border-b border-gray-600 py-3 px-4">
+                {/* <div className="w-4 h-4 rounded bg-[#5A50FF]/10 flex items-center justify-center">
                 <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
                   <path
                     d="M3.2 2.4V4.8H6.4"
@@ -219,114 +280,114 @@ export default function HeroSection() {
                   />
                 </svg>
               </div> */}
-              <p className="text-xs text-right font-medium text-white">
-                Activité récente
-              </p>
+                <p className="text-xs text-right font-medium text-white">
+                  Activité récente
+                </p>
+              </div>
+
+              {/* Activity items - Style pastel léger */}
+              <div className="py-2 space-y-0.5">
+                {/* Item 1 */}
+                <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-sm border border-white"></div>
+                    <span className="text-xs text-white">Facture envoyée</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#4F39F6]/20 text-[#4F39F6] font-medium">
+                      payé
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-300">2m</span>
+                </div>
+
+                {/* Item 2 */}
+                <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-sm border border-white"></div>
+                    <span className="text-xs text-white">Devis accepté</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">
+                      signé
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-300">15m</span>
+                </div>
+
+                {/* Item 3 */}
+                <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-sm border border-white"></div>
+                    <span className="text-xs text-white">Reçu numérisé</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 font-medium">
+                      ocr
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-300">1h</span>
+                </div>
+
+                {/* Item 4 */}
+                <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-sm border border-white"></div>
+                    <span className="text-xs text-white">Paiement reçu</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#4F39F6]/20 text-[#4F39F6] font-medium">
+                      +3 500€
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-gray-300">2h</span>
+                </div>
+              </div>
             </div>
 
-            {/* Activity items - Style pastel léger */}
-            <div className="py-2 space-y-0.5">
-              {/* Item 1 */}
-              <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-sm border border-white"></div>
-                  <span className="text-xs text-white">Facture envoyée</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#4F39F6]/20 text-[#4F39F6] font-medium">
-                    payé
-                  </span>
+            {/* Petite carte flottante 1 - Facturation électronique (style Qonto) */}
+            <div
+              className="absolute -left-20 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-[320px]"
+              style={{ top: "clamp(-30px, -7vh, 0px)" }}
+            >
+              {/* Header gris clair */}
+              <div className="bg-gray-50 border-b border-gray-200 px-3 py-3.5 flex items-center justify-between">
+                {/* Icône drapeau FR */}
+                <div className="flex">
+                  <svg
+                    width="68"
+                    height="13"
+                    viewBox="0 0 92 13"
+                    fill="#00f"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="7" cy="6.5" r="5"></circle>
+                    <path d="M22.9171 11.16C22.1262 11.16 21.4557 11.0267 20.9055 10.7603C20.3554 10.4852 19.8868 10.1327 19.5 9.70289L20.7895 8.40052C21.3998 9.08824 22.152 9.4321 23.0461 9.4321C23.5275 9.4321 23.8842 9.33324 24.1163 9.13552C24.3484 8.9378 24.4645 8.67561 24.4645 8.34894C24.4645 8.09964 24.3957 7.89333 24.2582 7.72999C24.1206 7.55807 23.8412 7.44201 23.42 7.38184L22.5303 7.26578C21.5761 7.14543 20.8754 6.85745 20.4284 6.40184C19.99 5.94622 19.7708 5.34017 19.7708 4.58368C19.7708 4.17965 19.8482 3.81 20.0029 3.47473C20.1576 3.13947 20.3768 2.85149 20.6605 2.61079C20.9528 2.37009 21.3053 2.18526 21.7179 2.05631C22.1391 1.91877 22.6162 1.85 23.1492 1.85C23.8283 1.85 24.4258 1.95745 24.9416 2.17237C25.4574 2.38728 25.9001 2.70105 26.2697 3.11368L24.9674 4.42894C24.7525 4.17965 24.4903 3.97763 24.1808 3.82289C23.8799 3.65956 23.4974 3.57789 23.0332 3.57789C22.5947 3.57789 22.2681 3.65526 22.0532 3.81C21.8382 3.96473 21.7308 4.17965 21.7308 4.45473C21.7308 4.76421 21.8125 4.98772 21.9758 5.12526C22.1477 5.2628 22.4228 5.36166 22.8011 5.42184L23.6908 5.56368C24.6192 5.70982 25.3069 5.9978 25.7539 6.42763C26.201 6.84886 26.4245 7.45061 26.4245 8.23289C26.4245 8.66271 26.3471 9.05815 26.1924 9.4192C26.0376 9.78026 25.8098 10.0897 25.5089 10.3476C25.2167 10.6055 24.8513 10.8075 24.4129 10.9537C23.9745 11.0912 23.4759 11.16 22.9171 11.16Z"></path>
+                    <path d="M29.9063 2.00474V7.52368C29.9063 8.15982 30.031 8.63693 30.2803 8.955C30.5296 9.26447 30.9465 9.41921 31.5311 9.41921C32.1156 9.41921 32.5326 9.26447 32.7819 8.955C33.0312 8.63693 33.1558 8.15982 33.1558 7.52368V2.00474H35.0642V7.31737C35.0642 7.9793 34.9998 8.55526 34.8708 9.04526C34.7505 9.52666 34.5484 9.9264 34.2648 10.2445C33.9811 10.5539 33.6157 10.786 33.1687 10.9408C32.7217 11.0869 32.1758 11.16 31.5311 11.16C30.8863 11.16 30.3405 11.0869 29.8935 10.9408C29.4464 10.786 29.0811 10.5539 28.7974 10.2445C28.5137 9.9264 28.3074 9.52666 28.1785 9.04526C28.0581 8.55526 27.9979 7.9793 27.9979 7.31737V2.00474H29.9063Z"></path>
+                    <path d="M37.0028 11.0053V2.00474H41.258C41.6793 2.00474 42.0575 2.07781 42.3928 2.22395C42.728 2.36149 43.0117 2.55491 43.2438 2.80421C43.4845 3.05351 43.6694 3.35868 43.7983 3.71974C43.9272 4.07219 43.9917 4.45903 43.9917 4.88026C43.9917 5.31009 43.9272 5.70123 43.7983 6.05368C43.6694 6.40614 43.4845 6.70702 43.2438 6.95631C43.0117 7.20561 42.728 7.40333 42.3928 7.54947C42.0575 7.68701 41.6793 7.75579 41.258 7.75579H38.9628V11.0053H37.0028ZM38.9628 6.05368H41.0259C41.3182 6.05368 41.546 5.98061 41.7094 5.83447C41.8813 5.67974 41.9672 5.45623 41.9672 5.16395V4.59658C41.9672 4.3043 41.8813 4.08509 41.7094 3.93895C41.546 3.78421 41.3182 3.70684 41.0259 3.70684H38.9628V6.05368Z"></path>
+                    <path d="M45.4649 11.0053V2.00474H51.5899V3.74553H47.4249V5.58947H50.9968V7.31737H47.4249V9.26447H51.5899V11.0053H45.4649Z"></path>
+                    <path d="M55.2575 11.0053H53.2975V2.00474H57.5656C57.9783 2.00474 58.3522 2.07351 58.6875 2.21105C59.0227 2.3486 59.3064 2.54632 59.5385 2.80421C59.7792 3.05351 59.9641 3.35439 60.093 3.70684C60.222 4.0593 60.2864 4.45044 60.2864 4.88026C60.2864 5.49061 60.1489 6.0236 59.8738 6.47921C59.6073 6.93482 59.199 7.26579 58.6488 7.4721L60.4154 11.0053H58.2362L56.663 7.70421H55.2575V11.0053ZM57.3206 6.05368C57.6129 6.05368 57.8407 5.98061 58.0041 5.83447C58.176 5.67974 58.262 5.45623 58.262 5.16395V4.59658C58.262 4.3043 58.176 4.08509 58.0041 3.93895C57.8407 3.78421 57.6129 3.70684 57.3206 3.70684H55.2575V6.05368H57.3206Z"></path>
+                    <path d="M65.0337 11.0053V2.00474H69.289C69.7102 2.00474 70.0884 2.07781 70.4237 2.22395C70.759 2.36149 71.0426 2.55491 71.2747 2.80421C71.5154 3.05351 71.7003 3.35868 71.8292 3.71974C71.9582 4.07219 72.0226 4.45903 72.0226 4.88026C72.0226 5.31009 71.9582 5.70123 71.8292 6.05368C71.7003 6.40614 71.5154 6.70702 71.2747 6.95631C71.0426 7.20561 70.759 7.40333 70.4237 7.54947C70.0884 7.68701 69.7102 7.75579 69.289 7.75579H66.9937V11.0053H65.0337ZM66.9937 6.05368H69.0568C69.3491 6.05368 69.5769 5.98061 69.7403 5.83447C69.9122 5.67974 69.9982 5.45623 69.9982 5.16395V4.59658C69.9982 4.3043 69.9122 4.08509 69.7403 3.93895C69.5769 3.78421 69.3491 3.70684 69.0568 3.70684H66.9937V6.05368Z"></path>
+                    <path d="M73.4958 2.00474H76.8872C77.4803 2.00474 78.0219 2.0993 78.5119 2.28842C79.0019 2.47754 79.4188 2.76123 79.7627 3.13947C80.1065 3.50912 80.373 3.97763 80.5622 4.545C80.7513 5.10377 80.8458 5.7571 80.8458 6.505C80.8458 7.25289 80.7513 7.91052 80.5622 8.47789C80.373 9.03666 80.1065 9.50517 79.7627 9.88342C79.4188 10.2531 79.0019 10.5325 78.5119 10.7216C78.0219 10.9107 77.4803 11.0053 76.8872 11.0053H73.4958V2.00474ZM76.8872 9.26447C77.4717 9.26447 77.9316 9.10114 78.2669 8.77447C78.6022 8.4478 78.7698 7.92342 78.7698 7.20131V5.80868C78.7698 5.08658 78.6022 4.56219 78.2669 4.23553C77.9316 3.90886 77.4717 3.74553 76.8872 3.74553H75.4559V9.26447H76.8872Z"></path>
+                    <path d="M82.4869 11.0053V2.00474H86.7422C87.1634 2.00474 87.5417 2.07781 87.8769 2.22395C88.2122 2.36149 88.4959 2.55491 88.728 2.80421C88.9687 3.05351 89.1535 3.35868 89.2825 3.71974C89.4114 4.07219 89.4759 4.45903 89.4759 4.88026C89.4759 5.31009 89.4114 5.70123 89.2825 6.05368C89.1535 6.40614 88.9687 6.70702 88.728 6.95631C88.4959 7.20561 88.2122 7.40333 87.8769 7.54947C87.5417 7.68701 87.1634 7.75579 86.7422 7.75579H84.4469V11.0053H82.4869ZM84.4469 6.05368H86.5101C86.8024 6.05368 87.0302 5.98061 87.1935 5.83447C87.3654 5.67974 87.4514 5.45623 87.4514 5.16395V4.59658C87.4514 4.3043 87.3654 4.08509 87.1935 3.93895C87.0302 3.78421 86.8024 3.70684 86.5101 3.70684H84.4469V6.05368Z"></path>
+                  </svg>
                 </div>
-                <span className="text-[10px] text-gray-300">2m</span>
+                <span className="text-sm font-medium">
+                  Facturation électronique
+                </span>
               </div>
-
-              {/* Item 2 */}
-              <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-sm border border-white"></div>
-                  <span className="text-xs text-white">Devis accepté</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 font-medium">
-                    signé
-                  </span>
-                </div>
-                <span className="text-[10px] text-gray-300">15m</span>
-              </div>
-
-              {/* Item 3 */}
-              <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-sm border border-white"></div>
-                  <span className="text-xs text-white">Reçu numérisé</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-500/10 text-gray-400 font-medium">
-                    ocr
-                  </span>
-                </div>
-                <span className="text-[10px] text-gray-300">1h</span>
-              </div>
-
-              {/* Item 4 */}
-              <div className="flex items-center justify-between px-3 py-2 mx-2 rounded-md hover:bg-white/5 transition-colors">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-sm border border-white"></div>
-                  <span className="text-xs text-white">Paiement reçu</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#4F39F6]/20 text-[#4F39F6] font-medium">
-                    +3 500€
-                  </span>
-                </div>
-                <span className="text-[10px] text-gray-300">2h</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Petite carte flottante 1 - Facturation électronique (style Qonto) */}
-          <div
-            className="absolute -left-20 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-[320px]"
-            style={{ top: "clamp(-30px, -7vh, 0px)" }}
-          >
-            {/* Header gris clair */}
-            <div className="bg-gray-50 border-b border-gray-200 px-3 py-3.5 flex items-center justify-between">
-              {/* Icône drapeau FR */}
-              <div className="flex">
-                <svg
-                  width="68"
-                  height="13"
-                  viewBox="0 0 92 13"
-                  fill="#00f"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle cx="7" cy="6.5" r="5"></circle>
-                  <path d="M22.9171 11.16C22.1262 11.16 21.4557 11.0267 20.9055 10.7603C20.3554 10.4852 19.8868 10.1327 19.5 9.70289L20.7895 8.40052C21.3998 9.08824 22.152 9.4321 23.0461 9.4321C23.5275 9.4321 23.8842 9.33324 24.1163 9.13552C24.3484 8.9378 24.4645 8.67561 24.4645 8.34894C24.4645 8.09964 24.3957 7.89333 24.2582 7.72999C24.1206 7.55807 23.8412 7.44201 23.42 7.38184L22.5303 7.26578C21.5761 7.14543 20.8754 6.85745 20.4284 6.40184C19.99 5.94622 19.7708 5.34017 19.7708 4.58368C19.7708 4.17965 19.8482 3.81 20.0029 3.47473C20.1576 3.13947 20.3768 2.85149 20.6605 2.61079C20.9528 2.37009 21.3053 2.18526 21.7179 2.05631C22.1391 1.91877 22.6162 1.85 23.1492 1.85C23.8283 1.85 24.4258 1.95745 24.9416 2.17237C25.4574 2.38728 25.9001 2.70105 26.2697 3.11368L24.9674 4.42894C24.7525 4.17965 24.4903 3.97763 24.1808 3.82289C23.8799 3.65956 23.4974 3.57789 23.0332 3.57789C22.5947 3.57789 22.2681 3.65526 22.0532 3.81C21.8382 3.96473 21.7308 4.17965 21.7308 4.45473C21.7308 4.76421 21.8125 4.98772 21.9758 5.12526C22.1477 5.2628 22.4228 5.36166 22.8011 5.42184L23.6908 5.56368C24.6192 5.70982 25.3069 5.9978 25.7539 6.42763C26.201 6.84886 26.4245 7.45061 26.4245 8.23289C26.4245 8.66271 26.3471 9.05815 26.1924 9.4192C26.0376 9.78026 25.8098 10.0897 25.5089 10.3476C25.2167 10.6055 24.8513 10.8075 24.4129 10.9537C23.9745 11.0912 23.4759 11.16 22.9171 11.16Z"></path>
-                  <path d="M29.9063 2.00474V7.52368C29.9063 8.15982 30.031 8.63693 30.2803 8.955C30.5296 9.26447 30.9465 9.41921 31.5311 9.41921C32.1156 9.41921 32.5326 9.26447 32.7819 8.955C33.0312 8.63693 33.1558 8.15982 33.1558 7.52368V2.00474H35.0642V7.31737C35.0642 7.9793 34.9998 8.55526 34.8708 9.04526C34.7505 9.52666 34.5484 9.9264 34.2648 10.2445C33.9811 10.5539 33.6157 10.786 33.1687 10.9408C32.7217 11.0869 32.1758 11.16 31.5311 11.16C30.8863 11.16 30.3405 11.0869 29.8935 10.9408C29.4464 10.786 29.0811 10.5539 28.7974 10.2445C28.5137 9.9264 28.3074 9.52666 28.1785 9.04526C28.0581 8.55526 27.9979 7.9793 27.9979 7.31737V2.00474H29.9063Z"></path>
-                  <path d="M37.0028 11.0053V2.00474H41.258C41.6793 2.00474 42.0575 2.07781 42.3928 2.22395C42.728 2.36149 43.0117 2.55491 43.2438 2.80421C43.4845 3.05351 43.6694 3.35868 43.7983 3.71974C43.9272 4.07219 43.9917 4.45903 43.9917 4.88026C43.9917 5.31009 43.9272 5.70123 43.7983 6.05368C43.6694 6.40614 43.4845 6.70702 43.2438 6.95631C43.0117 7.20561 42.728 7.40333 42.3928 7.54947C42.0575 7.68701 41.6793 7.75579 41.258 7.75579H38.9628V11.0053H37.0028ZM38.9628 6.05368H41.0259C41.3182 6.05368 41.546 5.98061 41.7094 5.83447C41.8813 5.67974 41.9672 5.45623 41.9672 5.16395V4.59658C41.9672 4.3043 41.8813 4.08509 41.7094 3.93895C41.546 3.78421 41.3182 3.70684 41.0259 3.70684H38.9628V6.05368Z"></path>
-                  <path d="M45.4649 11.0053V2.00474H51.5899V3.74553H47.4249V5.58947H50.9968V7.31737H47.4249V9.26447H51.5899V11.0053H45.4649Z"></path>
-                  <path d="M55.2575 11.0053H53.2975V2.00474H57.5656C57.9783 2.00474 58.3522 2.07351 58.6875 2.21105C59.0227 2.3486 59.3064 2.54632 59.5385 2.80421C59.7792 3.05351 59.9641 3.35439 60.093 3.70684C60.222 4.0593 60.2864 4.45044 60.2864 4.88026C60.2864 5.49061 60.1489 6.0236 59.8738 6.47921C59.6073 6.93482 59.199 7.26579 58.6488 7.4721L60.4154 11.0053H58.2362L56.663 7.70421H55.2575V11.0053ZM57.3206 6.05368C57.6129 6.05368 57.8407 5.98061 58.0041 5.83447C58.176 5.67974 58.262 5.45623 58.262 5.16395V4.59658C58.262 4.3043 58.176 4.08509 58.0041 3.93895C57.8407 3.78421 57.6129 3.70684 57.3206 3.70684H55.2575V6.05368H57.3206Z"></path>
-                  <path d="M65.0337 11.0053V2.00474H69.289C69.7102 2.00474 70.0884 2.07781 70.4237 2.22395C70.759 2.36149 71.0426 2.55491 71.2747 2.80421C71.5154 3.05351 71.7003 3.35868 71.8292 3.71974C71.9582 4.07219 72.0226 4.45903 72.0226 4.88026C72.0226 5.31009 71.9582 5.70123 71.8292 6.05368C71.7003 6.40614 71.5154 6.70702 71.2747 6.95631C71.0426 7.20561 70.759 7.40333 70.4237 7.54947C70.0884 7.68701 69.7102 7.75579 69.289 7.75579H66.9937V11.0053H65.0337ZM66.9937 6.05368H69.0568C69.3491 6.05368 69.5769 5.98061 69.7403 5.83447C69.9122 5.67974 69.9982 5.45623 69.9982 5.16395V4.59658C69.9982 4.3043 69.9122 4.08509 69.7403 3.93895C69.5769 3.78421 69.3491 3.70684 69.0568 3.70684H66.9937V6.05368Z"></path>
-                  <path d="M73.4958 2.00474H76.8872C77.4803 2.00474 78.0219 2.0993 78.5119 2.28842C79.0019 2.47754 79.4188 2.76123 79.7627 3.13947C80.1065 3.50912 80.373 3.97763 80.5622 4.545C80.7513 5.10377 80.8458 5.7571 80.8458 6.505C80.8458 7.25289 80.7513 7.91052 80.5622 8.47789C80.373 9.03666 80.1065 9.50517 79.7627 9.88342C79.4188 10.2531 79.0019 10.5325 78.5119 10.7216C78.0219 10.9107 77.4803 11.0053 76.8872 11.0053H73.4958V2.00474ZM76.8872 9.26447C77.4717 9.26447 77.9316 9.10114 78.2669 8.77447C78.6022 8.4478 78.7698 7.92342 78.7698 7.20131V5.80868C78.7698 5.08658 78.6022 4.56219 78.2669 4.23553C77.9316 3.90886 77.4717 3.74553 76.8872 3.74553H75.4559V9.26447H76.8872Z"></path>
-                  <path d="M82.4869 11.0053V2.00474H86.7422C87.1634 2.00474 87.5417 2.07781 87.8769 2.22395C88.2122 2.36149 88.4959 2.55491 88.728 2.80421C88.9687 3.05351 89.1535 3.35868 89.2825 3.71974C89.4114 4.07219 89.4759 4.45903 89.4759 4.88026C89.4759 5.31009 89.4114 5.70123 89.2825 6.05368C89.1535 6.40614 88.9687 6.70702 88.728 6.95631C88.4959 7.20561 88.2122 7.40333 87.8769 7.54947C87.5417 7.68701 87.1634 7.75579 86.7422 7.75579H84.4469V11.0053H82.4869ZM84.4469 6.05368H86.5101C86.8024 6.05368 87.0302 5.98061 87.1935 5.83447C87.3654 5.67974 87.4514 5.45623 87.4514 5.16395V4.59658C87.4514 4.3043 87.3654 4.08509 87.1935 3.93895C87.0302 3.78421 86.8024 3.70684 86.5101 3.70684H84.4469V6.05368Z"></path>
-                </svg>
-              </div>
-              <span className="text-sm font-medium">
-                Facturation électronique
-              </span>
-            </div>
-            {/* Contenu */}
-            <div className="px-3 py-3 flex items-center justify-between">
-              <Link href="/produits/facturation-electronique">
+              {/* Contenu */}
+              <div className="px-3 py-3 flex items-center justify-between">
+                <Link href="/produits/facturation-electronique">
+                  <img
+                    src="/logo_Compatible_Facturation_electronique-footer.png"
+                    alt="Conforme Facturation électronique 2026"
+                    className="h-12 w-auto object-contain"
+                  />
+                </Link>
                 <img
-                  src="/logo_Compatible_Facturation_electronique-footer.png"
-                  alt="Conforme Facturation électronique 2026"
-                  className="h-12 w-auto object-contain"
+                  src="/flag-for-flag-france-svgrepo-com.svg"
+                  alt="french flag"
+                  className="w-[16px]"
                 />
-              </Link>
-              <img
-                src="/flag-for-flag-france-svgrepo-com.svg"
-                alt="french flag"
-                className="w-[16px]"
-              />
-              {/* <span className="text-xs font-medium text-gray-900">Activé</span> */}
+                {/* <span className="text-xs font-medium text-gray-900">Activé</span> */}
+              </div>
             </div>
-          </div>
 
-          {/* Petite carte flottante 2 - Gain de temps (style Qonto) */}
-          {/* <div className="absolute -bottom-6 -right-16 bg-white rounded-t-xl border border-gray-200 shadow-sm overflow-hidden min-w-[180px]">
+            {/* Petite carte flottante 2 - Gain de temps (style Qonto) */}
+            {/* <div className="absolute -bottom-6 -right-16 bg-white rounded-t-xl border border-gray-200 shadow-sm overflow-hidden min-w-[180px]">
             <div className="bg-gray-50 border-b border-gray-200 px-3 py-2">
               <span className="text-sm font-medium text-gray-900">
                 Gain de temps
@@ -337,8 +398,9 @@ export default function HeroSection() {
               <span className="text-xs font-medium text-green-600">+40%</span>
             </div>
           </div> */}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

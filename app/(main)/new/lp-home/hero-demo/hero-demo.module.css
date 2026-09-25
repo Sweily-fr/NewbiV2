@@ -1,0 +1,778 @@
+/* ---------------------------------------------------------------------
+   Démo produit du hero.
+
+   Base : la capture du mockup iPad (cadre + sidebar + barre du haut),
+   servie telle quelle. Seul le panneau de droite est reconstruit en
+   HTML/CSS par-dessus, calé sur la zone vide de l'image :
+     image 2400 x 1286, panneau x 471→2264, y 101→1245
+   soit, ramené au repère de la scène (1200 x 643) :
+     left 235.5  top 50.5  width 896.5  height 572
+
+   Deux vues occupent ce panneau : le tableau de projet et la liste des
+   factures. L'animation les enchaîne (voir HeroDemo.jsx).
+   --------------------------------------------------------------------- */
+
+.wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1200px;
+  height: 643px;
+  transform-origin: top left;
+
+  --violet: #5a50ff;
+  --ink: #17171a;
+  --muted: #6b7280;
+  --line: #ececee;
+
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.device {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.panel {
+  position: absolute;
+  left: 235.5px;
+  top: 50.5px;
+  width: 896.5px;
+  height: 572px;
+  overflow: hidden;
+}
+
+/* Une vue = un calque qui occupe le panneau. La bascule est un fondu avec
+   un très léger déplacement vertical : discret, dans la continuité. Le fond
+   blanc évite que les deux contenus se superposent en transparence. */
+.layer {
+  position: absolute;
+  inset: 18px 20px 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+/* Vue au repos, tant que l'animation ne l'a pas amenée */
+.layerIdle {
+  opacity: 0;
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e2e2e5;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #27272a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  white-space: nowrap;
+}
+.btnIcon {
+  width: 30px;
+  padding: 0;
+  justify-content: center;
+}
+.btnPrimary {
+  background: var(--violet);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 6px -2px rgba(90, 80, 255, 0.5);
+}
+/* Contour pointillé et fond gris léger (Filtres) */
+.btnDashed {
+  border-style: dashed;
+  border-color: #d7d7db;
+  background: #fafafa;
+  box-shadow: none;
+}
+
+/* =====================================================================
+   Vue « Factures clients »
+   ===================================================================== */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.title {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 auto 0 0;
+}
+
+/* ---------- Indicateurs ----------
+   Deux blocs bordés : « CA facturé » et « CA payé » partagent le premier,
+   séparés par un filet ; « Factures en retard » a le sien. */
+.kpis {
+  display: flex;
+  gap: 9px;
+  margin-top: 16px;
+}
+.kpiGroup {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.kpi {
+  padding: 9px 14px;
+  min-width: 132px;
+}
+.kpi + .kpi {
+  border-left: 1px solid var(--line);
+}
+.kpiLbl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.kpiVal {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.kpiVal small {
+  margin-left: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.pillRed {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 9.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 5px;
+}
+
+/* ---------- Recherche + filtres ---------- */
+.toolbar {
+  display: flex;
+  gap: 9px;
+  margin-top: 21px;
+}
+.search {
+  width: 300px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #e2e2e5;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 11.5px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* ---------- Onglets ----------
+   L'onglet actif est encadré (fond très clair, filet fin) et souligné d'un
+   trait sombre qui tombe pile sur le bord haut du tableau. */
+.tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 13px;
+}
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  font-size: 12px;
+  color: #52525b;
+  white-space: nowrap;
+}
+.count {
+  font-size: 11px;
+  color: #9ca3af;
+}
+.tabActive {
+  border: 1px solid #e7e7ea;
+  border-radius: 9px;
+  background: #fafafa;
+  color: var(--ink);
+  font-weight: 500;
+}
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 1px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+
+/* ---------- Tableau ----------
+   Pleine largeur du panneau : les filets vont d'un bord à l'autre, le
+   contenu garde le retrait. */
+.table {
+  flex: 1;
+  min-height: 0;
+  margin: 9px -20px 0;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.tr {
+  display: grid;
+  grid-template-columns: 26px 1.9fr 1.05fr 1.5fr 1.05fr 1fr 0.95fr 66px;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-bottom: 1px solid #f2f2f4;
+  font-size: 11.5px;
+}
+/* Sans min-width, une référence longue élargit sa colonne et décale toute
+   la ligne : on la laisse se tronquer à la place. */
+.tr > div {
+  min-width: 0;
+  overflow: hidden;
+}
+.thead {
+  height: 32px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.th {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.box {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1px solid #d4d4d8;
+  border-radius: 4px;
+  background: #fff;
+}
+.cli {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ref {
+  margin-top: 2px;
+  font-size: 10px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.late {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #dc2626;
+  white-space: nowrap;
+}
+/* Hauteur fixe : sans elle, un badge avec icône est plus haut qu'un badge
+   sans, et les pastilles changeaient de taille au changement de statut. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge svg {
+  display: block;
+}
+.bWait {
+  background: #fef3c7;
+  color: #92400e;
+}
+.bDone {
+  background: #dcfce7;
+  color: #166534;
+}
+.bDraft {
+  background: #f3f4f6;
+  color: #3f3f46;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  background: #f4f4f5;
+  color: #52525b;
+  white-space: nowrap;
+}
+.chipOpen {
+  background: #dcfce7;
+  color: #166534;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  color: #9ca3af;
+}
+.act {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e8e8ea;
+  border-radius: 6px;
+  background: #fff;
+}
+/* Ligne créée par l'animation : repliée tant que la facture n'existe pas */
+.newRow {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-bottom-color: transparent;
+}
+.tfoot {
+  flex: none;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: 0 20px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.tfootRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 3px 7px;
+  border: 1px solid #e2e2e5;
+  border-radius: 7px;
+  color: #27272a;
+}
+
+/* ---------- Notification d'envoi ----------
+   Une pile de trois : la notification au premier plan, et deux cartes
+   derrière, calées sur sa boîte (inset 0) puis décalées et pivotées par
+   transformation — elles ne dépassent que de quelques pixels, chacune avec
+   sa propre inclinaison. */
+.toast {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 244px;
+  opacity: 0;
+  z-index: 10;
+}
+.toastCard {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1px solid rgba(16, 16, 32, 0.06);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 4px 12px -4px rgba(16, 16, 32, 0.1);
+}
+/* Les deux notifications du dessous sont calées sur la boîte de la
+   première ; leur décalage, leur échelle et leur inclinaison sont posés par
+   l'animation, qui les déplie ensuite en pile verticale. */
+.toastBack,
+.toastBack2 {
+  position: absolute;
+  inset: 0;
+}
+.toastBack {
+  z-index: 1;
+}
+.toastBack2 {
+  z-index: 0;
+}
+
+.toastBadge {
+  position: absolute;
+  top: -9px;
+  left: -9px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+/* Une teinte pastel par notification, reprise de la palette des colonnes */
+.toastAv {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 600;
+}
+.toastAv svg {
+  display: block;
+}
+/* Fonds pastel, lettre en blanc */
+.avViolet {
+  background: #c9c5ff;
+  color: #fff;
+}
+.avGreen {
+  background: #b5e3c8;
+  color: #fff;
+}
+.avAmber {
+  background: #f6dcae;
+  color: #fff;
+}
+/* Le bloc de texte ne doit jamais élargir la notification */
+.toastCard > div {
+  min-width: 0;
+  overflow: hidden;
+}
+.toastTitle {
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+/* Une seule ligne : la pile reste basse et lisible d'un coup d'œil */
+.toastText {
+  margin-top: 1px;
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--muted);
+  white-space: nowrap;
+}
+/* Action portée par la notification du dessus */
+.toastAction {
+  flex: none;
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: #f4f4f5;
+  color: var(--violet);
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* =====================================================================
+   Vue « Transactions » (flux bancaire)
+   ===================================================================== */
+.balance {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 auto 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.trx {
+  display: grid;
+  grid-template-columns: 26px 1.9fr 0.95fr 0.95fr 1.15fr 0.5fr 0.8fr 32px;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-bottom: 1px solid #f2f2f4;
+  font-size: 11.5px;
+}
+.trx > div {
+  min-width: 0;
+  overflow: hidden;
+}
+.trxName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* Logo du fournisseur, sans pastille de fond */
+/* Logo de marque dans une notification : pas de pastille derrière */
+.toastLogo {
+  display: block;
+  width: 24px;
+  height: 20px;
+  flex: none;
+  object-fit: contain;
+}
+.logoMark {
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  object-fit: contain;
+}
+.debit {
+  color: #dc2626;
+}
+.credit {
+  color: #16a34a;
+}
+.cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.catDot {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1;
+}
+.proof {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+}
+.dots {
+  color: #a1a1aa;
+}
+/* Pastille de rapprochement automatique, posée par l'animation */
+.matchChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 7px;
+  background: #ebe6fd;
+  color: #5b46b8;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* =====================================================================
+   Vue « Projet » (tableau kanban)
+   ===================================================================== */
+.projectHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.projectName {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1a1b2e;
+}
+/* Logo du client, à la place d'un emoji */
+.clientLogo {
+  display: block;
+  width: 104px;
+  height: 34px;
+  flex: none;
+  object-fit: contain;
+}
+
+/* Barre d'actions du tableau */
+.views {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 16px;
+}
+.viewsRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Colonnes */
+.board {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  /* chaque colonne s'arrête à la hauteur de ses cartes */
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px -20px 0;
+  padding: 0 20px;
+  overflow: hidden;
+}
+.column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+}
+.columnHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+}
+.columnPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: #fff;
+  font-weight: 500;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.columnCount {
+  color: #9ca3af;
+}
+/* Les cartes ne portent que leur titre : pas de filet, une ombre légère
+   suffit à les détacher du fond teinté de la colonne. */
+.card {
+  flex: none;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(16, 16, 32, 0.05),
+    0 4px 10px -6px rgba(16, 16, 32, 0.08);
+}
+.cardTitle {
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Action « Facturer ce projet », dépliée sur la carte déposée */
+.cardAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 7px;
+  border-radius: 7px;
+  background: #f4f4f5;
+  color: var(--violet);
+  font-size: 10.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* Curseur de saisie de la carte en cours d'écriture */
+.caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 11px;
+  margin-left: 1px;
+  background: var(--ink);
+  vertical-align: -1px;
+}
+
+/* ---------- Curseurs de la démo ---------- */
+.cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  opacity: 0;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+  z-index: 40;
+}
+/* Curseur d'un collaborateur : deux cartes bougent en même temps, ce second
+   curseur nommé rend la simultanéité crédible plutôt que magique. */
+.mate {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 1px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.mateArrow {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.mateName {
+  margin-top: 9px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--violet);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
