@@ -66,6 +66,11 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/outils/calculateur-penalites-retard`,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/modeles`,
       changeFrequency: "monthly",
       priority: 0.9,

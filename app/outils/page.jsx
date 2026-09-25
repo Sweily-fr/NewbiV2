@@ -3,7 +3,7 @@ import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { JsonLd } from "@/src/components/seo/json-ld";
 import { SITE_URL } from "@/src/lib/site";
-import { FileText, FileSignature, Download } from "lucide-react";
+import { FileText, FileSignature, Download, Percent } from "lucide-react";
 
 // Section « Outils » : pages publiques et gratuites, utilisables sans compte.
 // Elle a vocation à accueillir d'autres outils (calculateur de TVA,
@@ -42,6 +42,13 @@ const OUTILS = [
     icon: FileSignature,
     title: "Générateur de devis",
     desc: "Créez un devis professionnel avec sa durée de validité et sa mention d'accord, puis téléchargez-le en PDF.",
+    tag: "En ligne",
+  },
+  {
+    href: "/outils/calculateur-penalites-retard",
+    icon: Percent,
+    title: "Calculateur de pénalités de retard",
+    desc: "Chiffrez les pénalités dues sur une facture impayée, avec l'indemnité de 40 euros, et copiez le paragraphe de relance.",
     tag: "En ligne",
   },
   {
