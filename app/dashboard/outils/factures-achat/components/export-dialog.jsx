@@ -29,6 +29,7 @@ import {
   FileSpreadsheet,
   FileText,
   Calendar as CalendarIcon,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -50,7 +51,14 @@ const STATUS_LABELS = {
   ARCHIVED: "Archivée",
 };
 
-export function ExportDialog({ open, onOpenChange, invoices = [] }) {
+export function ExportDialog({
+  open,
+  onOpenChange,
+  invoices = [],
+  // L'export porte sur la liste chargée : tant que l'historique n'est pas
+  // complet, il serait tronqué sans que rien ne le signale.
+  loadingHistory = false,
+}) {
   const [format, setFormat] = useState("csv");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -212,7 +220,17 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
           </div>
 
           <div className="text-sm text-muted-foreground">
-            {invoices.length} facture{invoices.length > 1 ? "s" : ""} à exporter
+            {loadingHistory ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Chargement de l'historique... l'export attend la liste complète.
+              </span>
+            ) : (
+              <>
+                {invoices.length} facture{invoices.length > 1 ? "s" : ""} à
+                exporter
+              </>
+            )}
           </div>
         </div>
 
@@ -222,6 +240,7 @@ export function ExportDialog({ open, onOpenChange, invoices = [] }) {
           </Button>
           <Button
             onClick={handleExport}
+            disabled={loadingHistory}
             className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
           >
             <Download className="h-4 w-4 mr-2" />

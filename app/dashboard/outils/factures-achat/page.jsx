@@ -99,7 +99,12 @@ function StatsCard({ label, tooltip, amount, count, alert }) {
 
 function PurchaseInvoicesContent() {
   const searchParams = useSearchParams();
-  const { invoices, loading, refetch } = usePurchaseInvoices({ limit: 200 });
+  // Le tableau, les compteurs d'onglets, les filtres et l'export travaillent
+  // sur la liste chargée : il faut donc tout l'historique, pas la 1re page.
+  const { invoices, loading, loadingHistory, refetch } = usePurchaseInvoices({
+    limit: 200,
+    loadAll: true,
+  });
   const {
     stats,
     loading: statsLoading,
@@ -474,6 +479,7 @@ function PurchaseInvoicesContent() {
           <PurchaseInvoiceTable
             invoices={invoices || []}
             loading={loading}
+            loadingHistory={loadingHistory}
             refetch={refetch}
             refetchStats={refetchStats}
             onRowClick={handleRowClick}
@@ -531,6 +537,7 @@ function PurchaseInvoicesContent() {
         open={isExportOpen}
         onOpenChange={setIsExportOpen}
         invoices={invoices || []}
+        loadingHistory={loadingHistory}
       />
       <GmailConnectionDialog
         open={isGmailDialogOpen}

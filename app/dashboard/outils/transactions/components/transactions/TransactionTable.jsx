@@ -167,10 +167,7 @@ const announceReceiptOutcomes = (outcomes, unresolved) => {
         description: `Ce document correspond à ${named(label)}, déjà liée à cette transaction. Le justificatif y a été rattaché, rien n'a été créé en double.`,
       });
     } else {
-      toast.success(`Justificatif rattaché à ${named(label)}`, {
-        description:
-          "Il n'apparaît plus comme fichier isolé : il est désormais porté par la carte de la facture, dans « Factures d'achat liées ».",
-      });
+      toast.success(`Justificatif rattaché à ${named(label)}`);
     }
   } else if (outcomes.length > 1) {
     const notCovered = outcomes.filter((o) => o.notCovered).length;
@@ -202,12 +199,14 @@ const announceReceiptOutcomes = (outcomes, unresolved) => {
         },
       );
     } else {
-      toast.success(`${outcomes.length} justificatifs analysés`, {
-        description:
-          duplicates > 0
-            ? `${duplicates} correspondaient à une facture d'achat déjà liée à cette transaction. Les autres sont portés par leur facture, dans « Factures d'achat liées ».`
-            : "Ils sont désormais portés par leurs factures, dans « Factures d'achat liées ».",
-      });
+      toast.success(
+        `${outcomes.length} justificatifs analysés`,
+        duplicates > 0
+          ? {
+              description: `${duplicates} correspondaient à une facture d'achat déjà liée à cette transaction.`,
+            }
+          : undefined,
+      );
     }
   }
 
