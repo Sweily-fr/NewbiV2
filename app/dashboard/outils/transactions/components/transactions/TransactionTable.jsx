@@ -142,8 +142,22 @@ const announceReceiptOutcomes = (outcomes, unresolved) => {
     label ? `la facture d'achat ${label}` : "une facture d'achat";
 
   if (outcomes.length === 1) {
-    const [{ label, alreadyLinked, notCovered }] = outcomes;
-    if (notCovered) {
+    const [{ label, alreadyLinked, notCovered, error, incomplete }] = outcomes;
+    if (error) {
+      toast.error("L'analyse du justificatif a échoué", {
+        description: `${error} Le document reste attaché à la transaction, vous pouvez créer la facture d'achat à la main.`,
+      });
+    } else if (incomplete) {
+      toast.warning(
+        label
+          ? `Facture d'achat ${label} à compléter`
+          : "Facture d'achat à compléter",
+        {
+          description:
+            "Le document n'a pas pu être lu entièrement : le montant et le fournisseur viennent de la ligne bancaire. Vérifiez la facture avant de la valider.",
+        },
+      );
+    } else if (notCovered) {
       toast.info("Dépense toujours à rapprocher", {
         description:
           "Ce document correspond à une facture d'achat déjà réglée par un autre prélèvement. Le justificatif y a été rattaché, mais cette dépense-ci attend encore sa propre facture.",
@@ -161,7 +175,25 @@ const announceReceiptOutcomes = (outcomes, unresolved) => {
   } else if (outcomes.length > 1) {
     const notCovered = outcomes.filter((o) => o.notCovered).length;
     const duplicates = outcomes.filter((o) => o.alreadyLinked).length;
-    if (notCovered > 0) {
+    const failed = outcomes.filter((o) => o.error).length;
+    const incomplete = outcomes.filter((o) => o.incomplete).length;
+    if (failed > 0) {
+      toast.error(
+        `${failed} justificatif(s) sur ${outcomes.length} n'ont pas pu être analysés`,
+        {
+          description:
+            "Les documents restent attachés à la transaction, vous pouvez créer les factures d'achat à la main.",
+        },
+      );
+    } else if (incomplete > 0) {
+      toast.warning(
+        `${incomplete} facture(s) d'achat sur ${outcomes.length} sont à compléter`,
+        {
+          description:
+            "Les documents n'ont pas pu être lus entièrement : montants et fournisseurs viennent des lignes bancaires.",
+        },
+      );
+    } else if (notCovered > 0) {
       toast.info(
         `${outcomes.length} justificatifs analysés, ${notCovered} dépense(s) toujours à rapprocher`,
         {
@@ -746,7 +778,9 @@ export default function TransactionTable({
             // rapprocher.
             const attachedElsewhere =
               !invoice && Boolean(file.purchaseInvoiceId);
-            if (!invoice && !attachedElsewhere) continue;
+            // L'analyse a échoué : inutile d'attendre, on le dit.
+            const failed = !invoice && !attachedElsewhere && file.ocrError;
+            if (!invoice && !attachedElsewhere && !failed) continue;
             pending.delete(file.id);
             processed = true;
             outcomes.push({
@@ -757,6 +791,13 @@ export default function TransactionTable({
                 ? previousInvoiceIds.has(String(invoice.id))
                 : false,
               notCovered: attachedElsewhere,
+              error: failed ? file.ocrError : null,
+              // Facture créée sans avoir pu lire le document : montants et
+              // fournisseur viennent de la ligne bancaire, à compléter.
+              incomplete:
+                invoice && invoice.extractionQuality
+                  ? invoice.extractionQuality !== "full"
+                  : false,
             });
           }
           if (processed) refetch();
