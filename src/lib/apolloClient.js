@@ -253,8 +253,16 @@ export { getJWTToken };
 // Le JWT est récupéré via /api/auth/token (same-origin, cookie envoyé)
 // et transmis au backend en Authorization: Bearer.
 // Le JWT vit uniquement en mémoire — pas de localStorage.
+// Client + version envoyés à l'API (en-tête `x-app-client`) : alimente
+// l'historique des appareils du back-office, pour savoir sur quelle version
+// du front un bug a été rencontré. Vercel expose le SHA du déploiement ;
+// en local la version est inconnue, l'en-tête vaut juste "web".
+const APP_CLIENT = `web/${(
+  process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || ""
+).slice(0, 7)}`.replace(/\/$/, "");
+
 const authLink = setContext(async (_, { headers }) => {
-  const requestHeaders = { ...headers };
+  const requestHeaders = { ...headers, "x-app-client": APP_CLIENT };
 
   // JWT on-demand pour authentifier les requêtes cross-origin
   const jwtToken = await getJWTToken();

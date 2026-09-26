@@ -82,6 +82,18 @@ async function ensureIndexes(db) {
       idx: { at: 1 },
       opts: { expireAfterSeconds: 30 * 24 * 60 * 60, background: true },
     },
+    // Historique des appareils et des connexions (lu par le back-office).
+    // Pas de TTL : c'est justement l'historique qu'on veut garder.
+    {
+      coll: "user_device_log",
+      idx: { userId: 1, deviceKey: 1 },
+      opts: { unique: true, background: true },
+    },
+    {
+      coll: "user_device_log",
+      idx: { lastSeenAt: -1 },
+      opts: { background: true },
+    },
   ];
 
   const results = await Promise.allSettled(
