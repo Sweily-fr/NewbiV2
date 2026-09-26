@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { SearchIcon, LoaderCircle, Check, Info } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
+import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import LpCtaButton from "../../_components/LpCtaButton";
+import { SIGNUP_HREF } from "../../_components/lp-config";
 import { WHATSAPP_CONTACT_URL } from "@/src/lib/whatsapp";
 import { WhatsAppIcon } from "@/src/components/whatsapp-contact-button";
 
@@ -73,7 +74,15 @@ function deadlines(company) {
   };
 }
 
-export default function ConcernedChecker() {
+// `title` / `subtitle` : en-tête du bloc. Passer title={null} pour le masquer
+// quand la page porte déjà son propre H1 (cf. /facturation-electronique-suis-je-concerne).
+export default function ConcernedChecker({
+  title = "Es-tu concerné par la facturation électronique ?",
+  subtitle = "Tape le nom ou le SIREN de ton entreprise : en quelques secondes, tu sais si tu es concerné et à quelles dates.",
+  maxWidth = "max-w-6xl",
+  // `compact` : marges verticales réduites quand le bloc est intégré au hero
+  compact = false,
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
@@ -171,55 +180,58 @@ export default function ConcernedChecker() {
   const d = company ? deadlines(company) : null;
 
   return (
-    <section id="concerne" className="px-5 py-14 md:py-20 scroll-mt-20">
-      <div className="max-w-6xl mx-auto">
+    <section
+      id="concerne"
+      className={`px-5 scroll-mt-20 ${compact ? "py-6" : "py-14 md:py-20"}`}
+    >
+      <div className={`${maxWidth} mx-auto`}>
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-5">
-            Es-tu concerné par la facturation électronique ?
-          </h2>
-          <p className="text-base md:text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
-            Tape le nom ou le SIREN de ton entreprise : en quelques secondes, tu
-            sais si tu es concerné et à quelles dates.
-          </p>
+          {title && (
+            <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-5">
+              {title}
+            </h2>
+          )}
+          {subtitle && (
+            <p className="text-base md:text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
+              {subtitle}
+            </p>
+          )}
 
           {/* Recherche */}
           <form onSubmit={submit} ref={boxRef} className="relative">
-            {/* Input + bouton du design system (même pattern que InputLoader) */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <Input
-                  size="lg"
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setCompany(null);
-                  }}
-                  onFocus={() => results.length && setOpen(true)}
-                  placeholder="Nom de l'entreprise ou SIREN"
-                  aria-label="Nom de l'entreprise ou SIREN"
-                  autoComplete="off"
-                  className="peer ps-10 h-12 bg-white"
-                />
-                <div className="text-[rgba(0,0,0,0.35)] pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3.5 peer-disabled:opacity-50">
-                  {loading ? (
-                    <LoaderCircle
-                      className="animate-spin"
-                      size={18}
-                      role="status"
-                      aria-label="Recherche en cours"
-                    />
-                  ) : (
-                    <SearchIcon size={18} aria-hidden="true" />
-                  )}
-                </div>
-              </div>
-              <Button
-                type="submit"
+            {/* Champ arrondi, bouton de recherche à l'intérieur à droite ;
+                le chargement s'affiche dans le bouton lui-même. */}
+            <div className="relative">
+              <Input
                 size="lg"
-                className="h-12 px-6 text-base rounded-[9px] w-full sm:w-auto"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setCompany(null);
+                }}
+                onFocus={() => results.length && setOpen(true)}
+                placeholder="Nom de l'entreprise ou SIREN"
+                aria-label="Nom de l'entreprise ou SIREN"
+                autoComplete="off"
+                className="h-14 rounded-full border-gray-200 bg-white ps-6 pe-16 text-base shadow-none focus-visible:ring-0 focus-visible:border-gray-200"
+              />
+              <button
+                type="submit"
+                aria-label="Vérifier"
+                className="absolute end-2 top-1/2 -translate-y-1/2 grid place-items-center size-11 rounded-full bg-[#17171a] text-white transition-colors hover:bg-[#2c2c30] disabled:opacity-60"
+                disabled={loading}
               >
-                Vérifier
-              </Button>
+                {loading ? (
+                  <LoaderCircle
+                    className="animate-spin"
+                    size={19}
+                    role="status"
+                    aria-label="Recherche en cours"
+                  />
+                ) : (
+                  <SearchIcon size={19} aria-hidden="true" />
+                )}
+              </button>
             </div>
 
             {open && results.length > 0 && (
@@ -277,25 +289,49 @@ export default function ConcernedChecker() {
                 par la réforme de la facturation électronique
               </h3>
               <p className="mt-5 text-[15px] leading-relaxed text-gray-700">
-                Avec Newbi, tu émets et reçois tes factures électroniques au bon
-                format, sans surcoût. Crée ton compte, ton SIRET pré-remplit le
-                reste, et ta première facture électronique part dans la matinée.
+                Avec Newbi, tu émets et reçois tes factures électroniques{" "}
+                <strong className="font-medium text-gray-950">
+                  au bon format
+                </strong>
+                ,{" "}
+                <strong className="font-medium text-gray-950">
+                  sans surcoût
+                </strong>
+                . Crée ton compte,{" "}
+                <strong className="font-medium text-gray-950">
+                  ton SIRET pré-remplit le reste
+                </strong>
+                , et ta première facture électronique part{" "}
+                <strong className="font-medium text-gray-950">
+                  dans la matinée
+                </strong>
+                .
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap items-center gap-3">
-                <LpCtaButton
-                  dark
-                  sublabel={null}
-                  className="w-full sm:w-auto whitespace-nowrap px-6"
-                />
-                <a
-                  href={WHATSAPP_CONTACT_URL}
-                  target="_blank"
-                  rel="noopener"
-                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto whitespace-nowrap rounded-xl px-6 py-3 text-base font-medium text-gray-900 bg-white border border-gray-300 hover:bg-gray-50 transition"
+              {/* Même gabarit que les CTA du hero de la home : Button
+                  primary, taille md, px-4 py-1.5, 17px. Le bouton WhatsApp
+                  garde son fond blanc et son icône verte. */}
+              <div className="mt-8 flex flex-col sm:flex-row items-stretch gap-3">
+                <Button
+                  asChild
+                  size="md"
+                  variant="primary"
+                  className="h-auto w-full sm:w-auto px-4 py-1.5 text-[17px]"
                 >
-                  <WhatsAppIcon className="size-5 text-[#25D366]" />
-                  Une question ? WhatsApp
-                </a>
+                  <Link href={SIGNUP_HREF}>
+                    <span>Essayer Newbi gratuitement</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="md"
+                  variant="primary"
+                  className="h-auto w-full sm:w-auto px-4 py-1.5 text-[17px] bg-white text-gray-900 hover:bg-gray-50 active:bg-gray-100 [box-shadow:none]"
+                >
+                  <a href={WHATSAPP_CONTACT_URL} target="_blank" rel="noopener">
+                    <WhatsAppIcon className="size-5 text-[#25D366]" />
+                    <span>Une question ? WhatsApp</span>
+                  </a>
+                </Button>
               </div>
             </div>
 

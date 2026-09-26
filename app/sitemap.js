@@ -51,6 +51,11 @@ export default function sitemap() {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/facturation-electronique-suis-je-concerne`,
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/outils`,
       changeFrequency: "monthly",
       priority: 0.8,
