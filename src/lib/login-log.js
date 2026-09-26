@@ -50,7 +50,12 @@ export async function logLogin(session) {
         $setOnInsert: { firstSeenAt: at },
         $inc: { loginCount: 1 },
         $push: {
-          logins: { $each: [{ at, ipAddress, tokenPrefix }], $slice: -MAX_LOGINS },
+          logins: {
+            // Le build de l'app est lu dans le user-agent de la session : il
+            // date la connexion même si l'API n'a pas encore vu sa version.
+            $each: [{ at, ipAddress, tokenPrefix, appBuild: device.appBuild }],
+            $slice: -MAX_LOGINS,
+          },
         },
       },
       { upsert: true },
