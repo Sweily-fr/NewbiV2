@@ -284,6 +284,35 @@ const nextConfig = {
         destination: "https://www.newbi.fr/:path*",
         permanent: true,
       },
+      // URLs d'une version antérieure du site, absentes du dépôt actuel mais
+      // toujours connues de Google 16 mois après. Relevé le 26/09/2026 dans le
+      // rapport de performances : /blog/guide-facturation-freelance tient
+      // encore la position 10 avec 60 impressions, et
+      // /conditions-generales-de-vente la position 5.
+      {
+        source: "/blog/guide-facturation-freelance",
+        destination: "/blog/erreurs-facturation-independants",
+        permanent: true,
+      },
+      {
+        source: "/blog/guide-freelance-2025",
+        destination: "/blog/comment-fixer-tarif-journalier-tjm",
+        permanent: true,
+      },
+      {
+        source: "/conditions-generales-de-vente",
+        destination: "/cgv",
+        permanent: true,
+      },
+      {
+        source: "/newbi",
+        destination: "/",
+        permanent: true,
+      },
+      // Pas de redirection pour /blog/optimiser-seo-blog-techniques : aucun
+      // article du corpus ne traite du référencement, et rediriger vers un
+      // contenu sans rapport serait lu comme un soft-404.
+
       // Anciens articles de blog : redirigés vers l'article équivalent (une
       // redirection vers l'accueil est traitée comme un soft-404 par Google)
       {
