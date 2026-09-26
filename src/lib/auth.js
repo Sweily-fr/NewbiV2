@@ -321,6 +321,15 @@ export const auth = betterAuth({
             // Non bloquant : ne jamais faire échouer un login pour ça
             console.error("❌ [SESSION CREATE] enforceSessionLimit:", error);
           }
+
+          // Journal des connexions par appareil (back-office : sur quel
+          // appareil et quelle version d'app le client travaillait).
+          try {
+            const { logLogin } = await import("./login-log.js");
+            await logLogin(session);
+          } catch (error) {
+            console.error("❌ [SESSION CREATE] logLogin:", error);
+          }
         },
       },
     },
