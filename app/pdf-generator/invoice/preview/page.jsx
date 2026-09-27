@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { domToJpeg } from "modern-screenshot";
 import { CAPTURE_SCALE, JPEG_QUALITY } from "@/src/utils/generatePDF";
+import { waitForPreviewData } from "@/src/utils/wait-for-preview-data";
 
 /**
  * PDF Preview Generator Page
@@ -24,8 +25,10 @@ export default function PDFPreviewPage() {
   useEffect(() => {
     async function init() {
       try {
-        // Read data injected by Puppeteer
-        const data = window.__PREVIEW_DATA;
+        // Données injectées par l'appelant. On les ATTEND (cf.
+        // waitForPreviewData) : sur Android la WebView de l'app mobile les pose
+        // depuis onPageStarted, donc parfois après le démarrage de cette page.
+        const data = await waitForPreviewData();
         if (!data) {
           console.error("❌ No __PREVIEW_DATA found on window");
           setStatus("error");

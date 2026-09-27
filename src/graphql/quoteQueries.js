@@ -232,6 +232,7 @@ export const QUOTE_LIST_FRAGMENT = gql`
       quantity
       unitPrice
       vatRate
+      vatExemptionText
       unit
       discount
       discountType
