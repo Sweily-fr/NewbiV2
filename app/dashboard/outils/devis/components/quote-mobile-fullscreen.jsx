@@ -30,6 +30,7 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 import LinkedInvoicesList from "./linked-invoices-list";
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
+import { buildLinkedInvoiceItems } from "@/src/utils/linked-invoice-items";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -171,8 +172,6 @@ export default function QuoteMobileFullscreen({
   };
 
   const handleCreateLinkedInvoice = ({ quoteId, amount, isDeposit }) => {
-    const vatRate = 20;
-    const unitPriceHT = amount / (1 + vatRate / 100);
     const remainingAmount = calculateRemainingAmount();
     const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
 
@@ -199,19 +198,13 @@ export default function QuoteMobileFullscreen({
         purchaseOrderNumber: quoteRef,
         client: quote.client,
         isDeposit,
-        items: [
-          {
-            description,
-            quantity: 1,
-            unitPrice: unitPriceHT,
-            vatRate,
-            unit: "forfait",
-            discount: 0,
-            discountType: "FIXED",
-            details: "",
-            vatExemptionText: "",
-          },
-        ],
+        // Taux de TVA repris du devis (une ligne par taux s'il en mélange
+        // plusieurs) : facturer au taux en dur faussait la ventilation HT / TVA.
+        items: buildLinkedInvoiceItems({
+          quote,
+          amountTTC: amount,
+          description,
+        }),
       }),
     );
     router.push("/dashboard/outils/factures/new");

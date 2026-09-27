@@ -76,6 +76,7 @@ import {
   useDocumentSignatureStatus,
   useCancelSignature,
 } from "@/src/hooks/useESignature";
+import { buildLinkedInvoiceItems } from "@/src/utils/linked-invoice-items";
 
 export default function QuoteSidebar({
   isOpen,
@@ -325,8 +326,6 @@ export default function QuoteSidebar({
   };
 
   const handleCreateLinkedInvoice = async ({ quoteId, amount, isDeposit }) => {
-    const vatRate = 20;
-    const unitPriceHT = amount / (1 + vatRate / 100);
     const remainingAmount = calculateRemainingAmount();
     const quoteRef = `${quote.prefix || ""}-${quote.number || ""}`;
 
@@ -365,19 +364,13 @@ export default function QuoteSidebar({
         purchaseOrderNumber: quoteRef,
         client: freshClient,
         isDeposit,
-        items: [
-          {
-            description,
-            quantity: 1,
-            unitPrice: unitPriceHT,
-            vatRate,
-            unit: "forfait",
-            discount: 0,
-            discountType: "FIXED",
-            details: "",
-            vatExemptionText: "",
-          },
-        ],
+        // Taux de TVA repris du devis (une ligne par taux s'il en mélange
+        // plusieurs) : facturer au taux en dur faussait la ventilation HT / TVA.
+        items: buildLinkedInvoiceItems({
+          quote,
+          amountTTC: amount,
+          description,
+        }),
       }),
     );
     router.push("/dashboard/outils/factures/new");
