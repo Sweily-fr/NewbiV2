@@ -9,14 +9,14 @@ import { enforceSessionLimit } from "@/src/lib/enforce-session-limit";
 const DEFAULTS = {
   sessionDuration: 30, // jours
   inactivityTimeout: 12, // heures
-  maxSessions: 2, // ordinateur + téléphone
+  maxSessions: 3, // téléphone, ordinateur, 2e navigateur
 };
 
 // Valeurs autorisées
 const ALLOWED = {
   sessionDuration: [7, 30, 90],
   inactivityTimeout: [0.25, 1, 12, 24],
-  maxSessions: [1, 2],
+  maxSessions: [1, 2, 3],
 };
 
 export async function GET() {

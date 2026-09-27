@@ -19,8 +19,8 @@ async function handler() {
   const now = new Date();
 
   // Lire les settings de l'organisation (maxSessions, inactivityTimeout).
-  // Défaut : 2 sessions simultanées (ordinateur + téléphone).
-  let maxSessions = 2;
+  // Défaut : 3 sessions simultanées (téléphone, ordinateur, 2e navigateur).
+  let maxSessions = 3;
   let inactivityTimeoutHours = 12;
   const orgId = session.session?.activeOrganizationId;
 
@@ -33,7 +33,7 @@ async function handler() {
           { projection: { sessionSettings: 1 } },
         );
       if (org?.sessionSettings) {
-        maxSessions = org.sessionSettings.maxSessions ?? 2;
+        maxSessions = org.sessionSettings.maxSessions ?? 3;
         inactivityTimeoutHours = org.sessionSettings.inactivityTimeout ?? 12;
       }
     } catch {
