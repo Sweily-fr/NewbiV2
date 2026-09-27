@@ -75,7 +75,7 @@ export function SecuritySection({
     mfaRequired: false,
     sessionDuration: 30,
     inactivityTimeout: 12,
-    maxSessions: 0, // 0 = illimité (défaut)
+    maxSessions: 2, // défaut : ordinateur + téléphone
   });
 
   // États pour le 2FA - Utiliser Setup2FAModal
@@ -624,7 +624,6 @@ export function SecuritySection({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">Illimité</SelectItem>
                 <SelectItem value="1">1 session</SelectItem>
                 <SelectItem value="2">2 sessions</SelectItem>
               </SelectContent>
