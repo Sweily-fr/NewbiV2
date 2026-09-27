@@ -9,16 +9,19 @@ import { mongoDb } from "@/src/lib/mongodb";
 import { logSessionRevocation } from "@/src/lib/session-revocation-log";
 
 /**
- * 0 = aucune limite, et c'est la valeur par défaut depuis le 27/09/2026.
+ * 2 sessions simultanées par défaut depuis le 27/09/2026 : de quoi travailler
+ * sur son ordinateur ET son téléphone sans se faire déconnecter.
  *
- * Avec l'ancienne valeur (1), se connecter sur son ordinateur détruisait la
- * session du téléphone et inversement : 148 révocations en 30 jours sur 15
- * clients, qui se retrouvaient déconnectés sans comprendre. Une organisation
- * peut toujours choisir 1 ou 2 dans ses réglages de sécurité.
+ * L'ancienne valeur (1) provoquait 148 révocations en 30 jours sur 15 clients,
+ * dont 48 entre un mobile et un ordinateur. Au-delà de 2 appareils, la session
+ * la moins récemment active est toujours fermée : c'est un choix assumé.
  */
-const DEFAULT_MAX_SESSIONS = 0;
+const DEFAULT_MAX_SESSIONS = 2;
 
-/** Une limite absente, nulle ou négative signifie « pas de limite ». */
+/**
+ * Garde-fou : une limite absente ou non positive en base ne doit pas révoquer
+ * des sessions au hasard, on n'applique alors aucune limite.
+ */
 export const isUnlimited = (maxSessions) =>
   maxSessions === null || maxSessions === undefined || maxSessions <= 0;
 
