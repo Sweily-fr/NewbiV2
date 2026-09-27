@@ -9,14 +9,20 @@ import { mongoDb } from "@/src/lib/mongodb";
 import { logSessionRevocation } from "@/src/lib/session-revocation-log";
 
 /**
- * 2 sessions simultanées par défaut depuis le 27/09/2026 : de quoi travailler
- * sur son ordinateur ET son téléphone sans se faire déconnecter.
+ * 3 sessions simultanées par défaut depuis le 27/09/2026 : téléphone,
+ * ordinateur, et un deuxième navigateur ou ordinateur.
  *
- * L'ancienne valeur (1) provoquait 148 révocations en 30 jours sur 15 clients,
- * dont 48 entre un mobile et un ordinateur. Au-delà de 2 appareils, la session
- * la moins récemment active est toujours fermée : c'est un choix assumé.
+ * Deux ne suffisait pas parce qu'un NAVIGATEUR différent compte comme une
+ * session différente : Chrome et Safari sur le même Mac en font deux, et le
+ * téléphone sautait dès qu'un client changeait de navigateur. L'ancienne
+ * valeur (1) provoquait 148 révocations en 30 jours sur 15 clients.
+ *
+ * Au-delà, la session la moins récemment active est fermée. Pour repérer un
+ * compte réellement partagé, la collection `user_device_log` (back-office,
+ * page Activité) est un bien meilleur signal qu'une limite basse imposée à
+ * tout le monde.
  */
-const DEFAULT_MAX_SESSIONS = 2;
+const DEFAULT_MAX_SESSIONS = 3;
 
 /**
  * Garde-fou : une limite absente ou non positive en base ne doit pas révoquer
