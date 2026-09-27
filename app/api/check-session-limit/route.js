@@ -18,8 +18,9 @@ async function handler() {
   const userObjectId = toObjectId(session.user.id);
   const now = new Date();
 
-  // Lire les settings de l'organisation (maxSessions, inactivityTimeout)
-  let maxSessions = 1;
+  // Lire les settings de l'organisation (maxSessions, inactivityTimeout).
+  // maxSessions = 0 (défaut) : aucune limite de sessions simultanées.
+  let maxSessions = 0;
   let inactivityTimeoutHours = 12;
   const orgId = session.session?.activeOrganizationId;
 
@@ -32,7 +33,7 @@ async function handler() {
           { projection: { sessionSettings: 1 } },
         );
       if (org?.sessionSettings) {
-        maxSessions = org.sessionSettings.maxSessions ?? 1;
+        maxSessions = org.sessionSettings.maxSessions ?? 0;
         inactivityTimeoutHours = org.sessionSettings.inactivityTimeout ?? 12;
       }
     } catch {

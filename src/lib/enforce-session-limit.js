@@ -8,7 +8,19 @@ import { ObjectId } from "mongodb";
 import { mongoDb } from "@/src/lib/mongodb";
 import { logSessionRevocation } from "@/src/lib/session-revocation-log";
 
-const DEFAULT_MAX_SESSIONS = 1;
+/**
+ * 0 = aucune limite, et c'est la valeur par défaut depuis le 27/09/2026.
+ *
+ * Avec l'ancienne valeur (1), se connecter sur son ordinateur détruisait la
+ * session du téléphone et inversement : 148 révocations en 30 jours sur 15
+ * clients, qui se retrouvaient déconnectés sans comprendre. Une organisation
+ * peut toujours choisir 1 ou 2 dans ses réglages de sécurité.
+ */
+const DEFAULT_MAX_SESSIONS = 0;
+
+/** Une limite absente, nulle ou négative signifie « pas de limite ». */
+export const isUnlimited = (maxSessions) =>
+  maxSessions === null || maxSessions === undefined || maxSessions <= 0;
 
 /**
  * Lit le réglage maxSessions de l'organisation puis applique la limite.
@@ -42,7 +54,7 @@ export async function enforceSessionLimitForUser({
   return enforceSessionLimit({
     userObjectId: new ObjectId(userId),
     currentSessionToken,
-    maxSessions: Math.max(1, maxSessions),
+    maxSessions,
     trigger,
     meta,
   });
@@ -55,6 +67,11 @@ export async function enforceSessionLimit({
   trigger,
   meta,
 }) {
+  // Pas de limite : on ne lit même pas les sessions, rien n'est révoqué.
+  if (isUnlimited(maxSessions)) {
+    return { revokedCount: 0, activeSessions: [] };
+  }
+
   const now = new Date();
 
   const activeSessions = await mongoDb

@@ -75,7 +75,7 @@ export function SecuritySection({
     mfaRequired: false,
     sessionDuration: 30,
     inactivityTimeout: 12,
-    maxSessions: 1, // Limité à 1 session
+    maxSessions: 0, // 0 = illimité (défaut)
   });
 
   // États pour le 2FA - Utiliser Setup2FAModal
@@ -608,7 +608,9 @@ export function SecuritySection({
             <div className="flex-1">
               <h4 className="text-sm font-normal mb-1">Sessions simultanées</h4>
               <p className="text-xs text-gray-400">
-                Nombre maximum de sessions actives par utilisateur
+                Nombre maximum de sessions actives par utilisateur. Au-delà, la
+                session la moins récemment utilisée est fermée : un téléphone et
+                un ordinateur se déconnectent donc mutuellement.
               </p>
             </div>
             <Select
@@ -622,6 +624,7 @@ export function SecuritySection({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="0">Illimité</SelectItem>
                 <SelectItem value="1">1 session</SelectItem>
                 <SelectItem value="2">2 sessions</SelectItem>
               </SelectContent>
