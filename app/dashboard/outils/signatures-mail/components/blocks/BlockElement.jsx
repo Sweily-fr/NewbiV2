@@ -6,47 +6,10 @@ import { cn } from "@/src/lib/utils";
 import { ELEMENT_TYPES } from "../../utils/block-registry";
 import { Phone, Mail, Globe, MapPin, Smartphone } from "lucide-react";
 
-// Cloudflare R2 base URL for social icons
-const CLOUDFLARE_SOCIAL_BASE =
-  "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social";
-
-// Function to get social icon URL from Cloudflare
-const getSocialIconUrl = (platform, color = "black") => {
-  const cloudflareplatform = platform === "x" ? "twitter" : platform;
-  return `${CLOUDFLARE_SOCIAL_BASE}/${cloudflareplatform}/${cloudflareplatform}-${color}.png`;
-};
-
-// Function to convert hex color to color name for Cloudflare
-const getColorName = (colorInput) => {
-  if (!colorInput) return "black";
-  const color = colorInput.toLowerCase().trim();
-  const validColorNames = [
-    "blue",
-    "pink",
-    "purple",
-    "black",
-    "red",
-    "green",
-    "yellow",
-    "orange",
-    "indigo",
-    "sky",
-  ];
-  if (validColorNames.includes(color)) return color;
-
-  const hexColor = color.replace("#", "");
-  const colorMap = {
-    "0077b5": "blue",
-    "1877f2": "blue",
-    e4405f: "pink",
-    "833ab4": "purple",
-    "000000": "black",
-    "1da1f2": "blue",
-    ff0000: "red",
-    333333: "black",
-  };
-  return colorMap[hexColor] || "black";
-};
+import {
+  getSocialIconUrl,
+  getSocialColorName as getColorName,
+} from "../../utils/social-icons";
 
 /**
  * BlockElement - Individual element within a block
@@ -153,7 +116,11 @@ export default function BlockElement({
   // Handle blur - save changes
   const handleBlur = (e) => {
     setIsEditing(false);
-    const newValue = e.target.innerText.trim();
+    const raw = e.target.innerText.trim();
+    // Le texte d'exemple est rendu dans le contentEditable lui-même : sans ce
+    // garde, ouvrir puis quitter un champ vide enregistrait « email@exemple.com »
+    // ou « 123 Rue Example, Paris » comme vraie valeur de la signature.
+    const newValue = raw === getPlaceholder(element.type) ? "" : raw;
     const fieldName = getFieldName(element.type);
 
     if (fieldName && onFieldChange) {

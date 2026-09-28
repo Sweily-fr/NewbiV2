@@ -1958,14 +1958,18 @@ export default function NewSignaturePage() {
     setCopySuccess(false);
     try {
       const result = await copyToClipboard();
-      console.log("[handleCopyFromToolbar] Result:", result);
       if (result.success) {
         setCopySuccess(true);
         // Reset après 2 secondes
         setTimeout(() => setCopySuccess(false), 2000);
+      } else {
+        // Sans ce message, un échec de copie était totalement muet :
+        // l'utilisateur croyait avoir copié et collait du vide.
+        toast.error(result.message || "Erreur lors de la copie");
       }
     } catch (error) {
       console.error("[handleCopyFromToolbar] Error:", error);
+      toast.error("Erreur lors de la copie de la signature");
     } finally {
       setIsCopying(false);
     }
