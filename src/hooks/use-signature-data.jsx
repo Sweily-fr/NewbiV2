@@ -190,6 +190,14 @@ const GET_EMAIL_SIGNATURE = gql`
         github
         youtube
       }
+      socialSizes {
+        facebook
+        instagram
+        linkedin
+        x
+        github
+        youtube
+      }
       customSocialIcons {
         facebook
         instagram
@@ -348,6 +356,15 @@ function SignatureProviderContent({ children }) {
       // Couleur globale et taille des icônes sociales
       socialGlobalColor: null, // null = couleurs par défaut de chaque réseau
       socialSize: 24, // Taille par défaut des icônes sociales
+      // Taille par réseau, null = on suit la taille globale ci-dessus
+      socialSizes: {
+        facebook: null,
+        instagram: null,
+        linkedin: null,
+        x: null,
+        github: null,
+        youtube: null,
+      },
       // Séparateurs (activation) - définis par le preset du template
       separatorVerticalEnabled: true, // template1 a un séparateur vertical
       separatorHorizontalEnabled: false, // template1 n'a pas de séparateur horizontal
@@ -681,6 +698,10 @@ function SignatureProviderContent({ children }) {
           ...defaultSignatureData.socialColors,
           ...(fetchedSignature.socialColors || {}),
         },
+        socialSizes: {
+          ...defaultSignatureData.socialSizes,
+          ...(fetchedSignature.socialSizes || {}),
+        },
         customSocialIcons: {
           ...defaultSignatureData.customSocialIcons,
           ...(fetchedSignature.customSocialIcons || {}),
@@ -1011,7 +1032,8 @@ function SignatureProviderContent({ children }) {
         key === "verticalSeparator" ||
         key === "typography" ||
         key === "separators" ||
-        key === "socialColors"
+        key === "socialColors" ||
+        key === "socialSizes"
       ) {
         return {
           ...prev,

@@ -490,6 +490,16 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
       },
       socialGlobalColor: signatureData.socialGlobalColor || null,
       socialSize: signatureData.socialSize || 24,
+      // Taille réglée réseau par réseau : sans cet envoi, le réglage était
+      // appliqué à l'aperçu puis perdu à la sauvegarde.
+      socialSizes: {
+        facebook: signatureData.socialSizes?.facebook || null,
+        instagram: signatureData.socialSizes?.instagram || null,
+        linkedin: signatureData.socialSizes?.linkedin || null,
+        x: signatureData.socialSizes?.x || null,
+        github: signatureData.socialSizes?.github || null,
+        youtube: signatureData.socialSizes?.youtube || null,
+      },
       customSocialIcons: {
         facebook: signatureData.customSocialIcons?.facebook || "",
         instagram: signatureData.customSocialIcons?.instagram || "",
