@@ -10,59 +10,60 @@
 
 import { ELEMENT_TYPES } from "./block-registry";
 
-// Cloudflare R2 base URL for social icons (même URL que BlockElement.jsx)
-const CLOUDFLARE_SOCIAL_BASE =
-  "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social";
+import {
+  getSocialIconUrl,
+  getSocialColorName as getColorName,
+  getContactIconUrl,
+} from "./social-icons";
 
-// Function to get social icon URL from Cloudflare
-const getSocialIconUrl = (platform, color = "black") => {
-  // x -> twitter pour le nom du fichier
-  const cloudflareplatform = platform === "x" ? "twitter" : platform;
-  return `${CLOUDFLARE_SOCIAL_BASE}/${cloudflareplatform}/${cloudflareplatform}-${color}.png`;
-};
+/**
+ * Échappe un texte destiné à un noeud de texte HTML.
+ * Sans cela, un nom ou un texte libre contenant & < > casse la signature
+ * collée dans le client mail (ou y injecte du balisage).
+ */
+function escapeHtml(text) {
+  if (text === null || text === undefined) return "";
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
-// Function to convert hex color to color name for Cloudflare (même logique que BlockElement.jsx)
-const getColorName = (colorInput) => {
-  if (!colorInput) return "black";
-  const color = colorInput.toLowerCase().trim();
+/**
+ * Échappe une valeur destinée à un attribut HTML entre guillemets doubles
+ * (href, alt, src...). Empêche la valeur de sortir de l'attribut.
+ */
+function escapeAttr(value) {
+  return escapeHtml(value).replace(/"/g, "&quot;");
+}
 
-  // Si c'est déjà un nom de couleur valide
-  const validColorNames = [
-    "blue",
-    "pink",
-    "purple",
-    "black",
-    "red",
-    "green",
-    "yellow",
-    "orange",
-    "indigo",
-    "sky",
-    "white",
-  ];
-  if (validColorNames.includes(color)) return color;
+/**
+ * Numéro de téléphone utilisable dans un href tel:
+ */
+function telHref(value) {
+  const cleaned = String(value).replace(/[^\d+]/g, "");
+  return cleaned.startsWith("+") ? cleaned : cleaned.replace(/^00/, "+");
+}
 
-  // Conversion hex -> nom de couleur
-  const hexColor = color.replace("#", "");
-  const colorMap = {
-    "0077b5": "blue",
-    "1877f2": "blue",
-    e4405f: "pink",
-    "833ab4": "purple",
-    "000000": "black",
-    171717: "black",
-    "1da1f2": "blue",
-    ff0000: "red",
-    333333: "black",
-    "5a50ff": "purple",
-    "3b82f6": "blue",
-    ef4444: "red",
-    "22c55e": "green",
-    f59e0b: "orange",
-    ffffff: "white",
-  };
-  return colorMap[hexColor] || "black";
-};
+/**
+ * Reset appliqué à chaque <table> générée : Outlook ajoute sinon ~7,5pt
+ * d'espace de part et d'autre de chaque table, qui se cumulent avec
+ * l'imbrication des conteneurs.
+ */
+const TABLE_RESET =
+  "border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;";
+
+/**
+ * Complète une URL saisie sans protocole (ex. "calendly.com/moi").
+ * Sans cela le href est relatif et le lien est cassé dans tous les webmails.
+ */
+function normalizeUrl(value) {
+  const url = String(value || "").trim();
+  if (!url || url === "#") return "";
+  if (/^[a-z][a-z0-9+.-]*:/i.test(url)) return url;
+  if (url.startsWith("//")) return `https:${url}`;
+  return `https://${url}`;
+}
 
 /**
  * Helper to escape text for Gmail (prevent auto-link detection)
@@ -70,23 +71,29 @@ const getColorName = (colorInput) => {
 function escapeForGmail(text, type) {
   if (!text) return text;
 
-  const wj = "&#8288;"; // Word Joiner
-  const zwsp = "&#8203;"; // Zero-Width Space
-
-  if (type === "email") {
-    return text.replace(/@/g, `@${wj}`).replace(/\./g, `.${wj}`);
-  }
-
+  // email et site sont rendus dans un <a> : Gmail n'auto-lie pas le texte
+  // déjà contenu dans un lien. Seul le nettoyage du protocole reste utile.
   if (type === "website") {
-    let cleanUrl = text.replace(/^https?:\/\//i, "");
-    return cleanUrl.replace(/\./g, `.${wj}`);
+    return escapeHtml(text.replace(/^https?:\/\//i, "").replace(/\/$/, ""));
   }
 
-  if (type === "phone") {
-    return text.replace(/(\d)/g, `$1${zwsp}`);
+  return escapeHtml(text);
+}
+
+/**
+ * Ligne « icône + texte » d'un élément de contact.
+ * Le moteur Word (Outlook) ignore margin sur une image : sans table à deux
+ * cellules l'icône se retrouve collée au texte. L'attribut align préserve
+ * l'alignement du conteneur, que la table n'hérite pas du <td>.
+ */
+function contactLine(iconHTML, contentHTML, style, align) {
+  const textStyle = `font-size: ${style.fontSize}px; color: ${style.color}; font-family: ${style.fontFamily}; line-height: 1.4;`;
+
+  if (!iconHTML) {
+    return `<div style="${textStyle} margin: 0; padding: 0;">${contentHTML}</div>`;
   }
 
-  return text;
+  return `<table cellpadding="0" cellspacing="0" border="0" role="presentation" align="${align}" style="${TABLE_RESET}"><tr><td style="padding-right: 8px; vertical-align: middle; font-size: 0; line-height: 0;">${iconHTML}</td><td style="${textStyle} vertical-align: middle;">${contentHTML}</td></tr></table>`;
 }
 
 /**
@@ -119,9 +126,11 @@ function generateElementHTML(
       const fontFamily =
         props.fontFamily || signatureData.fontFamily || "Arial, sans-serif";
       const fontStyle = props.fontStyle || "normal";
-      const textAlign = props.textAlign || "left";
+      const textAlign = props.textAlign
+        ? `text-align: ${props.textAlign}; `
+        : "";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${name}</div>`;
+      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; ${textAlign}line-height: 1.4; margin: 0; padding: 0;">${escapeHtml(name)}</div>`;
     }
 
     case ELEMENT_TYPES.POSITION: {
@@ -134,9 +143,11 @@ function generateElementHTML(
       const fontFamily =
         props.fontFamily || signatureData.fontFamily || "Arial, sans-serif";
       const fontStyle = props.fontStyle || "normal";
-      const textAlign = props.textAlign || "left";
+      const textAlign = props.textAlign
+        ? `text-align: ${props.textAlign}; `
+        : "";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${position}</div>`;
+      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; ${textAlign}line-height: 1.4; margin: 0; padding: 0;">${escapeHtml(position)}</div>`;
     }
 
     case ELEMENT_TYPES.COMPANY: {
@@ -149,9 +160,11 @@ function generateElementHTML(
       const fontFamily =
         props.fontFamily || signatureData.fontFamily || "Arial, sans-serif";
       const fontStyle = props.fontStyle || "normal";
-      const textAlign = props.textAlign || "left";
+      const textAlign = props.textAlign
+        ? `text-align: ${props.textAlign}; `
+        : "";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${company}</div>`;
+      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; ${textAlign}line-height: 1.4; margin: 0; padding: 0;">${escapeHtml(company)}</div>`;
     }
 
     case ELEMENT_TYPES.TEXT: {
@@ -164,14 +177,16 @@ function generateElementHTML(
       const fontFamily =
         props.fontFamily || signatureData.fontFamily || "Arial, sans-serif";
       const fontStyle = props.fontStyle || "normal";
-      const textAlign = props.textAlign || "left";
+      const textAlign = props.textAlign
+        ? `text-align: ${props.textAlign}; `
+        : "";
 
-      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; text-align: ${textAlign}; line-height: 1.4; margin: 0; padding: 0;">${content}</div>`;
+      return `<div style="font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${color}; font-family: ${fontFamily}; font-style: ${fontStyle}; ${textAlign}line-height: 1.4; margin: 0; padding: 0;">${escapeHtml(content)}</div>`;
     }
 
     case ELEMENT_TYPES.CTA: {
       const label = props.label || "Prendre rendez-vous";
-      const url = props.url || "#";
+      const url = normalizeUrl(props.url);
       const bgColor = props.backgroundColor || "#5a50ff";
       const textColor = props.color || "#ffffff";
       const fontSize = props.fontSize || 13;
@@ -182,7 +197,7 @@ function generateElementHTML(
       const fontFamily =
         props.fontFamily || signatureData.fontFamily || "Arial, sans-serif";
 
-      return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tbody><tr><td align="center" style="background-color: ${bgColor}; border-radius: ${borderRadius}px; padding: ${paddingY}px ${paddingX}px;"><a href="${url}" target="_blank" style="display: inline-block; font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${textColor}; font-family: ${fontFamily}; text-decoration: none; line-height: 1.4;">${label}</a></td></tr></tbody></table>`;
+      return `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="${TABLE_RESET}"><tbody><tr><td align="center" style="background-color: ${bgColor}; border-radius: ${borderRadius}px; padding: ${paddingY}px ${paddingX}px;"><a href="${escapeAttr(url)}" target="_blank" style="display: inline-block; font-size: ${fontSize}px; font-weight: ${fontWeight}; color: ${textColor}; font-family: ${fontFamily}; text-decoration: none; line-height: 1.4;">${escapeHtml(label)}</a></td></tr></tbody></table>`;
     }
 
     case ELEMENT_TYPES.BANNER: {
@@ -194,10 +209,10 @@ function generateElementHTML(
       const alt = props.alt || "Bandeau";
       const url = props.url;
 
-      const imgTag = `<img src="${bannerUrl}" alt="${alt}" width="${bannerWidth}" style="width: ${bannerWidth}px; height: auto; display: block; border: 0; border-radius: ${borderRadius}px;" />`;
+      const imgTag = `<img src="${escapeAttr(bannerUrl)}" alt="${escapeAttr(alt)}" width="${bannerWidth}" style="width: ${bannerWidth}px; max-width: 100%; height: auto; display: block; border: 0; border-radius: ${borderRadius}px;" />`;
 
       if (url) {
-        return `<a href="${url}" target="_blank" style="text-decoration: none; display: inline-block;">${imgTag}</a>`;
+        return `<a href="${escapeAttr(url)}" target="_blank" style="text-decoration: none; display: inline-block;">${imgTag}</a>`;
       }
       return imgTag;
     }
@@ -218,10 +233,14 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/${type === ELEMENT_TYPES.PHONE ? "phone" : "smartphone"}-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl(type === ELEMENT_TYPES.PHONE ? "phone" : "smartphone", iconColor)}" alt="${type === ELEMENT_TYPES.PHONE ? "Tél" : "Mobile"}" width="16" height="16" style="width: 16px; height: 16px; display: block; border: 0;" />`
         : "";
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${escapeForGmail(value, "phone")}</span></div>`;
+      return contactLine(
+        icon,
+        `<a href="tel:${escapeAttr(telHref(value))}" style="color: ${color}; text-decoration: none;">${escapeHtml(value)}</a>`,
+        { fontSize, color, fontFamily }, containerAlignment,
+      );
     }
 
     case ELEMENT_TYPES.EMAIL: {
@@ -236,10 +255,14 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/mail-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl("mail", iconColor)}" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block; border: 0;" />`
         : "";
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="mailto:${email}" style="color: ${color}; text-decoration: none;">${escapeForGmail(email, "email")}</a></div>`;
+      return contactLine(
+        icon,
+        `<a href="mailto:${escapeAttr(email)}" style="color: ${color}; text-decoration: none;">${escapeForGmail(email, "email")}</a>`,
+        { fontSize, color, fontFamily }, containerAlignment,
+      );
     }
 
     case ELEMENT_TYPES.WEBSITE: {
@@ -254,11 +277,15 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/globe-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl("globe", iconColor)}" alt="Site" width="16" height="16" style="width: 16px; height: 16px; display: block; border: 0;" />`
         : "";
-      const href = website.startsWith("http") ? website : `https://${website}`;
+      const href = normalizeUrl(website);
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="${href}" style="color: ${color}; text-decoration: none;" target="_blank">${escapeForGmail(website, "website")}</a></div>`;
+      return contactLine(
+        icon,
+        `<a href="${escapeAttr(href)}" style="color: ${color}; text-decoration: none;" target="_blank">${escapeForGmail(website, "website")}</a>`,
+        { fontSize, color, fontFamily }, containerAlignment,
+      );
     }
 
     case ELEMENT_TYPES.ADDRESS: {
@@ -273,10 +300,14 @@ function generateElementHTML(
       const iconColor = props.iconColor || color;
 
       const icon = showIcon
-        ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/map-pin-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />`
+        ? `<img src="${getContactIconUrl("map-pin", iconColor)}" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; border: 0;" />`
         : "";
 
-      return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${address}</span></div>`;
+      return contactLine(
+        icon,
+        `<span>${escapeHtml(address)}</span>`,
+        { fontSize, color, fontFamily }, containerAlignment,
+      );
     }
 
     case ELEMENT_TYPES.PHOTO: {
@@ -295,32 +326,38 @@ function generateElementHTML(
         // VML for Outlook
         return `
           <!--[if gte mso 9]>
-          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="width:${size}px;height:${size}px;v-text-anchor:middle;" arcsize="50%" strokeweight="0" fillcolor="#FFFFFF">
+          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="width:${size}px;height:${size}px;v-text-anchor:middle;" arcsize="50%" stroked="f" strokeweight="0" fillcolor="#FFFFFF">
             <v:fill type="frame" src="${optimizedUrl}" />
             <w:anchorlock/>
           </v:roundrect>
           <![endif]-->
           <!--[if !mso]><!-->
-          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr><td width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; background: url('${optimizedUrl}') center / cover no-repeat; border-radius: ${radius}; overflow: hidden;">
-            <img src="${optimizedUrl}" alt="Photo" width="${size}" height="${size}" style="display: block; width: ${size}px; height: ${size}px; border-radius: ${radius}; opacity: 0;" />
-          </td></tr></table>
+          <img src="${escapeAttr(optimizedUrl)}" alt="Photo" width="${size}" height="${size}" style="display: block; width: ${size}px; height: ${size}px; border-radius: ${radius}; border: 0;" />
           <!--<![endif]-->
         `.trim();
       }
 
-      // Non-round: table cell avec background-image (pas de object-fit)
-      return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr><td width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; background: url('${optimizedUrl}') center / cover no-repeat; border-radius: ${radius}; overflow: hidden;">
-        <img src="${optimizedUrl}" alt="Photo" width="${size}" height="${size}" style="display: block; width: ${size}px; height: ${size}px; border-radius: ${radius}; opacity: 0;" />
-      </td></tr></table>`;
+      // Photo non ronde : wsrv.nl recadre déjà l'image côté serveur, une
+      // simple <img> suffit. L'ancienne cellule à image de fond + <img
+      // opacity:0> affichait un carré vide dans tout client honorant
+      // opacity sans honorer background-size.
+      return `<img src="${escapeAttr(optimizedUrl)}" alt="Photo" width="${size}" height="${size}" style="display: block; width: ${size}px; height: ${size}px; border-radius: ${radius}; border: 0;" />`;
     }
 
     case ELEMENT_TYPES.LOGO: {
       const logoUrl = signatureData.logo || signatureData.companyLogo;
       if (!logoUrl) return "";
 
+      // Les presets ne definissent souvent que maxHeight : borner par la
+      // hauteur dans ce cas, sinon le logo sortait a 100px de large.
+      const logoHeight = signatureData.logoSize ? null : props.maxHeight;
+      if (logoHeight) {
+        return `<img src="${escapeAttr(logoUrl)}" alt="Logo" height="${logoHeight}" style="height: ${logoHeight}px; max-height: ${logoHeight}px; width: auto; display: block; border: 0;" />`;
+      }
+
       const logoWidth = signatureData.logoSize || props.maxWidth || 100;
 
-      return `<img src="${logoUrl}" alt="Logo" style="width: ${logoWidth}px; height: auto; object-fit: contain; display: block;" />`;
+      return `<img src="${escapeAttr(logoUrl)}" alt="Logo" width="${logoWidth}" style="width: ${logoWidth}px; max-width: ${logoWidth}px; height: auto; display: block; border: 0;" />`;
     }
 
     case ELEMENT_TYPES.SEPARATOR_LINE: {
@@ -396,12 +433,13 @@ function generateElementHTML(
           // Supporter les deux formats : string directe "https://..." ou objet { url: "..." }
           const url =
             typeof networkData === "string" ? networkData : networkData?.url;
-          const hasValidUrl = url && url !== "#" && url.trim() !== "";
+          const safeUrl = normalizeUrl(url);
+          const hasValidUrl = safeUrl !== "";
 
           const imgTag = `<img src="${iconUrl}" alt="${networkName}" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0;" />`;
 
           const content = hasValidUrl
-            ? `<a href="${url}" target="_blank" style="text-decoration: none; display: inline-block;">${imgTag}</a>`
+            ? `<a href="${escapeAttr(safeUrl)}" target="_blank" style="text-decoration: none; display: inline-block;">${imgTag}</a>`
             : imgTag;
 
           return `<td style="padding: ${cellPadding};">${content}</td>`;
@@ -410,15 +448,16 @@ function generateElementHTML(
 
       if (!iconCells) return "";
 
-      // Contrôler l'alignement via margin sur la table (fiable dans les clients mail)
-      const tableMargin =
+      // L'attribut align est le seul moyen fiable dans Outlook : margin sur
+      // une table y est ignoré et les icônes restaient collées à gauche.
+      const tableAlign =
         effectiveAlignment === "center"
-          ? "0 auto"
+          ? "center"
           : effectiveAlignment === "right"
-            ? "0 0 0 auto"
-            : "0";
+            ? "right"
+            : "left";
 
-      return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: ${tableMargin};"><tbody><tr>${iconCells}</tr></tbody></table>`;
+      return `<table cellpadding="0" cellspacing="0" border="0" role="presentation" align="${tableAlign}" style="${TABLE_RESET}"><tbody><tr>${iconCells}</tr></tbody></table>`;
     }
 
     default:
@@ -510,10 +549,17 @@ function generateContainerHTML(
 
   if (allContent.length === 0) return "";
 
-  // Build container style
-  let containerStyle = `padding: ${padding}px;`;
+  // Build container style. Le moteur Word (Outlook) ignore padding sur une
+  // <table> : on le porte sur un <td> englobant, sinon toute la signature
+  // est collée au bord gauche et plus compacte que l'aperçu.
+  let containerStyle = "";
   if (width) containerStyle += ` width: ${width}px;`;
   if (height) containerStyle += ` height: ${height}px;`;
+
+  const withPadding = (inner) =>
+    padding > 0
+      ? `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="${TABLE_RESET}"><tr><td style="padding: ${padding}px;">${inner}</td></tr></table>`
+      : inner;
 
   if (layout === "horizontal") {
     // Horizontal layout: use table with cells in a row
@@ -536,7 +582,10 @@ function generateContainerHTML(
 
           // Pour email: utiliser une cellule avec background-color directement
           // Le gap est ajouté via des cellules vides de chaque côté pour l'espacement symétrique
-          return `<td style="width: ${gap}px; padding: 0;"></td><td style="width: ${separatorWidth}px; background-color: ${separatorColor}; padding: 0;"></td><td style="width: ${gap}px; padding: 0;"></td>`;
+          // Une cellule vide est effondrée par Outlook et Gmail : le trait
+          // disparaît et les gaps sont perdus. Un &nbsp; de 1px la maintient.
+          const spacer = `<td width="${gap}" style="width: ${gap}px; padding: 0; font-size: 1px; line-height: 1px;">&nbsp;</td>`;
+          return `${spacer}<td width="${separatorWidth}" style="width: ${separatorWidth}px; background-color: ${separatorColor}; padding: 0; font-size: 1px; line-height: 1px;">&nbsp;</td>${spacer}`;
         }
 
         // Pour les éléments non-séparateurs:
@@ -549,11 +598,9 @@ function generateContainerHTML(
       })
       .join("");
 
-    return `
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; ${containerStyle}">
-        <tr>${cellsHTML}</tr>
-      </table>
-    `.trim();
+    return withPadding(
+      `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="${TABLE_RESET}${containerStyle}"><tr>${cellsHTML}</tr></table>`,
+    );
   } else {
     // Vertical layout: use table with cells in rows
     const rowsHTML = allContent
@@ -574,11 +621,9 @@ function generateContainerHTML(
       })
       .join("");
 
-    return `
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; ${containerStyle}">
-        ${rowsHTML}
-      </table>
-    `.trim();
+    return withPadding(
+      `<table cellpadding="0" cellspacing="0" border="0" role="presentation" style="${TABLE_RESET}${containerStyle}">${rowsHTML}</table>`,
+    );
   }
 }
 
@@ -603,7 +648,7 @@ export function generateSignatureHTMLFromContainer(
 
     // Wrap in outer table for email clients
     return `
-      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; font-family: ${fontFamily}; max-width: 600px; background-color: transparent; color-scheme: light dark;">
+      <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="${TABLE_RESET} font-family: ${fontFamily}; max-width: 600px; background-color: transparent; color-scheme: light dark;">
         <tr>
           <td style="padding: 0;">
             ${containerHTML}

@@ -41,32 +41,36 @@ export function generateSignatureHTML(signatureData) {
     return `${top}px ${right}px ${bottom}px ${left}px`;
   };
 
-  // Helper pour échapper les caractères et éviter la détection automatique de liens par Gmail
-  // Utilise Word Joiner (&#8288;) qui est invisible et empêche la détection
+  // Échappe un texte destiné à un noeud de texte HTML : sans cela un nom ou
+  // une adresse contenant & < > casse la signature collée dans le client mail.
+  const escapeHtml = (text) => {
+    if (text === null || text === undefined) return "";
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  };
+
+  // Échappe une valeur destinée à un attribut HTML entre guillemets doubles
+  const escapeAttr = (value) => escapeHtml(value).replace(/"/g, "&quot;");
+
+  // Numéro utilisable dans un href tel:
+  const telHref = (value) => {
+    const cleaned = String(value).replace(/[^\d+]/g, "");
+    return cleaned.startsWith("+") ? cleaned : cleaned.replace(/^00/, "+");
+  };
+
+  // email et site sont rendus dans un <a> : Gmail n'auto-lie pas le texte déjà
+  // contenu dans un lien, les caractères invisibles d'autrefois ne servaient
+  // qu'à polluer le copier-coller du destinataire.
   const escapeForGmail = (text, type) => {
     if (!text) return text;
 
-    // Word Joiner - caractère invisible qui empêche la détection de liens
-    const wj = "&#8288;";
-    const zwsp = "&#8203;";
-
-    // Pour les emails : ajouter word joiner après @ et après chaque .
-    if (type === "email") {
-      return text.replace(/@/g, `@${wj}`).replace(/\./g, `.${wj}`);
-    }
-
-    // Pour les URLs : supprimer https:// et ajouter word joiner après chaque .
     if (type === "website") {
-      let cleanUrl = text.replace(/^https?:\/\//i, ""); // Supprimer https:// ou http://
-      return cleanUrl.replace(/\./g, `.${wj}`);
+      return escapeHtml(text.replace(/^https?:\/\//i, "").replace(/\/$/, ""));
     }
 
-    // Pour les téléphones : ajouter zwsp après chaque chiffre (fonctionne déjà bien)
-    if (type === "phone") {
-      return text.replace(/(\d)/g, `$1${zwsp}`);
-    }
-
-    return text;
+    return escapeHtml(text);
   };
 
   // Fonction helper pour obtenir les valeurs de typographie
@@ -345,7 +349,7 @@ ${profileImageHTML}
     return `<tr>
 <td colspan="2" style="text-align: ${signatureData.nameAlignment || "left"}; padding: ${getPaddingStyle("name", { bottom: 8 })};">
 <span style="font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#171717")}; line-height: 1.2; font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("fullName", "fontStyle", "normal")}; display: inline-block;">
-${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${signatureData.fullName || ""}</u>` : signatureData.fullName || ""}
+${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${escapeHtml(signatureData.fullName || "")}</u>` : escapeHtml(signatureData.fullName || "")}
 </span>
 </td>
 </tr>`;
@@ -357,7 +361,7 @@ ${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${si
     return `<tr>
 <td colspan="2" style="padding: ${getPaddingStyle("position", { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; text-align: ${signatureData.nameAlignment || "left"};">
 <span style="font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "rgb(102,102,102)")}; font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("position", "fontWeight", "normal")}; font-style: ${getTypography("position", "fontStyle", "normal")}; white-space: nowrap; display: inline-block;">
-${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${signatureData.position}</u>` : signatureData.position}
+${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${escapeHtml(signatureData.position)}</u>` : escapeHtml(signatureData.position)}
 </span>
 </td>
 </tr>`;
@@ -374,10 +378,10 @@ ${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${si
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png", 16)}" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png", 16)}" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("phone", "fontStyle", "normal")};">
-${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}
+${signatureData.phone ? `<a href="tel:${escapeAttr(telHref(signatureData.phone))}" style="color: ${getTypography("phone", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}${signatureData.phone ? "</a>" : ""}
 </td>
 </tr>
 </tbody>
@@ -393,10 +397,10 @@ ${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escap
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png", 16)}" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png", 16)}" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("mobile", "fontStyle", "normal")};">
-${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}
+${signatureData.mobile ? `<a href="tel:${escapeAttr(telHref(signatureData.mobile))}" style="color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}${signatureData.mobile ? "</a>" : ""}
 </td>
 </tr>
 </tbody>
@@ -453,7 +457,7 @@ ${getTypography("website", "textDecoration", "none") === "underline" ? `<u>${esc
 <img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png", 16)}" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 1px;" />
 </td>
 <td style="font-size: ${getTypography("address", "fontSize", 12)}px; color: ${getTypography("address", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("address", "fontWeight", "normal")}; font-family: ${getTypography("address", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("address", "fontStyle", "normal")};">
-${getTypography("address", "textDecoration", "none") === "underline" ? `<u>${signatureData.address}</u>` : signatureData.address}
+${getTypography("address", "textDecoration", "none") === "underline" ? `<u>${escapeHtml(signatureData.address)}</u>` : escapeHtml(signatureData.address)}
 </td>
 </tr>
 </tbody>
@@ -553,7 +557,7 @@ ${profileImageHTML}
 <tr>
 <td style="text-align: center; padding: ${getPaddingStyle("name", { bottom: 8 })};">
 <span style="font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#171717")}; line-height: 1.2; font-style: ${getTypography("fullName", "fontStyle", "normal")}; display: inline-block;">
-${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${signatureData.fullName || ""}</u>` : signatureData.fullName || ""}
+${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${escapeHtml(signatureData.fullName || "")}</u>` : escapeHtml(signatureData.fullName || "")}
 </span>
 </td>
 </tr>
@@ -564,7 +568,7 @@ ${
 <tr>
 <td style="padding: ${getPaddingStyle("position", { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; white-space: nowrap; text-align: center;">
 <span style="font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "#666666")}; font-weight: ${getTypography("position", "fontWeight", "normal")}; font-style: ${getTypography("position", "fontStyle", "normal")}; display: inline-block;">
-${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${signatureData.position}</u>` : signatureData.position}
+${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${escapeHtml(signatureData.position)}</u>` : escapeHtml(signatureData.position)}
 </span>
 </td>
 </tr>`
@@ -577,7 +581,7 @@ ${
 <tr>
 <td style="padding: ${getPaddingStyle("company", { bottom: 12 })}; text-align: center;">
 <span style="font-family: ${getTypography("company", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("company", "fontSize", 14)}px; font-weight: ${getTypography("company", "fontWeight", "bold")}; color: ${getTypography("company", "color", signatureData.primaryColor || "#171717")}; font-style: ${getTypography("company", "fontStyle", "normal")}; text-decoration: ${getTypography("company", "textDecoration", "none")}; display: inline-block;">
-${signatureData.companyName}
+${escapeHtml(signatureData.companyName)}
 </span>
 </td>
 </tr>`
@@ -614,10 +618,10 @@ ${
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
+<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; font-style: ${getTypography("phone", "fontStyle", "normal")}; vertical-align: middle;">
-${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}
+${signatureData.phone ? `<a href="tel:${escapeAttr(telHref(signatureData.phone))}" style="color: ${getTypography("phone", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}${signatureData.phone ? "</a>" : ""}
 </td>
 </tr>
 </tbody>
@@ -635,10 +639,10 @@ ${
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
+<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; font-style: ${getTypography("mobile", "fontStyle", "normal")}; vertical-align: middle;">
-${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}
+${signatureData.mobile ? `<a href="tel:${escapeAttr(telHref(signatureData.mobile))}" style="color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}${signatureData.mobile ? "</a>" : ""}
 </td>
 </tr>
 </tbody>
@@ -701,7 +705,7 @@ ${
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 1px;" />
 </td>
 <td style="font-size: ${getTypography("address", "fontSize", 12)}px; color: ${getTypography("address", "color", "rgb(102,102,102)")}; font-family: ${getTypography("address", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("address", "fontWeight", "normal")}; font-style: ${getTypography("address", "fontStyle", "normal")}; display: inline-block;">
-${getTypography("address", "textDecoration", "none") === "underline" ? `<u>${signatureData.address}</u>` : signatureData.address}
+${getTypography("address", "textDecoration", "none") === "underline" ? `<u>${escapeHtml(signatureData.address)}</u>` : escapeHtml(signatureData.address)}
 </td>
 </tr>
 </tbody>
