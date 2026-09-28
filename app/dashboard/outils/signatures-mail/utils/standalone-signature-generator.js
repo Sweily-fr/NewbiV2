@@ -378,7 +378,7 @@ ${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${es
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png", 16)}" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png", 16)}" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("phone", "fontStyle", "normal")};">
 ${signatureData.phone ? `<a href="tel:${escapeAttr(telHref(signatureData.phone))}" style="color: ${getTypography("phone", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}${signatureData.phone ? "</a>" : ""}
@@ -397,7 +397,7 @@ ${signatureData.phone ? `<a href="tel:${escapeAttr(telHref(signatureData.phone))
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png", 16)}" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png", 16)}" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("mobile", "fontStyle", "normal")};">
 ${signatureData.mobile ? `<a href="tel:${escapeAttr(telHref(signatureData.mobile))}" style="color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}${signatureData.mobile ? "</a>" : ""}
@@ -618,7 +618,7 @@ ${
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
+<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; font-style: ${getTypography("phone", "fontStyle", "normal")}; vertical-align: middle;">
 ${signatureData.phone ? `<a href="tel:${escapeAttr(telHref(signatureData.phone))}" style="color: ${getTypography("phone", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}${signatureData.phone ? "</a>" : ""}
@@ -639,7 +639,7 @@ ${
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
+<img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; font-style: ${getTypography("mobile", "fontStyle", "normal")}; vertical-align: middle;">
 ${signatureData.mobile ? `<a href="tel:${escapeAttr(telHref(signatureData.mobile))}" style="color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; text-decoration: none;">` : ""}${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}${signatureData.mobile ? "</a>" : ""}
