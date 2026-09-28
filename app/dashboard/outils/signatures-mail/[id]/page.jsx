@@ -1,30 +1,27 @@
-/**
- * Page d'édition d'une signature email existante
- * Redirige vers la page /new avec le paramètre edit=true
- */
-
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense } from "react";
 import { useParams } from "next/navigation";
-import { SignaturePageSkeleton } from "../components/signature-page-skeleton";
+import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
+import SignatureEditor from "../_v2/components/SignatureEditor";
+import { SignatureEditorV2Skeleton } from "../_v2/components/signature-v2-skeleton";
 
-export default function EditSignaturePage() {
-  const router = useRouter();
+function EditorContent() {
   const params = useParams();
-  const signatureId = params.id;
+  return <SignatureEditor id={params.id} />;
+}
 
-  useEffect(() => {
-    if (signatureId) {
-      // Rediriger vers la page /new avec le paramètre edit=true et l'ID de la signature
-      router.push(
-        `/dashboard/outils/signatures-mail/new?edit=true&id=${signatureId}`,
-      );
-    }
-  }, [signatureId, router]);
-
-  // Skeleton pendant la redirection : évite un écran blanc entre le
-  // loading.jsx de la route et la page /new en mode édition
-  return <SignaturePageSkeleton />;
+export default function SignatureV2EditorPage() {
+  return (
+    <RoleRouteGuard
+      roles={["owner", "admin", "member", "viewer"]}
+      fallbackUrl="/dashboard"
+      toastMessage="Vous n'avez pas accès aux signatures de mail."
+      loadingComponent={<SignatureEditorV2Skeleton />}
+    >
+      <Suspense fallback={<SignatureEditorV2Skeleton />}>
+        <EditorContent />
+      </Suspense>
+    </RoleRouteGuard>
+  );
 }

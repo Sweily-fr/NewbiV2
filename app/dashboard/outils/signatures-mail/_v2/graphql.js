@@ -1,0 +1,250 @@
+import { gql } from "@apollo/client";
+
+/**
+ * Requêtes et mutations des signatures de mail v2.
+ * Le HTML n'est jamais produit côté front : `render` et
+ * `renderEmailSignatureV2` renvoient toujours le HTML du générateur unique
+ * de l'API, identique pour l'aperçu, la copie et le téléchargement.
+ */
+
+export const SIGNATURE_V2_FIELDS = gql`
+  fragment SignatureV2Fields on EmailSignatureV2 {
+    id
+    name
+    isDefault
+    templateId
+    identity {
+      firstName
+      lastName
+      jobTitle
+      department
+      company
+      tagline
+    }
+    contact {
+      email
+      phone
+      mobile
+      website
+      address
+    }
+    social {
+      network
+      url
+    }
+    images {
+      photo {
+        url
+        width
+        height
+      }
+      logo {
+        url
+        width
+        height
+      }
+      banner {
+        url
+        width
+        height
+      }
+    }
+    cta {
+      enabled
+      label
+      url
+      backgroundColor
+      textColor
+    }
+    banner {
+      enabled
+      url
+      alt
+    }
+    disclaimer {
+      enabled
+      text
+    }
+    style {
+      fontFamily
+      fontSize
+      primaryColor
+      textColor
+      mutedColor
+      photoShape
+      photoSize
+      logoWidth
+      iconStyle
+      iconColorMode
+      iconColor
+      iconSize
+      showContactIcons
+      separatorColor
+      spacing
+      align
+    }
+    updatedAt
+  }
+`;
+
+export const RENDER_FIELDS = gql`
+  fragment RenderV2Fields on SignatureRenderV2 {
+    html
+    text
+    chars
+    warnings
+  }
+`;
+
+export const SIGNATURES_V2 = gql`
+  query SignaturesV2 {
+    emailSignaturesV2 {
+      ...SignatureV2Fields
+      render {
+        html
+      }
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+export const SIGNATURE_V2 = gql`
+  query SignatureV2($id: ID!) {
+    emailSignatureV2(id: $id) {
+      ...SignatureV2Fields
+      render {
+        ...RenderV2Fields
+      }
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+  ${RENDER_FIELDS}
+`;
+
+export const SIGNATURE_CATALOG_V2 = gql`
+  query SignatureCatalogV2 {
+    signatureCatalogV2 {
+      templates {
+        id
+        name
+        description
+        supports {
+          photo
+          logo
+          align
+        }
+      }
+      networks {
+        id
+        label
+        brandColor
+        host
+      }
+      fonts {
+        id
+        label
+        stack
+      }
+      gmailMaxChars
+    }
+  }
+`;
+
+export const RENDER_SIGNATURE_V2 = gql`
+  query RenderSignatureV2($id: ID, $input: EmailSignatureV2Input!) {
+    renderEmailSignatureV2(id: $id, input: $input) {
+      ...RenderV2Fields
+    }
+  }
+  ${RENDER_FIELDS}
+`;
+
+export const RENDER_TEMPLATE_V2 = gql`
+  query RenderTemplateV2($templateId: String!, $style: SignatureStyleV2Input) {
+    renderSignatureTemplateV2(templateId: $templateId, style: $style) {
+      html
+    }
+  }
+`;
+
+export const CREATE_SIGNATURE_V2 = gql`
+  mutation CreateSignatureV2($input: EmailSignatureV2Input!) {
+    createEmailSignatureV2(input: $input) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+export const UPDATE_SIGNATURE_V2 = gql`
+  mutation UpdateSignatureV2($id: ID!, $input: EmailSignatureV2Input!) {
+    updateEmailSignatureV2(id: $id, input: $input) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+export const DELETE_SIGNATURE_V2 = gql`
+  mutation DeleteSignatureV2($id: ID!) {
+    deleteEmailSignatureV2(id: $id)
+  }
+`;
+
+export const DUPLICATE_SIGNATURE_V2 = gql`
+  mutation DuplicateSignatureV2($id: ID!) {
+    duplicateEmailSignatureV2(id: $id) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+export const SET_DEFAULT_SIGNATURE_V2 = gql`
+  mutation SetDefaultSignatureV2($id: ID!) {
+    setDefaultEmailSignatureV2(id: $id) {
+      id
+      isDefault
+    }
+  }
+`;
+
+export const UPLOAD_SIGNATURE_V2_IMAGE = gql`
+  mutation UploadSignatureV2Image($id: ID!, $kind: SignatureImageKindV2!, $file: Upload!) {
+    uploadEmailSignatureV2Image(id: $id, kind: $kind, file: $file) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+export const REMOVE_SIGNATURE_V2_IMAGE = gql`
+  mutation RemoveSignatureV2Image($id: ID!, $kind: SignatureImageKindV2!) {
+    removeEmailSignatureV2Image(id: $id, kind: $kind) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+const OMIT = new Set(["__typename"]);
+const strip = (obj) =>
+  Object.fromEntries(
+    Object.entries(obj || {}).filter(([k, v]) => !OMIT.has(k) && v !== undefined),
+  );
+
+/** Convertit une signature (forme du fragment) en entrée de mutation. */
+export function toInput(sig) {
+  if (!sig) return {};
+  return {
+    name: sig.name,
+    templateId: sig.templateId,
+    identity: strip(sig.identity),
+    contact: strip(sig.contact),
+    social: (sig.social || []).map((s) => ({ network: s.network, url: s.url })),
+    cta: strip(sig.cta),
+    banner: strip(sig.banner),
+    disclaimer: strip(sig.disclaimer),
+    style: strip(sig.style),
+  };
+}
