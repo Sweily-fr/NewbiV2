@@ -25,7 +25,10 @@ export default function HtmlFrame({
     const invert = dark
       ? ".sig{filter:invert(1) hue-rotate(180deg);} .sig img{filter:invert(1) hue-rotate(180deg);}"
       : "";
-    return `<!doctype html><html><head><meta charset="utf-8"><meta name="color-scheme" content="${
+    // <base target="_blank"> : un clic sur un lien de la signature ouvre un
+    // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
+    // une page d'erreur si l'adresse est incomplète).
+    return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><meta name="color-scheme" content="${
       dark ? "dark" : "light"
     }"><style>html,body{margin:0;padding:0;background:${bg};} body{padding:${padding}px;} ${invert}</style></head><body><div class="sig">${
       html || ""
@@ -44,7 +47,7 @@ export default function HtmlFrame({
     <iframe
       title={title}
       srcDoc={srcDoc}
-      sandbox=""
+      sandbox="allow-popups allow-popups-to-escape-sandbox"
       className={className}
       style={style}
       loading="lazy"
