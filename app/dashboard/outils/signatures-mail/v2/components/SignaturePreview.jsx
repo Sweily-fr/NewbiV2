@@ -29,11 +29,22 @@ export default function SignaturePreview({ id, sig, initialRender, onRender }) {
   const debouncedInput = useDebounced(input, RENDER_DELAY_MS);
   const lastRender = useRef(initialRender);
 
-  const { data } = useQuery(RENDER_SIGNATURE_V2, {
+  const { data, refetch } = useQuery(RENDER_SIGNATURE_V2, {
     variables: { id, input: debouncedInput },
     skip: !sig,
     fetchPolicy: "no-cache",
   });
+
+  // Les images ne font pas partie de l'entrée (elles vivent sur le document) :
+  // après un envoi ou un retrait, on force un nouveau rendu.
+  const imagesKey = JSON.stringify(sig?.images || null);
+  const firstImagesKey = useRef(imagesKey);
+  useEffect(() => {
+    if (imagesKey !== firstImagesKey.current) {
+      firstImagesKey.current = imagesKey;
+      refetch();
+    }
+  }, [imagesKey, refetch]);
 
   const render = data?.renderEmailSignatureV2 || lastRender.current;
   useEffect(() => {
