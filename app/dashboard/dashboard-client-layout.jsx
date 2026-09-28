@@ -73,26 +73,11 @@ const PwaInstallBanner = dynamic(
     ),
   { ssr: false },
 );
-const SignatureSidebarRight = dynamic(
-  () =>
-    import("@/src/components/signature-sidebar-right").then(
-      (m) => m.SignatureSidebarRight,
-    ),
-  { ssr: false },
-);
-const SignatureProvider = dynamic(
-  () =>
-    import("@/src/hooks/use-signature-data").then((m) => m.SignatureProvider),
-  { ssr: false },
-);
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isSignaturePage = pathname?.startsWith(
-    "/dashboard/outils/signatures-mail/new",
-  );
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -186,8 +171,9 @@ function DashboardContent({ children }) {
       pathname.includes("/edit") ||
       pathname.includes("/editer") ||
       pathname.includes("/view") ||
-      pathname.includes("/avoir/")) &&
-    !isSignaturePage; // Exception pour la page de signature
+      pathname.includes("/avoir/") ||
+      // Éditeur de signature de mail : /signatures-mail/<id>
+      /\/dashboard\/outils\/signatures-mail\/[^/]+$/.test(pathname));
 
   // Clé localStorage pour persister l'état de la sidebar
   const SIDEBAR_STORAGE_KEY = "sidebar_collapsed";
@@ -226,12 +212,9 @@ function DashboardContent({ children }) {
     [isToolPage],
   );
 
-  // Forcer la sidebar fermée sur les pages d'outils (sauf page de signature)
+  // Forcer la sidebar fermée sur les pages d'outils
   useEffect(() => {
     if (isToolPage) {
-      setSidebarOpen(false);
-    } else if (isSignaturePage) {
-      // Pour la page de signature, forcer en mode rétréci (false = collapsed)
       setSidebarOpen(false);
     }
   }, [isToolPage]);
@@ -290,9 +273,6 @@ function DashboardContent({ children }) {
             </div>
           </div>
         </SidebarInset>
-
-        {/* Sidebar droite miroir - Affichée uniquement sur la page de signature */}
-        {isSignaturePage && <SignatureSidebarRight />}
 
         <SearchCommand />
 
@@ -392,13 +372,7 @@ function DashboardContent({ children }) {
 }
 
 export default function DashboardClientLayout({ children }) {
-  const pathname = usePathname();
-  const isSignaturePage = pathname?.startsWith(
-    "/dashboard/outils/signatures-mail/new",
-  );
-
-  // Wrapper avec le provider de layout optimisé
-  const content = (
+  return (
     <DashboardLayoutProvider>
       <AccountingViewProvider>
         <TutorialProvider>
@@ -414,12 +388,4 @@ export default function DashboardClientLayout({ children }) {
       </AccountingViewProvider>
     </DashboardLayoutProvider>
   );
-
-  // Si on est sur la page de signature, ajouter le provider de signature
-  if (isSignaturePage) {
-    return <SignatureProvider>{content}</SignatureProvider>;
-  }
-
-  // Sinon, rendu normal avec le provider de layout
-  return content;
 }

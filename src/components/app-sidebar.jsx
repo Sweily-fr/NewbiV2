@@ -462,9 +462,10 @@ export function AppSidebar({
   const isCollapsed = sidebarState === "collapsed";
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar masquée
-  // Exception : la page de signature doit avoir la sidebar en mode rétréci (icon)
-  const isSignaturePage = pathname?.startsWith(
-    "/dashboard/outils/signatures-mail/new",
+  // Exception : l'éditeur de signature (/signatures-mail/<id>) garde la
+  // sidebar en mode rétréci (icon), il a son propre panneau latéral.
+  const isSignaturePage = /\/dashboard\/outils\/signatures-mail\/[^/]+$/.test(
+    pathname || "",
   );
   const isToolPage =
     pathname?.includes("/dashboard/outils/") &&

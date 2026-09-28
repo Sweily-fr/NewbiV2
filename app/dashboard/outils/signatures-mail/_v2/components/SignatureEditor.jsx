@@ -52,7 +52,7 @@ import ExtrasPanel from "./ExtrasPanel";
 import SignaturePreview from "./SignaturePreview";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
-const LIST_URL = "/dashboard/outils/signatures-mail/v2";
+const LIST_URL = "/dashboard/outils/signatures-mail";
 
 function SaveStatus({ status }) {
   const map = {

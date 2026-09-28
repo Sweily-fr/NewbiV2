@@ -1,8 +1,7 @@
-import { SignaturePageSkeleton } from "./components/signature-page-skeleton";
+import { SignatureListV2Skeleton } from "./_v2/components/signature-v2-skeleton";
 
-// Skeleton affiché pendant le chargement du chunk de la page signatures mail.
-// Réutilise le même composant que le loadingComponent du RoleRouteGuard pour
-// que la transition soit invisible (pas de doublon de loader).
+// Squelette affiché pendant le chargement du chunk de la page. Le même
+// composant sert de loadingComponent au RoleRouteGuard : transition invisible.
 export default function SignaturesLoading() {
-  return <SignaturePageSkeleton />;
+  return <SignatureListV2Skeleton />;
 }
