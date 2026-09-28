@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { ColorPicker } from "@/src/components/ui/color-picker";
+import ColorField from "./ColorField";
 
 function Row({ label, hint, children }) {
   return (
@@ -28,10 +28,7 @@ function Row({ label, hint, children }) {
 function ColorRow({ label, value, onChange, hint }) {
   return (
     <Row label={label} hint={hint}>
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-xs text-muted-foreground">{value}</span>
-        <ColorPicker color={value} onChange={onChange} align="end" side="left" />
-      </div>
+      <ColorField value={value} onChange={onChange} />
     </Row>
   );
 }

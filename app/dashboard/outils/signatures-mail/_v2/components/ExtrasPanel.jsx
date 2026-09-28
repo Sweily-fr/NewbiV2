@@ -4,7 +4,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import { Textarea } from "@/src/components/ui/textarea";
-import { ColorPicker } from "@/src/components/ui/color-picker";
+import ColorField from "./ColorField";
 
 function Section({ title, description, enabled, onToggle, children }) {
   return (
@@ -67,26 +67,20 @@ export default function ExtrasPanel({ sig, update }) {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Fond">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs text-muted-foreground">
-                {cta.backgroundColor || style.primaryColor}
-              </span>
-              <ColorPicker
-                color={cta.backgroundColor || style.primaryColor}
-                onChange={(v) => update({ cta: { backgroundColor: v } })}
-                align="start"
-              />
-            </div>
+            <ColorField
+              value={cta.backgroundColor || style.primaryColor}
+              onChange={(v) => update({ cta: { backgroundColor: v } })}
+              align="start"
+              side="bottom"
+            />
           </Field>
           <Field label="Texte">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs text-muted-foreground">{cta.textColor}</span>
-              <ColorPicker
-                color={cta.textColor}
-                onChange={(v) => update({ cta: { textColor: v } })}
-                align="start"
-              />
-            </div>
+            <ColorField
+              value={cta.textColor}
+              onChange={(v) => update({ cta: { textColor: v } })}
+              align="start"
+              side="bottom"
+            />
           </Field>
         </div>
       </Section>
