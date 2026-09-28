@@ -2284,10 +2284,14 @@ function BannerSettings({ props, onUpdate }) {
 
       toast.info("Optimisation de l'image...");
       const optimizedBlob = await optimizeImage(file, "logo");
+      // Le preset produit un PNG : garder l'extension et le type réels, sinon
+      // l'objet R2 est servi avec un Content-Type faux et la transparence est
+      // perdue chez certains clients mail.
+      const bannerType = optimizedBlob.type || "image/png";
       const optimizedFile = new File(
         [optimizedBlob],
-        `banner-${Date.now()}.jpg`,
-        { type: "image/jpeg" },
+        `banner-${Date.now()}.${bannerType === "image/jpeg" ? "jpg" : "png"}`,
+        { type: bannerType },
       );
       const signatureId = editingSignatureId || `temp-${Date.now()}`;
       await uploadImageFile(

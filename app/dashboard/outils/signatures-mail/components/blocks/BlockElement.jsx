@@ -116,7 +116,11 @@ export default function BlockElement({
   // Handle blur - save changes
   const handleBlur = (e) => {
     setIsEditing(false);
-    const newValue = e.target.innerText.trim();
+    const raw = e.target.innerText.trim();
+    // Le texte d'exemple est rendu dans le contentEditable lui-même : sans ce
+    // garde, ouvrir puis quitter un champ vide enregistrait « email@exemple.com »
+    // ou « 123 Rue Example, Paris » comme vraie valeur de la signature.
+    const newValue = raw === getPlaceholder(element.type) ? "" : raw;
     const fieldName = getFieldName(element.type);
 
     if (fieldName && onFieldChange) {

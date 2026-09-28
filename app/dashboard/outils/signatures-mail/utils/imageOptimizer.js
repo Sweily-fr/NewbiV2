@@ -68,6 +68,9 @@ function isHeicFile(file) {
  * À appeler en amont (avant le toast « Optimisation… ») pour ne pas
  * afficher l'optimisation quand le format pose problème.
  */
+export const MAX_IMAGE_MB = 10;
+const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
+
 export function validateImageFile(file) {
   if (!(file instanceof Blob)) {
     throw new Error("Aucun fichier valide fourni");
@@ -80,6 +83,15 @@ export function validateImageFile(file) {
   if (file.type && !file.type.startsWith("image/")) {
     throw new Error(
       `Type de fichier non supporté (${file.type}). Utilisez une image JPG, PNG ou WebP.`,
+    );
+  }
+  // L'optimisation décode l'image en pleine résolution puis parcourt ses
+  // pixels : sans borne, une photo de reflex ou une capture 6K fige l'onglet
+  // plusieurs secondes, voire le fait planter sur mobile.
+  if (file.size > MAX_IMAGE_BYTES) {
+    const mb = Math.round(file.size / (1024 * 1024));
+    throw new Error(
+      `Image trop volumineuse (${mb} Mo). La taille maximale est de ${MAX_IMAGE_MB} Mo.`,
     );
   }
   return true;

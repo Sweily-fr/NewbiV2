@@ -951,33 +951,28 @@ function SignatureProviderContent({ children }) {
   }, [session?.user, organization, isEditMode]);
 
   // Effet pour appliquer automatiquement le logo de l'organisation (fallback si pas encore appliqué)
+  // Le logo de l'organisation ne sert qu'à pré-remplir une fois. Le
+  // réappliquer dès que le champ est vide annulait la suppression du logo :
+  // le fichier était bien détruit sur R2, mais l'URL revenait aussitôt.
+  const hasPreFilledLogo = useRef(false);
   useEffect(() => {
+    if (hasPreFilledLogo.current) return;
     if (organization?.logo && !signatureData.logo) {
+      hasPreFilledLogo.current = true;
       setSignatureData((prev) => ({
         ...prev,
         logo: organization.logo,
       }));
     }
-  }, [organization?.logo, signatureData.logo, organization]);
+  }, [organization?.logo, signatureData.logo]);
 
   // Fonction pour appliquer un preset de template (appelée depuis les pages)
-  const applyTemplatePreset = React.useCallback(
-    (templateId) => {
-      console.log("🎨 [PRESET] Application du preset pour:", templateId);
-      const presetData = applyPresetFunction(defaultSignatureData, templateId);
-      setSignatureData(presetData);
-      console.log(
-        "✅ [PRESET] Preset appliqué:",
-        presetData.templateId,
-        "photoVisible:",
-        presetData.photoVisible,
-        "separatorVerticalEnabled:",
-        presetData.separatorVerticalEnabled,
-      );
-      return presetData;
-    },
-    [defaultSignatureData],
-  );
+  const applyTemplatePreset = React.useCallback((templateId) => {
+    // applyPreset conserve les données utilisateur (nom, e-mail...) et
+    // n'écrase que le style : il faut donc lui passer l'état courant, pas
+    // les valeurs par défaut, sinon la saisie déjà faite est perdue.
+    setSignatureData((prev) => applyPresetFunction(prev, templateId));
+  }, []);
 
   // Fonction pour vérifier et appliquer le preset depuis sessionStorage
   const checkAndApplyTemplatePreset = React.useCallback(() => {

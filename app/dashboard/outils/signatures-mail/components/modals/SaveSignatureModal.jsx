@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useApolloClient } from "@apollo/client";
 import { gql } from "@apollo/client";
 import { useRouter } from "next/navigation";
@@ -158,6 +158,16 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
     signatureData.signatureName || "",
   );
   const [saveStatus, setSaveStatus] = useState(null);
+  // Redirection différée de 1,5 s : sans nettoyage au démontage, fermer le
+  // modal ou naviguer dans cet intervalle déclenchait une redirection
+  // surprise et un setState sur composant démonté.
+  const redirectTimer = useRef(null);
+  useEffect(
+    () => () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    },
+    [],
+  );
   const [errorMessage, setErrorMessage] = useState(null);
 
   // Récupérer toutes les signatures existantes pour vérifier les doublons
@@ -191,7 +201,7 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
         client.cache.evict({ fieldName: "getMyEmailSignatures" });
         client.cache.evict({ fieldName: "getEmailSignature" });
         client.cache.gc();
-        setTimeout(() => {
+        redirectTimer.current = setTimeout(() => {
           closeSaveModal();
           router.push("/dashboard/outils/signatures-mail");
         }, 1500);
@@ -215,7 +225,7 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
         client.cache.evict({ fieldName: "getMyEmailSignatures" });
         client.cache.evict({ fieldName: "getEmailSignature" });
         client.cache.gc();
-        setTimeout(() => {
+        redirectTimer.current = setTimeout(() => {
           closeSaveModal();
           router.push("/dashboard/outils/signatures-mail");
         }, 1500);
