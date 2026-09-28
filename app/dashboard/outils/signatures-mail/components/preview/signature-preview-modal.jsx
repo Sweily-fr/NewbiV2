@@ -14,7 +14,10 @@ import { gql } from "@apollo/client";
 import { LoaderCircle, Eye, Copy, Pencil } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { generateSignatureHTML } from "../../utils/standalone-signature-generator";
-import { generateSignatureHTMLFromContainer } from "../../utils/container-html-generator";
+import {
+  generateSignatureHTMLFromContainer,
+  generatePlainTextFromContainer,
+} from "../../utils/container-html-generator";
 import ContainerNode from "../blocks/ContainerNode";
 
 // No-op pour les callbacks d'interaction non utilisés en mode aperçu (lecture seule)
@@ -424,6 +427,28 @@ function transformSignatureData(signature) {
 }
 
 // Générer le HTML de la signature en utilisant le bon moteur de rendu
+/**
+ * Version texte brut de la signature, pour le client mail en mode texte.
+ * Détagger le HTML laissait les résidus d'espaces et d'attributs.
+ */
+function generatePreviewPlainText(signatureData, containerStructure) {
+  if (containerStructure) {
+    return generatePlainTextFromContainer(containerStructure, signatureData);
+  }
+  return [
+    signatureData?.fullName,
+    signatureData?.position,
+    signatureData?.companyName,
+    signatureData?.phone,
+    signatureData?.mobile,
+    signatureData?.email,
+    signatureData?.website,
+    signatureData?.address,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function generatePreviewHTML(signatureData, containerStructure) {
   if (containerStructure) {
     return generateSignatureHTMLFromContainer(
@@ -495,9 +520,10 @@ export default function SignaturePreviewModal({
         await navigator.clipboard.write([
           new ClipboardItem({
             "text/html": new Blob([signatureHTML], { type: "text/html" }),
-            "text/plain": new Blob([signatureHTML.replace(/<[^>]*>/g, "")], {
-              type: "text/plain",
-            }),
+            "text/plain": new Blob(
+              [generatePreviewPlainText(data, container)],
+              { type: "text/plain" },
+            ),
           }),
         ]);
         toast.success("Signature copiée avec succès !");
