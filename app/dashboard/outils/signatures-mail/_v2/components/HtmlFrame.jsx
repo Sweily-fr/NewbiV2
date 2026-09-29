@@ -30,13 +30,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
  *   modifier un texte) ; les rectangles sont en coordonnées de la page. Le
  *   navigateur continue d'envoyer la souris à l'iframe où le bouton a été
  *   pressé : le script relaie donc aussi `onDragMove` / `onDragEnd`.
+ * - `onHistory(redo)` : ⌘Z / ⇧⌘Z pressés dans l'aperçu (hors saisie).
+ * - `readOnly` : ni modification en place ni poignée (abonnement expiré) ;
+ *   un clic ouvre seulement le panneau de l'élément.
  */
 
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
 const EDITOR_SCRIPT = `(function(){
 var post=function(m){parent.postMessage(m,"*");};
 var editing=null,dragging=false,hover=null,hideT=null;
-function h(){post({type:"sig-height",height:document.documentElement.scrollHeight});}
+function h(){var d=document.documentElement;post({type:"sig-height",height:d.scrollHeight,overflow:d.scrollWidth>d.clientWidth+1});}
 new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function crect(el){var g=document.createRange();g.selectNodeContents(el);var r=g.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
@@ -45,7 +48,7 @@ var grip=document.createElement("div");
 grip.textContent="\u283F";grip.title="Déplacer";
 grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);";
 document.body.appendChild(grip);
-function showGrip(b){hover=b;var r=b.getBoundingClientRect();grip.style.left=Math.max(0,r.left+scrollX-20)+"px";grip.style.top=(r.top+scrollY)+"px";grip.style.display="block";}
+function showGrip(b){if(window.SIG_READONLY)return;hover=b;var r=b.getBoundingClientRect();grip.style.left=Math.max(0,r.left+scrollX-20)+"px";grip.style.top=(r.top+scrollY)+"px";grip.style.display="block";}
 function hideGrip(){grip.style.display="none";hover=null;}
 document.addEventListener("mouseover",function(e){
 if(dragging||editing)return;
@@ -70,6 +73,7 @@ document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-
 document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
 function startEdit(el,x,y){
+if(window.SIG_READONLY)return;
 editing=el;hideGrip();el.setAttribute("contenteditable","plaintext-only");el.focus();
 var r=document.caretRangeFromPoint&&document.caretRangeFromPoint(x,y);
 if(r&&el.contains(r.startContainer)){var s=getSelection();s.removeAllRanges();s.addRange(r);}
@@ -82,14 +86,17 @@ if(editing&&editing.contains(e.target))return;
 e.stopPropagation();
 var ed=e.target.closest("[data-sig-edit]");
 var m=e.target.closest("[data-sig-field]");
-if(m)post({type:"sig-field",field:m.getAttribute("data-sig-field"),edit:!!ed});
+var bk=m?null:e.target.closest("[data-sig-block]");
+if(m||bk)post({type:"sig-field",field:m?m.getAttribute("data-sig-field"):bk.getAttribute("data-sig-block"),edit:!!ed&&!window.SIG_READONLY});
 if(ed)startEdit(ed,e.clientX,e.clientY);
 },true);
 document.addEventListener("input",function(){
 if(editing)post({type:"sig-input",field:editing.getAttribute("data-sig-edit"),value:editing.textContent});
 });
 document.addEventListener("keydown",function(e){
-if(editing&&(e.key==="Enter"||e.key==="Escape")){e.preventDefault();editing.blur();}
+if(editing&&(e.key==="Enter"||e.key==="Escape")){e.preventDefault();editing.blur();return;}
+var k=(e.key||"").toLowerCase();
+if(!editing&&(e.metaKey||e.ctrlKey)&&(k==="z"||k==="y")){e.preventDefault();post({type:"sig-history",redo:k==="y"||e.shiftKey});}
 });
 document.addEventListener("focusout",function(e){
 if(editing&&e.target===editing){editing.removeAttribute("contenteditable");editing=null;post({type:"sig-editing",editing:false});}
@@ -110,6 +117,9 @@ export default function HtmlFrame({
   onDragStart,
   onDragMove,
   onDragEnd,
+  onHistory,
+  onOverflow,
+  readOnly = false,
   frozen = false,
 }) {
   const frameRef = useRef(null);
@@ -129,6 +139,9 @@ export default function HtmlFrame({
       }
       if (data && data.type === "sig-editing") {
         onEditingChange?.(Boolean(data.editing));
+      }
+      if (data && data.type === "sig-history") {
+        onHistory?.(Boolean(data.redo));
       }
       if (data && (data.type === "sig-drag-move" || data.type === "sig-drag-end")) {
         const box = frameRef.current?.getBoundingClientRect();
@@ -159,6 +172,7 @@ export default function HtmlFrame({
       }
       if (data && data.type === "sig-height" && Number.isFinite(data.height)) {
         setContentHeight(Math.ceil(data.height));
+        onOverflow?.(Boolean(data.overflow));
       }
     };
     window.addEventListener("message", onMessage);
@@ -171,6 +185,8 @@ export default function HtmlFrame({
     onDragStart,
     onDragMove,
     onDragEnd,
+    onHistory,
+    onOverflow,
   ]);
 
   // Pendant une modification en place, le HTML affiché ne change pas
@@ -189,13 +205,15 @@ export default function HtmlFrame({
     const editorCss = interactive
       ? "[data-sig-field]{cursor:pointer;border-radius:3px;transition:box-shadow .12s;} [data-sig-field]:hover{box-shadow:0 0 0 2px #5a50ff;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
       : "";
-    const editorScript = interactive ? `<script>${EDITOR_SCRIPT}</script>` : "";
+    const editorScript = interactive
+      ? `<script>window.SIG_READONLY=${readOnly ? "true" : "false"};${EDITOR_SCRIPT}</script>`
+      : "";
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><meta name="color-scheme" content="${
       dark ? "dark" : "light"
     }"><style>html,body{margin:0;padding:0;background:${bg};} body{padding:${padding}px;} ${invert} ${editorCss}</style></head><body><div class="sig">${
       displayed || ""
     }</div>${editorScript}</body></html>`;
-  }, [displayed, dark, padding, interactive]);
+  }, [displayed, dark, padding, interactive, readOnly]);
 
   const style = {};
   if (width) style.width = width;
@@ -219,6 +237,9 @@ export default function HtmlFrame({
       className={className}
       style={style}
       loading="lazy"
+      // Un rechargement (mode sombre, nouveau rendu) met fin à toute
+      // modification en place : l'aperçu ne doit pas rester figé
+      onLoad={interactive ? () => onEditingChange?.(false) : undefined}
     />
   );
 }

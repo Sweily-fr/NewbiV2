@@ -7,7 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { RotateCcw } from "lucide-react";
 import ColorField from "./ColorField";
+import { cleanSlots, slotOf } from "../slots";
 import { Choice, ColorRow, Row, SliderRow } from "./controls";
 import {
   ContactStyleControl,
@@ -37,6 +39,13 @@ function Section({ title, children }) {
 
 /** Contour de la photo : épaisseur (0 = aucun) et couleur. */
 export function PhotoBorderControls({ st, setStyle }) {
+  // Sur un fond de la couleur principale (en-tête, colonne pleine), le
+  // contour est blanc par défaut
+  const photoSlot = slotOf(st.slots, "photo");
+  const onFill =
+    (photoSlot === "header" && st.headerFill !== "tint") ||
+    (photoSlot === "visual" && st.visualFill === "solid");
+  const defaultColor = onFill ? "#ffffff" : st.primaryColor;
   return (
     <>
       <SliderRow
@@ -49,12 +58,48 @@ export function PhotoBorderControls({ st, setStyle }) {
       {st.photoBorder > 0 && (
         <ColorRow
           label="Couleur du contour"
-          value={st.photoBorderColor || st.primaryColor}
+          value={st.photoBorderColor || defaultColor}
           onChange={(v) => setStyle({ photoBorderColor: v })}
         />
       )}
     </>
   );
+}
+
+/** Réglages de placement repris du modèle par « Revenir à la disposition ». */
+const LAYOUT_KEYS = ["slots", "visualSide", "visualFill", "headerPhoto", "headerFill"];
+
+/**
+ * Remet chaque élément à sa place dans le modèle, après des déplacements.
+ * N'apparaît que si la disposition s'en écarte.
+ */
+function ResetLayout({ st, template, setStyle }) {
+  const defaults = template?.defaults;
+  if (!defaults?.slots) return null;
+  const same = LAYOUT_KEYS.every(
+    (k) => JSON.stringify(cleanValue(st[k])) === JSON.stringify(cleanValue(defaults[k])),
+  );
+  if (same) return null;
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        setStyle(Object.fromEntries(LAYOUT_KEYS.map((k) => [k, cleanValue(defaults[k])])))
+      }
+      className="flex items-center gap-1.5 text-xs text-[#5a50ff] hover:underline cursor-pointer"
+    >
+      <RotateCcw size={12} />
+      Revenir à la disposition du modèle {template.name}
+    </button>
+  );
+}
+
+/** Valeur sans champ GraphQL technique (emplacements). */
+function cleanValue(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return cleanSlots(value);
+  }
+  return value;
 }
 
 /**
@@ -115,6 +160,7 @@ export default function StylePanel({ sig, update, catalog, template }) {
       </Section>
 
       <Section title="Disposition">
+        <ResetLayout st={st} template={template} setStyle={setStyle} />
         <IdentityZoneControl st={st} setStyle={setStyle} />
         <PhotoLayoutControls st={st} setStyle={setStyle} />
         <DividerControl st={st} setStyle={setStyle} />

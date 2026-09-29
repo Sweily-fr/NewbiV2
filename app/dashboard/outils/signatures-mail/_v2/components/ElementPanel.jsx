@@ -36,6 +36,10 @@ import {
 /** Élément de la signature piloté par chaque champ cliquable de l'aperçu. */
 export const FIELD_ELEMENT = {
   firstName: "name",
+  // Repères d'éléments (data-sig-block) sans champ propre
+  name: "name",
+  title: "jobTitle",
+  accent: "name",
   jobTitle: "jobTitle",
   company: "company",
   tagline: "tagline",

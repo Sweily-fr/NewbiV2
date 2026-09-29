@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMutation } from "@apollo/client";
+import { useApolloClient, useMutation } from "@apollo/client";
 import {
   ArrowLeft,
   Check,
   Copy,
   Loader2,
   MoreHorizontal,
+  Move,
+  Redo2,
   Send,
+  Undo2,
   Star,
   Trash2,
   CopyPlus,
@@ -46,8 +49,10 @@ import { useSignatureV2 } from "../hooks/useSignatureV2";
 import {
   DELETE_SIGNATURE_V2,
   DUPLICATE_SIGNATURE_V2,
+  RENDER_SIGNATURE_V2,
   SET_DEFAULT_SIGNATURE_V2,
   SIGNATURES_V2,
+  toInput,
 } from "../graphql";
 import { SignatureEditorV2Skeleton } from "./signature-v2-skeleton";
 import TemplateGallery from "./TemplateGallery";
@@ -110,12 +115,32 @@ export default function SignatureEditor({ id }) {
     update,
     replace,
     flush,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
     status,
     loading,
     error,
     catalog,
     initialRender,
   } = useSignatureV2(id);
+
+  // Annuler / rétablir au clavier (⌘Z, ⇧⌘Z, Ctrl+Y) hors des champs de
+  // saisie, qui gardent leur propre annulation
+  useEffect(() => {
+    const onKey = (e) => {
+      const k = (e.key || "").toLowerCase();
+      if (!(e.metaKey || e.ctrlKey) || (k !== "z" && k !== "y")) return;
+      const t = e.target;
+      if (t?.closest?.("input, textarea, [contenteditable]")) return;
+      e.preventDefault();
+      if (k === "y" || e.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
 
   const [tab, setTab] = useState(isNew ? "template" : "content");
   // Élément cliqué dans l'aperçu : son panneau remplace les onglets
@@ -141,8 +166,23 @@ export default function SignatureEditor({ id }) {
     [update],
   );
 
-  // Bloc déposé sur une zone de l'aperçu : réglage de mise en page
-  const onStylePatch = useCallback((patch) => update({ style: patch }), [update]);
+  // Élément déposé sur une ligne de l'aperçu : nouvel emplacement, avec
+  // de quoi revenir en arrière tout de suite
+  const onStylePatch = useCallback(
+    (patch) => {
+      update({ style: patch });
+      toast.document("Élément déplacé", {
+        fallbackIcon: Move,
+        action: { label: "Annuler", onClick: () => undo() },
+        duration: 5000,
+      });
+    },
+    [update, undo],
+  );
+  const onHistory = useCallback(
+    (isRedo) => (isRedo ? redo() : undo()),
+    [undo, redo],
+  );
 
   // Clic sur un élément de l'aperçu : on ouvre son panneau (contenu et
   // mise en forme) puis on amène et focalise le champ cliqué, sauf si le
@@ -177,10 +217,23 @@ export default function SignatureEditor({ id }) {
 
   const template =
     catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
+  const client = useApolloClient();
 
   const handleCopy = async () => {
     await flush();
-    const ok = await copySignatureHtml(render?.html, render?.text);
+    // Rendu à jour : l'aperçu peut avoir un temps de retard sur la frappe
+    let fresh = render;
+    try {
+      const { data } = await client.query({
+        query: RENDER_SIGNATURE_V2,
+        variables: { id, input: toInput(sig) },
+        fetchPolicy: "no-cache",
+      });
+      fresh = data?.renderEmailSignatureV2 || render;
+    } catch {
+      // À défaut, le dernier rendu affiché
+    }
+    const ok = await copySignatureHtml(fresh?.html, fresh?.text);
     if (ok) {
       setCopied(true);
       toast.success("Signature copiée, collez-la dans votre client mail");
@@ -369,6 +422,30 @@ export default function SignatureEditor({ id }) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <div className="mr-1 flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 cursor-pointer"
+                onClick={undo}
+                disabled={!canUndo || isReadOnly}
+                aria-label="Annuler"
+                title="Annuler (⌘Z)"
+              >
+                <Undo2 size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 cursor-pointer"
+                onClick={redo}
+                disabled={!canRedo || isReadOnly}
+                aria-label="Rétablir"
+                title="Rétablir (⇧⌘Z)"
+              >
+                <Redo2 size={16} />
+              </Button>
+            </div>
             <Button
               variant="outline"
               onClick={handleCopy}
@@ -435,8 +512,10 @@ export default function SignatureEditor({ id }) {
               initialRender={initialRender}
               onRender={onRender}
               onFieldClick={onFieldClick}
-              onTextInput={onTextInput}
+              onTextInput={isReadOnly ? undefined : onTextInput}
               onStylePatch={onStylePatch}
+              onHistory={isReadOnly ? undefined : onHistory}
+              readOnly={isReadOnly}
             />
           </div>
         </div>

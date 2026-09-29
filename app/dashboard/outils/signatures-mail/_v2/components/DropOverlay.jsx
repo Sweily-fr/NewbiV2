@@ -22,14 +22,29 @@ import { ITEM_LABEL, ITEM_OF, ITEM_THE, moveItem, slotOf } from "../slots";
 const SNAP = 90;
 const SLOTS = ["header", "visual", "text", "side", "footer", "outside"];
 
-const hLine = (label, x, y, len, patch) => ({ label, orient: "h", x, y, len, patch });
-const vLine = (label, x, y, len, patch) => ({ label, orient: "v", x, y, len, patch });
+const hLine = (label, x, y, len, patch) => ({
+  label,
+  orient: "h",
+  x,
+  y,
+  len,
+  patch,
+});
+const vLine = (label, x, y, len, patch) => ({
+  label,
+  orient: "v",
+  x,
+  y,
+  len,
+  patch,
+});
 
 const bottom = (r) => r.y + r.h;
 const right = (r) => r.x + r.w;
 /** Deux éléments sur la même ligne (inline) : forte superposition verticale. */
 const sameRow = (a, b) =>
-  Math.min(bottom(a), bottom(b)) - Math.max(a.y, b.y) > 0.5 * Math.min(a.h, b.h);
+  Math.min(bottom(a), bottom(b)) - Math.max(a.y, b.y) >
+  0.5 * Math.min(a.h, b.h);
 
 /** Lignes de dépôt pour l'élément tiré, en coordonnées de la page. */
 export function targetsFor(field, st, g) {
@@ -39,58 +54,97 @@ export function targetsFor(field, st, g) {
   const targets = [];
   const B = g.body || g.sig;
 
+  // Emplacements sans élément affiché (hors élément tiré)
+  const emptySlot = (slot) =>
+    !(g.items || []).some((i) => i.slot === slot && i.item !== field && i.rect?.h > 0);
+
   for (const slot of SLOTS) {
     // Éléments affichés de l'emplacement, dans l'ordre de lecture
-    const shown = (g.items || [])
-      .filter((i) => i.slot === slot && i.item !== field && i.rect?.h > 0)
+    const inSlot = (g.items || [])
+      .filter((i) => i.slot === slot && i.rect?.h > 0)
       .filter((i, idx, arr) => arr.findIndex((j) => j.item === i.item) === idx)
-      .sort((a, b) => (sameRow(a.rect, b.rect) ? a.rect.x - b.rect.x : a.rect.y - b.rect.y));
+      .sort((a, b) =>
+        sameRow(a.rect, b.rect) ? a.rect.x - b.rect.x : a.rect.y - b.rect.y,
+      );
+    const shown = inSlot.filter((i) => i.item !== field);
+    const visibleNow = inSlot.map((i) => i.item);
     const area = g.slots?.[slot];
+    // Même ordre visible qu'aujourd'hui : ce ne serait pas un déplacement
+    const unchanged = (at) =>
+      current === slot &&
+      [
+        ...shown.slice(0, at).map((i) => i.item),
+        field,
+        ...shown.slice(at).map((i) => i.item),
+      ].join() === visibleNow.join();
     if (shown.length > 0) {
       const col = area || shown[0].rect;
       shown.forEach((entry, i) => {
+        if (unchanged(i)) return;
         const r = entry.rect;
         const prev = shown[i - 1];
-        // Avant cet élément
-        const patch = { slots: moveItem(slots, field, slot, { before: entry.item }) };
-        const noop = current === slot && slots[slot][slots[slot].indexOf(entry.item) - 1] === field;
-        if (!noop) {
-          if (prev && sameRow(prev.rect, r)) {
-            const x = (right(prev.rect) + r.x) / 2;
-            targets.push(vLine(`Avant ${ITEM_THE[entry.item]}`, x, Math.min(prev.rect.y, r.y), Math.max(bottom(prev.rect), bottom(r)) - Math.min(prev.rect.y, r.y), patch));
-          } else {
-            const y = prev ? (bottom(prev.rect) + r.y) / 2 : r.y - 5;
-            targets.push(hLine(`Au-dessus ${ITEM_OF[entry.item]}`, col.x, y, col.w, patch));
-          }
+        const patch = {
+          slots: moveItem(slots, field, slot, { before: entry.item }),
+        };
+        if (prev && sameRow(prev.rect, r)) {
+          const x = (right(prev.rect) + r.x) / 2;
+          const top = Math.min(prev.rect.y, r.y);
+          targets.push(
+            vLine(
+              `Avant ${ITEM_THE[entry.item]}`,
+              x,
+              top,
+              Math.max(bottom(prev.rect), bottom(r)) - top,
+              patch,
+            ),
+          );
+        } else {
+          const y = prev ? (bottom(prev.rect) + r.y) / 2 : r.y - 5;
+          targets.push(
+            hLine(`Au-dessus ${ITEM_OF[entry.item]}`, col.x, y, col.w, patch),
+          );
         }
       });
       // Après le dernier
       const last = shown[shown.length - 1];
-      const lastIdx = slots[slot].indexOf(last.item);
-      const noopEnd = current === slot && slots[slot][lastIdx + 1] === field;
-      if (!noopEnd) {
+      if (!unchanged(shown.length)) {
         targets.push(
-          hLine(`Sous ${ITEM_THE[last.item]}`, col.x, bottom(last.rect) + 5, col.w, {
-            slots: moveItem(slots, field, slot, { after: last.item }),
-          }),
+          hLine(
+            `Sous ${ITEM_THE[last.item]}`,
+            col.x,
+            bottom(last.rect) + 5,
+            col.w,
+            {
+              slots: moveItem(slots, field, slot, { after: last.item }),
+            },
+          ),
         );
       }
     } else if (current !== slot) {
       // Emplacement vide (l'élément tiré n'y est pas déjà seul) : une
       // ligne pour le créer
-      const create = (label, line) => targets.push({ ...line, label, create: true });
+      const create = (label, line) =>
+        targets.push({ ...line, label, create: true });
       const into = { slots: moveItem(slots, field, slot) };
       if (slot === "visual") {
-        create("Nouvelle colonne à gauche", vLine("", B.x - 16, B.y, B.h, { ...into, visualSide: "left" }));
+        create(
+          "Nouvelle colonne à gauche",
+          vLine("", B.x - 16, B.y, B.h, { ...into, visualSide: "left" }),
+        );
       } else if (slot === "side") {
-        create("Nouvelle colonne à droite", vLine("", right(B) + 16, B.y, B.h, into));
+        // Décalée si la colonne principale se crée aussi à droite
+        const x = right(B) + (emptySlot("text") && current !== "text" ? 44 : 16);
+        create("Nouvelle colonne à droite", vLine("", x, B.y, B.h, into));
       } else if (slot === "header") {
         const top = (g.frame || B).y;
         create("En-tête coloré", hLine("", B.x, top - 12, B.w, into));
       } else if (slot === "footer") {
         create("En bas", hLine("", B.x, bottom(B) + 10, B.w, into));
       } else if (slot === "outside" && g.frame) {
-        create("Sous le cadre", hLine("", g.frame.x, bottom(g.frame) + 12, g.frame.w, into));
+        create(
+          "Sous le cadre",
+          hLine("", g.frame.x, bottom(g.frame) + 12, g.frame.w, into),
+        );
       } else if (slot === "text") {
         create("Colonne principale", vLine("", right(B) + 16, B.y, B.h, into));
       }
@@ -102,7 +156,8 @@ export function targetsFor(field, st, g) {
   for (let i = 1; i < hs.length; i += 1) {
     const a = hs[i - 1];
     const b = hs[i];
-    const overlapX = Math.min(a.x + a.len, b.x + b.len) - Math.max(a.x, b.x) > 0;
+    const overlapX =
+      Math.min(a.x + a.len, b.x + b.len) - Math.max(a.x, b.x) > 0;
     if (overlapX && b.y - a.y < 12) b.y = a.y + 12;
   }
   return targets;
@@ -131,10 +186,20 @@ function nearest(targets, x, y) {
   return best;
 }
 
-export default function DropOverlay({ drag, style, pointer: relayed, release, onDrop, onCancel }) {
+export default function DropOverlay({
+  drag,
+  style,
+  pointer: relayed,
+  release,
+  onDrop,
+  onCancel,
+}) {
   const [own, setOwn] = useState(null);
   const pointer = own || relayed || { x: drag.x, y: drag.y };
-  const targets = useMemo(() => targetsFor(drag.field, style, drag), [drag, style]);
+  const targets = useMemo(
+    () => targetsFor(drag.field, style, drag),
+    [drag, style],
+  );
   const active = nearest(targets, pointer.x, pointer.y);
   const source = (drag.items || []).find((i) => i.item === drag.field)?.rect;
 
@@ -169,7 +234,12 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
       {source && (
         <div
           className="pointer-events-none fixed rounded-md border-2 border-dashed border-neutral-400"
-          style={{ left: source.x - 4, top: source.y - 4, width: source.w + 8, height: source.h + 8 }}
+          style={{
+            left: source.x - 4,
+            top: source.y - 4,
+            width: source.w + 8,
+            height: source.h + 8,
+          }}
         />
       )}
 
@@ -185,7 +255,11 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
           <div
             key={`${t.label}-${i}`}
             className={`pointer-events-none fixed rounded-full ${
-              on ? "bg-[#5a50ff]" : t.create ? "bg-[#5a50ff]/20" : "bg-[#5a50ff]/35"
+              on
+                ? "bg-[#5a50ff]"
+                : t.create
+                  ? "bg-[#5a50ff]/20"
+                  : "bg-[#5a50ff]/35"
             }`}
             style={lineStyle}
           >
@@ -193,11 +267,19 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
               <>
                 <span
                   className="absolute h-2.5 w-2.5 rounded-full border-2 border-[#5a50ff] bg-white"
-                  style={t.orient === "h" ? { left: -5, top: -3 } : { top: -5, left: -3 }}
+                  style={
+                    t.orient === "h"
+                      ? { left: -5, top: -3 }
+                      : { top: -5, left: -3 }
+                  }
                 />
                 <span
                   className="absolute h-2.5 w-2.5 rounded-full border-2 border-[#5a50ff] bg-white"
-                  style={t.orient === "h" ? { right: -5, top: -3 } : { bottom: -5, left: -3 }}
+                  style={
+                    t.orient === "h"
+                      ? { right: -5, top: -3 }
+                      : { bottom: -5, left: -3 }
+                  }
                 />
               </>
             )}
@@ -226,7 +308,10 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
       >
         {ITEM_LABEL[drag.field] || drag.field}
         {!active && (
-          <span className="font-normal text-neutral-300"> · approchez une ligne violette</span>
+          <span className="font-normal text-neutral-300">
+            {" "}
+            · approchez une ligne violette
+          </span>
         )}
       </div>
     </div>

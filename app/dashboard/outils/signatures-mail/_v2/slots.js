@@ -128,7 +128,8 @@ export function identityZone(st) {
 /** Rassemble photo + identité dans le bandeau, la colonne pleine, ou le texte. */
 export function setIdentityZone(st, zone) {
   let slots = cleanSlots(st.slots);
-  const identity = IDENTITY_ITEMS.filter((k) => slotOf(slots, k));
+  // Le trait sous le nom accompagne l'identité
+  const identity = [...IDENTITY_ITEMS, "accent"].filter((k) => slotOf(slots, k));
   const moveAll = (items, slot) => {
     for (const k of items) slots = moveItem(slots, k, slot);
   };
