@@ -9,6 +9,7 @@ import {
   UPDATE_SIGNATURE_V2,
   toInput,
 } from "../graphql";
+import { resetMovedBlocks } from "../slots";
 
 const SAVE_DELAY_MS = 800;
 /** Modifications rapprochées (frappe) regroupées en un seul pas d'annulation. */
@@ -141,7 +142,14 @@ export function useSignatureV2(id) {
     (patch) => {
       const prev = sigRef.current;
       if (!prev) return;
-      const next = merge(prev, patch);
+      // Un élément déplacé ailleurs perd la largeur réglée pour son ancienne
+      // place (déplacements par glisser-déposer comme par les réglages)
+      const next = merge(
+        prev,
+        patch.style
+          ? { ...patch, style: resetMovedBlocks(prev.style, patch.style) }
+          : patch,
+      );
       const h = history.current;
       const now = Date.now();
       if (now - h.lastPush > HISTORY_COALESCE_MS) {

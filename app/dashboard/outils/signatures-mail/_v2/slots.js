@@ -189,6 +189,45 @@ export const ELEMENT_ITEMS = {
   disclaimer: ["disclaimer"],
 };
 
+/** Bloc réglable (panneau d'élément) auquel appartient chaque élément. */
+const BLOCK_OF = Object.fromEntries(
+  Object.entries(ELEMENT_ITEMS).flatMap(([block, items]) =>
+    items.map((item) => [item, block]),
+  ),
+);
+
+/**
+ * Un élément qui change d'emplacement repart d'une largeur et d'un
+ * alignement automatiques : ceux réglés pour son ancienne place n'y ont
+ * plus de sens (une ligne de coordonnées emmenée dans la colonne photo y
+ * imposerait sinon la largeur de tout le bloc). Les espaces sont gardés.
+ * `patch` : modification du style, renvoyée complétée.
+ */
+export function resetMovedBlocks(prevStyle, patch) {
+  if (!patch?.slots || !prevStyle?.slots) return patch;
+  const blocks = patch.blocks ?? prevStyle.blocks;
+  if (!blocks || Object.keys(blocks).length === 0) return patch;
+  const moved = new Set(
+    Object.keys(BLOCK_OF)
+      .filter((item) => {
+        const before = slotOf(prevStyle.slots, item);
+        const after = slotOf(patch.slots, item);
+        return before && after && before !== after;
+      })
+      .map((item) => BLOCK_OF[item]),
+  );
+  if (![...moved].some((key) => blocks[key])) return patch;
+  const next = { ...blocks };
+  for (const key of moved) {
+    if (!next[key]) continue;
+    // eslint-disable-next-line no-unused-vars
+    const { width, align, ...rest } = next[key];
+    if (Object.keys(rest).length > 0) next[key] = rest;
+    else delete next[key];
+  }
+  return { ...patch, blocks: next };
+}
+
 /**
  * Éléments réellement affichés, selon le contenu de la signature (mêmes
  * règles que le rendu de l'API).
