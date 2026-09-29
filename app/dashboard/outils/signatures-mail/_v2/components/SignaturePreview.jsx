@@ -82,7 +82,7 @@ export default function SignaturePreview({
         <p className="text-xs text-muted-foreground">
           {dark
             ? "Simulation du mode sombre (Apple Mail, Outlook) : les textes sombres sont inversés, pas les images."
-            : "Cliquez sur un texte pour le modifier, faites glisser la photo, les réseaux ou le logo pour les déplacer."}
+            : "Cliquez sur un texte pour le modifier. Pour déplacer un bloc, tirez sa poignée ⠿ (au survol)."}
         </p>
         <ToggleGroup
           type="single"

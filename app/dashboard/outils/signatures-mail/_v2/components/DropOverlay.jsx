@@ -15,6 +15,8 @@ import { layoutState } from "./LayoutControls";
  */
 
 const LABELS = {
+  identity: "Nom et poste",
+  contact: "Coordonnées",
   photo: "Photo",
   social: "Réseaux",
   logo: "Logo",
@@ -23,8 +25,59 @@ const LABELS = {
   disclaimer: "Mention",
 };
 
+/** Blocs de la colonne de texte : « au-dessus de… / sous… ». */
+const TEXT_NAMES = {
+  identity: ["Au-dessus du nom", "Sous le nom"],
+  contact: ["Au-dessus des coordonnées", "Sous les coordonnées"],
+  social: ["Au-dessus des réseaux", "Sous les réseaux"],
+  logo: ["Au-dessus du logo", "Sous le logo"],
+};
+const TEXT_BLOCKS = ["identity", "contact", "social", "logo"];
+
+/** Blocs actuellement dans la colonne de texte. */
+function textColumn(st) {
+  const L = layoutState(st);
+  return {
+    identity: L.plain,
+    contact: true,
+    social: st.socialPosition === "text",
+    logo: st.logoPosition === "text",
+  };
+}
+
+/**
+ * Réordonner la colonne de texte : pour chaque autre bloc de la colonne,
+ * sa moitié haute = « au-dessus », sa moitié basse = « sous ».
+ */
+function reorderZones(field, st, blocks, add) {
+  const inColumn = textColumn(st);
+  const order = (st.textOrder?.length ? st.textOrder : TEXT_BLOCKS).filter(
+    (k) => k !== field,
+  );
+  const position =
+    field === "social" ? { socialPosition: "text" } : field === "logo" ? { logoPosition: "text" } : {};
+  for (const target of order) {
+    const r = blocks?.[target];
+    if (!inColumn[target] || !r) continue;
+    const at = order.indexOf(target);
+    const before = [...order.slice(0, at), field, ...order.slice(at)];
+    const after = [...order.slice(0, at + 1), field, ...order.slice(at + 1)];
+    const half = Math.max(18, r.h / 2);
+    add(TEXT_NAMES[target][0], { x: r.x, y: r.y - 4, w: r.w, h: half }, { ...position, textOrder: before });
+    add(TEXT_NAMES[target][1], { x: r.x, y: r.y + r.h - half + 4, w: r.w, h: half }, { ...position, textOrder: after });
+  }
+}
+
+/** Message quand un bloc n'a aucune zone possible. */
+export function noZoneHint(field, st) {
+  if (field === "identity" && !layoutState(st).plain) {
+    return "Sur un bloc de couleur : réglez « Bloc de couleur » dans Style";
+  }
+  return "Ajoutez un encadré pour déplacer cet élément";
+}
+
 /** Zones de dépôt proposées pour un bloc, en coordonnées de la page. */
-function zonesFor(field, st, S, P) {
+function zonesFor(field, st, S, P, blocks) {
   const L = layoutState(st);
   const outside = st.outside || [];
   const without = (k) => outside.filter((x) => x !== k);
@@ -48,16 +101,27 @@ function zonesFor(field, st, S, P) {
     return zones;
   }
 
+  if (field === "identity" || field === "contact") {
+    if (field === "identity" && !L.plain) return zones;
+    reorderZones(field, st, blocks, add);
+    return zones;
+  }
+
   if (field === "social" || field === "logo") {
     const key = field === "social" ? "socialPosition" : "logoPosition";
+    // Dans la colonne de texte : au-dessus / sous chaque bloc
+    reorderZones(field, st, blocks, add);
+    const reorder = zones.length > 0;
     const photoSide = L.plain && L.photoSide && P;
     const textX = photoSide && P.x < S.x + S.w / 2 ? P.x + P.w + 16 : S.x;
     const textW = photoSide ? S.x + S.w - textX - (P.x > S.x + S.w / 2 ? P.w + 16 : 0) : S.w;
-    add(
-      "Sous le texte",
-      { x: textX, y: S.y + S.h * 0.45, w: Math.max(120, textW * 0.7), h: S.h * 0.5 },
-      { [key]: "text" },
-    );
+    if (!reorder) {
+      add(
+        "Sous le texte",
+        { x: textX, y: S.y + S.h * 0.45, w: Math.max(120, textW * 0.7), h: S.h * 0.5 },
+        { [key]: "text" },
+      );
+    }
     if (photoSide) {
       add(
         "Sous la photo",
@@ -108,7 +172,7 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
   const [own, setOwn] = useState(null);
   const pointer = own || relayed || { x: drag.x, y: drag.y };
   const zones = useMemo(
-    () => zonesFor(drag.field, style, drag.sig, drag.photo),
+    () => zonesFor(drag.field, style, drag.sig, drag.photo, drag.blocks),
     [drag, style],
   );
   const hovered = zones.find((z) => inside(z.rect, pointer.x, pointer.y));
@@ -144,7 +208,7 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
           className="fixed rounded-md bg-neutral-900/90 px-3 py-1.5 text-xs text-white"
           style={{ left: pointer.x + 14, top: pointer.y + 14 }}
         >
-          Ajoutez un encadré pour déplacer cet élément
+          {noZoneHint(drag.field, style)}
         </div>
       )}
       {zones.map((z) => (

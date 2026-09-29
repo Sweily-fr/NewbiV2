@@ -106,6 +106,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       logoPosition
       footerStrip
       outside
+      textOrder
       elements {
         ${ELEMENT_STYLES}
       }

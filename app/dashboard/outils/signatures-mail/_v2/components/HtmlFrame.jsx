@@ -24,47 +24,54 @@ import { useEffect, useMemo, useRef, useState } from "react";
  *   en place (clic, frappe, Entrée ou Échap pour valider). Pendant la
  *   frappe, `frozen` garde le HTML affiché pour ne pas recharger l'iframe
  *   sous le curseur ; `onEditingChange(bool)` signale début et fin.
- * - `onDragStart({ field, sig, photo, x, y })` : un bloc déplaçable tiré de
- *   plus de 6 px ; les rectangles sont en coordonnées de la page. Le
+ * - `onDragStart({ field, sig, photo, blocks, x, y })` : un bloc tiré par sa
+ *   poignée (⠿, affichée au survol : déplacer ne se confond jamais avec
+ *   modifier un texte) ; les rectangles sont en coordonnées de la page. Le
  *   navigateur continue d'envoyer la souris à l'iframe où le bouton a été
  *   pressé : le script relaie donc aussi `onDragMove` / `onDragEnd`.
  */
 
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
 const EDITOR_SCRIPT = `(function(){
-var MOVABLE={photo:1,social:1,logo:1,cta:1,banner:1,disclaimer:1};
 var post=function(m){parent.postMessage(m,"*");};
-var start=null,editing=null,dragging=false;
+var editing=null,dragging=false,hover=null,hideT=null;
 function h(){post({type:"sig-height",height:document.documentElement.scrollHeight});}
 new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
-document.addEventListener("pointerdown",function(e){
-if(editing&&editing.contains(e.target))return;
-start={x:e.clientX,y:e.clientY,el:e.target.closest("[data-sig-field]")};
-},true);
-document.addEventListener("pointermove",function(e){
-if(dragging){post({type:"sig-drag-move",x:e.clientX,y:e.clientY});return;}
-if(!start||!start.el)return;
-var f=start.el.getAttribute("data-sig-field");
-if(!MOVABLE[f])return;
-if(Math.abs(e.clientX-start.x)+Math.abs(e.clientY-start.y)<6)return;
+var grip=document.createElement("div");
+grip.textContent="\u283F";grip.title="Déplacer";
+grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);";
+document.body.appendChild(grip);
+function showGrip(b){hover=b;var r=b.getBoundingClientRect();grip.style.left=Math.max(0,r.left+scrollX-20)+"px";grip.style.top=(r.top+scrollY)+"px";grip.style.display="block";}
+function hideGrip(){grip.style.display="none";hover=null;}
+document.addEventListener("mouseover",function(e){
+if(dragging||editing)return;
+clearTimeout(hideT);
+if(e.target===grip)return;
+var b=e.target.closest("[data-sig-block]");
+if(b)showGrip(b);else hideT=setTimeout(hideGrip,400);
+});
+document.addEventListener("mouseleave",function(){hideT=setTimeout(hideGrip,400);});
+grip.addEventListener("pointerdown",function(e){
+if(!hover)return;e.preventDefault();e.stopPropagation();
+var blocks={};
+document.querySelectorAll("[data-sig-block]").forEach(function(el){var k=el.getAttribute("data-sig-block");if(!blocks[k])blocks[k]=rect(el);});
 var sig=document.querySelector(".sig > table")||document.querySelector(".sig");
-var ph=document.querySelector('[data-sig-field="photo"]');
-post({type:"sig-drag",field:f,sig:rect(sig),photo:ph?rect(ph):null,x:e.clientX,y:e.clientY});
-start=null;dragging=true;e.preventDefault();
-},true);
-document.addEventListener("pointerup",function(e){
-if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});}
-setTimeout(function(){start=null;},0);
-},true);
+var field=hover.getAttribute("data-sig-block");
+dragging=true;hideGrip();
+post({type:"sig-drag",field:field,sig:rect(sig),photo:blocks.photo||null,blocks:blocks,x:e.clientX,y:e.clientY});
+});
+document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
+document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
 function startEdit(el,x,y){
-editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();
+editing=el;hideGrip();el.setAttribute("contenteditable","plaintext-only");el.focus();
 var r=document.caretRangeFromPoint&&document.caretRangeFromPoint(x,y);
 if(r&&el.contains(r.startContainer)){var s=getSelection();s.removeAllRanges();s.addRange(r);}
 post({type:"sig-editing",editing:true});
 }
 document.addEventListener("click",function(e){
+if(e.target===grip)return;
 if(e.target.closest("a"))e.preventDefault();
 if(editing&&editing.contains(e.target))return;
 e.stopPropagation();
@@ -135,6 +142,9 @@ export default function HtmlFrame({
             field: data.field,
             sig: toPage(data.sig),
             photo: toPage(data.photo),
+            blocks: Object.fromEntries(
+              Object.entries(data.blocks || {}).map(([k, r]) => [k, toPage(r)]),
+            ),
             x: data.x + box.left,
             y: data.y + box.top,
           });
@@ -170,7 +180,7 @@ export default function HtmlFrame({
     // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
     // une page d'erreur si l'adresse est incomplète).
     const editorCss = interactive
-      ? "[data-sig-field]{cursor:pointer;border-radius:3px;transition:box-shadow .12s;} [data-sig-field]:hover{box-shadow:0 0 0 2px #5a50ff;} a{cursor:pointer;} [data-sig-field=photo],[data-sig-field=social],[data-sig-field=logo],[data-sig-field=cta],[data-sig-field=banner],[data-sig-field=disclaimer]{cursor:grab;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
+      ? "[data-sig-field]{cursor:pointer;border-radius:3px;transition:box-shadow .12s;} [data-sig-field]:hover{box-shadow:0 0 0 2px #5a50ff;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
       : "";
     const editorScript = interactive ? `<script>${EDITOR_SCRIPT}</script>` : "";
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><meta name="color-scheme" content="${
