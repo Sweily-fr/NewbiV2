@@ -9,7 +9,7 @@ import {
 } from "@/src/components/ui/select";
 import { RotateCcw } from "lucide-react";
 import ColorField from "./ColorField";
-import { cleanSlots, slotOf } from "../slots";
+import { cleanSlots, slotOf, templateLayout } from "../slots";
 import { Choice, ColorRow, Row, SliderRow } from "./controls";
 import {
   ContactStyleControl,
@@ -73,8 +73,10 @@ const LAYOUT_KEYS = ["slots", "visualSide", "visualFill", "headerPhoto", "header
  * Remet chaque élément à sa place dans le modèle, après des déplacements.
  * N'apparaît que si la disposition s'en écarte.
  */
-function ResetLayout({ st, template, setStyle }) {
-  const defaults = template?.defaults;
+function ResetLayout({ sig, template, setStyle }) {
+  const st = sig.style;
+  // Sans photo, la disposition de référence est celle adaptée au contenu
+  const defaults = templateLayout(template?.defaults, sig);
   if (!defaults?.slots) return null;
   const same = LAYOUT_KEYS.every(
     (k) => JSON.stringify(cleanValue(st[k])) === JSON.stringify(cleanValue(defaults[k])),
@@ -160,7 +162,7 @@ export default function StylePanel({ sig, update, catalog, template }) {
       </Section>
 
       <Section title="Disposition">
-        <ResetLayout st={st} template={template} setStyle={setStyle} />
+        <ResetLayout sig={sig} template={template} setStyle={setStyle} />
         <IdentityZoneControl st={st} setStyle={setStyle} />
         <PhotoLayoutControls st={st} setStyle={setStyle} />
         <DividerControl st={st} setStyle={setStyle} />

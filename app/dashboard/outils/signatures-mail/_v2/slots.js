@@ -94,6 +94,27 @@ export function moveItem(slots, item, slot, { before, after, first } = {}) {
   return next;
 }
 
+/**
+ * Disposition d'un modèle adaptée au contenu de la signature. Les modèles
+ * sont pensés avec une photo : sans elle, la colonne photo ne garde que ce
+ * qui peut l'occuper (le nom sur une colonne de couleur, ou le logo) ; les
+ * réseaux et le logo reviennent sous le texte au lieu de flotter seuls
+ * dans une colonne vide. Même règle que l'API pour les anciens réglages.
+ */
+export function templateLayout(defaults, sig) {
+  const slots = defaults?.slots;
+  if (!slots || sig?.images?.photo?.url) return defaults;
+  const visual = slots.visual || [];
+  if (visual.some((k) => IDENTITY_ITEMS.includes(k))) return defaults;
+  if (sig?.images?.logo?.url && visual.includes("logo")) return defaults;
+  let next = cleanSlots(slots);
+  if (visual.includes("social")) {
+    next = moveItem(next, "social", "text", { before: "logo" });
+  }
+  if (visual.includes("logo")) next = moveItem(next, "logo", "text");
+  return { ...defaults, slots: next };
+}
+
 // ── Photo ──────────────────────────────────────────────────────────────
 
 /** Place de la photo : left, right, top (au-dessus du texte), header, autre. */

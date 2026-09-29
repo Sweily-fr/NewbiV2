@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { RENDER_TEMPLATE_V2 } from "../graphql";
+import { templateLayout } from "../slots";
 import HtmlFrame from "./HtmlFrame";
 
 const THUMB_WIDTH = 560;
@@ -94,10 +95,10 @@ export default function TemplateGallery({ sig, update, catalog }) {
             selected={sig.templateId === t.id}
             onSelect={(templateId) => {
               // Le modèle apporte sa typographie et sa mise en page de départ
-              // (tout reste réglable ensuite) ; les couleurs de l'utilisateur
-              // ne sont jamais touchées.
+              // (tout reste réglable ensuite), adaptée à la présence d'une
+              // photo ; les couleurs de l'utilisateur ne sont jamais touchées.
               const preset = Object.fromEntries(
-                Object.entries(t.defaults || t.preset || {}).filter(
+                Object.entries(templateLayout(t.defaults, sig) || t.preset || {}).filter(
                   ([key, value]) => key !== "__typename" && value !== null && value !== undefined,
                 ),
               );
