@@ -6,9 +6,9 @@ import { Switch } from "@/src/components/ui/switch";
 import { Textarea } from "@/src/components/ui/textarea";
 import ColorField from "./ColorField";
 
-function Section({ title, description, enabled, onToggle, children }) {
+function Section({ id, title, description, enabled, onToggle, children }) {
   return (
-    <div className="rounded-lg border p-3 space-y-3">
+    <div id={id} tabIndex={-1} className="rounded-lg border p-3 space-y-3 outline-none">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-medium">{title}</h3>
@@ -45,6 +45,7 @@ export default function ExtrasPanel({ sig, update }) {
   return (
     <div className="space-y-4">
       <Section
+        id="sig-field-cta"
         title="Bouton d'action"
         description="Un lien mis en avant : prise de rendez-vous, site, catalogue…"
         enabled={cta.enabled}
@@ -113,6 +114,7 @@ export default function ExtrasPanel({ sig, update }) {
       </Section>
 
       <Section
+        id="sig-field-disclaimer"
         title="Mention"
         description="Confidentialité, mention légale ou message écologique, en petit."
         enabled={disclaimer.enabled}

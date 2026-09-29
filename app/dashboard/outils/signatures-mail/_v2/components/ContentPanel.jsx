@@ -39,10 +39,11 @@ function Field({ label, children, hint }) {
   );
 }
 
-function TextField({ label, value, onChange, placeholder, hint, type = "text", maxLength }) {
+function TextField({ id, label, value, onChange, placeholder, hint, type = "text", maxLength }) {
   return (
     <Field label={label} hint={hint}>
       <Input
+        id={id}
         type={type}
         value={value || ""}
         placeholder={placeholder}
@@ -57,7 +58,7 @@ function TextField({ label, value, onChange, placeholder, hint, type = "text", m
  * Zone d'image : clic ou glisser-déposer, envoi immédiat à l'API qui
  * recadre, optimise et rattache l'image à la signature.
  */
-function ImageField({ id, kind, label, hint, image, onChanged, aspect = "square" }) {
+function ImageField({ id, kind, label, hint, image, onChanged, aspect = "square", fieldId }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -104,7 +105,7 @@ function ImageField({ id, kind, label, hint, image, onChanged, aspect = "square"
 
   return (
     <Field label={label} hint={hint}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3" id={fieldId}>
         <button
           type="button"
           disabled={busy}
@@ -244,6 +245,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
       <Section title="Identité">
         <div className="grid grid-cols-2 gap-3">
           <TextField
+            id="sig-field-firstName"
             label="Prénom"
             value={identity.firstName}
             onChange={(v) => update({ identity: { firstName: v } })}
@@ -257,6 +259,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
           />
         </div>
         <TextField
+          id="sig-field-jobTitle"
           label="Poste"
           value={identity.jobTitle}
           placeholder="Directrice artistique"
@@ -272,6 +275,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
             maxLength={120}
           />
           <TextField
+            id="sig-field-company"
             label="Entreprise"
             value={identity.company}
             onChange={(v) => update({ identity: { company: v } })}
@@ -279,6 +283,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
           />
         </div>
         <TextField
+          id="sig-field-tagline"
           label="Accroche"
           value={identity.tagline}
           placeholder="Une phrase, en italique sous le nom"
@@ -289,6 +294,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
 
       <Section title="Coordonnées">
         <TextField
+          id="sig-field-email"
           label="E-mail"
           type="email"
           value={contact.email}
@@ -297,6 +303,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
         />
         <div className="grid grid-cols-2 gap-3">
           <TextField
+            id="sig-field-phone"
             label="Téléphone"
             type="tel"
             value={contact.phone}
@@ -305,6 +312,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
             maxLength={40}
           />
           <TextField
+            id="sig-field-mobile"
             label="Mobile"
             type="tel"
             value={contact.mobile}
@@ -314,6 +322,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
           />
         </div>
         <TextField
+          id="sig-field-website"
           label="Site web"
           value={contact.website}
           placeholder="votre-site.fr"
@@ -321,6 +330,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
           maxLength={300}
         />
         <TextField
+          id="sig-field-address"
           label="Adresse"
           value={contact.address}
           placeholder="12 rue des Lilas, 75011 Paris"
@@ -330,6 +340,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
       </Section>
 
       <Section title="Réseaux sociaux">
+        <div id="sig-field-social" tabIndex={-1} className="outline-none" />
         <SocialLinks social={social} networks={catalog?.networks || []} update={update} />
       </Section>
 
@@ -338,6 +349,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
           <ImageField
             id={id}
             kind="PHOTO"
+            fieldId="sig-field-photo"
             label="Photo"
             hint="Recadrée automatiquement en carré, nette sur écran retina."
             image={images.photo}
@@ -348,6 +360,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
           <ImageField
             id={id}
             kind="LOGO"
+            fieldId="sig-field-logo"
             label="Logo"
             hint="Privilégiez un PNG à fond transparent : il s'adapte à tous les clients mail, y compris en mode sombre."
             image={images.logo}
@@ -358,6 +371,7 @@ export default function ContentPanel({ id, sig, update, replace, catalog, templa
         <ImageField
           id={id}
           kind="BANNER"
+          fieldId="sig-field-banner"
           label="Bandeau"
           hint="Image large affichée sous la signature (activez-la dans Extras)."
           image={images.banner}
