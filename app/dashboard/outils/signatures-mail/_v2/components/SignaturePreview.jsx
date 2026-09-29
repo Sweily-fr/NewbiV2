@@ -23,7 +23,13 @@ function useDebounced(value, delay) {
  * une iframe isolée, avec une simulation du mode sombre des clients mail.
  * Le dernier rendu reste affiché pendant le calcul du suivant.
  */
-export default function SignaturePreview({ id, sig, initialRender, onRender }) {
+export default function SignaturePreview({
+  id,
+  sig,
+  initialRender,
+  onRender,
+  onFieldClick,
+}) {
   const [dark, setDark] = useState(false);
   const input = useMemo(() => toInput(sig), [sig]);
   const debouncedInput = useDebounced(input, RENDER_DELAY_MS);
@@ -60,7 +66,7 @@ export default function SignaturePreview({ id, sig, initialRender, onRender }) {
         <p className="text-xs text-muted-foreground">
           {dark
             ? "Simulation du mode sombre (Apple Mail, Outlook) : les textes sombres sont inversés, pas les images."
-            : "Aperçu identique au HTML copié, sans aucun style de l'application."}
+            : "Aperçu identique au HTML copié. Cliquez sur un élément pour modifier son champ."}
         </p>
         <ToggleGroup
           type="single"
@@ -114,11 +120,12 @@ export default function SignaturePreview({ id, sig, initialRender, onRender }) {
           </p>
         </div>
         <HtmlFrame
-          html={render?.html || ""}
+          html={render?.previewHtml || render?.html || ""}
           dark={dark}
           padding={16}
           className="h-[calc(100%-150px)] w-full border-0"
           title="Aperçu de la signature"
+          onFieldClick={onFieldClick}
         />
       </div>
     </div>

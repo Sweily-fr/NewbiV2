@@ -90,6 +90,7 @@ export const SIGNATURE_V2_FIELDS = gql`
 export const RENDER_FIELDS = gql`
   fragment RenderV2Fields on SignatureRenderV2 {
     html
+    previewHtml
     text
     chars
     warnings

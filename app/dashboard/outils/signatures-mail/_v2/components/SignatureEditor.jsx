@@ -54,6 +54,25 @@ import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
 
+/** Onglet du panneau qui porte chaque champ de l'aperçu. */
+const FIELD_TAB = {
+  firstName: "content",
+  jobTitle: "content",
+  company: "content",
+  tagline: "content",
+  phone: "content",
+  mobile: "content",
+  email: "content",
+  website: "content",
+  address: "content",
+  social: "content",
+  photo: "content",
+  logo: "content",
+  banner: "content",
+  cta: "extras",
+  disclaimer: "extras",
+};
+
 function SaveStatus({ status }) {
   const map = {
     idle: null,
@@ -93,6 +112,25 @@ export default function SignatureEditor({ id }) {
   }, [initialRender, render]);
 
   const onRender = useCallback((r) => setRender(r), []);
+
+  // Clic sur un élément de l'aperçu : on ouvre l'onglet concerné puis on
+  // amène et focalise le champ (une fois le panneau rendu).
+  const onFieldClick = useCallback((field) => {
+    const target = FIELD_TAB[field];
+    if (!target) return;
+    setTab(target);
+    const focus = (attempt = 0) => {
+      const el = document.getElementById(`sig-field-${field}`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        if (typeof el.focus === "function") el.focus({ preventScroll: true });
+        if (typeof el.select === "function") el.select();
+      } else if (attempt < 10) {
+        setTimeout(() => focus(attempt + 1), 60);
+      }
+    };
+    setTimeout(() => focus(), 30);
+  }, []);
 
   const [duplicate] = useMutation(DUPLICATE_SIGNATURE_V2, {
     refetchQueries: [{ query: SIGNATURES_V2 }],
@@ -303,7 +341,13 @@ export default function SignatureEditor({ id }) {
 
         <div className="min-h-0 flex-1 p-6">
           <div className="mx-auto h-full max-w-3xl">
-            <SignaturePreview id={id} sig={sig} initialRender={initialRender} onRender={onRender} />
+            <SignaturePreview
+              id={id}
+              sig={sig}
+              initialRender={initialRender}
+              onRender={onRender}
+              onFieldClick={onFieldClick}
+            />
           </div>
         </div>
 
