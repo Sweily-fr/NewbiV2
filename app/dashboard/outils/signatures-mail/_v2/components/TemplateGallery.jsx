@@ -69,7 +69,9 @@ function TemplateCard({ template, style, selected, onSelect }) {
 export default function TemplateGallery({ sig, update, catalog }) {
   const templates = catalog?.templates || [];
   const style = Object.fromEntries(
-    Object.entries(sig.style || {}).filter(([key]) => key !== "__typename"),
+    // Les réglages par élément ne servent pas aux vignettes (et portent des
+    // champs GraphQL techniques refusés en entrée)
+    Object.entries(sig.style || {}).filter(([key]) => key !== "__typename" && key !== "elements"),
   );
 
   return (

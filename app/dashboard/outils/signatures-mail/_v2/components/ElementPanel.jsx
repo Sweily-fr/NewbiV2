@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Choice, ColorRow, Row, SliderRow } from "./StylePanel";
+import { Choice, ColorRow, PhotoBorderControls, Row, SliderRow } from "./StylePanel";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 
@@ -407,6 +407,7 @@ export default function ElementPanel({
               step={4}
               onChange={(v) => setStyle({ photoSize: v })}
             />
+            <PhotoBorderControls st={st} setStyle={setStyle} />
           </Group>
         </>
       );

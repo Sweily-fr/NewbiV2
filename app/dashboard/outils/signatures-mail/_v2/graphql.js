@@ -88,6 +88,11 @@ export const SIGNATURE_V2_FIELDS = gql`
       separatorColor
       spacing
       align
+      frame
+      frameColor
+      radius
+      photoBorder
+      photoBorderColor
       elements {
         ${ELEMENT_STYLES}
       }
@@ -146,6 +151,7 @@ export const SIGNATURE_CATALOG_V2 = gql`
           photo
           logo
           align
+          frame
         }
         preset {
           fontFamily

@@ -83,6 +83,28 @@ function Section({ title, children }) {
   );
 }
 
+/** Contour de la photo : épaisseur (0 = aucun) et couleur. */
+export function PhotoBorderControls({ st, setStyle }) {
+  return (
+    <>
+      <SliderRow
+        label="Contour"
+        value={st.photoBorder}
+        min={0}
+        max={6}
+        onChange={(v) => setStyle({ photoBorder: v })}
+      />
+      {st.photoBorder > 0 && (
+        <ColorRow
+          label="Couleur du contour"
+          value={st.photoBorderColor || st.primaryColor}
+          onChange={(v) => setStyle({ photoBorderColor: v })}
+        />
+      )}
+    </>
+  );
+}
+
 /**
  * Panneau « Style » : tout ce qui n'est pas du contenu.
  * Les valeurs possibles viennent du catalogue de l'API, la police est
@@ -165,6 +187,61 @@ export default function StylePanel({ sig, update, catalog, template }) {
         />
       </Section>
 
+      <Section title="Encadré">
+        {template?.supports?.frame !== false ? (
+          <Row label="Style">
+            <Select value={st.frame} onValueChange={(v) => setStyle({ frame: v })}>
+              <SelectTrigger size="sm" className="h-8 w-44 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun</SelectItem>
+                <SelectItem value="outline">Contour fin</SelectItem>
+                <SelectItem value="soft">Fond teinté</SelectItem>
+                <SelectItem value="accent-left">Barre à gauche</SelectItem>
+                <SelectItem value="accent-top">Barre en haut</SelectItem>
+              </SelectContent>
+            </Select>
+          </Row>
+        ) : (
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Ce modèle dessine déjà son propre cadre : réglez son arrondi ci-dessous.
+          </p>
+        )}
+        {template?.supports?.frame !== false && st.frame !== "none" && (
+          <Row
+            label="Couleur de l'encadré"
+            hint="Sans choix, elle suit la couleur principale (ou les traits pour le contour)."
+          >
+            <div className="flex items-center gap-2">
+              {st.frameColor && (
+                <button
+                  type="button"
+                  onClick={() => setStyle({ frameColor: "" })}
+                  className="text-[11px] text-muted-foreground underline cursor-pointer"
+                >
+                  Auto
+                </button>
+              )}
+              <ColorField
+                value={st.frameColor || (st.frame === "outline" ? st.separatorColor : st.primaryColor)}
+                onChange={(v) => setStyle({ frameColor: v })}
+              />
+            </div>
+          </Row>
+        )}
+        {(template?.supports?.frame === false || ["outline", "soft"].includes(st.frame)) && (
+          <SliderRow
+            label="Arrondi"
+            value={st.radius}
+            min={0}
+            max={24}
+            step={2}
+            onChange={(v) => setStyle({ radius: v })}
+          />
+        )}
+      </Section>
+
       {template?.supports?.photo !== false && (
         <Section title="Photo">
           <Row label="Forme">
@@ -186,6 +263,7 @@ export default function StylePanel({ sig, update, catalog, template }) {
             step={4}
             onChange={(v) => setStyle({ photoSize: v })}
           />
+          <PhotoBorderControls st={st} setStyle={setStyle} />
         </Section>
       )}
 
