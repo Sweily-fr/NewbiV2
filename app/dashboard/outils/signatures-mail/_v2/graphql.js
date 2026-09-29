@@ -134,6 +134,17 @@ export const SIGNATURE_CATALOG_V2 = gql`
           logo
           align
         }
+        preset {
+          fontFamily
+          fontSize
+          photoShape
+          photoSize
+          logoWidth
+          iconStyle
+          iconSize
+          spacing
+          showContactIcons
+        }
       }
       networks {
         id

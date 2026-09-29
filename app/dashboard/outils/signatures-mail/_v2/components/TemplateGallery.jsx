@@ -75,8 +75,8 @@ export default function TemplateGallery({ sig, update, catalog }) {
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Le modèle fixe la disposition. Vos textes, couleurs et images sont conservés quand vous en
-        changez.
+        Chaque modèle apporte sa disposition et sa typographie. Vos textes, couleurs et images
+        sont conservés quand vous en changez.
       </p>
       <div className="grid grid-cols-1 gap-3">
         {templates.map((t) => (
@@ -85,7 +85,16 @@ export default function TemplateGallery({ sig, update, catalog }) {
             template={t}
             style={style}
             selected={sig.templateId === t.id}
-            onSelect={(templateId) => update({ templateId })}
+            onSelect={(templateId) => {
+              // Le modèle apporte sa typographie (police, tailles, formes) ;
+              // les couleurs de l'utilisateur ne sont jamais touchées.
+              const preset = Object.fromEntries(
+                Object.entries(t.preset || {}).filter(
+                  ([key, value]) => key !== "__typename" && value !== null && value !== undefined,
+                ),
+              );
+              update({ templateId, style: preset });
+            }}
           />
         ))}
       </div>
