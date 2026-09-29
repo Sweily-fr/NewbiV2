@@ -147,18 +147,47 @@ export function layoutDiffers(st, defaults) {
   );
 }
 
+/** Blocs réglés un à un, ou colonnes de largeur choisie ? */
+export function hasBlockSettings(st) {
+  return (
+    Object.keys(st?.blocks || {}).length > 0 ||
+    Object.values(st?.columns || {}).some((w) => w > 0)
+  );
+}
+
 /**
- * La signature s'écarte-t-elle de son modèle : éléments déplacés ou traits
- * sur mesure ? (Changer de modèle remplacerait ces réglages.)
+ * La signature s'écarte-t-elle de son modèle : éléments déplacés, traits,
+ * blocs ou colonnes sur mesure ? (Changer de modèle remplacerait ces
+ * réglages.)
  */
 export function layoutCustomized(sig, template) {
   const defaults = templateLayout(template?.defaults, sig);
   if (!defaults?.slots) return false;
   return (
     layoutDiffers(sig.style, defaults) ||
-    LINE_KEYS.some((k) => (sig.style?.[k] || 0) > 0)
+    LINE_KEYS.some((k) => (sig.style?.[k] || 0) > 0) ||
+    hasBlockSettings(sig.style)
   );
 }
+
+/**
+ * Éléments de l'aperçu (data-sig-block) qui composent chaque bloc réglable,
+ * c'est-à-dire chaque panneau d'élément.
+ */
+export const ELEMENT_ITEMS = {
+  name: ["firstName", "lastName"],
+  jobTitle: ["title"],
+  company: ["company"],
+  tagline: ["tagline"],
+  contact: ["phone", "mobile", "email", "website", "address"],
+  social: ["social"],
+  photo: ["photo"],
+  logo: ["logo"],
+  accent: ["accent"],
+  cta: ["cta"],
+  banner: ["banner"],
+  disclaimer: ["disclaimer"],
+};
 
 // ── Photo ──────────────────────────────────────────────────────────────
 

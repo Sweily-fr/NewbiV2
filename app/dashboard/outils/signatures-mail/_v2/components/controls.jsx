@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ChevronDown, Plus } from "lucide-react";
+import { AlertTriangle, ChevronDown, Plus, RotateCcw } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
@@ -306,6 +306,46 @@ export function LengthRow({
         </div>
       )}
     </Row>
+  );
+}
+
+/** Lien discret à droite d'un libellé, pour revenir à une valeur auto. */
+export function ResetLink({ onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+    >
+      <RotateCcw size={11} />
+      {children}
+    </button>
+  );
+}
+
+/**
+ * Espace ajouté (+) ou retiré (−) autour d'un bloc, en px ; 0 = l'espace
+ * prévu par le modèle.
+ */
+export function OffsetRow({ label, value, onChange, min = -24, max = 64 }) {
+  const shown =
+    value === 0 ? "Auto" : `${value > 0 ? "+" : "−"}${Math.abs(value)} px`;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <Label className={FIELD_LABEL}>{label}</Label>
+        <span className="text-xs font-medium tabular-nums text-[#242529] dark:text-white">
+          {shown}
+        </span>
+      </div>
+      <Slider
+        value={[value]}
+        min={min}
+        max={max}
+        step={2}
+        onValueChange={(v) => onChange(v[0])}
+      />
+    </div>
   );
 }
 

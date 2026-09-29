@@ -520,6 +520,33 @@ export function SocialRowsControl({ st, setStyle, count }) {
   );
 }
 
+/**
+ * Largeur des colonnes (photo, texte, droite) : ajustée au contenu ou sur
+ * mesure. Seules les colonnes présentes sont proposées.
+ */
+export function ColumnWidthControls({ st, setStyle }) {
+  const L = layoutState(st);
+  const hasSide = (st.slots?.side || []).length > 0;
+  const columns = [
+    L.hasVisual && { key: "visual", label: "Colonne photo", min: 40, max: 600, initial: 140 },
+    { key: "text", label: "Colonne de texte", min: 80, max: 640, initial: 320 },
+    hasSide && { key: "side", label: "Colonne de droite", min: 40, max: 400, initial: 140 },
+  ].filter(Boolean);
+  return columns.map((c) => (
+    <LengthRow
+      key={c.key}
+      label={`Largeur : ${c.label.toLowerCase()}`}
+      autoLabel="Ajustée au contenu"
+      value={st.columns?.[c.key] || 0}
+      onChange={(v) => setStyle({ columns: { ...(st.columns || {}), [c.key]: v } })}
+      min={c.min}
+      max={c.max}
+      step={10}
+      initial={c.initial}
+    />
+  ));
+}
+
 const OUTSIDE_LABELS = {
   social: "Réseaux",
   logo: "Logo",

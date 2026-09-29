@@ -12,6 +12,7 @@ import { RotateCcw } from "lucide-react";
 import {
   LAYOUT_KEYS,
   cleanSlots,
+  hasBlockSettings,
   layoutDiffers,
   slotOf,
   templateLayout,
@@ -21,12 +22,14 @@ import {
   ColorRow,
   EmptyHint,
   LengthRow,
+  ResetLink,
   Row,
   Section,
   SliderRow,
 } from "./controls";
 import {
   AccentControls,
+  ColumnWidthControls,
   ContactStyleControl,
   DividerControls,
   FooterStripControl,
@@ -40,21 +43,7 @@ import {
   layoutState,
 } from "./LayoutControls";
 
-export { Choice, ColorRow, Row, SliderRow };
-
-/** Lien discret à droite d'un libellé, pour revenir à une valeur auto. */
-export function ResetLink({ onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
-    >
-      <RotateCcw size={11} />
-      {children}
-    </button>
-  );
-}
+export { Choice, ColorRow, ResetLink, Row, SliderRow };
 
 /** Contour de la photo : épaisseur (0 = aucun) et couleur. */
 export function PhotoBorderControls({ st, setStyle }) {
@@ -94,14 +83,19 @@ function ResetLayout({ sig, template, setStyle }) {
   // Sans photo, la disposition de référence est celle adaptée au contenu
   const defaults = templateLayout(template?.defaults, sig);
   if (!defaults?.slots) return null;
-  if (!layoutDiffers(st, defaults)) return null;
+  if (!layoutDiffers(st, defaults) && !hasBlockSettings(st)) return null;
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border bg-[#F5F5F5] px-3 py-2.5 dark:bg-neutral-900">
       <p className="text-xs text-muted-foreground">Disposition personnalisée</p>
       <button
         type="button"
         onClick={() =>
-          setStyle(Object.fromEntries(LAYOUT_KEYS.map((k) => [k, cleanValue(defaults[k])])))
+          setStyle({
+            ...Object.fromEntries(LAYOUT_KEYS.map((k) => [k, cleanValue(defaults[k])])),
+            // Blocs et colonnes reviennent aussi aux dimensions du modèle
+            blocks: {},
+            columns: {},
+          })
         }
         className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
       >
@@ -298,6 +292,7 @@ export default function StylePanel({
           count={sig.social.filter((s) => s.url?.trim()).length}
         />
         <LogoPositionControl st={st} setStyle={setStyle} />
+        <ColumnWidthControls st={st} setStyle={setStyle} />
         <Row label="Espacement">
           <Choice
             value={st.spacing}

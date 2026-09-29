@@ -139,6 +139,8 @@ export const SIGNATURE_V2_FIELDS = gql`
       frameThickness
       frameWidth
       frameBarLength
+      blocks
+      columns
       elements {
         ${ELEMENT_STYLES}
       }

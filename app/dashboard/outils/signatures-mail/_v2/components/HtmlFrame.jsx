@@ -104,6 +104,43 @@ if(!editing&&(e.metaKey||e.ctrlKey)&&(k==="z"||k==="y")){e.preventDefault();post
 document.addEventListener("focusout",function(e){
 if(editing&&e.target===editing){editing.removeAttribute("contenteditable");editing=null;post({type:"sig-editing",editing:false});}
 });
+var sel=null,rs=null;
+var box=document.createElement("div");
+box.style.cssText="position:absolute;display:none;pointer-events:none;border:2px solid #5a50ff;border-radius:5px;z-index:9;";
+var chip=document.createElement("div");
+chip.style.cssText="position:absolute;left:-2px;top:-21px;background:#5a50ff;color:#fff;font:11px/19px Arial,sans-serif;padding:0 7px;border-radius:4px 4px 0 0;white-space:nowrap;";
+box.appendChild(chip);
+var knob=document.createElement("div");
+knob.title="Tirer pour changer la largeur";
+knob.style.cssText="position:absolute;right:-7px;top:50%;width:10px;height:24px;margin-top:-12px;background:#fff;border:2px solid #5a50ff;border-radius:4px;cursor:ew-resize;pointer-events:auto;display:none;touch-action:none;";
+box.appendChild(knob);
+var tip=document.createElement("div");
+tip.style.cssText="position:absolute;right:-7px;bottom:-24px;background:#1f1f1f;color:#fff;font:11px/19px Arial,sans-serif;padding:0 7px;border-radius:4px;display:none;white-space:nowrap;";
+box.appendChild(tip);
+document.body.appendChild(box);
+function selEls(){var out=[];if(!sel)return out;(sel.items||[]).forEach(function(it){document.querySelectorAll('[data-sig-block="'+it+'"]').forEach(function(el){out.push(el);});});return out;}
+function union(els){var r=null;els.forEach(function(el){var c=crect(el);if(!c.w&&!c.h)return;if(!r)r={l:c.x,t:c.y,r:c.x+c.w,b:c.y+c.h};else{r.l=Math.min(r.l,c.x);r.t=Math.min(r.t,c.y);r.r=Math.max(r.r,c.x+c.w);r.b=Math.max(r.b,c.y+c.h);}});return r;}
+function selRect(){var els=selEls(),r=union(els),w=sel&&sel.resize&&sel.resize.width;
+if(!r||!w||!els[0])return r;var t=els[0].closest('table[width="'+w+'"]');if(!t)return r;var c=crect(t);r.l=Math.min(r.l,c.x);r.r=Math.max(r.r,c.x+c.w);return r;}
+function drawSel(){if(rs)return;var r=selRect();if(!r){box.style.display="none";return;}
+box.style.display="block";box.style.left=(r.l+scrollX-5)+"px";box.style.top=(r.t+scrollY-5)+"px";box.style.width=(r.r-r.l+10)+"px";box.style.height=(r.b-r.t+10)+"px";
+chip.textContent=sel.label||"";knob.style.display=sel.resize&&!window.SIG_READONLY?"block":"none";}
+function live(w){var k=sel&&sel.resize&&sel.resize.kind;selEls().forEach(function(el){
+if(k==="square"||k==="image"){var im=el.querySelector("img");if(!im)return;var ratio=k==="square"?1:(im.naturalWidth?im.naturalHeight/im.naturalWidth:(im.height/Math.max(1,im.width)));im.style.width=w+"px";im.style.height=Math.round(w*ratio)+"px";}
+else if(k==="bar"){var td=el.querySelector("td[bgcolor]");if(td){td.style.width=w+"px";td.setAttribute("width",w);}}
+});}
+knob.addEventListener("pointerdown",function(e){if(!sel||!sel.resize)return;e.preventDefault();e.stopPropagation();
+var r=selRect();if(!r)return;var w=Math.round(r.r-r.l);rs={x:e.clientX,w:w,cur:w};knob.setPointerCapture(e.pointerId);hideGrip();tip.style.display="block";tip.textContent=w+" px";});
+knob.addEventListener("pointermove",function(e){if(!rs)return;var w=Math.round(rs.w+(e.clientX-rs.x));w=Math.max(sel.resize.min,Math.min(sel.resize.max,w));rs.cur=w;tip.textContent=w+" px";box.style.width=(w+10)+"px";live(w);});
+function endResize(){if(!rs)return;var w=rs.cur,changed=w!==rs.w;rs=null;tip.style.display="none";if(changed)post({type:"sig-resize",width:w});else drawSel();}
+knob.addEventListener("pointerup",endResize);knob.addEventListener("pointercancel",endResize);
+knob.addEventListener("click",function(e){e.stopPropagation();});
+new ResizeObserver(drawSel).observe(document.body);document.addEventListener("load",drawSel,true);window.addEventListener("resize",drawSel);
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!editing&&sel)post({type:"sig-escape"});});
+window.addEventListener("message",function(e){if(e.source!==parent)return;var d=e.data||{};
+if(d.type==="sig-html"){if(editing)return;var root=document.querySelector(".sig");if(root)root.innerHTML=d.html||"";hideGrip();drawSel();h();}
+if(d.type==="sig-select"){sel=d.selection||null;drawSel();}
+});
 })();`;
 export default function HtmlFrame({
   html,
@@ -122,6 +159,9 @@ export default function HtmlFrame({
   onDragEnd,
   onHistory,
   onOverflow,
+  onResize,
+  onEscape,
+  selection = null,
   readOnly = false,
   frozen = false,
 }) {
@@ -145,6 +185,12 @@ export default function HtmlFrame({
       }
       if (data && data.type === "sig-history") {
         onHistory?.(Boolean(data.redo));
+      }
+      if (data && data.type === "sig-resize" && Number.isFinite(data.width)) {
+        onResize?.(Math.round(data.width));
+      }
+      if (data && data.type === "sig-escape") {
+        onEscape?.();
       }
       if (data && (data.type === "sig-drag-move" || data.type === "sig-drag-end")) {
         const box = frameRef.current?.getBoundingClientRect();
@@ -190,6 +236,8 @@ export default function HtmlFrame({
     onDragEnd,
     onHistory,
     onOverflow,
+    onResize,
+    onEscape,
   ]);
 
   // Pendant une modification en place, le HTML affiché ne change pas
@@ -197,7 +245,35 @@ export default function HtmlFrame({
   if (!frozen) shownHtml.current = html;
   const displayed = shownHtml.current;
 
+  // Éditeur : le document de l'iframe n'est recréé que si son habillage
+  // change (mode sombre…). Un nouveau rendu remplace le contenu sur place
+  // (message « sig-html ») : pas de rechargement, pas de clignotement.
+  const loaded = useRef(false);
+  const docHtml = useRef(null);
+  const send = (message) =>
+    frameRef.current?.contentWindow?.postMessage(message, "*");
   const srcDoc = useMemo(() => {
+    const content = shownHtml.current;
+    docHtml.current = content;
+    loaded.current = false;
+    return buildDoc(content);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dark, padding, interactive, readOnly, interactive ? null : displayed]);
+
+  useEffect(() => {
+    if (!interactive || !loaded.current) return;
+    if (displayed === docHtml.current) return;
+    docHtml.current = displayed;
+    send({ type: "sig-html", html: displayed || "" });
+  }, [displayed, interactive]);
+
+  useEffect(() => {
+    if (interactive && loaded.current) {
+      send({ type: "sig-select", selection });
+    }
+  }, [selection, interactive]);
+
+  function buildDoc(content) {
     const bg = dark ? "#1f1f1f" : "#ffffff";
     const invert = dark
       ? ".sig{filter:invert(1) hue-rotate(180deg);} .sig img{filter:invert(1) hue-rotate(180deg);}"
@@ -214,9 +290,9 @@ export default function HtmlFrame({
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><meta name="color-scheme" content="${
       dark ? "dark" : "light"
     }"><style>html,body{margin:0;padding:0;background:${bg};} body{padding:${padding}px;} ${invert} ${editorCss}</style></head><body><div class="sig">${
-      displayed || ""
+      content || ""
     }</div>${editorScript}</body></html>`;
-  }, [displayed, dark, padding, interactive, readOnly]);
+  }
 
   const style = {};
   if (width) style.width = width;
@@ -240,9 +316,22 @@ export default function HtmlFrame({
       className={className}
       style={style}
       loading="lazy"
-      // Un rechargement (mode sombre, nouveau rendu) met fin à toute
-      // modification en place : l'aperçu ne doit pas rester figé
-      onLoad={interactive ? () => onEditingChange?.(false) : undefined}
+      // Un rechargement (mode sombre) met fin à toute modification en
+      // place : l'aperçu ne doit pas rester figé. Puis on rattrape un rendu
+      // arrivé pendant le chargement, et la sélection.
+      onLoad={
+        interactive
+          ? () => {
+              loaded.current = true;
+              onEditingChange?.(false);
+              if (shownHtml.current !== docHtml.current) {
+                docHtml.current = shownHtml.current;
+                send({ type: "sig-html", html: shownHtml.current || "" });
+              }
+              send({ type: "sig-select", selection });
+            }
+          : undefined
+      }
     />
   );
 }

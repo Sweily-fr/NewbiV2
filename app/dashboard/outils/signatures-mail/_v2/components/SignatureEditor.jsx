@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useApolloClient, useMutation } from "@apollo/client";
 import {
@@ -68,10 +68,29 @@ import ContentPanel from "./ContentPanel";
 import StylePanel from "./StylePanel";
 import ExtrasPanel from "./ExtrasPanel";
 import SignaturePreview from "./SignaturePreview";
-import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
+import ElementPanel, { FIELD_ELEMENT, TITLES } from "./ElementPanel";
+import { ELEMENT_ITEMS } from "../slots";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
+
+/**
+ * Bord du bloc sélectionné dans l'aperçu : largeur réglable à la souris.
+ * `kind` : aperçu en direct (image carrée, image, trait) ou au relâcher.
+ */
+const RESIZE = {
+  photo: { kind: "square", min: 40, max: 160 },
+  logo: { kind: "image", min: 40, max: 300 },
+  accent: { kind: "bar", min: 8, max: 240 },
+  banner: { kind: "image", min: 120, max: 640 },
+  cta: { kind: "wrap", min: 80, max: 640 },
+  name: { kind: "wrap", min: 40, max: 640 },
+  jobTitle: { kind: "wrap", min: 40, max: 640 },
+  company: { kind: "wrap", min: 40, max: 640 },
+  tagline: { kind: "wrap", min: 40, max: 640 },
+  contact: { kind: "wrap", min: 80, max: 640 },
+  disclaimer: { kind: "wrap", min: 80, max: 640 },
+};
 
 /** Textes modifiables dans l'aperçu (data-sig-edit) → champ de la signature. */
 const TEXT_FIELDS = {
@@ -223,6 +242,48 @@ export default function SignatureEditor({ id }) {
     };
     setTimeout(() => focus(), 30);
   }, []);
+
+  // Bloc sélectionné dans l'aperçu : celui dont le panneau est ouvert, avec
+  // la largeur qui lui est réservée (le bord tiré part de celle-ci)
+  const blockWidth = (element && sig?.style?.blocks?.[element]?.width) || 0;
+  const selection = useMemo(
+    () =>
+      element
+        ? {
+            items: ELEMENT_ITEMS[element] || [element],
+            label: TITLES[element] || "",
+            resize:
+              isReadOnly || !RESIZE[element]
+                ? null
+                : { ...RESIZE[element], width: blockWidth },
+          }
+        : null,
+    [element, isReadOnly, blockWidth],
+  );
+  // Bord tiré dans l'aperçu : la largeur va au réglage de l'élément
+  const onResize = useCallback(
+    (width) => {
+      if (!element || !sig || !RESIZE[element]) return;
+      const { min, max } = RESIZE[element];
+      const value = Math.max(min, Math.min(max, width));
+      let patch;
+      if (element === "photo") patch = { photoSize: value };
+      else if (element === "logo") patch = { logoWidth: value };
+      else if (element === "accent") patch = { accentLength: value };
+      else {
+        const blocks = sig.style.blocks || {};
+        patch = {
+          blocks: {
+            ...blocks,
+            [element]: { ...(blocks[element] || {}), width: value },
+          },
+        };
+      }
+      update({ style: patch });
+    },
+    [element, sig, update],
+  );
+  const onEscape = useCallback(() => setElement(null), []);
 
   // Depuis un réglage sans objet (« Ajouter une photo »…) : onglet Contenu,
   // puis le champ concerné
@@ -610,6 +671,9 @@ export default function SignatureEditor({ id }) {
               onTextInput={isReadOnly ? undefined : onTextInput}
               onStylePatch={onStylePatch}
               onHistory={isReadOnly ? undefined : onHistory}
+              selection={selection}
+              onResize={onResize}
+              onEscape={onEscape}
               readOnly={isReadOnly}
             />
           </div>

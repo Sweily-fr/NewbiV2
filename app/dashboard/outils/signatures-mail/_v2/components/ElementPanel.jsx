@@ -24,6 +24,7 @@ import {
 } from "./controls";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
+import BlockControls from "./BlockControls";
 import {
   ctaLabelProblem,
   ctaLinkProblem,
@@ -67,7 +68,7 @@ export const FIELD_ELEMENT = {
   disclaimer: "disclaimer",
 };
 
-const TITLES = {
+export const TITLES = {
   name: "Nom",
   accent: "Trait sous le nom",
   jobTitle: "Poste",
@@ -645,6 +646,9 @@ export default function ElementPanel({
         <h2 className="text-xl font-medium">{TITLES[element] || ""}</h2>
       </div>
       {body}
+      {body && (
+        <BlockControls element={element} st={st} setStyle={setStyle} />
+      )}
     </div>
   );
 }

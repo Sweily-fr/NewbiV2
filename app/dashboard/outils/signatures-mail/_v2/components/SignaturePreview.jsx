@@ -8,7 +8,8 @@ import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
 import HtmlFrame from "./HtmlFrame";
 import DropOverlay from "./DropOverlay";
 
-const RENDER_DELAY_MS = 250;
+// Court : un déplacement ou un réglage doit se voir tout de suite
+const RENDER_DELAY_MS = 150;
 
 function useDebounced(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -33,6 +34,9 @@ export default function SignaturePreview({
   onTextInput,
   onStylePatch,
   onHistory,
+  selection,
+  onResize,
+  onEscape,
   readOnly = false,
 }) {
   const [dark, setDark] = useState(false);
@@ -93,7 +97,7 @@ export default function SignaturePreview({
           ) : dark ? (
             "Simulation du mode sombre (Apple Mail, Outlook) : les textes sombres sont inversés, pas les images."
           ) : (
-            "Cliquez sur un texte pour le modifier. Pour déplacer un bloc, tirez sa poignée ⠿ (au survol)."
+            "Cliquez sur un bloc pour le régler, sur un texte pour le modifier. Tirez la poignée ⠿ pour déplacer, le bord ▯ pour élargir."
           )}
         </p>
         <div className="flex shrink-0 items-center gap-2">
@@ -202,6 +206,9 @@ export default function SignaturePreview({
           onDragStart={readOnly ? undefined : startDrag}
           onHistory={onHistory}
           onOverflow={setOverflow}
+          selection={selection}
+          onResize={readOnly ? undefined : onResize}
+          onEscape={onEscape}
           readOnly={readOnly}
           onDragMove={setDragPointer}
           onDragEnd={setDragRelease}
