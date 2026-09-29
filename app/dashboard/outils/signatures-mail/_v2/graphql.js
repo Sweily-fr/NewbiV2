@@ -204,6 +204,7 @@ export const SIGNATURE_CATALOG_V2 = gql`
         id
         name
         description
+        inGallery
         supports {
           photo
           logo

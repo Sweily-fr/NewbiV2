@@ -392,6 +392,13 @@ export default function SignatureEditor({ id }) {
 
   const template =
     catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
+  // Un seul modèle proposé, déjà utilisé : rien à choisir, pas d'onglet
+  const gallery = (catalog?.templates || []).filter(
+    (t) => t.inGallery !== false,
+  );
+  const showTemplates =
+    gallery.length > 1 || (template ? template.inGallery === false : false);
+  const activeTab = tab === "template" && !showTemplates ? "content" : tab;
   const client = useApolloClient();
 
   const handleCopy = async () => {
@@ -536,15 +543,17 @@ export default function SignatureEditor({ id }) {
           </ScrollArea>
         ) : (
           <TabsNew
-            value={tab}
+            value={activeTab}
             onValueChange={setTab}
             className="min-h-0 flex-1"
           >
             <TabsNewList>
-              <TabsNewTrigger value="template">
-                <LayoutTemplate className="h-3.5 w-3.5" />
-                Modèle
-              </TabsNewTrigger>
+              {showTemplates && (
+                <TabsNewTrigger value="template">
+                  <LayoutTemplate className="h-3.5 w-3.5" />
+                  Modèle
+                </TabsNewTrigger>
+              )}
               <TabsNewTrigger value="content">
                 <PenLine className="h-3.5 w-3.5" />
                 Contenu
@@ -610,7 +619,7 @@ export default function SignatureEditor({ id }) {
         <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
           <div className="min-w-0">
             <h1 className="sr-only">{sig.name}</h1>
-            {template && (
+            {template && showTemplates && (
               <button
                 type="button"
                 onClick={() => {

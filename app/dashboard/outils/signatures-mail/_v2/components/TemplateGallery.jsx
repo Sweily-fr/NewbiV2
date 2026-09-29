@@ -97,8 +97,11 @@ const THUMB_COLORS = [
  * couleurs, pour choisir en connaissance de cause.
  */
 export default function TemplateGallery({ sig, update, catalog, onUndo }) {
-  const templates = catalog?.templates || [];
-  const current = templates.find((t) => t.id === sig.templateId);
+  // Seuls les modèles proposés (les autres ne servent qu'aux signatures
+  // qui les utilisent encore)
+  const all = catalog?.templates || [];
+  const templates = all.filter((t) => t.inGallery !== false);
+  const current = all.find((t) => t.id === sig.templateId);
   // Modèle en attente de confirmation (disposition personnalisée)
   const [pending, setPending] = useState(null);
 
