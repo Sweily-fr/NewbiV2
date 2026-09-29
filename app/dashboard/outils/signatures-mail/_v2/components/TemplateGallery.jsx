@@ -7,6 +7,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { RENDER_TEMPLATE_V2 } from "../graphql";
 import { templateLayout } from "../slots";
 import HtmlFrame from "./HtmlFrame";
+import { Section } from "./controls";
 
 const THUMB_WIDTH = 560;
 const THUMB_HEIGHT = 300;
@@ -23,10 +24,10 @@ function TemplateCard({ template, style, selected, onSelect }) {
       type="button"
       onClick={() => onSelect(template.id)}
       className={cn(
-        "group relative w-full overflow-hidden rounded-lg border bg-white text-left transition-shadow hover:shadow-md dark:bg-neutral-900",
+        "group relative w-full overflow-hidden rounded-xl border text-left shadow-xs transition-[border-color,box-shadow] cursor-pointer",
         selected
-          ? "border-[#5a50ff] ring-2 ring-[#5a50ff]/30"
-          : "border-neutral-200 dark:border-neutral-800",
+          ? "border-ring"
+          : "border-input hover:border-ring/60",
       )}
       aria-pressed={selected}
     >
@@ -48,15 +49,20 @@ function TemplateCard({ template, style, selected, onSelect }) {
             />
           </div>
         )}
-        {selected && (
-          <span className="absolute right-2 top-2 rounded-full bg-[#5a50ff] p-1 text-white">
-            <Check size={12} />
-          </span>
-        )}
       </div>
-      <div className="border-t px-3 py-2 dark:border-neutral-800">
-        <div className="text-sm font-medium">{template.name}</div>
-        <div className="text-[11px] leading-snug text-muted-foreground">{template.description}</div>
+      <div
+        className={cn(
+          "border-t px-3 py-2.5 transition-colors",
+          selected ? "bg-accent" : "bg-background",
+        )}
+      >
+        <div className="flex items-center gap-1.5 text-sm font-medium">
+          {selected && <Check size={14} aria-hidden="true" />}
+          {template.name}
+        </div>
+        <div className="mt-0.5 text-xs text-muted-foreground">
+          {template.description}
+        </div>
       </div>
     </button>
   );
@@ -81,12 +87,11 @@ export default function TemplateGallery({ sig, update, catalog }) {
   );
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Chaque modèle apporte sa disposition et sa typographie. Vos textes, couleurs et images
-        sont conservés quand vous en changez.
-      </p>
-      <div className="grid grid-cols-1 gap-3">
+    <Section
+      title="Modèles"
+      description="Chaque modèle apporte sa disposition et sa typographie. Vos textes, couleurs et images sont conservés quand vous en changez."
+    >
+      <div className="grid grid-cols-1 gap-4">
         {templates.map((t) => (
           <TemplateCard
             key={t.id}
@@ -107,6 +112,6 @@ export default function TemplateGallery({ sig, update, catalog }) {
           />
         ))}
       </div>
-    </div>
+    </Section>
   );
 }

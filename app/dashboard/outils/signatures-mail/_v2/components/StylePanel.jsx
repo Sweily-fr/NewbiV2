@@ -8,9 +8,8 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { RotateCcw } from "lucide-react";
-import ColorField from "./ColorField";
 import { cleanSlots, slotOf, templateLayout } from "../slots";
-import { Choice, ColorRow, Row, SliderRow } from "./controls";
+import { Choice, ColorRow, Row, Section, SliderRow } from "./controls";
 import {
   ContactStyleControl,
   DividerControl,
@@ -27,14 +26,17 @@ import {
 
 export { Choice, ColorRow, Row, SliderRow };
 
-function Section({ title, children }) {
+/** Lien discret à droite d'un libellé, pour revenir à une valeur auto. */
+export function ResetLink({ onClick, children }) {
   return (
-    <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h3>
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+    >
+      <RotateCcw size={11} />
       {children}
-    </div>
+    </button>
   );
 }
 
@@ -84,16 +86,19 @@ function ResetLayout({ sig, template, setStyle }) {
   );
   if (same) return null;
   return (
-    <button
-      type="button"
-      onClick={() =>
-        setStyle(Object.fromEntries(LAYOUT_KEYS.map((k) => [k, cleanValue(defaults[k])])))
-      }
-      className="flex items-center gap-1.5 text-xs text-[#5a50ff] hover:underline cursor-pointer"
-    >
-      <RotateCcw size={12} />
-      Revenir à la disposition du modèle {template.name}
-    </button>
+    <div className="flex items-center justify-between gap-3 rounded-xl border bg-[#F5F5F5] px-3 py-2.5 dark:bg-neutral-900">
+      <p className="text-xs text-muted-foreground">Disposition personnalisée</p>
+      <button
+        type="button"
+        onClick={() =>
+          setStyle(Object.fromEntries(LAYOUT_KEYS.map((k) => [k, cleanValue(defaults[k])])))
+        }
+        className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+      >
+        <RotateCcw size={12} />
+        Revenir au modèle {template.name}
+      </button>
+    </div>
   );
 }
 
@@ -113,9 +118,10 @@ function cleanValue(value) {
 export default function StylePanel({ sig, update, catalog, template }) {
   const st = sig.style;
   const setStyle = (patch) => update({ style: patch });
+  const L = layoutState(st);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Section title="Texte">
         <Row
           label="Police"
@@ -125,7 +131,7 @@ export default function StylePanel({ sig, update, catalog, template }) {
             value={st.fontFamily}
             onValueChange={(v) => setStyle({ fontFamily: v })}
           >
-            <SelectTrigger size="sm" className="h-8 w-44 text-xs">
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -150,16 +156,18 @@ export default function StylePanel({ sig, update, catalog, template }) {
           onChange={(v) => setStyle({ primaryColor: v })}
           hint="Accents, icônes et bouton. Une couleur de ton moyen reste lisible en mode sombre."
         />
-        <ColorRow
-          label="Texte"
-          value={st.textColor}
-          onChange={(v) => setStyle({ textColor: v })}
-        />
-        <ColorRow
-          label="Texte secondaire"
-          value={st.mutedColor}
-          onChange={(v) => setStyle({ mutedColor: v })}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <ColorRow
+            label="Texte"
+            value={st.textColor}
+            onChange={(v) => setStyle({ textColor: v })}
+          />
+          <ColorRow
+            label="Texte secondaire"
+            value={st.mutedColor}
+            onChange={(v) => setStyle({ mutedColor: v })}
+          />
+        </div>
       </Section>
 
       <Section title="Disposition">
@@ -200,7 +208,7 @@ export default function StylePanel({ sig, update, catalog, template }) {
             value={st.frame}
             onValueChange={(v) => setStyle({ frame: v })}
           >
-            <SelectTrigger size="sm" className="h-8 w-44 text-xs">
+            <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -213,35 +221,30 @@ export default function StylePanel({ sig, update, catalog, template }) {
           </Select>
         </Row>
         {st.frame !== "none" && (
-          <Row
+          <ColorRow
             label="Couleur de l'encadré"
-            hint="Sans choix, elle suit la couleur principale (ou les traits pour le contour)."
-          >
-            <div className="flex items-center gap-2">
-              {st.frameColor && (
-                <button
-                  type="button"
-                  onClick={() => setStyle({ frameColor: "" })}
-                  className="text-[11px] text-muted-foreground underline cursor-pointer"
-                >
-                  Auto
-                </button>
-              )}
-              <ColorField
-                value={
-                  st.frameColor ||
-                  (st.frame === "outline" ? st.separatorColor : st.primaryColor)
-                }
-                onChange={(v) => setStyle({ frameColor: v })}
-              />
-            </div>
-          </Row>
+            hint={
+              st.frameColor
+                ? undefined
+                : "Automatique : elle suit la couleur principale (ou les traits pour le contour)."
+            }
+            action={
+              st.frameColor ? (
+                <ResetLink onClick={() => setStyle({ frameColor: "" })}>
+                  Automatique
+                </ResetLink>
+              ) : null
+            }
+            value={
+              st.frameColor ||
+              (st.frame === "outline" ? st.separatorColor : st.primaryColor)
+            }
+            onChange={(v) => setStyle({ frameColor: v })}
+          />
         )}
         <FooterStripControl st={st} setStyle={setStyle} />
         <OutsideControls st={st} setStyle={setStyle} />
-        {(layoutState(st).boxed ||
-          layoutState(st).hasHeader ||
-          st.visualFill !== "none") && (
+        {(L.boxed || L.hasHeader || st.visualFill !== "none") && (
           <SliderRow
             label="Arrondi"
             value={st.radius}

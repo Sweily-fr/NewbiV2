@@ -2,11 +2,8 @@
 
 import { useState } from "react";
 import { ArrowLeft, Bold, CaseUpper, Italic, RotateCcw } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Switch } from "@/src/components/ui/switch";
 import { Textarea } from "@/src/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -14,13 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { PhotoBorderControls, ResetLink } from "./StylePanel";
 import {
   Choice,
   ColorRow,
-  PhotoBorderControls,
+  Hint,
+  MultiChoice,
   Row,
+  Section,
   SliderRow,
-} from "./StylePanel";
+  SwitchRow,
+} from "./controls";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 import {
@@ -75,17 +76,6 @@ const TITLES = {
 
 const DEFAULT_FONT = "__signature";
 
-function Group({ title, children }) {
-  return (
-    <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h3>
-      {children}
-    </div>
-  );
-}
-
 /**
  * Mise en forme d'un élément de texte. Les valeurs affichées sont celles
  * réellement appliquées (renvoyées par le rendu de l'API) ; seul ce que
@@ -98,6 +88,8 @@ function TextStyleControls({
   resolved,
   catalog,
   withColor = true,
+  intro = null,
+  footer = null,
 }) {
   const st = sig.style;
   const all = st.elements || {};
@@ -123,7 +115,8 @@ function TextStyleControls({
   const flags = ["bold", "italic", "uppercase"].filter((k) => value(k, false));
 
   return (
-    <Group title="Mise en forme">
+    <Section title="Mise en forme">
+      {intro}
       <Row label="Police">
         <Select
           value={own.fontFamily || DEFAULT_FONT}
@@ -131,7 +124,7 @@ function TextStyleControls({
             set({ fontFamily: v === DEFAULT_FONT ? null : v })
           }
         >
-          <SelectTrigger size="sm" className="h-8 w-44 text-xs">
+          <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -159,50 +152,36 @@ function TextStyleControls({
         />
       )}
       <Row label="Style">
-        <ToggleGroup
-          type="multiple"
-          size="sm"
+        <MultiChoice
+          label="Style du texte"
           value={flags}
-          onValueChange={(v) =>
+          onChange={(v) =>
             set({
               bold: v.includes("bold"),
               italic: v.includes("italic"),
               uppercase: v.includes("uppercase"),
             })
           }
-        >
-          <ToggleGroupItem value="bold" aria-label="Gras" className="px-2.5">
-            <Bold size={14} />
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="italic"
-            aria-label="Italique"
-            className="px-2.5"
-          >
-            <Italic size={14} />
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="uppercase"
-            aria-label="Majuscules"
-            className="px-2.5"
-          >
-            <CaseUpper size={14} />
-          </ToggleGroupItem>
-        </ToggleGroup>
+          options={[
+            { value: "bold", ariaLabel: "Gras", icon: <Bold size={14} /> },
+            {
+              value: "italic",
+              ariaLabel: "Italique",
+              icon: <Italic size={14} />,
+            },
+            {
+              value: "uppercase",
+              ariaLabel: "Majuscules",
+              icon: <CaseUpper size={14} />,
+            },
+          ]}
+        />
       </Row>
       {Object.keys(own).length > 0 && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={reset}
-          className="h-7 px-2 text-xs text-muted-foreground cursor-pointer"
-        >
-          <RotateCcw size={12} />
-          Revenir au style du modèle
-        </Button>
+        <ResetLink onClick={reset}>Revenir au style du modèle</ResetLink>
       )}
-    </Group>
+      {footer}
+    </Section>
   );
 }
 
@@ -231,7 +210,7 @@ export default function ElementPanel({
     case "name":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <div className="grid grid-cols-2 gap-3">
               <TextField
                 id="sig-field-firstName"
@@ -247,35 +226,44 @@ export default function ElementPanel({
                 maxLength={80}
               />
             </div>
-          </Group>
+          </Section>
           {/* Le prénom et le nom se règlent ensemble ou chacun à part */}
-          <Row label="Mettre en forme">
-            <Choice
-              value={nameTarget}
-              onChange={setNameTarget}
-              options={[
-                { value: "name", label: "Les deux" },
-                { value: "firstName", label: "Prénom" },
-                { value: "lastName", label: "Nom" },
-              ]}
-            />
-          </Row>
-          <TextStyleControls key={nameTarget} elementKey={nameTarget} {...textProps} />
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Pour séparer le prénom et le nom, tirez la poignée ⠿ de l&apos;un
-            d&apos;eux dans l&apos;aperçu.
-          </p>
-          <Group title="Disposition">
+          <TextStyleControls
+            key={nameTarget}
+            elementKey={nameTarget}
+            {...textProps}
+            intro={
+              <Row label="Appliquer à">
+                <Choice
+                  value={nameTarget}
+                  onChange={setNameTarget}
+                  label="Appliquer à"
+                  options={[
+                    { value: "name", label: "Les deux" },
+                    { value: "firstName", label: "Prénom" },
+                    { value: "lastName", label: "Nom" },
+                  ]}
+                />
+              </Row>
+            }
+            footer={
+              <Hint>
+                Pour séparer le prénom et le nom, tirez la poignée ⠿ de
+                l&apos;un d&apos;eux dans l&apos;aperçu.
+              </Hint>
+            }
+          />
+          <Section title="Disposition">
             <IdentityZoneControl st={st} setStyle={setStyle} />
             <IdentityControls st={st} setStyle={setStyle} />
-          </Group>
+          </Section>
         </>
       );
       break;
     case "jobTitle":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <TextField
               id="sig-field-jobTitle"
               label="Poste"
@@ -291,7 +279,7 @@ export default function ElementPanel({
               onChange={(v) => update({ identity: { department: v } })}
               maxLength={120}
             />
-          </Group>
+          </Section>
           <TextStyleControls elementKey="jobTitle" {...textProps} />
         </>
       );
@@ -299,7 +287,7 @@ export default function ElementPanel({
     case "company":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <TextField
               id="sig-field-company"
               label="Entreprise"
@@ -307,7 +295,7 @@ export default function ElementPanel({
               onChange={(v) => update({ identity: { company: v } })}
               maxLength={120}
             />
-          </Group>
+          </Section>
           <TextStyleControls elementKey="company" {...textProps} />
         </>
       );
@@ -315,7 +303,7 @@ export default function ElementPanel({
     case "tagline":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <TextField
               id="sig-field-tagline"
               label="Accroche"
@@ -324,7 +312,7 @@ export default function ElementPanel({
               onChange={(v) => update({ identity: { tagline: v } })}
               maxLength={200}
             />
-          </Group>
+          </Section>
           <TextStyleControls elementKey="tagline" {...textProps} />
         </>
       );
@@ -332,7 +320,7 @@ export default function ElementPanel({
     case "contact":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <TextField
               id="sig-field-email"
               label="E-mail"
@@ -373,26 +361,26 @@ export default function ElementPanel({
               onChange={(v) => update({ contact: { address: v } })}
               maxLength={300}
             />
-          </Group>
+          </Section>
           <TextStyleControls elementKey="contact" {...textProps} />
-          <Group title="Disposition">
+          <Section title="Disposition">
             <ContactStyleControl st={st} setStyle={setStyle} />
-          </Group>
+          </Section>
         </>
       );
       break;
     case "social":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <div id="sig-field-social" tabIndex={-1} className="outline-none" />
             <SocialLinks
               social={sig.social}
               networks={catalog?.networks || []}
               update={update}
             />
-          </Group>
-          <Group title="Mise en forme">
+          </Section>
+          <Section title="Mise en forme">
             <Row label="Forme">
               <Choice
                 value={st.iconStyle}
@@ -431,8 +419,8 @@ export default function ElementPanel({
               step={2}
               onChange={(v) => setStyle({ iconSize: v })}
             />
-          </Group>
-          <Group title="Disposition">
+          </Section>
+          <Section title="Disposition">
             <SocialRowsControl
               st={st}
               setStyle={setStyle}
@@ -440,14 +428,14 @@ export default function ElementPanel({
             />
             <SocialPositionControl st={st} setStyle={setStyle} />
             <OutsideToggle item="social" st={st} setStyle={setStyle} />
-          </Group>
+          </Section>
         </>
       );
       break;
     case "photo":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <ImageField
               id={id}
               kind="PHOTO"
@@ -457,8 +445,8 @@ export default function ElementPanel({
               image={images.photo}
               onChanged={replace}
             />
-          </Group>
-          <Group title="Mise en forme">
+          </Section>
+          <Section title="Mise en forme">
             <Row label="Forme">
               <Choice
                 value={st.photoShape}
@@ -479,18 +467,18 @@ export default function ElementPanel({
               onChange={(v) => setStyle({ photoSize: v })}
             />
             <PhotoBorderControls st={st} setStyle={setStyle} />
-          </Group>
-          <Group title="Disposition">
+          </Section>
+          <Section title="Disposition">
             <PhotoLayoutControls st={st} setStyle={setStyle} />
             <DividerControl st={st} setStyle={setStyle} />
-          </Group>
+          </Section>
         </>
       );
       break;
     case "logo":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <ImageField
               id={id}
               kind="LOGO"
@@ -501,8 +489,8 @@ export default function ElementPanel({
               onChanged={replace}
               aspect="logo"
             />
-          </Group>
-          <Group title="Mise en forme">
+          </Section>
+          <Section title="Mise en forme">
             <SliderRow
               label="Largeur"
               value={st.logoWidth}
@@ -511,20 +499,20 @@ export default function ElementPanel({
               step={4}
               onChange={(v) => setStyle({ logoWidth: v })}
             />
-            <p className="text-[11px] leading-snug text-muted-foreground">
+            <Hint>
               La hauteur est limitée à 48 px : un logo carré reste discret.
-            </p>
-          </Group>
-          <Group title="Disposition">
+            </Hint>
+          </Section>
+          <Section title="Disposition">
             <LogoPositionControl st={st} setStyle={setStyle} />
             <OutsideToggle item="logo" st={st} setStyle={setStyle} />
-          </Group>
+          </Section>
         </>
       );
       break;
     case "banner":
       body = (
-        <Group title="Contenu">
+        <Section title="Contenu">
           <ImageField
             id={id}
             kind="BANNER"
@@ -534,13 +522,12 @@ export default function ElementPanel({
             onChanged={replace}
             aspect="wide"
           />
-          <Row label="Afficher le bandeau">
-            <Switch
-              checked={banner.enabled}
-              onCheckedChange={(v) => update({ banner: { enabled: v } })}
-              className="scale-75 data-[state=checked]:bg-[#5a50ff]"
-            />
-          </Row>
+          <SwitchRow
+            id="sig-banner-visible"
+            label="Afficher le bandeau"
+            checked={banner.enabled}
+            onCheckedChange={(v) => update({ banner: { enabled: v } })}
+          />
           <Field label="Lien au clic">
             <Input
               value={banner.url}
@@ -549,13 +536,13 @@ export default function ElementPanel({
             />
           </Field>
           <OutsideToggle item="banner" st={st} setStyle={setStyle} />
-        </Group>
+        </Section>
       );
       break;
     case "cta":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <Field label="Texte du bouton">
               <Input
                 id="sig-field-cta"
@@ -590,7 +577,7 @@ export default function ElementPanel({
                 />
               </Field>
             </div>
-          </Group>
+          </Section>
           <TextStyleControls
             elementKey="cta"
             withColor={false}
@@ -603,7 +590,7 @@ export default function ElementPanel({
     case "disclaimer":
       body = (
         <>
-          <Group title="Contenu">
+          <Section title="Contenu">
             <Textarea
               id="sig-field-disclaimer"
               value={disclaimer.text}
@@ -611,7 +598,7 @@ export default function ElementPanel({
               rows={3}
               onChange={(e) => update({ disclaimer: { text: e.target.value } })}
             />
-          </Group>
+          </Section>
           <TextStyleControls elementKey="disclaimer" {...textProps} />
           <OutsideToggle item="disclaimer" st={st} setStyle={setStyle} />
         </>
@@ -622,19 +609,17 @@ export default function ElementPanel({
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-2">
-        <Button
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           onClick={onClose}
-          className="h-7 px-2 text-xs cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
         >
           <ArrowLeft size={14} />
           Tous les réglages
-        </Button>
-        <span className="text-sm font-medium">{TITLES[element] || ""}</span>
+        </button>
+        <h2 className="text-xl font-medium">{TITLES[element] || ""}</h2>
       </div>
       {body}
     </div>

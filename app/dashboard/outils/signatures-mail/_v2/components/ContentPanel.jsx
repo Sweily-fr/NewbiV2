@@ -23,6 +23,7 @@ import {
 } from "@/src/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import { toast } from "@/src/components/ui/sonner";
+import { FIELD_LABEL, Hint, Section } from "./controls";
 import {
   APPLY_MEMBER_SIGNATURE_V2,
   REMOVE_SIGNATURE_V2_IMAGE,
@@ -32,30 +33,21 @@ import {
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-function Section({ title, children }) {
+export function Field({ label, children, hint, htmlFor }) {
   return (
-    <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {title}
-      </h3>
+    <div className="space-y-2">
+      <Label htmlFor={htmlFor} className={FIELD_LABEL}>
+        {label}
+      </Label>
       {children}
-    </div>
-  );
-}
-
-export function Field({ label, children, hint }) {
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-      {hint && <p className="text-[11px] leading-snug text-muted-foreground">{hint}</p>}
+      {hint && <Hint>{hint}</Hint>}
     </div>
   );
 }
 
 export function TextField({ id, label, value, onChange, placeholder, hint, type = "text", maxLength }) {
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} htmlFor={id}>
       <Input
         id={id}
         type={type}
@@ -134,8 +126,10 @@ export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "
             setDragging(false);
             send(e.dataTransfer.files?.[0]);
           }}
-          className={`relative flex ${box} shrink-0 items-center justify-center overflow-hidden rounded-md border border-dashed bg-[linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%),linear-gradient(45deg,#f3f4f6_25%,transparent_25%,transparent_75%,#f3f4f6_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px] text-muted-foreground transition-colors hover:border-[#5a50ff] dark:bg-none dark:bg-neutral-800 ${
-            dragging ? "border-[#5a50ff]" : "border-neutral-300 dark:border-neutral-700"
+          className={`relative flex ${box} shrink-0 items-center justify-center overflow-hidden rounded-[9px] border border-dashed bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px] text-muted-foreground transition-[border] duration-[80ms] cursor-pointer dark:bg-none dark:bg-neutral-900 ${
+            dragging
+              ? "border-[#5b4fff]"
+              : "border-[#D1D3D8] hover:border-[#9FA1A7] dark:border-[#44444A] dark:hover:border-[#5c5c63]"
           }`}
           title="Cliquez ou déposez une image"
         >
@@ -259,9 +253,9 @@ export function SocialLinks({ social, networks, update }) {
       ))}
       {available.length > 0 && (
         <Select value="" onValueChange={addRow}>
-          <SelectTrigger size="sm" className="h-8 w-full text-xs">
+          <SelectTrigger className="w-full">
             <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Plus size={12} />
+              <Plus size={14} />
               Ajouter un réseau
             </span>
             <SelectValue className="hidden" />
@@ -370,13 +364,13 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
   const { identity, contact, social, images } = sig;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Section title="Personne">
         <PersonField id={id} sig={sig} replace={replace} flush={flush} />
       </Section>
 
       <Section title="Identité">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <TextField
             id="sig-field-firstName"
             label="Prénom"
@@ -399,7 +393,7 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
           onChange={(v) => update({ identity: { jobTitle: v } })}
           maxLength={120}
         />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <TextField
             label="Service"
             value={identity.department}
@@ -434,7 +428,7 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
           onChange={(v) => update({ contact: { email: v } })}
           maxLength={200}
         />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <TextField
             id="sig-field-phone"
             label="Téléphone"

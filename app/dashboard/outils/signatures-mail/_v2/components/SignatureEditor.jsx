@@ -7,11 +7,15 @@ import {
   ArrowLeft,
   Check,
   Copy,
+  LayoutTemplate,
   Loader2,
   MoreHorizontal,
   Move,
+  Palette,
+  PenLine,
   Redo2,
   Send,
+  Sparkles,
   Undo2,
   Star,
   Trash2,
@@ -20,11 +24,11 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/src/components/ui/tabs";
+  TabsNew,
+  TabsNewContent,
+  TabsNewList,
+  TabsNewTrigger,
+} from "@/src/components/ui/tabs-new";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
   DropdownMenu,
@@ -303,41 +307,45 @@ export default function SignatureEditor({ id }) {
 
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950">
-      {/* Panneau gauche */}
-      <aside className="flex w-[380px] shrink-0 flex-col border-r border-neutral-200 dark:border-neutral-800">
-        <div className="flex items-center gap-2 px-3 pt-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 cursor-pointer"
-            onClick={handleBack}
-            aria-label="Retour aux signatures"
-          >
-            <ArrowLeft size={16} />
-          </Button>
-          <Input
-            value={sig.name}
-            onChange={(e) => update({ name: e.target.value })}
-            maxLength={120}
-            className="h-8 border-transparent bg-transparent px-2 text-sm font-medium shadow-none hover:border-neutral-200 focus:border-neutral-300 dark:hover:border-neutral-700"
-            aria-label="Nom de la signature"
-            disabled={isReadOnly}
-          />
-        </div>
-        <div className="flex items-center justify-between px-5 pb-2 pt-1">
-          <SaveStatus status={status} />
-          {sig.isDefault && (
-            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <Star size={11} className="fill-current" />
-              Par défaut
-            </span>
+      {/* Panneau gauche, au style des éditeurs de documents */}
+      <aside className="flex w-[420px] shrink-0 flex-col border-r border-[#EEEFF1] dark:border-[#232323]">
+        <div className="px-6 pb-4 pt-5">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="-ml-2 h-8 w-8 shrink-0 cursor-pointer"
+              onClick={handleBack}
+              aria-label="Retour aux signatures"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Input
+              value={sig.name}
+              onChange={(e) => update({ name: e.target.value })}
+              maxLength={120}
+              className="h-10 min-w-0 flex-1 border-transparent px-2 text-xl font-medium shadow-none hover:border-[#e6e7ea] focus:border-[#D1D3D8] dark:border-transparent dark:hover:border-[#2E2E32] dark:focus:border-[#44444A]"
+              aria-label="Nom de la signature"
+              disabled={isReadOnly}
+            />
+          </div>
+          {(sig.isDefault || status !== "idle") && (
+            <div className="flex h-5 items-center gap-3 pl-9">
+              <SaveStatus status={status} />
+              {sig.isDefault && (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Star size={11} className="fill-current" />
+                  Par défaut
+                </span>
+              )}
+            </div>
           )}
         </div>
 
         {element ? (
-          <ScrollArea className="min-h-0 flex-1">
+          <ScrollArea className="min-h-0 flex-1 border-t border-[#EEEFF1] dark:border-[#232323]">
             <div
-              className={`px-4 py-3 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+              className={`px-6 py-6 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
             >
               <ElementPanel
                 element={element}
@@ -352,37 +360,41 @@ export default function SignatureEditor({ id }) {
             </div>
           </ScrollArea>
         ) : (
-          <Tabs
+          <TabsNew
             value={tab}
             onValueChange={setTab}
-            className="flex min-h-0 flex-1 flex-col"
+            className="min-h-0 flex-1"
           >
-            <TabsList className="mx-3 grid grid-cols-4">
-              <TabsTrigger value="template" className="text-xs">
+            <TabsNewList>
+              <TabsNewTrigger value="template">
+                <LayoutTemplate className="h-3.5 w-3.5" />
                 Modèle
-              </TabsTrigger>
-              <TabsTrigger value="content" className="text-xs">
+              </TabsNewTrigger>
+              <TabsNewTrigger value="content">
+                <PenLine className="h-3.5 w-3.5" />
                 Contenu
-              </TabsTrigger>
-              <TabsTrigger value="style" className="text-xs">
+              </TabsNewTrigger>
+              <TabsNewTrigger value="style">
+                <Palette className="h-3.5 w-3.5" />
                 Style
-              </TabsTrigger>
-              <TabsTrigger value="extras" className="text-xs">
+              </TabsNewTrigger>
+              <TabsNewTrigger value="extras">
+                <Sparkles className="h-3.5 w-3.5" />
                 Extras
-              </TabsTrigger>
-            </TabsList>
+              </TabsNewTrigger>
+            </TabsNewList>
             <ScrollArea className="min-h-0 flex-1">
               <div
-                className={`px-4 py-4 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+                className={`px-6 py-6 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
               >
-                <TabsContent value="template" className="mt-0">
+                <TabsNewContent value="template">
                   <TemplateGallery
                     sig={sig}
                     update={update}
                     catalog={catalog}
                   />
-                </TabsContent>
-                <TabsContent value="content" className="mt-0">
+                </TabsNewContent>
+                <TabsNewContent value="content">
                   <ContentPanel
                     id={id}
                     sig={sig}
@@ -392,21 +404,21 @@ export default function SignatureEditor({ id }) {
                     catalog={catalog}
                     template={template}
                   />
-                </TabsContent>
-                <TabsContent value="style" className="mt-0">
+                </TabsNewContent>
+                <TabsNewContent value="style">
                   <StylePanel
                     sig={sig}
                     update={update}
                     catalog={catalog}
                     template={template}
                   />
-                </TabsContent>
-                <TabsContent value="extras" className="mt-0">
+                </TabsNewContent>
+                <TabsNewContent value="extras">
                   <ExtrasPanel sig={sig} update={update} />
-                </TabsContent>
+                </TabsNewContent>
               </div>
             </ScrollArea>
-          </Tabs>
+          </TabsNew>
         )}
       </aside>
 

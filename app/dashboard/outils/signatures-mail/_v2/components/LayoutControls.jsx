@@ -1,8 +1,6 @@
 "use client";
 
-import { Label } from "@/src/components/ui/label";
-import { Switch } from "@/src/components/ui/switch";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
+import { Check } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,7 +9,15 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { cn } from "@/src/lib/utils";
-import { Choice, Row } from "./controls";
+import {
+  Choice,
+  ChoiceCard,
+  FIELD_LABEL,
+  Hint,
+  MultiChoice,
+  Row,
+  SwitchRow,
+} from "./controls";
 import {
   identityZone,
   isOutside,
@@ -54,14 +60,19 @@ export function Pick({ label, hint, value, onChange, options }) {
   if (options.length <= 3) {
     return (
       <Row label={label} hint={hint}>
-        <Choice value={value} onChange={onChange} options={options} />
+        <Choice
+          value={value}
+          onChange={onChange}
+          options={options}
+          label={label}
+        />
       </Row>
     );
   }
   return (
     <Row label={label} hint={hint}>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger size="sm" className="h-8 w-44 text-xs">
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Autre place" />
         </SelectTrigger>
         <SelectContent>
@@ -313,52 +324,53 @@ export function SocialRowsControl({ st, setStyle, count }) {
   const current = distribute(count, st.socialRows || []).join("+");
   const justify = JUSTIFY[socialAlign(st)];
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs text-muted-foreground">
-        Disposition des icônes
-      </Label>
+    <div className="space-y-2">
+      <p className={FIELD_LABEL}>Disposition des icônes</p>
       <div
         role="radiogroup"
         aria-label="Disposition des icônes"
-        className="flex flex-wrap gap-1.5"
+        className="grid grid-cols-4 gap-2"
       >
         {options.map((o) => {
           const selected = o.key === current;
           return (
-            <button
+            <ChoiceCard
               key={o.key}
-              type="button"
-              role="radio"
-              aria-checked={selected}
+              selected={selected}
               onClick={() => setStyle({ socialRows: o.plan })}
-              className={cn(
-                "flex min-w-[64px] flex-col items-center justify-between gap-1.5 rounded-md border px-2 py-2 text-[10px] transition-colors cursor-pointer",
-                selected
-                  ? "border-[#5a50ff] bg-[#5a50ff]/5 text-[#5a50ff]"
-                  : "border-neutral-200 text-muted-foreground hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700",
-              )}
+              label={
+                <span className="inline-flex items-center gap-1">
+                  {selected && <Check size={12} aria-hidden="true" />}
+                  {o.label}
+                </span>
+              }
             >
-              <span className="flex flex-col gap-[3px]" aria-hidden>
+              <span
+                aria-hidden
+                className={cn(
+                  "flex flex-col gap-[3px]",
+                  selected ? "text-[#242529] dark:text-white" : "text-[#b4b5b8] dark:text-white/35",
+                )}
+              >
                 {o.rows.map((n, i) => (
                   <span key={i} className={cn("flex gap-[3px]", justify)}>
                     {Array.from({ length: n }, (_, j) => (
                       <span
                         key={j}
-                        className="h-[7px] w-[7px] rounded-[2px] bg-current"
+                        className="h-[6px] w-[6px] rounded-[2px] bg-current"
                       />
                     ))}
                   </span>
                 ))}
               </span>
-              {o.label}
-            </button>
+            </ChoiceCard>
           );
         })}
       </div>
-      <p className="text-[11px] leading-snug text-muted-foreground">
+      <Hint>
         Les icônes suivent l&apos;ordre de la liste des réseaux : les flèches
         de la liste le changent.
-      </p>
+      </Hint>
     </div>
   );
 }
@@ -387,11 +399,10 @@ export function OutsideControls({ st, setStyle }) {
       label="En dehors de l'encadré"
       hint="Les éléments choisis s'affichent sous le cadre."
     >
-      <ToggleGroup
-        type="multiple"
-        size="sm"
+      <MultiChoice
+        label="En dehors de l'encadré"
         value={candidates.filter((k) => isOutside(st, k))}
-        onValueChange={(v) => {
+        onChange={(v) => {
           let slots = st.slots;
           for (const k of candidates) {
             const out = v.includes(k);
@@ -401,14 +412,11 @@ export function OutsideControls({ st, setStyle }) {
           }
           setStyle({ slots });
         }}
-        className="flex-wrap justify-end"
-      >
-        {candidates.map((k) => (
-          <ToggleGroupItem key={k} value={k} className="px-2 text-xs">
-            {OUTSIDE_LABELS[k]}
-          </ToggleGroupItem>
-        ))}
-      </ToggleGroup>
+        options={candidates.map((k) => ({
+          value: k,
+          label: OUTSIDE_LABELS[k],
+        }))}
+      />
     </Row>
   );
 }
@@ -437,15 +445,12 @@ export function FooterStripControl({ st, setStyle }) {
   const hasBottom = footer.includes("social") || footer.includes("logo");
   if (!L.boxed || !hasBottom) return null;
   return (
-    <Row
+    <SwitchRow
+      id="sig-footer-strip"
       label="Bande de pied teintée"
-      hint="Réseaux et logo « en bas » sur une bande colorée dans le cadre."
-    >
-      <Switch
-        checked={Boolean(st.footerStrip)}
-        onCheckedChange={(v) => setStyle({ footerStrip: v })}
-        className="scale-75 data-[state=checked]:bg-[#5a50ff]"
-      />
-    </Row>
+      description="Réseaux et logo « en bas » sur une bande colorée dans le cadre."
+      checked={Boolean(st.footerStrip)}
+      onCheckedChange={(v) => setStyle({ footerStrip: v })}
+    />
   );
 }
