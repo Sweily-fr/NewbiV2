@@ -21,6 +21,7 @@ import {
   OutsideControls,
   PhotoLayoutControls,
   SocialPositionControl,
+  SocialRowsControl,
   layoutState,
 } from "./LayoutControls";
 
@@ -169,6 +170,11 @@ export default function StylePanel({ sig, update, catalog, template }) {
         <IdentityControls st={st} setStyle={setStyle} />
         <ContactStyleControl st={st} setStyle={setStyle} />
         <SocialPositionControl st={st} setStyle={setStyle} />
+        <SocialRowsControl
+          st={st}
+          setStyle={setStyle}
+          count={sig.social.filter((s) => s.url?.trim()).length}
+        />
         <LogoPositionControl st={st} setStyle={setStyle} />
         <Row label="Espacement">
           <Choice

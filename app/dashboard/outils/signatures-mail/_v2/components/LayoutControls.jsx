@@ -1,5 +1,6 @@
 "use client";
 
+import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import {
@@ -9,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { cn } from "@/src/lib/utils";
 import { Choice, Row } from "./controls";
 import {
   identityZone,
@@ -21,6 +23,7 @@ import {
   setOutside,
   setPhotoPlacement,
 } from "../slots";
+import { distribute, socialAlign, socialRowOptions } from "../socialRows";
 
 /**
  * Contrôles de mise en page, partagés par l'onglet Style et les panneaux
@@ -290,6 +293,73 @@ export function LogoPositionControl({ st, setStyle }) {
       st={st}
       setStyle={setStyle}
     />
+  );
+}
+
+const JUSTIFY = {
+  left: "justify-start",
+  center: "justify-center",
+  right: "justify-end",
+};
+
+/**
+ * Disposition des icônes de réseaux : une ligne, deux lignes (2 en haut,
+ * 3 en bas…), 2 par ligne, en colonne. Une vignette par disposition,
+ * dessinée pour le nombre de réseaux renseignés.
+ */
+export function SocialRowsControl({ st, setStyle, count }) {
+  const options = socialRowOptions(count);
+  if (options.length === 0) return null;
+  const current = distribute(count, st.socialRows || []).join("+");
+  const justify = JUSTIFY[socialAlign(st)];
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs text-muted-foreground">
+        Disposition des icônes
+      </Label>
+      <div
+        role="radiogroup"
+        aria-label="Disposition des icônes"
+        className="flex flex-wrap gap-1.5"
+      >
+        {options.map((o) => {
+          const selected = o.key === current;
+          return (
+            <button
+              key={o.key}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => setStyle({ socialRows: o.plan })}
+              className={cn(
+                "flex min-w-[64px] flex-col items-center justify-between gap-1.5 rounded-md border px-2 py-2 text-[10px] transition-colors cursor-pointer",
+                selected
+                  ? "border-[#5a50ff] bg-[#5a50ff]/5 text-[#5a50ff]"
+                  : "border-neutral-200 text-muted-foreground hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700",
+              )}
+            >
+              <span className="flex flex-col gap-[3px]" aria-hidden>
+                {o.rows.map((n, i) => (
+                  <span key={i} className={cn("flex gap-[3px]", justify)}>
+                    {Array.from({ length: n }, (_, j) => (
+                      <span
+                        key={j}
+                        className="h-[7px] w-[7px] rounded-[2px] bg-current"
+                      />
+                    ))}
+                  </span>
+                ))}
+              </span>
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] leading-snug text-muted-foreground">
+        Les icônes suivent l&apos;ordre de la liste des réseaux : les flèches
+        de la liste le changent.
+      </p>
+    </div>
   );
 }
 

@@ -2,7 +2,15 @@
 
 import { useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ImagePlus,
+  Loader2,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
@@ -188,11 +196,42 @@ export function SocialLinks({ social, networks, update }) {
   };
   const removeRow = (index) => update({ social: social.filter((_, i) => i !== index) });
   const addRow = (network) => update({ social: [...social, { network, url: "" }] });
+  // L'ordre de la liste est celui des icônes (et de leurs lignes)
+  const moveRow = (index, delta) => {
+    const next = [...social];
+    const [row] = next.splice(index, 1);
+    next.splice(index + delta, 0, row);
+    update({ social: next });
+  };
+  const arrow =
+    "flex h-4 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground cursor-pointer disabled:cursor-default";
 
   return (
     <div className="space-y-2">
       {social.map((s, index) => (
         <div key={s.network} className="flex items-center gap-2">
+          {social.length > 1 && (
+            <div className="flex shrink-0 flex-col">
+              <button
+                type="button"
+                className={arrow}
+                disabled={index === 0}
+                onClick={() => moveRow(index, -1)}
+                aria-label={`Monter ${byId[s.network]?.label || s.network}`}
+              >
+                <ChevronUp size={12} />
+              </button>
+              <button
+                type="button"
+                className={arrow}
+                disabled={index === social.length - 1}
+                onClick={() => moveRow(index, 1)}
+                aria-label={`Descendre ${byId[s.network]?.label || s.network}`}
+              >
+                <ChevronDown size={12} />
+              </button>
+            </div>
+          )}
           <span
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[10px] font-bold text-white"
             style={{ backgroundColor: byId[s.network]?.brandColor || "#5a50ff" }}

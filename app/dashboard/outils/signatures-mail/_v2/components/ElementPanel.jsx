@@ -32,6 +32,7 @@ import {
   OutsideToggle,
   PhotoLayoutControls,
   SocialPositionControl,
+  SocialRowsControl,
 } from "./LayoutControls";
 
 /** Élément de la signature piloté par chaque champ cliquable de l'aperçu. */
@@ -432,6 +433,11 @@ export default function ElementPanel({
             />
           </Group>
           <Group title="Disposition">
+            <SocialRowsControl
+              st={st}
+              setStyle={setStyle}
+              count={sig.social.filter((s) => s.url?.trim()).length}
+            />
             <SocialPositionControl st={st} setStyle={setStyle} />
             <OutsideToggle item="social" st={st} setStyle={setStyle} />
           </Group>

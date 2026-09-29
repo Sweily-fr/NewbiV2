@@ -131,6 +131,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       headerPhoto
       headerFill
       nameLayout
+      socialRows
       elements {
         ${ELEMENT_STYLES}
       }
