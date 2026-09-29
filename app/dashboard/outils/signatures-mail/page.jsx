@@ -6,8 +6,6 @@ import { useMutation, useQuery } from "@apollo/client";
 import { CopyPlus, Loader2, Monitor, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
-import { useSession } from "@/src/lib/auth-client";
-import { useActiveOrganization } from "@/src/lib/organization-client";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import {
@@ -39,35 +37,6 @@ import HtmlFrame from "./_v2/components/HtmlFrame";
 import { SignatureListV2Skeleton } from "./_v2/components/signature-v2-skeleton";
 
 const EDITOR_URL = (id) => `/dashboard/outils/signatures-mail/${id}`;
-
-/** Adresse de l'organisation, texte ou objet selon les comptes. */
-function formatAddress(address) {
-  if (!address) return "";
-  if (typeof address === "string") return address;
-  const line = [address.street, address.line1, address.addressLine1].filter(Boolean)[0] || "";
-  const cityPart = [address.postalCode || address.zipCode, address.city].filter(Boolean).join(" ");
-  return [line, cityPart].filter(Boolean).join(", ");
-}
-
-/** Première signature pré-remplie avec le profil et l'entreprise. */
-function prefillInput(session, organization) {
-  const name = String(session?.user?.name || "").trim();
-  const [firstName = "", ...rest] = name.split(" ");
-  return {
-    name: "Ma signature",
-    identity: {
-      firstName,
-      lastName: rest.join(" "),
-      company: organization?.name || organization?.companyName || "",
-    },
-    contact: {
-      email: session?.user?.email || "",
-      phone: organization?.companyPhone || organization?.phone || "",
-      website: organization?.website || "",
-      address: formatAddress(organization?.address),
-    },
-  };
-}
 
 function SignatureCard({ sig, onOpen, onDuplicate, onSetDefault, onDelete, readOnly }) {
   return (
@@ -147,8 +116,6 @@ function SignatureCard({ sig, onOpen, onDuplicate, onSetDefault, onDelete, readO
 function SignaturesV2Content() {
   const router = useRouter();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
-  const { data: session } = useSession();
-  const { organization } = useActiveOrganization();
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState(null);
 
@@ -170,8 +137,8 @@ function SignaturesV2Content() {
   const handleCreate = async () => {
     setCreating(true);
     try {
-      const input = signatures.length === 0 ? prefillInput(session, organization) : { name: "Ma signature" };
-      const { data: created } = await create({ variables: { input } });
+      // L'API pré-remplit avec le profil du créateur et l'entreprise
+      const { data: created } = await create({ variables: { input: { name: "Ma signature" } } });
       router.push(`${EDITOR_URL(created.createEmailSignatureV2.id)}?new=1`);
     } catch {
       toast.error("Création impossible");

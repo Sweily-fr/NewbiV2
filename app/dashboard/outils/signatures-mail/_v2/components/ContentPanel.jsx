@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { ImagePlus, Loader2, Plus, Trash2, X } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -13,8 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import { toast } from "@/src/components/ui/sonner";
-import { REMOVE_SIGNATURE_V2_IMAGE, UPLOAD_SIGNATURE_V2_IMAGE } from "../graphql";
+import {
+  APPLY_MEMBER_SIGNATURE_V2,
+  REMOVE_SIGNATURE_V2_IMAGE,
+  SIGNATURE_MEMBERS_V2,
+  UPLOAD_SIGNATURE_V2_IMAGE,
+} from "../graphql";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -234,14 +240,102 @@ function SocialLinks({ social, networks, update }) {
   );
 }
 
+const initials = (name) =>
+  String(name || "?")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
+
+function MemberOption({ member }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <Avatar className="h-5 w-5">
+        {member.image && <AvatarImage src={member.image} alt="" />}
+        <AvatarFallback className="text-[9px]">{initials(member.name)}</AvatarFallback>
+      </Avatar>
+      <span className="truncate">
+        {member.name}
+        {member.isMe && <span className="text-muted-foreground"> (vous)</span>}
+      </span>
+    </span>
+  );
+}
+
 /**
- * Panneau « Contenu » : identité, coordonnées, réseaux, images.
+ * Personne de la signature : un membre de l'espace, soi-même par défaut.
+ * Le choisir reprend son nom, son e-mail, son portable et sa photo ; la
+ * société, le standard, le site et l'adresse ne complètent que les champs
+ * vides. Le poste et le reste de la signature sont conservés.
  */
-export default function ContentPanel({ id, sig, update, replace, catalog, template }) {
+function PersonField({ id, sig, replace, flush }) {
+  const [busy, setBusy] = useState(false);
+  const { data } = useQuery(SIGNATURE_MEMBERS_V2, { fetchPolicy: "cache-and-network" });
+  const [apply] = useMutation(APPLY_MEMBER_SIGNATURE_V2);
+  const members = data?.signatureMembersV2 || [];
+  const me = members.find((m) => m.isMe);
+  const value = sig.memberUserId || me?.userId || "";
+
+  const choose = async (memberUserId) => {
+    if (!memberUserId || memberUserId === value) return;
+    setBusy(true);
+    try {
+      // Enregistre d'abord une saisie en cours, sinon elle écraserait le résultat
+      await flush();
+      const { data: result } = await apply({ variables: { id, memberUserId } });
+      replace(result?.applyMemberToEmailSignatureV2);
+      const member = members.find((m) => m.userId === memberUserId);
+      toast.success(`Informations de ${member?.name || "la personne"} reprises`);
+    } catch (err) {
+      toast.error(err?.graphQLErrors?.[0]?.message || "Changement impossible");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (members.length === 0) return null;
+
+  return (
+    <Field
+      label="Informations de"
+      hint="Nom, e-mail, portable et photo repris du profil de la personne choisie."
+    >
+      <Select value={value} onValueChange={choose} disabled={busy}>
+        <SelectTrigger id="sig-field-member" className="w-full">
+          {busy ? (
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 size={14} className="animate-spin" />
+              Mise à jour…
+            </span>
+          ) : (
+            <SelectValue placeholder="Choisir une personne" />
+          )}
+        </SelectTrigger>
+        <SelectContent>
+          {members.map((m) => (
+            <SelectItem key={m.userId} value={m.userId}>
+              <MemberOption member={m} />
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </Field>
+  );
+}
+
+/**
+ * Panneau « Contenu » : personne, identité, coordonnées, réseaux, images.
+ */
+export default function ContentPanel({ id, sig, update, replace, flush, catalog, template }) {
   const { identity, contact, social, images } = sig;
 
   return (
     <div className="space-y-6">
+      <Section title="Personne">
+        <PersonField id={id} sig={sig} replace={replace} flush={flush} />
+      </Section>
+
       <Section title="Identité">
         <div className="grid grid-cols-2 gap-3">
           <TextField

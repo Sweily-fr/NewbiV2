@@ -267,6 +267,7 @@ export default function SignatureEditor({ id }) {
                   sig={sig}
                   update={update}
                   replace={replace}
+                  flush={flush}
                   catalog={catalog}
                   template={template}
                 />

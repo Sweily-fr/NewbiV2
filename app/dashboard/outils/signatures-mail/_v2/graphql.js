@@ -83,6 +83,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       spacing
       align
     }
+    memberUserId
     updatedAt
   }
 `;
@@ -179,9 +180,21 @@ export const RENDER_TEMPLATE_V2 = gql`
   }
 `;
 
+export const SIGNATURE_MEMBERS_V2 = gql`
+  query SignatureMembersV2 {
+    signatureMembersV2 {
+      userId
+      name
+      email
+      image
+      isMe
+    }
+  }
+`;
+
 export const CREATE_SIGNATURE_V2 = gql`
-  mutation CreateSignatureV2($input: EmailSignatureV2Input!) {
-    createEmailSignatureV2(input: $input) {
+  mutation CreateSignatureV2($input: EmailSignatureV2Input!, $memberUserId: ID) {
+    createEmailSignatureV2(input: $input, memberUserId: $memberUserId) {
       ...SignatureV2Fields
     }
   }
@@ -191,6 +204,15 @@ export const CREATE_SIGNATURE_V2 = gql`
 export const UPDATE_SIGNATURE_V2 = gql`
   mutation UpdateSignatureV2($id: ID!, $input: EmailSignatureV2Input!) {
     updateEmailSignatureV2(id: $id, input: $input) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+export const APPLY_MEMBER_SIGNATURE_V2 = gql`
+  mutation ApplyMemberSignatureV2($id: ID!, $memberUserId: ID!) {
+    applyMemberToEmailSignatureV2(id: $id, memberUserId: $memberUserId) {
       ...SignatureV2Fields
     }
   }
