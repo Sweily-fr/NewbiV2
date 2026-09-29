@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { Moon, Sun } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
 import HtmlFrame from "./HtmlFrame";
+import DropOverlay from "./DropOverlay";
 
 const RENDER_DELAY_MS = 250;
 
@@ -29,8 +30,23 @@ export default function SignaturePreview({
   initialRender,
   onRender,
   onFieldClick,
+  onTextInput,
+  onStylePatch,
 }) {
   const [dark, setDark] = useState(false);
+  // Texte en cours de modification dans l'aperçu : l'iframe n'est pas
+  // rechargée tant que la frappe n'est pas validée
+  const [editing, setEditing] = useState(false);
+  // Bloc en cours de déplacement (zones de dépôt affichées), avec la
+  // position et le relâchement relayés par l'aperçu
+  const [drag, setDrag] = useState(null);
+  const [dragPointer, setDragPointer] = useState(null);
+  const [dragRelease, setDragRelease] = useState(null);
+  const startDrag = useCallback((d) => {
+    setDragPointer(null);
+    setDragRelease(null);
+    setDrag(d);
+  }, []);
   const input = useMemo(() => toInput(sig), [sig]);
   const debouncedInput = useDebounced(input, RENDER_DELAY_MS);
   const lastRender = useRef(initialRender);
@@ -66,7 +82,7 @@ export default function SignaturePreview({
         <p className="text-xs text-muted-foreground">
           {dark
             ? "Simulation du mode sombre (Apple Mail, Outlook) : les textes sombres sont inversés, pas les images."
-            : "Aperçu identique au HTML copié. Cliquez sur un élément pour modifier son champ."}
+            : "Cliquez sur un texte pour le modifier, faites glisser la photo, les réseaux ou le logo pour les déplacer."}
         </p>
         <ToggleGroup
           type="single"
@@ -127,7 +143,26 @@ export default function SignaturePreview({
           className="block min-h-[120px] w-full border-0"
           title="Aperçu de la signature"
           onFieldClick={onFieldClick}
+          onTextInput={onTextInput}
+          onEditingChange={setEditing}
+          onDragStart={startDrag}
+          onDragMove={setDragPointer}
+          onDragEnd={setDragRelease}
+          frozen={editing}
         />
+        {drag && (
+          <DropOverlay
+            drag={drag}
+            style={sig.style}
+            pointer={dragPointer}
+            release={dragRelease}
+            onCancel={() => setDrag(null)}
+            onDrop={(patch) => {
+              setDrag(null);
+              onStylePatch?.(patch);
+            }}
+          />
+        )}
       </div>
     </div>
   );

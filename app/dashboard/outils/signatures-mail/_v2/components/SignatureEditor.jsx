@@ -60,6 +60,23 @@ import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
 
+/** Textes modifiables dans l'aperçu (data-sig-edit) → champ de la signature. */
+const TEXT_FIELDS = {
+  firstName: ["identity", "firstName"],
+  lastName: ["identity", "lastName"],
+  jobTitle: ["identity", "jobTitle"],
+  department: ["identity", "department"],
+  company: ["identity", "company"],
+  tagline: ["identity", "tagline"],
+  phone: ["contact", "phone"],
+  mobile: ["contact", "mobile"],
+  email: ["contact", "email"],
+  website: ["contact", "website"],
+  address: ["contact", "address"],
+  ctaLabel: ["cta", "label"],
+  disclaimer: ["disclaimer", "text"],
+};
+
 function SaveStatus({ status }) {
   const map = {
     idle: null,
@@ -114,12 +131,27 @@ export default function SignatureEditor({ id }) {
 
   const onRender = useCallback((r) => setRender(r), []);
 
+  // Texte modifié directement dans l'aperçu : même enregistrement qu'une
+  // saisie dans le panneau
+  const onTextInput = useCallback(
+    (field, value) => {
+      const path = TEXT_FIELDS[field];
+      if (path) update({ [path[0]]: { [path[1]]: value } });
+    },
+    [update],
+  );
+
+  // Bloc déposé sur une zone de l'aperçu : réglage de mise en page
+  const onStylePatch = useCallback((patch) => update({ style: patch }), [update]);
+
   // Clic sur un élément de l'aperçu : on ouvre son panneau (contenu et
-  // mise en forme) puis on amène et focalise le champ cliqué.
-  const onFieldClick = useCallback((field) => {
+  // mise en forme) puis on amène et focalise le champ cliqué, sauf si le
+  // texte se modifie en place (le curseur reste alors dans l'aperçu).
+  const onFieldClick = useCallback((field, { edit = false } = {}) => {
     const target = FIELD_ELEMENT[field];
     if (!target) return;
     setElement(target);
+    if (edit) return;
     const focus = (attempt = 0) => {
       const el = document.getElementById(`sig-field-${field}`);
       if (el) {
@@ -403,6 +435,8 @@ export default function SignatureEditor({ id }) {
               initialRender={initialRender}
               onRender={onRender}
               onFieldClick={onFieldClick}
+              onTextInput={onTextInput}
+              onStylePatch={onStylePatch}
             />
           </div>
         </div>
