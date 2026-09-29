@@ -213,6 +213,9 @@ export default function ElementPanel({
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
   const setStyle = (patch) => update({ style: patch });
   const textProps = { sig, update, resolved, catalog };
+  // Plafonds du modèle : les curseurs s'arrêtent à ce qui s'affiche
+  const photoMax = lines?.photoMax || 160;
+  const iconMax = lines?.iconMax || 40;
   // Mise en forme du nom : les deux, le prénom seul ou le nom seul
   const [nameTarget, setNameTarget] = useState("name");
 
@@ -383,7 +386,21 @@ export default function ElementPanel({
               maxLength={300}
             />
           </Section>
-          <TextStyleControls elementKey="contact" {...textProps} />
+          <TextStyleControls
+            elementKey="contact"
+            {...textProps}
+            footer={
+              st.contactStyle === "icons" ? (
+                <SliderRow
+                  label="Taille des icônes"
+                  value={st.contactIconSize || 16}
+                  min={12}
+                  max={32}
+                  onChange={(v) => setStyle({ contactIconSize: v })}
+                />
+              ) : null
+            }
+          />
         </>
       );
       layout = (
@@ -434,10 +451,15 @@ export default function ElementPanel({
             )}
             <SliderRow
               label="Taille"
-              value={st.iconSize}
+              value={Math.min(st.iconSize, iconMax)}
               min={16}
-              max={40}
+              max={iconMax}
               step={2}
+              hint={
+                iconMax < 40
+                  ? `Ce modèle limite les icônes à ${iconMax} px.`
+                  : null
+              }
               onChange={(v) => setStyle({ iconSize: v })}
             />
           </Section>
@@ -483,10 +505,15 @@ export default function ElementPanel({
             </Row>
             <SliderRow
               label="Taille"
-              value={st.photoSize}
+              value={Math.min(st.photoSize, photoMax)}
               min={40}
-              max={160}
+              max={photoMax}
               step={4}
+              hint={
+                photoMax < 160
+                  ? `Ce modèle limite la photo à ${photoMax} px.`
+                  : null
+              }
               onChange={(v) => setStyle({ photoSize: v })}
             />
             <PhotoBorderControls st={st} setStyle={setStyle} />

@@ -139,6 +139,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       frameThickness
       frameWidth
       frameBarLength
+      contactIconSize
       blocks
       columns
       elements {
@@ -162,6 +163,8 @@ export const RENDER_FIELDS = gql`
       accentThickness
       dividerThickness
       frameThickness
+      photoMax
+      iconMax
     }
     elements {
       ${ELEMENT_STYLES}

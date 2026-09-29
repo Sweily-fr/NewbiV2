@@ -205,6 +205,9 @@ export default function StylePanel({
   const hasNetworks = sig.social.some((s) => s.url?.trim());
   const accentOn = st.accent === "short" || st.accent === "thin";
   const font = (catalog?.fonts || []).find((f) => f.id === st.fontFamily);
+  // Plafonds du modèle : les curseurs s'arrêtent à ce qui s'affiche
+  const photoMax = lines?.photoMax || 160;
+  const iconMax = lines?.iconMax || 40;
 
   const summaries = {
     texte: `${font?.label || "Arial"} · ${st.fontSize} px`,
@@ -219,11 +222,11 @@ export default function StylePanel({
         .join(" · ") || "Aucun trait",
     encadre: FRAME_LABELS[st.frame],
     photo: hasPhoto
-      ? `${SHAPE_LABELS[st.photoShape]} · ${st.photoSize} px`
+      ? `${SHAPE_LABELS[st.photoShape]} · ${Math.min(st.photoSize, photoMax)} px`
       : "Aucune photo",
     logo: hasLogo ? `${st.logoWidth} px de large` : "Aucun logo",
     icones: hasNetworks
-      ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${st.iconSize} px`
+      ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${Math.min(st.iconSize, iconMax)} px`
       : "Aucun réseau",
   };
 
@@ -469,10 +472,15 @@ export default function StylePanel({
             </Row>
             <SliderRow
               label="Taille"
-              value={st.photoSize}
+              value={Math.min(st.photoSize, photoMax)}
               min={40}
-              max={160}
+              max={photoMax}
               step={4}
+              hint={
+                photoMax < 160
+                  ? `Ce modèle limite la photo à ${photoMax} px.`
+                  : null
+              }
               onChange={(v) => setStyle({ photoSize: v })}
             />
             <PhotoBorderControls st={st} setStyle={setStyle} />
@@ -543,10 +551,15 @@ export default function StylePanel({
             )}
             <SliderRow
               label="Taille des réseaux"
-              value={st.iconSize}
+              value={Math.min(st.iconSize, iconMax)}
               min={16}
-              max={40}
+              max={iconMax}
               step={2}
+              hint={
+                iconMax < 40
+                  ? `Ce modèle limite les icônes à ${iconMax} px.`
+                  : null
+              }
               onChange={(v) => setStyle({ iconSize: v })}
             />
           </>

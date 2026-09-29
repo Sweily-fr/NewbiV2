@@ -240,6 +240,7 @@ export function SliderRow({
   max,
   step = 1,
   unit = "px",
+  hint,
   onChange,
 }) {
   return (
@@ -258,6 +259,7 @@ export function SliderRow({
         step={step}
         onValueChange={(v) => onChange(v[0])}
       />
+      {hint && <Hint>{hint}</Hint>}
     </div>
   );
 }
@@ -438,42 +440,42 @@ export function ChoiceCard({ selected, onClick, label, children, className }) {
 }
 
 /**
- * Taille de la signature face à la limite de Gmail (au-delà, Gmail refuse
- * de l'enregistrer), dite en clair ; le nombre exact est en infobulle.
+ * Taille de la signature face à la limite de Gmail, dite en clair ; le
+ * détail est en infobulle. Gmail retire une partie du code au collage (celui
+ * pour Outlook) : au-delà de la limite, le refus est possible, pas certain.
  */
 export function GmailSize({ chars, max }) {
   const ratio = chars / max;
-  const state = ratio > 1 ? "over" : ratio > 0.8 ? "near" : "ok";
+  const state = ratio > 1 ? "over" : ratio > 0.9 ? "near" : "ok";
   const TEXT = {
     ok: "Taille acceptée par Gmail",
     near: "Proche de la limite de Gmail",
-    over: "Trop longue pour Gmail",
+    over: "Peut dépasser la limite de Gmail",
   };
+  const count = `${chars.toLocaleString("fr-FR")} caractères pour une limite de ${max.toLocaleString("fr-FR")}.`;
   return (
     <div
       className="flex shrink-0 items-center gap-2"
-      title={`${chars.toLocaleString("fr-FR")} caractères sur ${max.toLocaleString("fr-FR")} acceptés par Gmail`}
+      title={
+        state === "over"
+          ? `${count} Gmail en retire une partie au collage (le code destiné à Outlook) et l'accepte souvent. S'il la refuse, retirez un élément (réseaux, bandeau…) ou raccourcissez les textes.`
+          : count
+      }
     >
       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
         <div
           className={cn(
             "h-full rounded-full",
-            state === "over"
-              ? "bg-red-500"
-              : state === "near"
-                ? "bg-amber-500"
-                : "bg-emerald-500",
+            state === "ok" ? "bg-emerald-500" : "bg-amber-500",
           )}
           style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }}
         />
       </div>
       <span
         className={
-          state === "over"
-            ? "text-red-600"
-            : state === "near"
-              ? "text-amber-700 dark:text-amber-300"
-              : "text-muted-foreground"
+          state === "ok"
+            ? "text-muted-foreground"
+            : "text-amber-700 dark:text-amber-300"
         }
       >
         {TEXT[state]}

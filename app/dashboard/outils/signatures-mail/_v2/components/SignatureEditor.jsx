@@ -84,6 +84,7 @@ const RESIZE = {
   logo: { kind: "image", min: 40, max: 300 },
   accent: { kind: "bar", min: 8, max: 240 },
   banner: { kind: "image", min: 120, max: 640 },
+  social: { kind: "icons", min: 16, max: 40 },
   cta: { kind: "wrap", min: 80, max: 640 },
   name: { kind: "wrap", min: 40, max: 640 },
   jobTitle: { kind: "wrap", min: 40, max: 640 },
@@ -92,6 +93,18 @@ const RESIZE = {
   contact: { kind: "wrap", min: 80, max: 640 },
   disclaimer: { kind: "wrap", min: 80, max: 640 },
 };
+
+/** Textes dont le coin du cadre, dans l'aperçu, règle la taille. */
+const FONT = { min: 9, max: 36 };
+const FONT_ELEMENTS = new Set([
+  "name",
+  "jobTitle",
+  "company",
+  "tagline",
+  "contact",
+  "cta",
+  "disclaimer",
+]);
 
 /** Textes modifiables dans l'aperçu (data-sig-edit) → champ de la signature. */
 const TEXT_FIELDS = {
@@ -244,22 +257,37 @@ export default function SignatureEditor({ id }) {
     setTimeout(() => focus(), 30);
   }, []);
 
-  // Bloc sélectionné dans l'aperçu : celui dont le panneau est ouvert, avec
-  // la largeur qui lui est réservée (le bord tiré part de celle-ci)
+  // Bloc sélectionné dans l'aperçu : celui dont le panneau est ouvert. Son
+  // bord part de la taille qui lui est réservée, bornée par le modèle
+  // (photo, icônes) ; le coin d'un texte règle la taille de ses caractères.
   const blockWidth = (element && sig?.style?.blocks?.[element]?.width) || 0;
-  const selection = useMemo(
-    () =>
-      element
-        ? {
-            items: ELEMENT_ITEMS[element] || [element],
-            resize:
-              isReadOnly || !RESIZE[element]
-                ? null
-                : { ...RESIZE[element], width: blockWidth },
-          }
-        : null,
-    [element, isReadOnly, blockWidth],
-  );
+  const photoMax = render?.lines?.photoMax || 160;
+  const iconMax = render?.lines?.iconMax || 40;
+  const iconSize = Math.min(sig?.style?.iconSize || 22, iconMax);
+  const fontSize =
+    (element && render?.elements?.[element]?.fontSize) ||
+    sig?.style?.fontSize ||
+    13;
+  const selection = useMemo(() => {
+    if (!element) return null;
+    const base = !isReadOnly && RESIZE[element];
+    let resize = null;
+    if (base && element === "photo") {
+      resize = { ...base, max: Math.min(base.max, photoMax) };
+    } else if (base && element === "social") {
+      resize = { ...base, max: iconMax, size: iconSize };
+    } else if (base) {
+      resize = { ...base, width: blockWidth };
+    }
+    return {
+      items: ELEMENT_ITEMS[element] || [element],
+      resize,
+      font:
+        !isReadOnly && FONT_ELEMENTS.has(element)
+          ? { ...FONT, size: fontSize }
+          : null,
+    };
+  }, [element, isReadOnly, blockWidth, photoMax, iconMax, iconSize, fontSize]);
   // Bord tiré dans l'aperçu : la largeur va au réglage de l'élément
   const onResize = useCallback(
     (width) => {
@@ -268,6 +296,7 @@ export default function SignatureEditor({ id }) {
       const value = Math.max(min, Math.min(max, width));
       let patch;
       if (element === "photo") patch = { photoSize: value };
+      else if (element === "social") patch = { iconSize: value };
       else if (element === "logo") patch = { logoWidth: value };
       else if (element === "accent") patch = { accentLength: value };
       else {
@@ -282,6 +311,39 @@ export default function SignatureEditor({ id }) {
       update({ style: patch });
     },
     [element, sig, update],
+  );
+  // Coin tiré dans l'aperçu : taille des caractères de l'élément ; le
+  // prénom et le nom réglés à part suivent, les icônes des coordonnées aussi
+  const onFont = useCallback(
+    (size) => {
+      if (!element || !sig || !FONT_ELEMENTS.has(element)) return;
+      const style = sig.style;
+      const all = style.elements || {};
+      const value = Math.max(FONT.min, Math.min(FONT.max, size));
+      const factor = value / fontSize;
+      const scaled = (n, min, max) =>
+        Math.max(min, Math.min(max, Math.round(n * factor)));
+      const elements = {
+        ...all,
+        [element]: { ...(all[element] || {}), fontSize: value },
+      };
+      if (element === "name") {
+        for (const part of ["firstName", "lastName"]) {
+          if (all[part]?.fontSize) {
+            elements[part] = {
+              ...all[part],
+              fontSize: scaled(all[part].fontSize, FONT.min, FONT.max),
+            };
+          }
+        }
+      }
+      const patch = { elements };
+      if (element === "contact" && style.contactStyle === "icons") {
+        patch.contactIconSize = scaled(style.contactIconSize || 16, 12, 32);
+      }
+      update({ style: patch });
+    },
+    [element, sig, update, fontSize],
   );
   const onEscape = useCallback(() => setElement(null), []);
 
@@ -679,6 +741,7 @@ export default function SignatureEditor({ id }) {
               onHistory={isReadOnly ? undefined : onHistory}
               selection={selection}
               onResize={onResize}
+              onFont={isReadOnly ? undefined : onFont}
               onEscape={onEscape}
               readOnly={isReadOnly}
             />
@@ -688,7 +751,8 @@ export default function SignatureEditor({ id }) {
         {(render?.warnings?.length > 0 || render?.chars > 0) && (
           <div className="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-2 text-xs dark:border-neutral-800">
             <div className="min-w-0 truncate text-amber-700 dark:text-amber-300">
-              {render?.warnings?.[0] || ""}
+              {/* L'alerte de taille Gmail est portée par la jauge */}
+              {render?.warnings?.find((w) => !w.includes("Gmail")) || ""}
             </div>
             {render?.chars > 0 && (
               <GmailSize
@@ -711,7 +775,7 @@ export default function SignatureEditor({ id }) {
             {
               target: "preview",
               title: "Déplacez et élargissez",
-              body: "Survolez un élément puis tirez sa poignée ⠿ pour le déplacer. Une fois l'élément sélectionné, tirez le bord de son cadre pour l'élargir.",
+              body: "Survolez un élément puis tirez sa poignée ⠿ pour le déplacer. Une fois l'élément sélectionné, tirez le bord de son cadre pour l'élargir, ou son coin pour agrandir le texte.",
             },
             {
               target: "actions",

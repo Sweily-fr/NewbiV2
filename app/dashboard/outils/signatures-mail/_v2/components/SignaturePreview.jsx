@@ -7,7 +7,7 @@ import {
   Monitor,
   Moon,
   MousePointerClick,
-  MoveHorizontal,
+  Scaling,
   Smartphone,
   Sun,
 } from "lucide-react";
@@ -23,7 +23,7 @@ const RENDER_DELAY_MS = 150;
 const GESTURES = [
   { icon: MousePointerClick, label: "Cliquer pour modifier" },
   { icon: GripVertical, label: "Poignée pour déplacer" },
-  { icon: MoveHorizontal, label: "Bord pour élargir" },
+  { icon: Scaling, label: "Bord ou coin pour agrandir" },
 ];
 
 function useDebounced(value, delay) {
@@ -51,6 +51,7 @@ export default function SignaturePreview({
   onHistory,
   selection,
   onResize,
+  onFont,
   onEscape,
   readOnly = false,
 }) {
@@ -237,6 +238,7 @@ export default function SignaturePreview({
           onOverflow={setOverflow}
           selection={selection}
           onResize={readOnly ? undefined : onResize}
+          onFont={readOnly ? undefined : onFont}
           onEscape={onEscape}
           readOnly={readOnly}
           onDragMove={setDragPointer}
