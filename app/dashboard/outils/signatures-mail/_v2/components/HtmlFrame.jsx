@@ -38,6 +38,8 @@ var editing=null,dragging=false,hover=null,hideT=null;
 function h(){post({type:"sig-height",height:document.documentElement.scrollHeight});}
 new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
+function crect(el){var g=document.createRange();g.selectNodeContents(el);var r=g.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
+function q(s,content){var el=document.querySelector(s);return el?(content?crect(el):rect(el)):null;}
 var grip=document.createElement("div");
 grip.textContent="\u283F";grip.title="Déplacer";
 grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);";
@@ -55,11 +57,11 @@ document.addEventListener("mouseleave",function(){hideT=setTimeout(hideGrip,400)
 grip.addEventListener("pointerdown",function(e){
 if(!hover)return;e.preventDefault();e.stopPropagation();
 var blocks={};
-document.querySelectorAll("[data-sig-block]").forEach(function(el){var k=el.getAttribute("data-sig-block");if(!blocks[k])blocks[k]=rect(el);});
+document.querySelectorAll("[data-sig-block]").forEach(function(el){var k=el.getAttribute("data-sig-block");if(!blocks[k])blocks[k]=crect(el);});
 var sig=document.querySelector(".sig > table")||document.querySelector(".sig");
 var field=hover.getAttribute("data-sig-block");
 dragging=true;hideGrip();
-post({type:"sig-drag",field:field,sig:rect(sig),photo:blocks.photo||null,blocks:blocks,x:e.clientX,y:e.clientY});
+post({type:"sig-drag",field:field,sig:rect(sig),photo:blocks.photo||null,blocks:blocks,column:q("[data-sig-column]",true),body:q("[data-sig-body]",true),frame:q("[data-sig-frame] > table")||q("[data-sig-frame]",true),x:e.clientX,y:e.clientY});
 });
 document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
 document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});}},true);
@@ -145,6 +147,9 @@ export default function HtmlFrame({
             blocks: Object.fromEntries(
               Object.entries(data.blocks || {}).map(([k, r]) => [k, toPage(r)]),
             ),
+            column: toPage(data.column),
+            body: toPage(data.body),
+            frame: toPage(data.frame),
             x: data.x + box.left,
             y: data.y + box.top,
           });
