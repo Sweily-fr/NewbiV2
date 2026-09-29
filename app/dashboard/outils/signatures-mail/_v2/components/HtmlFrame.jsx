@@ -48,7 +48,10 @@ var grip=document.createElement("div");
 grip.textContent="\u283F";grip.title="Déplacer";
 grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);";
 document.body.appendChild(grip);
-function showGrip(b){if(window.SIG_READONLY)return;hover=b;var r=b.getBoundingClientRect();grip.style.left=Math.max(0,r.left+scrollX-20)+"px";grip.style.top=(r.top+scrollY)+"px";grip.style.display="block";}
+function showGrip(b){if(window.SIG_READONLY)return;hover=b;var r=b.getBoundingClientRect();
+if(getComputedStyle(b).display==="inline"){grip.style.left=(r.left+scrollX)+"px";grip.style.top=Math.max(0,r.top+scrollY-24)+"px";}
+else{grip.style.left=Math.max(0,r.left+scrollX-20)+"px";grip.style.top=(r.top+scrollY)+"px";}
+grip.style.display="block";}
 function hideGrip(){grip.style.display="none";hover=null;}
 document.addEventListener("mouseover",function(e){
 if(dragging||editing)return;

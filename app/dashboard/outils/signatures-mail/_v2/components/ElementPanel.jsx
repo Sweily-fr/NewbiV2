@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ArrowLeft, Bold, CaseUpper, Italic, RotateCcw } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -36,6 +37,7 @@ import {
 /** Élément de la signature piloté par chaque champ cliquable de l'aperçu. */
 export const FIELD_ELEMENT = {
   firstName: "name",
+  lastName: "name",
   // Repères d'éléments (data-sig-block) sans champ propre
   name: "name",
   title: "jobTitle",
@@ -220,6 +222,8 @@ export default function ElementPanel({
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
   const setStyle = (patch) => update({ style: patch });
   const textProps = { sig, update, resolved, catalog };
+  // Mise en forme du nom : les deux, le prénom seul ou le nom seul
+  const [nameTarget, setNameTarget] = useState("name");
 
   let body = null;
   switch (element) {
@@ -243,7 +247,23 @@ export default function ElementPanel({
               />
             </div>
           </Group>
-          <TextStyleControls elementKey="name" {...textProps} />
+          {/* Le prénom et le nom se règlent ensemble ou chacun à part */}
+          <Row label="Mettre en forme">
+            <Choice
+              value={nameTarget}
+              onChange={setNameTarget}
+              options={[
+                { value: "name", label: "Les deux" },
+                { value: "firstName", label: "Prénom" },
+                { value: "lastName", label: "Nom" },
+              ]}
+            />
+          </Row>
+          <TextStyleControls key={nameTarget} elementKey={nameTarget} {...textProps} />
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Pour séparer le prénom et le nom, tirez la poignée ⠿ de l&apos;un
+            d&apos;eux dans l&apos;aperçu.
+          </p>
           <Group title="Disposition">
             <IdentityZoneControl st={st} setStyle={setStyle} />
             <IdentityControls st={st} setStyle={setStyle} />

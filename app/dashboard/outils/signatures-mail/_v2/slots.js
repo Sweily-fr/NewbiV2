@@ -6,12 +6,14 @@
  */
 
 export const SLOTS = ["header", "visual", "text", "side", "footer", "outside"];
-export const IDENTITY_ITEMS = ["name", "title", "company", "tagline"];
+export const IDENTITY_ITEMS = ["firstName", "lastName", "title", "company", "tagline"];
 
 /** Libellés pour les lignes de dépôt : « Au-dessus du nom », « Sous le nom ». */
 export const ITEM_OF = {
   photo: "de la photo",
   name: "du nom",
+  firstName: "du prénom",
+  lastName: "du nom",
   title: "du poste",
   company: "de la société",
   tagline: "de l'accroche",
@@ -30,6 +32,8 @@ export const ITEM_OF = {
 export const ITEM_THE = {
   photo: "la photo",
   name: "le nom",
+  firstName: "le prénom",
+  lastName: "le nom",
   title: "le poste",
   company: "la société",
   tagline: "l'accroche",
@@ -48,6 +52,8 @@ export const ITEM_THE = {
 export const ITEM_LABEL = {
   photo: "Photo",
   name: "Nom",
+  firstName: "Prénom",
+  lastName: "Nom",
   title: "Poste",
   company: "Société",
   tagline: "Accroche",
@@ -119,7 +125,10 @@ export function identityZone(st) {
   if ((st.slots?.header || []).some((k) => IDENTITY_ITEMS.includes(k))) {
     return "band-top";
   }
-  if (st.visualFill === "solid" && (st.slots?.visual || []).includes("name")) {
+  if (
+    st.visualFill === "solid" &&
+    (st.slots?.visual || []).some((k) => k === "firstName" || k === "lastName")
+  ) {
     return "band-left";
   }
   return "plain";

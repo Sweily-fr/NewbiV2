@@ -9,7 +9,17 @@ import { cleanSlots } from "./slots";
  */
 
 /** Éléments de texte réglables un par un (clic dans l'aperçu). */
-export const TEXT_ELEMENTS = ["name", "jobTitle", "company", "tagline", "contact", "cta", "disclaimer"];
+export const TEXT_ELEMENTS = [
+  "name",
+  "firstName",
+  "lastName",
+  "jobTitle",
+  "company",
+  "tagline",
+  "contact",
+  "cta",
+  "disclaimer",
+];
 
 const TEXT_STYLE = "fontFamily fontSize color bold italic uppercase";
 const ELEMENT_STYLES = TEXT_ELEMENTS.map((k) => `${k} { ${TEXT_STYLE} }`).join("\n");
@@ -120,6 +130,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       visualFill
       headerPhoto
       headerFill
+      nameLayout
       elements {
         ${ELEMENT_STYLES}
       }

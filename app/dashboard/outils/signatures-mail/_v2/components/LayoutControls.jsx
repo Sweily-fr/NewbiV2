@@ -175,9 +175,26 @@ export function DividerControl({ st, setStyle }) {
   );
 }
 
+/** Prénom et nom côte à côte : une ligne ou l'un sous l'autre. */
+export function NameLayoutControl({ st, setStyle }) {
+  if (st.identityStyle === "inline") return null;
+  return (
+    <Pick
+      label="Prénom et nom"
+      value={st.nameLayout || "inline"}
+      onChange={(v) => setStyle({ nameLayout: v })}
+      options={[
+        { value: "inline", label: "Sur une ligne" },
+        { value: "stacked", label: "L'un sous l'autre" },
+      ]}
+    />
+  );
+}
+
 export function IdentityControls({ st, setStyle }) {
   return (
     <>
+      <NameLayoutControl st={st} setStyle={setStyle} />
       <Pick
         label="Trait sous le nom"
         value={st.accent}
