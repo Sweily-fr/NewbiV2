@@ -13,9 +13,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Choice, ColorRow, PhotoBorderControls, Row, SliderRow } from "./StylePanel";
+import {
+  Choice,
+  ColorRow,
+  PhotoBorderControls,
+  Row,
+  SliderRow,
+} from "./StylePanel";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
+import {
+  ContactStyleControl,
+  DividerControl,
+  IdentityControls,
+  IdentityZoneControl,
+  LogoPositionControl,
+  OutsideToggle,
+  PhotoLayoutControls,
+  SocialPositionControl,
+} from "./LayoutControls";
 
 /** Élément de la signature piloté par chaque champ cliquable de l'aperçu. */
 export const FIELD_ELEMENT = {
@@ -68,11 +84,20 @@ function Group({ title, children }) {
  * réellement appliquées (renvoyées par le rendu de l'API) ; seul ce que
  * l'utilisateur change est enregistré, le reste suit le modèle.
  */
-function TextStyleControls({ elementKey, sig, update, resolved, catalog, withColor = true }) {
+function TextStyleControls({
+  elementKey,
+  sig,
+  update,
+  resolved,
+  catalog,
+  withColor = true,
+}) {
   const st = sig.style;
   const all = st.elements || {};
   const own = Object.fromEntries(
-    Object.entries(all[elementKey] || {}).filter(([k, v]) => k !== "__typename" && v !== null),
+    Object.entries(all[elementKey] || {}).filter(
+      ([k, v]) => k !== "__typename" && v !== null,
+    ),
   );
   const applied = resolved?.[elementKey] || {};
   const value = (k, fallback) => own[k] ?? applied[k] ?? fallback;
@@ -95,7 +120,9 @@ function TextStyleControls({ elementKey, sig, update, resolved, catalog, withCol
       <Row label="Police">
         <Select
           value={own.fontFamily || DEFAULT_FONT}
-          onValueChange={(v) => set({ fontFamily: v === DEFAULT_FONT ? null : v })}
+          onValueChange={(v) =>
+            set({ fontFamily: v === DEFAULT_FONT ? null : v })
+          }
         >
           <SelectTrigger size="sm" className="h-8 w-44 text-xs">
             <SelectValue />
@@ -140,10 +167,18 @@ function TextStyleControls({ elementKey, sig, update, resolved, catalog, withCol
           <ToggleGroupItem value="bold" aria-label="Gras" className="px-2.5">
             <Bold size={14} />
           </ToggleGroupItem>
-          <ToggleGroupItem value="italic" aria-label="Italique" className="px-2.5">
+          <ToggleGroupItem
+            value="italic"
+            aria-label="Italique"
+            className="px-2.5"
+          >
             <Italic size={14} />
           </ToggleGroupItem>
-          <ToggleGroupItem value="uppercase" aria-label="Majuscules" className="px-2.5">
+          <ToggleGroupItem
+            value="uppercase"
+            aria-label="Majuscules"
+            className="px-2.5"
+          >
             <CaseUpper size={14} />
           </ToggleGroupItem>
         </ToggleGroup>
@@ -205,6 +240,10 @@ export default function ElementPanel({
             </div>
           </Group>
           <TextStyleControls elementKey="name" {...textProps} />
+          <Group title="Disposition">
+            <IdentityZoneControl st={st} setStyle={setStyle} />
+            <IdentityControls st={st} setStyle={setStyle} />
+          </Group>
         </>
       );
       break;
@@ -311,14 +350,8 @@ export default function ElementPanel({
             />
           </Group>
           <TextStyleControls elementKey="contact" {...textProps} />
-          <Group title="Icônes">
-            <Row label="Icônes de contact">
-              <Switch
-                checked={st.showContactIcons}
-                onCheckedChange={(v) => setStyle({ showContactIcons: v })}
-                className="scale-75 data-[state=checked]:bg-[#5a50ff]"
-              />
-            </Row>
+          <Group title="Disposition">
+            <ContactStyleControl st={st} setStyle={setStyle} />
           </Group>
         </>
       );
@@ -328,7 +361,11 @@ export default function ElementPanel({
         <>
           <Group title="Contenu">
             <div id="sig-field-social" tabIndex={-1} className="outline-none" />
-            <SocialLinks social={sig.social} networks={catalog?.networks || []} update={update} />
+            <SocialLinks
+              social={sig.social}
+              networks={catalog?.networks || []}
+              update={update}
+            />
           </Group>
           <Group title="Mise en forme">
             <Row label="Forme">
@@ -370,6 +407,10 @@ export default function ElementPanel({
               onChange={(v) => setStyle({ iconSize: v })}
             />
           </Group>
+          <Group title="Disposition">
+            <SocialPositionControl st={st} setStyle={setStyle} />
+            <OutsideToggle item="social" st={st} setStyle={setStyle} />
+          </Group>
         </>
       );
       break;
@@ -409,6 +450,10 @@ export default function ElementPanel({
             />
             <PhotoBorderControls st={st} setStyle={setStyle} />
           </Group>
+          <Group title="Disposition">
+            <PhotoLayoutControls st={st} setStyle={setStyle} />
+            <DividerControl st={st} setStyle={setStyle} />
+          </Group>
         </>
       );
       break;
@@ -440,6 +485,10 @@ export default function ElementPanel({
               La hauteur est limitée à 48 px : un logo carré reste discret.
             </p>
           </Group>
+          <Group title="Disposition">
+            <LogoPositionControl st={st} setStyle={setStyle} />
+            <OutsideToggle item="logo" st={st} setStyle={setStyle} />
+          </Group>
         </>
       );
       break;
@@ -469,6 +518,7 @@ export default function ElementPanel({
               onChange={(e) => update({ banner: { url: e.target.value } })}
             />
           </Field>
+          <OutsideToggle item="banner" st={st} setStyle={setStyle} />
         </Group>
       );
       break;
@@ -511,7 +561,12 @@ export default function ElementPanel({
               </Field>
             </div>
           </Group>
-          <TextStyleControls elementKey="cta" withColor={false} {...textProps} />
+          <TextStyleControls
+            elementKey="cta"
+            withColor={false}
+            {...textProps}
+          />
+          <OutsideToggle item="cta" st={st} setStyle={setStyle} />
         </>
       );
       break;
@@ -528,6 +583,7 @@ export default function ElementPanel({
             />
           </Group>
           <TextStyleControls elementKey="disclaimer" {...textProps} />
+          <OutsideToggle item="disclaimer" st={st} setStyle={setStyle} />
         </>
       );
       break;

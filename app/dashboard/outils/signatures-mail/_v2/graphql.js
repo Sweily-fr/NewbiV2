@@ -93,6 +93,19 @@ export const SIGNATURE_V2_FIELDS = gql`
       radius
       photoBorder
       photoBorderColor
+      identityZone
+      photoPosition
+      photoValign
+      photoColumn
+      divider
+      accent
+      identityStyle
+      titleStyle
+      contactStyle
+      socialPosition
+      logoPosition
+      footerStrip
+      outside
       elements {
         ${ELEMENT_STYLES}
       }
@@ -153,6 +166,7 @@ export const SIGNATURE_CATALOG_V2 = gql`
           align
           frame
         }
+        defaults
         preset {
           fontFamily
           fontSize

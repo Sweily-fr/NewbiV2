@@ -88,10 +88,11 @@ export default function TemplateGallery({ sig, update, catalog }) {
             style={style}
             selected={sig.templateId === t.id}
             onSelect={(templateId) => {
-              // Le modèle apporte sa typographie (police, tailles, formes) ;
-              // les couleurs de l'utilisateur ne sont jamais touchées.
+              // Le modèle apporte sa typographie et sa mise en page de départ
+              // (tout reste réglable ensuite) ; les couleurs de l'utilisateur
+              // ne sont jamais touchées.
               const preset = Object.fromEntries(
-                Object.entries(t.preset || {}).filter(
+                Object.entries(t.defaults || t.preset || {}).filter(
                   ([key, value]) => key !== "__typename" && value !== null && value !== undefined,
                 ),
               );

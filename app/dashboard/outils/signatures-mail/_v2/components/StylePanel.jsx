@@ -1,9 +1,5 @@
 "use client";
 
-import { Label } from "@/src/components/ui/label";
-import { Slider } from "@/src/components/ui/slider";
-import { Switch } from "@/src/components/ui/switch";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -12,65 +8,21 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import ColorField from "./ColorField";
+import { Choice, ColorRow, Row, SliderRow } from "./controls";
+import {
+  ContactStyleControl,
+  DividerControl,
+  FooterStripControl,
+  IdentityControls,
+  IdentityZoneControl,
+  LogoPositionControl,
+  OutsideControls,
+  PhotoLayoutControls,
+  SocialPositionControl,
+  layoutState,
+} from "./LayoutControls";
 
-export function Row({ label, hint, children }) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-3">
-        <Label className="text-xs text-muted-foreground">{label}</Label>
-        {children}
-      </div>
-      {hint && <p className="text-[11px] leading-snug text-muted-foreground">{hint}</p>}
-    </div>
-  );
-}
-
-export function ColorRow({ label, value, onChange, hint }) {
-  return (
-    <Row label={label} hint={hint}>
-      <ColorField value={value} onChange={onChange} />
-    </Row>
-  );
-}
-
-export function SliderRow({ label, value, min, max, step = 1, unit = "px", onChange }) {
-  return (
-    <Row label={label}>
-      <div className="flex items-center gap-2 w-44">
-        <Slider
-          className="flex-1"
-          value={[value]}
-          min={min}
-          max={max}
-          step={step}
-          onValueChange={(v) => onChange(v[0])}
-        />
-        <span className="w-12 text-right font-mono text-xs text-muted-foreground">
-          {value}
-          {unit}
-        </span>
-      </div>
-    </Row>
-  );
-}
-
-export function Choice({ value, onChange, options }) {
-  return (
-    <ToggleGroup
-      type="single"
-      value={value}
-      onValueChange={(v) => v && onChange(v)}
-      className="justify-end"
-      size="sm"
-    >
-      {options.map((o) => (
-        <ToggleGroupItem key={o.value} value={o.value} className="text-xs px-2.5">
-          {o.label}
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
-  );
-}
+export { Choice, ColorRow, Row, SliderRow };
 
 function Section({ title, children }) {
   return (
@@ -117,8 +69,14 @@ export default function StylePanel({ sig, update, catalog, template }) {
   return (
     <div className="space-y-6">
       <Section title="Texte">
-        <Row label="Police" hint="Seules ces polices s'affichent partout : Gmail, Outlook, Apple Mail.">
-          <Select value={st.fontFamily} onValueChange={(v) => setStyle({ fontFamily: v })}>
+        <Row
+          label="Police"
+          hint="Seules ces polices s'affichent partout : Gmail, Outlook, Apple Mail."
+        >
+          <Select
+            value={st.fontFamily}
+            onValueChange={(v) => setStyle({ fontFamily: v })}
+          >
             <SelectTrigger size="sm" className="h-8 w-44 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -156,7 +114,14 @@ export default function StylePanel({ sig, update, catalog, template }) {
         />
       </Section>
 
-      <Section title="Mise en page">
+      <Section title="Disposition">
+        <IdentityZoneControl st={st} setStyle={setStyle} />
+        <PhotoLayoutControls st={st} setStyle={setStyle} />
+        <DividerControl st={st} setStyle={setStyle} />
+        <IdentityControls st={st} setStyle={setStyle} />
+        <ContactStyleControl st={st} setStyle={setStyle} />
+        <SocialPositionControl st={st} setStyle={setStyle} />
+        <LogoPositionControl st={st} setStyle={setStyle} />
         <Row label="Espacement">
           <Choice
             value={st.spacing}
@@ -168,18 +133,6 @@ export default function StylePanel({ sig, update, catalog, template }) {
             ]}
           />
         </Row>
-        {template?.supports?.align && (
-          <Row label="Alignement">
-            <Choice
-              value={st.align}
-              onChange={(v) => setStyle({ align: v })}
-              options={[
-                { value: "left", label: "Gauche" },
-                { value: "center", label: "Centré" },
-              ]}
-            />
-          </Row>
-        )}
         <ColorRow
           label="Traits de séparation"
           value={st.separatorColor}
@@ -188,27 +141,24 @@ export default function StylePanel({ sig, update, catalog, template }) {
       </Section>
 
       <Section title="Encadré">
-        {template?.supports?.frame !== false ? (
-          <Row label="Style">
-            <Select value={st.frame} onValueChange={(v) => setStyle({ frame: v })}>
-              <SelectTrigger size="sm" className="h-8 w-44 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Aucun</SelectItem>
-                <SelectItem value="outline">Contour fin</SelectItem>
-                <SelectItem value="soft">Fond teinté</SelectItem>
-                <SelectItem value="accent-left">Barre à gauche</SelectItem>
-                <SelectItem value="accent-top">Barre en haut</SelectItem>
-              </SelectContent>
-            </Select>
-          </Row>
-        ) : (
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Ce modèle dessine déjà son propre cadre : réglez son arrondi ci-dessous.
-          </p>
-        )}
-        {template?.supports?.frame !== false && st.frame !== "none" && (
+        <Row label="Style">
+          <Select
+            value={st.frame}
+            onValueChange={(v) => setStyle({ frame: v })}
+          >
+            <SelectTrigger size="sm" className="h-8 w-44 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucun</SelectItem>
+              <SelectItem value="outline">Contour fin</SelectItem>
+              <SelectItem value="soft">Fond teinté</SelectItem>
+              <SelectItem value="accent-left">Barre à gauche</SelectItem>
+              <SelectItem value="accent-top">Barre en haut</SelectItem>
+            </SelectContent>
+          </Select>
+        </Row>
+        {st.frame !== "none" && (
           <Row
             label="Couleur de l'encadré"
             hint="Sans choix, elle suit la couleur principale (ou les traits pour le contour)."
@@ -224,13 +174,20 @@ export default function StylePanel({ sig, update, catalog, template }) {
                 </button>
               )}
               <ColorField
-                value={st.frameColor || (st.frame === "outline" ? st.separatorColor : st.primaryColor)}
+                value={
+                  st.frameColor ||
+                  (st.frame === "outline" ? st.separatorColor : st.primaryColor)
+                }
                 onChange={(v) => setStyle({ frameColor: v })}
               />
             </div>
           </Row>
         )}
-        {(template?.supports?.frame === false || ["outline", "soft"].includes(st.frame)) && (
+        <FooterStripControl st={st} setStyle={setStyle} />
+        <OutsideControls st={st} setStyle={setStyle} />
+        {(layoutState(st).boxed ||
+          st.identityZone !== "plain" ||
+          st.photoColumn === "tinted") && (
           <SliderRow
             label="Arrondi"
             value={st.radius}
@@ -242,52 +199,41 @@ export default function StylePanel({ sig, update, catalog, template }) {
         )}
       </Section>
 
-      {template?.supports?.photo !== false && (
-        <Section title="Photo">
-          <Row label="Forme">
-            <Choice
-              value={st.photoShape}
-              onChange={(v) => setStyle({ photoShape: v })}
-              options={[
-                { value: "circle", label: "Ronde" },
-                { value: "rounded", label: "Arrondie" },
-                { value: "square", label: "Carrée" },
-              ]}
-            />
-          </Row>
-          <SliderRow
-            label="Taille"
-            value={st.photoSize}
-            min={40}
-            max={160}
-            step={4}
-            onChange={(v) => setStyle({ photoSize: v })}
-          />
-          <PhotoBorderControls st={st} setStyle={setStyle} />
-        </Section>
-      )}
-
-      {template?.supports?.logo !== false && (
-        <Section title="Logo">
-          <SliderRow
-            label="Largeur"
-            value={st.logoWidth}
-            min={40}
-            max={200}
-            step={4}
-            onChange={(v) => setStyle({ logoWidth: v })}
-          />
-        </Section>
-      )}
-
-      <Section title="Icônes">
-        <Row label="Icônes de contact">
-          <Switch
-            checked={st.showContactIcons}
-            onCheckedChange={(v) => setStyle({ showContactIcons: v })}
-            className="scale-75 data-[state=checked]:bg-[#5a50ff]"
+      <Section title="Photo">
+        <Row label="Forme">
+          <Choice
+            value={st.photoShape}
+            onChange={(v) => setStyle({ photoShape: v })}
+            options={[
+              { value: "circle", label: "Ronde" },
+              { value: "rounded", label: "Arrondie" },
+              { value: "square", label: "Carrée" },
+            ]}
           />
         </Row>
+        <SliderRow
+          label="Taille"
+          value={st.photoSize}
+          min={40}
+          max={160}
+          step={4}
+          onChange={(v) => setStyle({ photoSize: v })}
+        />
+        <PhotoBorderControls st={st} setStyle={setStyle} />
+      </Section>
+
+      <Section title="Logo">
+        <SliderRow
+          label="Largeur"
+          value={st.logoWidth}
+          min={40}
+          max={200}
+          step={4}
+          onChange={(v) => setStyle({ logoWidth: v })}
+        />
+      </Section>
+
+      <Section title="Icônes">
         <Row label="Style des réseaux">
           <Choice
             value={st.iconStyle}
