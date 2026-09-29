@@ -189,6 +189,31 @@ export const ELEMENT_ITEMS = {
   disclaimer: ["disclaimer"],
 };
 
+/**
+ * Éléments réellement affichés, selon le contenu de la signature (mêmes
+ * règles que le rendu de l'API).
+ */
+export function shownItems(sig) {
+  const { identity = {}, contact = {}, images = {}, style: st = {} } = sig || {};
+  const shown = new Set();
+  if (identity.firstName) shown.add("firstName");
+  if (identity.lastName) shown.add("lastName");
+  if (identity.jobTitle || identity.department) shown.add("title");
+  if (identity.company) shown.add("company");
+  if (identity.tagline) shown.add("tagline");
+  for (const k of ["phone", "mobile", "email", "website", "address"]) {
+    if (contact[k]) shown.add(k);
+  }
+  if ((sig?.social || []).some((s) => s.url?.trim())) shown.add("social");
+  if (images.photo?.url) shown.add("photo");
+  if (images.logo?.url) shown.add("logo");
+  if (st.accent && st.accent !== "none") shown.add("accent");
+  if (sig?.cta?.enabled && sig.cta.label && sig.cta.url) shown.add("cta");
+  if (sig?.banner?.enabled && images.banner?.url) shown.add("banner");
+  if (sig?.disclaimer?.enabled && sig.disclaimer.text) shown.add("disclaimer");
+  return shown;
+}
+
 // ── Photo ──────────────────────────────────────────────────────────────
 
 /** Place de la photo : left, right, top (au-dessus du texte), header, autre. */

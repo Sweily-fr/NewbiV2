@@ -42,6 +42,7 @@ import {
   PhotoLayoutControls,
   SocialPositionControl,
   SocialRowsControl,
+  TitleStyleControl,
 } from "./LayoutControls";
 
 /** Élément de la signature piloté par chaque champ cliquable de l'aperçu. */
@@ -68,7 +69,7 @@ export const FIELD_ELEMENT = {
   disclaimer: "disclaimer",
 };
 
-export const TITLES = {
+const TITLES = {
   name: "Nom",
   accent: "Trait sous le nom",
   jobTitle: "Poste",
@@ -215,7 +216,11 @@ export default function ElementPanel({
   // Mise en forme du nom : les deux, le prénom seul ou le nom seul
   const [nameTarget, setNameTarget] = useState("name");
 
+  // Trois parties pour chaque élément : Contenu, Mise en forme (dans
+  // `body`) puis Disposition (`layout`, suivie de sa largeur, de ses espaces
+  // et de son alignement)
   let body = null;
+  let layout = null;
   switch (element) {
     case "name":
       body = (
@@ -256,27 +261,19 @@ export default function ElementPanel({
                 />
               </Row>
             }
-            footer={
-              <Hint>
-                Pour séparer le prénom et le nom, tirez la poignée ⠿ de
-                l&apos;un d&apos;eux dans l&apos;aperçu.
-              </Hint>
-            }
           />
-          <Section title="Disposition">
-            <IdentityZoneControl st={st} setStyle={setStyle} />
-            <IdentityControls st={st} setStyle={setStyle} />
-            <AccentControls st={st} setStyle={setStyle} lines={lines} />
-          </Section>
+        </>
+      );
+      layout = (
+        <>
+          <IdentityZoneControl st={st} setStyle={setStyle} />
+          <IdentityControls st={st} setStyle={setStyle} withTitle={false} />
         </>
       );
       break;
     case "accent":
       body = (
-        <Section
-          title="Mise en forme"
-          description="Pour le déplacer, tirez sa poignée ⠿ dans l'aperçu."
-        >
+        <Section title="Mise en forme">
           <AccentControls st={st} setStyle={setStyle} lines={lines} />
         </Section>
       );
@@ -304,6 +301,7 @@ export default function ElementPanel({
           <TextStyleControls elementKey="jobTitle" {...textProps} />
         </>
       );
+      layout = <TitleStyleControl st={st} setStyle={setStyle} />;
       break;
     case "company":
       body = (
@@ -386,10 +384,10 @@ export default function ElementPanel({
             />
           </Section>
           <TextStyleControls elementKey="contact" {...textProps} />
-          <Section title="Disposition">
-            <ContactStyleControl st={st} setStyle={setStyle} />
-          </Section>
         </>
+      );
+      layout = (
+        <ContactStyleControl st={st} setStyle={setStyle} label="Présentation" />
       );
       break;
     case "social":
@@ -443,15 +441,17 @@ export default function ElementPanel({
               onChange={(v) => setStyle({ iconSize: v })}
             />
           </Section>
-          <Section title="Disposition">
-            <SocialRowsControl
-              st={st}
-              setStyle={setStyle}
-              count={sig.social.filter((s) => s.url?.trim()).length}
-            />
-            <SocialPositionControl st={st} setStyle={setStyle} />
-            <OutsideToggle item="social" st={st} setStyle={setStyle} />
-          </Section>
+        </>
+      );
+      layout = (
+        <>
+          <SocialRowsControl
+            st={st}
+            setStyle={setStyle}
+            count={sig.social.filter((s) => s.url?.trim()).length}
+          />
+          <SocialPositionControl st={st} setStyle={setStyle} />
+          <OutsideToggle item="social" st={st} setStyle={setStyle} />
         </>
       );
       break;
@@ -491,10 +491,12 @@ export default function ElementPanel({
             />
             <PhotoBorderControls st={st} setStyle={setStyle} />
           </Section>
-          <Section title="Disposition">
-            <PhotoLayoutControls st={st} setStyle={setStyle} />
-            <DividerControls st={st} setStyle={setStyle} lines={lines} />
-          </Section>
+        </>
+      );
+      layout = (
+        <>
+          <PhotoLayoutControls st={st} setStyle={setStyle} />
+          <DividerControls st={st} setStyle={setStyle} lines={lines} />
         </>
       );
       break;
@@ -526,10 +528,12 @@ export default function ElementPanel({
               La hauteur est limitée à 48 px : un logo carré reste discret.
             </Hint>
           </Section>
-          <Section title="Disposition">
-            <LogoPositionControl st={st} setStyle={setStyle} />
-            <OutsideToggle item="logo" st={st} setStyle={setStyle} />
-          </Section>
+        </>
+      );
+      layout = (
+        <>
+          <LogoPositionControl st={st} setStyle={setStyle} />
+          <OutsideToggle item="logo" st={st} setStyle={setStyle} />
         </>
       );
       break;
@@ -559,9 +563,9 @@ export default function ElementPanel({
               onChange={(e) => update({ banner: { url: e.target.value } })}
             />
           </Field>
-          <OutsideToggle item="banner" st={st} setStyle={setStyle} />
         </Section>
       );
+      layout = <OutsideToggle item="banner" st={st} setStyle={setStyle} />;
       break;
     case "cta":
       body = (
@@ -607,9 +611,9 @@ export default function ElementPanel({
             withColor={false}
             {...textProps}
           />
-          <OutsideToggle item="cta" st={st} setStyle={setStyle} />
         </>
       );
+      layout = <OutsideToggle item="cta" st={st} setStyle={setStyle} />;
       break;
     case "disclaimer":
       body = (
@@ -624,8 +628,10 @@ export default function ElementPanel({
             />
           </Section>
           <TextStyleControls elementKey="disclaimer" {...textProps} />
-          <OutsideToggle item="disclaimer" st={st} setStyle={setStyle} />
         </>
+      );
+      layout = (
+        <OutsideToggle item="disclaimer" st={st} setStyle={setStyle} />
       );
       break;
     default:
@@ -647,7 +653,17 @@ export default function ElementPanel({
       </div>
       {body}
       {body && (
-        <BlockControls element={element} st={st} setStyle={setStyle} />
+        <Section title="Disposition">
+          {layout}
+          <BlockControls
+            element={element}
+            sig={sig}
+            setStyle={setStyle}
+            alignLabel={
+              element === "photo" ? "Alignement horizontal" : undefined
+            }
+          />
+        </Section>
       )}
     </div>
   );

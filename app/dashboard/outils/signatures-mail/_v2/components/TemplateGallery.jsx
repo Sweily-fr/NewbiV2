@@ -167,10 +167,10 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
                 : `Appliquer le modèle ${pending?.name} ?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez personnalisé la disposition (éléments déplacés, traits
-              sur mesure). Elle sera remplacée par celle du modèle. Vos
-              textes, couleurs et images sont conservés, et vous pourrez
-              annuler.
+              Vous avez personnalisé la disposition (éléments déplacés,
+              largeurs, espaces ou traits sur mesure). Elle sera remplacée par
+              celle du modèle. Vos textes, couleurs et images sont conservés,
+              et vous pourrez annuler.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

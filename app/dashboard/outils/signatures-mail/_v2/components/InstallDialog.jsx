@@ -12,6 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
+import { GmailSize } from "./controls";
 
 /**
  * Copie le HTML dans le presse-papiers. L'API Clipboard passe en premier :
@@ -81,7 +82,7 @@ const GUIDES = [
       "Collez la signature dans la zone de texte (Cmd+V ou Ctrl+V).",
       "Choisissez-la comme signature par défaut pour les nouveaux messages et les réponses, puis « Enregistrer les modifications » tout en bas.",
     ],
-    note: "Gmail limite la signature à 10 000 caractères : le compteur ci-dessous vous indique où vous en êtes.",
+    note: "Au-delà de 10 000 caractères, Gmail refuse la signature : la jauge ci-dessus vous indique où vous en êtes.",
   },
   {
     id: "outlook-web",
@@ -135,7 +136,6 @@ export default function InstallDialog({ open, onOpenChange, render, name, gmailM
   const [copied, setCopied] = useState(false);
   const html = render?.html || "";
   const chars = render?.chars || 0;
-  const overGmail = chars > gmailMaxChars;
 
   const handleCopy = async () => {
     const ok = await copySignatureHtml(html, render?.text);
@@ -172,12 +172,11 @@ export default function InstallDialog({ open, onOpenChange, render, name, gmailM
             <Download size={14} />
             Télécharger le HTML
           </Button>
-          <span
-            className={`ml-auto text-xs ${overGmail ? "text-red-600" : "text-muted-foreground"}`}
-          >
-            {chars.toLocaleString("fr-FR")} / {gmailMaxChars.toLocaleString("fr-FR")} caractères
-            (limite Gmail)
-          </span>
+          {chars > 0 && (
+            <div className="ml-auto text-xs">
+              <GmailSize chars={chars} max={gmailMaxChars} />
+            </div>
+          )}
         </div>
 
         {render?.warnings?.length > 0 && (

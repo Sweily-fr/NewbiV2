@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ChevronDown, Plus, RotateCcw } from "lucide-react";
+import { AlertTriangle, ChevronDown, Minus, Plus, RotateCcw } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
@@ -324,32 +324,55 @@ export function ResetLink({ onClick, children }) {
 }
 
 /**
- * Espace ajouté (+) ou retiré (−) autour d'un bloc, en px ; 0 = l'espace
- * prévu par le modèle.
+ * Espace ajouté (+) ou retiré (−) autour d'un bloc, par pas de 4 px ;
+ * « Normal » = l'espace prévu par le modèle.
  */
-export function OffsetRow({ label, value, onChange, min = -24, max = 64 }) {
+export function SpaceRow({ label, value, onChange, min = -24, max = 64 }) {
+  const step = 4;
   const shown =
-    value === 0 ? "Auto" : `${value > 0 ? "+" : "−"}${Math.abs(value)} px`;
+    value === 0 ? "Normal" : `${value > 0 ? "+" : "−"}${Math.abs(value)} px`;
+  const set = (v) => onChange(Math.max(min, Math.min(max, v)));
+  const button =
+    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#242529] transition-colors hover:bg-white disabled:pointer-events-none disabled:opacity-30 dark:text-white dark:hover:bg-neutral-800 cursor-pointer";
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <Label className={FIELD_LABEL}>{label}</Label>
-        <span className="text-xs font-medium tabular-nums text-[#242529] dark:text-white">
+    <Row label={label}>
+      <div className={cn(SEGMENTS, "items-center")}>
+        <button
+          type="button"
+          aria-label={`${label} : moins`}
+          disabled={value <= min}
+          onClick={() => set(value - step)}
+          className={button}
+        >
+          <Minus size={14} />
+        </button>
+        <span className="flex-1 text-center text-xs font-medium tabular-nums text-[#242529] dark:text-white">
           {shown}
         </span>
+        <button
+          type="button"
+          aria-label={`${label} : plus`}
+          disabled={value >= max}
+          onClick={() => set(value + step)}
+          className={button}
+        >
+          <Plus size={14} />
+        </button>
       </div>
-      <Slider
-        value={[value]}
-        min={min}
-        max={max}
-        step={2}
-        onValueChange={(v) => onChange(v[0])}
-      />
+    </Row>
+  );
+}
+
+/** Intertitre d'une longue section, pour y retrouver ses réglages. */
+export function Group({ title, children }) {
+  return (
+    <div className="space-y-4 border-t border-[#EEEFF1] pt-4 first:border-t-0 first:pt-0 dark:border-[#232323]">
+      <p className="text-sm font-medium">{title}</p>
+      {children}
     </div>
   );
 }
 
-/** Interrupteur dans un encadré, comme dans les paramètres de facture. */
 export function SwitchRow({
   id,
   label,
@@ -411,5 +434,50 @@ export function ChoiceCard({ selected, onClick, label, children, className }) {
         {label}
       </span>
     </button>
+  );
+}
+
+/**
+ * Taille de la signature face à la limite de Gmail (au-delà, Gmail refuse
+ * de l'enregistrer), dite en clair ; le nombre exact est en infobulle.
+ */
+export function GmailSize({ chars, max }) {
+  const ratio = chars / max;
+  const state = ratio > 1 ? "over" : ratio > 0.8 ? "near" : "ok";
+  const TEXT = {
+    ok: "Taille acceptée par Gmail",
+    near: "Proche de la limite de Gmail",
+    over: "Trop longue pour Gmail",
+  };
+  return (
+    <div
+      className="flex shrink-0 items-center gap-2"
+      title={`${chars.toLocaleString("fr-FR")} caractères sur ${max.toLocaleString("fr-FR")} acceptés par Gmail`}
+    >
+      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
+        <div
+          className={cn(
+            "h-full rounded-full",
+            state === "over"
+              ? "bg-red-500"
+              : state === "near"
+                ? "bg-amber-500"
+                : "bg-emerald-500",
+          )}
+          style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }}
+        />
+      </div>
+      <span
+        className={
+          state === "over"
+            ? "text-red-600"
+            : state === "near"
+              ? "text-amber-700 dark:text-amber-300"
+              : "text-muted-foreground"
+        }
+      >
+        {TEXT[state]}
+      </span>
+    </div>
   );
 }

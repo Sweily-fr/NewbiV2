@@ -68,7 +68,8 @@ import ContentPanel from "./ContentPanel";
 import StylePanel from "./StylePanel";
 import ExtrasPanel from "./ExtrasPanel";
 import SignaturePreview from "./SignaturePreview";
-import ElementPanel, { FIELD_ELEMENT, TITLES } from "./ElementPanel";
+import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
+import { GmailSize } from "./controls";
 import { ELEMENT_ITEMS } from "../slots";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
@@ -251,7 +252,6 @@ export default function SignatureEditor({ id }) {
       element
         ? {
             items: ELEMENT_ITEMS[element] || [element],
-            label: TITLES[element] || "",
             resize:
               isReadOnly || !RESIZE[element]
                 ? null
@@ -441,17 +441,17 @@ export default function SignatureEditor({ id }) {
               disabled={isReadOnly}
             />
           </div>
-          {(sig.isDefault || status !== "idle") && (
-            <div className="flex h-5 items-center gap-3 pl-9">
-              <SaveStatus status={status} />
-              {sig.isDefault && (
-                <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Star size={11} className="fill-current" />
-                  Par défaut
-                </span>
-              )}
-            </div>
-          )}
+          {/* Ligne toujours présente : l'état d'enregistrement qui apparaît
+              et disparaît ne fait pas bouger les onglets */}
+          <div className="flex h-5 items-center gap-3 pl-9">
+            <SaveStatus status={status} />
+            {sig.isDefault && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Star size={11} className="fill-current" />
+                Par défaut
+              </span>
+            )}
+          </div>
         </div>
 
         {element ? (
@@ -530,7 +530,12 @@ export default function SignatureEditor({ id }) {
                   />
                 </TabsNewContent>
                 <TabsNewContent value="extras">
-                  <ExtrasPanel sig={sig} update={update} />
+                  <ExtrasPanel
+                    id={id}
+                    sig={sig}
+                    update={update}
+                    replace={replace}
+                  />
                 </TabsNewContent>
               </div>
             </ScrollArea>
@@ -591,6 +596,7 @@ export default function SignatureEditor({ id }) {
               onClick={handleCopy}
               disabled={!render?.html}
               className="cursor-pointer"
+              title="Copier la signature pour la coller dans les réglages de votre messagerie"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? "Copiée" : "Copier"}
@@ -684,17 +690,12 @@ export default function SignatureEditor({ id }) {
             <div className="min-w-0 truncate text-amber-700 dark:text-amber-300">
               {render?.warnings?.[0] || ""}
             </div>
-            <div
-              className={
-                render?.chars > (catalog?.gmailMaxChars || 10000)
-                  ? "shrink-0 text-red-600"
-                  : "shrink-0 text-muted-foreground"
-              }
-            >
-              {render?.chars?.toLocaleString("fr-FR")} /{" "}
-              {(catalog?.gmailMaxChars || 10000).toLocaleString("fr-FR")}{" "}
-              caractères (Gmail)
-            </div>
+            {render?.chars > 0 && (
+              <GmailSize
+                chars={render.chars}
+                max={catalog?.gmailMaxChars || 10000}
+              />
+            )}
           </div>
         )}
       </main>
@@ -704,13 +705,13 @@ export default function SignatureEditor({ id }) {
           steps={[
             {
               target: "preview",
-              title: "Modifiez directement dans l'aperçu",
-              body: "Cliquez sur un texte pour le changer, ou sur un élément (photo, réseaux, trait…) pour ouvrir ses réglages.",
+              title: "Cliquez sur un élément pour le modifier",
+              body: "Un texte se change directement dans l'aperçu. Ses réglages s'ouvrent à gauche : contenu, mise en forme, disposition.",
             },
             {
               target: "preview",
-              title: "Déplacez les blocs",
-              body: "Survolez un bloc puis tirez sa poignée ⠿ : le nom au-dessus de la photo, les réseaux à droite… Tout se replace.",
+              title: "Déplacez et élargissez",
+              body: "Survolez un élément puis tirez sa poignée ⠿ pour le déplacer. Une fois l'élément sélectionné, tirez le bord de son cadre pour l'élargir.",
             },
             {
               target: "actions",

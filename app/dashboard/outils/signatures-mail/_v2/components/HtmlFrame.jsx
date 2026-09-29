@@ -107,9 +107,6 @@ if(editing&&e.target===editing){editing.removeAttribute("contenteditable");editi
 var sel=null,rs=null;
 var box=document.createElement("div");
 box.style.cssText="position:absolute;display:none;pointer-events:none;border:2px solid #5a50ff;border-radius:5px;z-index:9;";
-var chip=document.createElement("div");
-chip.style.cssText="position:absolute;left:-2px;top:-21px;background:#5a50ff;color:#fff;font:11px/19px Arial,sans-serif;padding:0 7px;border-radius:4px 4px 0 0;white-space:nowrap;";
-box.appendChild(chip);
 var knob=document.createElement("div");
 knob.title="Tirer pour changer la largeur";
 knob.style.cssText="position:absolute;right:-7px;top:50%;width:10px;height:24px;margin-top:-12px;background:#fff;border:2px solid #5a50ff;border-radius:4px;cursor:ew-resize;pointer-events:auto;display:none;touch-action:none;";
@@ -124,7 +121,7 @@ function selRect(){var els=selEls(),r=union(els),w=sel&&sel.resize&&sel.resize.w
 if(!r||!w||!els[0])return r;var t=els[0].closest('table[width="'+w+'"]');if(!t)return r;var c=crect(t);r.l=Math.min(r.l,c.x);r.r=Math.max(r.r,c.x+c.w);return r;}
 function drawSel(){if(rs)return;var r=selRect();if(!r){box.style.display="none";return;}
 box.style.display="block";box.style.left=(r.l+scrollX-5)+"px";box.style.top=(r.t+scrollY-5)+"px";box.style.width=(r.r-r.l+10)+"px";box.style.height=(r.b-r.t+10)+"px";
-chip.textContent=sel.label||"";knob.style.display=sel.resize&&!window.SIG_READONLY?"block":"none";}
+knob.style.display=sel.resize&&!window.SIG_READONLY?"block":"none";}
 function live(w){var k=sel&&sel.resize&&sel.resize.kind;selEls().forEach(function(el){
 if(k==="square"||k==="image"){var im=el.querySelector("img");if(!im)return;var ratio=k==="square"?1:(im.naturalWidth?im.naturalHeight/im.naturalWidth:(im.height/Math.max(1,im.width)));im.style.width=w+"px";im.style.height=Math.round(w*ratio)+"px";}
 else if(k==="bar"){var td=el.querySelector("td[bgcolor]");if(td){td.style.width=w+"px";td.setAttribute("width",w);}}

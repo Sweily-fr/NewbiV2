@@ -8,12 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { RotateCcw } from "lucide-react";
+import { MousePointerClick, RotateCcw } from "lucide-react";
 import {
   LAYOUT_KEYS,
   cleanSlots,
   hasBlockSettings,
   layoutDiffers,
+  shownItems,
   slotOf,
   templateLayout,
 } from "../slots";
@@ -21,6 +22,7 @@ import {
   Choice,
   ColorRow,
   EmptyHint,
+  Group,
   LengthRow,
   ResetLink,
   Row,
@@ -227,6 +229,13 @@ export default function StylePanel({
 
   return (
     <div className="divide-y divide-[#EEEFF1] dark:divide-[#232323]">
+      {/* Ces réglages valent pour toute la signature ; un élément se règle
+          seul depuis l'aperçu */}
+      <p className="flex items-start gap-2 pb-5 text-sm text-muted-foreground">
+        <MousePointerClick size={16} className="mt-0.5 shrink-0" />
+        Réglages de toute la signature. Pour un seul élément, cliquez-le dans
+        l&apos;aperçu.
+      </p>
       <Section title="Texte" {...section("texte")} summary={summaries.texte}>
         <Row
           label="Police"
@@ -281,29 +290,59 @@ export default function StylePanel({
         summary={summaries.disposition}
       >
         <ResetLayout sig={sig} template={template} setStyle={setStyle} />
-        <IdentityZoneControl st={st} setStyle={setStyle} />
-        <PhotoLayoutControls st={st} setStyle={setStyle} />
-        <IdentityControls st={st} setStyle={setStyle} />
-        <ContactStyleControl st={st} setStyle={setStyle} />
-        <SocialPositionControl st={st} setStyle={setStyle} />
-        <SocialRowsControl
-          st={st}
-          setStyle={setStyle}
-          count={sig.social.filter((s) => s.url?.trim()).length}
-        />
-        <LogoPositionControl st={st} setStyle={setStyle} />
-        <ColumnWidthControls st={st} setStyle={setStyle} />
-        <Row label="Espacement">
-          <Choice
-            value={st.spacing}
-            onChange={(v) => setStyle({ spacing: v })}
-            options={[
-              { value: "compact", label: "Serré" },
-              { value: "normal", label: "Normal" },
-              { value: "airy", label: "Aéré" },
-            ]}
+        {/* Seuls les réglages d'éléments présents sont proposés */}
+        <Group title={hasPhoto ? "Photo et couleur" : "Couleur"}>
+          <IdentityZoneControl st={st} setStyle={setStyle} />
+          {hasPhoto && <PhotoLayoutControls st={st} setStyle={setStyle} />}
+        </Group>
+        <Group title="Textes">
+          <IdentityControls st={st} setStyle={setStyle} />
+          <ContactStyleControl st={st} setStyle={setStyle} />
+        </Group>
+        {(hasNetworks || hasLogo) && (
+          <Group
+            title={
+              hasNetworks && hasLogo
+                ? "Réseaux et logo"
+                : hasNetworks
+                  ? "Réseaux"
+                  : "Logo"
+            }
+          >
+            {hasNetworks && (
+              <>
+                <SocialPositionControl st={st} setStyle={setStyle} />
+                <SocialRowsControl
+                  st={st}
+                  setStyle={setStyle}
+                  count={sig.social.filter((s) => s.url?.trim()).length}
+                />
+              </>
+            )}
+            {hasLogo && <LogoPositionControl st={st} setStyle={setStyle} />}
+          </Group>
+        )}
+        <Group title="Largeurs et espacement">
+          <ColumnWidthControls
+            st={st}
+            setStyle={setStyle}
+            shown={shownItems(sig)}
           />
-        </Row>
+          <Row
+            label="Espace entre les éléments"
+            hint="Pour un seul élément, cliquez-le dans l'aperçu."
+          >
+            <Choice
+              value={st.spacing}
+              onChange={(v) => setStyle({ spacing: v })}
+              options={[
+                { value: "compact", label: "Serré" },
+                { value: "normal", label: "Normal" },
+                { value: "airy", label: "Aéré" },
+              ]}
+            />
+          </Row>
+        </Group>
       </Section>
 
       <Section

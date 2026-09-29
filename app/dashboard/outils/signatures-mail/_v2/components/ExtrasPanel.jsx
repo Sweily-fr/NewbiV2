@@ -4,6 +4,7 @@ import { Textarea } from "@/src/components/ui/textarea";
 import ColorField from "./ColorField";
 import { CheckedInput, Row, Section, SwitchRow } from "./controls";
 import { ctaLabelProblem, ctaLinkProblem, linkProblem } from "../links";
+import { ImageField } from "./ContentPanel";
 
 /**
  * Un extra : section de la plateforme, interrupteur dans un encadré gris,
@@ -34,9 +35,10 @@ function Extra({
 }
 
 /**
- * Panneau « Extras » : bouton d'action, bandeau, mention légale.
+ * Panneau « Extras » : bouton d'action, bandeau (image comprise), mention
+ * légale.
  */
-export default function ExtrasPanel({ sig, update }) {
+export default function ExtrasPanel({ id, sig, update, replace }) {
   const { cta, banner, disclaimer, images, style } = sig;
 
   return (
@@ -91,14 +93,20 @@ export default function ExtrasPanel({ sig, update }) {
         name="banner"
         title="Bandeau"
         switchLabel="Afficher le bandeau"
-        description={
-          images.banner
-            ? "Une image pleine largeur sous la signature, cliquable."
-            : "Ajoutez d'abord une image de bandeau dans l'onglet Contenu."
-        }
+        description="Une image large sous la signature : offre, événement, salon…"
         enabled={banner.enabled}
         onToggle={(v) => update({ banner: { enabled: v } })}
       >
+        <ImageField
+          id={id}
+          kind="BANNER"
+          fieldId="sig-field-banner"
+          label="Image"
+          hint="Une image large (1200 px de large par exemple), en JPG ou PNG."
+          image={images.banner}
+          onChanged={replace}
+          aspect="wide"
+        />
         <Row label="Lien au clic" htmlFor="sig-banner-url">
           <CheckedInput
             id="sig-banner-url"
@@ -108,7 +116,11 @@ export default function ExtrasPanel({ sig, update }) {
             onChange={(e) => update({ banner: { url: e.target.value } })}
           />
         </Row>
-        <Row label="Texte alternatif" htmlFor="sig-banner-alt">
+        <Row
+          label="Texte de remplacement"
+          htmlFor="sig-banner-alt"
+          hint="Affiché quand la messagerie bloque les images."
+        >
           <CheckedInput
             id="sig-banner-alt"
             value={banner.alt}

@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@apollo/client";
-import { Monitor, Moon, Smartphone, Sun } from "lucide-react";
+import {
+  GripVertical,
+  Monitor,
+  Moon,
+  MousePointerClick,
+  MoveHorizontal,
+  Smartphone,
+  Sun,
+} from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
 import HtmlFrame from "./HtmlFrame";
@@ -10,6 +18,13 @@ import DropOverlay from "./DropOverlay";
 
 // Court : un déplacement ou un réglage doit se voir tout de suite
 const RENDER_DELAY_MS = 150;
+
+/** Les trois gestes de l'aperçu, rappelés au-dessus de lui. */
+const GESTURES = [
+  { icon: MousePointerClick, label: "Cliquer pour modifier" },
+  { icon: GripVertical, label: "Poignée pour déplacer" },
+  { icon: MoveHorizontal, label: "Bord pour élargir" },
+];
 
 function useDebounced(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -87,19 +102,29 @@ export default function SignaturePreview({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-1 pb-3">
-        <p className="text-xs text-muted-foreground">
-          {mobile && overflow ? (
-            <span className="text-amber-700 dark:text-amber-300">
-              Trop large pour un téléphone : la signature y défilera de côté.
-              Placez des éléments en dessous plutôt qu&apos;à côté.
-            </span>
-          ) : dark ? (
-            "Simulation du mode sombre (Apple Mail, Outlook) : les textes sombres sont inversés, pas les images."
-          ) : (
-            "Cliquez sur un bloc pour le régler, sur un texte pour le modifier. Tirez la poignée ⠿ pour déplacer, le bord ▯ pour élargir."
-          )}
-        </p>
+      <div className="flex items-center justify-between gap-4 px-1 pb-3">
+        {mobile && overflow ? (
+          <p className="text-xs text-amber-700 dark:text-amber-300">
+            Trop large pour un téléphone : la signature y défilera de côté.
+            Placez des éléments en dessous plutôt qu&apos;à côté.
+          </p>
+        ) : dark ? (
+          <p className="text-xs text-muted-foreground">
+            Simulation du mode sombre (Apple Mail, Outlook) : les textes
+            sombres sont inversés, pas les images.
+          </p>
+        ) : readOnly ? (
+          <span />
+        ) : (
+          <ul className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {GESTURES.map(({ icon: Icon, label }) => (
+              <li key={label} className="inline-flex items-center gap-1.5">
+                <Icon size={14} aria-hidden="true" />
+                {label}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="flex shrink-0 items-center gap-2">
           <ToggleGroup
             type="single"
@@ -110,6 +135,7 @@ export default function SignaturePreview({
             <ToggleGroupItem
               value="desktop"
               aria-label="Aperçu ordinateur"
+              title="Aperçu sur ordinateur"
               className="px-2.5"
             >
               <Monitor size={14} />
@@ -117,6 +143,7 @@ export default function SignaturePreview({
             <ToggleGroupItem
               value="mobile"
               aria-label="Aperçu téléphone"
+              title="Aperçu sur téléphone"
               className="px-2.5"
             >
               <Smartphone size={14} />
@@ -131,6 +158,7 @@ export default function SignaturePreview({
             <ToggleGroupItem
               value="light"
               aria-label="Aperçu clair"
+              title="Mode clair"
               className="px-2.5"
             >
               <Sun size={14} />
@@ -138,6 +166,7 @@ export default function SignaturePreview({
             <ToggleGroupItem
               value="dark"
               aria-label="Aperçu sombre"
+              title="Mode sombre"
               className="px-2.5"
             >
               <Moon size={14} />

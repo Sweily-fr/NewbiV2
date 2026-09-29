@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 
-const STORAGE_KEY = "sig-editor-tour-v1";
+const STORAGE_KEY = "sig-editor-tour-v2";
 
 /**
  * Guide de première ouverture de l'éditeur : quelques bulles posées sur les

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import {
   ChevronDown,
@@ -57,10 +57,13 @@ export function TextField({
   maxLength,
   warning,
 }) {
+  // Libellé toujours relié au champ (clic, lecteurs d'écran)
+  const autoId = useId();
+  const inputId = id || autoId;
   return (
-    <Field label={label} hint={hint} htmlFor={id}>
+    <Field label={label} hint={hint} htmlFor={inputId}>
       <CheckedInput
-        id={id}
+        id={inputId}
         type={type}
         value={value || ""}
         placeholder={placeholder}
@@ -118,8 +121,13 @@ export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "
     }
   };
 
+  // Image large : la zone prend la place restante, les boutons restent visibles
   const box =
-    aspect === "wide" ? "h-20 w-full" : aspect === "logo" ? "h-16 w-32" : "h-20 w-20";
+    aspect === "wide"
+      ? "h-20 min-w-0 flex-1"
+      : aspect === "logo"
+        ? "h-16 w-32 shrink-0"
+        : "h-20 w-20 shrink-0";
 
   return (
     <Field label={label} hint={hint}>
@@ -138,7 +146,7 @@ export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "
             setDragging(false);
             send(e.dataTransfer.files?.[0]);
           }}
-          className={`relative flex ${box} shrink-0 items-center justify-center overflow-hidden rounded-[9px] border border-dashed bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px] text-muted-foreground transition-[border] duration-[80ms] cursor-pointer dark:bg-none dark:bg-neutral-900 ${
+          className={`relative flex ${box} items-center justify-center overflow-hidden rounded-[9px] border border-dashed bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px] text-muted-foreground transition-[border] duration-[80ms] cursor-pointer dark:bg-none dark:bg-neutral-900 ${
             dragging
               ? "border-[#5b4fff]"
               : "border-[#D1D3D8] hover:border-[#9FA1A7] dark:border-[#44444A] dark:hover:border-[#5c5c63]"
@@ -154,7 +162,7 @@ export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "
             <ImagePlus size={18} />
           )}
         </button>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex shrink-0 flex-col gap-1.5">
           <Button
             type="button"
             variant="outline"
@@ -350,8 +358,8 @@ function PersonField({ id, sig, replace, flush }) {
 
   return (
     <Field
-      label="Informations de"
-      hint="Nom, e-mail, portable et photo repris du profil de la personne choisie."
+      label="Signature de"
+      hint="Son nom, son e-mail, son portable et sa photo sont repris de son profil."
     >
       <Select value={value} onValueChange={choose} disabled={busy}>
         <SelectTrigger id="sig-field-member" className="w-full">
@@ -516,16 +524,6 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
             aspect="logo"
           />
         )}
-        <ImageField
-          id={id}
-          kind="BANNER"
-          fieldId="sig-field-banner"
-          label="Bandeau"
-          hint="Image large affichée sous la signature (activez-la dans Extras)."
-          image={images.banner}
-          onChanged={replace}
-          aspect="wide"
-        />
       </Section>
     </div>
   );

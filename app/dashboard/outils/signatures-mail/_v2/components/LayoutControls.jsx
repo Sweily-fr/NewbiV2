@@ -353,7 +353,31 @@ export function NameLayoutControl({ st, setStyle }) {
   );
 }
 
-export function IdentityControls({ st, setStyle }) {
+/**
+ * Poste en petites capitales espacées ; suivi de l'entreprise, les deux
+ * partagent alors une ligne.
+ */
+export function TitleStyleControl({ st, setStyle }) {
+  if (st.identityStyle === "inline") return null;
+  return (
+    <Pick
+      label="Style du poste"
+      hint={
+        st.titleStyle === "caps"
+          ? "Suivi de l'entreprise, les deux partagent une ligne."
+          : null
+      }
+      value={st.titleStyle}
+      onChange={(v) => setStyle({ titleStyle: v })}
+      options={[
+        { value: "normal", label: "Normal" },
+        { value: "caps", label: "En capitales" },
+      ]}
+    />
+  );
+}
+
+export function IdentityControls({ st, setStyle, withTitle = true }) {
   return (
     <>
       <NameLayoutControl st={st} setStyle={setStyle} />
@@ -367,25 +391,15 @@ export function IdentityControls({ st, setStyle }) {
           { value: "inline", label: "Sur une ligne", picto: <IdentityPicto inline /> },
         ]}
       />
-      {st.identityStyle !== "inline" && (
-        <Pick
-          label="Poste"
-          value={st.titleStyle}
-          onChange={(v) => setStyle({ titleStyle: v })}
-          options={[
-            { value: "normal", label: "Normal" },
-            { value: "caps", label: "CAPITALES" },
-          ]}
-        />
-      )}
+      {withTitle && <TitleStyleControl st={st} setStyle={setStyle} />}
     </>
   );
 }
 
-export function ContactStyleControl({ st, setStyle }) {
+export function ContactStyleControl({ st, setStyle, label = "Coordonnées" }) {
   return (
     <PictoPick
-      label="Coordonnées"
+      label={label}
       columns={4}
       value={st.contactStyle}
       onChange={(v) =>
@@ -524,18 +538,20 @@ export function SocialRowsControl({ st, setStyle, count }) {
  * Largeur des colonnes (photo, texte, droite) : ajustée au contenu ou sur
  * mesure. Seules les colonnes présentes sont proposées.
  */
-export function ColumnWidthControls({ st, setStyle }) {
-  const L = layoutState(st);
-  const hasSide = (st.slots?.side || []).length > 0;
+export function ColumnWidthControls({ st, setStyle, shown }) {
+  // Colonne affichée : au moins un de ses éléments a du contenu
+  const has = (slot) =>
+    (st.slots?.[slot] || []).some((k) => !shown || shown.has(k));
+  const hasSide = has("side");
   const columns = [
-    L.hasVisual && { key: "visual", label: "Colonne photo", min: 40, max: 600, initial: 140 },
+    has("visual") && { key: "visual", label: "Colonne photo", min: 40, max: 600, initial: 140 },
     { key: "text", label: "Colonne de texte", min: 80, max: 640, initial: 320 },
     hasSide && { key: "side", label: "Colonne de droite", min: 40, max: 400, initial: 140 },
   ].filter(Boolean);
   return columns.map((c) => (
     <LengthRow
       key={c.key}
-      label={`Largeur : ${c.label.toLowerCase()}`}
+      label={c.label}
       autoLabel="Ajustée au contenu"
       value={st.columns?.[c.key] || 0}
       onChange={(v) => setStyle({ columns: { ...(st.columns || {}), [c.key]: v } })}
