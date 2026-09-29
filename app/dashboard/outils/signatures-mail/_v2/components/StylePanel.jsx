@@ -186,8 +186,8 @@ export default function StylePanel({ sig, update, catalog, template }) {
         <FooterStripControl st={st} setStyle={setStyle} />
         <OutsideControls st={st} setStyle={setStyle} />
         {(layoutState(st).boxed ||
-          st.identityZone !== "plain" ||
-          st.photoColumn === "tinted") && (
+          layoutState(st).hasHeader ||
+          st.visualFill !== "none") && (
           <SliderRow
             label="Arrondi"
             value={st.radius}

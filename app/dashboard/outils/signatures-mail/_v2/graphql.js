@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { cleanSlots } from "./slots";
 
 /**
  * Requêtes et mutations des signatures de mail v2.
@@ -107,6 +108,18 @@ export const SIGNATURE_V2_FIELDS = gql`
       footerStrip
       outside
       textOrder
+      slots {
+        header
+        visual
+        text
+        side
+        footer
+        outside
+      }
+      visualSide
+      visualFill
+      headerPhoto
+      headerFill
       elements {
         ${ELEMENT_STYLES}
       }
@@ -323,6 +336,10 @@ export function toInput(sig) {
     cta: strip(sig.cta),
     banner: strip(sig.banner),
     disclaimer: strip(sig.disclaimer),
-    style: { ...strip(sig.style), elements: cleanElements(sig.style?.elements) },
+    style: {
+      ...strip(sig.style),
+      elements: cleanElements(sig.style?.elements),
+      ...(sig.style?.slots ? { slots: cleanSlots(sig.style.slots) } : {}),
+    },
   };
 }

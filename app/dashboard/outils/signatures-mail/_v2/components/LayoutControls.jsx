@@ -10,21 +10,36 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Choice, Row } from "./controls";
+import {
+  identityZone,
+  isOutside,
+  itemPlacement,
+  moveItem,
+  photoPlacement,
+  setIdentityZone,
+  setItemPlacement,
+  setOutside,
+  setPhotoPlacement,
+} from "../slots";
 
 /**
  * Contrôles de mise en page, partagés par l'onglet Style et les panneaux
- * d'élément. Chaque contrôle ne s'affiche que s'il a un effet avec les
- * réglages en cours (ex. l'alignement vertical n'existe que pour une photo
- * à côté du texte) : les mêmes règles que le générateur (layout.js).
+ * d'élément. Ils agissent sur les emplacements des éléments (style.slots),
+ * comme le glisser-déposer de l'aperçu. Chaque contrôle ne s'affiche que
+ * s'il a un effet avec les réglages en cours.
  */
 
-/** Réglages effectifs, mêmes règles que effectiveLayout côté API. */
+/** État de la mise en page, lu dans les emplacements. */
 export function layoutState(st) {
-  const zone = st.identityZone;
-  const photoSide = zone !== "band-left" && st.photoPosition !== "top";
+  const slots = st.slots || {};
+  const zone = identityZone(st);
+  const photo = photoPlacement(st);
   return {
     zone,
-    photoSide,
+    photo,
+    hasVisual: (slots.visual || []).length > 0,
+    hasHeader: (slots.header || []).length > 0,
+    photoSide: photo === "left" || photo === "right",
     plain: zone === "plain",
     boxed: st.frame === "outline" || st.frame === "soft",
     framed: st.frame !== "none",
@@ -44,7 +59,7 @@ export function Pick({ label, hint, value, onChange, options }) {
     <Row label={label} hint={hint}>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger size="sm" className="h-8 w-44 text-xs">
-          <SelectValue />
+          <SelectValue placeholder="Autre place" />
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
@@ -63,8 +78,8 @@ export function IdentityZoneControl({ st, setStyle }) {
     <Pick
       label="Bloc de couleur"
       hint="Le nom (et la photo) sur un fond de la couleur principale."
-      value={st.identityZone}
-      onChange={(v) => setStyle({ identityZone: v })}
+      value={identityZone(st)}
+      onChange={(v) => setStyle(setIdentityZone(st, v))}
       options={[
         { value: "plain", label: "Aucun" },
         { value: "band-top", label: "En-tête" },
@@ -74,29 +89,36 @@ export function IdentityZoneControl({ st, setStyle }) {
   );
 }
 
-/** Position, alignement et colonne de la photo. */
+/** Place de la photo, son alignement et sa colonne. */
 export function PhotoLayoutControls({ st, setStyle }) {
   const L = layoutState(st);
-  if (L.zone === "band-left") {
+  if (L.photo === "header") {
     return (
-      <p className="text-[11px] leading-snug text-muted-foreground">
-        La photo est dans le bloc de couleur, au-dessus du nom.
-      </p>
-    );
-  }
-  return (
-    <>
       <Pick
-        label="Position"
-        value={st.photoPosition}
-        onChange={(v) => setStyle({ photoPosition: v })}
+        label="Photo dans l'en-tête"
+        value={st.headerPhoto}
+        onChange={(v) => setStyle({ headerPhoto: v })}
         options={[
           { value: "left", label: "Gauche" },
           { value: "top", label: "En haut" },
           { value: "right", label: "Droite" },
         ]}
       />
-      {L.photoSide && (
+    );
+  }
+  return (
+    <>
+      <Pick
+        label="Position"
+        value={["left", "top", "right"].includes(L.photo) ? L.photo : ""}
+        onChange={(v) => setStyle(setPhotoPlacement(st, v))}
+        options={[
+          { value: "left", label: "Gauche" },
+          { value: "top", label: "En haut" },
+          { value: "right", label: "Droite" },
+        ]}
+      />
+      {L.hasVisual && (
         <Pick
           label="Alignement vertical"
           value={st.photoValign}
@@ -108,18 +130,19 @@ export function PhotoLayoutControls({ st, setStyle }) {
           ]}
         />
       )}
-      {L.photoSide && L.plain && (
+      {L.hasVisual && (
         <Pick
-          label="Colonne de la photo"
-          value={st.photoColumn}
-          onChange={(v) => setStyle({ photoColumn: v })}
+          label="Fond de la colonne"
+          value={st.visualFill}
+          onChange={(v) => setStyle({ visualFill: v })}
           options={[
-            { value: "plain", label: "Simple" },
-            { value: "tinted", label: "Teintée" },
+            { value: "none", label: "Aucun" },
+            { value: "tint", label: "Teinté" },
+            { value: "solid", label: "Couleur" },
           ]}
         />
       )}
-      {!L.photoSide && (
+      {!L.hasVisual && (
         <Pick
           label="Alignement du texte"
           value={st.align}
@@ -136,7 +159,7 @@ export function PhotoLayoutControls({ st, setStyle }) {
 
 export function DividerControl({ st, setStyle }) {
   const L = layoutState(st);
-  if (!L.plain || !L.photoSide || st.photoColumn === "tinted") return null;
+  if (!L.hasVisual || st.visualFill !== "none") return null;
   return (
     <Pick
       label="Séparateur photo / texte"
@@ -153,32 +176,27 @@ export function DividerControl({ st, setStyle }) {
 }
 
 export function IdentityControls({ st, setStyle }) {
-  const L = layoutState(st);
   return (
     <>
-      {L.plain && (
-        <Pick
-          label="Trait sous le nom"
-          value={st.accent}
-          onChange={(v) => setStyle({ accent: v })}
-          options={[
-            { value: "none", label: "Aucun" },
-            { value: "short", label: "Court" },
-            { value: "thin", label: "Fin" },
-          ]}
-        />
-      )}
-      {L.plain && (
-        <Pick
-          label="Nom, poste, société"
-          value={st.identityStyle}
-          onChange={(v) => setStyle({ identityStyle: v })}
-          options={[
-            { value: "stack", label: "Empilés" },
-            { value: "inline", label: "Sur une ligne" },
-          ]}
-        />
-      )}
+      <Pick
+        label="Trait sous le nom"
+        value={st.accent}
+        onChange={(v) => setStyle({ accent: v })}
+        options={[
+          { value: "none", label: "Aucun" },
+          { value: "short", label: "Court" },
+          { value: "thin", label: "Fin" },
+        ]}
+      />
+      <Pick
+        label="Nom, poste, société"
+        value={st.identityStyle}
+        onChange={(v) => setStyle({ identityStyle: v })}
+        options={[
+          { value: "stack", label: "Empilés" },
+          { value: "inline", label: "Sur une ligne" },
+        ]}
+      />
       {st.identityStyle !== "inline" && (
         <Pick
           label="Poste"
@@ -212,44 +230,48 @@ export function ContactStyleControl({ st, setStyle }) {
   );
 }
 
-function positionOptions(st) {
+/** Emplacements proposés pour un élément (réseaux, logo). */
+function placementOptions(st) {
   const L = layoutState(st);
   return [
+    ...(L.hasHeader ? [{ value: "header", label: "Dans l'en-tête" }] : []),
+    { value: "visual", label: "Colonne photo" },
     { value: "text", label: "Sous le texte" },
-    ...(L.plain && L.photoSide
-      ? [{ value: "photo", label: "Sous la photo" }]
-      : []),
     { value: "side", label: "À droite" },
-    { value: "bottom", label: "En bas" },
+    { value: "footer", label: "En bas" },
+    ...(L.framed ? [{ value: "outside", label: "Sous le cadre" }] : []),
   ];
 }
 
-export function SocialPositionControl({ st, setStyle }) {
-  const options = positionOptions(st);
-  const value = options.some((o) => o.value === st.socialPosition)
-    ? st.socialPosition
-    : "text";
+function PlacementControl({ item, label, st, setStyle }) {
   return (
     <Pick
+      label={label}
+      value={itemPlacement(st, item)}
+      onChange={(v) => setStyle(setItemPlacement(st, item, v))}
+      options={placementOptions(st)}
+    />
+  );
+}
+
+export function SocialPositionControl({ st, setStyle }) {
+  return (
+    <PlacementControl
+      item="social"
       label="Position des réseaux"
-      value={value}
-      onChange={(v) => setStyle({ socialPosition: v })}
-      options={options}
+      st={st}
+      setStyle={setStyle}
     />
   );
 }
 
 export function LogoPositionControl({ st, setStyle }) {
-  const options = positionOptions(st);
-  const value = options.some((o) => o.value === st.logoPosition)
-    ? st.logoPosition
-    : "text";
   return (
-    <Pick
+    <PlacementControl
+      item="logo"
       label="Position du logo"
-      value={value}
-      onChange={(v) => setStyle({ logoPosition: v })}
-      options={options}
+      st={st}
+      setStyle={setStyle}
     />
   );
 }
@@ -262,22 +284,17 @@ const OUTSIDE_LABELS = {
   disclaimer: "Mention",
 };
 
-/** Éléments qu'on peut sortir de l'encadré, selon leur position. */
+/** Éléments du bas qu'on peut sortir du cadre (ou y remettre). */
 function outsideCandidates(st) {
-  return [
-    ...(st.socialPosition === "bottom" ? ["social"] : []),
-    ...(st.logoPosition === "bottom" ? ["logo"] : []),
-    "cta",
-    "banner",
-    "disclaimer",
-  ];
+  const bottom = [...(st.slots?.footer || []), ...(st.slots?.outside || [])];
+  return Object.keys(OUTSIDE_LABELS).filter((k) => bottom.includes(k));
 }
 
 /** Toutes les cases « en dehors de l'encadré » (onglet Style). */
 export function OutsideControls({ st, setStyle }) {
   const L = layoutState(st);
-  if (!L.framed) return null;
   const candidates = outsideCandidates(st);
+  if (!L.framed || candidates.length === 0) return null;
   return (
     <Row
       label="En dehors de l'encadré"
@@ -286,8 +303,17 @@ export function OutsideControls({ st, setStyle }) {
       <ToggleGroup
         type="multiple"
         size="sm"
-        value={(st.outside || []).filter((k) => candidates.includes(k))}
-        onValueChange={(v) => setStyle({ outside: v })}
+        value={candidates.filter((k) => isOutside(st, k))}
+        onValueChange={(v) => {
+          let slots = st.slots;
+          for (const k of candidates) {
+            const out = v.includes(k);
+            if (out !== isOutside(st, k)) {
+              slots = moveItem(slots, k, out ? "outside" : "footer");
+            }
+          }
+          setStyle({ slots });
+        }}
         className="flex-wrap justify-end"
       >
         {candidates.map((k) => (
@@ -304,15 +330,11 @@ export function OutsideControls({ st, setStyle }) {
 export function OutsideToggle({ item, st, setStyle }) {
   const L = layoutState(st);
   if (!L.framed || !outsideCandidates(st).includes(item)) return null;
-  const outside = (st.outside || []).includes(item);
   return (
     <Pick
       label="Place"
-      value={outside ? "out" : "in"}
-      onChange={(v) => {
-        const rest = (st.outside || []).filter((k) => k !== item);
-        setStyle({ outside: v === "out" ? [...rest, item] : rest });
-      }}
+      value={isOutside(st, item) ? "out" : "in"}
+      onChange={(v) => setStyle(setOutside(st, item, v === "out"))}
       options={[
         { value: "in", label: "Dans l'encadré" },
         { value: "out", label: "En dehors" },
@@ -324,8 +346,8 @@ export function OutsideToggle({ item, st, setStyle }) {
 /** Bande teintée en bas du cadre, pour les réseaux et le logo en bas. */
 export function FooterStripControl({ st, setStyle }) {
   const L = layoutState(st);
-  const hasBottom =
-    st.socialPosition === "bottom" || st.logoPosition === "bottom";
+  const footer = st.slots?.footer || [];
+  const hasBottom = footer.includes("social") || footer.includes("logo");
   if (!L.boxed || !hasBottom) return null;
   return (
     <Row

@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { layoutState } from "./LayoutControls";
+import { ITEM_LABEL, ITEM_OF, ITEM_THE, moveItem, slotOf } from "../slots";
 
 /**
- * Glisser-déposer d'un bloc de l'aperçu, façon Figma / Notion : des lignes
- * d'insertion fines, calées sur la géométrie réelle du rendu (colonne de
- * texte, corps, cadre), et seule la ligne la plus proche du pointeur
- * s'allume, avec son nom. Chaque ligne correspond à un réglage de mise en
- * page que le générateur sait rendre dans Gmail et Outlook ; la position
- * actuelle n'est jamais proposée.
+ * Glisser-déposer d'un élément de l'aperçu, façon Figma / Notion. Tout
+ * élément va dans n'importe quel emplacement (bandeau, colonne photo,
+ * colonne principale, colonne de droite, bas du cadre, sous le cadre), à
+ * n'importe quelle place : des lignes d'insertion fines, calées sur la
+ * géométrie réelle du rendu, et seule la plus proche du pointeur s'allume,
+ * avec son nom. Un emplacement vide se crée en déposant sur sa ligne (ex.
+ * « Nouvelle colonne à gauche »). La place actuelle n'est jamais proposée.
  *
  * Posé en plein écran au-dessus de l'aperçu pendant le glisser. Le
  * pointeur arrive par deux chemins : les événements de cet écran, ou ceux
@@ -17,147 +18,94 @@ import { layoutState } from "./LayoutControls";
  * bouton a été pressé) ; le premier relâchement reçu l'emporte.
  */
 
-const GAP = 10;
 /** Au-delà de cette distance (px) d'une ligne, relâcher annule. */
 const SNAP = 90;
-
-const LABELS = {
-  identity: "Nom et poste",
-  contact: "Coordonnées",
-  photo: "Photo",
-  social: "Réseaux",
-  logo: "Logo",
-  cta: "Bouton",
-  banner: "Bandeau",
-  disclaimer: "Mention",
-};
-const ABOVE = {
-  identity: "Au-dessus du nom",
-  contact: "Au-dessus des coordonnées",
-  social: "Au-dessus des réseaux",
-  logo: "Au-dessus du logo",
-};
-const BELOW = {
-  identity: "Sous le nom",
-  contact: "Sous les coordonnées",
-  social: "Sous les réseaux",
-  logo: "Sous le logo",
-};
-const TEXT_BLOCKS = ["identity", "contact", "social", "logo"];
+const SLOTS = ["header", "visual", "text", "side", "footer", "outside"];
 
 const hLine = (label, x, y, len, patch) => ({ label, orient: "h", x, y, len, patch });
 const vLine = (label, x, y, len, patch) => ({ label, orient: "v", x, y, len, patch });
 
-/** Réordonner la colonne de texte : une ligne entre chaque bloc. */
-function reorderTargets(field, st, g, extraPatch = {}) {
-  const L = layoutState(st);
-  const inColumn = {
-    identity: L.plain,
-    contact: true,
-    social: st.socialPosition === "text",
-    logo: st.logoPosition === "text",
-  };
-  const seq = TEXT_BLOCKS.filter((k) => k !== field && inColumn[k] && g.blocks?.[k]).sort(
-    (a, b) => g.blocks[a].y - g.blocks[b].y,
-  );
-  if (seq.length === 0) return [];
-  const current = st.textOrder?.length ? st.textOrder : TEXT_BLOCKS;
-  const base = current.filter((k) => k !== field);
-  const col = g.column || g.body || g.sig;
-  const rect = (k) => g.blocks[k];
+const bottom = (r) => r.y + r.h;
+const right = (r) => r.x + r.w;
+/** Deux éléments sur la même ligne (inline) : forte superposition verticale. */
+const sameRow = (a, b) =>
+  Math.min(bottom(a), bottom(b)) - Math.max(a.y, b.y) > 0.5 * Math.min(a.h, b.h);
+
+/** Lignes de dépôt pour l'élément tiré, en coordonnées de la page. */
+export function targetsFor(field, st, g) {
+  const slots = st.slots;
+  if (!slots) return [];
+  const current = slotOf(slots, field);
   const targets = [];
-  for (let i = 0; i <= seq.length; i += 1) {
-    let y;
-    let label;
-    let order;
-    if (i === 0) {
-      y = rect(seq[0]).y - 6;
-      label = ABOVE[seq[0]];
-      const at = base.indexOf(seq[0]);
-      order = [...base.slice(0, at), field, ...base.slice(at)];
-    } else {
-      const prev = rect(seq[i - 1]);
-      y = i === seq.length ? prev.y + prev.h + 6 : (prev.y + prev.h + rect(seq[i]).y) / 2;
-      label = BELOW[seq[i - 1]];
-      const at = base.indexOf(seq[i - 1]) + 1;
-      order = [...base.slice(0, at), field, ...base.slice(at)];
+  const B = g.body || g.sig;
+
+  for (const slot of SLOTS) {
+    // Éléments affichés de l'emplacement, dans l'ordre de lecture
+    const shown = (g.items || [])
+      .filter((i) => i.slot === slot && i.item !== field && i.rect?.h > 0)
+      .filter((i, idx, arr) => arr.findIndex((j) => j.item === i.item) === idx)
+      .sort((a, b) => (sameRow(a.rect, b.rect) ? a.rect.x - b.rect.x : a.rect.y - b.rect.y));
+    const area = g.slots?.[slot];
+    if (shown.length > 0) {
+      const col = area || shown[0].rect;
+      shown.forEach((entry, i) => {
+        const r = entry.rect;
+        const prev = shown[i - 1];
+        // Avant cet élément
+        const patch = { slots: moveItem(slots, field, slot, { before: entry.item }) };
+        const noop = current === slot && slots[slot][slots[slot].indexOf(entry.item) - 1] === field;
+        if (!noop) {
+          if (prev && sameRow(prev.rect, r)) {
+            const x = (right(prev.rect) + r.x) / 2;
+            targets.push(vLine(`Avant ${ITEM_THE[entry.item]}`, x, Math.min(prev.rect.y, r.y), Math.max(bottom(prev.rect), bottom(r)) - Math.min(prev.rect.y, r.y), patch));
+          } else {
+            const y = prev ? (bottom(prev.rect) + r.y) / 2 : r.y - 5;
+            targets.push(hLine(`Au-dessus ${ITEM_OF[entry.item]}`, col.x, y, col.w, patch));
+          }
+        }
+      });
+      // Après le dernier
+      const last = shown[shown.length - 1];
+      const lastIdx = slots[slot].indexOf(last.item);
+      const noopEnd = current === slot && slots[slot][lastIdx + 1] === field;
+      if (!noopEnd) {
+        targets.push(
+          hLine(`Sous ${ITEM_THE[last.item]}`, col.x, bottom(last.rect) + 5, col.w, {
+            slots: moveItem(slots, field, slot, { after: last.item }),
+          }),
+        );
+      }
+    } else if (current !== slot) {
+      // Emplacement vide (l'élément tiré n'y est pas déjà seul) : une
+      // ligne pour le créer
+      const create = (label, line) => targets.push({ ...line, label, create: true });
+      const into = { slots: moveItem(slots, field, slot) };
+      if (slot === "visual") {
+        create("Nouvelle colonne à gauche", vLine("", B.x - 16, B.y, B.h, { ...into, visualSide: "left" }));
+      } else if (slot === "side") {
+        create("Nouvelle colonne à droite", vLine("", right(B) + 16, B.y, B.h, into));
+      } else if (slot === "header") {
+        const top = (g.frame || B).y;
+        create("En-tête coloré", hLine("", B.x, top - 12, B.w, into));
+      } else if (slot === "footer") {
+        create("En bas", hLine("", B.x, bottom(B) + 10, B.w, into));
+      } else if (slot === "outside" && g.frame) {
+        create("Sous le cadre", hLine("", g.frame.x, bottom(g.frame) + 12, g.frame.w, into));
+      } else if (slot === "text") {
+        create("Colonne principale", vLine("", right(B) + 16, B.y, B.h, into));
+      }
     }
-    // Même ordre et même position : ce serait la place actuelle
-    const samePlace =
-      Object.keys(extraPatch).length === 0 && order.join() === current.join();
-    if (!samePlace) {
-      targets.push(hLine(label, col.x, y, col.w, { ...extraPatch, textOrder: order }));
-    }
+  }
+
+  // Deux lignes horizontales presque confondues : on écarte la seconde
+  const hs = targets.filter((t) => t.orient === "h").sort((a, b) => a.y - b.y);
+  for (let i = 1; i < hs.length; i += 1) {
+    const a = hs[i - 1];
+    const b = hs[i];
+    const overlapX = Math.min(a.x + a.len, b.x + b.len) - Math.max(a.x, b.x) > 0;
+    if (overlapX && b.y - a.y < 12) b.y = a.y + 12;
   }
   return targets;
-}
-
-/** Lignes de dépôt proposées pour un bloc, en coordonnées de la page. */
-export function targetsFor(field, st, g) {
-  const L = layoutState(st);
-  const outside = st.outside || [];
-  const without = (k) => outside.filter((x) => x !== k);
-  const B = g.body || g.sig;
-  const F = g.frame;
-  const P = g.blocks?.photo || g.photo;
-
-  if (field === "photo") {
-    if (L.zone === "band-left") return [];
-    // Référence : l'identité sur un en-tête coloré, sinon la colonne de texte
-    const R = L.zone === "band-top" ? g.blocks?.identity || B : g.column || B;
-    const cur = st.photoPosition;
-    return [
-      cur !== "left" && vLine("Photo à gauche", R.x - GAP - 4, R.y, R.h, { photoPosition: "left" }),
-      cur !== "top" && hLine("Photo au-dessus", R.x, R.y - GAP - 4, R.w, { photoPosition: "top" }),
-      cur !== "right" &&
-        vLine("Photo à droite", R.x + R.w + GAP + 4, R.y, R.h, { photoPosition: "right" }),
-    ].filter(Boolean);
-  }
-
-  if (field === "identity" || field === "contact") {
-    if (field === "identity" && !L.plain) return [];
-    return reorderTargets(field, st, g);
-  }
-
-  if (field === "social" || field === "logo") {
-    const key = field === "social" ? "socialPosition" : "logoPosition";
-    const cur = st[key];
-    const isOut = outside.includes(field);
-    const targets = reorderTargets(field, st, g, cur === "text" ? {} : { [key]: "text" });
-    const lowest = targets.reduce((m, t) => Math.max(m, t.y), -Infinity);
-    if (cur !== "photo" && L.plain && L.photoSide && P) {
-      targets.push(hLine("Sous la photo", P.x, P.y + P.h + GAP, P.w, { [key]: "photo" }));
-    }
-    if (cur !== "side") {
-      targets.push(vLine("À droite", B.x + B.w + 2 * GAP, B.y, B.h, { [key]: "side" }));
-    }
-    // « En bas » : sous le corps, décalé s'il tombe sur la dernière ligne de la colonne
-    const bottomY = Math.max(B.y + B.h + GAP, lowest + 16);
-    if (cur !== "bottom" || isOut) {
-      targets.push(
-        hLine("En bas", B.x, bottomY, B.w, { [key]: "bottom", outside: without(field) }),
-      );
-    }
-    if (L.framed && F && !(cur === "bottom" && isOut)) {
-      targets.push(
-        hLine("Hors du cadre", F.x, Math.max(F.y + F.h + GAP, bottomY + 16), F.w, {
-          [key]: "bottom",
-          outside: [...without(field), field],
-        }),
-      );
-    }
-    return targets;
-  }
-
-  // Bouton, bandeau, mention : dans ou hors du cadre
-  if (!L.framed || !F) return [];
-  return outside.includes(field)
-    ? [hLine("Dans le cadre", F.x + 8, F.y + F.h - GAP, F.w - 16, { outside: without(field) })]
-    : [
-        hLine("Hors du cadre", F.x, F.y + F.h + GAP, F.w, {
-          outside: [...without(field), field],
-        }),
-      ];
 }
 
 /** Distance du pointeur à une ligne (segment). */
@@ -183,23 +131,12 @@ function nearest(targets, x, y) {
   return best;
 }
 
-/** Message quand un bloc n'a aucune place possible. */
-function noTargetHint(field, st) {
-  if (field === "identity" && !layoutState(st).plain) {
-    return "Sur un bloc de couleur : réglez « Bloc de couleur » dans Style";
-  }
-  if (["cta", "banner", "disclaimer"].includes(field)) {
-    return "Ajoutez un encadré pour sortir cet élément du cadre";
-  }
-  return "Aucune autre place possible pour ce bloc";
-}
-
 export default function DropOverlay({ drag, style, pointer: relayed, release, onDrop, onCancel }) {
   const [own, setOwn] = useState(null);
   const pointer = own || relayed || { x: drag.x, y: drag.y };
   const targets = useMemo(() => targetsFor(drag.field, style, drag), [drag, style]);
   const active = nearest(targets, pointer.x, pointer.y);
-  const source = drag.blocks?.[drag.field];
+  const source = (drag.items || []).find((i) => i.item === drag.field)?.rect;
 
   const done = useRef(false);
   const finish = (x, y) => {
@@ -228,7 +165,7 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
       onPointerMove={(e) => setOwn({ x: e.clientX, y: e.clientY })}
       onPointerUp={(e) => finish(e.clientX, e.clientY)}
     >
-      {/* Bloc tiré, repéré en pointillés */}
+      {/* Élément tiré, repéré en pointillés */}
       {source && (
         <div
           className="pointer-events-none fixed rounded-md border-2 border-dashed border-neutral-400"
@@ -237,7 +174,7 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
       )}
 
       {/* Lignes d'insertion : discrètes, sauf la plus proche */}
-      {targets.map((t) => {
+      {targets.map((t, i) => {
         const on = t === active;
         const thick = on ? 4 : 2;
         const lineStyle =
@@ -246,9 +183,9 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
             : { left: t.x - thick / 2, top: t.y, width: thick, height: t.len };
         return (
           <div
-            key={t.label}
+            key={`${t.label}-${i}`}
             className={`pointer-events-none fixed rounded-full ${
-              on ? "bg-[#5a50ff]" : "bg-[#5a50ff]/35"
+              on ? "bg-[#5a50ff]" : t.create ? "bg-[#5a50ff]/20" : "bg-[#5a50ff]/35"
             }`}
             style={lineStyle}
           >
@@ -256,19 +193,11 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
               <>
                 <span
                   className="absolute h-2.5 w-2.5 rounded-full border-2 border-[#5a50ff] bg-white"
-                  style={
-                    t.orient === "h"
-                      ? { left: -5, top: -3 }
-                      : { top: -5, left: -3 }
-                  }
+                  style={t.orient === "h" ? { left: -5, top: -3 } : { top: -5, left: -3 }}
                 />
                 <span
                   className="absolute h-2.5 w-2.5 rounded-full border-2 border-[#5a50ff] bg-white"
-                  style={
-                    t.orient === "h"
-                      ? { right: -5, top: -3 }
-                      : { bottom: -5, left: -3 }
-                  }
+                  style={t.orient === "h" ? { right: -5, top: -3 } : { bottom: -5, left: -3 }}
                 />
               </>
             )}
@@ -295,13 +224,9 @@ export default function DropOverlay({ drag, style, pointer: relayed, release, on
         className="pointer-events-none fixed whitespace-nowrap rounded-md bg-neutral-900/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg"
         style={{ left: pointer.x + 14, top: pointer.y + 14 }}
       >
-        {LABELS[drag.field] || drag.field}
-        {targets.length === 0 ? (
-          <span className="font-normal text-neutral-300"> · {noTargetHint(drag.field, style)}</span>
-        ) : (
-          !active && (
-            <span className="font-normal text-neutral-300"> · approchez une ligne violette</span>
-          )
+        {ITEM_LABEL[drag.field] || drag.field}
+        {!active && (
+          <span className="font-normal text-neutral-300"> · approchez une ligne violette</span>
         )}
       </div>
     </div>

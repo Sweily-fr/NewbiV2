@@ -24,8 +24,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
  *   en place (clic, frappe, Entrée ou Échap pour valider). Pendant la
  *   frappe, `frozen` garde le HTML affiché pour ne pas recharger l'iframe
  *   sous le curseur ; `onEditingChange(bool)` signale début et fin.
- * - `onDragStart({ field, sig, photo, blocks, x, y })` : un bloc tiré par sa
- *   poignée (⠿, affichée au survol : déplacer ne se confond jamais avec
+ * - `onDragStart({ field, sig, items, slots, body, frame, x, y })` : un
+ *   élément tiré par sa poignée (⠿, affichée au survol : déplacer ne se
+ *   confond jamais avec
  *   modifier un texte) ; les rectangles sont en coordonnées de la page. Le
  *   navigateur continue d'envoyer la souris à l'iframe où le bouton a été
  *   pressé : le script relaie donc aussi `onDragMove` / `onDragEnd`.
@@ -56,12 +57,14 @@ if(b)showGrip(b);else hideT=setTimeout(hideGrip,400);
 document.addEventListener("mouseleave",function(){hideT=setTimeout(hideGrip,400);});
 grip.addEventListener("pointerdown",function(e){
 if(!hover)return;e.preventDefault();e.stopPropagation();
-var blocks={};
-document.querySelectorAll("[data-sig-block]").forEach(function(el){var k=el.getAttribute("data-sig-block");if(!blocks[k])blocks[k]=crect(el);});
+var items=[];
+document.querySelectorAll("[data-sig-block]").forEach(function(el){var s=el.closest("[data-sig-slot]");items.push({item:el.getAttribute("data-sig-block"),slot:s?s.getAttribute("data-sig-slot"):null,rect:crect(el)});});
+var slots={};
+document.querySelectorAll("[data-sig-slot]").forEach(function(el){var k=el.getAttribute("data-sig-slot");var r=crect(el);var a=slots[k];if(!a){slots[k]=r;return;}var x=Math.min(a.x,r.x),y=Math.min(a.y,r.y);slots[k]={x:x,y:y,w:Math.max(a.x+a.w,r.x+r.w)-x,h:Math.max(a.y+a.h,r.y+r.h)-y};});
 var sig=document.querySelector(".sig > table")||document.querySelector(".sig");
 var field=hover.getAttribute("data-sig-block");
 dragging=true;hideGrip();
-post({type:"sig-drag",field:field,sig:rect(sig),photo:blocks.photo||null,blocks:blocks,column:q("[data-sig-column]",true),body:q("[data-sig-body]",true),frame:q("[data-sig-frame] > table")||q("[data-sig-frame]",true),x:e.clientX,y:e.clientY});
+post({type:"sig-drag",field:field,sig:rect(sig),items:items,slots:slots,body:q("[data-sig-body]",true),frame:q("[data-sig-frame] > table")||q("[data-sig-frame]",true),x:e.clientX,y:e.clientY});
 });
 document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
 document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});}},true);
@@ -143,11 +146,10 @@ export default function HtmlFrame({
           onDragStart?.({
             field: data.field,
             sig: toPage(data.sig),
-            photo: toPage(data.photo),
-            blocks: Object.fromEntries(
-              Object.entries(data.blocks || {}).map(([k, r]) => [k, toPage(r)]),
+            items: (data.items || []).map((i) => ({ ...i, rect: toPage(i.rect) })),
+            slots: Object.fromEntries(
+              Object.entries(data.slots || {}).map(([k, r]) => [k, toPage(r)]),
             ),
-            column: toPage(data.column),
             body: toPage(data.body),
             frame: toPage(data.frame),
             x: data.x + box.left,
