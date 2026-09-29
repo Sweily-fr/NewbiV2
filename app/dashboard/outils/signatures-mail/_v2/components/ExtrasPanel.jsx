@@ -1,9 +1,9 @@
 "use client";
 
-import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
 import ColorField from "./ColorField";
-import { Row, Section, SwitchRow } from "./controls";
+import { CheckedInput, Row, Section, SwitchRow } from "./controls";
+import { ctaLabelProblem, ctaLinkProblem, linkProblem } from "../links";
 
 /**
  * Un extra : section de la plateforme, interrupteur dans un encadré gris,
@@ -51,31 +51,35 @@ export default function ExtrasPanel({ sig, update }) {
         onToggle={(v) => update({ cta: { enabled: v } })}
       >
         <Row label="Texte du bouton" htmlFor="sig-cta-label">
-          <Input
+          <CheckedInput
             id="sig-cta-label"
             value={cta.label}
             maxLength={60}
             placeholder="Prendre rendez-vous"
+            warning={ctaLabelProblem(cta)}
             onChange={(e) => update({ cta: { label: e.target.value } })}
           />
         </Row>
         <Row label="Lien" htmlFor="sig-cta-url">
-          <Input
+          <CheckedInput
             id="sig-cta-url"
             value={cta.url}
             placeholder="calendly.com/votre-nom"
+            warning={ctaLinkProblem(cta)}
             onChange={(e) => update({ cta: { url: e.target.value } })}
           />
         </Row>
         <div className="grid grid-cols-2 gap-4">
           <Row label="Fond">
             <ColorField
+              label="Fond du bouton"
               value={cta.backgroundColor || style.primaryColor}
               onChange={(v) => update({ cta: { backgroundColor: v } })}
             />
           </Row>
           <Row label="Texte">
             <ColorField
+              label="Texte du bouton"
               value={cta.textColor}
               onChange={(v) => update({ cta: { textColor: v } })}
             />
@@ -96,15 +100,16 @@ export default function ExtrasPanel({ sig, update }) {
         onToggle={(v) => update({ banner: { enabled: v } })}
       >
         <Row label="Lien au clic" htmlFor="sig-banner-url">
-          <Input
+          <CheckedInput
             id="sig-banner-url"
             value={banner.url}
             placeholder="votre-site.fr/offre"
+            warning={linkProblem(banner.url)}
             onChange={(e) => update({ banner: { url: e.target.value } })}
           />
         </Row>
         <Row label="Texte alternatif" htmlFor="sig-banner-alt">
-          <Input
+          <CheckedInput
             id="sig-banner-alt"
             value={banner.alt}
             maxLength={120}

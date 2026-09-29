@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useApolloClient, useMutation } from "@apollo/client";
 import {
   ArrowLeft,
   Check,
   Copy,
+  ChevronRight,
   LayoutTemplate,
   Loader2,
+  MailCheck,
   MoreHorizontal,
   Move,
   Palette,
@@ -54,12 +56,14 @@ import {
   DELETE_SIGNATURE_V2,
   DUPLICATE_SIGNATURE_V2,
   RENDER_SIGNATURE_V2,
+  SEND_SIGNATURE_V2_TEST,
   SET_DEFAULT_SIGNATURE_V2,
   SIGNATURES_V2,
   toInput,
 } from "../graphql";
 import { SignatureEditorV2Skeleton } from "./signature-v2-skeleton";
 import TemplateGallery from "./TemplateGallery";
+import EditorTour from "./EditorTour";
 import ContentPanel from "./ContentPanel";
 import StylePanel from "./StylePanel";
 import ExtrasPanel from "./ExtrasPanel";
@@ -146,7 +150,18 @@ export default function SignatureEditor({ id }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo]);
 
-  const [tab, setTab] = useState(isNew ? "template" : "content");
+  const [tab, setTabState] = useState(isNew ? "template" : "content");
+  // Chaque onglet s'ouvre en haut de sa liste de réglages
+  const panelRef = useRef(null);
+  const setTab = useCallback((next) => {
+    setTabState(next);
+    requestAnimationFrame(() => {
+      const viewport = panelRef.current?.querySelector(
+        "[data-radix-scroll-area-viewport]",
+      );
+      if (viewport) viewport.scrollTop = 0;
+    });
+  }, []);
   // Élément cliqué dans l'aperçu : son panneau remplace les onglets
   const [element, setElement] = useState(null);
   const [render, setRender] = useState(initialRender);
@@ -208,6 +223,39 @@ export default function SignatureEditor({ id }) {
     };
     setTimeout(() => focus(), 30);
   }, []);
+
+  // Depuis un réglage sans objet (« Ajouter une photo »…) : onglet Contenu,
+  // puis le champ concerné
+  const goToField = useCallback((field) => {
+    setElement(null);
+    setTab("content");
+    const focus = (attempt = 0) => {
+      const el = document.getElementById(`sig-field-${field}`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        if (typeof el.focus === "function") el.focus({ preventScroll: true });
+      } else if (attempt < 10) {
+        setTimeout(() => focus(attempt + 1), 60);
+      }
+    };
+    setTimeout(() => focus(), 30);
+  }, []);
+
+  // E-mail de test : la saisie en cours est d'abord enregistrée
+  const [sendTest, { loading: testing }] = useMutation(SEND_SIGNATURE_V2_TEST);
+  const handleTest = async () => {
+    try {
+      await flush();
+      const { data } = await sendTest({ variables: { id } });
+      toast.success(
+        `E-mail de test envoyé à ${data?.sendEmailSignatureV2Test || "votre adresse"}`,
+      );
+    } catch (err) {
+      toast.error(
+        err?.graphQLErrors?.[0]?.message || "L'e-mail de test n'a pas pu être envoyé",
+      );
+    }
+  };
 
   const [duplicate] = useMutation(DUPLICATE_SIGNATURE_V2, {
     refetchQueries: [{ query: SIGNATURES_V2 }],
@@ -308,7 +356,10 @@ export default function SignatureEditor({ id }) {
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950">
       {/* Panneau gauche, au style des éditeurs de documents */}
-      <aside className="flex w-[420px] shrink-0 flex-col border-r border-[#EEEFF1] dark:border-[#232323]">
+      <aside
+        ref={panelRef}
+        className="flex w-[420px] shrink-0 flex-col border-r border-[#EEEFF1] dark:border-[#232323]"
+      >
         <div className="px-6 pb-4 pt-5">
           <div className="flex items-center gap-1">
             <Button
@@ -393,6 +444,7 @@ export default function SignatureEditor({ id }) {
                     sig={sig}
                     update={update}
                     catalog={catalog}
+                    onUndo={undo}
                   />
                 </TabsNewContent>
                 <TabsNewContent value="content">
@@ -413,6 +465,7 @@ export default function SignatureEditor({ id }) {
                     catalog={catalog}
                     template={template}
                     lines={render?.lines}
+                    onGoTo={goToField}
                   />
                 </TabsNewContent>
                 <TabsNewContent value="extras">
@@ -428,11 +481,23 @@ export default function SignatureEditor({ id }) {
       <main className="flex min-w-0 flex-1 flex-col bg-neutral-50 dark:bg-neutral-900">
         <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
           <div className="min-w-0">
-            <h1 className="truncate text-base font-medium">{sig.name}</h1>
+            <h1 className="sr-only">{sig.name}</h1>
             {template && (
-              <p className="text-xs text-muted-foreground">
-                Modèle {template.name}
-              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setElement(null);
+                  setTab("template");
+                }}
+                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+              >
+                <LayoutTemplate size={14} />
+                Modèle <span className="font-medium text-foreground">{template.name}</span>
+                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100">
+                  Changer
+                  <ChevronRight size={12} />
+                </span>
+              </button>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -469,15 +534,31 @@ export default function SignatureEditor({ id }) {
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {copied ? "Copiée" : "Copier"}
             </Button>
-            <Button
-              variant="primary"
-              onClick={() => setInstallOpen(true)}
-              disabled={!render?.html}
-              className="cursor-pointer"
-            >
-              <Send size={14} />
-              Installer dans ma messagerie
-            </Button>
+            <div data-tour="actions" className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={!render?.html || testing}
+                className="cursor-pointer"
+                title="Recevoir la signature dans votre boîte mail pour la vérifier"
+              >
+                {testing ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <MailCheck size={14} />
+                )}
+                M&apos;envoyer un test
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => setInstallOpen(true)}
+                disabled={!render?.html}
+                className="cursor-pointer"
+              >
+                <Send size={14} />
+                Installer dans ma messagerie
+              </Button>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -519,7 +600,7 @@ export default function SignatureEditor({ id }) {
         </div>
 
         <div className="min-h-0 flex-1 p-6">
-          <div className="mx-auto h-full max-w-3xl">
+          <div data-tour="preview" className="mx-auto h-full max-w-3xl">
             <SignaturePreview
               id={id}
               sig={sig}
@@ -553,6 +634,28 @@ export default function SignatureEditor({ id }) {
           </div>
         )}
       </main>
+
+      {!isReadOnly && (
+        <EditorTour
+          steps={[
+            {
+              target: "preview",
+              title: "Modifiez directement dans l'aperçu",
+              body: "Cliquez sur un texte pour le changer, ou sur un élément (photo, réseaux, trait…) pour ouvrir ses réglages.",
+            },
+            {
+              target: "preview",
+              title: "Déplacez les blocs",
+              body: "Survolez un bloc puis tirez sa poignée ⠿ : le nom au-dessus de la photo, les réseaux à droite… Tout se replace.",
+            },
+            {
+              target: "actions",
+              title: "Vérifiez, puis installez",
+              body: "Envoyez-vous un e-mail de test pour la voir dans votre messagerie, puis installez-la dans Gmail, Outlook ou Apple Mail.",
+            },
+          ]}
+        />
+      )}
 
       <InstallDialog
         open={installOpen}

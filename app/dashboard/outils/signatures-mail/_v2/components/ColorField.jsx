@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 
 const norm = (v) =>
@@ -23,11 +23,25 @@ const norm = (v) =>
 export default function ColorField({
   value,
   onChange,
+  label,
   align = "start",
   side = "bottom",
 }) {
   const interacted = useRef(false);
+  const wrapper = useRef(null);
   const hex = norm(value);
+
+  // Le déclencheur du ColorPicker porterait la couleur dérivée comme nom :
+  // les lecteurs d'écran annoncent le libellé et la vraie valeur
+  useEffect(() => {
+    const trigger = wrapper.current?.querySelector("button");
+    if (trigger) {
+      trigger.setAttribute(
+        "aria-label",
+        `${label ? `${label} : ` : "Couleur "}${hex || "aucune"}`,
+      );
+    }
+  });
 
   const handleChange = (next) => {
     if (!interacted.current) return;
@@ -37,6 +51,7 @@ export default function ColorField({
 
   return (
     <div
+      ref={wrapper}
       className="group relative w-full"
       onPointerDownCapture={() => {
         interacted.current = true;

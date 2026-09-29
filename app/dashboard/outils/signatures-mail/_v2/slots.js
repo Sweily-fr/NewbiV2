@@ -115,6 +115,51 @@ export function templateLayout(defaults, sig) {
   return { ...defaults, slots: next };
 }
 
+/** Réglages de placement repris d'un modèle. */
+export const LAYOUT_KEYS = [
+  "slots",
+  "visualSide",
+  "visualFill",
+  "headerPhoto",
+  "headerFill",
+];
+
+/** Traits et bordures sur mesure (0 = dimensions du modèle). */
+export const LINE_KEYS = [
+  "accentLength",
+  "accentThickness",
+  "dividerThickness",
+  "dividerLength",
+  "frameThickness",
+  "frameWidth",
+  "frameBarLength",
+];
+
+const layoutValue = (v) =>
+  v && typeof v === "object" && !Array.isArray(v) ? cleanSlots(v) : v;
+
+/** Vrai si la disposition diffère de `defaults` (celle d'un modèle). */
+export function layoutDiffers(st, defaults) {
+  return LAYOUT_KEYS.some(
+    (k) =>
+      JSON.stringify(layoutValue(st?.[k])) !==
+      JSON.stringify(layoutValue(defaults?.[k])),
+  );
+}
+
+/**
+ * La signature s'écarte-t-elle de son modèle : éléments déplacés ou traits
+ * sur mesure ? (Changer de modèle remplacerait ces réglages.)
+ */
+export function layoutCustomized(sig, template) {
+  const defaults = templateLayout(template?.defaults, sig);
+  if (!defaults?.slots) return false;
+  return (
+    layoutDiffers(sig.style, defaults) ||
+    LINE_KEYS.some((k) => (sig.style?.[k] || 0) > 0)
+  );
+}
+
 // ── Photo ──────────────────────────────────────────────────────────────
 
 /** Place de la photo : left, right, top (au-dessus du texte), header, autre. */

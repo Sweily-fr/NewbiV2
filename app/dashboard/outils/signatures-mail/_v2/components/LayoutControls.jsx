@@ -1,6 +1,13 @@
 "use client";
 
-import { Check } from "lucide-react";
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  Check,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,6 +39,15 @@ import {
   setPhotoPlacement,
 } from "../slots";
 import { distribute, socialAlign, socialRowOptions } from "../socialRows";
+import {
+  ContactPicto,
+  FillPicto,
+  IdentityPicto,
+  NamePicto,
+  PhotoPicto,
+  PlacementPicto,
+  ZonePicto,
+} from "./Pictos";
 
 /**
  * Contrôles de mise en page, partagés par l'onglet Style et les panneaux
@@ -89,85 +105,125 @@ export function Pick({ label, hint, value, onChange, options }) {
   );
 }
 
+/**
+ * Choix en vignettes : une signature en miniature par option, comme
+ * « Position du client dans le PDF » des paramètres de facture.
+ */
+export function PictoPick({ label, hint, value, onChange, options, columns = 3 }) {
+  return (
+    <Row label={label} hint={hint}>
+      <div
+        role="radiogroup"
+        aria-label={label}
+        className={cn(
+          "grid gap-2",
+          columns === 4 ? "grid-cols-4" : columns === 2 ? "grid-cols-2" : "grid-cols-3",
+        )}
+      >
+        {options.map((o) => {
+          const selected = o.value === value;
+          return (
+            <ChoiceCard
+              key={o.value}
+              selected={selected}
+              onClick={() => onChange(o.value)}
+              label={
+                <span className="inline-flex items-center gap-1">
+                  {selected && <Check size={12} aria-hidden="true" />}
+                  {o.label}
+                </span>
+              }
+            >
+              {o.picto}
+            </ChoiceCard>
+          );
+        })}
+      </div>
+    </Row>
+  );
+}
+
 export function IdentityZoneControl({ st, setStyle }) {
   return (
-    <Pick
+    <PictoPick
       label="Bloc de couleur"
       hint="Le nom (et la photo) sur un fond de la couleur principale."
       value={identityZone(st)}
       onChange={(v) => setStyle(setIdentityZone(st, v))}
       options={[
-        { value: "plain", label: "Aucun" },
-        { value: "band-top", label: "En-tête" },
-        { value: "band-left", label: "À gauche" },
+        { value: "plain", label: "Aucun", picto: <ZonePicto zone="plain" /> },
+        { value: "band-top", label: "En-tête", picto: <ZonePicto zone="band-top" /> },
+        { value: "band-left", label: "À gauche", picto: <ZonePicto zone="band-left" /> },
       ]}
     />
   );
 }
+
+const PHOTO_OPTIONS = [
+  { value: "left", label: "À gauche", picto: <PhotoPicto position="left" /> },
+  { value: "top", label: "Au-dessus", picto: <PhotoPicto position="top" /> },
+  { value: "right", label: "À droite", picto: <PhotoPicto position="right" /> },
+];
 
 /** Place de la photo, son alignement et sa colonne. */
 export function PhotoLayoutControls({ st, setStyle }) {
   const L = layoutState(st);
   if (L.photo === "header") {
     return (
-      <Pick
+      <PictoPick
         label="Photo dans l'en-tête"
         value={st.headerPhoto}
         onChange={(v) => setStyle({ headerPhoto: v })}
-        options={[
-          { value: "left", label: "Gauche" },
-          { value: "top", label: "En haut" },
-          { value: "right", label: "Droite" },
-        ]}
+        options={PHOTO_OPTIONS}
       />
     );
   }
   return (
     <>
-      <Pick
-        label="Position"
+      <PictoPick
+        label="Position de la photo"
         value={["left", "top", "right"].includes(L.photo) ? L.photo : ""}
         onChange={(v) => setStyle(setPhotoPlacement(st, v))}
-        options={[
-          { value: "left", label: "Gauche" },
-          { value: "top", label: "En haut" },
-          { value: "right", label: "Droite" },
-        ]}
+        options={PHOTO_OPTIONS}
       />
       {L.hasVisual && (
-        <Pick
-          label="Alignement vertical"
-          value={st.photoValign}
-          onChange={(v) => setStyle({ photoValign: v })}
-          options={[
-            { value: "top", label: "Haut" },
-            { value: "middle", label: "Milieu" },
-            { value: "bottom", label: "Bas" },
-          ]}
-        />
+        <Row label="Alignement vertical de la photo">
+          <Choice
+            label="Alignement vertical de la photo"
+            value={st.photoValign}
+            onChange={(v) => setStyle({ photoValign: v })}
+            options={[
+              { value: "top", label: "Haut", icon: <AlignVerticalJustifyStart size={14} /> },
+              { value: "middle", label: "Milieu", icon: <AlignVerticalJustifyCenter size={14} /> },
+              { value: "bottom", label: "Bas", icon: <AlignVerticalJustifyEnd size={14} /> },
+            ]}
+          />
+        </Row>
       )}
       {L.hasVisual && (
-        <Pick
-          label="Fond de la colonne"
+        <PictoPick
+          label="Fond de la colonne photo"
           value={st.visualFill}
           onChange={(v) => setStyle({ visualFill: v })}
           options={[
-            { value: "none", label: "Aucun" },
-            { value: "tint", label: "Teinté" },
-            { value: "solid", label: "Couleur" },
+            { value: "none", label: "Aucun", picto: <FillPicto fill="none" /> },
+            { value: "tint", label: "Teinté", picto: <FillPicto fill="tint" /> },
+            { value: "solid", label: "Couleur", picto: <FillPicto fill="solid" /> },
           ]}
         />
       )}
       {!L.hasVisual && (
-        <Pick
-          label="Alignement du texte"
-          value={st.align}
-          onChange={(v) => setStyle({ align: v })}
-          options={[
-            { value: "left", label: "Gauche" },
-            { value: "center", label: "Centré" },
-          ]}
-        />
+        <Row label="Alignement du texte">
+          <Choice
+            label="Alignement du texte"
+            value={st.align}
+            onChange={(v) => setStyle({ align: v })}
+            options={[
+              { value: "left", label: "Gauche", icon: <AlignLeft size={14} /> },
+              { value: "center", label: "Centré", icon: <AlignCenter size={14} /> },
+            ]}
+          />
+        </Row>
       )}
     </>
   );
@@ -284,13 +340,14 @@ export function DividerControls({ st, setStyle, lines }) {
 export function NameLayoutControl({ st, setStyle }) {
   if (st.identityStyle === "inline") return null;
   return (
-    <Pick
+    <PictoPick
       label="Prénom et nom"
+      columns={2}
       value={st.nameLayout || "inline"}
       onChange={(v) => setStyle({ nameLayout: v })}
       options={[
-        { value: "inline", label: "Sur une ligne" },
-        { value: "stacked", label: "L'un sous l'autre" },
+        { value: "inline", label: "Sur une ligne", picto: <NamePicto /> },
+        { value: "stacked", label: "L'un sous l'autre", picto: <NamePicto stacked /> },
       ]}
     />
   );
@@ -300,13 +357,14 @@ export function IdentityControls({ st, setStyle }) {
   return (
     <>
       <NameLayoutControl st={st} setStyle={setStyle} />
-      <Pick
-        label="Nom, poste, société"
+      <PictoPick
+        label="Nom, poste et société"
+        columns={2}
         value={st.identityStyle}
         onChange={(v) => setStyle({ identityStyle: v })}
         options={[
-          { value: "stack", label: "Empilés" },
-          { value: "inline", label: "Sur une ligne" },
+          { value: "stack", label: "Empilés", picto: <IdentityPicto /> },
+          { value: "inline", label: "Sur une ligne", picto: <IdentityPicto inline /> },
         ]}
       />
       {st.identityStyle !== "inline" && (
@@ -316,7 +374,7 @@ export function IdentityControls({ st, setStyle }) {
           onChange={(v) => setStyle({ titleStyle: v })}
           options={[
             { value: "normal", label: "Normal" },
-            { value: "caps", label: "Capitales" },
+            { value: "caps", label: "CAPITALES" },
           ]}
         />
       )}
@@ -326,42 +384,48 @@ export function IdentityControls({ st, setStyle }) {
 
 export function ContactStyleControl({ st, setStyle }) {
   return (
-    <Pick
+    <PictoPick
       label="Coordonnées"
+      columns={4}
       value={st.contactStyle}
       onChange={(v) =>
         setStyle({ contactStyle: v, showContactIcons: v === "icons" })
       }
       options={[
-        { value: "icons", label: "Avec icônes" },
-        { value: "labels", label: "Avec initiales (T, E, W)" },
-        { value: "plain", label: "Texte seul" },
-        { value: "inline", label: "Sur une ligne" },
+        { value: "icons", label: "Icônes", picto: <ContactPicto style="icons" /> },
+        { value: "labels", label: "Initiales", picto: <ContactPicto style="labels" /> },
+        { value: "plain", label: "Texte", picto: <ContactPicto style="plain" /> },
+        { value: "inline", label: "En ligne", picto: <ContactPicto style="inline" /> },
       ]}
     />
   );
 }
 
 /** Emplacements proposés pour un élément (réseaux, logo). */
-function placementOptions(st) {
+function placementOptions(st, item) {
   const L = layoutState(st);
+  const opt = (value, label) => ({
+    value,
+    label,
+    picto: <PlacementPicto slot={value} kind={item} />,
+  });
   return [
-    ...(L.hasHeader ? [{ value: "header", label: "Dans l'en-tête" }] : []),
-    { value: "visual", label: "Colonne photo" },
-    { value: "text", label: "Sous le texte" },
-    { value: "side", label: "À droite" },
-    { value: "footer", label: "En bas" },
-    ...(L.framed ? [{ value: "outside", label: "Sous le cadre" }] : []),
+    ...(L.hasHeader ? [opt("header", "En-tête")] : []),
+    opt("visual", "Colonne photo"),
+    opt("text", "Sous le texte"),
+    opt("side", "À droite"),
+    opt("footer", "En bas"),
+    ...(L.framed ? [opt("outside", "Sous le cadre")] : []),
   ];
 }
 
 function PlacementControl({ item, label, st, setStyle }) {
   return (
-    <Pick
+    <PictoPick
       label={label}
       value={itemPlacement(st, item)}
       onChange={(v) => setStyle(setItemPlacement(st, item, v))}
-      options={placementOptions(st)}
+      options={placementOptions(st, item)}
     />
   );
 }

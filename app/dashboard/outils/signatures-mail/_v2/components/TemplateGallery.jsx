@@ -1,21 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@apollo/client";
-import { Check } from "lucide-react";
+import { Check, LayoutTemplate } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import { toast } from "@/src/components/ui/sonner";
 import { RENDER_TEMPLATE_V2 } from "../graphql";
-import { templateLayout } from "../slots";
+import { layoutCustomized, templateLayout } from "../slots";
 import HtmlFrame from "./HtmlFrame";
 import { Section } from "./controls";
 
 const THUMB_WIDTH = 560;
 const THUMB_HEIGHT = 300;
 
-function TemplateCard({ template, style, selected, onSelect }) {
+function TemplateCard({ template, style, sigId, selected, onSelect }) {
+  // Rendu avec les informations de la signature (nom, photo, logo…) :
+  // rafraîchi à chaque ouverture de l'onglet
   const { data, loading } = useQuery(RENDER_TEMPLATE_V2, {
-    variables: { templateId: template.id, style },
-    fetchPolicy: "cache-first",
+    variables: { templateId: template.id, style, id: sigId },
+    fetchPolicy: "cache-and-network",
   });
   const html = data?.renderSignatureTemplateV2?.html;
 
@@ -68,22 +82,59 @@ function TemplateCard({ template, style, selected, onSelect }) {
   );
 }
 
+const THUMB_COLORS = [
+  "primaryColor",
+  "textColor",
+  "mutedColor",
+  "iconColorMode",
+  "iconColor",
+  "separatorColor",
+];
+
 /**
- * Galerie des modèles, rendus par l'API avec des données d'exemple et le
- * style courant de la signature (couleurs, police), pour choisir en
- * connaissance de cause.
+ * Galerie des modèles, rendus par l'API avec les informations de la
+ * signature (ou des données d'exemple tant qu'elle n'a pas de nom) et ses
+ * couleurs, pour choisir en connaissance de cause.
  */
-export default function TemplateGallery({ sig, update, catalog }) {
+export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   const templates = catalog?.templates || [];
+  const current = templates.find((t) => t.id === sig.templateId);
+  // Modèle en attente de confirmation (disposition personnalisée)
+  const [pending, setPending] = useState(null);
+
+  // Le modèle apporte sa typographie et sa mise en page de départ (tout
+  // reste réglable ensuite), adaptée à la présence d'une photo ; les
+  // couleurs de l'utilisateur ne sont jamais touchées.
+  const apply = (t) => {
+    const preset = Object.fromEntries(
+      Object.entries(templateLayout(t.defaults, sig) || t.preset || {}).filter(
+        ([key, value]) =>
+          key !== "__typename" && value !== null && value !== undefined,
+      ),
+    );
+    update({ templateId: t.id, style: preset });
+    toast.document(`Modèle ${t.name} appliqué`, {
+      fallbackIcon: LayoutTemplate,
+      ...(onUndo
+        ? { action: { label: "Annuler", onClick: () => onUndo() } }
+        : {}),
+      duration: 6000,
+    });
+  };
+
+  const choose = (t) => {
+    const customized = layoutCustomized(sig, current);
+    if (t.id === sig.templateId && !customized) return;
+    if (customized) setPending(t);
+    else apply(t);
+  };
+  // Les vignettes n'utilisent que les couleurs : les autres réglages ne
+  // doivent pas relancer les 11 rendus à chaque changement
   const style = Object.fromEntries(
-    // Les vignettes n'utilisent que les couleurs : on écarte les objets
-    // imbriqués (réglages par élément, emplacements), qui portent des champs
-    // GraphQL techniques refusés en entrée
-    Object.entries(sig.style || {}).filter(
-      ([key, value]) =>
-        key !== "__typename" &&
-        (value === null || typeof value !== "object" || Array.isArray(value)),
-    ),
+    THUMB_COLORS.filter((key) => sig.style?.[key]).map((key) => [
+      key,
+      sig.style[key],
+    ]),
   );
 
   return (
@@ -98,20 +149,47 @@ export default function TemplateGallery({ sig, update, catalog }) {
             template={t}
             style={style}
             selected={sig.templateId === t.id}
-            onSelect={(templateId) => {
-              // Le modèle apporte sa typographie et sa mise en page de départ
-              // (tout reste réglable ensuite), adaptée à la présence d'une
-              // photo ; les couleurs de l'utilisateur ne sont jamais touchées.
-              const preset = Object.fromEntries(
-                Object.entries(templateLayout(t.defaults, sig) || t.preset || {}).filter(
-                  ([key, value]) => key !== "__typename" && value !== null && value !== undefined,
-                ),
-              );
-              update({ templateId, style: preset });
-            }}
+            sigId={sig.id}
+            onSelect={() => choose(t)}
           />
         ))}
       </div>
+
+      <AlertDialog
+        open={Boolean(pending)}
+        onOpenChange={(open) => !open && setPending(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pending?.id === sig.templateId
+                ? `Revenir au modèle ${pending?.name} ?`
+                : `Appliquer le modèle ${pending?.name} ?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous avez personnalisé la disposition (éléments déplacés, traits
+              sur mesure). Elle sera remplacée par celle du modèle. Vos
+              textes, couleurs et images sont conservés, et vous pourrez
+              annuler.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Garder ma disposition
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="cursor-pointer"
+              onClick={() => {
+                const t = pending;
+                setPending(null);
+                if (t) apply(t);
+              }}
+            >
+              Appliquer le modèle
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Section>
   );
 }

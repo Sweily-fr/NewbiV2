@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -8,10 +9,17 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { RotateCcw } from "lucide-react";
-import { cleanSlots, slotOf, templateLayout } from "../slots";
+import {
+  LAYOUT_KEYS,
+  cleanSlots,
+  layoutDiffers,
+  slotOf,
+  templateLayout,
+} from "../slots";
 import {
   Choice,
   ColorRow,
+  EmptyHint,
   LengthRow,
   Row,
   Section,
@@ -77,9 +85,6 @@ export function PhotoBorderControls({ st, setStyle }) {
   );
 }
 
-/** Réglages de placement repris du modèle par « Revenir à la disposition ». */
-const LAYOUT_KEYS = ["slots", "visualSide", "visualFill", "headerPhoto", "headerFill"];
-
 /**
  * Remet chaque élément à sa place dans le modèle, après des déplacements.
  * N'apparaît que si la disposition s'en écarte.
@@ -89,10 +94,7 @@ function ResetLayout({ sig, template, setStyle }) {
   // Sans photo, la disposition de référence est celle adaptée au contenu
   const defaults = templateLayout(template?.defaults, sig);
   if (!defaults?.slots) return null;
-  const same = LAYOUT_KEYS.every(
-    (k) => JSON.stringify(cleanValue(st[k])) === JSON.stringify(cleanValue(defaults[k])),
-  );
-  if (same) return null;
+  if (!layoutDiffers(st, defaults)) return null;
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border bg-[#F5F5F5] px-3 py-2.5 dark:bg-neutral-900">
       <p className="text-xs text-muted-foreground">Disposition personnalisée</p>
@@ -123,15 +125,115 @@ function cleanValue(value) {
  * Les valeurs possibles viennent du catalogue de l'API, la police est
  * limitée aux polices lisibles dans tous les clients mail.
  */
-export default function StylePanel({ sig, update, catalog, template, lines }) {
+const OPEN_KEY = "sig-style-sections";
+const OPEN_DEFAULT = { texte: true };
+
+/** Sections ouvertes, mémorisées d'une visite à l'autre. */
+function useOpenSections() {
+  const [open, setOpen] = useState(() => {
+    try {
+      return {
+        ...OPEN_DEFAULT,
+        ...JSON.parse(localStorage.getItem(OPEN_KEY) || "{}"),
+      };
+    } catch {
+      return OPEN_DEFAULT;
+    }
+  });
+  const section = (key) => ({
+    collapsible: true,
+    open: Boolean(open[key]),
+    onToggle: () =>
+      setOpen((current) => {
+        const next = { ...current, [key]: !current[key] };
+        try {
+          localStorage.setItem(OPEN_KEY, JSON.stringify(next));
+        } catch {
+          // Stockage indisponible : l'état reste en mémoire
+        }
+        return next;
+      }),
+  });
+  return section;
+}
+
+const FRAME_LABELS = {
+  none: "Aucun encadré",
+  outline: "Contour",
+  soft: "Fond teinté",
+  "accent-left": "Barre à gauche",
+  "accent-top": "Barre en haut",
+};
+const PHOTO_LABELS = {
+  left: "Photo à gauche",
+  top: "Photo au-dessus",
+  right: "Photo à droite",
+  header: "Photo dans l'en-tête",
+};
+const CONTACT_LABELS = {
+  icons: "coordonnées avec icônes",
+  labels: "coordonnées avec initiales",
+  plain: "coordonnées en texte seul",
+  inline: "coordonnées sur une ligne",
+};
+const SHAPE_LABELS = { circle: "Ronde", rounded: "Arrondie", square: "Carrée" };
+const ICON_LABELS = {
+  circle: "Rondes",
+  rounded: "Arrondies",
+  square: "Carrées",
+  plain: "Simples",
+};
+const ICON_COLOR_LABELS = {
+  brand: "couleurs de marque",
+  primary: "couleur principale",
+  custom: "couleur personnalisée",
+};
+const capitalize = (text) =>
+  text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+
+export default function StylePanel({
+  sig,
+  update,
+  catalog,
+  template,
+  lines,
+  onGoTo,
+}) {
   const st = sig.style;
   const setStyle = (patch) => update({ style: patch });
   const L = layoutState(st);
   const bars = st.frame === "accent-left" || st.frame === "accent-top";
+  const section = useOpenSections();
+  const hasPhoto = Boolean(sig.images?.photo?.url);
+  const hasLogo = Boolean(sig.images?.logo?.url);
+  const hasNetworks = sig.social.some((s) => s.url?.trim());
+  const accentOn = st.accent === "short" || st.accent === "thin";
+  const font = (catalog?.fonts || []).find((f) => f.id === st.fontFamily);
+
+  const summaries = {
+    texte: `${font?.label || "Arial"} · ${st.fontSize} px`,
+    disposition: capitalize(
+      [hasPhoto ? PHOTO_LABELS[L.photo] : null, CONTACT_LABELS[st.contactStyle]]
+        .filter(Boolean)
+        .join(" · "),
+    ),
+    traits:
+      [accentOn && "Trait sous le nom", st.divider !== "none" && "Séparateur vertical"]
+        .filter(Boolean)
+        .join(" · ") || "Aucun trait",
+    encadre: FRAME_LABELS[st.frame],
+    photo: hasPhoto
+      ? `${SHAPE_LABELS[st.photoShape]} · ${st.photoSize} px`
+      : "Aucune photo",
+    logo: hasLogo ? `${st.logoWidth} px de large` : "Aucun logo",
+    icones: hasNetworks
+      ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${st.iconSize} px`
+      : "Aucun réseau",
+  };
 
   return (
-    <div className="space-y-8">
-      <Section title="Texte">
+    <div className="divide-y divide-[#EEEFF1] dark:divide-[#232323]">
+      <Section title="Texte" {...section("texte")} summary={summaries.texte}>
         <Row
           label="Police"
           hint="Seules ces polices s'affichent partout : Gmail, Outlook, Apple Mail."
@@ -179,7 +281,11 @@ export default function StylePanel({ sig, update, catalog, template, lines }) {
         </div>
       </Section>
 
-      <Section title="Disposition">
+      <Section
+        title="Disposition"
+        {...section("disposition")}
+        summary={summaries.disposition}
+      >
         <ResetLayout sig={sig} template={template} setStyle={setStyle} />
         <IdentityZoneControl st={st} setStyle={setStyle} />
         <PhotoLayoutControls st={st} setStyle={setStyle} />
@@ -208,6 +314,8 @@ export default function StylePanel({ sig, update, catalog, template, lines }) {
       <Section
         title="Traits"
         description="Affichez ou non chaque trait, puis réglez sa longueur et son épaisseur."
+        {...section("traits")}
+        summary={summaries.traits}
       >
         <AccentControls st={st} setStyle={setStyle} lines={lines} />
         <DividerControls st={st} setStyle={setStyle} lines={lines} />
@@ -219,7 +327,11 @@ export default function StylePanel({ sig, update, catalog, template, lines }) {
         />
       </Section>
 
-      <Section title="Encadré">
+      <Section
+        title="Encadré"
+        {...section("encadre")}
+        summary={summaries.encadre}
+      >
         <Row label="Style">
           <Select
             value={st.frame}
@@ -307,82 +419,110 @@ export default function StylePanel({ sig, update, catalog, template, lines }) {
         )}
       </Section>
 
-      <Section title="Photo">
-        <Row label="Forme">
-          <Choice
-            value={st.photoShape}
-            onChange={(v) => setStyle({ photoShape: v })}
-            options={[
-              { value: "circle", label: "Ronde" },
-              { value: "rounded", label: "Arrondie" },
-              { value: "square", label: "Carrée" },
-            ]}
-          />
-        </Row>
-        <SliderRow
-          label="Taille"
-          value={st.photoSize}
-          min={40}
-          max={160}
-          step={4}
-          onChange={(v) => setStyle({ photoSize: v })}
-        />
-        <PhotoBorderControls st={st} setStyle={setStyle} />
-      </Section>
-
-      <Section title="Logo">
-        <SliderRow
-          label="Largeur"
-          value={st.logoWidth}
-          min={40}
-          max={200}
-          step={4}
-          onChange={(v) => setStyle({ logoWidth: v })}
-        />
-      </Section>
-
-      <Section title="Icônes">
-        <Row label="Style des réseaux">
-          <Choice
-            value={st.iconStyle}
-            onChange={(v) => setStyle({ iconStyle: v })}
-            options={[
-              { value: "circle", label: "Rond" },
-              { value: "rounded", label: "Arrondi" },
-              { value: "square", label: "Carré" },
-              { value: "plain", label: "Simple" },
-            ]}
-          />
-        </Row>
-        <Row
-          label="Couleur des icônes"
-          hint="Les couleurs de marque et les tons moyens gardent le même rendu en mode clair et sombre."
-        >
-          <Choice
-            value={st.iconColorMode}
-            onChange={(v) => setStyle({ iconColorMode: v })}
-            options={[
-              { value: "brand", label: "Marque" },
-              { value: "primary", label: "Principale" },
-              { value: "custom", label: "Autre" },
-            ]}
-          />
-        </Row>
-        {st.iconColorMode === "custom" && (
-          <ColorRow
-            label="Couleur personnalisée"
-            value={st.iconColor}
-            onChange={(v) => setStyle({ iconColor: v })}
+      <Section title="Photo" {...section("photo")} summary={summaries.photo}>
+        {hasPhoto ? (
+          <>
+            <Row label="Forme">
+              <Choice
+                value={st.photoShape}
+                onChange={(v) => setStyle({ photoShape: v })}
+                options={[
+                  { value: "circle", label: "Ronde" },
+                  { value: "rounded", label: "Arrondie" },
+                  { value: "square", label: "Carrée" },
+                ]}
+              />
+            </Row>
+            <SliderRow
+              label="Taille"
+              value={st.photoSize}
+              min={40}
+              max={160}
+              step={4}
+              onChange={(v) => setStyle({ photoSize: v })}
+            />
+            <PhotoBorderControls st={st} setStyle={setStyle} />
+          </>
+        ) : (
+          <EmptyHint
+            text="Aucune photo pour l'instant."
+            action="Ajouter une photo"
+            onAction={onGoTo ? () => onGoTo("photo") : undefined}
           />
         )}
-        <SliderRow
-          label="Taille des réseaux"
-          value={st.iconSize}
-          min={16}
-          max={40}
-          step={2}
-          onChange={(v) => setStyle({ iconSize: v })}
-        />
+      </Section>
+
+      <Section title="Logo" {...section("logo")} summary={summaries.logo}>
+        {hasLogo ? (
+          <SliderRow
+            label="Largeur"
+            value={st.logoWidth}
+            min={40}
+            max={200}
+            step={4}
+            onChange={(v) => setStyle({ logoWidth: v })}
+          />
+        ) : (
+          <EmptyHint
+            text="Aucun logo pour l'instant."
+            action="Ajouter un logo"
+            onAction={onGoTo ? () => onGoTo("logo") : undefined}
+          />
+        )}
+      </Section>
+
+      <Section title="Icônes" {...section("icones")} summary={summaries.icones}>
+        {hasNetworks ? (
+          <>
+            <Row label="Style des réseaux">
+              <Choice
+                value={st.iconStyle}
+                onChange={(v) => setStyle({ iconStyle: v })}
+                options={[
+                  { value: "circle", label: "Rond" },
+                  { value: "rounded", label: "Arrondi" },
+                  { value: "square", label: "Carré" },
+                  { value: "plain", label: "Simple" },
+                ]}
+              />
+            </Row>
+            <Row
+              label="Couleur des icônes"
+              hint="Les couleurs de marque et les tons moyens gardent le même rendu en mode clair et sombre."
+            >
+              <Choice
+                value={st.iconColorMode}
+                onChange={(v) => setStyle({ iconColorMode: v })}
+                options={[
+                  { value: "brand", label: "Marque" },
+                  { value: "primary", label: "Principale" },
+                  { value: "custom", label: "Autre" },
+                ]}
+              />
+            </Row>
+            {st.iconColorMode === "custom" && (
+              <ColorRow
+                label="Couleur personnalisée"
+                value={st.iconColor}
+                onChange={(v) => setStyle({ iconColor: v })}
+              />
+            )}
+            <SliderRow
+              label="Taille des réseaux"
+              value={st.iconSize}
+              min={16}
+              max={40}
+              step={2}
+              onChange={(v) => setStyle({ iconSize: v })}
+            />
+          </>
+        ) : (
+          <EmptyHint
+            text="Aucun réseau pour l'instant."
+            action="Ajouter un réseau"
+            onAction={onGoTo ? () => onGoTo("social") : undefined}
+          />
+        )}
       </Section>
     </div>
   );

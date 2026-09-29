@@ -23,7 +23,8 @@ import {
 } from "@/src/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import { toast } from "@/src/components/ui/sonner";
-import { FIELD_LABEL, Hint, Section } from "./controls";
+import { CheckedInput, FIELD_LABEL, Hint, Section } from "./controls";
+import { emailProblem, linkProblem, networkLinkProblem } from "../links";
 import {
   APPLY_MEMBER_SIGNATURE_V2,
   REMOVE_SIGNATURE_V2_IMAGE,
@@ -45,15 +46,26 @@ export function Field({ label, children, hint, htmlFor }) {
   );
 }
 
-export function TextField({ id, label, value, onChange, placeholder, hint, type = "text", maxLength }) {
+export function TextField({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  hint,
+  type = "text",
+  maxLength,
+  warning,
+}) {
   return (
     <Field label={label} hint={hint} htmlFor={id}>
-      <Input
+      <CheckedInput
         id={id}
         type={type}
         value={value || ""}
         placeholder={placeholder}
         maxLength={maxLength}
+        warning={warning}
         onChange={(e) => onChange(e.target.value)}
       />
     </Field>
@@ -203,7 +215,7 @@ export function SocialLinks({ social, networks, update }) {
   return (
     <div className="space-y-2">
       {social.map((s, index) => (
-        <div key={s.network} className="flex items-center gap-2">
+        <div key={s.network} className="flex items-start gap-2">
           {social.length > 1 && (
             <div className="flex shrink-0 flex-col">
               <button
@@ -233,12 +245,19 @@ export function SocialLinks({ social, networks, update }) {
           >
             {(byId[s.network]?.label || s.network).slice(0, 2).toUpperCase()}
           </span>
-          <Input
-            value={s.url}
-            placeholder={`${byId[s.network]?.host || "https://"}/votre-profil`}
-            onChange={(e) => setRow(index, { url: e.target.value })}
-            className="h-8 text-sm"
-          />
+          <div className="min-w-0 flex-1 space-y-1">
+            <CheckedInput
+              value={s.url}
+              placeholder={`${byId[s.network]?.host || "https://"}/votre-profil`}
+              onChange={(e) => setRow(index, { url: e.target.value })}
+              aria-label={`Lien ${byId[s.network]?.label || s.network}`}
+              warning={networkLinkProblem(
+                s.url,
+                s.network,
+                byId[s.network]?.label || s.network,
+              )}
+            />
+          </div>
           <Button
             type="button"
             variant="ghost"
@@ -427,6 +446,7 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
           value={contact.email}
           onChange={(v) => update({ contact: { email: v } })}
           maxLength={200}
+          warning={emailProblem(contact.email)}
         />
         <div className="grid grid-cols-2 gap-4">
           <TextField
@@ -455,6 +475,7 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
           placeholder="votre-site.fr"
           onChange={(v) => update({ contact: { website: v } })}
           maxLength={300}
+          warning={linkProblem(contact.website)}
         />
         <TextField
           id="sig-field-address"

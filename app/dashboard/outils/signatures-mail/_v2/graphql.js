@@ -244,10 +244,20 @@ export const RENDER_SIGNATURE_V2 = gql`
 `;
 
 export const RENDER_TEMPLATE_V2 = gql`
-  query RenderTemplateV2($templateId: String!, $style: SignatureStyleV2Input) {
-    renderSignatureTemplateV2(templateId: $templateId, style: $style) {
+  query RenderTemplateV2(
+    $templateId: String!
+    $style: SignatureStyleV2Input
+    $id: ID
+  ) {
+    renderSignatureTemplateV2(templateId: $templateId, style: $style, id: $id) {
       html
     }
+  }
+`;
+
+export const SEND_SIGNATURE_V2_TEST = gql`
+  mutation SendSignatureV2Test($id: ID!) {
+    sendEmailSignatureV2Test(id: $id)
   }
 `;
 

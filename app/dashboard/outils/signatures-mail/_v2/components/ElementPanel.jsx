@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ArrowLeft, Bold, CaseUpper, Italic, RotateCcw } from "lucide-react";
-import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
   Select,
@@ -13,6 +12,7 @@ import {
 } from "@/src/components/ui/select";
 import { PhotoBorderControls, ResetLink } from "./StylePanel";
 import {
+  CheckedInput,
   Choice,
   ColorRow,
   Hint,
@@ -24,6 +24,12 @@ import {
 } from "./controls";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
+import {
+  ctaLabelProblem,
+  ctaLinkProblem,
+  emailProblem,
+  linkProblem,
+} from "../links";
 import {
   AccentControls,
   ContactStyleControl,
@@ -214,7 +220,7 @@ export default function ElementPanel({
       body = (
         <>
           <Section title="Contenu">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <TextField
                 id="sig-field-firstName"
                 label="Prénom"
@@ -342,8 +348,9 @@ export default function ElementPanel({
               value={contact.email}
               onChange={(v) => update({ contact: { email: v } })}
               maxLength={200}
+              warning={emailProblem(contact.email)}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <TextField
                 id="sig-field-phone"
                 label="Téléphone"
@@ -367,6 +374,7 @@ export default function ElementPanel({
               value={contact.website}
               onChange={(v) => update({ contact: { website: v } })}
               maxLength={300}
+              warning={linkProblem(contact.website)}
             />
             <TextField
               id="sig-field-address"
@@ -543,9 +551,10 @@ export default function ElementPanel({
             onCheckedChange={(v) => update({ banner: { enabled: v } })}
           />
           <Field label="Lien au clic">
-            <Input
+            <CheckedInput
               value={banner.url}
               placeholder="votre-site.fr/offre"
+              warning={linkProblem(banner.url)}
               onChange={(e) => update({ banner: { url: e.target.value } })}
             />
           </Field>
@@ -558,36 +567,36 @@ export default function ElementPanel({
         <>
           <Section title="Contenu">
             <Field label="Texte du bouton">
-              <Input
+              <CheckedInput
                 id="sig-field-cta"
                 value={cta.label}
                 maxLength={60}
                 placeholder="Prendre rendez-vous"
+                warning={ctaLabelProblem(cta)}
                 onChange={(e) => update({ cta: { label: e.target.value } })}
               />
             </Field>
             <Field label="Lien">
-              <Input
+              <CheckedInput
                 value={cta.url}
                 placeholder="calendly.com/votre-nom"
+                warning={ctaLinkProblem(cta)}
                 onChange={(e) => update({ cta: { url: e.target.value } })}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <Field label="Fond">
                 <ColorField
+                  label="Fond du bouton"
                   value={cta.backgroundColor || st.primaryColor}
                   onChange={(v) => update({ cta: { backgroundColor: v } })}
-                  align="start"
-                  side="bottom"
                 />
               </Field>
               <Field label="Texte">
                 <ColorField
+                  label="Texte du bouton"
                   value={cta.textColor}
                   onChange={(v) => update({ cta: { textColor: v } })}
-                  align="start"
-                  side="bottom"
                 />
               </Field>
             </div>

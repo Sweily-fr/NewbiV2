@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { AlertTriangle, ChevronDown, Plus } from "lucide-react";
+import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Switch } from "@/src/components/ui/switch";
@@ -21,8 +24,114 @@ export function Hint({ children }) {
   return <p className="text-xs text-muted-foreground">{children}</p>;
 }
 
-/** Section d'un panneau : titre, description facultative, contenu. */
-export function Section({ id, title, description, action, children }) {
+/** Avertissement sous un champ (lien douteux…), sans rien bloquer. */
+export function Warning({ children }) {
+  if (!children) return null;
+  return (
+    <p className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+      <AlertTriangle size={12} className="mt-px shrink-0" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/**
+ * Champ texte dont l'avertissement (lien douteux…) s'affiche une fois la
+ * saisie terminée, pas à chaque lettre tapée.
+ */
+export function CheckedInput({ warning, onFocus, onBlur, ...props }) {
+  const [focused, setFocused] = useState(false);
+  const shown = !focused && warning;
+  return (
+    <>
+      <Input
+        {...props}
+        aria-invalid={shown ? true : undefined}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
+      />
+      {shown && <Warning>{warning}</Warning>}
+    </>
+  );
+}
+
+/** Réglages sans objet (pas de photo, de logo…) : un lien pour l'ajouter. */
+export function EmptyHint({ text, action, onAction }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed px-3 py-2.5">
+      <p className="text-xs text-muted-foreground">{text}</p>
+      {onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+        >
+          <Plus size={12} />
+          {action}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Section d'un panneau : titre, description facultative, contenu.
+ * `collapsible` : le titre replie la section, un résumé (`summary`)
+ * rappelle alors les réglages en cours.
+ */
+export function Section({
+  id,
+  title,
+  description,
+  action,
+  children,
+  collapsible = false,
+  open = true,
+  onToggle,
+  summary,
+}) {
+  if (collapsible) {
+    return (
+      <section id={id} className="py-5 outline-none first:pt-0 last:pb-0">
+        <h3>
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={onToggle}
+            className="flex w-full items-center justify-between gap-3 text-left text-lg font-medium cursor-pointer"
+          >
+            {title}
+            <ChevronDown
+              size={16}
+              className={cn(
+                "shrink-0 text-muted-foreground transition-transform duration-200",
+                open && "rotate-180",
+              )}
+            />
+          </button>
+        </h3>
+        {!open && summary && (
+          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+            {summary}
+          </p>
+        )}
+        {open && (
+          <div className="mt-4 space-y-4">
+            {description && (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            )}
+            {children}
+          </div>
+        )}
+      </section>
+    );
+  }
   return (
     <section
       id={id}
@@ -119,7 +228,7 @@ export function MultiChoice({ value, onChange, options, label }) {
 export function ColorRow({ label, value, onChange, hint, action }) {
   return (
     <Row label={label} hint={hint} action={action}>
-      <ColorField value={value} onChange={onChange} />
+      <ColorField label={label} value={value} onChange={onChange} />
     </Row>
   );
 }
@@ -255,7 +364,7 @@ export function ChoiceCard({ selected, onClick, label, children, className }) {
       </span>
       <span
         className={cn(
-          "mt-1.5 text-xs font-medium",
+          "mt-1.5 flex h-4 items-center text-xs font-medium leading-4",
           selected ? "text-foreground" : "text-muted-foreground/80",
         )}
       >
