@@ -132,6 +132,13 @@ export const SIGNATURE_V2_FIELDS = gql`
       headerFill
       nameLayout
       socialRows
+      accentLength
+      accentThickness
+      dividerThickness
+      dividerLength
+      frameThickness
+      frameWidth
+      frameBarLength
       elements {
         ${ELEMENT_STYLES}
       }
@@ -148,6 +155,12 @@ export const RENDER_FIELDS = gql`
     text
     chars
     warnings
+    lines {
+      accentLength
+      accentThickness
+      dividerThickness
+      frameThickness
+    }
     elements {
       ${ELEMENT_STYLES}
     }

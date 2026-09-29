@@ -153,6 +153,53 @@ export function SliderRow({
   );
 }
 
+/**
+ * Longueur automatique (toute la hauteur, ajustée au contenu…) ou sur
+ * mesure, en px. `value` 0 = automatique ; `initial` = valeur proposée au
+ * passage en sur mesure.
+ */
+export function LengthRow({
+  label,
+  hint,
+  autoLabel,
+  value,
+  onChange,
+  min,
+  max,
+  step = 2,
+  initial,
+}) {
+  const custom = value > 0;
+  return (
+    <Row label={label} hint={hint}>
+      <Choice
+        label={label}
+        value={custom ? "custom" : "auto"}
+        onChange={(v) => onChange(v === "custom" ? initial : 0)}
+        options={[
+          { value: "auto", label: autoLabel },
+          { value: "custom", label: "Sur mesure" },
+        ]}
+      />
+      {custom && (
+        <div className="flex items-center gap-3 pt-1">
+          <Slider
+            className="flex-1"
+            value={[value]}
+            min={min}
+            max={max}
+            step={step}
+            onValueChange={(v) => onChange(v[0])}
+          />
+          <span className="w-14 shrink-0 text-right text-xs font-medium tabular-nums text-[#242529] dark:text-white">
+            {value}px
+          </span>
+        </div>
+      )}
+    </Row>
+  );
+}
+
 /** Interrupteur dans un encadré, comme dans les paramètres de facture. */
 export function SwitchRow({
   id,

@@ -14,8 +14,10 @@ import {
   ChoiceCard,
   FIELD_LABEL,
   Hint,
+  LengthRow,
   MultiChoice,
   Row,
+  SliderRow,
   SwitchRow,
 } from "./controls";
 import {
@@ -171,21 +173,110 @@ export function PhotoLayoutControls({ st, setStyle }) {
   );
 }
 
-export function DividerControl({ st, setStyle }) {
-  const L = layoutState(st);
-  if (!L.hasVisual || st.visualFill !== "none") return null;
+/**
+ * Trait sous le nom : affiché ou non, puis sa longueur et son épaisseur.
+ * `lines` : dimensions effectives renvoyées par le rendu (celles du modèle
+ * tant que rien n'est réglé).
+ */
+export function AccentControls({ st, setStyle, lines }) {
+  const on = st.accent === "short" || st.accent === "thin";
   return (
-    <Pick
-      label="Séparateur photo / texte"
-      value={st.divider}
-      onChange={(v) => setStyle({ divider: v })}
-      options={[
-        { value: "none", label: "Aucun" },
-        { value: "line", label: "Trait fin" },
-        { value: "accent", label: "Trait de couleur" },
-        { value: "bar", label: "Barre épaisse" },
-      ]}
-    />
+    <>
+      <SwitchRow
+        id="sig-accent"
+        label="Trait sous le nom"
+        description="Un trait de la couleur principale, sous le nom."
+        checked={on}
+        onCheckedChange={(v) => setStyle({ accent: v ? "short" : "none" })}
+      />
+      {on && (
+        <div className="grid grid-cols-2 gap-4">
+          <SliderRow
+            label="Longueur"
+            value={st.accentLength || lines?.accentLength || 40}
+            min={8}
+            max={240}
+            step={2}
+            onChange={(v) => setStyle({ accentLength: v })}
+          />
+          <SliderRow
+            label="Épaisseur"
+            value={st.accentThickness || lines?.accentThickness || 3}
+            min={1}
+            max={8}
+            onChange={(v) => setStyle({ accentThickness: v })}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * Séparateur vertical : entre la photo et le texte, ou à gauche du texte
+ * sans photo. Couleur, épaisseur, longueur (toute la hauteur ou sur mesure).
+ * Sans effet sur une colonne photo de couleur : masqué.
+ */
+export function DividerControls({ st, setStyle, lines }) {
+  const L = layoutState(st);
+  if (L.hasVisual && st.visualFill !== "none") return null;
+  const on = st.divider !== "none";
+  const thickness =
+    st.dividerThickness ||
+    lines?.dividerThickness ||
+    (st.divider === "bar" ? 4 : 1);
+  return (
+    <>
+      <SwitchRow
+        id="sig-divider"
+        label="Séparateur vertical"
+        description={
+          L.hasVisual
+            ? "Un trait entre la photo et le texte."
+            : "Un trait à gauche du texte."
+        }
+        checked={on}
+        onCheckedChange={(v) => setStyle({ divider: v ? "accent" : "none" })}
+      />
+      {on && (
+        <>
+          <Row label="Couleur">
+            <Choice
+              label="Couleur du séparateur"
+              value={st.divider === "line" ? "gray" : "primary"}
+              onChange={(v) => {
+                if ((v === "gray") === (st.divider === "line")) return;
+                // L'épaisseur affichée est conservée en changeant de couleur
+                setStyle({
+                  divider: v === "gray" ? "line" : "accent",
+                  dividerThickness: thickness,
+                });
+              }}
+              options={[
+                { value: "primary", label: "Couleur principale" },
+                { value: "gray", label: "Gris des traits" },
+              ]}
+            />
+          </Row>
+          <SliderRow
+            label="Épaisseur"
+            value={thickness}
+            min={1}
+            max={8}
+            onChange={(v) => setStyle({ dividerThickness: v })}
+          />
+          <LengthRow
+            label="Longueur"
+            autoLabel="Toute la hauteur"
+            value={st.dividerLength}
+            onChange={(v) => setStyle({ dividerLength: v })}
+            min={16}
+            max={400}
+            initial={60}
+          />
+        </>
+      )}
+    </>
   );
 }
 
@@ -209,16 +300,6 @@ export function IdentityControls({ st, setStyle }) {
   return (
     <>
       <NameLayoutControl st={st} setStyle={setStyle} />
-      <Pick
-        label="Trait sous le nom"
-        value={st.accent}
-        onChange={(v) => setStyle({ accent: v })}
-        options={[
-          { value: "none", label: "Aucun" },
-          { value: "short", label: "Court" },
-          { value: "thin", label: "Fin" },
-        ]}
-      />
       <Pick
         label="Nom, poste, société"
         value={st.identityStyle}

@@ -9,10 +9,18 @@ import {
 } from "@/src/components/ui/select";
 import { RotateCcw } from "lucide-react";
 import { cleanSlots, slotOf, templateLayout } from "../slots";
-import { Choice, ColorRow, Row, Section, SliderRow } from "./controls";
 import {
+  Choice,
+  ColorRow,
+  LengthRow,
+  Row,
+  Section,
+  SliderRow,
+} from "./controls";
+import {
+  AccentControls,
   ContactStyleControl,
-  DividerControl,
+  DividerControls,
   FooterStripControl,
   IdentityControls,
   IdentityZoneControl,
@@ -115,10 +123,11 @@ function cleanValue(value) {
  * Les valeurs possibles viennent du catalogue de l'API, la police est
  * limitée aux polices lisibles dans tous les clients mail.
  */
-export default function StylePanel({ sig, update, catalog, template }) {
+export default function StylePanel({ sig, update, catalog, template, lines }) {
   const st = sig.style;
   const setStyle = (patch) => update({ style: patch });
   const L = layoutState(st);
+  const bars = st.frame === "accent-left" || st.frame === "accent-top";
 
   return (
     <div className="space-y-8">
@@ -174,7 +183,6 @@ export default function StylePanel({ sig, update, catalog, template }) {
         <ResetLayout sig={sig} template={template} setStyle={setStyle} />
         <IdentityZoneControl st={st} setStyle={setStyle} />
         <PhotoLayoutControls st={st} setStyle={setStyle} />
-        <DividerControl st={st} setStyle={setStyle} />
         <IdentityControls st={st} setStyle={setStyle} />
         <ContactStyleControl st={st} setStyle={setStyle} />
         <SocialPositionControl st={st} setStyle={setStyle} />
@@ -195,8 +203,17 @@ export default function StylePanel({ sig, update, catalog, template }) {
             ]}
           />
         </Row>
+      </Section>
+
+      <Section
+        title="Traits"
+        description="Affichez ou non chaque trait, puis réglez sa longueur et son épaisseur."
+      >
+        <AccentControls st={st} setStyle={setStyle} lines={lines} />
+        <DividerControls st={st} setStyle={setStyle} lines={lines} />
         <ColorRow
-          label="Traits de séparation"
+          label="Gris des traits"
+          hint="Utilisé par le séparateur gris et par le contour de l'encadré."
           value={st.separatorColor}
           onChange={(v) => setStyle({ separatorColor: v })}
         />
@@ -213,7 +230,7 @@ export default function StylePanel({ sig, update, catalog, template }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Aucun</SelectItem>
-              <SelectItem value="outline">Contour fin</SelectItem>
+              <SelectItem value="outline">Contour</SelectItem>
               <SelectItem value="soft">Fond teinté</SelectItem>
               <SelectItem value="accent-left">Barre à gauche</SelectItem>
               <SelectItem value="accent-top">Barre en haut</SelectItem>
@@ -240,6 +257,40 @@ export default function StylePanel({ sig, update, catalog, template }) {
               (st.frame === "outline" ? st.separatorColor : st.primaryColor)
             }
             onChange={(v) => setStyle({ frameColor: v })}
+          />
+        )}
+        {(st.frame === "outline" || bars) && (
+          <SliderRow
+            label={bars ? "Épaisseur de la barre" : "Épaisseur du contour"}
+            value={st.frameThickness || lines?.frameThickness || (bars ? 4 : 1)}
+            min={1}
+            max={8}
+            onChange={(v) => setStyle({ frameThickness: v })}
+          />
+        )}
+        {L.boxed && (
+          <LengthRow
+            label="Largeur du cadre"
+            autoLabel="Ajustée au contenu"
+            hint="Sur un téléphone, le cadre ne dépasse jamais la largeur de l'écran."
+            value={st.frameWidth}
+            onChange={(v) => setStyle({ frameWidth: v })}
+            min={240}
+            max={720}
+            step={10}
+            initial={480}
+          />
+        )}
+        {bars && (
+          <LengthRow
+            label="Longueur de la barre"
+            autoLabel="Toute la longueur"
+            value={st.frameBarLength}
+            onChange={(v) => setStyle({ frameBarLength: v })}
+            min={16}
+            max={720}
+            step={4}
+            initial={st.frame === "accent-top" ? 80 : 48}
           />
         )}
         <FooterStripControl st={st} setStyle={setStyle} />

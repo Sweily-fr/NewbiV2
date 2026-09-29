@@ -25,8 +25,9 @@ import {
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 import {
+  AccentControls,
   ContactStyleControl,
-  DividerControl,
+  DividerControls,
   IdentityControls,
   IdentityZoneControl,
   LogoPositionControl,
@@ -43,7 +44,7 @@ export const FIELD_ELEMENT = {
   // Repères d'éléments (data-sig-block) sans champ propre
   name: "name",
   title: "jobTitle",
-  accent: "name",
+  accent: "accent",
   jobTitle: "jobTitle",
   company: "company",
   tagline: "tagline",
@@ -62,6 +63,7 @@ export const FIELD_ELEMENT = {
 
 const TITLES = {
   name: "Nom",
+  accent: "Trait sous le nom",
   jobTitle: "Poste",
   company: "Entreprise",
   tagline: "Accroche",
@@ -197,6 +199,7 @@ export default function ElementPanel({
   replace,
   catalog,
   resolved,
+  lines,
   onClose,
 }) {
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
@@ -256,8 +259,19 @@ export default function ElementPanel({
           <Section title="Disposition">
             <IdentityZoneControl st={st} setStyle={setStyle} />
             <IdentityControls st={st} setStyle={setStyle} />
+            <AccentControls st={st} setStyle={setStyle} lines={lines} />
           </Section>
         </>
+      );
+      break;
+    case "accent":
+      body = (
+        <Section
+          title="Mise en forme"
+          description="Pour le déplacer, tirez sa poignée ⠿ dans l'aperçu."
+        >
+          <AccentControls st={st} setStyle={setStyle} lines={lines} />
+        </Section>
       );
       break;
     case "jobTitle":
@@ -470,7 +484,7 @@ export default function ElementPanel({
           </Section>
           <Section title="Disposition">
             <PhotoLayoutControls st={st} setStyle={setStyle} />
-            <DividerControl st={st} setStyle={setStyle} />
+            <DividerControls st={st} setStyle={setStyle} lines={lines} />
           </Section>
         </>
       );

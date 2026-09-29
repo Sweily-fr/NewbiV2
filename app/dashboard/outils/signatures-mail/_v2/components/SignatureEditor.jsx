@@ -355,6 +355,7 @@ export default function SignatureEditor({ id }) {
                 replace={replace}
                 catalog={catalog}
                 resolved={render?.elements}
+                lines={render?.lines}
                 onClose={() => setElement(null)}
               />
             </div>
@@ -411,6 +412,7 @@ export default function SignatureEditor({ id }) {
                     update={update}
                     catalog={catalog}
                     template={template}
+                    lines={render?.lines}
                   />
                 </TabsNewContent>
                 <TabsNewContent value="extras">
