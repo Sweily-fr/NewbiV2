@@ -7,6 +7,12 @@ import { gql } from "@apollo/client";
  * de l'API, identique pour l'aperçu, la copie et le téléchargement.
  */
 
+/** Éléments de texte réglables un par un (clic dans l'aperçu). */
+export const TEXT_ELEMENTS = ["name", "jobTitle", "company", "tagline", "contact", "cta", "disclaimer"];
+
+const TEXT_STYLE = "fontFamily fontSize color bold italic uppercase";
+const ELEMENT_STYLES = TEXT_ELEMENTS.map((k) => `${k} { ${TEXT_STYLE} }`).join("\n");
+
 export const SIGNATURE_V2_FIELDS = gql`
   fragment SignatureV2Fields on EmailSignatureV2 {
     id
@@ -82,6 +88,9 @@ export const SIGNATURE_V2_FIELDS = gql`
       separatorColor
       spacing
       align
+      elements {
+        ${ELEMENT_STYLES}
+      }
     }
     memberUserId
     updatedAt
@@ -95,6 +104,9 @@ export const RENDER_FIELDS = gql`
     text
     chars
     warnings
+    elements {
+      ${ELEMENT_STYLES}
+    }
   }
 `;
 
@@ -267,6 +279,17 @@ const strip = (obj) =>
     Object.entries(obj || {}).filter(([k, v]) => !OMIT.has(k) && v !== undefined),
   );
 
+/** Réglages par élément sans les champs GraphQL techniques ni les vides. */
+export function cleanElements(elements) {
+  const out = {};
+  for (const key of TEXT_ELEMENTS) {
+    const e = strip(elements?.[key]);
+    const kept = Object.fromEntries(Object.entries(e).filter(([, v]) => v !== null));
+    if (Object.keys(kept).length > 0) out[key] = kept;
+  }
+  return out;
+}
+
 /** Convertit une signature (forme du fragment) en entrée de mutation. */
 export function toInput(sig) {
   if (!sig) return {};
@@ -279,6 +302,6 @@ export function toInput(sig) {
     cta: strip(sig.cta),
     banner: strip(sig.banner),
     disclaimer: strip(sig.disclaimer),
-    style: strip(sig.style),
+    style: { ...strip(sig.style), elements: cleanElements(sig.style?.elements) },
   };
 }

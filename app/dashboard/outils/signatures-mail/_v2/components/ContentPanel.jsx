@@ -35,7 +35,7 @@ function Section({ title, children }) {
   );
 }
 
-function Field({ label, children, hint }) {
+export function Field({ label, children, hint }) {
   return (
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
@@ -45,7 +45,7 @@ function Field({ label, children, hint }) {
   );
 }
 
-function TextField({ id, label, value, onChange, placeholder, hint, type = "text", maxLength }) {
+export function TextField({ id, label, value, onChange, placeholder, hint, type = "text", maxLength }) {
   return (
     <Field label={label} hint={hint}>
       <Input
@@ -64,7 +64,7 @@ function TextField({ id, label, value, onChange, placeholder, hint, type = "text
  * Zone d'image : clic ou glisser-déposer, envoi immédiat à l'API qui
  * recadre, optimise et rattache l'image à la signature.
  */
-function ImageField({ id, kind, label, hint, image, onChanged, aspect = "square", fieldId }) {
+export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "square", fieldId }) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -177,7 +177,7 @@ function ImageField({ id, kind, label, hint, image, onChanged, aspect = "square"
   );
 }
 
-function SocialLinks({ social, networks, update }) {
+export function SocialLinks({ social, networks, update }) {
   const used = new Set(social.map((s) => s.network));
   const available = networks.filter((n) => !used.has(n.id));
   const byId = Object.fromEntries(networks.map((n) => [n.id, n]));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
  * Affiche le HTML d'une signature dans une iframe isolée : aucun style de
@@ -14,6 +14,10 @@ import { useEffect, useMemo, useRef } from "react";
  * (data-sig-field, fourni par previewHtml) remonte le champ au parent au
  * lieu de suivre le lien. Un petit script est alors autorisé dans le bac à
  * sable ; il ne peut ni accéder au parent ni sortir de l'iframe.
+ *
+ * En mode éditeur, l'iframe prend la hauteur de son contenu (le script la
+ * remonte à chaque changement) : c'est la page qui défile, jamais l'iframe,
+ * donc une grande signature reste entièrement visible.
  */
 export default function HtmlFrame({
   html,
@@ -28,6 +32,7 @@ export default function HtmlFrame({
 }) {
   const frameRef = useRef(null);
   const interactive = typeof onFieldClick === "function";
+  const [contentHeight, setContentHeight] = useState(null);
 
   useEffect(() => {
     if (!interactive) return undefined;
@@ -36,6 +41,9 @@ export default function HtmlFrame({
       const data = event.data;
       if (data && data.type === "sig-field" && typeof data.field === "string") {
         onFieldClick(data.field);
+      }
+      if (data && data.type === "sig-height" && Number.isFinite(data.height)) {
+        setContentHeight(Math.ceil(data.height));
       }
     };
     window.addEventListener("message", onMessage);
@@ -54,7 +62,7 @@ export default function HtmlFrame({
       ? "[data-sig-field]{cursor:pointer;border-radius:3px;transition:box-shadow .12s;} [data-sig-field]:hover{box-shadow:0 0 0 2px #5a50ff;} a{cursor:pointer;}"
       : "";
     const editorScript = interactive
-      ? `<script>document.addEventListener("click",function(e){var m=e.target.closest("[data-sig-field]");if(m){e.preventDefault();e.stopPropagation();parent.postMessage({type:"sig-field",field:m.getAttribute("data-sig-field")},"*");return;}if(e.target.closest("a")){e.preventDefault();}},true);</script>`
+      ? `<script>document.addEventListener("click",function(e){var m=e.target.closest("[data-sig-field]");if(m){e.preventDefault();e.stopPropagation();parent.postMessage({type:"sig-field",field:m.getAttribute("data-sig-field")},"*");return;}if(e.target.closest("a")){e.preventDefault();}},true);function h(){parent.postMessage({type:"sig-height",height:document.documentElement.scrollHeight},"*");}new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();</script>`
       : "";
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><meta name="color-scheme" content="${
       dark ? "dark" : "light"
@@ -66,6 +74,7 @@ export default function HtmlFrame({
   const style = {};
   if (width) style.width = width;
   if (height) style.height = height;
+  else if (interactive && contentHeight) style.height = contentHeight;
   if (scale !== 1) {
     style.transform = `scale(${scale})`;
     style.transformOrigin = "top left";

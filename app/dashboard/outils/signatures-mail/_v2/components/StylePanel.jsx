@@ -13,7 +13,7 @@ import {
 } from "@/src/components/ui/select";
 import ColorField from "./ColorField";
 
-function Row({ label, hint, children }) {
+export function Row({ label, hint, children }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3">
@@ -25,7 +25,7 @@ function Row({ label, hint, children }) {
   );
 }
 
-function ColorRow({ label, value, onChange, hint }) {
+export function ColorRow({ label, value, onChange, hint }) {
   return (
     <Row label={label} hint={hint}>
       <ColorField value={value} onChange={onChange} />
@@ -33,7 +33,7 @@ function ColorRow({ label, value, onChange, hint }) {
   );
 }
 
-function SliderRow({ label, value, min, max, step = 1, unit = "px", onChange }) {
+export function SliderRow({ label, value, min, max, step = 1, unit = "px", onChange }) {
   return (
     <Row label={label}>
       <div className="flex items-center gap-2 w-44">
@@ -54,7 +54,7 @@ function SliderRow({ label, value, min, max, step = 1, unit = "px", onChange }) 
   );
 }
 
-function Choice({ value, onChange, options }) {
+export function Choice({ value, onChange, options }) {
   return (
     <ToggleGroup
       type="single"

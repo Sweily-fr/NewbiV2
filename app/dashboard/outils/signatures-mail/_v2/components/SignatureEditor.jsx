@@ -16,7 +16,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
   DropdownMenu,
@@ -50,33 +55,18 @@ import ContentPanel from "./ContentPanel";
 import StylePanel from "./StylePanel";
 import ExtrasPanel from "./ExtrasPanel";
 import SignaturePreview from "./SignaturePreview";
+import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
 
-/** Onglet du panneau qui porte chaque champ de l'aperçu. */
-const FIELD_TAB = {
-  firstName: "content",
-  jobTitle: "content",
-  company: "content",
-  tagline: "content",
-  phone: "content",
-  mobile: "content",
-  email: "content",
-  website: "content",
-  address: "content",
-  social: "content",
-  photo: "content",
-  logo: "content",
-  banner: "content",
-  cta: "extras",
-  disclaimer: "extras",
-};
-
 function SaveStatus({ status }) {
   const map = {
     idle: null,
-    dirty: { label: "Modifications en cours…", className: "text-muted-foreground" },
+    dirty: {
+      label: "Modifications en cours…",
+      className: "text-muted-foreground",
+    },
     saving: { label: "Enregistrement…", className: "text-muted-foreground" },
     saved: { label: "Enregistré", className: "text-emerald-600" },
     error: { label: "Non enregistré", className: "text-red-600" },
@@ -98,10 +88,21 @@ export default function SignatureEditor({ id }) {
   const isNew = searchParams?.get("new") === "1";
   const { isReadOnly } = useSubscriptionAccess();
 
-  const { sig, update, replace, flush, status, loading, error, catalog, initialRender } =
-    useSignatureV2(id);
+  const {
+    sig,
+    update,
+    replace,
+    flush,
+    status,
+    loading,
+    error,
+    catalog,
+    initialRender,
+  } = useSignatureV2(id);
 
   const [tab, setTab] = useState(isNew ? "template" : "content");
+  // Élément cliqué dans l'aperçu : son panneau remplace les onglets
+  const [element, setElement] = useState(null);
   const [render, setRender] = useState(initialRender);
   const [installOpen, setInstallOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -113,12 +114,12 @@ export default function SignatureEditor({ id }) {
 
   const onRender = useCallback((r) => setRender(r), []);
 
-  // Clic sur un élément de l'aperçu : on ouvre l'onglet concerné puis on
-  // amène et focalise le champ (une fois le panneau rendu).
+  // Clic sur un élément de l'aperçu : on ouvre son panneau (contenu et
+  // mise en forme) puis on amène et focalise le champ cliqué.
   const onFieldClick = useCallback((field) => {
-    const target = FIELD_TAB[field];
+    const target = FIELD_ELEMENT[field];
     if (!target) return;
-    setTab(target);
+    setElement(target);
     const focus = (attempt = 0) => {
       const el = document.getElementById(`sig-field-${field}`);
       if (el) {
@@ -142,7 +143,8 @@ export default function SignatureEditor({ id }) {
     refetchQueries: [{ query: SIGNATURES_V2 }],
   });
 
-  const template = catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
+  const template =
+    catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
 
   const handleCopy = async () => {
     await flush();
@@ -152,7 +154,9 @@ export default function SignatureEditor({ id }) {
       toast.success("Signature copiée, collez-la dans votre client mail");
       setTimeout(() => setCopied(false), 2500);
     } else {
-      toast.error("Copie impossible, utilisez « Installer » puis le téléchargement HTML");
+      toast.error(
+        "Copie impossible, utilisez « Installer » puis le téléchargement HTML",
+      );
     }
   };
 
@@ -198,7 +202,11 @@ export default function SignatureEditor({ id }) {
         <p className="text-sm text-muted-foreground">
           {"Cette signature est introuvable ou n'est plus accessible."}
         </p>
-        <Button variant="outline" onClick={() => router.push(LIST_URL)} className="cursor-pointer">
+        <Button
+          variant="outline"
+          onClick={() => router.push(LIST_URL)}
+          className="cursor-pointer"
+        >
           <ArrowLeft size={14} />
           Retour aux signatures
         </Button>
@@ -241,46 +249,80 @@ export default function SignatureEditor({ id }) {
           )}
         </div>
 
-        <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-          <TabsList className="mx-3 grid grid-cols-4">
-            <TabsTrigger value="template" className="text-xs">
-              Modèle
-            </TabsTrigger>
-            <TabsTrigger value="content" className="text-xs">
-              Contenu
-            </TabsTrigger>
-            <TabsTrigger value="style" className="text-xs">
-              Style
-            </TabsTrigger>
-            <TabsTrigger value="extras" className="text-xs">
-              Extras
-            </TabsTrigger>
-          </TabsList>
+        {element ? (
           <ScrollArea className="min-h-0 flex-1">
-            <div className={`px-4 py-4 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}>
-              <TabsContent value="template" className="mt-0">
-                <TemplateGallery sig={sig} update={update} catalog={catalog} />
-              </TabsContent>
-              <TabsContent value="content" className="mt-0">
-                <ContentPanel
-                  id={id}
-                  sig={sig}
-                  update={update}
-                  replace={replace}
-                  flush={flush}
-                  catalog={catalog}
-                  template={template}
-                />
-              </TabsContent>
-              <TabsContent value="style" className="mt-0">
-                <StylePanel sig={sig} update={update} catalog={catalog} template={template} />
-              </TabsContent>
-              <TabsContent value="extras" className="mt-0">
-                <ExtrasPanel sig={sig} update={update} />
-              </TabsContent>
+            <div
+              className={`px-4 py-3 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+            >
+              <ElementPanel
+                element={element}
+                id={id}
+                sig={sig}
+                update={update}
+                replace={replace}
+                catalog={catalog}
+                resolved={render?.elements}
+                onClose={() => setElement(null)}
+              />
             </div>
           </ScrollArea>
-        </Tabs>
+        ) : (
+          <Tabs
+            value={tab}
+            onValueChange={setTab}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <TabsList className="mx-3 grid grid-cols-4">
+              <TabsTrigger value="template" className="text-xs">
+                Modèle
+              </TabsTrigger>
+              <TabsTrigger value="content" className="text-xs">
+                Contenu
+              </TabsTrigger>
+              <TabsTrigger value="style" className="text-xs">
+                Style
+              </TabsTrigger>
+              <TabsTrigger value="extras" className="text-xs">
+                Extras
+              </TabsTrigger>
+            </TabsList>
+            <ScrollArea className="min-h-0 flex-1">
+              <div
+                className={`px-4 py-4 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+              >
+                <TabsContent value="template" className="mt-0">
+                  <TemplateGallery
+                    sig={sig}
+                    update={update}
+                    catalog={catalog}
+                  />
+                </TabsContent>
+                <TabsContent value="content" className="mt-0">
+                  <ContentPanel
+                    id={id}
+                    sig={sig}
+                    update={update}
+                    replace={replace}
+                    flush={flush}
+                    catalog={catalog}
+                    template={template}
+                  />
+                </TabsContent>
+                <TabsContent value="style" className="mt-0">
+                  <StylePanel
+                    sig={sig}
+                    update={update}
+                    catalog={catalog}
+                    template={template}
+                  />
+                </TabsContent>
+                <TabsContent value="extras" className="mt-0">
+                  <ExtrasPanel sig={sig} update={update} />
+                </TabsContent>
+              </div>
+            </ScrollArea>
+          </Tabs>
+        )}
       </aside>
 
       {/* Aperçu */}
@@ -289,7 +331,9 @@ export default function SignatureEditor({ id }) {
           <div className="min-w-0">
             <h1 className="truncate text-base font-medium">{sig.name}</h1>
             {template && (
-              <p className="text-xs text-muted-foreground">Modèle {template.name}</p>
+              <p className="text-xs text-muted-foreground">
+                Modèle {template.name}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-2">
@@ -313,16 +357,27 @@ export default function SignatureEditor({ id }) {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 cursor-pointer" aria-label="Plus d'actions">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 cursor-pointer"
+                  aria-label="Plus d'actions"
+                >
                   <MoreHorizontal size={16} />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleSetDefault} disabled={sig.isDefault || isReadOnly}>
+                <DropdownMenuItem
+                  onClick={handleSetDefault}
+                  disabled={sig.isDefault || isReadOnly}
+                >
                   <Star size={14} />
                   Définir par défaut
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDuplicate} disabled={isReadOnly}>
+                <DropdownMenuItem
+                  onClick={handleDuplicate}
+                  disabled={isReadOnly}
+                >
                   <CopyPlus size={14} />
                   Dupliquer
                 </DropdownMenuItem>
@@ -365,7 +420,8 @@ export default function SignatureEditor({ id }) {
               }
             >
               {render?.chars?.toLocaleString("fr-FR")} /{" "}
-              {(catalog?.gmailMaxChars || 10000).toLocaleString("fr-FR")} caractères (Gmail)
+              {(catalog?.gmailMaxChars || 10000).toLocaleString("fr-FR")}{" "}
+              caractères (Gmail)
             </div>
           </div>
         )}
@@ -384,11 +440,14 @@ export default function SignatureEditor({ id }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cette signature ?</AlertDialogTitle>
             <AlertDialogDescription>
-              « {sig.name} » et ses images seront supprimées. Cette action est irréversible.
+              « {sig.name} » et ses images seront supprimées. Cette action est
+              irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+            <AlertDialogCancel className="cursor-pointer">
+              Annuler
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"

@@ -83,9 +83,10 @@ export default function SignaturePreview({
         </ToggleGroup>
       </div>
 
-      {/* Fenêtre de client mail stylisée autour de l'iframe */}
+      {/* Fenêtre de client mail stylisée autour de l'iframe ; elle défile
+          quand la signature dépasse la hauteur disponible. */}
       <div
-        className={`flex-1 overflow-hidden rounded-xl border shadow-sm ${
+        className={`min-h-0 flex-1 overflow-y-auto rounded-xl border shadow-sm ${
           dark ? "border-neutral-700 bg-[#1f1f1f]" : "border-neutral-200 bg-white"
         }`}
       >
@@ -123,7 +124,7 @@ export default function SignaturePreview({
           html={render?.previewHtml || render?.html || ""}
           dark={dark}
           padding={16}
-          className="h-[calc(100%-150px)] w-full border-0"
+          className="block min-h-[120px] w-full border-0"
           title="Aperçu de la signature"
           onFieldClick={onFieldClick}
         />
