@@ -16,6 +16,7 @@ import {
   ELEMENT_ITEMS,
   ITEM_LABEL,
   SLOTS,
+  isDetached,
   SLOT_LABEL,
   moveElement,
   moveItem,
@@ -254,6 +255,12 @@ export function ItemPanel({ item, sig, update, resolved, catalog }) {
       />
       <Section title="Disposition">
         <PlaceRow item={item} st={sig.style} setStyle={setStyle} />
+        {isDetached(sig, item) && (
+          <Hint>
+            Placée à part du reste {whole} : largeur, espaces et alignement
+            automatiques.
+          </Hint>
+        )}
       </Section>
     </>
   );

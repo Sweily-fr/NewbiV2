@@ -143,11 +143,12 @@ export function useSignatureV2(id) {
       const prev = sigRef.current;
       if (!prev) return;
       // Un élément déplacé ailleurs perd la largeur réglée pour son ancienne
-      // place (déplacements par glisser-déposer comme par les réglages)
+      // place (déplacements par glisser-déposer comme par les réglages ;
+      // une partie emmenée seule ne compte pas)
       const next = merge(
         prev,
         patch.style
-          ? { ...patch, style: resetMovedBlocks(prev.style, patch.style) }
+          ? { ...patch, style: resetMovedBlocks(prev, patch.style) }
           : patch,
       );
       const h = history.current;

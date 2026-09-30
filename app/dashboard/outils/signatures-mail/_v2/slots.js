@@ -319,26 +319,78 @@ export function shiftItem(slots, slot, item, dir, shown) {
 }
 
 /**
- * Un élément qui change d'emplacement repart d'une largeur et d'un
- * alignement automatiques : ceux réglés pour son ancienne place n'y ont
- * plus de sens (une ligne de coordonnées emmenée dans la colonne photo y
- * imposerait sinon la largeur de tout le bloc). Les espaces sont gardés.
- * `patch` : modification du style, renvoyée complétée.
+ * Morceaux d'un élément fait de plusieurs parties (nom, coordonnées) :
+ * suites de parties affichées qui se touchent dans un emplacement.
  */
-export function resetMovedBlocks(prevStyle, patch) {
+export function piecesOf(st, shown, element) {
+  const parts = ELEMENT_ITEMS[element] || [element];
+  const pieces = [];
+  for (const slot of SLOTS) {
+    let run = [];
+    const list = (st?.slots?.[slot] || []).filter((k) => !shown || shown.has(k));
+    for (const k of [...list, null]) {
+      if (k && parts.includes(k)) {
+        run.push(k);
+        continue;
+      }
+      if (run.length > 0) pieces.push(run);
+      run = [];
+    }
+  }
+  return pieces;
+}
+
+/**
+ * Morceau principal d'un élément : celui qui réunit le plus de parties (à
+ * égalité, le premier). Ses réglages de bloc (largeur, espaces,
+ * alignement) ne valent que pour lui, les autres morceaux restent
+ * automatiques : même règle que le rendu de l'API.
+ */
+export function mainPiece(st, shown, element) {
+  let best = null;
+  for (const piece of piecesOf(st, shown, element)) {
+    if (!best || piece.length > best.length) best = piece;
+  }
+  return best;
+}
+
+/** Partie placée hors du morceau principal de son élément ? */
+export function isDetached(sig, item) {
+  const element = BLOCK_OF[item];
+  if (!element) return false;
+  const main = mainPiece(sig?.style, shownItems(sig), element);
+  return Boolean(main && !main.includes(item));
+}
+
+/** Emplacement de chaque bloc : celui de son morceau principal. */
+function blockSlots(st, shown) {
+  return Object.fromEntries(
+    Object.keys(ELEMENT_ITEMS).map((key) => {
+      const items = mainPiece(st, shown, key) || ELEMENT_ITEMS[key];
+      return [key, items.map((k) => slotOf(st?.slots, k)).find(Boolean) || null];
+    }),
+  );
+}
+
+/**
+ * Un élément dont le morceau principal change d'emplacement repart d'une
+ * largeur et d'un alignement automatiques : ceux réglés pour son ancienne
+ * place n'y ont plus de sens. Les espaces sont gardés. Une partie emmenée
+ * seule ailleurs (une ligne de coordonnées) ne change rien : elle est
+ * automatique. `patch` : modification du style, renvoyée complétée.
+ */
+export function resetMovedBlocks(prevSig, patch) {
+  const prevStyle = prevSig?.style;
   if (!patch?.slots || !prevStyle?.slots) return patch;
   const blocks = patch.blocks ?? prevStyle.blocks;
   if (!blocks || Object.keys(blocks).length === 0) return patch;
-  const moved = new Set(
-    Object.keys(BLOCK_OF)
-      .filter((item) => {
-        const before = slotOf(prevStyle.slots, item);
-        const after = slotOf(patch.slots, item);
-        return before && after && before !== after;
-      })
-      .map((item) => BLOCK_OF[item]),
+  const shown = shownItems(prevSig);
+  const before = blockSlots(prevStyle, shown);
+  const after = blockSlots({ ...prevStyle, slots: patch.slots }, shown);
+  const moved = Object.keys(before).filter(
+    (key) => before[key] && after[key] && before[key] !== after[key],
   );
-  if (![...moved].some((key) => blocks[key])) return patch;
+  if (!moved.some((key) => blocks[key])) return patch;
   const next = { ...blocks };
   for (const key of moved) {
     if (!next[key]) continue;

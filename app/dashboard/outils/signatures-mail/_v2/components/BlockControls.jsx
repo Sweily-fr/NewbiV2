@@ -1,8 +1,15 @@
 "use client";
 
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
-import { ELEMENT_ITEMS, shownItems, slotOf } from "../slots";
-import { Choice, LengthRow, ResetLink, Row, SpaceRow } from "./controls";
+import {
+  ELEMENT_ITEMS,
+  ITEM_LABEL,
+  mainPiece,
+  piecesOf,
+  shownItems,
+  slotOf,
+} from "../slots";
+import { Choice, Hint, LengthRow, ResetLink, Row, SpaceRow } from "./controls";
 
 const WRAP_HINT =
   "Le texte revient à la ligne à cette largeur. Vous pouvez aussi tirer le bord du cadre dans l'aperçu.";
@@ -54,13 +61,16 @@ export default function BlockControls({
   const blocks = st.blocks || {};
   const block = blocks[element] || {};
   const width = WIDTH[element];
-  const items = ELEMENT_ITEMS[element] || [element];
+  const shown = shownItems(sig);
+  // Élément en plusieurs morceaux : ces réglages valent pour le principal
+  const split = piecesOf(st, shown, element).length > 1;
+  const items = (split && mainPiece(st, shown, element)) ||
+    ELEMENT_ITEMS[element] || [element];
   // Photo du bandeau : sa place se règle avec le bandeau
-  const slot = slotOf(st.slots, items[0]);
+  const slot = items.map((k) => slotOf(st.slots, k)).find(Boolean) || null;
   if (element === "photo" && slot === "header") return null;
   // Aligner n'a d'effet qu'à côté d'autres éléments de sa colonne, ou dans
   // une colonne de largeur choisie
-  const shown = shownItems(sig);
   const mates = (st.slots?.[slot] || []).filter(
     (k) => shown.has(k) && !items.includes(k),
   );
@@ -77,6 +87,13 @@ export default function BlockControls({
 
   return (
     <>
+      {split && (
+        <Hint>
+          Réglages du groupe principal ({items.map((k) => ITEM_LABEL[k]).join(", ")}),
+          entouré dans l&apos;aperçu. Les parties placées ailleurs restent
+          automatiques.
+        </Hint>
+      )}
       {width && (
         <LengthRow
           label={width.label}

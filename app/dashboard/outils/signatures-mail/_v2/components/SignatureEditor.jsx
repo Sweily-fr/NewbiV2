@@ -74,8 +74,10 @@ import {
   BLOCK_OF,
   COLUMN_WIDTH,
   ELEMENT_ITEMS,
+  mainPiece,
   selectUp,
   selectionChain,
+  shownItems,
 } from "../slots";
 import {
   ItemPanel,
@@ -316,6 +318,12 @@ export default function SignatureEditor({ id }) {
   const frameWidth = st0?.frameWidth || 0;
   const columnWidth = (level === "slot" && st0?.columns?.[key]) || 0;
   const contactIcons = st0?.contactStyle === "icons";
+  // Élément réparti en morceaux : ses réglages ne valent que pour le
+  // principal, que le cadre entoure
+  const mainKey =
+    element === "name" || element === "contact"
+      ? (mainPiece(st0, shownItems(sig), element) || []).join()
+      : "";
   const selection = useMemo(() => {
     if (!level) return null;
     if (level === "signature") {
@@ -361,6 +369,7 @@ export default function SignatureEditor({ id }) {
     return {
       level,
       items: ELEMENT_ITEMS[key] || [key],
+      main: mainKey ? mainKey.split(",") : null,
       resize,
       font:
         !isReadOnly && FONT_ELEMENTS.has(key)
@@ -382,6 +391,7 @@ export default function SignatureEditor({ id }) {
     frameWidth,
     columnWidth,
     contactIcons,
+    mainKey,
   ]);
   const clamp = (v, min, max) => Math.max(min, Math.min(max, Math.round(v)));
   // Bord tiré dans l'aperçu : largeur du cadre, d'une colonne, ou réglage
