@@ -551,6 +551,27 @@ export function ColumnWidthControls({ st, setStyle, shown }) {
     ));
 }
 
+/**
+ * Largeur de toute la signature (le cadre s'il y en a un) : ajustée au
+ * contenu ou sur mesure.
+ */
+export function SignatureWidthRow({ st, setStyle, label }) {
+  const L = layoutState(st);
+  return (
+    <LengthRow
+      label={label || (L.framed ? "Largeur du cadre" : "Largeur de la signature")}
+      autoLabel="Ajustée au contenu"
+      hint="Ou tirez le bord de la signature dans l'aperçu. Sur un téléphone, elle ne dépasse jamais la largeur de l'écran."
+      value={st.frameWidth}
+      onChange={(v) => setStyle({ frameWidth: v })}
+      min={240}
+      max={720}
+      step={10}
+      initial={480}
+    />
+  );
+}
+
 /** Largeur d'une colonne : ajustée au contenu ou sur mesure. */
 export function ColumnWidthRow({ slot, st, setStyle, label }) {
   const c = COLUMN_WIDTH[slot];

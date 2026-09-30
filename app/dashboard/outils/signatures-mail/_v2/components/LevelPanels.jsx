@@ -3,6 +3,7 @@
 import {
   AlignCenter,
   AlignLeft,
+  AlignRight,
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
   AlignVerticalJustifyStart,
@@ -18,6 +19,8 @@ import {
   SLOTS,
   elementSlot,
   isDetached,
+  partHasWidth,
+  pieceOf,
   SLOT_LABEL,
   moveElement,
   moveItem,
@@ -27,7 +30,7 @@ import {
   slotOf,
 } from "../slots";
 import { emailProblem, linkProblem } from "../links";
-import { Choice, Hint, Row, Section } from "./controls";
+import { Choice, Hint, LengthRow, Row, Section, SpaceRow } from "./controls";
 import { TextField } from "./ContentPanel";
 import TextStyleControls from "./TextStyleControls";
 import {
@@ -37,6 +40,7 @@ import {
   OutsideControls,
   Pick,
   PictoPick,
+  SignatureWidthRow,
   layoutState,
 } from "./LayoutControls";
 import { FillPicto } from "./Pictos";
@@ -262,13 +266,86 @@ export function ItemPanel({ item, sig, update, resolved, catalog }) {
       />
       <Section title="Disposition">
         <PlaceRow item={item} sig={sig} setStyle={setStyle} />
-        {isDetached(sig, item) && (
-          <Hint>
-            Partie placée à part du reste {whole} : largeur, espaces et
-            alignement automatiques.
-          </Hint>
-        )}
+        <PartLayout item={item} sig={sig} setStyle={setStyle} whole={whole} />
       </Section>
+    </>
+  );
+}
+
+/**
+ * Largeur d'une partie (ligne de coordonnées, prénom ou nom seul sur sa
+ * ligne) ; pour une partie placée à part de son élément, espaces et
+ * alignement de son morceau (réglés sur sa première partie).
+ */
+function PartLayout({ item, sig, setStyle, whole }) {
+  const blocks = sig.style.blocks || {};
+  const set = (key, patch) => {
+    const next = Object.fromEntries(
+      Object.entries({ ...(blocks[key] || {}), ...patch }).filter(
+        ([, v]) => v !== 0 && v !== null && v !== undefined && v !== "",
+      ),
+    );
+    const all = { ...blocks };
+    if (Object.keys(next).length > 0) all[key] = next;
+    else delete all[key];
+    setStyle({ blocks: all });
+  };
+  const detached = isDetached(sig, item);
+  const piece = pieceOf(sig, item) || [item];
+  const head = piece[0];
+  const lead = blocks[head] || {};
+  return (
+    <>
+      {partHasWidth(sig, item) && (
+        <LengthRow
+          label="Largeur"
+          hint="Le texte revient à la ligne à cette largeur. Vous pouvez aussi tirer le bord du cadre dans l'aperçu."
+          autoLabel="Automatique"
+          value={blocks[item]?.width || 0}
+          onChange={(v) => set(item, { width: v })}
+          min={40}
+          max={640}
+          step={4}
+          initial={200}
+        />
+      )}
+      {detached && (
+        <>
+          <Hint>
+            Partie placée à part du reste {whole}
+            {piece.length > 1
+              ? ` : espaces et alignement communs à ${piece
+                  .map((k) => PARTS[k]?.title || ITEM_LABEL[k])
+                  .join(", ")}.`
+              : "."}
+          </Hint>
+          <div className="grid grid-cols-2 gap-4">
+            <SpaceRow
+              label="Espace au-dessus"
+              value={lead.spaceBefore || 0}
+              onChange={(v) => set(head, { spaceBefore: v })}
+            />
+            <SpaceRow
+              label="Espace en dessous"
+              value={lead.spaceAfter || 0}
+              onChange={(v) => set(head, { spaceAfter: v })}
+            />
+          </div>
+          <Row label="Alignement">
+            <Choice
+              label="Alignement"
+              value={lead.align || ""}
+              onChange={(v) => set(head, { align: v })}
+              options={[
+                { value: "", label: "Auto" },
+                { value: "left", label: "Gauche", icon: <AlignLeft size={14} /> },
+                { value: "center", label: "Centre", icon: <AlignCenter size={14} /> },
+                { value: "right", label: "Droite", icon: <AlignRight size={14} /> },
+              ]}
+            />
+          </Row>
+        </>
+      )}
     </>
   );
 }
@@ -328,6 +405,8 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
     );
   } else if (slot === "header") {
     settings = (
+      <>
+      <SignatureWidthRow st={st} setStyle={setStyle} />
       <Row label="Fond">
         <Choice
           label="Fond"
@@ -339,6 +418,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
           ]}
         />
       </Row>
+      </>
     );
   } else if (slot === "text" && !L.hasVisual) {
     settings = (
@@ -357,6 +437,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
   } else if (slot === "footer" || slot === "outside") {
     settings = (
       <>
+        {slot === "footer" && <SignatureWidthRow st={st} setStyle={setStyle} />}
         <FooterStripControl st={st} setStyle={setStyle} />
         <OutsideControls st={st} setStyle={setStyle} />
       </>

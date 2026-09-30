@@ -155,8 +155,10 @@ if(!d){d=document.createElement("div");d.style.cssText="position:absolute;pointe
 n++;d.style.display="block";d.style.left=(r.l+scrollX-4)+"px";d.style.top=(r.t+scrollY-4)+"px";d.style.width=(r.r-r.l+8)+"px";d.style.height=(r.b-r.t+8)+"px";});
 for(;n<ghosts.length;n++)ghosts[n].style.display="none";}
 var liveTables=[];
+/* Ligne de coordonnées seule : sa largeur porte sur son texte */
+function lineTarget(el){var it=el.getAttribute("data-sig-block");return (sel&&sel.resize&&sel.resize.line&&el.querySelector('[data-sig-field="'+it+'"]'))||el;}
 /* Tableaux à largeur fixe du morceau (un par ligne), ou null */
-function fixedTables(els,w){var out=[];els.forEach(function(el){var t=el.closest('table[width="'+w+'"]');if(t&&out.indexOf(t)<0)out.push(t);});return out;}
+function fixedTables(els,w){var out=[];els.forEach(function(el){var t=lineTarget(el).closest('table[width="'+w+'"]');if(t&&out.indexOf(t)<0)out.push(t);});return out;}
 function selRect(){var els=groupEls(),r=union(els),w=sel&&sel.resize&&sel.resize.width;
 if(!r||!els[0])return r;var ts=liveTables.filter(function(t){return t.isConnected;});if(!ts.length&&w&&sel.items)ts=fixedTables(els,w);
 ts.forEach(function(t){var c=crect(t);r.l=Math.min(r.l,c.x);r.r=Math.max(r.r,c.x+c.w);});return r;}
@@ -194,10 +196,12 @@ function newTable(){var t=document.createElement("table");t.setAttribute("role",
 function rowRoot(el){var a=el;if(/^(TR|TBODY|THEAD|TD|TH)$/.test(a.tagName))a=a.closest("table");
 while(a&&a.parentNode&&a.parentNode!==sigRoot&&a.parentNode.tagName!=="TD"&&!a.parentNode.hasAttribute("data-sig-slot"))a=a.parentNode;return a;}
 function wrapTables(){var els=groupEls();if(!els.length)return [];var w=sel.resize.width,k=sel.resize.kind;
-if(k==="frame"){var ft=document.querySelector("[data-sig-frame] > table");return ft?[ft]:[];}
+if(k==="frame"){var fr=document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]");if(!fr)return [];var f0=fr.firstElementChild;if(f0&&f0.tagName==="TABLE")return [f0];
+var ft=newTable(),fd=ft.insertRow().insertCell();while(fr.firstChild)fd.appendChild(fr.firstChild);fr.appendChild(ft);return [ft];}
 if(k==="column"){var reg=els[0],t0=reg.firstElementChild;if(w&&t0&&t0.tagName==="TABLE"&&t0.getAttribute("width")===String(w))return [t0];
 var ct=newTable(),cd=ct.insertRow().insertCell();while(reg.firstChild)cd.appendChild(reg.firstChild);reg.appendChild(ct);return [ct];}
 if(w){var fx=fixedTables(els,w);if(fx.length)return fx;}
+if(sel.resize.line)return els.map(function(el){var tg=lineTarget(el),t=newTable(),td=t.insertRow().insertCell();tg.parentNode.insertBefore(t,tg);td.appendChild(tg);return t;});
 var roots=[];els.forEach(function(el){var a=rowRoot(el);if(a&&a!==sigRoot&&roots.indexOf(a)<0)roots.push(a);});
 return roots.map(function(a){var t=newTable(),td=t.insertRow().insertCell();a.parentNode.insertBefore(t,a);td.appendChild(a);return t;});}
 /* Logo : largeur réglée → largeur affichée (hauteur plafonnée, comme le rendu) */

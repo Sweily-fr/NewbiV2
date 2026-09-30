@@ -365,6 +365,32 @@ export function isDetached(sig, item) {
   return Boolean(main && !main.includes(item));
 }
 
+/** Morceau d'un élément qui contient une partie. */
+export function pieceOf(sig, item) {
+  const element = BLOCK_OF[item];
+  if (!element) return null;
+  return (
+    piecesOf(sig?.style, shownItems(sig), element).find((p) =>
+      p.includes(item),
+    ) || null
+  );
+}
+
+/**
+ * Une partie a-t-elle sa propre largeur ? Une ligne de coordonnées oui
+ * (sauf coordonnées sur une ligne), le prénom ou le nom seulement s'il est
+ * seul sur sa ligne (l'un sous l'autre, ou séparés).
+ */
+export function partHasWidth(sig, item) {
+  const st = sig?.style || {};
+  if (ELEMENT_ITEMS.contact.includes(item)) return st.contactStyle !== "inline";
+  if (ELEMENT_ITEMS.name.includes(item)) {
+    if (st.identityStyle === "inline") return false;
+    return st.nameLayout === "stacked" || (pieceOf(sig, item) || []).length === 1;
+  }
+  return false;
+}
+
 /** Emplacement de chaque bloc : celui de son morceau principal. */
 function blockSlots(st, shown) {
   return Object.fromEntries(

@@ -75,6 +75,7 @@ import {
   COLUMN_WIDTH,
   ELEMENT_ITEMS,
   mainPiece,
+  partHasWidth,
   selectUp,
   selectionChain,
   shownItems,
@@ -291,10 +292,12 @@ export default function SignatureEditor({ id }) {
     [sig, isReadOnly],
   );
 
-  // Sélection dessinée dans l'aperçu. Élément : son bord part de la taille
-  // qui lui est réservée, bornée par le modèle (photo, icônes), le coin d'un
-  // texte règle ses caractères. Partie : ses caractères. Colonne : sa
-  // largeur. Signature : la largeur du cadre, la taille du texte.
+  // Sélection dessinée dans l'aperçu : chaque niveau a un bord qui règle
+  // sa largeur. Élément : la taille qui lui est réservée, bornée par le
+  // modèle (photo, icônes), le coin d'un texte règle ses caractères.
+  // Partie : sa largeur (ligne de coordonnées, prénom ou nom seul sur sa
+  // ligne) et ses caractères. Colonne : sa largeur ; en-tête et bas : celle
+  // de la signature. Signature : sa largeur, la taille du texte.
   const st0 = sig?.style;
   const level = selected?.level || null;
   const key = selected?.key || null;
@@ -310,8 +313,15 @@ export default function SignatureEditor({ id }) {
       (render?.elements?.[key]?.fontSize ||
         render?.elements?.[BLOCK_OF[key]]?.fontSize)) ||
     baseFont;
-  const boxed = st0?.frame === "outline" || st0?.frame === "soft";
   const frameWidth = st0?.frameWidth || 0;
+  const partWidth =
+    level === "item" && partHasWidth(sig, key)
+      ? {
+          width: st0?.blocks?.[key]?.width || 0,
+          line: BLOCK_OF[key] === "contact",
+        }
+      : null;
+  const partWidthKey = partWidth ? `${partWidth.width}-${partWidth.line}` : "";
   const columnWidth = (level === "slot" && st0?.columns?.[key]) || 0;
   const contactIcons = st0?.contactStyle === "icons";
   // Élément réparti en morceaux : ses réglages ne valent que pour le
@@ -322,14 +332,14 @@ export default function SignatureEditor({ id }) {
       : "";
   const selection = useMemo(() => {
     if (!level) return null;
+    const signatureWidth = isReadOnly
+      ? null
+      : { kind: "frame", min: 240, max: 720, width: frameWidth };
     if (level === "signature") {
       return {
         level,
         whole: true,
-        resize:
-          !isReadOnly && boxed
-            ? { kind: "frame", min: 240, max: 720, width: frameWidth }
-            : null,
+        resize: signatureWidth,
         font: isReadOnly ? null : { min: 11, max: 18, size: baseFont },
       };
     }
@@ -338,18 +348,31 @@ export default function SignatureEditor({ id }) {
       return {
         level,
         slot: key,
-        resize:
-          !isReadOnly && c
-            ? { kind: "column", min: c.min, max: c.max, width: columnWidth }
+        resize: c
+          ? isReadOnly
+            ? null
+            : { kind: "column", min: c.min, max: c.max, width: columnWidth }
+          : key === "header" || key === "footer"
+            ? signatureWidth
             : null,
         font: null,
       };
     }
     if (level === "item") {
+      const [pw, pl] = partWidthKey.split("-");
       return {
         level,
         items: [key],
-        resize: null,
+        resize:
+          partWidthKey && !isReadOnly
+            ? {
+                kind: "wrap",
+                min: 40,
+                max: 640,
+                width: Number(pw) || 0,
+                line: pl === "true",
+              }
+            : null,
         font: isReadOnly ? null : { ...FONT, size: itemFont },
       };
     }
@@ -383,8 +406,8 @@ export default function SignatureEditor({ id }) {
     fontSize,
     itemFont,
     baseFont,
-    boxed,
     frameWidth,
+    partWidthKey,
     columnWidth,
     contactIcons,
     mainKey,
@@ -396,8 +419,23 @@ export default function SignatureEditor({ id }) {
     (width) => {
       if (!sig || !level) return;
       const st = sig.style;
-      if (level === "signature") {
+      if (
+        level === "signature" ||
+        (level === "slot" && (key === "header" || key === "footer"))
+      ) {
         update({ style: { frameWidth: clamp(width, 240, 720) } });
+        return;
+      }
+      if (level === "item") {
+        const blocks = st.blocks || {};
+        update({
+          style: {
+            blocks: {
+              ...blocks,
+              [key]: { ...(blocks[key] || {}), width: clamp(width, 40, 640) },
+            },
+          },
+        });
         return;
       }
       if (level === "slot") {

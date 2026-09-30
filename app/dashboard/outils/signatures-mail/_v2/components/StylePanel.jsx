@@ -40,6 +40,7 @@ import {
   LogoPositionControl,
   OutsideControls,
   PhotoLayoutControls,
+  SignatureWidthRow,
   SocialPositionControl,
   SocialRowsControl,
   layoutState,
@@ -326,6 +327,7 @@ export default function StylePanel({
           </Group>
         )}
         <Group title="Largeurs et espacement">
+          <SignatureWidthRow st={st} setStyle={setStyle} />
           <ColumnWidthControls
             st={st}
             setStyle={setStyle}
@@ -415,19 +417,6 @@ export default function StylePanel({
             min={1}
             max={8}
             onChange={(v) => setStyle({ frameThickness: v })}
-          />
-        )}
-        {L.boxed && (
-          <LengthRow
-            label="Largeur du cadre"
-            autoLabel="Ajustée au contenu"
-            hint="Sur un téléphone, le cadre ne dépasse jamais la largeur de l'écran."
-            value={st.frameWidth}
-            onChange={(v) => setStyle({ frameWidth: v })}
-            min={240}
-            max={720}
-            step={10}
-            initial={480}
           />
         )}
         {bars && (
