@@ -343,5 +343,12 @@
       "delai-conservation-factures-documents-comptables",
       "facture-en-devise-etrangere-regles"
     ]
+  },
+  {
+    "date": "2026-09-30",
+    "articles": [
+      "facture-psychologue-liberal-guide",
+      "pennylane-vs-tiime-comparatif"
+    ]
   }
 ]
