@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { throwIfMutationErrors } from "./mutationErrors";
 
 // ==================== FRAGMENTS ====================
 
@@ -717,6 +718,7 @@ export const useCreatePurchaseOrder = () => {
       const result = await createMutation({
         variables: { workspaceId, input },
       });
+      throwIfMutationErrors(result);
       return result.data?.createPurchaseOrder;
     } catch (error) {
       throw error;
@@ -749,6 +751,7 @@ export const useUpdatePurchaseOrder = () => {
       const result = await updateMutation({
         variables: { id, workspaceId, input },
       });
+      throwIfMutationErrors(result);
       return result.data?.updatePurchaseOrder;
     } catch (error) {
       throw error;

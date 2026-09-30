@@ -1031,69 +1031,62 @@ const UniversalPDFDownloaderWithFacturX = ({
           currentPage.currentHeight += section.height + SECTION_SPACING;
           console.log(`    ✓ Section ajoutée entièrement`);
         } else {
-          // La section doit être coupée
+          // La section doit être coupée, sur autant de pages que nécessaire :
+          // des CGV longues peuvent dépasser une page entière (avant, le
+          // reste était posé d'un bloc sur la page suivante et débordait).
           console.log(
             `    ⚠️ Section trop longue, sera coupée sur plusieurs pages`,
           );
 
-          // Ajouter la partie qui rentre sur la page actuelle
-          if (spaceRemaining > 20) {
-            // Au moins 20mm pour que ça vaille le coup
-            currentPage.sections.push({
-              type: section.type,
-              data: section.data,
-              height: spaceRemaining - SECTION_SPACING,
-              spacing: SECTION_SPACING,
-              canBreak: true,
-              isPartial: true,
-              partialStart: 0,
-              partialHeight: spaceRemaining - SECTION_SPACING,
-            });
-            currentPage.currentHeight += spaceRemaining;
-            console.log(
-              `    ✓ Partie 1 ajoutée (${(spaceRemaining - SECTION_SPACING).toFixed(1)}mm)`,
-            );
-
-            // Créer une nouvelle page pour le reste
+          let space = spaceRemaining;
+          if (space <= 20) {
+            // Moins de 20mm : ça ne vaut pas le coup, on part page suivante
             pages.push(currentPage);
             currentPage = {
               number: pages.length + 1,
               sections: [],
               currentHeight: 0,
             };
+            space = AVAILABLE_HEIGHT;
+          }
 
-            const remainingHeight =
-              section.height - (spaceRemaining - SECTION_SPACING);
-            currentPage.sections.push({
-              type: section.type,
-              data: section.data,
-              height: remainingHeight,
-              spacing: SECTION_SPACING,
-              canBreak: true,
-              isPartial: true,
-              partialStart: spaceRemaining - SECTION_SPACING,
-              partialHeight: remainingHeight,
-            });
-            currentPage.currentHeight += remainingHeight + SECTION_SPACING;
-            console.log(
-              `    ✓ Partie 2 ajoutée (${remainingHeight.toFixed(1)}mm)`,
-            );
-          } else {
-            // Pas assez de place, mettre toute la section sur la page suivante
-            pages.push(currentPage);
-            currentPage = {
-              number: pages.length + 1,
-              sections: [],
-              currentHeight: 0,
-            };
+          let offset = 0;
+          while (offset < section.height) {
+            const remaining = section.height - offset;
+            const chunk =
+              remaining <= space ? remaining : space - SECTION_SPACING;
 
-            currentPage.sections.push({
-              ...section,
-              spacing: SECTION_SPACING,
-              canBreak: true,
-            });
-            currentPage.currentHeight += section.height + SECTION_SPACING;
-            console.log(`    ✓ Section entière sur nouvelle page`);
+            if (offset === 0 && chunk === section.height) {
+              currentPage.sections.push({
+                ...section,
+                spacing: SECTION_SPACING,
+                canBreak: true,
+              });
+            } else {
+              currentPage.sections.push({
+                type: section.type,
+                data: section.data,
+                height: chunk,
+                spacing: SECTION_SPACING,
+                canBreak: true,
+                isPartial: true,
+                partialStart: offset,
+                partialHeight: chunk,
+              });
+            }
+            currentPage.currentHeight += chunk + SECTION_SPACING;
+            offset += chunk;
+            console.log(`    ✓ Partie ajoutée (${chunk.toFixed(1)}mm)`);
+
+            if (offset < section.height) {
+              pages.push(currentPage);
+              currentPage = {
+                number: pages.length + 1,
+                sections: [],
+                currentHeight: 0,
+              };
+              space = AVAILABLE_HEIGHT;
+            }
           }
         }
       }
@@ -1123,8 +1116,29 @@ const UniversalPDFDownloaderWithFacturX = ({
         );
       }
 
+      // Footer plus haut qu'une page (notes de bas de page très longues) :
+      // collé d'un bloc en bas de la dernière page, son haut sortait de la
+      // feuille. On le découpe en tranches d'une page ; seule la dernière
+      // reste collée à la pagination.
+      const FOOTER_MAX_HEIGHT = A4_HEIGHT_MM - PAGINATION_HEIGHT;
+      const footerSlices = [];
+      if (sections.footer) {
+        let start = 0;
+        while (heights.footer - start > FOOTER_MAX_HEIGHT) {
+          footerSlices.push({ start, height: FOOTER_MAX_HEIGHT });
+          start += FOOTER_MAX_HEIGHT;
+        }
+        footerSlices.push({ start, height: heights.footer - start });
+      }
+      const lastFooterSlice = footerSlices[footerSlices.length - 1];
+      const leadingFooterSlices = footerSlices.slice(0, -1);
+
       // Vérifier si le footer rentre sur la page courante
-      if (currentPage.currentHeight + heights.footer > AVAILABLE_HEIGHT) {
+      if (
+        leadingFooterSlices.length > 0 ||
+        currentPage.currentHeight + (lastFooterSlice?.height || 0) >
+          AVAILABLE_HEIGHT
+      ) {
         // Pas assez de place pour le footer, créer une page dédiée
         console.log(`⚠️ Footer ne rentre pas, création d'une page dédiée`);
         pages.push(currentPage);
@@ -1134,6 +1148,18 @@ const UniversalPDFDownloaderWithFacturX = ({
           currentHeight: 0,
         };
       }
+
+      // Tranches intermédiaires du footer : une page chacune
+      for (const slice of leadingFooterSlices) {
+        currentPage.footerSlice = slice;
+        pages.push(currentPage);
+        currentPage = {
+          number: pages.length + 1,
+          sections: [],
+          currentHeight: 0,
+        };
+      }
+      if (lastFooterSlice) currentPage.footerSlice = lastFooterSlice;
 
       // Ajouter la dernière page
       pages.push(currentPage);
@@ -1249,18 +1275,45 @@ const UniversalPDFDownloaderWithFacturX = ({
         const paginationY = A4_HEIGHT_MM - paginationHeight; // Collée en bas (pas de marge)
 
         // Ajouter le footer uniquement sur la dernière page (collé à la pagination)
-        if (sections.footer && i === pages.length - 1) {
-          // Footer collé directement à la pagination (pas d'espace)
+        if (sections.footer && page.footerSlice) {
+          const slice = page.footerSlice;
+          // Dernière tranche collée directement à la pagination (pas
+          // d'espace) ; les tranches intermédiaires occupent la page entière.
           const footerYPosition =
-            Math.floor((paginationY - heights.footer) * 100) / 100;
+            i === pages.length - 1
+              ? Math.floor((paginationY - slice.height) * 100) / 100
+              : 0;
+
+          let footerImageData = sections.footer.dataUrl;
+          if (slice.start > 0 || slice.height < heights.footer) {
+            const footerImg = sections.footer.img;
+            const footerPixelsPerMM = footerImg.width / A4_WIDTH_MM;
+            const sliceCanvas = document.createElement("canvas");
+            sliceCanvas.width = footerImg.width;
+            sliceCanvas.height = Math.round(slice.height * footerPixelsPerMM);
+            sliceCanvas
+              .getContext("2d")
+              .drawImage(
+                footerImg,
+                0,
+                slice.start * footerPixelsPerMM,
+                footerImg.width,
+                sliceCanvas.height,
+                0,
+                0,
+                footerImg.width,
+                sliceCanvas.height,
+              );
+            footerImageData = sliceCanvas.toDataURL("image/jpeg", JPEG_QUALITY);
+          }
 
           pdf.addImage(
-            sections.footer.dataUrl,
+            footerImageData,
             "JPEG",
             0,
             footerYPosition,
             A4_WIDTH_MM,
-            heights.footer,
+            slice.height,
             `footer-${i}`,
             "FAST",
           );
