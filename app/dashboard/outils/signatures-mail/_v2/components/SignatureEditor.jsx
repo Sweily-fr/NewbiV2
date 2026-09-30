@@ -426,14 +426,25 @@ export default function SignatureEditor({ id }) {
         update({ style: { frameWidth: clamp(width, 240, 720) } });
         return;
       }
+      // Largeur d'un texte : 0 = automatique (tiré jusqu'à sa largeur
+      // naturelle), le réglage est alors retiré
+      const withWidth = (blocks, k, value) => {
+        // eslint-disable-next-line no-unused-vars
+        const { width: _w, ...rest } = blocks[k] || {};
+        const next = value ? { ...rest, width: value } : rest;
+        const all = { ...blocks };
+        if (Object.keys(next).length > 0) all[k] = next;
+        else delete all[k];
+        return all;
+      };
       if (level === "item") {
-        const blocks = st.blocks || {};
         update({
           style: {
-            blocks: {
-              ...blocks,
-              [key]: { ...(blocks[key] || {}), width: clamp(width, 40, 640) },
-            },
+            blocks: withWidth(
+              st.blocks || {},
+              key,
+              width ? clamp(width, 40, 640) : 0,
+            ),
           },
         });
         return;
@@ -450,6 +461,10 @@ export default function SignatureEditor({ id }) {
       }
       if (!element || !RESIZE[element]) return;
       const { min, max } = RESIZE[element];
+      if (!width && RESIZE[element].kind === "wrap") {
+        update({ style: { blocks: withWidth(st.blocks || {}, element, 0) } });
+        return;
+      }
       const value = clamp(width, min, max);
       let patch;
       if (element === "photo") patch = { photoSize: value };
@@ -457,13 +472,7 @@ export default function SignatureEditor({ id }) {
       else if (element === "logo") patch = { logoWidth: value };
       else if (element === "accent") patch = { accentLength: value };
       else {
-        const blocks = st.blocks || {};
-        patch = {
-          blocks: {
-            ...blocks,
-            [element]: { ...(blocks[element] || {}), width: value },
-          },
-        };
+        patch = { blocks: withWidth(st.blocks || {}, element, value) };
       }
       update({ style: patch });
     },
