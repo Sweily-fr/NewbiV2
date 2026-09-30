@@ -84,6 +84,7 @@ post({type:"sig-editing",editing:true});
 }
 document.addEventListener("click",function(e){
 if(e.target===grip)return;
+clickSlot=e.target.closest?e.target.closest("[data-sig-slot]"):null;
 if(e.target.closest("a"))e.preventDefault();
 if(editing&&editing.contains(e.target))return;
 e.stopPropagation();
@@ -120,7 +121,15 @@ box.appendChild(tip);
 document.body.appendChild(box);
 function selEls(){var out=[];if(!sel)return out;(sel.items||[]).forEach(function(it){document.querySelectorAll('[data-sig-block="'+it+'"]').forEach(function(el){out.push(el);});});return out;}
 function union(els){var r=null;els.forEach(function(el){var c=crect(el);if(!c.w&&!c.h)return;if(!r)r={l:c.x,t:c.y,r:c.x+c.w,b:c.y+c.h};else{r.l=Math.min(r.l,c.x);r.t=Math.min(r.t,c.y);r.r=Math.max(r.r,c.x+c.w);r.b=Math.max(r.b,c.y+c.h);}});return r;}
-function selRect(){var els=selEls(),r=union(els),w=sel&&sel.resize&&sel.resize.width;
+/* Bloc réparti sur plusieurs colonnes (coordonnées) : le cadre et la
+   poignée portent sur la partie cliquée, sinon sur la plus fournie ; un
+   cadre à cheval sur deux colonnes donnait une largeur de départ absurde */
+var clickSlot=null;
+function groupEls(){var els=selEls();if(els.length<2)return els;var by=new Map();
+els.forEach(function(el){var k=el.closest("[data-sig-slot]")||document.body;if(!by.has(k))by.set(k,[]);by.get(k).push(el);});
+if(by.size<2)return els;if(clickSlot&&by.has(clickSlot))return by.get(clickSlot);
+var best=null;by.forEach(function(g){if(!best||g.length>best.length)best=g;});return best;}
+function selRect(){var els=groupEls(),r=union(els),w=sel&&sel.resize&&sel.resize.width;
 if(!r||!w||!els[0])return r;var t=els[0].closest('table[width="'+w+'"]');if(!t)return r;var c=crect(t);r.l=Math.min(r.l,c.x);r.r=Math.max(r.r,c.x+c.w);return r;}
 function place(r){box.style.left=(r.l+scrollX-5)+"px";box.style.top=(r.t+scrollY-5)+"px";box.style.width=(r.r-r.l+10)+"px";box.style.height=(r.b-r.t+10)+"px";}
 function drawSel(){if(rs||fs)return;var r=selRect();if(!r){box.style.display="none";return;}
@@ -143,23 +152,23 @@ function awaitRender(){clearTimeout(pending);pending=setTimeout(function(){pendi
 /* Bord : largeur du bloc, ou taille des icônes (proportionnelle) */
 knob.addEventListener("pointerdown",function(e){if(!sel||!sel.resize)return;e.preventDefault();e.stopPropagation();if(editing)editing.blur();
 var r=selRect();if(!r)return;var w=Math.round(r.r-r.l),icons=sel.resize.kind==="icons",start=icons?sel.resize.size:w;
-rs={x:e.clientX,w:w,start:start,cur:start,icons:icons};knob.setPointerCapture(e.pointerId);hideGrip();tip.style.display="block";tip.textContent=start+" px";});
-knob.addEventListener("pointermove",function(e){if(!rs)return;var w=rs.w+(e.clientX-rs.x),v=rs.icons?Math.round(rs.start*w/rs.w):Math.round(w);
+rs={x:e.clientX,w:w,start:start,cur:start,icons:icons,moved:false};knob.setPointerCapture(e.pointerId);hideGrip();tip.style.display="block";tip.textContent=start+" px";});
+knob.addEventListener("pointermove",function(e){if(!rs)return;if(!rs.moved){if(Math.abs(e.clientX-rs.x)<3)return;rs.moved=true;}var w=rs.w+(e.clientX-rs.x),v=rs.icons?Math.round(rs.start*w/rs.w):Math.round(w);
 v=Math.max(sel.resize.min,Math.min(sel.resize.max,v));rs.cur=v;tip.textContent=v+" px";live(v);
 if(sel.resize.kind==="wrap"){box.style.width=(v+10)+"px";}else{var nr=selRect();if(nr)place(nr);}});
-function endResize(){if(!rs)return;var v=rs.cur,changed=v!==rs.start;rs=null;tip.style.display="none";if(changed){post({type:"sig-resize",width:v});awaitRender();}else restore();}
+function endResize(){if(!rs)return;var v=rs.cur,changed=rs.moved&&v!==rs.start;rs=null;tip.style.display="none";if(changed){post({type:"sig-resize",width:v});awaitRender();}else restore();}
 knob.addEventListener("pointerup",endResize);knob.addEventListener("pointercancel",endResize);knob.addEventListener("lostpointercapture",endResize);
 knob.addEventListener("click",function(e){e.stopPropagation();});
 /* Coin : taille des caractères (et des icônes des coordonnées), en direct */
 corner.addEventListener("pointerdown",function(e){if(!sel||!sel.font)return;e.preventDefault();e.stopPropagation();if(editing)editing.blur();
 var r=selRect();if(!r)return;var texts=[],imgs=[];selEls().forEach(function(el){[el].concat([].slice.call(el.querySelectorAll("*"))).forEach(function(n){if(n.style&&n.style.fontSize)texts.push({n:n,fs:parseFloat(n.style.fontSize),lh:parseFloat(n.style.lineHeight)||0});});
 el.querySelectorAll("img").forEach(function(im){imgs.push({n:im,w:im.width,h:im.height});});});
-fs={x:e.clientX,y:e.clientY,w:r.r-r.l,h:r.b-r.t,start:sel.font.size,cur:sel.font.size,texts:texts,imgs:imgs};corner.setPointerCapture(e.pointerId);hideGrip();tip.style.display="block";tip.textContent=fs.start+" px";});
-corner.addEventListener("pointermove",function(e){if(!fs)return;var f=1+((e.clientX-fs.x)+(e.clientY-fs.y))/(fs.w+fs.h);
+fs={x:e.clientX,y:e.clientY,w:r.r-r.l,h:r.b-r.t,start:sel.font.size,cur:sel.font.size,texts:texts,imgs:imgs,moved:false};corner.setPointerCapture(e.pointerId);hideGrip();tip.style.display="block";tip.textContent=fs.start+" px";});
+corner.addEventListener("pointermove",function(e){if(!fs)return;if(!fs.moved){if(Math.abs(e.clientX-fs.x)+Math.abs(e.clientY-fs.y)<4)return;fs.moved=true;}var f=1+((e.clientX-fs.x)+(e.clientY-fs.y))/(fs.w+fs.h);
 var v=Math.max(sel.font.min,Math.min(sel.font.max,Math.round(fs.start*f))),k=v/fs.start;fs.cur=v;tip.textContent=v+" px";
 fs.texts.forEach(function(t){t.n.style.fontSize=(t.fs*k)+"px";if(t.lh)t.n.style.lineHeight=(t.lh*k)+"px";});
 fs.imgs.forEach(function(i){i.n.style.width=(i.w*k)+"px";i.n.style.height=(i.h*k)+"px";});var nr=selRect();if(nr)place(nr);});
-function endFont(){if(!fs)return;var v=fs.cur,changed=v!==fs.start;fs=null;tip.style.display="none";if(changed){post({type:"sig-font",size:v});awaitRender();}else restore();}
+function endFont(){if(!fs)return;var v=fs.cur,changed=fs.moved&&v!==fs.start;fs=null;tip.style.display="none";if(changed){post({type:"sig-font",size:v});awaitRender();}else restore();}
 corner.addEventListener("pointerup",endFont);corner.addEventListener("pointercancel",endFont);corner.addEventListener("lostpointercapture",endFont);
 corner.addEventListener("click",function(e){e.stopPropagation();});
 new ResizeObserver(drawSel).observe(document.body);document.addEventListener("load",drawSel,true);window.addEventListener("resize",drawSel);
