@@ -948,6 +948,27 @@ export function useQuoteEditor({
     }
   }, [existingQuote, mode, reset]);
 
+  // Appliquer le réglage global de numérotation séquentielle continue lors de
+  // l'édition d'un brouillon (même correctif que les bons de commande,
+  // 7163f4fd). Les brouillons ne persistent pas autoNumbering et
+  // l'organisation est chargée après l'ouverture : sans cela, le numéro
+  // affiché était calculé par préfixe (ex. 0067) au lieu de globalement
+  // (0068), et l'API refusait la finalisation (« numéro déjà utilisé »).
+  // Appliqué une seule fois, dès que l'organisation est disponible, pour ne pas
+  // écraser une bascule manuelle faite ensuite dans les paramètres de l'éditeur.
+  const draftAutoNumberingAppliedRef = useRef(false);
+  useEffect(() => {
+    if (draftAutoNumberingAppliedRef.current) return;
+    if (!organization) return;
+    const isDraftEdit = mode === "edit" && existingQuote?.status === "DRAFT";
+    if (!isDraftEdit) return;
+
+    draftAutoNumberingAppliedRef.current = true;
+    const orgAutoNumbering = organization.quoteAutoNumbering || false;
+    setCurrentAutoNumbering(orgAutoNumbering);
+    setValue("autoNumbering", orgAutoNumbering, { shouldDirty: false });
+  }, [organization, mode, existingQuote?.status, setValue]);
+
   // Synchroniser les données client avec la collection Client (données à jour)
   useEffect(() => {
     if (!isFormInitialized || !freshClient || mode === "create") return;
