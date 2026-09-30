@@ -2480,7 +2480,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     // Notes et conditions
     headerNotes: "",
     footerNotes: "",
-    terms: "",
+    termsAndConditions: "",
 
     // Champs personnalisés
     customFields: [],
@@ -2803,7 +2803,9 @@ function transformQuoteToFormData(quote) {
 
     headerNotes: quote.headerNotes || "",
     footerNotes: quote.footerNotes || "",
-    terms: quote.terms || "",
+    // L'API expose `termsAndConditions` (pas de champ `terms`) : lire `terms`
+    // rechargeait des CGV vides, puis le réenregistrement les effaçait.
+    termsAndConditions: quote.termsAndConditions || "",
 
     customFields:
       quote.customFields?.map((field) => ({
@@ -3244,7 +3246,7 @@ function transformFormDataToInput(
     escompte: parseFloat(formData.escompte) || 0,
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
-    termsAndConditions: formData.terms || formData.termsAndConditions || "",
+    termsAndConditions: formData.termsAndConditions || "",
     customFields:
       formData.customFields?.map((field) => ({
         key: field.name,

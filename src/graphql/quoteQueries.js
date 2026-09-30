@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { throwIfMutationErrors } from "./mutationErrors";
 
 // ==================== FRAGMENTS ====================
 
@@ -747,6 +748,7 @@ export const useCreateQuote = () => {
       const result = await createQuoteMutation({
         variables: { workspaceId, input },
       });
+      throwIfMutationErrors(result);
       return result.data?.createQuote;
     } catch (error) {
       throw error;
@@ -780,6 +782,7 @@ export const useUpdateQuote = () => {
       const result = await updateQuoteMutation({
         variables: { id, input },
       });
+      throwIfMutationErrors(result);
       return result.data?.updateQuote;
     } catch (error) {
       throw error;

@@ -455,13 +455,7 @@ export default function DeliveryNoteSettingsView({
                   <TextareaNew
                     id="delivery-notes"
                     className={`mt-2 ${errors?.notes ? "border-red-500" : ""}`}
-                    {...register("notes", {
-                      maxLength: {
-                        value: 2000,
-                        message:
-                          "Les remarques ne doivent pas dépasser 2000 caractères",
-                      },
-                    })}
+                    {...register("notes")}
                     defaultValue={data.notes || ""}
                     placeholder="Remarques imprimées sous la liste des articles (réserves, consignes...)"
                     rows={4}
@@ -492,13 +486,7 @@ export default function DeliveryNoteSettingsView({
                   <TextareaNew
                     id="footer-notes"
                     className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
-                    {...register("footerNotes", {
-                      maxLength: {
-                        value: 2000,
-                        message:
-                          "Les notes de bas de page ne doivent pas dépasser 2000 caractères",
-                      },
-                    })}
+                    {...register("footerNotes")}
                     defaultValue={data.footerNotes || ""}
                     placeholder="Notes qui apparaîtront en bas du bon de livraison..."
                     rows={3}

@@ -214,6 +214,11 @@ const UniversalPDFDownloader = ({
           // Trouver le dernier élément qui serait coupé
           let needsAdjustment = false;
           for (const row of elementsInRange) {
+            // Un bloc plus haut qu'une page (ex. notes de bas de page très
+            // longues) ne peut pas être gardé entier : sans cette exception,
+            // la coupe reculait au début du bloc à chaque page (tranches
+            // vides, jusqu'à 50 pages blanches).
+            if (row.height >= pageHeightPixels) continue;
             // Si l'élément commence avant targetY mais finit après
             if (row.top < targetY && row.bottom > targetY) {
               // Cet élément serait coupé, on ajuste targetY avant lui
@@ -233,6 +238,11 @@ const UniversalPDFDownloader = ({
             console.log(
               `  ✅ Aucune coupure détectée, on utilise toute la page`,
             );
+          }
+
+          // Garde-fou : ne jamais produire une tranche vide
+          if (targetY <= currentY) {
+            targetY = Math.min(currentY + pageHeightPixels, img.height);
           }
 
           const sliceHeight = targetY - currentY;

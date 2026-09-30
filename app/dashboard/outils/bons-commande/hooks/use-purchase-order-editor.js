@@ -2526,7 +2526,6 @@ function getInitialFormData(mode, initialData, session, organization) {
       organization?.purchaseOrderFooterNotes ||
       organization?.documentFooterNotes ||
       "",
-    terms: "",
     termsAndConditions:
       organization?.purchaseOrderTermsAndConditions ||
       organization?.documentTermsAndConditions ||
@@ -2840,7 +2839,9 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
 
     headerNotes: purchaseOrder.headerNotes || "",
     footerNotes: purchaseOrder.footerNotes || "",
-    terms: purchaseOrder.terms || "",
+    // L'API expose `termsAndConditions` (pas de champ `terms`) : lire `terms`
+    // rechargeait des CGV vides, puis le réenregistrement les effaçait.
+    termsAndConditions: purchaseOrder.termsAndConditions || "",
 
     customFields:
       purchaseOrder.customFields?.map((field) => ({
@@ -3150,7 +3151,7 @@ function transformFormDataToInput(
     escompte: parseFloat(formData.escompte) || 0,
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
-    termsAndConditions: formData.terms || formData.termsAndConditions || "",
+    termsAndConditions: formData.termsAndConditions || "",
     customFields:
       formData.customFields?.map((field) => ({
         key: field.name || "",
