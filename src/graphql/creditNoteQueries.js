@@ -1,6 +1,7 @@
 import { gql } from "@apollo/client";
 import { useQuery, useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { throwIfMutationErrors } from "./mutationErrors";
 
 // ==================== FRAGMENTS ====================
 
@@ -432,13 +433,14 @@ export function useCreateCreditNote() {
       throw new Error("WorkspaceId is required but not found in session");
     }
 
-    const { data } = await createCreditNoteMutation({
+    const result = await createCreditNoteMutation({
       variables: {
         workspaceId,
         input,
       },
     });
-    return data.createCreditNote;
+    throwIfMutationErrors(result);
+    return result.data.createCreditNote;
   };
 
   return {
@@ -456,14 +458,15 @@ export function useUpdateCreditNote() {
     useMutation(UPDATE_CREDIT_NOTE);
 
   const updateCreditNote = async (id, input) => {
-    const { data } = await updateCreditNoteMutation({
+    const result = await updateCreditNoteMutation({
       variables: {
         id,
         workspaceId,
         input,
       },
     });
-    return data.updateCreditNote;
+    throwIfMutationErrors(result);
+    return result.data.updateCreditNote;
   };
 
   return {
