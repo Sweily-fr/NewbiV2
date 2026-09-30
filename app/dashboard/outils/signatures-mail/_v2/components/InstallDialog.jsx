@@ -82,7 +82,7 @@ const GUIDES = [
       "Collez la signature dans la zone de texte (Cmd+V ou Ctrl+V).",
       "Choisissez-la comme signature par défaut pour les nouveaux messages et les réponses, puis « Enregistrer les modifications » tout en bas.",
     ],
-    note: "Gmail limite une signature à 10 000 caractères, mais en retire une partie au collage : une signature signalée « peut dépasser » passe souvent. S'il la refuse, retirez un élément (réseaux, bandeau…).",
+    note: "Gmail limite une signature à 10 000 caractères, mais en retire une partie au collage : une signature signalée « peut dépasser » passe souvent. S'il la refuse, retirez un élément (réseaux, bannière…).",
   },
   {
     id: "outlook-web",

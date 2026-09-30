@@ -21,6 +21,7 @@ import {
   isDetached,
   partHasWidth,
   pieceOf,
+  slotLabel,
   SLOT_LABEL,
   moveElement,
   moveItem,
@@ -41,6 +42,7 @@ import {
   Pick,
   PictoPick,
   SignatureWidthRow,
+  TextAlignControl,
   layoutState,
 } from "./LayoutControls";
 import { FillPicto } from "./Pictos";
@@ -54,7 +56,7 @@ import { FillPicto } from "./Pictos";
 
 /** Titre de chaque élément (panneau d'élément). */
 export const ELEMENT_TITLE = {
-  name: "Nom",
+  name: "Prénom et nom",
   accent: "Trait sous le nom",
   jobTitle: "Poste",
   company: "Entreprise",
@@ -63,7 +65,7 @@ export const ELEMENT_TITLE = {
   social: "Réseaux sociaux",
   photo: "Photo",
   logo: "Logo",
-  banner: "Bandeau",
+  banner: "Bannière",
   cta: "Bouton d'action",
   disclaimer: "Mention",
 };
@@ -99,10 +101,10 @@ export function modClick() {
 }
 
 /** Libellé d'une sélection, pour le titre et le fil d'Ariane. */
-export function selectionLabel(sel) {
+export function selectionLabel(sel, st) {
   if (!sel) return "";
   if (sel.level === "signature") return "Toute la signature";
-  if (sel.level === "slot") return SLOT_LABEL[sel.key] || "";
+  if (sel.level === "slot") return slotLabel(sel.key, st);
   if (sel.level === "element") return ELEMENT_TITLE[sel.key] || "";
   return PARTS[sel.key]?.title || ITEM_LABEL[sel.key] || "";
 }
@@ -122,7 +124,7 @@ export function ancestorsOf(sel, sig) {
 }
 
 /** En-tête d'un panneau : retour aux onglets, niveaux au-dessus, titre. */
-export function LevelHeader({ selected, ancestors, onSelect, onClose }) {
+export function LevelHeader({ selected, ancestors, onSelect, onClose, st }) {
   return (
     <div className="space-y-2">
       <button
@@ -148,14 +150,14 @@ export function LevelHeader({ selected, ancestors, onSelect, onClose }) {
                 onClick={() => onSelect(a)}
                 className="rounded px-1 py-0.5 -mx-1 hover:bg-accent hover:text-foreground cursor-pointer"
               >
-                {selectionLabel(a)}
+                {selectionLabel(a, st)}
               </button>
               <ChevronRight size={12} aria-hidden="true" />
             </span>
           ))}
         </nav>
       )}
-      <h2 className="text-xl font-medium">{selectionLabel(selected)}</h2>
+      <h2 className="text-xl font-medium">{selectionLabel(selected, st)}</h2>
       {selected.level !== "signature" && (
         <Hint>{modClick()} dans l&apos;aperçu : le niveau au-dessus.</Hint>
       )}
@@ -193,12 +195,12 @@ export function PartLinks({ element, sig, onSelect }) {
 }
 
 /** Emplacements proposés pour déplacer une partie ou un élément. */
-function placeOptions(st) {
+function placeOptions(st, current) {
   const L = layoutState(st);
-  return SLOTS.filter((s) => s !== "outside" || L.framed).map((s) => ({
-    value: s,
-    label: SLOT_LABEL[s],
-  }));
+  // Tout en bas (sous le cadre) : avec un cadre, ou s'il y est déjà
+  return SLOTS.filter(
+    (s) => s !== "outside" || L.framed || current === "outside",
+  ).map((s) => ({ value: s, label: slotLabel(s, st) }));
 }
 
 /**
@@ -223,7 +225,7 @@ export function PlaceRow({ item, element, sig, setStyle }) {
             : moveElement(st.slots, element, v),
         })
       }
-      options={placeOptions(st)}
+      options={placeOptions(st, current)}
     />
   );
 }
@@ -263,6 +265,7 @@ export function ItemPanel({ item, sig, update, resolved, catalog }) {
             s&apos;applique à cette partie.
           </Hint>
         }
+        resetLabel={`Reprendre le style ${whole}`}
       />
       <Section title="Disposition">
         <PlaceRow item={item} sig={sig} setStyle={setStyle} />
@@ -294,6 +297,16 @@ function PartLayout({ item, sig, setStyle, whole }) {
   const piece = pieceOf(sig, item) || [item];
   const head = piece[0];
   const lead = blocks[head] || {};
+  // Aligner n'a d'effet qu'à côté d'autres éléments de sa colonne, ou dans
+  // une colonne de largeur choisie
+  const shown = shownItems(sig);
+  const slot = slotOf(sig.style.slots, item);
+  const canAlign =
+    Boolean(lead.align) ||
+    (sig.style.columns?.[slot] || 0) > 0 ||
+    (sig.style.slots?.[slot] || []).some(
+      (k) => shown.has(k) && !piece.includes(k),
+    );
   return (
     <>
       {partHasWidth(sig, item) && (
@@ -331,6 +344,7 @@ function PartLayout({ item, sig, setStyle, whole }) {
               onChange={(v) => set(head, { spaceAfter: v })}
             />
           </div>
+          {canAlign && (
           <Row label="Alignement">
             <Choice
               label="Alignement"
@@ -344,6 +358,7 @@ function PartLayout({ item, sig, setStyle, whole }) {
               ]}
             />
           </Row>
+          )}
         </>
       )}
     </>
@@ -363,8 +378,8 @@ const FILL_OPTIONS = [
 export function SlotPanel({ slot, sig, update, lines, onSelect }) {
   const st = sig.style;
   const setStyle = (patch) => update({ style: patch });
-  const L = layoutState(st);
   const shown = shownItems(sig);
+  const L = layoutState(st, shown);
   const items = (st.slots?.[slot] || []).filter((k) => shown.has(k));
 
   let settings = null;
@@ -400,7 +415,12 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
             ]}
           />
         </Row>
-        <DividerControls st={st} setStyle={setStyle} lines={lines} />
+        <DividerControls
+          st={st}
+          setStyle={setStyle}
+          lines={lines}
+          shown={shown}
+        />
       </>
     );
   } else if (slot === "header") {
@@ -421,25 +441,13 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
       </>
     );
   } else if (slot === "text" && !L.hasVisual) {
-    settings = (
-      <Row label="Alignement du texte">
-        <Choice
-          label="Alignement du texte"
-          value={st.align}
-          onChange={(v) => setStyle({ align: v })}
-          options={[
-            { value: "left", label: "Gauche", icon: <AlignLeft size={14} /> },
-            { value: "center", label: "Centré", icon: <AlignCenter size={14} /> },
-          ]}
-        />
-      </Row>
-    );
+    settings = <TextAlignControl st={st} setStyle={setStyle} shown={shown} />;
   } else if (slot === "footer" || slot === "outside") {
     settings = (
       <>
         {slot === "footer" && <SignatureWidthRow st={st} setStyle={setStyle} />}
-        <FooterStripControl st={st} setStyle={setStyle} />
-        <OutsideControls st={st} setStyle={setStyle} />
+        <FooterStripControl st={st} setStyle={setStyle} shown={shown} />
+        <OutsideControls st={st} setStyle={setStyle} shown={shown} />
       </>
     );
   }

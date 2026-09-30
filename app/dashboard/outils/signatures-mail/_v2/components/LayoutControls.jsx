@@ -30,6 +30,7 @@ import {
 import {
   COLUMN_WIDTH,
   SLOT_LABEL,
+  logoFit,
   identityZone,
   isOutside,
   itemPlacement,
@@ -37,7 +38,6 @@ import {
   photoPlacement,
   setIdentityZone,
   setItemPlacement,
-  setOutside,
   setPhotoPlacement,
 } from "../slots";
 import { distribute, socialAlign, socialRowOptions } from "../socialRows";
@@ -58,16 +58,22 @@ import {
  * s'il a un effet avec les réglages en cours.
  */
 
-/** État de la mise en page, lu dans les emplacements. */
-export function layoutState(st) {
+/**
+ * État de la mise en page, lu dans les emplacements. `shown` : éléments
+ * affichés ; une colonne où rien ne s'affiche (photo absente) ne compte pas,
+ * comme dans le rendu.
+ */
+export function layoutState(st, shown = null) {
   const slots = st.slots || {};
   const zone = identityZone(st);
   const photo = photoPlacement(st);
+  const present = (slot) =>
+    (slots[slot] || []).some((k) => !shown || shown.has(k));
   return {
     zone,
     photo,
-    hasVisual: (slots.visual || []).length > 0,
-    hasHeader: (slots.header || []).length > 0,
+    hasVisual: present("visual"),
+    hasHeader: present("header"),
     photoSide: photo === "left" || photo === "right",
     plain: zone === "plain",
     boxed: st.frame === "outline" || st.frame === "soft",
@@ -167,9 +173,30 @@ const PHOTO_OPTIONS = [
   { value: "right", label: "À droite", picto: <PhotoPicto position="right" /> },
 ];
 
+/**
+ * Alignement du texte, quand rien n'est à côté de lui (pas de colonne
+ * photo affichée) : sinon il suit sa colonne.
+ */
+export function TextAlignControl({ st, setStyle, shown }) {
+  if (layoutState(st, shown).hasVisual) return null;
+  return (
+    <Row label="Alignement du texte">
+      <Choice
+        label="Alignement du texte"
+        value={st.align}
+        onChange={(v) => setStyle({ align: v })}
+        options={[
+          { value: "left", label: "Gauche", icon: <AlignLeft size={14} /> },
+          { value: "center", label: "Centre", icon: <AlignCenter size={14} /> },
+        ]}
+      />
+    </Row>
+  );
+}
+
 /** Place de la photo, son alignement et sa colonne. */
-export function PhotoLayoutControls({ st, setStyle }) {
-  const L = layoutState(st);
+export function PhotoLayoutControls({ st, setStyle, shown }) {
+  const L = layoutState(st, shown);
   if (L.photo === "header") {
     return (
       <PictoPick
@@ -214,19 +241,7 @@ export function PhotoLayoutControls({ st, setStyle }) {
           ]}
         />
       )}
-      {!L.hasVisual && (
-        <Row label="Alignement du texte">
-          <Choice
-            label="Alignement du texte"
-            value={st.align}
-            onChange={(v) => setStyle({ align: v })}
-            options={[
-              { value: "left", label: "Gauche", icon: <AlignLeft size={14} /> },
-              { value: "center", label: "Centré", icon: <AlignCenter size={14} /> },
-            ]}
-          />
-        </Row>
-      )}
+      <TextAlignControl st={st} setStyle={setStyle} shown={shown} />
     </>
   );
 }
@@ -274,8 +289,8 @@ export function AccentControls({ st, setStyle, lines }) {
  * sans photo. Couleur, épaisseur, longueur (toute la hauteur ou sur mesure).
  * Sans effet sur une colonne photo de couleur : masqué.
  */
-export function DividerControls({ st, setStyle, lines }) {
-  const L = layoutState(st);
+export function DividerControls({ st, setStyle, lines, shown }) {
+  const L = layoutState(st, shown);
   if (L.hasVisual && st.visualFill !== "none") return null;
   const on = st.divider !== "none";
   const thickness =
@@ -309,7 +324,7 @@ export function DividerControls({ st, setStyle, lines }) {
               }}
               options={[
                 { value: "primary", label: "Couleur principale" },
-                { value: "gray", label: "Gris des traits" },
+                { value: "gray", label: "Couleur des traits" },
               ]}
             />
           </Row>
@@ -548,6 +563,28 @@ export function ColumnWidthControls({ st, setStyle, shown }) {
 }
 
 /**
+ * Largeur du logo telle qu'elle s'affiche : sa hauteur est plafonnée selon
+ * sa place (un logo carré reste discret), le curseur montre donc la
+ * largeur visible et enregistre le réglage qui la donne.
+ */
+export function LogoWidthRow({ sig, setStyle }) {
+  const fit = logoFit(sig);
+  return (
+    <SliderRow
+      label="Largeur"
+      value={fit.shown(sig.style.logoWidth)}
+      min={fit.shown(40)}
+      max={fit.shown(300)}
+      step={2}
+      hint={`Hauteur limitée à ${fit.cap} px à cette place : un logo carré reste discret.`}
+      onChange={(v) =>
+        setStyle({ logoWidth: Math.max(40, Math.min(300, fit.setting(v))) })
+      }
+    />
+  );
+}
+
+/**
  * Largeur de toute la signature (le cadre s'il y en a un) : ajustée au
  * contenu ou sur mesure.
  */
@@ -555,7 +592,7 @@ export function SignatureWidthRow({ st, setStyle, label }) {
   const L = layoutState(st);
   return (
     <LengthRow
-      label={label || (L.framed ? "Largeur du cadre" : "Largeur de la signature")}
+      label={label || "Largeur de la signature"}
       autoLabel="Ajustée au contenu"
       hint="Ou tirez le bord de la signature dans l'aperçu. Sur un téléphone, elle ne dépasse jamais la largeur de l'écran."
       value={st.frameWidth}
@@ -593,20 +630,22 @@ const OUTSIDE_LABELS = {
   social: "Réseaux",
   logo: "Logo",
   cta: "Bouton",
-  banner: "Bandeau",
+  banner: "Bannière",
   disclaimer: "Mention",
 };
 
-/** Éléments du bas qu'on peut sortir du cadre (ou y remettre). */
-function outsideCandidates(st) {
+/** Éléments affichés du bas qu'on peut sortir du cadre (ou y remettre). */
+function outsideCandidates(st, shown) {
   const bottom = [...(st.slots?.footer || []), ...(st.slots?.outside || [])];
-  return Object.keys(OUTSIDE_LABELS).filter((k) => bottom.includes(k));
+  return Object.keys(OUTSIDE_LABELS).filter(
+    (k) => bottom.includes(k) && (!shown || shown.has(k)),
+  );
 }
 
 /** Toutes les cases « en dehors de l'encadré » (onglet Style). */
-export function OutsideControls({ st, setStyle }) {
-  const L = layoutState(st);
-  const candidates = outsideCandidates(st);
+export function OutsideControls({ st, setStyle, shown }) {
+  const L = layoutState(st, shown);
+  const candidates = outsideCandidates(st, shown);
   if (!L.framed || candidates.length === 0) return null;
   return (
     <Row
@@ -635,23 +674,6 @@ export function OutsideControls({ st, setStyle }) {
   );
 }
 
-/** Dans / hors de l'encadré pour un seul élément (panneau d'élément). */
-export function OutsideToggle({ item, st, setStyle }) {
-  const L = layoutState(st);
-  if (!L.framed || !outsideCandidates(st).includes(item)) return null;
-  return (
-    <Pick
-      label="Place"
-      value={isOutside(st, item) ? "out" : "in"}
-      onChange={(v) => setStyle(setOutside(st, item, v === "out"))}
-      options={[
-        { value: "in", label: "Dans l'encadré" },
-        { value: "out", label: "En dehors" },
-      ]}
-    />
-  );
-}
-
 /**
  * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
  * l'autre (comme les dépôts « À côté », « Au-dessus », « Sous »).
@@ -661,21 +683,42 @@ export function FooterPairControl({ st, setStyle, shown }) {
   const a = footer.indexOf("social");
   const b = footer.indexOf("logo");
   if (a < 0 || b < 0 || Math.abs(a - b) !== 1) return null;
+  // Un alignement choisi pour l'un des deux les garde l'un sous l'autre
+  const blocks = st.blocks || {};
+  const aligned = Boolean(blocks.social?.align || blocks.logo?.align);
+  const unaligned = (k) => {
+    // eslint-disable-next-line no-unused-vars
+    const { align, ...rest } = blocks[k] || {};
+    return rest;
+  };
   return (
     <SwitchRow
       id="sig-footer-pair"
       label="Réseaux et logo côte à côte"
       description="Sinon, l'un sous l'autre."
-      checked={st.footerPair !== false}
-      onCheckedChange={(v) => setStyle({ footerPair: v })}
+      checked={st.footerPair !== false && !aligned}
+      onCheckedChange={(v) =>
+        setStyle(
+          v
+            ? {
+                footerPair: true,
+                blocks: {
+                  ...blocks,
+                  social: unaligned("social"),
+                  logo: unaligned("logo"),
+                },
+              }
+            : { footerPair: false },
+        )
+      }
     />
   );
 }
 
 /** Bande teintée en bas du cadre, pour les réseaux et le logo en bas. */
-export function FooterStripControl({ st, setStyle }) {
-  const L = layoutState(st);
-  const footer = st.slots?.footer || [];
+export function FooterStripControl({ st, setStyle, shown }) {
+  const L = layoutState(st, shown);
+  const footer = (st.slots?.footer || []).filter((k) => !shown || shown.has(k));
   const hasBottom = footer.includes("social") || footer.includes("logo");
   if (!L.boxed || !hasBottom) return null;
   return (

@@ -248,8 +248,7 @@ export function SliderRow({
       <div className="flex items-center justify-between gap-3">
         <Label className={FIELD_LABEL}>{label}</Label>
         <span className="text-xs font-medium tabular-nums text-[#242529] dark:text-white">
-          {value}
-          {unit}
+          {unit ? `${value} ${unit}` : value}
         </span>
       </div>
       <Slider
@@ -303,7 +302,7 @@ export function LengthRow({
             onValueChange={(v) => onChange(v[0])}
           />
           <span className="w-14 shrink-0 text-right text-xs font-medium tabular-nums text-[#242529] dark:text-white">
-            {value}px
+            {value} px
           </span>
         </div>
       )}
@@ -484,7 +483,7 @@ export function GmailSize({ chars, max }) {
       className="flex shrink-0 items-center gap-2"
       title={
         state === "over"
-          ? `${count} Gmail en retire une partie au collage (le code destiné à Outlook) et l'accepte souvent. S'il la refuse, retirez un élément (réseaux, bandeau…) ou raccourcissez les textes.`
+          ? `${count} Gmail en retire une partie au collage (le code destiné à Outlook) et l'accepte souvent. S'il la refuse, retirez un élément (réseaux, bannière…) ou raccourcissez les textes.`
           : count
       }
     >

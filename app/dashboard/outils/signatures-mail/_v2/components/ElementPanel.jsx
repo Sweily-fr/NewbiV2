@@ -34,7 +34,7 @@ import {
   IdentityControls,
   IdentityZoneControl,
   LogoPositionControl,
-  OutsideToggle,
+  LogoWidthRow,
   PhotoLayoutControls,
   SocialPositionControl,
   SocialRowsControl,
@@ -348,7 +348,6 @@ export default function ElementPanel({
           />
           <SocialPositionControl st={st} setStyle={setStyle} />
           <FooterPairControl st={st} setStyle={setStyle} shown={shownItems(sig)} />
-          <OutsideToggle item="social" st={st} setStyle={setStyle} />
         </>
       );
       break;
@@ -397,8 +396,17 @@ export default function ElementPanel({
       );
       layout = (
         <>
-          <PhotoLayoutControls st={st} setStyle={setStyle} />
-          <DividerControls st={st} setStyle={setStyle} lines={lines} />
+          <PhotoLayoutControls
+            st={st}
+            setStyle={setStyle}
+            shown={shownItems(sig)}
+          />
+          <DividerControls
+            st={st}
+            setStyle={setStyle}
+            lines={lines}
+            shown={shownItems(sig)}
+          />
         </>
       );
       break;
@@ -418,17 +426,7 @@ export default function ElementPanel({
             />
           </Section>
           <Section title="Mise en forme">
-            <SliderRow
-              label="Largeur"
-              value={st.logoWidth}
-              min={40}
-              max={300}
-              step={4}
-              onChange={(v) => setStyle({ logoWidth: v })}
-            />
-            <Hint>
-              La hauteur est limitée à 48 px : un logo carré reste discret.
-            </Hint>
+            <LogoWidthRow sig={sig} setStyle={setStyle} />
           </Section>
         </>
       );
@@ -436,7 +434,6 @@ export default function ElementPanel({
         <>
           <LogoPositionControl st={st} setStyle={setStyle} />
           <FooterPairControl st={st} setStyle={setStyle} shown={shownItems(sig)} />
-          <OutsideToggle item="logo" st={st} setStyle={setStyle} />
         </>
       );
       break;
@@ -454,7 +451,7 @@ export default function ElementPanel({
           />
           <SwitchRow
             id="sig-banner-visible"
-            label="Afficher le bandeau"
+            label="Afficher la bannière"
             checked={banner.enabled}
             onCheckedChange={(v) => update({ banner: { enabled: v } })}
           >
@@ -469,7 +466,6 @@ export default function ElementPanel({
           </SwitchRow>
         </Section>
       );
-      layout = <OutsideToggle item="banner" st={st} setStyle={setStyle} />;
       break;
     case "cta":
       body = (
@@ -517,7 +513,6 @@ export default function ElementPanel({
           />
         </>
       );
-      layout = <OutsideToggle item="cta" st={st} setStyle={setStyle} />;
       break;
     case "disclaimer":
       body = (
@@ -533,9 +528,6 @@ export default function ElementPanel({
           </Section>
           <TextStyleControls elementKey="disclaimer" {...textProps} />
         </>
-      );
-      layout = (
-        <OutsideToggle item="disclaimer" st={st} setStyle={setStyle} />
       );
       break;
     default:

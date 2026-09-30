@@ -5,10 +5,12 @@ import {
   ELEMENT_ITEMS,
   ITEM_LABEL,
   mainPiece,
+  mergedRow,
   piecesOf,
   shownItems,
   slotOf,
 } from "../slots";
+import { ELEMENT_TITLE } from "./LevelPanels";
 import { Choice, Hint, LengthRow, ResetLink, Row, SpaceRow } from "./controls";
 
 const WRAP_HINT =
@@ -29,7 +31,7 @@ const WIDTH = {
     initial: 220,
   },
   banner: {
-    label: "Largeur du bandeau",
+    label: "Largeur de la bannière",
     hint: "La hauteur suit, sans déformer l'image.",
     min: 120,
     initial: 480,
@@ -62,6 +64,17 @@ export default function BlockControls({
   const block = blocks[element] || {};
   const width = WIDTH[element];
   const shown = shownItems(sig);
+  // Sur la ligne d'un autre (poste et entreprise en capitales, identité en
+  // ligne) : la ligne se règle sur son premier élément
+  const row = mergedRow(sig, element);
+  if (row && row[0] !== element) {
+    return (
+      <Hint>
+        Sur la même ligne que « {ELEMENT_TITLE[row[0]] || row[0]} » : largeur,
+        espaces et alignement se règlent sur lui.
+      </Hint>
+    );
+  }
   // Élément en plusieurs morceaux : ces réglages valent pour le principal
   const split = piecesOf(st, shown, element).length > 1;
   const items = (split && mainPiece(st, shown, element)) ||

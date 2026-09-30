@@ -11,11 +11,11 @@ export const IDENTITY_ITEMS = ["firstName", "lastName", "title", "company", "tag
 /** Libellés pour les lignes de dépôt : « Au-dessus du nom », « Sous le nom ». */
 export const ITEM_OF = {
   photo: "de la photo",
-  name: "du nom",
+  name: "du prénom et du nom",
   firstName: "du prénom",
   lastName: "du nom",
   title: "du poste",
-  company: "de la société",
+  company: "de l'entreprise",
   tagline: "de l'accroche",
   accent: "du trait",
   phone: "du téléphone",
@@ -26,16 +26,16 @@ export const ITEM_OF = {
   social: "des réseaux",
   logo: "du logo",
   cta: "du bouton",
-  banner: "du bandeau",
+  banner: "de la bannière",
   disclaimer: "de la mention",
 };
 export const ITEM_THE = {
   photo: "la photo",
-  name: "le nom",
+  name: "le prénom et le nom",
   firstName: "le prénom",
   lastName: "le nom",
   title: "le poste",
-  company: "la société",
+  company: "l'entreprise",
   tagline: "l'accroche",
   accent: "le trait",
   phone: "le téléphone",
@@ -46,27 +46,27 @@ export const ITEM_THE = {
   social: "les réseaux",
   logo: "le logo",
   cta: "le bouton",
-  banner: "le bandeau",
+  banner: "la bannière",
   disclaimer: "la mention",
 };
 export const ITEM_LABEL = {
   photo: "Photo",
-  name: "Nom",
+  name: "Prénom et nom",
   firstName: "Prénom",
   lastName: "Nom",
   title: "Poste",
-  company: "Société",
+  company: "Entreprise",
   tagline: "Accroche",
   accent: "Trait",
   phone: "Téléphone",
   mobile: "Mobile",
   email: "E-mail",
-  website: "Site",
+  website: "Site web",
   address: "Adresse",
   social: "Réseaux",
   logo: "Logo",
   cta: "Bouton",
-  banner: "Bandeau",
+  banner: "Bannière",
   disclaimer: "Mention",
   contact: "Coordonnées",
 };
@@ -177,11 +177,80 @@ export function hasBlockSettings(st) {
 export function layoutCustomized(sig, template) {
   const defaults = templateLayout(template?.defaults, sig);
   if (!defaults?.slots) return false;
+  const st = sig.style || {};
   return (
-    layoutDiffers(sig.style, defaults) ||
-    LINE_KEYS.some((k) => (sig.style?.[k] || 0) > 0) ||
-    hasBlockSettings(sig.style)
+    layoutDiffers(st, defaults) ||
+    LINE_KEYS.some((k) => (st[k] || 0) !== (defaults[k] || 0)) ||
+    hasBlockSettings(st) ||
+    st.footerPair === false ||
+    (st.nameLayout || "inline") !== (defaults.nameLayout || "inline") ||
+    JSON.stringify(st.socialRows || []) !==
+      JSON.stringify(defaults.socialRows || [])
   );
+}
+
+/**
+ * Disposition du modèle, pour « Revenir au modèle » : places, traits et
+ * bordures, blocs et colonnes, nom, réseaux et logo ; jamais les couleurs
+ * ni la typographie de l'utilisateur.
+ */
+export function layoutReset(sig, template) {
+  const defaults = templateLayout(template?.defaults, sig) || {};
+  const clean = (v) =>
+    v && typeof v === "object" && !Array.isArray(v) ? cleanSlots(v) : v;
+  return {
+    ...Object.fromEntries(LAYOUT_KEYS.map((k) => [k, clean(defaults[k])])),
+    ...Object.fromEntries(LINE_KEYS.map((k) => [k, defaults[k] || 0])),
+    nameLayout: defaults.nameLayout || "inline",
+    socialRows: [...(defaults.socialRows || [])],
+    blocks: {},
+    columns: {},
+    footerPair: true,
+  };
+}
+
+/**
+ * Nom d'un emplacement : « Sous le cadre » n'a de sens qu'avec un cadre,
+ * sans cadre c'est « Tout en bas ».
+ */
+export function slotLabel(slot, st) {
+  if (slot === "outside" && (!st?.frame || st.frame === "none")) {
+    return "Tout en bas";
+  }
+  return SLOT_LABEL[slot] || "";
+}
+
+/** Hauteur maximale du logo selon sa place (mêmes règles que le rendu). */
+export function logoMaxHeight(st) {
+  const slot = slotOf(st?.slots, "logo");
+  const boxed = st?.frame === "outline" || st?.frame === "soft";
+  if (slot === "visual") return 64;
+  if (slot === "text" || slot === "side" || slot === "header") return 40;
+  if (slot === "footer" && boxed && st?.footerStrip) return 32;
+  return 48;
+}
+
+/**
+ * Logo : largeur affichée pour un réglage (sa hauteur est plafonnée, un
+ * logo carré reste discret) et réglage pour une largeur affichée. Mêmes
+ * calculs que le rendu (LOGO_CAP_WIDTH 120) et que l'aperçu (logoFit).
+ */
+export function logoFit(sig) {
+  const logo = sig?.images?.logo;
+  const cap = logoMaxHeight(sig?.style);
+  if (!logo?.width || !logo?.height) {
+    return { cap, shown: (w) => w, setting: (d) => d };
+  }
+  const ratio = logo.width / logo.height;
+  const shown = (w) =>
+    Math.min(w, Math.round(Math.round(cap * Math.max(1, w / 120)) * ratio));
+  const setting = (d) => {
+    const k = cap * ratio;
+    let w = k >= 120 || d <= Math.min(120, k) ? d : Math.ceil((d * 120) / k);
+    while (shown(w) < d && w < 2000) w += 1;
+    return w;
+  };
+  return { cap, shown, setting };
 }
 
 /**
@@ -322,15 +391,59 @@ export function shiftItem(slots, slot, item, dir, shown) {
 }
 
 /**
+ * Taille des caractères d'un élément : ses parties réglées à part (prénom,
+ * nom, lignes de coordonnées) suivent en proportion, les icônes des
+ * coordonnées aussi. Même règle pour le coin du cadre dans l'aperçu et le
+ * curseur « Taille » du panneau. `current` : taille affichée avant.
+ */
+export function fontSizePatch(style, element, value, current) {
+  const all = style?.elements || {};
+  const factor = current ? value / current : 1;
+  const scaled = (n, min, max) =>
+    Math.max(min, Math.min(max, Math.round(n * factor)));
+  const elements = {
+    ...all,
+    [element]: { ...(all[element] || {}), fontSize: value },
+  };
+  const parts =
+    element === "name" || element === "contact" ? ELEMENT_ITEMS[element] : [];
+  for (const part of parts) {
+    if (all[part]?.fontSize) {
+      elements[part] = {
+        ...all[part],
+        fontSize: scaled(all[part].fontSize, 9, 36),
+      };
+    }
+  }
+  const patch = { elements };
+  if (element === "contact" && style?.contactStyle === "icons") {
+    patch.contactIconSize = scaled(style.contactIconSize || 16, 12, 32);
+  }
+  return patch;
+}
+
+/**
  * Morceaux d'un élément fait de plusieurs parties (nom, coordonnées) :
  * suites de parties affichées qui se touchent dans un emplacement.
  */
 export function piecesOf(st, shown, element) {
   const parts = ELEMENT_ITEMS[element] || [element];
   const pieces = [];
-  for (const slot of SLOTS) {
-    let run = [];
+  // Listes dont les lignes sont faites (comme le rendu) : l'en-tête sans sa
+  // photo, le bas coupé en deux par une bande de pied teintée
+  const stripOn =
+    (st?.frame === "outline" || st?.frame === "soft") && Boolean(st?.footerStrip);
+  const inStrip = (k) => k === "social" || k === "logo";
+  const lists = SLOTS.flatMap((slot) => {
     const list = (st?.slots?.[slot] || []).filter((k) => !shown || shown.has(k));
+    if (slot === "header") return [list.filter((k) => k !== "photo")];
+    if (slot === "footer" && stripOn) {
+      return [list.filter((k) => !inStrip(k)), list.filter(inStrip)];
+    }
+    return [list];
+  });
+  for (const list of lists) {
+    let run = [];
     for (const k of [...list, null]) {
       if (k && parts.includes(k)) {
         run.push(k);
@@ -361,8 +474,49 @@ export function mainPiece(st, shown, element) {
 export function isDetached(sig, item) {
   const element = BLOCK_OF[item];
   if (!element) return false;
-  const main = mainPiece(sig?.style, shownItems(sig), element);
+  const shown = shownItems(sig);
+  // Une partie vide n'est nulle part : elle n'est pas « à part »
+  if (!shown.has(item)) return false;
+  const main = mainPiece(sig?.style, shown, element);
   return Boolean(main && !main.includes(item));
+}
+
+/** Prénom, nom, poste, entreprise : réunis sur une ligne en « identité en ligne ». */
+const INLINE_IDENTITY = ["firstName", "lastName", "title", "company"];
+
+/**
+ * Éléments réunis sur une même ligne que `element` (identité en ligne,
+ * poste suivi de l'entreprise en capitales), dans l'ordre ; null s'il est
+ * seul sur sa ligne. La ligne se règle sur son premier élément (largeur,
+ * espaces, alignement), comme le rendu de l'API.
+ */
+export function mergedRow(sig, element) {
+  const st = sig?.style || {};
+  const shown = shownItems(sig);
+  const items = ELEMENT_ITEMS[element] || [element];
+  for (const slot of SLOTS) {
+    const list = (st.slots?.[slot] || []).filter((k) => shown.has(k));
+    let i = 0;
+    while (i < list.length) {
+      let group = [list[i]];
+      if (st.identityStyle === "inline" && INLINE_IDENTITY.includes(list[i])) {
+        group = [];
+        while (i + group.length < list.length && INLINE_IDENTITY.includes(list[i + group.length])) {
+          group.push(list[i + group.length]);
+        }
+      } else if (
+        st.titleStyle === "caps" &&
+        list[i] === "title" &&
+        list[i + 1] === "company"
+      ) {
+        group = ["title", "company"];
+      }
+      const keys = [...new Set(group.map((k) => BLOCK_OF[k] || k))];
+      if (keys.length > 1 && group.some((k) => items.includes(k))) return keys;
+      i += group.length;
+    }
+  }
+  return null;
 }
 
 /** Morceau d'un élément qui contient une partie. */

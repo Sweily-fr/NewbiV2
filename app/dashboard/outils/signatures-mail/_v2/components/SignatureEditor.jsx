@@ -74,7 +74,9 @@ import {
   BLOCK_OF,
   COLUMN_WIDTH,
   ELEMENT_ITEMS,
+  fontSizePatch,
   mainPiece,
+  mergedRow,
   partHasWidth,
   selectUp,
   selectionChain,
@@ -330,6 +332,9 @@ export default function SignatureEditor({ id }) {
     element === "name" || element === "contact"
       ? (mainPiece(st0, shownItems(sig), element) || []).join()
       : "";
+  // Sur la ligne d'un autre élément : sa largeur se règle sur lui
+  const rowCarrier =
+    element && (mergedRow(sig, element) || [element])[0] !== element;
   const selection = useMemo(() => {
     if (!level) return null;
     const signatureWidth = isReadOnly
@@ -376,7 +381,7 @@ export default function SignatureEditor({ id }) {
         font: isReadOnly ? null : { ...FONT, size: itemFont },
       };
     }
-    const base = !isReadOnly && RESIZE[key];
+    const base = !isReadOnly && !rowCarrier && RESIZE[key];
     let resize = null;
     if (base && key === "photo") {
       resize = { ...base, max: Math.min(base.max, photoMax) };
@@ -411,6 +416,7 @@ export default function SignatureEditor({ id }) {
     columnWidth,
     contactIcons,
     mainKey,
+    rowCarrier,
   ]);
   const clamp = (v, min, max) => Math.max(min, Math.min(max, Math.round(v)));
   // Bord tiré dans l'aperçu : largeur du cadre, d'une colonne, ou réglage
@@ -511,30 +517,9 @@ export default function SignatureEditor({ id }) {
         return;
       }
       if (!element || !FONT_ELEMENTS.has(element)) return;
+      // Même règle que le curseur « Taille » du panneau
       const value = clamp(size, FONT.min, FONT.max);
-      const factor = value / fontSize;
-      const scaled = (n, min, max) => clamp(n * factor, min, max);
-      const elements = {
-        ...all,
-        [element]: { ...(all[element] || {}), fontSize: value },
-      };
-      const parts =
-        element === "name" || element === "contact"
-          ? ELEMENT_ITEMS[element]
-          : [];
-      for (const part of parts) {
-        if (all[part]?.fontSize) {
-          elements[part] = {
-            ...all[part],
-            fontSize: scaled(all[part].fontSize, FONT.min, FONT.max),
-          };
-        }
-      }
-      const patch = { elements };
-      if (element === "contact" && style.contactStyle === "icons") {
-        patch.contactIconSize = scaled(style.contactIconSize || 16, 12, 32);
-      }
-      update({ style: patch });
+      update({ style: fontSizePatch(style, element, value, fontSize) });
     },
     [level, key, element, sig, update, fontSize, baseFont],
   );
@@ -621,7 +606,13 @@ export default function SignatureEditor({ id }) {
   };
 
   const handleBack = async () => {
-    await flush();
+    // Une modification pas encore enregistrée ne se perd pas en partant
+    if ((await flush()) === false) {
+      toast.error(
+        "Vos dernières modifications ne sont pas encore enregistrées : réessayez dans un instant",
+      );
+      return;
+    }
     router.push(LIST_URL);
   };
 
@@ -726,6 +717,7 @@ export default function SignatureEditor({ id }) {
             <div className="px-6 pt-6">
               <LevelHeader
                 selected={selected}
+                st={sig.style}
                 ancestors={ancestorsOf(selected, sig)}
                 onSelect={select}
                 onClose={() => setSelected(null)}
@@ -807,6 +799,8 @@ export default function SignatureEditor({ id }) {
             <ScrollArea className="min-h-0 flex-1">
               <div
                 className={`px-6 py-6 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+                // Lecture seule : ni souris ni clavier (onglets, champs)
+                inert={isReadOnly}
               >
                 <TabsNewContent value="template">
                   <TemplateGallery

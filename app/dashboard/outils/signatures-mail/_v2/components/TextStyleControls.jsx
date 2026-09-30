@@ -9,13 +9,15 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { ColorRow, MultiChoice, ResetLink, Row, Section, SliderRow } from "./controls";
+import { fontSizePatch } from "../slots";
 
 const DEFAULT_FONT = "__signature";
 
 /**
  * Mise en forme d'un élément de texte. Les valeurs affichées sont celles
  * réellement appliquées (renvoyées par le rendu de l'API) ; seul ce que
- * l'utilisateur change est enregistré, le reste suit le modèle.
+ * l'utilisateur change est enregistré, le reste suit le modèle (ou, pour
+ * une partie, son élément : `resetLabel` le dit).
  */
 export default function TextStyleControls({
   elementKey,
@@ -26,6 +28,7 @@ export default function TextStyleControls({
   withColor = true,
   intro = null,
   footer = null,
+  resetLabel = "Revenir au style du modèle",
 }) {
   const st = sig.style;
   const all = st.elements || {};
@@ -78,7 +81,12 @@ export default function TextStyleControls({
         value={value("fontSize", st.fontSize)}
         min={9}
         max={36}
-        onChange={(v) => set({ fontSize: v })}
+        // Comme le coin du cadre : les parties réglées à part suivent
+        onChange={(v) =>
+          update({
+            style: fontSizePatch(st, elementKey, v, value("fontSize", st.fontSize)),
+          })
+        }
       />
       {withColor && (
         <ColorRow
@@ -91,13 +99,17 @@ export default function TextStyleControls({
         <MultiChoice
           label="Style du texte"
           value={flags}
-          onChange={(v) =>
-            set({
-              bold: v.includes("bold"),
-              italic: v.includes("italic"),
-              uppercase: v.includes("uppercase"),
-            })
-          }
+          // Seul le style touché est enregistré : les autres suivent encore
+          // le modèle (ou l'élément, pour une partie)
+          onChange={(v) => {
+            const patch = {};
+            for (const k of ["bold", "italic", "uppercase"]) {
+              if (v.includes(k) !== Boolean(value(k, false))) {
+                patch[k] = v.includes(k);
+              }
+            }
+            if (Object.keys(patch).length > 0) set(patch);
+          }}
           options={[
             { value: "bold", ariaLabel: "Gras", icon: <Bold size={14} /> },
             {
@@ -114,7 +126,7 @@ export default function TextStyleControls({
         />
       </Row>
       {Object.keys(own).length > 0 && (
-        <ResetLink onClick={reset}>Revenir au style du modèle</ResetLink>
+        <ResetLink onClick={reset}>{resetLabel}</ResetLink>
       )}
       {footer}
     </Section>

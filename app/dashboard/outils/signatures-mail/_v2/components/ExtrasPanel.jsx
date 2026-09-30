@@ -36,7 +36,7 @@ function Extra({
 }
 
 /**
- * Panneau « Extras » : bouton d'action, bandeau (image comprise), mention
+ * Panneau « Extras » : bouton d'action, bannière (image comprise), mention
  * légale.
  */
 export default function ExtrasPanel({ id, sig, update, replace }) {
@@ -92,8 +92,8 @@ export default function ExtrasPanel({ id, sig, update, replace }) {
 
       <Extra
         name="banner"
-        title="Bandeau"
-        switchLabel="Afficher le bandeau"
+        title="Bannière"
+        switchLabel="Afficher une bannière"
         description="Une image large sous la signature : offre, événement, salon…"
         enabled={banner.enabled}
         onToggle={(v) => update({ banner: { enabled: v } })}

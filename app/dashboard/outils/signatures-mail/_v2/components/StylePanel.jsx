@@ -10,13 +10,11 @@ import {
 } from "@/src/components/ui/select";
 import { MousePointerClick, RotateCcw } from "lucide-react";
 import {
-  LAYOUT_KEYS,
-  cleanSlots,
-  hasBlockSettings,
-  layoutDiffers,
+  layoutCustomized,
+  layoutReset,
+  logoFit,
   shownItems,
   slotOf,
-  templateLayout,
 } from "../slots";
 import {
   Choice,
@@ -39,8 +37,10 @@ import {
   IdentityControls,
   IdentityZoneControl,
   LogoPositionControl,
+  LogoWidthRow,
   OutsideControls,
   PhotoLayoutControls,
+  TextAlignControl,
   SignatureWidthRow,
   SocialPositionControl,
   SocialRowsControl,
@@ -48,6 +48,16 @@ import {
 } from "./LayoutControls";
 
 export { Choice, ColorRow, ResetLink, Row, SliderRow };
+
+/** Couleur mêlée de blanc (`amount` = part de la couleur), comme le rendu. */
+function tintOf(color, amount) {
+  const c = /^#[0-9a-f]{6}$/i.test(color || "") ? color.slice(1) : "000000";
+  const mix = (i) =>
+    Math.round(parseInt(c.slice(i, i + 2), 16) * amount + 255 * (1 - amount))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${mix(0)}${mix(2)}${mix(4)}`;
+}
 
 /** Contour de la photo : épaisseur (0 = aucun) et couleur. */
 export function PhotoBorderControls({ st, setStyle }) {
@@ -85,31 +95,16 @@ export function PhotoBorderControls({ st, setStyle }) {
  * N'apparaît que si la disposition s'en écarte.
  */
 function ResetLayout({ sig, template, setStyle }) {
-  const st = sig.style;
   // Sans photo, la disposition de référence est celle adaptée au contenu
-  const defaults = templateLayout(template?.defaults, sig);
-  if (!defaults?.slots) return null;
-  if (
-    !layoutDiffers(st, defaults) &&
-    !hasBlockSettings(st) &&
-    st.footerPair !== false
-  ) {
-    return null;
-  }
+  if (!template || !layoutCustomized(sig, template)) return null;
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border bg-[#F5F5F5] px-3 py-2.5 dark:bg-neutral-900">
       <p className="text-xs text-muted-foreground">Disposition personnalisée</p>
       <button
         type="button"
-        onClick={() =>
-          setStyle({
-            ...Object.fromEntries(LAYOUT_KEYS.map((k) => [k, cleanValue(defaults[k])])),
-            // Blocs et colonnes reviennent aussi aux dimensions du modèle
-            blocks: {},
-            columns: {},
-            footerPair: true,
-          })
-        }
+        // Places, traits et bordures, blocs, colonnes, nom, réseaux et logo
+        // du modèle ; couleurs et typographie inchangées
+        onClick={() => setStyle(layoutReset(sig, template))}
         className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
       >
         <RotateCcw size={12} />
@@ -119,13 +114,6 @@ function ResetLayout({ sig, template, setStyle }) {
   );
 }
 
-/** Valeur sans champ GraphQL technique (emplacements). */
-function cleanValue(value) {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return cleanSlots(value);
-  }
-  return value;
-}
 
 /**
  * Panneau « Style » : tout ce qui n'est pas du contenu.
@@ -208,7 +196,9 @@ export default function StylePanel({
 }) {
   const st = sig.style;
   const setStyle = (patch) => update({ style: patch });
-  const L = layoutState(st);
+  // Éléments affichés : les réglages d'éléments absents sont masqués
+  const shown = shownItems(sig);
+  const L = layoutState(st, shown);
   const bars = st.frame === "accent-left" || st.frame === "accent-top";
   const section = useOpenSections();
   const hasPhoto = Boolean(sig.images?.photo?.url);
@@ -235,7 +225,9 @@ export default function StylePanel({
     photo: hasPhoto
       ? `${SHAPE_LABELS[st.photoShape]} · ${Math.min(st.photoSize, photoMax)} px`
       : "Aucune photo",
-    logo: hasLogo ? `${st.logoWidth} px de large` : "Aucun logo",
+    logo: hasLogo
+      ? `${logoFit(sig).shown(st.logoWidth)} px de large`
+      : "Aucun logo",
     icones: hasNetworks
       ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${Math.min(st.iconSize, iconMax)} px`
       : "Aucun réseau",
@@ -307,7 +299,11 @@ export default function StylePanel({
         {/* Seuls les réglages d'éléments présents sont proposés */}
         <Group title={hasPhoto ? "Photo et couleur" : "Couleur"}>
           <IdentityZoneControl st={st} setStyle={setStyle} />
-          {hasPhoto && <PhotoLayoutControls st={st} setStyle={setStyle} />}
+          {hasPhoto ? (
+            <PhotoLayoutControls st={st} setStyle={setStyle} shown={shown} />
+          ) : (
+            <TextAlignControl st={st} setStyle={setStyle} shown={shown} />
+          )}
         </Group>
         <Group title="Textes">
           <IdentityControls st={st} setStyle={setStyle} />
@@ -341,7 +337,7 @@ export default function StylePanel({
           <ColumnWidthControls
             st={st}
             setStyle={setStyle}
-            shown={shownItems(sig)}
+            shown={shown}
           />
           <Row
             label="Espace entre les éléments"
@@ -367,10 +363,15 @@ export default function StylePanel({
         summary={summaries.traits}
       >
         <AccentControls st={st} setStyle={setStyle} lines={lines} />
-        <DividerControls st={st} setStyle={setStyle} lines={lines} />
+        <DividerControls
+          st={st}
+          setStyle={setStyle}
+          lines={lines}
+          shown={shown}
+        />
         <ColorRow
-          label="Gris des traits"
-          hint="Utilisé par le séparateur gris et par le contour de l'encadré."
+          label="Couleur des traits"
+          hint="Celle du séparateur « Couleur des traits » et du contour de l'encadré."
           value={st.separatorColor}
           onChange={(v) => setStyle({ separatorColor: v })}
         />
@@ -415,9 +416,15 @@ export default function StylePanel({
                 </ResetLink>
               ) : null
             }
+            // Automatique : ce que le rendu utilise (fond teinté = couleur
+            // principale très éclaircie)
             value={
               st.frameColor ||
-              (st.frame === "outline" ? st.separatorColor : st.primaryColor)
+              (st.frame === "outline"
+                ? st.separatorColor
+                : st.frame === "soft"
+                  ? tintOf(st.primaryColor, 0.07)
+                  : st.primaryColor)
             }
             onChange={(v) => setStyle({ frameColor: v })}
           />
@@ -442,8 +449,8 @@ export default function StylePanel({
             initial={st.frame === "accent-top" ? 80 : 48}
           />
         )}
-        <FooterStripControl st={st} setStyle={setStyle} />
-        <OutsideControls st={st} setStyle={setStyle} />
+        <FooterStripControl st={st} setStyle={setStyle} shown={shown} />
+        <OutsideControls st={st} setStyle={setStyle} shown={shown} />
           </Nested>
         )}
         {(L.boxed || L.hasHeader || st.visualFill !== "none") && (
@@ -498,14 +505,7 @@ export default function StylePanel({
 
       <Section title="Logo" {...section("logo")} summary={summaries.logo}>
         {hasLogo ? (
-          <SliderRow
-            label="Largeur"
-            value={st.logoWidth}
-            min={40}
-            max={300}
-            step={4}
-            onChange={(v) => setStyle({ logoWidth: v })}
-          />
+          <LogoWidthRow sig={sig} setStyle={setStyle} />
         ) : (
           <EmptyHint
             text="Aucun logo pour l'instant."
@@ -515,7 +515,11 @@ export default function StylePanel({
         )}
       </Section>
 
-      <Section title="Icônes" {...section("icones")} summary={summaries.icones}>
+      <Section
+        title="Réseaux sociaux"
+        {...section("icones")}
+        summary={summaries.icones}
+      >
         {hasNetworks ? (
           <>
             <Row label="Style des réseaux">

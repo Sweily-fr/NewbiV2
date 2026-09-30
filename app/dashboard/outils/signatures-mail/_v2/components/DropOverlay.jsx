@@ -79,7 +79,16 @@ export function targetsFor(field, st, g) {
           slotOf(slots, k) === current,
       )
     : [];
-  const move = (slot, at) => moveItems(slots, [...group, ...hidden], slot, at);
+  // Dans leur ordre d'origine (un prénom vide reste avant le nom)
+  const order = slots[current] || [];
+  const moving = [...group, ...hidden].sort(
+    (a, b) => order.indexOf(a) - order.indexOf(b),
+  );
+  const move = (slot, at) => moveItems(slots, moving, slot, at);
+  const NAME = ["firstName", "lastName"];
+  const inStrip = (k) => k === "social" || k === "logo";
+  const stripOn =
+    (st.frame === "outline" || st.frame === "soft") && Boolean(st.footerStrip);
   const targets = [];
   const B = g.body || g.sig;
 
@@ -97,9 +106,53 @@ export function targetsFor(field, st, g) {
       .sort((a, b) =>
         sameRow(a.rect, b.rect) ? a.rect.x - b.rect.x : a.rect.y - b.rect.y,
       );
-    const shown = inSlot.filter((i) => !group.includes(i.item));
-    const visibleNow = inSlot.map((i) => i.item);
+    let shown = inSlot.filter((i) => !group.includes(i.item));
     const area = g.slots?.[slot];
+    // Photo de l'en-tête : placée par « Photo dans l'en-tête », pas par
+    // l'ordre ; y déposer la photo, c'est seulement l'y mettre
+    if (slot === "header" && group.includes("photo")) {
+      if (current !== "header" && shown.length > 0) {
+        const a = area || shown[0].rect;
+        targets.push(
+          hLine("Dans l'en-tête", a.x, a.y - 6, a.w, {
+            slots: move(slot, { first: true }),
+          }),
+        );
+      }
+      continue;
+    }
+    // Repères qui ont un sens : pas la photo de l'en-tête ; bande de pied
+    // teintée : réseaux et logo entre eux, les autres au-dessus d'elle
+    const hiddenAnchors = shown.filter(
+      (i) =>
+        (slot === "header" && i.item === "photo") ||
+        (slot === "footer" &&
+          stripOn &&
+          inStrip(i.item) !== group.some(inStrip)),
+    );
+    if (hiddenAnchors.length > 0) {
+      shown = shown.filter((i) => !hiddenAnchors.includes(i));
+      if (shown.length === 0) {
+        // Rien d'autre ici : une seule ligne, au-dessus de ce qui reste
+        const top = Math.min(...hiddenAnchors.map((i) => i.rect.y));
+        const a = area || hiddenAnchors[0].rect;
+        if (current !== slot) {
+          targets.push(
+            hLine(
+              slot === "header" ? "Dans l'en-tête" : "En bas",
+              a.x,
+              top - 6,
+              a.w,
+              { slots: move(slot, { first: true }) },
+            ),
+          );
+        }
+        continue;
+      }
+    }
+    const visibleNow = inSlot
+      .filter((i) => group.includes(i.item) || shown.includes(i))
+      .map((i) => i.item);
     // Même ordre visible qu'aujourd'hui : ce ne serait pas un déplacement
     const unchanged = (at) =>
       current === slot &&
@@ -122,6 +175,14 @@ export function targetsFor(field, st, g) {
             IDENTITY_LINE.includes(prev.item) &&
             IDENTITY_LINE.includes(entry.item) &&
             !group.every((k) => IDENTITY_LINE.includes(k))
+          ) {
+            return;
+          }
+          // Entre le prénom et le nom : seulement l'un d'eux
+          if (
+            NAME.includes(prev.item) &&
+            NAME.includes(entry.item) &&
+            !group.every((k) => NAME.includes(k))
           ) {
             return;
           }

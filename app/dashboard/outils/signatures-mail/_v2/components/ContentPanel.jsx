@@ -344,7 +344,7 @@ function PersonField({ id, sig, replace, flush }) {
       // Enregistre d'abord une saisie en cours, sinon elle écraserait le résultat
       await flush();
       const { data: result } = await apply({ variables: { id, memberUserId } });
-      replace(result?.applyMemberToEmailSignatureV2);
+      replace(result?.applyMemberToEmailSignatureV2, { resetHistory: true });
       const member = members.find((m) => m.userId === memberUserId);
       toast.success(`Informations de ${member?.name || "la personne"} reprises`);
     } catch (err) {

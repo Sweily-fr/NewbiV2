@@ -51,6 +51,11 @@ export function useSignatureV2(id) {
   const [historyFlags, setHistoryFlags] = useState({ canUndo: false, canRedo: false });
   // Numéro d'enregistrement : seule la réponse du dernier envoi est appliquée
   const saveSeq = useRef(0);
+  // Échec d'enregistrement : nouvel essai de plus en plus espacé
+  const retryDelay = useRef(0);
+  // Nom refusé par l'API (vide ou déjà pris) : gardé à l'écran, pas renvoyé
+  // tant qu'il ne change pas, pour que le reste s'enregistre quand même
+  const refusedName = useRef(null);
 
   const setSig = useCallback((value) => {
     setSigState((prev) => {
@@ -90,40 +95,75 @@ export function useSignatureV2(id) {
     }
   }, [data, setSig, syncHistoryFlags]);
 
+  /**
+   * Enregistre la dernière modification. Renvoie false si elle n'a pas pu
+   * l'être : elle reste alors en attente (nouvel essai automatique, fermeture
+   * de l'onglet bloquée), jamais perdue.
+   */
   const flush = useCallback(async () => {
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;
     }
     const toSave = pending.current;
-    if (!toSave) return;
+    if (!toSave) return true;
     pending.current = null;
     setStatus("saving");
     const seq = ++saveSeq.current;
+    const input = toInput(toSave);
+    const name = String(input.name ?? "").trim();
+    if (!name || name === refusedName.current) delete input.name;
     try {
       const { data: saved } = await updateMutation({
-        variables: { id, input: toInput(toSave) },
+        variables: { id, input },
       });
+      retryDelay.current = 0;
       // Une réponse plus ancienne arrivée après une plus récente est ignorée
-      if (seq !== saveSeq.current) return;
+      if (seq !== saveSeq.current) return true;
       const server = saved?.updateEmailSignatureV2;
       if (server) {
         // Réaligne les champs normalisés (couleurs, bornes) sans toucher à
-        // une modification arrivée entre-temps.
+        // une modification arrivée entre-temps, ni au nom refusé affiché
         setSig((current) =>
-          pending.current ? current : { ...current, ...server, images: server.images },
+          pending.current
+            ? current
+            : {
+                ...current,
+                ...server,
+                images: server.images,
+                name: input.name === undefined ? current.name : server.name,
+              },
         );
       }
       setStatus(pending.current ? "dirty" : "saved");
+      return true;
     } catch (err) {
-      if (seq !== saveSeq.current) return;
+      if (seq !== saveSeq.current) return false;
+      const message = err?.graphQLErrors?.[0]?.message || "";
+      // La modification attend un nouvel essai (sauf plus récente)
+      if (!pending.current) pending.current = toSave;
+      if (input.name !== undefined && /\bnom\b/i.test(message)) {
+        // Seul le nom est refusé : le reste repart tout de suite sans lui
+        refusedName.current = input.name;
+        toast.error(
+          /existe/i.test(message)
+            ? "Ce nom de signature est déjà utilisé : le reste de vos modifications est enregistré"
+            : message,
+        );
+        timer.current = setTimeout(flush, 0);
+        return false;
+      }
       setStatus("error");
-      const message = err?.graphQLErrors?.[0]?.message || err?.message || "";
-      toast.error(
-        /existe/i.test(message)
-          ? "Ce nom de signature est déjà utilisé"
-          : "Enregistrement impossible, vérifiez votre connexion",
-      );
+      const first = retryDelay.current === 0;
+      retryDelay.current = Math.min(Math.max(retryDelay.current * 2, 2000), 30000);
+      timer.current = setTimeout(flush, retryDelay.current);
+      if (first) {
+        toast.error(
+          message ||
+            "Enregistrement impossible pour l'instant : nouvel essai automatique, vos modifications sont gardées",
+        );
+      }
+      return false;
     }
   }, [id, updateMutation, setSig]);
 
@@ -189,18 +229,33 @@ export function useSignatureV2(id) {
   /**
    * Remplace la signature locale par une réponse serveur (après un upload),
    * ou y reporte un changement partiel ({ isDefault }) : les images ne
-   * changent que si la réponse les contient.
+   * changent que si la réponse les contient. Une saisie pas encore
+   * enregistrée garde la main : seuls les champs que l'utilisateur ne tape
+   * pas (images, par défaut) sont repris. `resetHistory` : la réponse
+   * remplace tout le contenu (autre personne), annuler n'y a plus de sens.
    */
   const replace = useCallback(
-    (server) => {
+    (server, { resetHistory = false } = {}) => {
       if (!server) return;
-      setSig((current) => ({
-        ...current,
-        ...server,
-        images: server.images ?? current.images,
-      }));
+      setSig((current) => {
+        const images = server.images ?? current.images;
+        if (pending.current) {
+          return {
+            ...current,
+            images,
+            ...(server.isDefault !== undefined
+              ? { isDefault: server.isDefault }
+              : {}),
+          };
+        }
+        return { ...current, ...server, images };
+      });
+      if (resetHistory) {
+        history.current = { past: [], future: [], lastPush: 0 };
+        syncHistoryFlags();
+      }
     },
-    [setSig],
+    [setSig, syncHistoryFlags],
   );
 
   // Garde-fou : une modification non enregistrée ne doit pas être perdue en
