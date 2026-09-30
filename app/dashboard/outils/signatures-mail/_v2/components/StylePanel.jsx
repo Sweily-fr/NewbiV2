@@ -24,6 +24,7 @@ import {
   EmptyHint,
   Group,
   LengthRow,
+  Nested,
   ResetLink,
   Row,
   Section,
@@ -67,11 +68,13 @@ export function PhotoBorderControls({ st, setStyle }) {
         onChange={(v) => setStyle({ photoBorder: v })}
       />
       {st.photoBorder > 0 && (
-        <ColorRow
-          label="Couleur du contour"
-          value={st.photoBorderColor || defaultColor}
-          onChange={(v) => setStyle({ photoBorderColor: v })}
-        />
+        <Nested>
+          <ColorRow
+            label="Couleur du contour"
+            value={st.photoBorderColor || defaultColor}
+            onChange={(v) => setStyle({ photoBorderColor: v })}
+          />
+        </Nested>
       )}
     </>
   );
@@ -395,7 +398,9 @@ export default function StylePanel({
             </SelectContent>
           </Select>
         </Row>
+        {/* Réglages de l'encadré choisi, dépliés sous le choix */}
         {st.frame !== "none" && (
+          <Nested>
           <ColorRow
             label="Couleur de l'encadré"
             hint={
@@ -416,7 +421,6 @@ export default function StylePanel({
             }
             onChange={(v) => setStyle({ frameColor: v })}
           />
-        )}
         {(st.frame === "outline" || bars) && (
           <SliderRow
             label={bars ? "Épaisseur de la barre" : "Épaisseur du contour"}
@@ -440,6 +444,8 @@ export default function StylePanel({
         )}
         <FooterStripControl st={st} setStyle={setStyle} />
         <OutsideControls st={st} setStyle={setStyle} />
+          </Nested>
+        )}
         {(L.boxed || L.hasHeader || st.visualFill !== "none") && (
           <SliderRow
             label="Arrondi"
@@ -539,11 +545,13 @@ export default function StylePanel({
               />
             </Row>
             {st.iconColorMode === "custom" && (
-              <ColorRow
-                label="Couleur personnalisée"
-                value={st.iconColor}
-                onChange={(v) => setStyle({ iconColor: v })}
-              />
+              <Nested>
+                <ColorRow
+                  label="Couleur personnalisée"
+                  value={st.iconColor}
+                  onChange={(v) => setStyle({ iconColor: v })}
+                />
+              </Nested>
             )}
             <SliderRow
               label="Taille des réseaux"

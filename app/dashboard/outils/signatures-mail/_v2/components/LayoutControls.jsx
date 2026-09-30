@@ -246,8 +246,7 @@ export function AccentControls({ st, setStyle, lines }) {
         description="Un trait de la couleur principale, sous le nom."
         checked={on}
         onCheckedChange={(v) => setStyle({ accent: v ? "short" : "none" })}
-      />
-      {on && (
+      >
         <div className="grid grid-cols-2 gap-4">
           <SliderRow
             label="Longueur"
@@ -265,7 +264,7 @@ export function AccentControls({ st, setStyle, lines }) {
             onChange={(v) => setStyle({ accentThickness: v })}
           />
         </div>
-      )}
+      </SwitchRow>
     </>
   );
 }
@@ -295,9 +294,7 @@ export function DividerControls({ st, setStyle, lines }) {
         }
         checked={on}
         onCheckedChange={(v) => setStyle({ divider: v ? "accent" : "none" })}
-      />
-      {on && (
-        <>
+      >
           <Row label="Couleur">
             <Choice
               label="Couleur du séparateur"
@@ -332,8 +329,7 @@ export function DividerControls({ st, setStyle, lines }) {
             max={400}
             initial={60}
           />
-        </>
-      )}
+      </SwitchRow>
     </>
   );
 }

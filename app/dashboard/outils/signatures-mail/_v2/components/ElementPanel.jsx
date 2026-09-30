@@ -8,6 +8,7 @@ import {
   Choice,
   ColorRow,
   Hint,
+  Nested,
   Row,
   Section,
   SliderRow,
@@ -314,11 +315,13 @@ export default function ElementPanel({
               />
             </Row>
             {st.iconColorMode === "custom" && (
-              <ColorRow
-                label="Couleur personnalisée"
-                value={st.iconColor}
-                onChange={(v) => setStyle({ iconColor: v })}
-              />
+              <Nested>
+                <ColorRow
+                  label="Couleur personnalisée"
+                  value={st.iconColor}
+                  onChange={(v) => setStyle({ iconColor: v })}
+                />
+              </Nested>
             )}
             <SliderRow
               label="Taille"
@@ -454,15 +457,16 @@ export default function ElementPanel({
             label="Afficher le bandeau"
             checked={banner.enabled}
             onCheckedChange={(v) => update({ banner: { enabled: v } })}
-          />
-          <Field label="Lien au clic">
-            <CheckedInput
-              value={banner.url}
-              placeholder="votre-site.fr/offre"
-              warning={linkProblem(banner.url)}
-              onChange={(e) => update({ banner: { url: e.target.value } })}
-            />
-          </Field>
+          >
+            <Field label="Lien au clic">
+              <CheckedInput
+                value={banner.url}
+                placeholder="votre-site.fr/offre"
+                warning={linkProblem(banner.url)}
+                onChange={(e) => update({ banner: { url: e.target.value } })}
+              />
+            </Field>
+          </SwitchRow>
         </Section>
       );
       layout = <OutsideToggle item="banner" st={st} setStyle={setStyle} />;

@@ -293,7 +293,7 @@ export function LengthRow({
         ]}
       />
       {custom && (
-        <div className="flex items-center gap-3 pt-1">
+        <div className="animate-in fade-in-0 slide-in-from-top-1 ml-1 flex items-center gap-3 border-l-2 border-[#5b4fff]/30 py-0.5 pl-4 duration-200">
           <Slider
             className="flex-1"
             value={[value]}
@@ -375,6 +375,11 @@ export function Group({ title, children }) {
   );
 }
 
+/**
+ * Interrupteur dans un encadré gris. `children` : ses réglages, dépliés
+ * sous lui dans le même encadré une fois activé (jamais plus bas dans la
+ * section, loin de ce qui les a fait apparaître).
+ */
 export function SwitchRow({
   id,
   label,
@@ -382,24 +387,45 @@ export function SwitchRow({
   checked,
   onCheckedChange,
   disabled,
+  children,
 }) {
+  const open = Boolean(checked && children);
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border bg-[#F5F5F5] p-3 dark:bg-neutral-900">
-      <div className="min-w-0 space-y-0.5">
-        <Label htmlFor={id} className="text-sm font-medium">
-          {label}
-        </Label>
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
+    <div className="overflow-hidden rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900">
+      <div className="flex items-center justify-between gap-3 p-3">
+        <div className="min-w-0 space-y-0.5">
+          <Label htmlFor={id} className="text-sm font-medium">
+            {label}
+          </Label>
+          {description && (
+            <p className="text-xs text-muted-foreground">{description}</p>
+          )}
+        </div>
+        <Switch
+          id={id}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          disabled={disabled}
+          className="data-[state=checked]:bg-[#5b4fff]"
+        />
       </div>
-      <Switch
-        id={id}
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        disabled={disabled}
-        className="data-[state=checked]:bg-[#5b4fff]"
-      />
+      {open && (
+        <div className="animate-in fade-in-0 slide-in-from-top-1 space-y-4 border-t bg-white p-3 duration-200 dark:bg-neutral-950">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Réglages qui dépendent du choix juste au-dessus (« Autre » couleur,
+ * contour…) : en retrait, reliés à lui par un trait, dépliés en douceur.
+ */
+export function Nested({ children }) {
+  return (
+    <div className="animate-in fade-in-0 slide-in-from-top-1 ml-1 space-y-4 border-l-2 border-[#5b4fff]/30 pl-4 duration-200">
+      {children}
     </div>
   );
 }

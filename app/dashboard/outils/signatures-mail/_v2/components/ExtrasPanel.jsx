@@ -8,7 +8,7 @@ import { ImageField } from "./ContentPanel";
 
 /**
  * Un extra : section de la plateforme, interrupteur dans un encadré gris,
- * puis ses réglages une fois activé.
+ * ses réglages dépliés dessous une fois activé.
  */
 function Extra({
   id,
@@ -28,8 +28,9 @@ function Extra({
         description={description}
         checked={enabled}
         onCheckedChange={onToggle}
-      />
-      {enabled && <div className="space-y-4">{children}</div>}
+      >
+        {children}
+      </SwitchRow>
     </Section>
   );
 }
