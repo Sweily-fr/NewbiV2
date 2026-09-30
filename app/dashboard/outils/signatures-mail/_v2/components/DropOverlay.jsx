@@ -39,6 +39,9 @@ const vLine = (label, x, y, len, patch) => ({
   patch,
 });
 
+/** Prénom, nom, poste, entreprise : une ligne qu'un autre élément ne coupe pas. */
+const IDENTITY_LINE = ["firstName", "lastName", "title", "company"];
+
 const bottom = (r) => r.y + r.h;
 const right = (r) => r.x + r.w;
 /** Deux éléments sur la même ligne (inline) : forte superposition verticale. */
@@ -87,6 +90,15 @@ export function targetsFor(field, st, g) {
           slots: moveItem(slots, field, slot, { before: entry.item }),
         };
         if (prev && sameRow(prev.rect, r)) {
+          // Pas d'insertion au milieu du nom (ou de l'identité en ligne)
+          // pour un autre élément : il couperait « Prénom Nom » en deux
+          if (
+            IDENTITY_LINE.includes(prev.item) &&
+            IDENTITY_LINE.includes(entry.item) &&
+            !IDENTITY_LINE.includes(field)
+          ) {
+            return;
+          }
           const x = (right(prev.rect) + r.x) / 2;
           const top = Math.min(prev.rect.y, r.y);
           targets.push(

@@ -84,7 +84,7 @@ post({type:"sig-editing",editing:true});
 }
 document.addEventListener("click",function(e){
 if(e.target===grip)return;
-clickSlot=e.target.closest?e.target.closest("[data-sig-slot]"):null;
+var cb=e.target.closest?e.target.closest("[data-sig-block]"):null;clickItem=cb?cb.getAttribute("data-sig-block"):null;
 if(e.target.closest("a"))e.preventDefault();
 if(editing&&editing.contains(e.target))return;
 e.stopPropagation();
@@ -121,14 +121,17 @@ box.appendChild(tip);
 document.body.appendChild(box);
 function selEls(){var out=[];if(!sel)return out;(sel.items||[]).forEach(function(it){document.querySelectorAll('[data-sig-block="'+it+'"]').forEach(function(el){out.push(el);});});return out;}
 function union(els){var r=null;els.forEach(function(el){var c=crect(el);if(!c.w&&!c.h)return;if(!r)r={l:c.x,t:c.y,r:c.x+c.w,b:c.y+c.h};else{r.l=Math.min(r.l,c.x);r.t=Math.min(r.t,c.y);r.r=Math.max(r.r,c.x+c.w);r.b=Math.max(r.b,c.y+c.h);}});return r;}
-/* Bloc réparti sur plusieurs colonnes (coordonnées) : le cadre et la
-   poignée portent sur la partie cliquée, sinon sur la plus fournie ; un
-   cadre à cheval sur deux colonnes donnait une largeur de départ absurde */
-var clickSlot=null;
-function groupEls(){var els=selEls();if(els.length<2)return els;var by=new Map();
-els.forEach(function(el){var k=el.closest("[data-sig-slot]")||document.body;if(!by.has(k))by.set(k,[]);by.get(k).push(el);});
-if(by.size<2)return els;if(clickSlot&&by.has(clickSlot))return by.get(clickSlot);
-var best=null;by.forEach(function(g){if(!best||g.length>best.length)best=g;});return best;}
+/* Bloc réparti en plusieurs morceaux (coordonnées séparées par d'autres
+   éléments ou sur deux colonnes) : le cadre et la poignée portent sur le
+   morceau cliqué, sinon le plus fourni, jamais sur tout ce qui les sépare */
+var clickItem=null;
+function groupEls(){var els=selEls();if(els.length<2)return els;var set=new Set(els),groups=[],cur=null,slot=null;
+document.querySelectorAll("[data-sig-block]").forEach(function(el){
+if(!set.has(el)){cur=null;return;}var s=el.closest("[data-sig-slot]");
+if(!cur||s!==slot){cur=[];groups.push(cur);slot=s;}cur.push(el);});
+if(groups.length<2)return els;
+for(var i=0;i<groups.length;i++){if(clickItem&&groups[i].some(function(el){return el.getAttribute("data-sig-block")===clickItem;}))return groups[i];}
+var best=null;groups.forEach(function(g){if(!best||g.length>best.length)best=g;});return best;}
 function selRect(){var els=groupEls(),r=union(els),w=sel&&sel.resize&&sel.resize.width;
 if(!r||!w||!els[0])return r;var t=els[0].closest('table[width="'+w+'"]');if(!t)return r;var c=crect(t);r.l=Math.min(r.l,c.x);r.r=Math.max(r.r,c.x+c.w);return r;}
 function place(r){box.style.left=(r.l+scrollX-5)+"px";box.style.top=(r.t+scrollY-5)+"px";box.style.width=(r.r-r.l+10)+"px";box.style.height=(r.b-r.t+10)+"px";}
