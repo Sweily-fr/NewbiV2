@@ -186,6 +186,9 @@ function nearest(targets, x, y) {
   return best;
 }
 
+/** Distance à parcourir avant qu'un glisser compte, en px. */
+const DRAG_THRESHOLD = 6;
+
 export default function DropOverlay({
   drag,
   style,
@@ -200,14 +203,25 @@ export default function DropOverlay({
     () => targetsFor(drag.field, style, drag),
     [drag, style],
   );
-  const active = nearest(targets, pointer.x, pointer.y);
   const source = (drag.items || []).find((i) => i.item === drag.field)?.rect;
+  // Un appui sans bouger (ou un relâcher sur l'élément lui-même) ne déplace
+  // rien : seul un vrai glisser, hors de l'élément, choisit une place
+  const movedFrom = (x, y) => Math.hypot(x - drag.x, y - drag.y) > DRAG_THRESHOLD;
+  const onSource = (x, y) =>
+    Boolean(source) &&
+    x >= source.x - 8 &&
+    x <= source.x + source.w + 8 &&
+    y >= source.y - 8 &&
+    y <= source.y + source.h + 8;
+  const placing = movedFrom(pointer.x, pointer.y) && !onSource(pointer.x, pointer.y);
+  const active = placing ? nearest(targets, pointer.x, pointer.y) : null;
 
   const done = useRef(false);
   const finish = (x, y) => {
     if (done.current) return;
     done.current = true;
-    const target = nearest(targets, x, y);
+    const target =
+      movedFrom(x, y) && !onSource(x, y) ? nearest(targets, x, y) : null;
     if (target) onDrop(target.patch);
     else onCancel();
   };
@@ -243,8 +257,9 @@ export default function DropOverlay({
         />
       )}
 
-      {/* Lignes d'insertion : discrètes, sauf la plus proche */}
-      {targets.map((t, i) => {
+      {/* Lignes d'insertion : discrètes, sauf la plus proche ; seulement
+          une fois le glisser commencé (un simple appui n'en montre pas) */}
+      {movedFrom(pointer.x, pointer.y) && targets.map((t, i) => {
         const on = t === active;
         const thick = on ? 4 : 2;
         const lineStyle =
