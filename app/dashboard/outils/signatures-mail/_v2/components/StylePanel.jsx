@@ -500,7 +500,7 @@ export default function StylePanel({
             label="Largeur"
             value={st.logoWidth}
             min={40}
-            max={200}
+            max={300}
             step={4}
             onChange={(v) => setStyle({ logoWidth: v })}
           />

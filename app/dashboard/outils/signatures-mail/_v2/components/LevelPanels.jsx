@@ -16,6 +16,7 @@ import {
   ELEMENT_ITEMS,
   ITEM_LABEL,
   SLOTS,
+  elementSlot,
   isDetached,
   SLOT_LABEL,
   moveElement,
@@ -85,6 +86,14 @@ const PARTS = {
   address: { title: "Adresse", group: "contact", maxLength: 300 },
 };
 
+/** « ⌘ + clic » sur un Mac, « Ctrl + clic » ailleurs (côté navigateur). */
+export function modClick() {
+  const mac =
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+  return mac ? "⌘ + clic" : "Ctrl + clic";
+}
+
 /** Libellé d'une sélection, pour le titre et le fil d'Ariane. */
 export function selectionLabel(sel) {
   if (!sel) return "";
@@ -95,19 +104,15 @@ export function selectionLabel(sel) {
 }
 
 /**
- * Niveaux qui contiennent la sélection, du plus large au plus proche.
- * `anchor` : dernière partie cliquée (la colonne d'un élément réparti).
+ * Niveaux qui contiennent la sélection, du plus large au plus proche (la
+ * colonne d'un élément réparti : celle de son morceau principal).
  */
-export function ancestorsOf(sel, st, anchor) {
+export function ancestorsOf(sel, sig) {
   if (!sel || sel.level === "signature") return [];
   if (sel.level === "slot") return [{ level: "signature" }];
-  const items =
-    sel.level === "item" ? [sel.key] : ELEMENT_ITEMS[sel.key] || [sel.key];
-  const from =
-    anchor && items.includes(anchor)
-      ? anchor
-      : items.find((k) => slotOf(st?.slots, k)) || items[0];
-  const chain = selectionChain(from, st);
+  const item =
+    sel.level === "item" ? sel.key : (ELEMENT_ITEMS[sel.key] || [sel.key])[0];
+  const chain = selectionChain(item, sig?.style, shownItems(sig));
   const at = chain.findIndex((c) => c.level === sel.level);
   return chain.slice(at + 1).reverse();
 }
@@ -148,7 +153,7 @@ export function LevelHeader({ selected, ancestors, onSelect, onClose }) {
       )}
       <h2 className="text-xl font-medium">{selectionLabel(selected)}</h2>
       {selected.level !== "signature" && (
-        <Hint>⌘ + clic (Ctrl + clic) dans l&apos;aperçu : le niveau au-dessus.</Hint>
+        <Hint>{modClick()} dans l&apos;aperçu : le niveau au-dessus.</Hint>
       )}
     </div>
   );
@@ -196,9 +201,11 @@ function placeOptions(st) {
  * Emplacement d'une partie (`item`) ou d'un élément entier (`element`) :
  * le choisir l'y emmène, comme un glisser-déposer dans l'aperçu.
  */
-export function PlaceRow({ item, element, st, setStyle }) {
-  const items = item ? [item] : ELEMENT_ITEMS[element] || [element];
-  const current = items.map((k) => slotOf(st.slots, k)).find(Boolean);
+export function PlaceRow({ item, element, sig, setStyle }) {
+  const st = sig.style;
+  const current = item
+    ? slotOf(st.slots, item)
+    : elementSlot(st, shownItems(sig), element);
   if (!current) return null;
   return (
     <Pick
@@ -254,11 +261,11 @@ export function ItemPanel({ item, sig, update, resolved, catalog }) {
         }
       />
       <Section title="Disposition">
-        <PlaceRow item={item} st={sig.style} setStyle={setStyle} />
+        <PlaceRow item={item} sig={sig} setStyle={setStyle} />
         {isDetached(sig, item) && (
           <Hint>
-            Placée à part du reste {whole} : largeur, espaces et alignement
-            automatiques.
+            Partie placée à part du reste {whole} : largeur, espaces et
+            alignement automatiques.
           </Hint>
         )}
       </Section>
@@ -369,7 +376,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
               <li key={k} className="flex items-center gap-1 px-2 py-1">
                 <button
                   type="button"
-                  onClick={() => onSelect(selectionChain(k, st)[0], k)}
+                  onClick={() => onSelect(selectionChain(k, st, shown)[0], k)}
                   className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer"
                 >
                   <span className="truncate">

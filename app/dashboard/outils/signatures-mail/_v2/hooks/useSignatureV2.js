@@ -186,11 +186,19 @@ export function useSignatureV2(id) {
   const undo = useCallback(() => travel("past", "future"), [travel]);
   const redo = useCallback(() => travel("future", "past"), [travel]);
 
-  /** Remplace la signature locale par une réponse serveur (après un upload). */
+  /**
+   * Remplace la signature locale par une réponse serveur (après un upload),
+   * ou y reporte un changement partiel ({ isDefault }) : les images ne
+   * changent que si la réponse les contient.
+   */
   const replace = useCallback(
     (server) => {
       if (!server) return;
-      setSig((current) => ({ ...current, ...server, images: server.images }));
+      setSig((current) => ({
+        ...current,
+        ...server,
+        images: server.images ?? current.images,
+      }));
     },
     [setSig],
   );

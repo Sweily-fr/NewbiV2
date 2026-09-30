@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
+import { modClick } from "./LevelPanels";
 import HtmlFrame from "./HtmlFrame";
 import DropOverlay from "./DropOverlay";
 
@@ -23,7 +24,7 @@ const RENDER_DELAY_MS = 150;
 /** Les gestes de l'aperçu, rappelés au-dessus de lui. */
 const GESTURES = [
   { icon: MousePointerClick, label: "Cliquer pour modifier" },
-  { icon: ArrowUpToLine, label: "⌘ + clic pour le niveau au-dessus" },
+  { icon: ArrowUpToLine, label: () => `${modClick()} pour le niveau au-dessus` },
   { icon: GripVertical, label: "Poignée pour déplacer" },
   { icon: Scaling, label: "Bord ou coin pour agrandir" },
 ];
@@ -74,6 +75,8 @@ export default function SignaturePreview({
     setDragRelease(null);
     setDrag(d);
   }, []);
+  // Échap pendant le glisser, pointeur dans l'aperçu
+  const cancelDrag = useCallback(() => setDrag(null), []);
   const input = useMemo(() => toInput(sig), [sig]);
   const debouncedInput = useDebounced(input, RENDER_DELAY_MS);
   const lastRender = useRef(initialRender);
@@ -120,12 +123,15 @@ export default function SignaturePreview({
           <span />
         ) : (
           <ul className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            {GESTURES.map(({ icon: Icon, label }) => (
-              <li key={label} className="inline-flex items-center gap-1.5">
-                <Icon size={14} aria-hidden="true" />
-                {label}
-              </li>
-            ))}
+            {GESTURES.map(({ icon: Icon, label }) => {
+              const text = typeof label === "function" ? label() : label;
+              return (
+                <li key={text} className="inline-flex items-center gap-1.5">
+                  <Icon size={14} aria-hidden="true" />
+                  {text}
+                </li>
+              );
+            })}
           </ul>
         )}
         <div className="flex shrink-0 items-center gap-2">
@@ -245,6 +251,7 @@ export default function SignaturePreview({
           readOnly={readOnly}
           onDragMove={setDragPointer}
           onDragEnd={setDragRelease}
+          onDragCancel={cancelDrag}
           frozen={editing}
         />
         {drag && (

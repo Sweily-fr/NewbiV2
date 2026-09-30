@@ -242,14 +242,23 @@ export const SLOT_LABEL = {
   outside: "Sous le cadre",
 };
 
+/**
+ * Colonne d'un élément : celle de son morceau principal (celui que ses
+ * réglages et le cadre de l'aperçu concernent). `shown` : parties affichées.
+ */
+export function elementSlot(st, shown, element) {
+  const items = mainPiece(st, shown, element) || ELEMENT_ITEMS[element] || [];
+  return items.map((k) => slotOf(st?.slots, k)).find(Boolean) || null;
+}
+
 /** Niveaux d'une partie de l'aperçu, du plus précis au plus large. */
-export function selectionChain(item, st) {
+export function selectionChain(item, st, shown = null) {
   const element = BLOCK_OF[item];
   if (!element) return [{ level: "signature" }];
   const chain = [];
   if (PART_ITEMS.includes(item)) chain.push({ level: "item", key: item });
   chain.push({ level: "element", key: element });
-  const slot = slotOf(st?.slots, item);
+  const slot = elementSlot(st, shown, element);
   if (slot) chain.push({ level: "slot", key: slot });
   chain.push({ level: "signature" });
   return chain;
@@ -260,21 +269,15 @@ export const sameSelection = (a, b) =>
 
 /**
  * Niveau au-dessus d'une sélection. Un élément réparti sur deux colonnes
- * remonte à celle de `item` (la partie cliquée), sinon à celle de sa
- * première partie placée.
+ * remonte à celle de son morceau principal.
  */
-export function parentSelection(current, st, item = null) {
+export function parentSelection(current, st, shown = null) {
   if (!current) return { level: "signature" };
   if (current.level === "item") {
     return { level: "element", key: BLOCK_OF[current.key] };
   }
   if (current.level === "element") {
-    const items = ELEMENT_ITEMS[current.key] || [current.key];
-    const from =
-      item && items.includes(item)
-        ? item
-        : items.find((k) => slotOf(st?.slots, k));
-    const slot = from ? slotOf(st?.slots, from) : null;
+    const slot = elementSlot(st, shown, current.key);
     return slot ? { level: "slot", key: slot } : { level: "signature" };
   }
   return { level: "signature" };
@@ -285,9 +288,9 @@ export function parentSelection(current, st, item = null) {
  * contient la partie cliquée, sinon le parent de la partie cliquée. Hors
  * de tout élément : le niveau au-dessus de la sélection.
  */
-export function selectUp(current, item, st) {
-  if (!item || !BLOCK_OF[item]) return parentSelection(current, st);
-  const chain = selectionChain(item, st);
+export function selectUp(current, item, st, shown = null) {
+  if (!item || !BLOCK_OF[item]) return parentSelection(current, st, shown);
+  const chain = selectionChain(item, st, shown);
   const at = chain.findIndex((c) => sameSelection(c, current));
   if (at >= 0) return chain[Math.min(at + 1, chain.length - 1)];
   return chain[Math.min(1, chain.length - 1)];

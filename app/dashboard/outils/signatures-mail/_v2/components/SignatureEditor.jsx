@@ -187,6 +187,7 @@ export default function SignatureEditor({ id }) {
   useEffect(() => {
     const onKey = (e) => {
       const k = (e.key || "").toLowerCase();
+      if (isReadOnly) return;
       if (!(e.metaKey || e.ctrlKey) || (k !== "z" && k !== "y")) return;
       const t = e.target;
       if (t?.closest?.("input, textarea, [contenteditable]")) return;
@@ -196,7 +197,7 @@ export default function SignatureEditor({ id }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo]);
+  }, [undo, redo, isReadOnly]);
 
   const [tab, setTabState] = useState(isNew ? "template" : "content");
   // Chaque onglet s'ouvre en haut de sa liste de réglages
@@ -212,15 +213,10 @@ export default function SignatureEditor({ id }) {
   }, []);
   // Sélection dans l'aperçu (son panneau remplace les onglets), du plus
   // précis au plus large : une partie (prénom, une ligne de coordonnées),
-  // un élément, une colonne, toute la signature. `anchor` : dernière partie
-  // cliquée, qui situe la colonne d'un élément réparti sur deux.
+  // un élément, une colonne, toute la signature.
   const [selected, setSelected] = useState(null);
-  const [anchor, setAnchor] = useState(null);
   const element = selected?.level === "element" ? selected.key : null;
-  const select = useCallback((next, part = null) => {
-    setSelected(next);
-    if (part) setAnchor(part);
-  }, []);
+  const select = useCallback((next) => setSelected(next), []);
   const [render, setRender] = useState(initialRender);
   const [installOpen, setInstallOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -263,23 +259,23 @@ export default function SignatureEditor({ id }) {
   // Clic dans l'aperçu : la partie la plus précise, dont le panneau s'ouvre
   // avec le champ cliqué amené et focalisé (sauf texte modifié en place) ;
   // ⌘ + clic (Ctrl + clic) : le niveau au-dessus de la sélection.
-  const slots = sig?.style?.slots;
   const onFieldClick = useCallback(
     (field, { edit = false, item = null, up = false } = {}) => {
-      const st = { slots };
+      const st = sig?.style;
+      const shown = shownItems(sig);
       const part = BLOCK_OF[item]
         ? item
         : BLOCK_OF[field]
           ? field
           : (ELEMENT_ITEMS[FIELD_ELEMENT[field]] || [])[0] || null;
-      if (part) setAnchor(part);
       if (up) {
-        setSelected((current) => selectUp(current, part, st));
+        setSelected((current) => selectUp(current, part, st, shown));
         return;
       }
       if (!part) return;
-      setSelected(selectionChain(part, st)[0]);
-      if (edit || !field) return;
+      setSelected(selectionChain(part, st, shown)[0]);
+      // Lecture seule : rien à saisir, le panneau n'est qu'affiché
+      if (edit || !field || isReadOnly) return;
       const focus = (attempt = 0) => {
         const el = document.getElementById(`sig-field-${field}`);
         if (el) {
@@ -292,7 +288,7 @@ export default function SignatureEditor({ id }) {
       };
       setTimeout(() => focus(), 30);
     },
-    [slots],
+    [sig, isReadOnly],
   );
 
   // Sélection dessinée dans l'aperçu. Élément : son bord part de la taille
@@ -678,68 +674,61 @@ export default function SignatureEditor({ id }) {
             key={`${selected.level}-${selected.key || ""}`}
             className="min-h-0 flex-1 border-t border-[#EEEFF1] dark:border-[#232323]"
           >
+            {/* Lecture seule : l'en-tête (retour, niveaux) reste utilisable,
+                les réglages sont seulement affichés */}
+            <div className="px-6 pt-6">
+              <LevelHeader
+                selected={selected}
+                ancestors={ancestorsOf(selected, sig)}
+                onSelect={select}
+                onClose={() => setSelected(null)}
+              />
+            </div>
             <div
-              className={`px-6 py-6 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+              className={`space-y-8 px-6 pb-6 pt-8 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+              inert={isReadOnly}
             >
-              {(() => {
-                const header = (
-                  <LevelHeader
-                    selected={selected}
-                    ancestors={ancestorsOf(selected, sig.style, anchor)}
-                    onSelect={select}
-                    onClose={() => setSelected(null)}
-                  />
-                );
-                if (selected.level === "element") {
-                  return (
-                    <ElementPanel
-                      element={selected.key}
-                      id={id}
-                      sig={sig}
-                      update={update}
-                      replace={replace}
-                      catalog={catalog}
-                      resolved={render?.elements}
-                      lines={render?.lines}
-                      header={header}
-                      onSelect={select}
-                    />
-                  );
-                }
-                return (
-                  <div className="space-y-8">
-                    {header}
-                    {selected.level === "item" && (
-                      <ItemPanel
-                        item={selected.key}
-                        sig={sig}
-                        update={update}
-                        resolved={render?.elements}
-                        catalog={catalog}
-                      />
-                    )}
-                    {selected.level === "slot" && (
-                      <SlotPanel
-                        slot={selected.key}
-                        sig={sig}
-                        update={update}
-                        lines={render?.lines}
-                        onSelect={select}
-                      />
-                    )}
-                    {selected.level === "signature" && (
-                      <StylePanel
-                        sig={sig}
-                        update={update}
-                        catalog={catalog}
-                        template={template}
-                        lines={render?.lines}
-                        onGoTo={goToField}
-                      />
-                    )}
-                  </div>
-                );
-              })()}
+              {selected.level === "element" && (
+                <ElementPanel
+                  element={selected.key}
+                  id={id}
+                  sig={sig}
+                  update={update}
+                  replace={replace}
+                  catalog={catalog}
+                  resolved={render?.elements}
+                  lines={render?.lines}
+                  onSelect={select}
+                />
+              )}
+              {selected.level === "item" && (
+                <ItemPanel
+                  item={selected.key}
+                  sig={sig}
+                  update={update}
+                  resolved={render?.elements}
+                  catalog={catalog}
+                />
+              )}
+              {selected.level === "slot" && (
+                <SlotPanel
+                  slot={selected.key}
+                  sig={sig}
+                  update={update}
+                  lines={render?.lines}
+                  onSelect={select}
+                />
+              )}
+              {selected.level === "signature" && (
+                <StylePanel
+                  sig={sig}
+                  update={update}
+                  catalog={catalog}
+                  template={template}
+                  lines={render?.lines}
+                  onGoTo={goToField}
+                />
+              )}
             </div>
           </ScrollArea>
         ) : (

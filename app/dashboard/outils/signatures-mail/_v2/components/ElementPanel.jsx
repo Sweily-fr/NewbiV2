@@ -77,9 +77,8 @@ const PLACE_IN_LIST = new Set([
 
 /**
  * Panneau d'un élément de l'aperçu : son contenu et tous ses réglages au
- * même endroit. `header` : en-tête du niveau (fil d'Ariane, titre) ;
- * `onSelect(sélection, partie)` : ouvre une partie seule (prénom, une ligne
- * de coordonnées).
+ * même endroit. `onSelect(sélection)` : ouvre une partie seule (prénom, une
+ * ligne de coordonnées).
  */
 export default function ElementPanel({
   element,
@@ -90,7 +89,6 @@ export default function ElementPanel({
   catalog,
   resolved,
   lines,
-  header,
   onSelect,
 }) {
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
@@ -418,7 +416,7 @@ export default function ElementPanel({
               label="Largeur"
               value={st.logoWidth}
               min={40}
-              max={200}
+              max={300}
               step={4}
               onChange={(v) => setStyle({ logoWidth: v })}
             />
@@ -538,12 +536,11 @@ export default function ElementPanel({
 
   return (
     <div className="space-y-8">
-      {header}
       {body}
       {body && (
         <Section title="Disposition">
           {PLACE_IN_LIST.has(element) && (
-            <PlaceRow element={element} st={st} setStyle={setStyle} />
+            <PlaceRow element={element} sig={sig} setStyle={setStyle} />
           )}
           {layout}
           <BlockControls

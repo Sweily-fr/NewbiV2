@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BLOCK_OF,
+  ELEMENT_ITEMS,
   ITEM_LABEL,
   ITEM_OF,
   ITEM_THE,
@@ -64,8 +65,18 @@ export function targetsFor(field, st, g) {
   const slots = st.slots;
   if (!slots) return [];
   const group = g.fields?.length ? g.fields : [field];
-  const move = (slot, at) => moveItems(slots, group, slot, at);
   const current = slotOf(slots, field);
+  // Élément entier : ses parties vides (mobile, adresse…) placées au même
+  // endroit le suivent, sinon elles y réapparaîtraient une fois remplies
+  const hidden = g.whole
+    ? (ELEMENT_ITEMS[BLOCK_OF[field]] || []).filter(
+        (k) =>
+          !group.includes(k) &&
+          !(g.items || []).some((i) => i.item === k) &&
+          slotOf(slots, k) === current,
+      )
+    : [];
+  const move = (slot, at) => moveItems(slots, [...group, ...hidden], slot, at);
   const targets = [];
   const B = g.body || g.sig;
 
