@@ -200,12 +200,12 @@ if(k==="frame"){var fr=document.querySelector("[data-sig-frame]")||document.quer
 var ft=newTable(),fd=ft.insertRow().insertCell();while(fr.firstChild)fd.appendChild(fr.firstChild);fr.appendChild(ft);return [ft];}
 if(k==="column"){var reg=els[0],t0=reg.firstElementChild;if(w&&t0&&t0.tagName==="TABLE"&&t0.getAttribute("width")===String(w))return [t0];
 var ct=newTable(),cd=ct.insertRow().insertCell();while(reg.firstChild)cd.appendChild(reg.firstChild);reg.appendChild(ct);return [ct];}
-/* Texte : une enveloppe à largeur maximale par ligne (celle du rendu,
+/* Texte : une enveloppe ajustée et bornée par ligne (celle du rendu,
    sinon une nouvelle), comme wrapAt : il revient à la ligne sans jamais
    occuper plus que son contenu */
 if(w){var own=[];els.forEach(function(el){var d=wrapDivOf(el,w);if(d&&own.indexOf(d)<0)own.push(d);});if(own.length)return own;}
 var roots=[];els.forEach(function(el){var a=sel.resize.line?lineTarget(el):rowRoot(el);if(a&&a!==sigRoot&&roots.indexOf(a)<0)roots.push(a);});
-return roots.map(function(a){var d=document.createElement("div");a.parentNode.insertBefore(d,a);d.appendChild(a);return d;});}
+return roots.map(function(a){var d=document.createElement("div");d.style.cssText="display:inline-block;vertical-align:top;";a.parentNode.insertBefore(d,a);d.appendChild(a);return d;});}
 /* Logo : largeur réglée → largeur affichée (hauteur plafonnée, comme le rendu) */
 function logoFit(){var el=selEls()[0],m=el&&el.querySelector("[data-sig-cap]");if(!m)return null;
 var cap=+m.getAttribute("data-sig-cap"),ratio=+m.getAttribute("data-sig-ratio");if(!cap||!ratio)return null;
