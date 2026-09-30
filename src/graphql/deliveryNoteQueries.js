@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { throwIfMutationErrors } from "./mutationErrors";
 
 // ==================== FRAGMENTS ====================
 
@@ -684,6 +685,7 @@ export const useCreateDeliveryNote = () => {
       throw new Error("Aucun workspace sélectionné");
     }
     const result = await createMutation({ variables: { workspaceId, input } });
+    throwIfMutationErrors(result);
     return result.data?.createDeliveryNote;
   };
 
@@ -709,6 +711,7 @@ export const useUpdateDeliveryNote = () => {
     const result = await updateMutation({
       variables: { id, workspaceId, input },
     });
+    throwIfMutationErrors(result);
     return result.data?.updateDeliveryNote;
   };
 

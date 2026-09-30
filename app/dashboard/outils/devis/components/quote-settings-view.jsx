@@ -1005,13 +1005,7 @@ export default function QuoteSettingsView({
                   <TextareaNew
                     id="terms-conditions"
                     className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
-                    {...register("termsAndConditions", {
-                      maxLength: {
-                        value: 2000,
-                        message:
-                          "Les conditions générales ne doivent pas dépasser 2000 caractères",
-                      },
-                    })}
+                    {...register("termsAndConditions")}
                     defaultValue={data.termsAndConditions || ""}
                     placeholder="Conditions générales de vente..."
                     rows={4}
@@ -1046,13 +1040,7 @@ export default function QuoteSettingsView({
                   <TextareaNew
                     id="footer-notes"
                     className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
-                    {...register("footerNotes", {
-                      maxLength: {
-                        value: 2000,
-                        message:
-                          "Les notes de bas de page ne doivent pas dépasser 2000 caractères",
-                      },
-                    })}
+                    {...register("footerNotes")}
                     defaultValue={data.footerNotes || ""}
                     placeholder={`Notes qui apparaîtront en bas du ${documentLabel}...`}
                     rows={3}
