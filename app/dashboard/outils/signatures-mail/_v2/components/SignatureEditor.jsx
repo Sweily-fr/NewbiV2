@@ -76,8 +76,9 @@ import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 const LIST_URL = "/dashboard/outils/signatures-mail";
 
 /**
- * Bord du bloc sélectionné dans l'aperçu : largeur réglable à la souris.
- * `kind` : aperçu en direct (image carrée, image, trait) ou au relâcher.
+ * Bord du bloc sélectionné dans l'aperçu : largeur réglable à la souris,
+ * suivie en direct. `kind` : image carrée, image, trait, bouton, icônes ou
+ * texte (« wrap », qui revient à la ligne).
  */
 const RESIZE = {
   photo: { kind: "square", min: 40, max: 160 },
@@ -85,7 +86,7 @@ const RESIZE = {
   accent: { kind: "bar", min: 8, max: 240 },
   banner: { kind: "image", min: 120, max: 640 },
   social: { kind: "icons", min: 16, max: 40 },
-  cta: { kind: "wrap", min: 80, max: 640 },
+  cta: { kind: "button", min: 80, max: 640 },
   name: { kind: "wrap", min: 40, max: 640 },
   jobTitle: { kind: "wrap", min: 40, max: 640 },
   company: { kind: "wrap", min: 40, max: 640 },
@@ -784,7 +785,7 @@ export default function SignatureEditor({ id }) {
             {
               target: "preview",
               title: "Déplacez et élargissez",
-              body: "Survolez un élément puis tirez sa poignée ⠿ pour le déplacer. Une fois l'élément sélectionné, tirez le bord de son cadre pour l'élargir, ou son coin pour agrandir le texte.",
+              body: "Cliquez sur un élément : sa poignée ⠿ apparaît, tirez-la pour le déplacer. Tirez le bord de son cadre pour l'élargir, ou son coin pour agrandir le texte.",
             },
             {
               target: "actions",
