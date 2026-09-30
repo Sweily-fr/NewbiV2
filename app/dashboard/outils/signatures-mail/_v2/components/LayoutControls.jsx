@@ -28,6 +28,8 @@ import {
   SwitchRow,
 } from "./controls";
 import {
+  COLUMN_WIDTH,
+  SLOT_LABEL,
   identityZone,
   isOutside,
   itemPlacement,
@@ -542,25 +544,32 @@ export function ColumnWidthControls({ st, setStyle, shown }) {
   // Colonne affichée : au moins un de ses éléments a du contenu
   const has = (slot) =>
     (st.slots?.[slot] || []).some((k) => !shown || shown.has(k));
-  const hasSide = has("side");
-  const columns = [
-    has("visual") && { key: "visual", label: "Colonne photo", min: 40, max: 600, initial: 140 },
-    { key: "text", label: "Colonne de texte", min: 80, max: 640, initial: 320 },
-    hasSide && { key: "side", label: "Colonne de droite", min: 40, max: 400, initial: 140 },
-  ].filter(Boolean);
-  return columns.map((c) => (
+  return ["visual", "text", "side"]
+    .filter((slot) => slot === "text" || has(slot))
+    .map((slot) => (
+      <ColumnWidthRow key={slot} slot={slot} st={st} setStyle={setStyle} />
+    ));
+}
+
+/** Largeur d'une colonne : ajustée au contenu ou sur mesure. */
+export function ColumnWidthRow({ slot, st, setStyle, label }) {
+  const c = COLUMN_WIDTH[slot];
+  if (!c) return null;
+  return (
     <LengthRow
-      key={c.key}
-      label={c.label}
+      label={label || SLOT_LABEL[slot]}
+      hint="Vous pouvez aussi tirer le bord de la colonne dans l'aperçu."
       autoLabel="Ajustée au contenu"
-      value={st.columns?.[c.key] || 0}
-      onChange={(v) => setStyle({ columns: { ...(st.columns || {}), [c.key]: v } })}
+      value={st.columns?.[slot] || 0}
+      onChange={(v) =>
+        setStyle({ columns: { ...(st.columns || {}), [slot]: v } })
+      }
       min={c.min}
       max={c.max}
       step={10}
       initial={c.initial}
     />
-  ));
+  );
 }
 
 const OUTSIDE_LABELS = {

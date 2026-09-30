@@ -17,6 +17,12 @@ export const TEXT_ELEMENTS = [
   "company",
   "tagline",
   "contact",
+  // Chaque ligne de coordonnées, par-dessus le style des coordonnées
+  "phone",
+  "mobile",
+  "email",
+  "website",
+  "address",
   "cta",
   "disclaimer",
 ];

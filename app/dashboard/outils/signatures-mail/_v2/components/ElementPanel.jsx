@@ -1,27 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Bold, CaseUpper, Italic, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { Textarea } from "@/src/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { PhotoBorderControls, ResetLink } from "./StylePanel";
+import { PhotoBorderControls } from "./StylePanel";
 import {
   CheckedInput,
   Choice,
   ColorRow,
   Hint,
-  MultiChoice,
   Row,
   Section,
   SliderRow,
   SwitchRow,
 } from "./controls";
+import TextStyleControls from "./TextStyleControls";
+import { PartLinks, PlaceRow } from "./LevelPanels";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 import BlockControls from "./BlockControls";
@@ -69,135 +62,24 @@ export const FIELD_ELEMENT = {
   disclaimer: "disclaimer",
 };
 
-const TITLES = {
-  name: "Nom",
-  accent: "Trait sous le nom",
-  jobTitle: "Poste",
-  company: "Entreprise",
-  tagline: "Accroche",
-  contact: "Coordonnées",
-  social: "Réseaux sociaux",
-  photo: "Photo",
-  logo: "Logo",
-  banner: "Bandeau",
-  cta: "Bouton d'action",
-  disclaimer: "Mention",
-};
-
-const DEFAULT_FONT = "__signature";
+/** Éléments dont la place se choisit dans une liste (les autres ont la leur). */
+const PLACE_IN_LIST = new Set([
+  "name",
+  "accent",
+  "jobTitle",
+  "company",
+  "tagline",
+  "contact",
+  "cta",
+  "banner",
+  "disclaimer",
+]);
 
 /**
- * Mise en forme d'un élément de texte. Les valeurs affichées sont celles
- * réellement appliquées (renvoyées par le rendu de l'API) ; seul ce que
- * l'utilisateur change est enregistré, le reste suit le modèle.
- */
-function TextStyleControls({
-  elementKey,
-  sig,
-  update,
-  resolved,
-  catalog,
-  withColor = true,
-  intro = null,
-  footer = null,
-}) {
-  const st = sig.style;
-  const all = st.elements || {};
-  const own = Object.fromEntries(
-    Object.entries(all[elementKey] || {}).filter(
-      ([k, v]) => k !== "__typename" && v !== null,
-    ),
-  );
-  const applied = resolved?.[elementKey] || {};
-  const value = (k, fallback) => own[k] ?? applied[k] ?? fallback;
-
-  const set = (patch) => {
-    const next = { ...own, ...patch };
-    const elements = { ...all, [elementKey]: next };
-    update({ style: { elements } });
-  };
-  const reset = () => {
-    const elements = { ...all };
-    delete elements[elementKey];
-    update({ style: { elements } });
-  };
-
-  const flags = ["bold", "italic", "uppercase"].filter((k) => value(k, false));
-
-  return (
-    <Section title="Mise en forme">
-      {intro}
-      <Row label="Police">
-        <Select
-          value={own.fontFamily || DEFAULT_FONT}
-          onValueChange={(v) =>
-            set({ fontFamily: v === DEFAULT_FONT ? null : v })
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={DEFAULT_FONT}>Police de la signature</SelectItem>
-            {(catalog?.fonts || []).map((f) => (
-              <SelectItem key={f.id} value={f.id}>
-                <span style={{ fontFamily: f.stack }}>{f.label}</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Row>
-      <SliderRow
-        label="Taille"
-        value={value("fontSize", st.fontSize)}
-        min={9}
-        max={36}
-        onChange={(v) => set({ fontSize: v })}
-      />
-      {withColor && (
-        <ColorRow
-          label="Couleur"
-          value={value("color", st.textColor)}
-          onChange={(v) => set({ color: v })}
-        />
-      )}
-      <Row label="Style">
-        <MultiChoice
-          label="Style du texte"
-          value={flags}
-          onChange={(v) =>
-            set({
-              bold: v.includes("bold"),
-              italic: v.includes("italic"),
-              uppercase: v.includes("uppercase"),
-            })
-          }
-          options={[
-            { value: "bold", ariaLabel: "Gras", icon: <Bold size={14} /> },
-            {
-              value: "italic",
-              ariaLabel: "Italique",
-              icon: <Italic size={14} />,
-            },
-            {
-              value: "uppercase",
-              ariaLabel: "Majuscules",
-              icon: <CaseUpper size={14} />,
-            },
-          ]}
-        />
-      </Row>
-      {Object.keys(own).length > 0 && (
-        <ResetLink onClick={reset}>Revenir au style du modèle</ResetLink>
-      )}
-      {footer}
-    </Section>
-  );
-}
-
-/**
- * Panneau d'un élément cliqué dans l'aperçu : son contenu et tous ses
- * réglages au même endroit.
+ * Panneau d'un élément de l'aperçu : son contenu et tous ses réglages au
+ * même endroit. `header` : en-tête du niveau (fil d'Ariane, titre) ;
+ * `onSelect(sélection, partie)` : ouvre une partie seule (prénom, une ligne
+ * de coordonnées).
  */
 export default function ElementPanel({
   element,
@@ -208,7 +90,8 @@ export default function ElementPanel({
   catalog,
   resolved,
   lines,
-  onClose,
+  header,
+  onSelect,
 }) {
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
   const setStyle = (patch) => update({ style: patch });
@@ -216,8 +99,6 @@ export default function ElementPanel({
   // Plafonds du modèle : les curseurs s'arrêtent à ce qui s'affiche
   const photoMax = lines?.photoMax || 160;
   const iconMax = lines?.iconMax || 40;
-  // Mise en forme du nom : les deux, le prénom seul ou le nom seul
-  const [nameTarget, setNameTarget] = useState("name");
 
   // Trois parties pour chaque élément : Contenu, Mise en forme (dans
   // `body`) puis Disposition (`layout`, suivie de sa largeur, de ses espaces
@@ -245,25 +126,12 @@ export default function ElementPanel({
               />
             </div>
           </Section>
-          {/* Le prénom et le nom se règlent ensemble ou chacun à part */}
+          {/* Le prénom ou le nom seul : son propre niveau (clic dans
+              l'aperçu, ou ce raccourci) */}
           <TextStyleControls
-            key={nameTarget}
-            elementKey={nameTarget}
+            elementKey="name"
             {...textProps}
-            intro={
-              <Row label="Appliquer à">
-                <Choice
-                  value={nameTarget}
-                  onChange={setNameTarget}
-                  label="Appliquer à"
-                  options={[
-                    { value: "name", label: "Les deux" },
-                    { value: "firstName", label: "Prénom" },
-                    { value: "lastName", label: "Nom" },
-                  ]}
-                />
-              </Row>
-            }
+            intro={<PartLinks element="name" sig={sig} onSelect={onSelect} />}
           />
         </>
       );
@@ -389,6 +257,9 @@ export default function ElementPanel({
           <TextStyleControls
             elementKey="contact"
             {...textProps}
+            intro={
+              <PartLinks element="contact" sig={sig} onSelect={onSelect} />
+            }
             footer={
               st.contactStyle === "icons" ? (
                 <SliderRow
@@ -667,20 +538,13 @@ export default function ElementPanel({
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          <ArrowLeft size={14} />
-          Tous les réglages
-        </button>
-        <h2 className="text-xl font-medium">{TITLES[element] || ""}</h2>
-      </div>
+      {header}
       {body}
       {body && (
         <Section title="Disposition">
+          {PLACE_IN_LIST.has(element) && (
+            <PlaceRow element={element} st={st} setStyle={setStyle} />
+          )}
           {layout}
           <BlockControls
             element={element}

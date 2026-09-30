@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ITEM_LABEL, ITEM_OF, ITEM_THE, moveItem, slotOf } from "../slots";
+import {
+  BLOCK_OF,
+  ITEM_LABEL,
+  ITEM_OF,
+  ITEM_THE,
+  moveItems,
+  slotOf,
+} from "../slots";
 
 /**
  * Glisser-déposer d'un élément de l'aperçu, façon Figma / Notion. Tout
@@ -49,17 +56,24 @@ const sameRow = (a, b) =>
   Math.min(bottom(a), bottom(b)) - Math.max(a.y, b.y) >
   0.5 * Math.min(a.h, b.h);
 
-/** Lignes de dépôt pour l'élément tiré, en coordonnées de la page. */
+/**
+ * Lignes de dépôt pour l'élément tiré, en coordonnées de la page. `g.fields`
+ * : parties tirées ensemble (un élément entier), `field` en tête.
+ */
 export function targetsFor(field, st, g) {
   const slots = st.slots;
   if (!slots) return [];
+  const group = g.fields?.length ? g.fields : [field];
+  const move = (slot, at) => moveItems(slots, group, slot, at);
   const current = slotOf(slots, field);
   const targets = [];
   const B = g.body || g.sig;
 
   // Emplacements sans élément affiché (hors élément tiré)
   const emptySlot = (slot) =>
-    !(g.items || []).some((i) => i.slot === slot && i.item !== field && i.rect?.h > 0);
+    !(g.items || []).some(
+      (i) => i.slot === slot && !group.includes(i.item) && i.rect?.h > 0,
+    );
 
   for (const slot of SLOTS) {
     // Éléments affichés de l'emplacement, dans l'ordre de lecture
@@ -69,7 +83,7 @@ export function targetsFor(field, st, g) {
       .sort((a, b) =>
         sameRow(a.rect, b.rect) ? a.rect.x - b.rect.x : a.rect.y - b.rect.y,
       );
-    const shown = inSlot.filter((i) => i.item !== field);
+    const shown = inSlot.filter((i) => !group.includes(i.item));
     const visibleNow = inSlot.map((i) => i.item);
     const area = g.slots?.[slot];
     // Même ordre visible qu'aujourd'hui : ce ne serait pas un déplacement
@@ -77,7 +91,7 @@ export function targetsFor(field, st, g) {
       current === slot &&
       [
         ...shown.slice(0, at).map((i) => i.item),
-        field,
+        ...group.filter((k) => visibleNow.includes(k)),
         ...shown.slice(at).map((i) => i.item),
       ].join() === visibleNow.join();
     if (shown.length > 0) {
@@ -86,16 +100,14 @@ export function targetsFor(field, st, g) {
         if (unchanged(i)) return;
         const r = entry.rect;
         const prev = shown[i - 1];
-        const patch = {
-          slots: moveItem(slots, field, slot, { before: entry.item }),
-        };
+        const patch = { slots: move(slot, { before: entry.item }) };
         if (prev && sameRow(prev.rect, r)) {
           // Pas d'insertion au milieu du nom (ou de l'identité en ligne)
           // pour un autre élément : il couperait « Prénom Nom » en deux
           if (
             IDENTITY_LINE.includes(prev.item) &&
             IDENTITY_LINE.includes(entry.item) &&
-            !IDENTITY_LINE.includes(field)
+            !group.every((k) => IDENTITY_LINE.includes(k))
           ) {
             return;
           }
@@ -126,9 +138,7 @@ export function targetsFor(field, st, g) {
             col.x,
             bottom(last.rect) + 5,
             col.w,
-            {
-              slots: moveItem(slots, field, slot, { after: last.item }),
-            },
+            { slots: move(slot, { after: last.item }) },
           ),
         );
       }
@@ -137,7 +147,7 @@ export function targetsFor(field, st, g) {
       // ligne pour le créer
       const create = (label, line) =>
         targets.push({ ...line, label, create: true });
-      const into = { slots: moveItem(slots, field, slot) };
+      const into = { slots: move(slot) };
       if (slot === "visual") {
         create(
           "Nouvelle colonne à gauche",
@@ -215,7 +225,21 @@ export default function DropOverlay({
     () => targetsFor(drag.field, style, drag),
     [drag, style],
   );
-  const source = (drag.items || []).find((i) => i.item === drag.field)?.rect;
+  // Élément tiré : toutes ses parties
+  const group = drag.fields?.length ? drag.fields : [drag.field];
+  const source = (drag.items || [])
+    .filter((i) => group.includes(i.item) && i.rect?.h > 0)
+    .reduce((r, { rect: c }) => {
+      if (!r) return { ...c };
+      const x = Math.min(r.x, c.x);
+      const y = Math.min(r.y, c.y);
+      return {
+        x,
+        y,
+        w: Math.max(r.x + r.w, c.x + c.w) - x,
+        h: Math.max(r.y + r.h, c.y + c.h) - y,
+      };
+    }, null);
   // Un appui sans bouger (ou un relâcher sur l'élément lui-même) ne déplace
   // rien : seul un vrai glisser, hors de l'élément, choisit une place
   const movedFrom = (x, y) => Math.hypot(x - drag.x, y - drag.y) > DRAG_THRESHOLD;
@@ -333,7 +357,9 @@ export default function DropOverlay({
         className="pointer-events-none fixed whitespace-nowrap rounded-md bg-neutral-900/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg"
         style={{ left: pointer.x + 14, top: pointer.y + 14 }}
       >
-        {ITEM_LABEL[drag.field] || drag.field}
+        {(group.length > 1 && ITEM_LABEL[BLOCK_OF[drag.field]]) ||
+          ITEM_LABEL[drag.field] ||
+          drag.field}
         {!active && (
           <span className="font-normal text-neutral-300">
             {" "}

@@ -70,7 +70,19 @@ import ExtrasPanel from "./ExtrasPanel";
 import SignaturePreview from "./SignaturePreview";
 import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
 import { GmailSize } from "./controls";
-import { ELEMENT_ITEMS } from "../slots";
+import {
+  BLOCK_OF,
+  COLUMN_WIDTH,
+  ELEMENT_ITEMS,
+  selectUp,
+  selectionChain,
+} from "../slots";
+import {
+  ItemPanel,
+  LevelHeader,
+  SlotPanel,
+  ancestorsOf,
+} from "./LevelPanels";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
@@ -196,8 +208,17 @@ export default function SignatureEditor({ id }) {
       if (viewport) viewport.scrollTop = 0;
     });
   }, []);
-  // Élément cliqué dans l'aperçu : son panneau remplace les onglets
-  const [element, setElement] = useState(null);
+  // Sélection dans l'aperçu (son panneau remplace les onglets), du plus
+  // précis au plus large : une partie (prénom, une ligne de coordonnées),
+  // un élément, une colonne, toute la signature. `anchor` : dernière partie
+  // cliquée, qui situe la colonne d'un élément réparti sur deux.
+  const [selected, setSelected] = useState(null);
+  const [anchor, setAnchor] = useState(null);
+  const element = selected?.level === "element" ? selected.key : null;
+  const select = useCallback((next, part = null) => {
+    setSelected(next);
+    if (part) setAnchor(part);
+  }, []);
   const [render, setRender] = useState(initialRender);
   const [installOpen, setInstallOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -237,71 +258,162 @@ export default function SignatureEditor({ id }) {
     [undo, redo],
   );
 
-  // Clic sur un élément de l'aperçu : on ouvre son panneau (contenu et
-  // mise en forme) puis on amène et focalise le champ cliqué, sauf si le
-  // texte se modifie en place (le curseur reste alors dans l'aperçu).
-  const onFieldClick = useCallback((field, { edit = false } = {}) => {
-    const target = FIELD_ELEMENT[field];
-    if (!target) return;
-    setElement(target);
-    if (edit) return;
-    const focus = (attempt = 0) => {
-      const el = document.getElementById(`sig-field-${field}`);
-      if (el) {
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
-        if (typeof el.focus === "function") el.focus({ preventScroll: true });
-        if (typeof el.select === "function") el.select();
-      } else if (attempt < 10) {
-        setTimeout(() => focus(attempt + 1), 60);
+  // Clic dans l'aperçu : la partie la plus précise, dont le panneau s'ouvre
+  // avec le champ cliqué amené et focalisé (sauf texte modifié en place) ;
+  // ⌘ + clic (Ctrl + clic) : le niveau au-dessus de la sélection.
+  const slots = sig?.style?.slots;
+  const onFieldClick = useCallback(
+    (field, { edit = false, item = null, up = false } = {}) => {
+      const st = { slots };
+      const part = BLOCK_OF[item]
+        ? item
+        : BLOCK_OF[field]
+          ? field
+          : (ELEMENT_ITEMS[FIELD_ELEMENT[field]] || [])[0] || null;
+      if (part) setAnchor(part);
+      if (up) {
+        setSelected((current) => selectUp(current, part, st));
+        return;
       }
-    };
-    setTimeout(() => focus(), 30);
-  }, []);
+      if (!part) return;
+      setSelected(selectionChain(part, st)[0]);
+      if (edit || !field) return;
+      const focus = (attempt = 0) => {
+        const el = document.getElementById(`sig-field-${field}`);
+        if (el) {
+          el.scrollIntoView({ block: "center", behavior: "smooth" });
+          if (typeof el.focus === "function") el.focus({ preventScroll: true });
+          if (typeof el.select === "function") el.select();
+        } else if (attempt < 10) {
+          setTimeout(() => focus(attempt + 1), 60);
+        }
+      };
+      setTimeout(() => focus(), 30);
+    },
+    [slots],
+  );
 
-  // Bloc sélectionné dans l'aperçu : celui dont le panneau est ouvert. Son
-  // bord part de la taille qui lui est réservée, bornée par le modèle
-  // (photo, icônes) ; le coin d'un texte règle la taille de ses caractères.
-  const blockWidth = (element && sig?.style?.blocks?.[element]?.width) || 0;
+  // Sélection dessinée dans l'aperçu. Élément : son bord part de la taille
+  // qui lui est réservée, bornée par le modèle (photo, icônes), le coin d'un
+  // texte règle ses caractères. Partie : ses caractères. Colonne : sa
+  // largeur. Signature : la largeur du cadre, la taille du texte.
+  const st0 = sig?.style;
+  const level = selected?.level || null;
+  const key = selected?.key || null;
+  const blockWidth = (element && st0?.blocks?.[element]?.width) || 0;
   const photoMax = render?.lines?.photoMax || 160;
   const iconMax = render?.lines?.iconMax || 40;
-  const iconSize = Math.min(sig?.style?.iconSize || 22, iconMax);
+  const iconSize = Math.min(st0?.iconSize || 22, iconMax);
+  const baseFont = st0?.fontSize || 13;
   const fontSize =
-    (element && render?.elements?.[element]?.fontSize) ||
-    sig?.style?.fontSize ||
-    13;
+    (element && render?.elements?.[element]?.fontSize) || baseFont;
+  const itemFont =
+    (level === "item" &&
+      (render?.elements?.[key]?.fontSize ||
+        render?.elements?.[BLOCK_OF[key]]?.fontSize)) ||
+    baseFont;
+  const boxed = st0?.frame === "outline" || st0?.frame === "soft";
+  const frameWidth = st0?.frameWidth || 0;
+  const columnWidth = (level === "slot" && st0?.columns?.[key]) || 0;
+  const contactIcons = st0?.contactStyle === "icons";
   const selection = useMemo(() => {
-    if (!element) return null;
-    const base = !isReadOnly && RESIZE[element];
+    if (!level) return null;
+    if (level === "signature") {
+      return {
+        level,
+        whole: true,
+        resize:
+          !isReadOnly && boxed
+            ? { kind: "frame", min: 240, max: 720, width: frameWidth }
+            : null,
+        font: isReadOnly ? null : { min: 11, max: 18, size: baseFont },
+      };
+    }
+    if (level === "slot") {
+      const c = COLUMN_WIDTH[key];
+      return {
+        level,
+        slot: key,
+        resize:
+          !isReadOnly && c
+            ? { kind: "column", min: c.min, max: c.max, width: columnWidth }
+            : null,
+        font: null,
+      };
+    }
+    if (level === "item") {
+      return {
+        level,
+        items: [key],
+        resize: null,
+        font: isReadOnly ? null : { ...FONT, size: itemFont },
+      };
+    }
+    const base = !isReadOnly && RESIZE[key];
     let resize = null;
-    if (base && element === "photo") {
+    if (base && key === "photo") {
       resize = { ...base, max: Math.min(base.max, photoMax) };
-    } else if (base && element === "social") {
+    } else if (base && key === "social") {
       resize = { ...base, max: iconMax, size: iconSize };
     } else if (base) {
       resize = { ...base, width: blockWidth };
     }
     return {
-      items: ELEMENT_ITEMS[element] || [element],
+      level,
+      items: ELEMENT_ITEMS[key] || [key],
       resize,
       font:
-        !isReadOnly && FONT_ELEMENTS.has(element)
-          ? { ...FONT, size: fontSize }
+        !isReadOnly && FONT_ELEMENTS.has(key)
+          ? { ...FONT, size: fontSize, icons: key === "contact" && contactIcons }
           : null,
     };
-  }, [element, isReadOnly, blockWidth, photoMax, iconMax, iconSize, fontSize]);
-  // Bord tiré dans l'aperçu : la largeur va au réglage de l'élément
+  }, [
+    level,
+    key,
+    isReadOnly,
+    blockWidth,
+    photoMax,
+    iconMax,
+    iconSize,
+    fontSize,
+    itemFont,
+    baseFont,
+    boxed,
+    frameWidth,
+    columnWidth,
+    contactIcons,
+  ]);
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, Math.round(v)));
+  // Bord tiré dans l'aperçu : largeur du cadre, d'une colonne, ou réglage
+  // de l'élément
   const onResize = useCallback(
     (width) => {
-      if (!element || !sig || !RESIZE[element]) return;
+      if (!sig || !level) return;
+      const st = sig.style;
+      if (level === "signature") {
+        update({ style: { frameWidth: clamp(width, 240, 720) } });
+        return;
+      }
+      if (level === "slot") {
+        const c = COLUMN_WIDTH[key];
+        if (!c) return;
+        update({
+          style: {
+            columns: { ...(st.columns || {}), [key]: clamp(width, c.min, c.max) },
+          },
+        });
+        return;
+      }
+      if (!element || !RESIZE[element]) return;
       const { min, max } = RESIZE[element];
-      const value = Math.max(min, Math.min(max, width));
+      const value = clamp(width, min, max);
       let patch;
       if (element === "photo") patch = { photoSize: value };
       else if (element === "social") patch = { iconSize: value };
       else if (element === "logo") patch = { logoWidth: value };
       else if (element === "accent") patch = { accentLength: value };
       else {
-        const blocks = sig.style.blocks || {};
+        const blocks = st.blocks || {};
         patch = {
           blocks: {
             ...blocks,
@@ -311,31 +423,58 @@ export default function SignatureEditor({ id }) {
       }
       update({ style: patch });
     },
-    [element, sig, update],
+    [level, key, element, sig, update],
   );
-  // Coin tiré dans l'aperçu : taille des caractères de l'élément ; le
-  // prénom et le nom réglés à part suivent, les icônes des coordonnées aussi
+  // Coin tiré dans l'aperçu : taille des caractères. Signature : la taille
+  // de base, les éléments réglés à part suivent. Élément : ses parties
+  // réglées à part suivent, les icônes des coordonnées aussi. Partie : elle
+  // seule.
   const onFont = useCallback(
     (size) => {
-      if (!element || !sig || !FONT_ELEMENTS.has(element)) return;
+      if (!sig || !level) return;
       const style = sig.style;
       const all = style.elements || {};
-      const value = Math.max(FONT.min, Math.min(FONT.max, size));
+      if (level === "signature") {
+        const value = clamp(size, 11, 18);
+        const factor = value / baseFont;
+        const elements = Object.fromEntries(
+          Object.entries(all).map(([k, e]) => [
+            k,
+            e?.fontSize
+              ? { ...e, fontSize: clamp(e.fontSize * factor, FONT.min, FONT.max) }
+              : e,
+          ]),
+        );
+        update({ style: { fontSize: value, elements } });
+        return;
+      }
+      if (level === "item") {
+        const value = clamp(size, FONT.min, FONT.max);
+        update({
+          style: {
+            elements: { ...all, [key]: { ...(all[key] || {}), fontSize: value } },
+          },
+        });
+        return;
+      }
+      if (!element || !FONT_ELEMENTS.has(element)) return;
+      const value = clamp(size, FONT.min, FONT.max);
       const factor = value / fontSize;
-      const scaled = (n, min, max) =>
-        Math.max(min, Math.min(max, Math.round(n * factor)));
+      const scaled = (n, min, max) => clamp(n * factor, min, max);
       const elements = {
         ...all,
         [element]: { ...(all[element] || {}), fontSize: value },
       };
-      if (element === "name") {
-        for (const part of ["firstName", "lastName"]) {
-          if (all[part]?.fontSize) {
-            elements[part] = {
-              ...all[part],
-              fontSize: scaled(all[part].fontSize, FONT.min, FONT.max),
-            };
-          }
+      const parts =
+        element === "name" || element === "contact"
+          ? ELEMENT_ITEMS[element]
+          : [];
+      for (const part of parts) {
+        if (all[part]?.fontSize) {
+          elements[part] = {
+            ...all[part],
+            fontSize: scaled(all[part].fontSize, FONT.min, FONT.max),
+          };
         }
       }
       const patch = { elements };
@@ -344,14 +483,14 @@ export default function SignatureEditor({ id }) {
       }
       update({ style: patch });
     },
-    [element, sig, update, fontSize],
+    [level, key, element, sig, update, fontSize, baseFont],
   );
-  const onEscape = useCallback(() => setElement(null), []);
+  const onEscape = useCallback(() => setSelected(null), []);
 
   // Depuis un réglage sans objet (« Ajouter une photo »…) : onglet Contenu,
   // puis le champ concerné
   const goToField = useCallback((field) => {
-    setElement(null);
+    setSelected(null);
     setTab("content");
     const focus = (attempt = 0) => {
       const el = document.getElementById(`sig-field-${field}`);
@@ -524,22 +663,73 @@ export default function SignatureEditor({ id }) {
           </div>
         </div>
 
-        {element ? (
-          <ScrollArea className="min-h-0 flex-1 border-t border-[#EEEFF1] dark:border-[#232323]">
+        {selected ? (
+          <ScrollArea
+            key={`${selected.level}-${selected.key || ""}`}
+            className="min-h-0 flex-1 border-t border-[#EEEFF1] dark:border-[#232323]"
+          >
             <div
               className={`px-6 py-6 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
             >
-              <ElementPanel
-                element={element}
-                id={id}
-                sig={sig}
-                update={update}
-                replace={replace}
-                catalog={catalog}
-                resolved={render?.elements}
-                lines={render?.lines}
-                onClose={() => setElement(null)}
-              />
+              {(() => {
+                const header = (
+                  <LevelHeader
+                    selected={selected}
+                    ancestors={ancestorsOf(selected, sig.style, anchor)}
+                    onSelect={select}
+                    onClose={() => setSelected(null)}
+                  />
+                );
+                if (selected.level === "element") {
+                  return (
+                    <ElementPanel
+                      element={selected.key}
+                      id={id}
+                      sig={sig}
+                      update={update}
+                      replace={replace}
+                      catalog={catalog}
+                      resolved={render?.elements}
+                      lines={render?.lines}
+                      header={header}
+                      onSelect={select}
+                    />
+                  );
+                }
+                return (
+                  <div className="space-y-8">
+                    {header}
+                    {selected.level === "item" && (
+                      <ItemPanel
+                        item={selected.key}
+                        sig={sig}
+                        update={update}
+                        resolved={render?.elements}
+                        catalog={catalog}
+                      />
+                    )}
+                    {selected.level === "slot" && (
+                      <SlotPanel
+                        slot={selected.key}
+                        sig={sig}
+                        update={update}
+                        lines={render?.lines}
+                        onSelect={select}
+                      />
+                    )}
+                    {selected.level === "signature" && (
+                      <StylePanel
+                        sig={sig}
+                        update={update}
+                        catalog={catalog}
+                        template={template}
+                        lines={render?.lines}
+                        onGoTo={goToField}
+                      />
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </ScrollArea>
         ) : (
@@ -624,7 +814,7 @@ export default function SignatureEditor({ id }) {
               <button
                 type="button"
                 onClick={() => {
-                  setElement(null);
+                  setSelected(null);
                   setTab("template");
                 }}
                 className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
@@ -780,7 +970,7 @@ export default function SignatureEditor({ id }) {
             {
               target: "preview",
               title: "Cliquez sur un élément pour le modifier",
-              body: "Un texte se change directement dans l'aperçu. Ses réglages s'ouvrent à gauche : contenu, mise en forme, disposition.",
+              body: "Un texte se change directement dans l'aperçu. Ses réglages s'ouvrent à gauche. ⌘ + clic (Ctrl + clic) sélectionne le niveau au-dessus : l'élément entier, sa colonne, puis toute la signature.",
             },
             {
               target: "preview",

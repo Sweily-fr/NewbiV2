@@ -68,6 +68,7 @@ export const ITEM_LABEL = {
   cta: "Bouton",
   banner: "Bandeau",
   disclaimer: "Mention",
+  contact: "Coordonnées",
 };
 
 /** Copie propre des emplacements (sans champ GraphQL technique). */
@@ -91,6 +92,19 @@ export function moveItem(slots, item, slot, { before, after, first } = {}) {
   if (before && list.includes(before)) at = list.indexOf(before);
   else if (after && list.includes(after)) at = list.indexOf(after) + 1;
   list.splice(at, 0, item);
+  return next;
+}
+
+/**
+ * Déplace plusieurs éléments ensemble (un élément entier : prénom et nom,
+ * lignes de coordonnées), dans leur ordre : le premier à la place donnée,
+ * les autres à sa suite.
+ */
+export function moveItems(slots, items, slot, at = {}) {
+  let next = moveItem(slots, items[0], slot, at);
+  for (let i = 1; i < items.length; i += 1) {
+    next = moveItem(next, items[i], slot, { after: items[i - 1] });
+  }
   return next;
 }
 
@@ -190,11 +204,119 @@ export const ELEMENT_ITEMS = {
 };
 
 /** Bloc réglable (panneau d'élément) auquel appartient chaque élément. */
-const BLOCK_OF = Object.fromEntries(
+export const BLOCK_OF = Object.fromEntries(
   Object.entries(ELEMENT_ITEMS).flatMap(([block, items]) =>
     items.map((item) => [item, block]),
   ),
 );
+
+/**
+ * Sélection dans l'aperçu, du plus précis au plus large : une partie
+ * (prénom, nom, une ligne de coordonnées), son élément (le nom, les
+ * coordonnées…), sa colonne (emplacement), toute la signature. Un clic
+ * prend le plus précis, chaque ⌘ + clic remonte d'un niveau.
+ */
+export const PART_ITEMS = [
+  "firstName",
+  "lastName",
+  "phone",
+  "mobile",
+  "email",
+  "website",
+  "address",
+];
+
+/** Colonnes de largeur réglable : bornes (celles de l'API) et valeur proposée. */
+export const COLUMN_WIDTH = {
+  visual: { min: 40, max: 600, initial: 140 },
+  text: { min: 80, max: 640, initial: 320 },
+  side: { min: 40, max: 400, initial: 140 },
+};
+
+export const SLOT_LABEL = {
+  header: "En-tête",
+  visual: "Colonne photo",
+  text: "Colonne principale",
+  side: "Colonne de droite",
+  footer: "Bas de la signature",
+  outside: "Sous le cadre",
+};
+
+/** Niveaux d'une partie de l'aperçu, du plus précis au plus large. */
+export function selectionChain(item, st) {
+  const element = BLOCK_OF[item];
+  if (!element) return [{ level: "signature" }];
+  const chain = [];
+  if (PART_ITEMS.includes(item)) chain.push({ level: "item", key: item });
+  chain.push({ level: "element", key: element });
+  const slot = slotOf(st?.slots, item);
+  if (slot) chain.push({ level: "slot", key: slot });
+  chain.push({ level: "signature" });
+  return chain;
+}
+
+export const sameSelection = (a, b) =>
+  Boolean(a && b && a.level === b.level && (a.key || null) === (b.key || null));
+
+/**
+ * Niveau au-dessus d'une sélection. Un élément réparti sur deux colonnes
+ * remonte à celle de `item` (la partie cliquée), sinon à celle de sa
+ * première partie placée.
+ */
+export function parentSelection(current, st, item = null) {
+  if (!current) return { level: "signature" };
+  if (current.level === "item") {
+    return { level: "element", key: BLOCK_OF[current.key] };
+  }
+  if (current.level === "element") {
+    const items = ELEMENT_ITEMS[current.key] || [current.key];
+    const from =
+      item && items.includes(item)
+        ? item
+        : items.find((k) => slotOf(st?.slots, k));
+    const slot = from ? slotOf(st?.slots, from) : null;
+    return slot ? { level: "slot", key: slot } : { level: "signature" };
+  }
+  return { level: "signature" };
+}
+
+/**
+ * ⌘ + clic sur `item` : le niveau au-dessus de la sélection si elle
+ * contient la partie cliquée, sinon le parent de la partie cliquée. Hors
+ * de tout élément : le niveau au-dessus de la sélection.
+ */
+export function selectUp(current, item, st) {
+  if (!item || !BLOCK_OF[item]) return parentSelection(current, st);
+  const chain = selectionChain(item, st);
+  const at = chain.findIndex((c) => sameSelection(c, current));
+  if (at >= 0) return chain[Math.min(at + 1, chain.length - 1)];
+  return chain[Math.min(1, chain.length - 1)];
+}
+
+/** Emmène un élément entier (toutes ses parties placées) dans `slot`. */
+export function moveElement(slots, element, slot) {
+  const items = (ELEMENT_ITEMS[element] || [element]).filter((k) =>
+    slotOf(slots, k),
+  );
+  return items.length > 0 ? moveItems(slots, items, slot) : cleanSlots(slots);
+}
+
+/**
+ * Échange une partie avec sa voisine affichée (`dir` -1 : avant, 1 :
+ * après) dans son emplacement. `shown` : parties affichées.
+ */
+export function shiftItem(slots, slot, item, dir, shown) {
+  const next = cleanSlots(slots);
+  const list = next[slot];
+  const visible = list.filter((k) => !shown || shown.has(k));
+  const other = visible[visible.indexOf(item) + dir];
+  if (!visible.includes(item) || !other) return next;
+  const a = list.indexOf(item);
+  const b = list.indexOf(other);
+  list[a] = other;
+  list[b] = item;
+  return next;
+}
 
 /**
  * Un élément qui change d'emplacement repart d'une largeur et d'un

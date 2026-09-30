@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@apollo/client";
 import {
+  ArrowUpToLine,
   GripVertical,
   Monitor,
   Moon,
@@ -19,9 +20,10 @@ import DropOverlay from "./DropOverlay";
 // Court : un déplacement ou un réglage doit se voir tout de suite
 const RENDER_DELAY_MS = 150;
 
-/** Les trois gestes de l'aperçu, rappelés au-dessus de lui. */
+/** Les gestes de l'aperçu, rappelés au-dessus de lui. */
 const GESTURES = [
   { icon: MousePointerClick, label: "Cliquer pour modifier" },
+  { icon: ArrowUpToLine, label: "⌘ + clic pour le niveau au-dessus" },
   { icon: GripVertical, label: "Poignée pour déplacer" },
   { icon: Scaling, label: "Bord ou coin pour agrandir" },
 ];
