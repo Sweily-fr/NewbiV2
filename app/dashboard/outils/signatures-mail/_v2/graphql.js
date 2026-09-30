@@ -122,6 +122,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       socialPosition
       logoPosition
       footerStrip
+      footerPair
       outside
       textOrder
       slots {

@@ -15,6 +15,7 @@ import {
 } from "./controls";
 import TextStyleControls from "./TextStyleControls";
 import { PartLinks, PlaceRow } from "./LevelPanels";
+import { shownItems } from "../slots";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 import BlockControls from "./BlockControls";
@@ -28,6 +29,7 @@ import {
   AccentControls,
   ContactStyleControl,
   DividerControls,
+  FooterPairControl,
   IdentityControls,
   IdentityZoneControl,
   LogoPositionControl,
@@ -342,6 +344,7 @@ export default function ElementPanel({
             count={sig.social.filter((s) => s.url?.trim()).length}
           />
           <SocialPositionControl st={st} setStyle={setStyle} />
+          <FooterPairControl st={st} setStyle={setStyle} shown={shownItems(sig)} />
           <OutsideToggle item="social" st={st} setStyle={setStyle} />
         </>
       );
@@ -429,6 +432,7 @@ export default function ElementPanel({
       layout = (
         <>
           <LogoPositionControl st={st} setStyle={setStyle} />
+          <FooterPairControl st={st} setStyle={setStyle} shown={shownItems(sig)} />
           <OutsideToggle item="logo" st={st} setStyle={setStyle} />
         </>
       );

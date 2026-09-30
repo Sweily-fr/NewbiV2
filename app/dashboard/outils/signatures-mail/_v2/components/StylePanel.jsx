@@ -86,7 +86,13 @@ function ResetLayout({ sig, template, setStyle }) {
   // Sans photo, la disposition de référence est celle adaptée au contenu
   const defaults = templateLayout(template?.defaults, sig);
   if (!defaults?.slots) return null;
-  if (!layoutDiffers(st, defaults) && !hasBlockSettings(st)) return null;
+  if (
+    !layoutDiffers(st, defaults) &&
+    !hasBlockSettings(st) &&
+    st.footerPair !== false
+  ) {
+    return null;
+  }
   return (
     <div className="flex items-center justify-between gap-3 rounded-xl border bg-[#F5F5F5] px-3 py-2.5 dark:bg-neutral-900">
       <p className="text-xs text-muted-foreground">Disposition personnalisée</p>
@@ -98,6 +104,7 @@ function ResetLayout({ sig, template, setStyle }) {
             // Blocs et colonnes reviennent aussi aux dimensions du modèle
             blocks: {},
             columns: {},
+            footerPair: true,
           })
         }
         className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"

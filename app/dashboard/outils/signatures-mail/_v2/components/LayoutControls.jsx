@@ -656,6 +656,26 @@ export function OutsideToggle({ item, st, setStyle }) {
   );
 }
 
+/**
+ * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
+ * l'autre (comme les dépôts « À côté », « Au-dessus », « Sous »).
+ */
+export function FooterPairControl({ st, setStyle, shown }) {
+  const footer = (st.slots?.footer || []).filter((k) => !shown || shown.has(k));
+  const a = footer.indexOf("social");
+  const b = footer.indexOf("logo");
+  if (a < 0 || b < 0 || Math.abs(a - b) !== 1) return null;
+  return (
+    <SwitchRow
+      id="sig-footer-pair"
+      label="Réseaux et logo côte à côte"
+      description="Sinon, l'un sous l'autre."
+      checked={st.footerPair !== false}
+      onCheckedChange={(v) => setStyle({ footerPair: v })}
+    />
+  );
+}
+
 /** Bande teintée en bas du cadre, pour les réseaux et le logo en bas. */
 export function FooterStripControl({ st, setStyle }) {
   const L = layoutState(st);

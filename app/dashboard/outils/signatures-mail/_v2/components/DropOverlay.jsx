@@ -47,6 +47,9 @@ const vLine = (label, x, y, len, patch) => ({
   patch,
 });
 
+/** Réseaux et logo : côte à côte en bas quand ils se suivent (footerPair). */
+const PAIR = { social: "logo", logo: "social" };
+
 /** Prénom, nom, poste, entreprise : une ligne qu'un autre élément ne coupe pas. */
 const IDENTITY_LINE = ["firstName", "lastName", "title", "company"];
 
@@ -122,6 +125,9 @@ export function targetsFor(field, st, g) {
           ) {
             return;
           }
+          // Ni entre des réseaux et un logo côte à côte : ils passeraient
+          // l'un sous l'autre, pas de part et d'autre
+          if (slot === "footer" && PAIR[prev.item] === entry.item) return;
           const x = (right(prev.rect) + r.x) / 2;
           const top = Math.min(prev.rect.y, r.y);
           targets.push(
@@ -181,6 +187,77 @@ export function targetsFor(field, st, g) {
       } else if (slot === "text") {
         create("Colonne principale", vLine("", right(B) + 16, B.y, B.h, into));
       }
+    }
+  }
+
+  // Réseaux et logo en bas : qui se suivent, ils sont côte à côte, sauf
+  // s'ils ont été mis l'un sous l'autre. « Au-dessus » et « Sous » les
+  // empilent (comme annoncé), « À côté » les réunit.
+  const partner = group.length === 1 ? PAIR[field] : null;
+  if (partner) {
+    const visible = new Set(
+      (g.items || []).filter((i) => i.rect?.h > 0).map((i) => i.item),
+    );
+    const adjacent = (sl) => {
+      const list = (sl?.footer || []).filter(
+        (k) => k === field || visible.has(k),
+      );
+      const a = list.indexOf(field);
+      const b = list.indexOf(partner);
+      return a >= 0 && b >= 0 && Math.abs(a - b) === 1;
+    };
+    for (const t of targets) {
+      if (adjacent(t.patch.slots)) t.patch = { ...t.patch, footerPair: false };
+    }
+    const p = (g.items || []).find(
+      (i) => i.item === partner && i.slot === "footer" && i.rect?.h > 0,
+    );
+    const blocks = st.blocks || {};
+    const paired =
+      current === "footer" &&
+      st.footerPair !== false &&
+      adjacent(slots) &&
+      !blocks[field]?.align &&
+      !blocks[partner]?.align;
+    if (p && paired) {
+      // Déjà côte à côte : les mettre l'un sous l'autre, dans le même ordre
+      const list = (slots.footer || []).filter((k) => visible.has(k));
+      const below = list.indexOf(field) > list.indexOf(partner);
+      const col = g.slots?.footer || p.rect;
+      targets.push(
+        hLine(
+          `${below ? "Sous" : "Au-dessus"} ${below ? ITEM_THE[partner] : ITEM_OF[partner]}`,
+          col.x,
+          below ? bottom(p.rect) + 5 : p.rect.y - 5,
+          col.w,
+          { slots, footerPair: false },
+        ),
+      );
+    } else if (p) {
+      // Côte à côte, à droite de l'autre (un alignement propre les
+      // empêcherait : retiré)
+      const unaligned = (k) => {
+        // eslint-disable-next-line no-unused-vars
+        const { align, ...rest } = blocks[k] || {};
+        return rest;
+      };
+      targets.push(
+        vLine(
+          `À côté ${ITEM_OF[partner]}`,
+          right(p.rect) + 12,
+          p.rect.y,
+          p.rect.h,
+          {
+            slots: move("footer", { after: partner }),
+            footerPair: true,
+            blocks: {
+              ...blocks,
+              [field]: unaligned(field),
+              [partner]: unaligned(partner),
+            },
+          },
+        ),
+      );
     }
   }
 
