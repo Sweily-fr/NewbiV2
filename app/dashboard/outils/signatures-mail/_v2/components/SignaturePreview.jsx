@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@apollo/client";
 import {
   ArrowUpToLine,
+  CircleHelp,
   GripVertical,
   Monitor,
   Moon,
@@ -13,6 +14,11 @@ import {
   Sun,
 } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
 import { modClick } from "./LevelPanels";
 import HtmlFrame from "./HtmlFrame";
@@ -122,17 +128,37 @@ export default function SignaturePreview({
         ) : readOnly ? (
           <span />
         ) : (
-          <ul className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            {GESTURES.map(({ icon: Icon, label }) => {
-              const text = typeof label === "function" ? label() : label;
-              return (
-                <li key={text} className="inline-flex items-center gap-1.5">
-                  <Icon size={14} aria-hidden="true" />
-                  {text}
-                </li>
-              );
-            })}
-          </ul>
+          // Une phrase pour commencer ; les autres gestes dans l'aide « ? »
+          <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <MousePointerClick size={14} aria-hidden="true" />
+            <span className="truncate">Cliquez un élément pour le modifier</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Tous les gestes de l'aperçu"
+                  title="Tous les gestes de l'aperçu"
+                  className="ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent hover:text-foreground cursor-pointer"
+                >
+                  <CircleHelp size={14} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-72 p-3">
+                <p className="mb-2 text-sm font-medium">Dans l&apos;aperçu</p>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  {GESTURES.map(({ icon: Icon, label }) => {
+                    const text = typeof label === "function" ? label() : label;
+                    return (
+                      <li key={text} className="flex items-start gap-2">
+                        <Icon size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                        {text}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </PopoverContent>
+            </Popover>
+          </div>
         )}
         <div className="flex shrink-0 items-center gap-2">
           <ToggleGroup

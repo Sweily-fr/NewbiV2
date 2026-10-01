@@ -2,17 +2,7 @@
 
 import { useId, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import {
-  ChevronDown,
-  ChevronUp,
-  ImagePlus,
-  Loader2,
-  Plus,
-  Trash2,
-  X,
-} from "lucide-react";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
+import { ChevronDown, ChevronUp, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Select,
@@ -23,28 +13,14 @@ import {
 } from "@/src/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import { toast } from "@/src/components/ui/sonner";
-import { CheckedInput, FIELD_LABEL, Hint, Section } from "./controls";
+import { AddChips, CheckedInput, Field, Section } from "./controls";
+import ImageField from "./ImageField";
+import ExtrasSection from "./ExtrasPanel";
+
+// Partagés avec les panneaux d'élément
+export { Field, ImageField };
 import { emailProblem, linkProblem, networkLinkProblem } from "../links";
-import {
-  APPLY_MEMBER_SIGNATURE_V2,
-  REMOVE_SIGNATURE_V2_IMAGE,
-  SIGNATURE_MEMBERS_V2,
-  UPLOAD_SIGNATURE_V2_IMAGE,
-} from "../graphql";
-
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-
-export function Field({ label, children, hint, htmlFor }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={htmlFor} className={FIELD_LABEL}>
-        {label}
-      </Label>
-      {children}
-      {hint && <Hint>{hint}</Hint>}
-    </div>
-  );
-}
+import { APPLY_MEMBER_SIGNATURE_V2, SIGNATURE_MEMBERS_V2 } from "../graphql";
 
 export function TextField({
   id,
@@ -71,197 +47,6 @@ export function TextField({
         warning={warning}
         onChange={(e) => onChange(e.target.value)}
       />
-    </Field>
-  );
-}
-
-/**
- * Zone d'image : clic ou glisser-déposer, envoi immédiat à l'API qui
- * recadre, optimise et rattache l'image à la signature.
- */
-export function ImageField({
-  id,
-  kind,
-  label,
-  hint,
-  image,
-  onChanged,
-  aspect = "square",
-  fieldId,
-  compact = false,
-}) {
-  const inputRef = useRef(null);
-  const [busy, setBusy] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [upload] = useMutation(UPLOAD_SIGNATURE_V2_IMAGE);
-  const [remove] = useMutation(REMOVE_SIGNATURE_V2_IMAGE);
-
-  const send = async (file) => {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Choisissez une image (JPG, PNG ou WebP)");
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      toast.error("Image trop volumineuse (10 Mo maximum)");
-      return;
-    }
-    setBusy(true);
-    try {
-      const { data } = await upload({ variables: { id, kind, file } });
-      onChanged(data?.uploadEmailSignatureV2Image);
-      toast.success("Image ajoutée");
-    } catch (err) {
-      toast.error(err?.graphQLErrors?.[0]?.message || "Envoi impossible");
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  };
-
-  const clear = async () => {
-    setBusy(true);
-    try {
-      const { data } = await remove({ variables: { id, kind } });
-      onChanged(data?.removeEmailSignatureV2Image);
-    } catch {
-      toast.error("Suppression impossible");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const input = (
-    <input
-      ref={inputRef}
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={(e) => send(e.target.files?.[0])}
-    />
-  );
-  // Vignette seule (à côté du nom, de l'entreprise) : un clic ou un dépôt
-  // pour ajouter ou changer l'image, « Retirer » dessous
-  if (compact) {
-    return (
-      <div className="flex shrink-0 flex-col items-center gap-1">
-        <button
-          id={fieldId}
-          type="button"
-          disabled={busy}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            send(e.dataTransfer.files?.[0]);
-          }}
-          title={`${image?.url ? "Changer" : "Ajouter"} : ${hint || label}`}
-          aria-label={`${image?.url ? "Changer" : "Ajouter"} ${label.toLowerCase()}`}
-          className={`flex ${aspect === "logo" ? "h-14 w-24" : "h-[72px] w-[72px]"} items-center justify-center overflow-hidden rounded-[9px] border border-dashed text-muted-foreground transition-[border] duration-[80ms] cursor-pointer ${
-            dragging
-              ? "border-[#5b4fff]"
-              : "border-[#D1D3D8] hover:border-[#9FA1A7] dark:border-[#44444A] dark:hover:border-[#5c5c63]"
-          }`}
-        >
-          {busy ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : image?.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={image.url} alt="" className="h-full w-full object-contain" />
-          ) : (
-            <span className="flex flex-col items-center gap-1 text-[11px]">
-              <ImagePlus size={16} />
-              {label}
-            </span>
-          )}
-        </button>
-        {image?.url && !busy && (
-          <button
-            type="button"
-            onClick={clear}
-            className="text-[11px] text-muted-foreground hover:text-red-600 cursor-pointer"
-          >
-            Retirer
-          </button>
-        )}
-        {input}
-      </div>
-    );
-  }
-
-  // Image large : la zone prend la place restante, les boutons restent visibles
-  const box =
-    aspect === "wide"
-      ? "h-20 min-w-0 flex-1"
-      : aspect === "logo"
-        ? "h-16 w-32 shrink-0"
-        : "h-20 w-20 shrink-0";
-
-  return (
-    <Field label={label} hint={hint}>
-      <div className="flex items-center gap-3" id={fieldId}>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            send(e.dataTransfer.files?.[0]);
-          }}
-          className={`relative flex ${box} items-center justify-center overflow-hidden rounded-[9px] border border-dashed bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px] text-muted-foreground transition-[border] duration-[80ms] cursor-pointer dark:bg-none dark:bg-neutral-900 ${
-            dragging
-              ? "border-[#5b4fff]"
-              : "border-[#D1D3D8] hover:border-[#9FA1A7] dark:border-[#44444A] dark:hover:border-[#5c5c63]"
-          }`}
-          title="Cliquez ou déposez une image"
-        >
-          {busy ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : image?.url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={image.url} alt="" className="h-full w-full object-contain" />
-          ) : (
-            <ImagePlus size={18} />
-          )}
-        </button>
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs cursor-pointer"
-            disabled={busy}
-            onClick={() => inputRef.current?.click()}
-          >
-            {image?.url ? "Changer" : "Choisir une image"}
-          </Button>
-          {image?.url && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-red-600 hover:text-red-700 cursor-pointer"
-              disabled={busy}
-              onClick={clear}
-            >
-              <Trash2 size={12} />
-              Retirer
-            </Button>
-          )}
-        </div>
-        {input}
-      </div>
     </Field>
   );
 }
@@ -453,32 +238,10 @@ function PersonField({ id, sig, replace, flush }) {
 }
 
 /**
- * Champs facultatifs vides, proposés en petits boutons « + Service »… : le
- * panneau s'ouvre sur l'essentiel, le reste vient à la demande.
- */
-function AddFields({ fields, onAdd }) {
-  if (fields.length === 0) return null;
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {fields.map((f) => (
-        <button
-          key={f.key}
-          type="button"
-          onClick={() => onAdd(f.key)}
-          className="inline-flex items-center gap-1 rounded-md border border-dashed border-[#D1D3D8] px-2 py-1 text-xs text-muted-foreground hover:border-[#9FA1A7] hover:text-foreground cursor-pointer dark:border-[#44444A]"
-        >
-          <Plus size={12} />
-          {f.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/**
  * Panneau « Contenu » : l'essentiel d'abord (prénom, nom, poste,
  * entreprise, e-mail), photo à côté du nom, logo à côté de l'entreprise ;
- * les champs facultatifs vides attendent un clic sur « + … ».
+ * les champs facultatifs vides attendent un clic sur « + … », comme le
+ * bouton d'action, la bannière et la mention (« En plus »).
  */
 export default function ContentPanel({ id, sig, update, replace, flush, catalog, template }) {
   const { identity, contact, social, images } = sig;
@@ -567,8 +330,8 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
             maxLength={200}
           />
         )}
-        <AddFields
-          fields={missing([
+        <AddChips
+          items={missing([
             { key: "department", label: "Service", value: identity.department },
             { key: "tagline", label: "Accroche", value: identity.tagline },
           ])}
@@ -622,8 +385,8 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
             maxLength={300}
           />
         )}
-        <AddFields
-          fields={missing([
+        <AddChips
+          items={missing([
             { key: "website", label: "Site web", value: contact.website },
             { key: "address", label: "Adresse", value: contact.address },
           ])}
@@ -667,8 +430,8 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
             )}
           </div>
         )}
-        <AddFields
-          fields={missing([
+        <AddChips
+          items={missing([
             { key: "phone", label: "Téléphone", value: contact.phone },
             { key: "mobile", label: "Mobile", value: contact.mobile },
           ])}
@@ -680,6 +443,8 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
         <div id="sig-field-social" tabIndex={-1} className="outline-none" />
         <SocialLinks social={social} networks={catalog?.networks || []} update={update} />
       </Section>
+
+      <ExtrasSection id={id} sig={sig} update={update} replace={replace} />
     </div>
   );
 }

@@ -30,18 +30,13 @@ import {
 import {
   AccentControls,
   ColumnWidthControls,
-  ContactStyleControl,
   DividerControls,
   FooterStripControl,
-  IdentityControls,
   IdentityZoneControl,
-  LogoPositionControl,
   OutsideControls,
   PhotoLayoutControls,
   TextAlignControl,
   SignatureWidthRow,
-  SocialPositionControl,
-  SocialRowsControl,
   layoutState,
 } from "./LayoutControls";
 
@@ -169,6 +164,11 @@ const CONTACT_LABELS = {
   plain: "coordonnées en texte seul",
   inline: "coordonnées sur une ligne",
 };
+const SPACING_LABELS = {
+  compact: "éléments serrés",
+  normal: "espacement normal",
+  airy: "éléments aérés",
+};
 const SHAPE_LABELS = { circle: "Ronde", rounded: "Arrondie", square: "Carrée" };
 const ICON_LABELS = {
   circle: "Rondes",
@@ -212,7 +212,7 @@ export default function StylePanel({
   const summaries = {
     texte: `${font?.label || "Arial"} · ${st.fontSize} px`,
     disposition: capitalize(
-      [hasPhoto ? PHOTO_LABELS[L.photo] : null, CONTACT_LABELS[st.contactStyle]]
+      [hasPhoto ? PHOTO_LABELS[L.photo] : null, SPACING_LABELS[st.spacing]]
         .filter(Boolean)
         .join(" · "),
     ),
@@ -230,11 +230,63 @@ export default function StylePanel({
     icones: hasNetworks
       ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${Math.min(st.iconSize, iconMax)} px`
       : "Aucun réseau",
-    elements:
-      [hasPhoto && "Photo", hasLogo && "Logo", hasNetworks && "Réseaux"]
-        .filter(Boolean)
-        .join(" · ") || "Rien d'ajouté pour l'instant",
   };
+  const elementRows = [
+    shown.has("firstName") || shown.has("lastName")
+      ? {
+          key: "name",
+          label: "Prénom et nom",
+          has: true,
+          detail:
+            st.identityStyle === "inline"
+              ? "Sur une ligne avec le poste"
+              : st.nameLayout === "stacked"
+                ? "L'un sous l'autre"
+                : "Sur une ligne",
+        }
+      : null,
+    shown.has("title")
+      ? {
+          key: "jobTitle",
+          label: "Poste",
+          has: true,
+          detail: st.titleStyle === "caps" ? "En capitales" : "Normal",
+        }
+      : null,
+    ["phone", "mobile", "email", "website", "address"].some((k) => shown.has(k))
+      ? {
+          key: "contact",
+          label: "Coordonnées",
+          has: true,
+          detail: capitalize(CONTACT_LABELS[st.contactStyle] || ""),
+        }
+      : null,
+    {
+      key: "photo",
+      label: "Photo",
+      has: hasPhoto,
+      detail: summaries.photo,
+      add: "Ajouter une photo",
+    },
+    {
+      key: "logo",
+      label: "Logo",
+      has: hasLogo,
+      detail: summaries.logo,
+      add: "Ajouter un logo",
+    },
+    {
+      key: "social",
+      label: "Réseaux sociaux",
+      has: hasNetworks,
+      detail: summaries.icones,
+      add: "Ajouter un réseau",
+    },
+  ].filter(Boolean);
+  summaries.elements = elementRows
+    .filter((r) => r.has)
+    .map((r) => r.label)
+    .join(" · ");
 
   return (
     <div className="divide-y divide-[#EEEFF1] dark:divide-[#232323]">
@@ -308,33 +360,6 @@ export default function StylePanel({
             <TextAlignControl st={st} setStyle={setStyle} shown={shown} />
           )}
         </Group>
-        <Group title="Textes">
-          <IdentityControls st={st} setStyle={setStyle} />
-          <ContactStyleControl st={st} setStyle={setStyle} />
-        </Group>
-        {(hasNetworks || hasLogo) && (
-          <Group
-            title={
-              hasNetworks && hasLogo
-                ? "Réseaux et logo"
-                : hasNetworks
-                  ? "Réseaux"
-                  : "Logo"
-            }
-          >
-            {hasNetworks && (
-              <>
-                <SocialPositionControl st={st} setStyle={setStyle} />
-                <SocialRowsControl
-                  st={st}
-                  setStyle={setStyle}
-                  count={sig.social.filter((s) => s.url?.trim()).length}
-                />
-              </>
-            )}
-            {hasLogo && <LogoPositionControl st={st} setStyle={setStyle} />}
-          </Group>
-        )}
         <Group title="Largeurs et espacement">
           <SignatureWidthRow st={st} setStyle={setStyle} />
           <ColumnWidthControls
@@ -468,41 +493,19 @@ export default function StylePanel({
         )}
       </Section>
 
-      {/* Photo, logo et réseaux se règlent dans leur propre panneau (comme
-          en les cliquant dans l'aperçu) : un seul endroit par réglage */}
+      {/* Un élément se règle dans son propre panneau (comme en le cliquant
+          dans l'aperçu) : un seul endroit par réglage, ici des raccourcis */}
       <Section
-        title="Photo, logo et réseaux"
+        title="Un élément en particulier"
         {...section("elements")}
         summary={summaries.elements}
       >
         <p className="text-sm text-muted-foreground">
-          Forme, taille et couleurs se règlent dans le panneau de chacun, ou
-          en le cliquant dans l&apos;aperçu.
+          Présentation, place, forme et taille de chacun : dans son panneau,
+          ou en le cliquant dans l&apos;aperçu.
         </p>
         <ul className="divide-y rounded-lg border">
-          {[
-            {
-              key: "photo",
-              label: "Photo",
-              has: hasPhoto,
-              detail: summaries.photo,
-              add: "Ajouter une photo",
-            },
-            {
-              key: "logo",
-              label: "Logo",
-              has: hasLogo,
-              detail: summaries.logo,
-              add: "Ajouter un logo",
-            },
-            {
-              key: "social",
-              label: "Réseaux sociaux",
-              has: hasNetworks,
-              detail: summaries.icones,
-              add: "Ajouter un réseau",
-            },
-          ].map((row) => (
+          {elementRows.map((row) => (
             <li key={row.key}>
               <button
                 type="button"

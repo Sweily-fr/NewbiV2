@@ -374,6 +374,43 @@ export function Group({ title, children }) {
   );
 }
 
+/** Champ : libellé au-dessus, contrôle, aide dessous. */
+export function Field({ label, children, hint, htmlFor }) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={htmlFor} className={FIELD_LABEL}>
+        {label}
+      </Label>
+      {children}
+      {hint && <Hint>{hint}</Hint>}
+    </div>
+  );
+}
+
+/**
+ * Éléments facultatifs absents, proposés en petits boutons « + Service »,
+ * « + Bannière »… : le panneau s'ouvre sur l'essentiel, le reste vient à
+ * la demande. `items` : [{ key, label }].
+ */
+export function AddChips({ items, onAdd }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((f) => (
+        <button
+          key={f.key}
+          type="button"
+          onClick={() => onAdd(f.key)}
+          className="inline-flex items-center gap-1 rounded-md border border-dashed border-[#D1D3D8] px-2 py-1 text-xs text-muted-foreground hover:border-[#9FA1A7] hover:text-foreground cursor-pointer dark:border-[#44444A]"
+        >
+          <Plus size={12} />
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Interrupteur dans un encadré gris. `children` : ses réglages, dépliés
  * sous lui dans le même encadré une fois activé (jamais plus bas dans la

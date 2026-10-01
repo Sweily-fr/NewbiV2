@@ -17,7 +17,6 @@ import {
   PenLine,
   Redo2,
   Send,
-  Sparkles,
   Undo2,
   Star,
   Trash2,
@@ -66,7 +65,6 @@ import TemplateGallery from "./TemplateGallery";
 import EditorTour from "./EditorTour";
 import ContentPanel from "./ContentPanel";
 import StylePanel from "./StylePanel";
-import ExtrasPanel from "./ExtrasPanel";
 import SignaturePreview from "./SignaturePreview";
 import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
 import { GmailSize } from "./controls";
@@ -792,10 +790,6 @@ export default function SignatureEditor({ id }) {
                 <Palette className="h-3.5 w-3.5" />
                 Style
               </TabsNewTrigger>
-              <TabsNewTrigger value="extras">
-                <Sparkles className="h-3.5 w-3.5" />
-                Extras
-              </TabsNewTrigger>
             </TabsNewList>
             <ScrollArea className="min-h-0 flex-1">
               <div
@@ -831,14 +825,6 @@ export default function SignatureEditor({ id }) {
                     lines={render?.lines}
                     onGoTo={goToField}
                     onSelect={select}
-                  />
-                </TabsNewContent>
-                <TabsNewContent value="extras">
-                  <ExtrasPanel
-                    id={id}
-                    sig={sig}
-                    update={update}
-                    replace={replace}
                   />
                 </TabsNewContent>
               </div>
