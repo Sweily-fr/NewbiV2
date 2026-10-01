@@ -563,36 +563,57 @@ export function ColumnWidthControls({ st, setStyle, shown }) {
     ));
 }
 
+const ICON_COLOR_TARGETS = {
+  // Réseaux : couleurs de marque (chaque réseau la sienne) possibles
+  social: {
+    mode: "iconColorMode",
+    color: "iconColor",
+    options: [
+      { value: "brand", label: "Marque" },
+      { value: "primary", label: "Principale" },
+      { value: "custom", label: "Autre" },
+    ],
+  },
+  contact: {
+    mode: "contactIconMode",
+    color: "contactIconColor",
+    options: [
+      { value: "primary", label: "Principale" },
+      { value: "text", label: "Texte" },
+      { value: "custom", label: "Autre" },
+    ],
+  },
+};
+
 /**
- * Couleur des icônes, réseaux et coordonnées : couleurs de marque (chaque
- * réseau la sienne), couleur principale, ou une couleur au choix.
+ * Couleur des icônes des réseaux (`target` "social") ou de celles des
+ * coordonnées ("contact") : chacune la sienne, changer l'une ne touche
+ * jamais l'autre.
  */
 export function IconColorControls({
   st,
   setStyle,
+  target = "social",
   label = "Couleur des icônes",
   hint,
 }) {
+  const { mode, color, options } = ICON_COLOR_TARGETS[target];
   return (
     <>
       <Row label={label} hint={hint}>
         <Choice
           label={label}
-          value={st.iconColorMode}
-          onChange={(v) => setStyle({ iconColorMode: v })}
-          options={[
-            { value: "brand", label: "Marque" },
-            { value: "primary", label: "Principale" },
-            { value: "custom", label: "Autre" },
-          ]}
+          value={st[mode]}
+          onChange={(v) => setStyle({ [mode]: v })}
+          options={options}
         />
       </Row>
-      {st.iconColorMode === "custom" && (
+      {st[mode] === "custom" && (
         <Nested>
           <ColorRow
             label="Couleur personnalisée"
-            value={st.iconColor}
-            onChange={(v) => setStyle({ iconColor: v })}
+            value={st[color]}
+            onChange={(v) => setStyle({ [color]: v })}
           />
         </Nested>
       )}

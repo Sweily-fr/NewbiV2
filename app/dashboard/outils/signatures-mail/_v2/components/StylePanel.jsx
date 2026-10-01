@@ -213,13 +213,12 @@ export default function StylePanel({
   const photoMax = lines?.photoMax || 160;
   const iconMax = lines?.iconMax || 40;
 
-  // Icônes à colorer : réseaux, ou coordonnées présentées avec icônes
-  const hasIcons =
-    hasNetworks ||
-    (st.contactStyle === "icons" &&
-      ["phone", "mobile", "email", "website", "address"].some((k) =>
-        shown.has(k),
-      ));
+  // Coordonnées présentées avec icônes (leur couleur est à part)
+  const hasContactIcons =
+    st.contactStyle === "icons" &&
+    ["phone", "mobile", "email", "website", "address"].some((k) =>
+      shown.has(k),
+    );
   // Traits libres posés (à placer où l'on veut, en les glissant)
   const freeRules = RULE_ITEMS.filter((k) => st.rules?.[k]);
   const addFreeRule = () => {
@@ -372,11 +371,20 @@ export default function StylePanel({
             onChange={(v) => setStyle({ mutedColor: v })}
           />
         </div>
-        {hasIcons && (
+        {hasNetworks && (
           <IconColorControls
             st={st}
             setStyle={setStyle}
-            hint="Réseaux sociaux et icônes des coordonnées. « Marque » : la couleur de chaque réseau (la principale pour les coordonnées)."
+            label="Icônes des réseaux"
+            hint="« Marque » : la couleur de chaque réseau."
+          />
+        )}
+        {hasContactIcons && (
+          <IconColorControls
+            target="contact"
+            st={st}
+            setStyle={setStyle}
+            label="Icônes des coordonnées"
           />
         )}
       </Section>

@@ -371,9 +371,9 @@ export default function ElementPanel({
                     onChange={(v) => setStyle({ contactIconSize: v })}
                   />
                   <IconColorControls
+                    target="contact"
                     st={st}
                     setStyle={setStyle}
-                    hint="Aussi celle des réseaux sociaux ; « Marque » : la couleur principale pour les coordonnées."
                   />
                 </>
               ) : null
@@ -413,7 +413,7 @@ export default function ElementPanel({
               st={st}
               setStyle={setStyle}
               label="Couleur"
-              hint="Aussi celle des icônes des coordonnées."
+              hint="« Marque » : la couleur de chaque réseau."
             />
             <SliderRow
               label="Taille"

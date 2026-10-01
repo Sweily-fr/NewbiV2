@@ -147,6 +147,8 @@ export const SIGNATURE_V2_FIELDS = gql`
       frameWidth
       frameBarLength
       contactIconSize
+      contactIconMode
+      contactIconColor
       blocks
       columns
       rules

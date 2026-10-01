@@ -89,6 +89,8 @@ const THUMB_COLORS = [
   "iconColorMode",
   "iconColor",
   "separatorColor",
+  "contactIconMode",
+  "contactIconColor",
 ];
 
 /**
@@ -115,6 +117,9 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
           key !== "__typename" && value !== null && value !== undefined,
       ),
     );
+    // Icônes des coordonnées : la couleur du modèle, sauf une couleur au
+    // choix de l'utilisateur, gardée
+    if (sig.style?.contactIconMode === "custom") delete preset.contactIconMode;
     update({ templateId: t.id, style: preset });
     toast.document(`Modèle ${t.name} appliqué`, {
       fallbackIcon: LayoutTemplate,
