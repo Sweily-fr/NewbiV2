@@ -103,6 +103,7 @@ async function handler(request, { params }) {
     showBankDetails: quote.showBankDetails,
     isReverseCharge: quote.isReverseCharge,
     clientPositionRight: quote.clientPositionRight,
+    operationType: quote.operationType,
 
     appearance: quote.appearance || {
       textColor: "#000000",

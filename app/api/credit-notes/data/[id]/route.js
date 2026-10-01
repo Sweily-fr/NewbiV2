@@ -121,6 +121,7 @@ async function handler(request, { params }) {
     showBankDetails: creditNote.showBankDetails,
     isReverseCharge: creditNote.isReverseCharge,
     clientPositionRight: creditNote.clientPositionRight,
+    operationType: creditNote.operationType,
 
     appearance: creditNote.appearance || {
       textColor: "#000000",

@@ -165,6 +165,9 @@ async function handler(request, { params }) {
     showBankDetails: invoice.showBankDetails,
     isReverseCharge: invoice.isReverseCharge,
     clientPositionRight: invoice.clientPositionRight,
+    // Nature de l'opération (mention obligatoire 2026) : sans elle, le PDF
+    // archivé et le XML Factur-X perdaient la mention visible dans l'aperçu.
+    operationType: invoice.operationType,
 
     appearance: invoice.appearance || {
       textColor: "#000000",

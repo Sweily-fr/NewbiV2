@@ -2837,6 +2837,9 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
     isReverseCharge: purchaseOrder.isReverseCharge || false,
     isVatExempt: purchaseOrder.isVatExempt || false,
 
+    // Nature de l'opération
+    operationType: purchaseOrder.operationType || null,
+
     headerNotes: purchaseOrder.headerNotes || "",
     footerNotes: purchaseOrder.footerNotes || "",
     // L'API expose `termsAndConditions` (pas de champ `terms`) : lire `terms`
