@@ -188,6 +188,8 @@ export function TransactionDetailDrawer({
   onEdit,
   onAttachReceipt,
   isAnalyzingReceipt = false,
+  // Ouvre la confirmation d'une facture d'achat proposée par l'analyse
+  onConfirmProposal,
   onRefresh,
   onSubmit,
   isCreating = false,
@@ -967,6 +969,10 @@ export function TransactionDetailDrawer({
     for (const r of getStandaloneReceipts(transaction)) {
       list.push({
         id: r.id,
+        // Facture d'achat proposée par l'analyse, pas encore confirmée : la
+        // carte propose de la vérifier, sinon elle resterait invisible après
+        // la fermeture du dialogue.
+        proposal: r.proposal || null,
         // Position dans receiptFiles : sert au proxy d'aperçu quand le
         // justificatif n'a pas d'identifiant Mongo (anciens fichiers migrés)
         receiptIndex: r.receiptIndex,
@@ -1722,6 +1728,24 @@ export function TransactionDetailDrawer({
                                 ? "À envoyer"
                                 : "Justificatif déposé"}
                             </span>
+                            {rcpt.proposal && onConfirmProposal ? (
+                              <div className="mt-2">
+                                <span className="inline-flex items-center max-w-full truncate text-[10px] leading-none px-1.5 py-1 rounded whitespace-nowrap bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                  Facture d&apos;achat à confirmer
+                                </span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="mt-2 h-7 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onConfirmProposal(rcpt);
+                                  }}
+                                >
+                                  Vérifier et créer
+                                </Button>
+                              </div>
+                            ) : null}
                           </div>
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <EyeButton
