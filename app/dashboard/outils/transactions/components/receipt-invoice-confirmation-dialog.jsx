@@ -25,8 +25,10 @@ import {
   ocrDraftValue,
 } from "@/src/components/reconciliation/OcrValueInput";
 
-// Décalage du dialogue quand le volet d'aperçu est ouvert à gauche
-const DIALOG_RIGHT_OFFSET = 520;
+// Largeur réservée au dialogue quand le document est affiché à gauche :
+// largeur du dialogue (max-w-2xl = 42rem) + sa marge droite (right-8).
+// Trop petite, le volet d'aperçu passerait sous le dialogue.
+const DIALOG_RIGHT_OFFSET = 42 * 16 + 32;
 
 const PAYMENT_METHOD_OPTIONS = [
   { value: "BANK_TRANSFER", label: "Virement" },
@@ -136,8 +138,14 @@ export function ReceiptInvoiceConfirmationDialog({
   // lues, sans traîner les corrections saisies pour le fichier précédent.
   useEffect(() => {
     setDrafts({});
-    setPreviewOpen(false);
     setPending(null);
+    // Confirmer, c'est comparer les valeurs lues au document : il s'affiche
+    // donc d'emblée à gauche. Sur petit écran le volet couvre tout l'écran et
+    // masquerait le formulaire : il reste fermé, le bouton œil l'ouvre.
+    setPreviewOpen(
+      typeof window !== "undefined" &&
+        window.matchMedia("(min-width: 768px)").matches,
+    );
   }, [receiptFile?.id]);
 
   // La liste de catégories affiche la sous-catégorie fine (référentiel
