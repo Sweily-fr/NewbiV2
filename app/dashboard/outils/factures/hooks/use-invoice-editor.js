@@ -3193,6 +3193,9 @@ function transformInvoiceToFormData(invoice) {
     },
     clientPositionRight: invoice.clientPositionRight || false,
 
+    // Nature de l'opération
+    operationType: invoice.operationType || null,
+
     // Livraison
     shipping: invoice.shipping
       ? {

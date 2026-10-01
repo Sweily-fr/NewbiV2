@@ -86,6 +86,7 @@ async function handler(request, { params }) {
     showBankDetails: purchaseOrder.showBankDetails,
     isReverseCharge: purchaseOrder.isReverseCharge,
     clientPositionRight: purchaseOrder.clientPositionRight,
+    operationType: purchaseOrder.operationType,
 
     appearance: purchaseOrder.appearance || {
       textColor: "#000000",
