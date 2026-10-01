@@ -413,7 +413,11 @@ export const columns = [
       // Facture d'achat proposée par l'analyse et pas encore confirmée :
       // signalée dans la liste pour qu'elle ne reste pas en attente sans
       // qu'on le sache (le dialogue ne se rouvre pas tout seul).
-      const toConfirm = receipts.filter((f) => f?.proposal);
+      // Mises de côté exclues : elles ne réclament plus d'action (elles
+      // restent créables depuis le tiroir du justificatif).
+      const toConfirm = receipts.filter(
+        (f) => f?.proposal && !f.proposal.dismissedAt,
+      );
       const confirmTag =
         toConfirm.length > 0 ? (
           <TooltipProvider>

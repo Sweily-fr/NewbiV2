@@ -143,6 +143,7 @@ export const GET_TRANSACTIONS = gql`
           provider
           confidenceScore
           proposedAt
+          dismissedAt
           duplicate {
             id
             invoiceNumber
@@ -302,6 +303,7 @@ export const GET_TRANSACTIONS_PAGE = gql`
             provider
             confidenceScore
             proposedAt
+            dismissedAt
             duplicate {
               id
               invoiceNumber
@@ -439,6 +441,7 @@ export const GET_TRANSACTION = gql`
           provider
           confidenceScore
           proposedAt
+          dismissedAt
           duplicate {
             id
             invoiceNumber
@@ -633,6 +636,7 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
           provider
           confidenceScore
           proposedAt
+          dismissedAt
           duplicate {
             id
             invoiceNumber
@@ -674,6 +678,7 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
             provider
             confidenceScore
             proposedAt
+            dismissedAt
             duplicate {
               id
               invoiceNumber
@@ -760,6 +765,7 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
           provider
           confidenceScore
           proposedAt
+          dismissedAt
           duplicate {
             id
             invoiceNumber
@@ -801,6 +807,7 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
             provider
             confidenceScore
             proposedAt
+            dismissedAt
             duplicate {
               id
               invoiceNumber
