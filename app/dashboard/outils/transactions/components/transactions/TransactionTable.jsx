@@ -29,10 +29,12 @@ import { useUpdateTransaction } from "@/src/hooks/useTransactions";
 import { useTransactionsPage } from "@/src/hooks/useTransactionsPage";
 import { useApolloClient, useLazyQuery, useMutation } from "@apollo/client";
 import {
+  CONFIRM_TRANSACTION_RECEIPT_INVOICE,
   GET_TRANSACTION,
   GET_TRANSACTIONS,
   UPLOAD_TRANSACTION_RECEIPT,
 } from "@/src/graphql/queries/banking";
+import { ReceiptInvoiceConfirmationDialog } from "../receipt-invoice-confirmation-dialog";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
@@ -710,6 +712,80 @@ export default function TransactionTable({
   // Transaction dont les justificatifs sont en cours d'analyse : alimente le
   // loader du tiroir, pour que l'attente ne soit pas un écran qui ne bouge pas.
   const [analyzingTransactionId, setAnalyzingTransactionId] = useState(null);
+  // Factures d'achat proposées par l'analyse, confirmées une par une
+  const [confirmationQueue, setConfirmationQueue] = useState([]);
+  const [confirmationIndex, setConfirmationIndex] = useState(0);
+  const [confirmReceiptInvoice] = useMutation(
+    CONFIRM_TRANSACTION_RECEIPT_INVOICE,
+  );
+
+  // La file peut rétrécir en cours de route (analyse en échec, justificatif
+  // rattaché) : l'index est borné pour ne pas fermer la modale à tort.
+  const safeConfirmationIndex = Math.min(
+    confirmationIndex,
+    Math.max(confirmationQueue.length - 1, 0),
+  );
+  const currentConfirmation = confirmationQueue[safeConfirmationIndex] || null;
+
+  /**
+   * Décision de l'utilisateur sur une facture proposée. Tant qu'il n'a pas
+   * tranché, aucune facture n'existe : fermer le dialogue laisse la
+   * proposition en attente sur le justificatif.
+   */
+  const handleConfirmReceiptInvoice = useCallback(
+    async (action, values, purchaseInvoiceId) => {
+      const index = Math.min(
+        confirmationIndex,
+        Math.max(confirmationQueue.length - 1, 0),
+      );
+      const item = confirmationQueue[index];
+      if (!item) return;
+      try {
+        const { data } = await confirmReceiptInvoice({
+          variables: {
+            transactionId: item.transactionId,
+            workspaceId,
+            fileId: item.receiptFile.id,
+            action,
+            values: action === "CREATE" ? values : null,
+            purchaseInvoiceId: purchaseInvoiceId || null,
+          },
+        });
+        const result = data?.confirmTransactionReceiptInvoice;
+        if (!result?.success) {
+          toast.error(result?.message || "La facture d'achat n'a pas pu être enregistrée");
+          return;
+        }
+        if (action === "CREATE") {
+          toast.success("Facture d'achat créée");
+        } else if (action === "ATTACH") {
+          toast.success("Justificatif rattaché à la facture d'achat");
+        } else {
+          toast.info("Aucune facture d'achat créée", {
+            description:
+              "Le justificatif reste sur la dépense. Vous pourrez créer la facture plus tard depuis le justificatif.",
+          });
+        }
+      } catch (error) {
+        console.error("❌ [CONFIRM RECEIPT INVOICE]", error);
+        toast.error(error.message || "La facture d'achat n'a pas pu être enregistrée");
+        return;
+      }
+      refetch();
+      // Le justificatif traité quitte la file ; la modale se ferme quand elle
+      // est vide.
+      setConfirmationQueue((queue) =>
+        queue.filter((q) => q.receiptFile?.id !== item.receiptFile?.id),
+      );
+    },
+    [
+      confirmationQueue,
+      confirmationIndex,
+      confirmReceiptInvoice,
+      workspaceId,
+      refetch,
+    ],
+  );
   useEffect(() => {
     return () => {
       if (purchaseInvoicePollRef.current) {
@@ -779,9 +855,42 @@ export default function TransactionTable({
               !invoice && Boolean(file.purchaseInvoiceId);
             // L'analyse a échoué : inutile d'attendre, on le dit.
             const failed = !invoice && !attachedElsewhere && file.ocrError;
+            // Facture d'achat proposée : rien n'est créé tant que
+            // l'utilisateur n'a pas confirmé les valeurs lues.
+            if (
+              !invoice &&
+              !attachedElsewhere &&
+              !failed &&
+              file.proposal &&
+              !file.proposal.dismissedAt
+            ) {
+              pending.delete(file.id);
+              processed = true;
+              // La modale est déjà ouverte depuis le dépôt : on y verse les
+              // valeurs lues. Si l'utilisateur l'a fermée entre-temps, la
+              // file est vide et on ne la rouvre pas (le tag « À confirmer »
+              // de la liste permet d'y revenir).
+              setConfirmationQueue((queue) =>
+                queue.length === 0
+                  ? queue
+                  : queue.map((item) =>
+                      item.receiptFile?.id === file.id
+                        ? { ...item, receiptFile: file, transaction }
+                        : item,
+                    ),
+              );
+              continue;
+            }
             if (!invoice && !attachedElsewhere && !failed) continue;
             pending.delete(file.id);
             processed = true;
+            // Rien à confirmer pour ce fichier (analyse en échec, ou
+            // rattachement déjà fait) : il quitte la file.
+            setConfirmationQueue((queue) =>
+              queue.length === 0
+                ? queue
+                : queue.filter((item) => item.receiptFile?.id !== file.id),
+            );
             outcomes.push({
               label: invoice?.invoiceNumber || invoice?.supplierName || null,
               // Facture déjà liée avant ce dépôt : document en double, aucune
@@ -804,7 +913,18 @@ export default function TransactionTable({
         }
 
         if (poll.cancelled) return;
-        announceReceiptOutcomes(outcomes, pending.size);
+        // Les propositions se versent dans la modale déjà ouverte ; les
+        // autres issues (échec d'analyse, rattachement) gardent leur message.
+        if (outcomes.length > 0 || pending.size > 0) {
+          announceReceiptOutcomes(outcomes, pending.size);
+        }
+        // Analyse jamais aboutie : on ne laisse pas la modale tourner
+        // indéfiniment sur un fichier sans proposition.
+        if (pending.size > 0) {
+          setConfirmationQueue((queue) =>
+            queue.filter((item) => !pending.has(item.receiptFile?.id)),
+          );
+        }
         // Délai dépassé : un dernier rafraîchissement, au cas où l'analyse
         // aboutisse juste après.
         if (pending.size > 0) refetch();
@@ -904,6 +1024,17 @@ export default function TransactionTable({
       }
       refetch();
       if (isExpense && uploadedReceiptIds.length > 0) {
+        // Confirmation ouverte tout de suite, avec le document et l'analyse en
+        // cours : les champs se remplissent quand la lecture aboutit. Ouvrir
+        // la modale après coup la faisait surgir alors que l'utilisateur était
+        // passé à autre chose.
+        const uploaded = (data.uploadTransactionReceipt.receiptFiles || [])
+          .filter((f) => uploadedReceiptIds.includes(f?.id))
+          .map((f) => ({ transactionId, receiptFile: f, transaction }));
+        if (uploaded.length > 0) {
+          setConfirmationQueue(uploaded);
+          setConfirmationIndex(0);
+        }
         // L'OCR prend quelques secondes : on attend que le justificatif soit
         // traité pour afficher la facture d'achat dès qu'elle est prête.
         waitForReceiptsProcessed(
@@ -1069,6 +1200,18 @@ export default function TransactionTable({
       onOpenReconciliation: (transaction) => {
         setSelectedTransaction(transaction);
         setIsDetailDrawerOpen(true);
+      },
+      // Tag « À confirmer » de la colonne Justificatif : reprend une facture
+      // d'achat proposée restée en attente.
+      onConfirmProposal: (transaction, receiptFile) => {
+        setConfirmationQueue([
+          {
+            transactionId: transaction.originalTransaction?.id || transaction.id,
+            receiptFile,
+            transaction,
+          },
+        ]);
+        setConfirmationIndex(0);
       },
       bankAccounts,
     },
@@ -1756,6 +1899,20 @@ export default function TransactionTable({
                 (selectedTransaction?.originalTransaction?.id ||
                   selectedTransaction?.id)
             }
+            onConfirmProposal={(receiptFile) => {
+              // Reprise d'une proposition laissée en attente : même dialogue
+              // que juste après l'analyse.
+              setConfirmationQueue([
+                {
+                  transactionId:
+                    selectedTransaction?.originalTransaction?.id ||
+                    selectedTransaction?.id,
+                  receiptFile,
+                  transaction: selectedTransaction,
+                },
+              ]);
+              setConfirmationIndex(0);
+            }}
             onRefresh={refetch}
             onSubmit={handleSaveTransaction}
           />
@@ -1774,6 +1931,25 @@ export default function TransactionTable({
           />
         )}
       </AnimatePresence>
+
+      {/* Confirmation des factures d'achat proposées par l'analyse */}
+      {currentConfirmation ? (
+        <ReceiptInvoiceConfirmationDialog
+          open
+          onOpenChange={(open) => {
+            // Fermeture sans trancher : la proposition reste en attente sur
+            // le justificatif, rien n'est perdu.
+            if (!open) {
+              setConfirmationQueue([]);
+              setConfirmationIndex(0);
+            }
+          }}
+          transaction={currentConfirmation.transaction}
+          receiptFile={currentConfirmation.receiptFile}
+          onConfirm={handleConfirmReceiptInvoice}
+          queueLength={confirmationQueue.length}
+        />
+      ) : null}
     </div>
   );
 }
