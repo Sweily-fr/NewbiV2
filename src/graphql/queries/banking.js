@@ -126,6 +126,34 @@ export const GET_TRANSACTIONS = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        proposal {
+          supplierName
+          invoiceNumber
+          issueDate
+          dueDate
+          amountHT
+          amountTVA
+          vatRate
+          amountTTC
+          currency
+          category
+          subcategory
+          paymentMethod
+          extractionQuality
+          provider
+          confidenceScore
+          proposedAt
+          duplicate {
+            id
+            invoiceNumber
+            supplierName
+            amountTTC
+            currency
+            issueDate
+            reason
+            linkTransaction
+          }
+        }
         ocrError
         url
         key
@@ -257,6 +285,34 @@ export const GET_TRANSACTIONS_PAGE = gql`
         receiptFiles {
           id
           purchaseInvoiceId
+          proposal {
+            supplierName
+            invoiceNumber
+            issueDate
+            dueDate
+            amountHT
+            amountTVA
+            vatRate
+            amountTTC
+            currency
+            category
+            subcategory
+            paymentMethod
+            extractionQuality
+            provider
+            confidenceScore
+            proposedAt
+            duplicate {
+              id
+              invoiceNumber
+              supplierName
+              amountTTC
+              currency
+              issueDate
+              reason
+              linkTransaction
+            }
+          }
           ocrError
           url
           key
@@ -366,6 +422,34 @@ export const GET_TRANSACTION = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        proposal {
+          supplierName
+          invoiceNumber
+          issueDate
+          dueDate
+          amountHT
+          amountTVA
+          vatRate
+          amountTTC
+          currency
+          category
+          subcategory
+          paymentMethod
+          extractionQuality
+          provider
+          confidenceScore
+          proposedAt
+          duplicate {
+            id
+            invoiceNumber
+            supplierName
+            amountTTC
+            currency
+            issueDate
+            reason
+            linkTransaction
+          }
+        }
         ocrError
         url
         key
@@ -532,6 +616,34 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        proposal {
+          supplierName
+          invoiceNumber
+          issueDate
+          dueDate
+          amountHT
+          amountTVA
+          vatRate
+          amountTTC
+          currency
+          category
+          subcategory
+          paymentMethod
+          extractionQuality
+          provider
+          confidenceScore
+          proposedAt
+          duplicate {
+            id
+            invoiceNumber
+            supplierName
+            amountTTC
+            currency
+            issueDate
+            reason
+            linkTransaction
+          }
+        }
         ocrError
         url
         key
@@ -545,6 +657,34 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
         receiptFiles {
           id
           purchaseInvoiceId
+          proposal {
+            supplierName
+            invoiceNumber
+            issueDate
+            dueDate
+            amountHT
+            amountTVA
+            vatRate
+            amountTTC
+            currency
+            category
+            subcategory
+            paymentMethod
+            extractionQuality
+            provider
+            confidenceScore
+            proposedAt
+            duplicate {
+              id
+              invoiceNumber
+              supplierName
+              amountTTC
+              currency
+              issueDate
+              reason
+              linkTransaction
+            }
+          }
           ocrError
           url
           filename
@@ -558,6 +698,35 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
 /**
  * Suppression d'un justificatif d'une transaction
  */
+/**
+ * Décision de l'utilisateur sur la facture d'achat proposée pour un
+ * justificatif : CREATE (créer avec les valeurs confirmées), ATTACH
+ * (rattacher à une facture existante) ou SKIP (ne rien créer).
+ */
+export const CONFIRM_TRANSACTION_RECEIPT_INVOICE = gql`
+  mutation ConfirmTransactionReceiptInvoice(
+    $transactionId: ID!
+    $workspaceId: ID!
+    $fileId: ID!
+    $action: ReceiptInvoiceProposalAction!
+    $values: ReceiptInvoiceValuesInput
+    $purchaseInvoiceId: ID
+  ) {
+    confirmTransactionReceiptInvoice(
+      transactionId: $transactionId
+      workspaceId: $workspaceId
+      fileId: $fileId
+      action: $action
+      values: $values
+      purchaseInvoiceId: $purchaseInvoiceId
+    ) {
+      success
+      message
+      purchaseInvoiceId
+    }
+  }
+`;
+
 export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
   mutation RemoveTransactionReceiptFile(
     $transactionId: ID!
@@ -574,6 +743,34 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
       receiptFiles {
         id
         purchaseInvoiceId
+        proposal {
+          supplierName
+          invoiceNumber
+          issueDate
+          dueDate
+          amountHT
+          amountTVA
+          vatRate
+          amountTTC
+          currency
+          category
+          subcategory
+          paymentMethod
+          extractionQuality
+          provider
+          confidenceScore
+          proposedAt
+          duplicate {
+            id
+            invoiceNumber
+            supplierName
+            amountTTC
+            currency
+            issueDate
+            reason
+            linkTransaction
+          }
+        }
         ocrError
         url
         key
@@ -587,6 +784,34 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
         receiptFiles {
           id
           purchaseInvoiceId
+          proposal {
+            supplierName
+            invoiceNumber
+            issueDate
+            dueDate
+            amountHT
+            amountTVA
+            vatRate
+            amountTTC
+            currency
+            category
+            subcategory
+            paymentMethod
+            extractionQuality
+            provider
+            confidenceScore
+            proposedAt
+            duplicate {
+              id
+              invoiceNumber
+              supplierName
+              amountTTC
+              currency
+              issueDate
+              reason
+              linkTransaction
+            }
+          }
           ocrError
           url
           filename
