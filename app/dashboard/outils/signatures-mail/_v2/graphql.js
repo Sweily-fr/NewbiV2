@@ -150,6 +150,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       blocks
       columns
       rules
+      dividerSpace
       elements {
         ${ELEMENT_STYLES}
       }

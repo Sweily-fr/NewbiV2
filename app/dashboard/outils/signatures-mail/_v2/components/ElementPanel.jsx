@@ -13,6 +13,7 @@ import {
   Row,
   Section,
   SliderRow,
+  SpaceRow,
   SwitchRow,
 } from "./controls";
 import TextStyleControls from "./TextStyleControls";
@@ -73,7 +74,66 @@ export const FIELD_ELEMENT = {
   rule1: "rule1",
   rule2: "rule2",
   rule3: "rule3",
+  divider: "divider",
 };
+
+/** Traits horizontaux : leurs marges (au-dessus, en dessous) se règlent avec eux. */
+const HORIZONTAL_TRAITS = new Set(["accent", "rule1", "rule2", "rule3"]);
+
+/** Marges d'un trait horizontal : au-dessus et en dessous. */
+function TraitMargins({ element, st, setStyle }) {
+  const blocks = st.blocks || {};
+  const block = blocks[element] || {};
+  const set = (patch) => {
+    const next = Object.fromEntries(
+      Object.entries({ ...block, ...patch }).filter(
+        ([, v]) => v !== 0 && v !== null && v !== undefined && v !== "",
+      ),
+    );
+    const all = { ...blocks };
+    if (Object.keys(next).length > 0) all[element] = next;
+    else delete all[element];
+    setStyle({ blocks: all });
+  };
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <SpaceRow
+        label="Marge au-dessus"
+        value={block.spaceBefore || 0}
+        onChange={(v) => set({ spaceBefore: v })}
+      />
+      <SpaceRow
+        label="Marge en dessous"
+        value={block.spaceAfter || 0}
+        onChange={(v) => set({ spaceAfter: v })}
+      />
+    </div>
+  );
+}
+
+/** Marges du séparateur vertical : à gauche et à droite du trait. */
+function DividerMargins({ st, setStyle }) {
+  const ds = st.dividerSpace || {};
+  const set = (side, v) => {
+    const next = { ...ds, [side]: v };
+    if (!v) delete next[side];
+    setStyle({ dividerSpace: next });
+  };
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <SpaceRow
+        label="Marge à gauche"
+        value={ds.left || 0}
+        onChange={(v) => set("left", v)}
+      />
+      <SpaceRow
+        label="Marge à droite"
+        value={ds.right || 0}
+        onChange={(v) => set("right", v)}
+      />
+    </div>
+  );
+}
 
 /**
  * « Disposition » d'un élément : repliée par défaut (le panneau s'ouvre sur
@@ -168,6 +228,23 @@ export default function ElementPanel({
       body = (
         <Section title="Mise en forme">
           <AccentControls st={st} setStyle={setStyle} lines={lines} />
+          <TraitMargins element="accent" st={st} setStyle={setStyle} />
+        </Section>
+      );
+      break;
+    case "divider":
+      // Séparateur vertical : sa forme et ses marges (il ne se déplace pas)
+      body = (
+        <Section title="Mise en forme">
+          <DividerControls
+            st={st}
+            setStyle={setStyle}
+            lines={lines}
+            shown={shownItems(sig)}
+          />
+          {st.divider !== "none" && (
+            <DividerMargins st={st} setStyle={setStyle} />
+          )}
         </Section>
       );
       break;
@@ -586,6 +663,7 @@ export default function ElementPanel({
               options={RULE_COLORS}
             />
           </Row>
+          <TraitMargins element={element} st={st} setStyle={setStyle} />
           <button
             type="button"
             onClick={() => setStyle(removeRule(st, element))}
@@ -606,7 +684,7 @@ export default function ElementPanel({
   return (
     <div className="space-y-8">
       {body}
-      {body && (
+      {body && element !== "divider" && (
         <Section
           title="Disposition"
           collapsible
@@ -632,6 +710,7 @@ export default function ElementPanel({
             alignLabel={
               element === "photo" ? "Alignement horizontal" : undefined
             }
+            withSpaces={!HORIZONTAL_TRAITS.has(element)}
           />
         </Section>
       )}

@@ -58,6 +58,7 @@ export default function BlockControls({
   sig,
   setStyle,
   alignLabel = "Alignement",
+  withSpaces = true,
 }) {
   const st = sig.style;
   const blocks = st.blocks || {};
@@ -120,6 +121,7 @@ export default function BlockControls({
           initial={width.initial}
         />
       )}
+      {withSpaces && (
       <div className="grid grid-cols-2 gap-4">
         <SpaceRow
           label="Espace au-dessus"
@@ -132,6 +134,7 @@ export default function BlockControls({
           onChange={(v) => set({ spaceAfter: v })}
         />
       </div>
+      )}
       {canAlign && (
         <Row
           label={alignLabel}

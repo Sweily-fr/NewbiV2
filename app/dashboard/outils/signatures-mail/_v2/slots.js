@@ -31,6 +31,7 @@ export const ITEM_OF = {
   rule1: "du trait",
   rule2: "du trait",
   rule3: "du trait",
+  divider: "du séparateur",
 };
 export const ITEM_THE = {
   photo: "la photo",
@@ -54,6 +55,7 @@ export const ITEM_THE = {
   rule1: "le trait",
   rule2: "le trait",
   rule3: "le trait",
+  divider: "le séparateur",
 };
 export const ITEM_LABEL = {
   photo: "Photo",
@@ -77,6 +79,7 @@ export const ITEM_LABEL = {
   rule1: "Trait",
   rule2: "Trait",
   rule3: "Trait",
+  divider: "Séparateur",
   contact: "Coordonnées",
 };
 
@@ -282,6 +285,8 @@ export const ELEMENT_ITEMS = {
   rule1: ["rule1"],
   rule2: ["rule2"],
   rule3: ["rule3"],
+  // Séparateur vertical : sélectionnable dans l'aperçu, pas déplaçable
+  divider: ["divider"],
 };
 
 /** Bloc réglable (panneau d'élément) auquel appartient chaque élément. */
@@ -620,6 +625,7 @@ export function shownItems(sig) {
   if (sig?.banner?.enabled && images.banner?.url) shown.add("banner");
   if (sig?.disclaimer?.enabled && sig.disclaimer.text) shown.add("disclaimer");
   for (const k of RULE_ITEMS) if (st.rules?.[k]) shown.add(k);
+  if (st.divider && st.divider !== "none") shown.add("divider");
   return shown;
 }
 
@@ -710,6 +716,8 @@ export function deleteFor(sig, selected) {
     case "photo":
     case "logo":
       return { image: key };
+    case "divider":
+      return { update: { style: { divider: "none" } } };
     default:
       return RULE_ITEMS.includes(key)
         ? { update: { style: removeRule(sig.style, key) } }

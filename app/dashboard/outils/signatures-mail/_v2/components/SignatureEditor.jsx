@@ -398,6 +398,8 @@ export default function SignatureEditor({ id }) {
     return {
       level,
       items: ELEMENT_ITEMS[key] || [key],
+      // Le séparateur vertical se règle mais ne se déplace pas
+      nograb: key === "divider",
       main: mainKey ? mainKey.split(",") : null,
       resize,
       font:

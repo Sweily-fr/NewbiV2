@@ -58,7 +58,7 @@ grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border
 document.body.appendChild(grip);
 /* Poignée : seulement sur l'élément sélectionné (rien au survol), à côté
    du morceau cliqué ; elle reste pendant la modification d'un texte */
-function showGrip(){if(window.SIG_READONLY||dragging||rs||fs||!sel||sel.whole||sel.slot){hideGrip();return;}
+function showGrip(){if(window.SIG_READONLY||dragging||rs||fs||!sel||sel.whole||sel.slot||sel.nograb){hideGrip();return;}
 var els=groupEls(),b=null;els.forEach(function(el){if(!b&&el.getAttribute("data-sig-block")===clickItem)b=el;});b=b||els[0];
 if(!b){hideGrip();return;}gripEl=b;var r=vrect(b);
 if(getComputedStyle(b).display==="inline"){grip.style.left=(r.x+scrollX)+"px";grip.style.top=Math.max(0,r.y+scrollY-30)+"px";}
@@ -88,15 +88,17 @@ var r=document.caretRangeFromPoint&&document.caretRangeFromPoint(x,y);
 if(r&&el.contains(r.startContainer)){var s=getSelection();s.removeAllRanges();s.addRange(r);}
 post({type:"sig-editing",editing:true});
 }
-function goUp(e){e.preventDefault();e.stopPropagation();var cb=e.target.closest?e.target.closest("[data-sig-block]"):null;clickItem=cb?cb.getAttribute("data-sig-block"):null;
+function goUp(e){e.preventDefault();e.stopPropagation();var cb=blockAt(e.target,e.clientX,e.clientY);clickItem=cb?cb.getAttribute("data-sig-block"):null;
 if(editing)editing.blur();post({type:"sig-field",field:null,item:clickItem,up:true});drawSel();}
 /* Sur un Mac, Ctrl + clic ouvre le menu contextuel au lieu de cliquer */
 document.addEventListener("contextmenu",function(e){if(e.ctrlKey&&/Mac|iPhone|iPad/.test(navigator.platform||""))goUp(e);},true);
 document.addEventListener("click",function(e){
 if(e.target===grip||box.contains(e.target))return;
 hideHover();if(e.metaKey||e.ctrlKey){goUp(e);return;}
-var cb=e.target.closest?e.target.closest("[data-sig-block]"):null;clickItem=cb?cb.getAttribute("data-sig-block"):null;
+var cb=blockAt(e.target,e.clientX,e.clientY);clickItem=cb?cb.getAttribute("data-sig-block"):null;
 if(e.target.closest("a"))e.preventDefault();
+/* Un trait visé (même à quelques pixels) : il est sélectionné, sans saisie */
+if(cb&&lineAt(e.clientX,e.clientY)===cb){e.stopPropagation();post({type:"sig-field",field:null,item:clickItem,edit:false});drawSel();return;}
 if(editing&&editing.contains(e.target))return;
 e.stopPropagation();
 var ed=e.target.closest("[data-sig-edit]");
@@ -144,16 +146,29 @@ if(sel.slot){document.querySelectorAll('[data-sig-slot="'+sel.slot+'"]').forEach
 var hov=document.createElement("div");
 hov.style.cssText="position:absolute;display:none;pointer-events:none;border:1px solid rgba(90,80,255,.55);border-radius:4px;z-index:8;";
 document.body.appendChild(hov);
-function hideHover(){hov.style.display="none";}
-document.addEventListener("mouseover",function(e){if(dragging||rs||fs){hideHover();return;}
-var b=e.target.closest?e.target.closest("[data-sig-block]"):null;
+var hovEl=null;
+function hideHover(){hov.style.display="none";hovEl=null;}
+document.addEventListener("mousemove",function(e){if(dragging||rs||fs){hideHover();return;}
+var b=blockAt(e.target,e.clientX,e.clientY);
 if(!b||selEls().indexOf(b)>=0){hideHover();return;}
+if(b===hovEl)return;hovEl=b;
 var r=vrect(b);hov.style.display="block";hov.style.left=(r.x+scrollX-3)+"px";hov.style.top=(r.y+scrollY-3)+"px";hov.style.width=(r.w+6)+"px";hov.style.height=(r.h+6)+"px";});
 document.documentElement.addEventListener("mouseleave",hideHover);
+/* Traits (séparateur, trait sous le nom, traits libres) : quelques pixels
+   autour d'eux suffisent pour les viser */
+function lineAt(x,y){var best=null,bd=7;document.querySelectorAll('[data-sig-block="divider"],[data-sig-block="accent"],[data-sig-block^="rule"]').forEach(function(el){
+var r=vrect(el);var dx=Math.max(r.x-x,0,x-(r.x+r.w)),dy=Math.max(r.y-y,0,y-(r.y+r.h)),d=Math.max(dx,dy);if(d<bd){bd=d;best=el;}});return best;}
+/* Élément sous le pointeur : un trait proche d'abord, sinon le bloc le
+   plus proche (la cellule d'un séparateur en bordure ne compte que près
+   de son bord) */
+function blockAt(target,x,y){var l=lineAt(x,y);if(l)return l;var b=target&&target.closest?target.closest("[data-sig-block]"):null;
+if(b&&b.hasAttribute("data-sig-edge")){var p=b.parentElement;b=p&&p.closest?p.closest("[data-sig-block]"):null;}return b;}
 /* Contenu visible d'un élément : texte (sans l'interligne), images,
    cases colorées ou bordées ; jamais les marges des cellules ni les
    espaces entre lignes. Le cadre de sélection l'épouse. */
-function vrect(el){var r=null,g=document.createRange();
+function vrect(el){var edge=el.getAttribute&&el.getAttribute("data-sig-edge");
+if(edge){var er=el.getBoundingClientRect(),ecs=getComputedStyle(el),bw=parseFloat(edge==="right"?ecs.borderRightWidth:ecs.borderLeftWidth)||1;return{x:edge==="right"?er.right-bw:er.left,y:er.top,w:bw,h:er.height};}
+var r=null,g=document.createRange();
 var add=function(b){if(!b.width&&!b.height)return;if(!r)r={l:b.left,t:b.top,r:b.right,b:b.bottom};else{r.l=Math.min(r.l,b.left);r.t=Math.min(r.t,b.top);r.r=Math.max(r.r,b.right);r.b=Math.max(r.b,b.bottom);}};
 var w=document.createTreeWalker(el,5),n=el;
 do{if(n.nodeType===3){if(n.nodeValue.trim()){g.selectNodeContents(n);add(g.getBoundingClientRect());}}
@@ -477,7 +492,7 @@ export default function HtmlFrame({
     // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
     // une page d'erreur si l'adresse est incomplète).
     const editorCss = interactive
-      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
+      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
       : "";
     const editorScript = interactive
       ? `<script>window.SIG_READONLY=${readOnly ? "true" : "false"};${EDITOR_SCRIPT}</script>`

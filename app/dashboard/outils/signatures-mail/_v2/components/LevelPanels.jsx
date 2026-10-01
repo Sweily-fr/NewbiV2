@@ -71,6 +71,7 @@ export const ELEMENT_TITLE = {
   rule1: "Trait",
   rule2: "Trait",
   rule3: "Trait",
+  divider: "Séparateur vertical",
 };
 
 /** Parties réglables seules, et le champ de contenu de chacune. */
