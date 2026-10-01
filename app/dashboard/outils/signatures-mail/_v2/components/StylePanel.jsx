@@ -35,6 +35,7 @@ import {
   ColumnWidthControls,
   DividerControls,
   FooterStripControl,
+  IconColorControls,
   IdentityZoneControl,
   OutsideControls,
   PhotoLayoutControls,
@@ -212,6 +213,13 @@ export default function StylePanel({
   const photoMax = lines?.photoMax || 160;
   const iconMax = lines?.iconMax || 40;
 
+  // Icônes à colorer : réseaux, ou coordonnées présentées avec icônes
+  const hasIcons =
+    hasNetworks ||
+    (st.contactStyle === "icons" &&
+      ["phone", "mobile", "email", "website", "address"].some((k) =>
+        shown.has(k),
+      ));
   // Traits libres posés (à placer où l'on veut, en les glissant)
   const freeRules = RULE_ITEMS.filter((k) => st.rules?.[k]);
   const addFreeRule = () => {
@@ -314,7 +322,11 @@ export default function StylePanel({
         Réglages de toute la signature. Pour un seul élément, cliquez-le dans
         l&apos;aperçu.
       </p>
-      <Section title="Texte" {...section("texte")} summary={summaries.texte}>
+      <Section
+        title="Texte et couleurs"
+        {...section("texte")}
+        summary={summaries.texte}
+      >
         <Row
           label="Police"
           hint="Seules ces polices s'affichent partout : Gmail, Outlook, Apple Mail."
@@ -360,6 +372,13 @@ export default function StylePanel({
             onChange={(v) => setStyle({ mutedColor: v })}
           />
         </div>
+        {hasIcons && (
+          <IconColorControls
+            st={st}
+            setStyle={setStyle}
+            hint="Réseaux sociaux et icônes des coordonnées. « Marque » : la couleur de chaque réseau (la principale pour les coordonnées)."
+          />
+        )}
       </Section>
 
       <Section

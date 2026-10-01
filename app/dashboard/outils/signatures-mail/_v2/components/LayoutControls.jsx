@@ -19,10 +19,12 @@ import { cn } from "@/src/lib/utils";
 import {
   Choice,
   ChoiceCard,
+  ColorRow,
   FIELD_LABEL,
   Hint,
   LengthRow,
   MultiChoice,
+  Nested,
   Row,
   SliderRow,
   SwitchRow,
@@ -559,6 +561,43 @@ export function ColumnWidthControls({ st, setStyle, shown }) {
     .map((slot) => (
       <ColumnWidthRow key={slot} slot={slot} st={st} setStyle={setStyle} />
     ));
+}
+
+/**
+ * Couleur des icônes, réseaux et coordonnées : couleurs de marque (chaque
+ * réseau la sienne), couleur principale, ou une couleur au choix.
+ */
+export function IconColorControls({
+  st,
+  setStyle,
+  label = "Couleur des icônes",
+  hint,
+}) {
+  return (
+    <>
+      <Row label={label} hint={hint}>
+        <Choice
+          label={label}
+          value={st.iconColorMode}
+          onChange={(v) => setStyle({ iconColorMode: v })}
+          options={[
+            { value: "brand", label: "Marque" },
+            { value: "primary", label: "Principale" },
+            { value: "custom", label: "Autre" },
+          ]}
+        />
+      </Row>
+      {st.iconColorMode === "custom" && (
+        <Nested>
+          <ColorRow
+            label="Couleur personnalisée"
+            value={st.iconColor}
+            onChange={(v) => setStyle({ iconColor: v })}
+          />
+        </Nested>
+      )}
+    </>
+  );
 }
 
 /**

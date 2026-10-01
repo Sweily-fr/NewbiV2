@@ -39,6 +39,7 @@ import {
   ContactStyleControl,
   DividerControls,
   FooterPairControl,
+  IconColorControls,
   IdentityControls,
   IdentityZoneControl,
   LogoPositionControl,
@@ -361,13 +362,20 @@ export default function ElementPanel({
             }
             footer={
               st.contactStyle === "icons" ? (
-                <SliderRow
-                  label="Taille des icônes"
-                  value={st.contactIconSize || 16}
-                  min={12}
-                  max={32}
-                  onChange={(v) => setStyle({ contactIconSize: v })}
-                />
+                <>
+                  <SliderRow
+                    label="Taille des icônes"
+                    value={st.contactIconSize || 16}
+                    min={12}
+                    max={32}
+                    onChange={(v) => setStyle({ contactIconSize: v })}
+                  />
+                  <IconColorControls
+                    st={st}
+                    setStyle={setStyle}
+                    hint="Aussi celle des réseaux sociaux ; « Marque » : la couleur principale pour les coordonnées."
+                  />
+                </>
               ) : null
             }
           />
@@ -401,26 +409,12 @@ export default function ElementPanel({
                 ]}
               />
             </Row>
-            <Row label="Couleur">
-              <Choice
-                value={st.iconColorMode}
-                onChange={(v) => setStyle({ iconColorMode: v })}
-                options={[
-                  { value: "brand", label: "Marque" },
-                  { value: "primary", label: "Principale" },
-                  { value: "custom", label: "Autre" },
-                ]}
-              />
-            </Row>
-            {st.iconColorMode === "custom" && (
-              <Nested>
-                <ColorRow
-                  label="Couleur personnalisée"
-                  value={st.iconColor}
-                  onChange={(v) => setStyle({ iconColor: v })}
-                />
-              </Nested>
-            )}
+            <IconColorControls
+              st={st}
+              setStyle={setStyle}
+              label="Couleur"
+              hint="Aussi celle des icônes des coordonnées."
+            />
             <SliderRow
               label="Taille"
               value={Math.min(st.iconSize, iconMax)}
