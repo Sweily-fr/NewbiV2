@@ -181,6 +181,22 @@ export function hasBlockSettings(st) {
   );
 }
 
+/** Traits libres différents (posés, longueur, épaisseur, couleur) ? */
+function rulesDiffer(a, b) {
+  return RULE_ITEMS.some((k) => {
+    const x = a?.[k];
+    const y = b?.[k];
+    if (!x || !y) return Boolean(x) !== Boolean(y);
+    return (
+      x.length !== y.length || x.thickness !== y.thickness || x.color !== y.color
+    );
+  });
+}
+
+/** Marges du séparateur vertical différentes ? */
+const spaceDiffers = (a, b) =>
+  (a?.left || 0) !== (b?.left || 0) || (a?.right || 0) !== (b?.right || 0);
+
 /**
  * La signature s'écarte-t-elle de son modèle : éléments déplacés, traits,
  * blocs ou colonnes sur mesure ? (Changer de modèle remplacerait ces
@@ -197,7 +213,9 @@ export function layoutCustomized(sig, template) {
     st.footerPair === false ||
     (st.nameLayout || "inline") !== (defaults.nameLayout || "inline") ||
     JSON.stringify(st.socialRows || []) !==
-      JSON.stringify(defaults.socialRows || [])
+      JSON.stringify(defaults.socialRows || []) ||
+    rulesDiffer(st.rules, defaults.rules) ||
+    spaceDiffers(st.dividerSpace, defaults.dividerSpace)
   );
 }
 
@@ -218,6 +236,9 @@ export function layoutReset(sig, template) {
     blocks: {},
     columns: {},
     footerPair: true,
+    // Traits libres et marges du séparateur : ceux du modèle
+    rules: { ...(defaults.rules || {}) },
+    dividerSpace: { ...(defaults.dividerSpace || {}) },
   };
 }
 

@@ -179,15 +179,17 @@ export function useSignatureV2(id) {
   );
 
   const update = useCallback(
-    (patch) => {
+    (patch, { asIs = false } = {}) => {
       const prev = sigRef.current;
       if (!prev) return;
       // Un élément déplacé ailleurs perd la largeur réglée pour son ancienne
       // place (déplacements par glisser-déposer comme par les réglages ;
-      // une partie emmenée seule ne compte pas)
+      // une partie emmenée seule ne compte pas). `asIs` : style complet
+      // appliqué tel quel (modèle enregistré, ses largeurs vont avec ses
+      // places)
       const next = merge(
         prev,
-        patch.style
+        patch.style && !asIs
           ? { ...patch, style: resetMovedBlocks(prev, patch.style) }
           : patch,
       );
