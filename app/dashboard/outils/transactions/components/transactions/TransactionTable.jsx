@@ -761,7 +761,10 @@ export default function TransactionTable({
         } else if (action === "ATTACH") {
           toast.success("Justificatif rattaché à la facture d'achat");
         } else {
-          toast.info("Aucune facture d'achat créée, le justificatif reste sur la dépense");
+          toast.info("Aucune facture d'achat créée", {
+            description:
+              "Le justificatif reste sur la dépense. Vous pourrez créer la facture plus tard depuis le justificatif.",
+          });
         }
       } catch (error) {
         console.error("❌ [CONFIRM RECEIPT INVOICE]", error);
@@ -854,7 +857,13 @@ export default function TransactionTable({
             const failed = !invoice && !attachedElsewhere && file.ocrError;
             // Facture d'achat proposée : rien n'est créé tant que
             // l'utilisateur n'a pas confirmé les valeurs lues.
-            if (!invoice && !attachedElsewhere && !failed && file.proposal) {
+            if (
+              !invoice &&
+              !attachedElsewhere &&
+              !failed &&
+              file.proposal &&
+              !file.proposal.dismissedAt
+            ) {
               pending.delete(file.id);
               processed = true;
               // La modale est déjà ouverte depuis le dépôt : on y verse les

@@ -1730,19 +1730,25 @@ export function TransactionDetailDrawer({
                             </span>
                             {rcpt.proposal && onConfirmProposal ? (
                               <div className="mt-2">
-                                <span className="inline-flex items-center max-w-full truncate text-[10px] leading-none px-1.5 py-1 rounded whitespace-nowrap bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
-                                  Facture d&apos;achat à confirmer
-                                </span>
+                                {/* Mise de côté : plus d'étiquette d'alerte,
+                                    mais la facture reste créable. */}
+                                {rcpt.proposal.dismissedAt ? null : (
+                                  <span className="inline-flex items-center max-w-full truncate text-[10px] leading-none px-1.5 py-1 rounded whitespace-nowrap bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+                                    Facture d&apos;achat à confirmer
+                                  </span>
+                                )}
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="mt-2 h-7 text-xs"
+                                  className={`h-7 text-xs ${rcpt.proposal.dismissedAt ? "" : "mt-2"}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onConfirmProposal(rcpt);
                                   }}
                                 >
-                                  Vérifier et créer
+                                  {rcpt.proposal.dismissedAt
+                                    ? "Créer la facture d'achat"
+                                    : "Vérifier et créer"}
                                 </Button>
                               </div>
                             ) : null}
