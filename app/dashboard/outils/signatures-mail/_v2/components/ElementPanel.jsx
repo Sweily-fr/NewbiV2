@@ -17,7 +17,13 @@ import {
 } from "./controls";
 import TextStyleControls from "./TextStyleControls";
 import { PartLinks, PlaceRow } from "./LevelPanels";
-import { elementSlot, shownItems, slotLabel } from "../slots";
+import {
+  RULE_COLORS,
+  elementSlot,
+  removeRule,
+  shownItems,
+  slotLabel,
+} from "../slots";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 import BlockControls from "./BlockControls";
@@ -64,6 +70,9 @@ export const FIELD_ELEMENT = {
   banner: "banner",
   cta: "cta",
   disclaimer: "disclaimer",
+  rule1: "rule1",
+  rule2: "rule2",
+  rule3: "rule3",
 };
 
 /**
@@ -83,6 +92,9 @@ const PLACE_IN_LIST = new Set([
   "cta",
   "banner",
   "disclaimer",
+  "rule1",
+  "rule2",
+  "rule3",
 ]);
 
 /**
@@ -539,6 +551,54 @@ export default function ElementPanel({
         </>
       );
       break;
+    case "rule1":
+    case "rule2":
+    case "rule3": {
+      // Trait libre : sa forme ; sa place se règle comme celle d'un élément
+      const rule = st.rules?.[element];
+      const setRule = (patch) =>
+        setStyle({
+          rules: { ...(st.rules || {}), [element]: { ...rule, ...patch } },
+        });
+      body = rule ? (
+        <Section title="Mise en forme">
+          <SliderRow
+            label="Longueur"
+            value={rule.length}
+            min={16}
+            max={640}
+            step={4}
+            hint="Vous pouvez aussi tirer le bord du cadre dans l'aperçu."
+            onChange={(v) => setRule({ length: v })}
+          />
+          <SliderRow
+            label="Épaisseur"
+            value={rule.thickness}
+            min={1}
+            max={8}
+            onChange={(v) => setRule({ thickness: v })}
+          />
+          <Row label="Couleur">
+            <Choice
+              label="Couleur du trait"
+              value={rule.color}
+              onChange={(v) => setRule({ color: v })}
+              options={RULE_COLORS}
+            />
+          </Row>
+          <button
+            type="button"
+            onClick={() => setStyle(removeRule(st, element))}
+            className="text-xs font-medium text-red-600 hover:underline cursor-pointer"
+          >
+            Retirer ce trait
+          </button>
+        </Section>
+      ) : (
+        <Hint>Ce trait a été retiré.</Hint>
+      );
+      break;
+    }
     default:
       body = null;
   }

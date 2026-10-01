@@ -285,13 +285,12 @@ export function AccentControls({ st, setStyle, lines }) {
 }
 
 /**
- * Séparateur vertical : entre la photo et le texte, ou à gauche du texte
- * sans photo. Couleur, épaisseur, longueur (toute la hauteur ou sur mesure).
- * Sans effet sur une colonne photo de couleur : masqué.
+ * Séparateur vertical : entre la photo et le texte (colonne photo avec ou
+ * sans fond), ou à gauche du texte sans photo. Couleur, épaisseur, longueur
+ * (toute la hauteur ou sur mesure).
  */
 export function DividerControls({ st, setStyle, lines, shown }) {
   const L = layoutState(st, shown);
-  if (L.hasVisual && st.visualFill !== "none") return null;
   const on = st.divider !== "none";
   const thickness =
     st.dividerThickness ||

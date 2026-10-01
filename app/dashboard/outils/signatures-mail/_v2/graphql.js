@@ -149,6 +149,7 @@ export const SIGNATURE_V2_FIELDS = gql`
       contactIconSize
       blocks
       columns
+      rules
       elements {
         ${ELEMENT_STYLES}
       }

@@ -68,6 +68,9 @@ export const ELEMENT_TITLE = {
   banner: "Bannière",
   cta: "Bouton d'action",
   disclaimer: "Mention",
+  rule1: "Trait",
+  rule2: "Trait",
+  rule3: "Trait",
 };
 
 /** Parties réglables seules, et le champ de contenu de chacune. */

@@ -28,6 +28,9 @@ export const ITEM_OF = {
   cta: "du bouton",
   banner: "de la bannière",
   disclaimer: "de la mention",
+  rule1: "du trait",
+  rule2: "du trait",
+  rule3: "du trait",
 };
 export const ITEM_THE = {
   photo: "la photo",
@@ -48,6 +51,9 @@ export const ITEM_THE = {
   cta: "le bouton",
   banner: "la bannière",
   disclaimer: "la mention",
+  rule1: "le trait",
+  rule2: "le trait",
+  rule3: "le trait",
 };
 export const ITEM_LABEL = {
   photo: "Photo",
@@ -68,6 +74,9 @@ export const ITEM_LABEL = {
   cta: "Bouton",
   banner: "Bannière",
   disclaimer: "Mention",
+  rule1: "Trait",
+  rule2: "Trait",
+  rule3: "Trait",
   contact: "Coordonnées",
 };
 
@@ -270,6 +279,9 @@ export const ELEMENT_ITEMS = {
   cta: ["cta"],
   banner: ["banner"],
   disclaimer: ["disclaimer"],
+  rule1: ["rule1"],
+  rule2: ["rule2"],
+  rule3: ["rule3"],
 };
 
 /** Bloc réglable (panneau d'élément) auquel appartient chaque élément. */
@@ -607,7 +619,49 @@ export function shownItems(sig) {
   if (sig?.cta?.enabled && sig.cta.label && sig.cta.url) shown.add("cta");
   if (sig?.banner?.enabled && images.banner?.url) shown.add("banner");
   if (sig?.disclaimer?.enabled && sig.disclaimer.text) shown.add("disclaimer");
+  for (const k of RULE_ITEMS) if (st.rules?.[k]) shown.add(k);
   return shown;
+}
+
+/**
+ * Traits libres (jusqu'à trois) : chacun se place où l'on veut, comme un
+ * élément, avec sa longueur, son épaisseur et sa couleur.
+ */
+export const RULE_ITEMS = ["rule1", "rule2", "rule3"];
+export const RULE_COLORS = [
+  { value: "separator", label: "Des traits" },
+  { value: "primary", label: "Principale" },
+  { value: "text", label: "Du texte" },
+];
+
+/**
+ * Ajoute un trait libre sous le dernier élément de `slot` (colonne
+ * principale par défaut) : patch de style et clé du trait, ou null s'il y
+ * en a déjà trois.
+ */
+export function addRule(sig, slot = "text") {
+  const st = sig?.style || {};
+  const key = RULE_ITEMS.find((k) => !st.rules?.[k]);
+  if (!key) return null;
+  const shown = shownItems(sig);
+  const last = [...(st.slots?.[slot] || [])].reverse().find((k) => shown.has(k));
+  return {
+    key,
+    patch: {
+      rules: {
+        ...(st.rules || {}),
+        [key]: { length: 120, thickness: 1, color: "separator" },
+      },
+      slots: moveItem(st.slots, key, slot, last ? { after: last } : {}),
+    },
+  };
+}
+
+/** Retire un trait libre. */
+export function removeRule(st, key) {
+  const rules = { ...(st?.rules || {}) };
+  delete rules[key];
+  return { rules };
 }
 
 // ── Photo ──────────────────────────────────────────────────────────────

@@ -108,6 +108,10 @@ const RESIZE = {
   tagline: { kind: "wrap", min: 40, max: 640 },
   contact: { kind: "wrap", min: 80, max: 640 },
   disclaimer: { kind: "wrap", min: 80, max: 640 },
+  // Traits libres : leur longueur
+  rule1: { kind: "bar", min: 16, max: 640 },
+  rule2: { kind: "bar", min: 16, max: 640 },
+  rule3: { kind: "bar", min: 16, max: 640 },
 };
 
 /** Textes dont le coin du cadre, dans l'aperçu, règle la taille. */
@@ -475,6 +479,14 @@ export default function SignatureEditor({ id }) {
       else if (element === "social") patch = { iconSize: value };
       else if (element === "logo") patch = { logoWidth: value };
       else if (element === "accent") patch = { accentLength: value };
+      else if (st.rules?.[element]) {
+        patch = {
+          rules: {
+            ...st.rules,
+            [element]: { ...st.rules[element], length: value },
+          },
+        };
+      }
       else {
         patch = { blocks: withWidth(st.blocks || {}, element, value) };
       }

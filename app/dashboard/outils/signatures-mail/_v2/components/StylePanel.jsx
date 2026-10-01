@@ -10,6 +10,8 @@ import {
 } from "@/src/components/ui/select";
 import { ChevronRight, MousePointerClick, RotateCcw } from "lucide-react";
 import {
+  RULE_ITEMS,
+  addRule,
   layoutCustomized,
   layoutReset,
   logoFit,
@@ -17,6 +19,7 @@ import {
   slotOf,
 } from "../slots";
 import {
+  AddChips,
   Choice,
   ColorRow,
   Group,
@@ -209,6 +212,15 @@ export default function StylePanel({
   const photoMax = lines?.photoMax || 160;
   const iconMax = lines?.iconMax || 40;
 
+  // Traits libres posés (à placer où l'on veut, en les glissant)
+  const freeRules = RULE_ITEMS.filter((k) => st.rules?.[k]);
+  const addFreeRule = () => {
+    const added = addRule(sig);
+    if (!added) return;
+    update({ style: added.patch });
+    // Son panneau s'ouvre, sa poignée dans l'aperçu permet de le placer
+    onSelect?.({ level: "element", key: added.key });
+  };
   const summaries = {
     texte: `${font?.label || "Arial"} · ${st.fontSize} px`,
     disposition: capitalize(
@@ -217,7 +229,12 @@ export default function StylePanel({
         .join(" · "),
     ),
     traits:
-      [accentOn && "Trait sous le nom", st.divider !== "none" && "Séparateur vertical"]
+      [
+        accentOn && "Trait sous le nom",
+        st.divider !== "none" && "Séparateur vertical",
+        freeRules.length > 0 &&
+          `${freeRules.length} trait${freeRules.length > 1 ? "s" : ""} libre${freeRules.length > 1 ? "s" : ""}`,
+      ]
         .filter(Boolean)
         .join(" · ") || "Aucun trait",
     encadre: FRAME_LABELS[st.frame],
@@ -403,6 +420,42 @@ export default function StylePanel({
           value={st.separatorColor}
           onChange={(v) => setStyle({ separatorColor: v })}
         />
+        <Row
+          label="Traits libres"
+          hint="Un trait de plus, à placer où vous voulez : glissez-le par sa poignée ⠿ dans l'aperçu (trois au plus)."
+        >
+          <div className="space-y-2">
+            {freeRules.map((key, i) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onSelect?.({ level: "element", key })}
+                className="flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-accent cursor-pointer"
+              >
+                <span>
+                  Trait {i + 1}
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {st.rules[key].length} px
+                  </span>
+                </span>
+                <ChevronRight
+                  size={14}
+                  className="shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+            <AddChips
+              items={
+                freeRules.length < RULE_ITEMS.length
+                  ? [{ key: "add", label: "Ajouter un trait" }]
+                  : []
+              }
+              onAdd={addFreeRule}
+            />
+          </div>
+        </Row>
       </Section>
 
       <Section
