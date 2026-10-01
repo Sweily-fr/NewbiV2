@@ -79,7 +79,17 @@ export function TextField({
  * Zone d'image : clic ou glisser-déposer, envoi immédiat à l'API qui
  * recadre, optimise et rattache l'image à la signature.
  */
-export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "square", fieldId }) {
+export function ImageField({
+  id,
+  kind,
+  label,
+  hint,
+  image,
+  onChanged,
+  aspect = "square",
+  fieldId,
+  compact = false,
+}) {
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -120,6 +130,69 @@ export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "
       setBusy(false);
     }
   };
+
+  const input = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={(e) => send(e.target.files?.[0])}
+    />
+  );
+  // Vignette seule (à côté du nom, de l'entreprise) : un clic ou un dépôt
+  // pour ajouter ou changer l'image, « Retirer » dessous
+  if (compact) {
+    return (
+      <div className="flex shrink-0 flex-col items-center gap-1">
+        <button
+          id={fieldId}
+          type="button"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            send(e.dataTransfer.files?.[0]);
+          }}
+          title={`${image?.url ? "Changer" : "Ajouter"} : ${hint || label}`}
+          aria-label={`${image?.url ? "Changer" : "Ajouter"} ${label.toLowerCase()}`}
+          className={`flex ${aspect === "logo" ? "h-14 w-24" : "h-[72px] w-[72px]"} items-center justify-center overflow-hidden rounded-[9px] border border-dashed text-muted-foreground transition-[border] duration-[80ms] cursor-pointer ${
+            dragging
+              ? "border-[#5b4fff]"
+              : "border-[#D1D3D8] hover:border-[#9FA1A7] dark:border-[#44444A] dark:hover:border-[#5c5c63]"
+          }`}
+        >
+          {busy ? (
+            <Loader2 size={18} className="animate-spin" />
+          ) : image?.url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image.url} alt="" className="h-full w-full object-contain" />
+          ) : (
+            <span className="flex flex-col items-center gap-1 text-[11px]">
+              <ImagePlus size={16} />
+              {label}
+            </span>
+          )}
+        </button>
+        {image?.url && !busy && (
+          <button
+            type="button"
+            onClick={clear}
+            className="text-[11px] text-muted-foreground hover:text-red-600 cursor-pointer"
+          >
+            Retirer
+          </button>
+        )}
+        {input}
+      </div>
+    );
+  }
 
   // Image large : la zone prend la place restante, les boutons restent visibles
   const box =
@@ -187,13 +260,7 @@ export function ImageField({ id, kind, label, hint, image, onChanged, aspect = "
             </Button>
           )}
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => send(e.target.files?.[0])}
-        />
+        {input}
       </div>
     </Field>
   );
@@ -354,7 +421,8 @@ function PersonField({ id, sig, replace, flush }) {
     }
   };
 
-  if (members.length === 0) return null;
+  // Seul dans l'espace : rien à choisir, rien à afficher
+  if (members.length <= 1) return null;
 
   return (
     <Field
@@ -385,64 +453,181 @@ function PersonField({ id, sig, replace, flush }) {
 }
 
 /**
- * Panneau « Contenu » : personne, identité, coordonnées, réseaux, images.
+ * Champs facultatifs vides, proposés en petits boutons « + Service »… : le
+ * panneau s'ouvre sur l'essentiel, le reste vient à la demande.
+ */
+function AddFields({ fields, onAdd }) {
+  if (fields.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {fields.map((f) => (
+        <button
+          key={f.key}
+          type="button"
+          onClick={() => onAdd(f.key)}
+          className="inline-flex items-center gap-1 rounded-md border border-dashed border-[#D1D3D8] px-2 py-1 text-xs text-muted-foreground hover:border-[#9FA1A7] hover:text-foreground cursor-pointer dark:border-[#44444A]"
+        >
+          <Plus size={12} />
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Panneau « Contenu » : l'essentiel d'abord (prénom, nom, poste,
+ * entreprise, e-mail), photo à côté du nom, logo à côté de l'entreprise ;
+ * les champs facultatifs vides attendent un clic sur « + … ».
  */
 export default function ContentPanel({ id, sig, update, replace, flush, catalog, template }) {
   const { identity, contact, social, images } = sig;
+  // Champ facultatif affiché : rempli, ajouté à la demande, ou déjà vu
+  // rempli (il ne disparaît pas quand on l'efface pour le retaper)
+  const [opened, setOpened] = useState(() => new Set());
+  const seen = useRef(new Set());
+  const shows = (key, value) => {
+    if (value) seen.current.add(key);
+    return Boolean(value) || opened.has(key) || seen.current.has(key);
+  };
+  const add = (key) => {
+    setOpened((current) => new Set(current).add(key));
+    setTimeout(() => document.getElementById(`sig-field-${key}`)?.focus(), 30);
+  };
+  const missing = (defs) => defs.filter((d) => !shows(d.key, d.value));
+  const setIdentity = (key) => (v) => update({ identity: { [key]: v } });
+  const setContact = (key) => (v) => update({ contact: { [key]: v } });
+  const photoOk = template?.supports?.photo !== false;
+  const logoOk = template?.supports?.logo !== false;
+  const showPhone = shows("phone", contact.phone);
+  const showMobile = shows("mobile", contact.mobile);
 
   return (
     <div className="space-y-8">
-      <Section title="Personne">
-        <PersonField id={id} sig={sig} replace={replace} flush={flush} />
-      </Section>
+      <PersonField id={id} sig={sig} replace={replace} flush={flush} />
 
-      <Section title="Identité">
-        <div className="grid grid-cols-2 gap-4">
-          <TextField
-            id="sig-field-firstName"
-            label="Prénom"
-            value={identity.firstName}
-            onChange={(v) => update({ identity: { firstName: v } })}
-            maxLength={80}
-          />
-          <TextField
-            label="Nom"
-            value={identity.lastName}
-            onChange={(v) => update({ identity: { lastName: v } })}
-            maxLength={80}
-          />
+      <Section title="Vous">
+        <div className="flex items-start gap-4">
+          {photoOk && (
+            <ImageField
+              compact
+              id={id}
+              kind="PHOTO"
+              fieldId="sig-field-photo"
+              label="Photo"
+              hint="recadrée automatiquement en carré"
+              image={images.photo}
+              onChanged={replace}
+            />
+          )}
+          <div className="min-w-0 flex-1 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <TextField
+                id="sig-field-firstName"
+                label="Prénom"
+                value={identity.firstName}
+                onChange={setIdentity("firstName")}
+                maxLength={80}
+              />
+              <TextField
+                id="sig-field-lastName"
+                label="Nom"
+                value={identity.lastName}
+                onChange={setIdentity("lastName")}
+                maxLength={80}
+              />
+            </div>
+            <TextField
+              id="sig-field-jobTitle"
+              label="Poste"
+              value={identity.jobTitle}
+              placeholder="Directrice artistique"
+              onChange={setIdentity("jobTitle")}
+              maxLength={120}
+            />
+          </div>
         </div>
-        <TextField
-          id="sig-field-jobTitle"
-          label="Poste"
-          value={identity.jobTitle}
-          placeholder="Directrice artistique"
-          onChange={(v) => update({ identity: { jobTitle: v } })}
-          maxLength={120}
-        />
-        <div className="grid grid-cols-2 gap-4">
+        {shows("department", identity.department) && (
           <TextField
+            id="sig-field-department"
             label="Service"
             value={identity.department}
             placeholder="Studio"
-            onChange={(v) => update({ identity: { department: v } })}
+            onChange={setIdentity("department")}
             maxLength={120}
           />
+        )}
+        {shows("tagline", identity.tagline) && (
           <TextField
-            id="sig-field-company"
-            label="Entreprise"
-            value={identity.company}
-            onChange={(v) => update({ identity: { company: v } })}
-            maxLength={120}
+            id="sig-field-tagline"
+            label="Accroche"
+            value={identity.tagline}
+            placeholder="Une phrase, en italique sous le nom"
+            onChange={setIdentity("tagline")}
+            maxLength={200}
           />
+        )}
+        <AddFields
+          fields={missing([
+            { key: "department", label: "Service", value: identity.department },
+            { key: "tagline", label: "Accroche", value: identity.tagline },
+          ])}
+          onAdd={add}
+        />
+      </Section>
+
+      <Section title="Entreprise">
+        <div className="flex items-start gap-4">
+          {logoOk && (
+            <ImageField
+              compact
+              id={id}
+              kind="LOGO"
+              fieldId="sig-field-logo"
+              label="Logo"
+              hint="un PNG à fond transparent s'adapte au mode sombre"
+              image={images.logo}
+              onChanged={replace}
+              aspect="logo"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <TextField
+              id="sig-field-company"
+              label="Nom de l'entreprise"
+              value={identity.company}
+              onChange={setIdentity("company")}
+              maxLength={120}
+            />
+          </div>
         </div>
-        <TextField
-          id="sig-field-tagline"
-          label="Accroche"
-          value={identity.tagline}
-          placeholder="Une phrase, en italique sous le nom"
-          onChange={(v) => update({ identity: { tagline: v } })}
-          maxLength={200}
+        {shows("website", contact.website) && (
+          <TextField
+            id="sig-field-website"
+            label="Site web"
+            value={contact.website}
+            placeholder="votre-site.fr"
+            onChange={setContact("website")}
+            maxLength={300}
+            warning={linkProblem(contact.website)}
+          />
+        )}
+        {shows("address", contact.address) && (
+          <TextField
+            id="sig-field-address"
+            label="Adresse"
+            value={contact.address}
+            placeholder="12 rue des Lilas, 75011 Paris"
+            onChange={setContact("address")}
+            maxLength={300}
+          />
+        )}
+        <AddFields
+          fields={missing([
+            { key: "website", label: "Site web", value: contact.website },
+            { key: "address", label: "Adresse", value: contact.address },
+          ])}
+          onAdd={add}
         />
       </Section>
 
@@ -452,78 +637,48 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
           label="E-mail"
           type="email"
           value={contact.email}
-          onChange={(v) => update({ contact: { email: v } })}
+          onChange={setContact("email")}
           maxLength={200}
           warning={emailProblem(contact.email)}
         />
-        <div className="grid grid-cols-2 gap-4">
-          <TextField
-            id="sig-field-phone"
-            label="Téléphone"
-            type="tel"
-            value={contact.phone}
-            placeholder="01 23 45 67 89"
-            onChange={(v) => update({ contact: { phone: v } })}
-            maxLength={40}
-          />
-          <TextField
-            id="sig-field-mobile"
-            label="Mobile"
-            type="tel"
-            value={contact.mobile}
-            placeholder="06 12 34 56 78"
-            onChange={(v) => update({ contact: { mobile: v } })}
-            maxLength={40}
-          />
-        </div>
-        <TextField
-          id="sig-field-website"
-          label="Site web"
-          value={contact.website}
-          placeholder="votre-site.fr"
-          onChange={(v) => update({ contact: { website: v } })}
-          maxLength={300}
-          warning={linkProblem(contact.website)}
-        />
-        <TextField
-          id="sig-field-address"
-          label="Adresse"
-          value={contact.address}
-          placeholder="12 rue des Lilas, 75011 Paris"
-          onChange={(v) => update({ contact: { address: v } })}
-          maxLength={300}
+        {(showPhone || showMobile) && (
+          <div className="grid grid-cols-2 gap-4">
+            {showPhone && (
+              <TextField
+                id="sig-field-phone"
+                label="Téléphone"
+                type="tel"
+                value={contact.phone}
+                placeholder="01 23 45 67 89"
+                onChange={setContact("phone")}
+                maxLength={40}
+              />
+            )}
+            {showMobile && (
+              <TextField
+                id="sig-field-mobile"
+                label="Mobile"
+                type="tel"
+                value={contact.mobile}
+                placeholder="06 12 34 56 78"
+                onChange={setContact("mobile")}
+                maxLength={40}
+              />
+            )}
+          </div>
+        )}
+        <AddFields
+          fields={missing([
+            { key: "phone", label: "Téléphone", value: contact.phone },
+            { key: "mobile", label: "Mobile", value: contact.mobile },
+          ])}
+          onAdd={add}
         />
       </Section>
 
       <Section title="Réseaux sociaux">
         <div id="sig-field-social" tabIndex={-1} className="outline-none" />
         <SocialLinks social={social} networks={catalog?.networks || []} update={update} />
-      </Section>
-
-      <Section title="Images">
-        {template?.supports?.photo !== false && (
-          <ImageField
-            id={id}
-            kind="PHOTO"
-            fieldId="sig-field-photo"
-            label="Photo"
-            hint="Recadrée automatiquement en carré, nette sur écran retina."
-            image={images.photo}
-            onChanged={replace}
-          />
-        )}
-        {template?.supports?.logo !== false && (
-          <ImageField
-            id={id}
-            kind="LOGO"
-            fieldId="sig-field-logo"
-            label="Logo"
-            hint="Privilégiez un PNG à fond transparent : il s'adapte à tous les clients mail, y compris en mode sombre."
-            image={images.logo}
-            onChanged={replace}
-            aspect="logo"
-          />
-        )}
       </Section>
     </div>
   );

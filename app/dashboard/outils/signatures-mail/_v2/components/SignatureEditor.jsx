@@ -766,6 +766,7 @@ export default function SignatureEditor({ id }) {
                   template={template}
                   lines={render?.lines}
                   onGoTo={goToField}
+                  onSelect={select}
                 />
               )}
             </div>
@@ -829,6 +830,7 @@ export default function SignatureEditor({ id }) {
                     template={template}
                     lines={render?.lines}
                     onGoTo={goToField}
+                    onSelect={select}
                   />
                 </TabsNewContent>
                 <TabsNewContent value="extras">

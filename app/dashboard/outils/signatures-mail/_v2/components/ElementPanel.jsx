@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { Textarea } from "@/src/components/ui/textarea";
 import { PhotoBorderControls } from "./StylePanel";
@@ -16,7 +17,7 @@ import {
 } from "./controls";
 import TextStyleControls from "./TextStyleControls";
 import { PartLinks, PlaceRow } from "./LevelPanels";
-import { shownItems } from "../slots";
+import { elementSlot, shownItems, slotLabel } from "../slots";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 import BlockControls from "./BlockControls";
@@ -65,6 +66,12 @@ export const FIELD_ELEMENT = {
   disclaimer: "disclaimer",
 };
 
+/**
+ * « Disposition » d'un élément : repliée par défaut (le panneau s'ouvre sur
+ * son contenu et sa mise en forme), choix gardé pendant la session.
+ */
+let layoutOpenPref = false;
+
 /** Éléments dont la place se choisit dans une liste (les autres ont la leur). */
 const PLACE_IN_LIST = new Set([
   "name",
@@ -97,6 +104,8 @@ export default function ElementPanel({
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
   const setStyle = (patch) => update({ style: patch });
   const textProps = { sig, update, resolved, catalog };
+  const [layoutOpen, setLayoutOpen] = useState(layoutOpenPref);
+  const place = slotLabel(elementSlot(st, shownItems(sig), element), st);
   // Plafonds du modèle : les curseurs s'arrêtent à ce qui s'affiche
   const photoMax = lines?.photoMax || 160;
   const iconMax = lines?.iconMax || 40;
@@ -538,7 +547,20 @@ export default function ElementPanel({
     <div className="space-y-8">
       {body}
       {body && (
-        <Section title="Disposition">
+        <Section
+          title="Disposition"
+          collapsible
+          open={layoutOpen}
+          onToggle={() => {
+            layoutOpenPref = !layoutOpen;
+            setLayoutOpen(!layoutOpen);
+          }}
+          summary={
+            place
+              ? `${place} · largeur, espaces, alignement`
+              : "Place, largeur, espaces, alignement"
+          }
+        >
           {PLACE_IN_LIST.has(element) && (
             <PlaceRow element={element} sig={sig} setStyle={setStyle} />
           )}

@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { MousePointerClick, RotateCcw } from "lucide-react";
+import { ChevronRight, MousePointerClick, RotateCcw } from "lucide-react";
 import {
   layoutCustomized,
   layoutReset,
@@ -19,7 +19,6 @@ import {
 import {
   Choice,
   ColorRow,
-  EmptyHint,
   Group,
   LengthRow,
   Nested,
@@ -37,7 +36,6 @@ import {
   IdentityControls,
   IdentityZoneControl,
   LogoPositionControl,
-  LogoWidthRow,
   OutsideControls,
   PhotoLayoutControls,
   TextAlignControl,
@@ -193,6 +191,7 @@ export default function StylePanel({
   template,
   lines,
   onGoTo,
+  onSelect,
 }) {
   const st = sig.style;
   const setStyle = (patch) => update({ style: patch });
@@ -231,6 +230,10 @@ export default function StylePanel({
     icones: hasNetworks
       ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${Math.min(st.iconSize, iconMax)} px`
       : "Aucun réseau",
+    elements:
+      [hasPhoto && "Photo", hasLogo && "Logo", hasNetworks && "Réseaux"]
+        .filter(Boolean)
+        .join(" · ") || "Rien d'ajouté pour l'instant",
   };
 
   return (
@@ -465,119 +468,66 @@ export default function StylePanel({
         )}
       </Section>
 
-      <Section title="Photo" {...section("photo")} summary={summaries.photo}>
-        {hasPhoto ? (
-          <>
-            <Row label="Forme">
-              <Choice
-                value={st.photoShape}
-                onChange={(v) => setStyle({ photoShape: v })}
-                options={[
-                  { value: "circle", label: "Ronde" },
-                  { value: "rounded", label: "Arrondie" },
-                  { value: "square", label: "Carrée" },
-                ]}
-              />
-            </Row>
-            <SliderRow
-              label="Taille"
-              value={Math.min(st.photoSize, photoMax)}
-              min={40}
-              max={photoMax}
-              step={4}
-              hint={
-                photoMax < 160
-                  ? `Ce modèle limite la photo à ${photoMax} px.`
-                  : null
-              }
-              onChange={(v) => setStyle({ photoSize: v })}
-            />
-            <PhotoBorderControls st={st} setStyle={setStyle} />
-          </>
-        ) : (
-          <EmptyHint
-            text="Aucune photo pour l'instant."
-            action="Ajouter une photo"
-            onAction={onGoTo ? () => onGoTo("photo") : undefined}
-          />
-        )}
-      </Section>
-
-      <Section title="Logo" {...section("logo")} summary={summaries.logo}>
-        {hasLogo ? (
-          <LogoWidthRow sig={sig} setStyle={setStyle} />
-        ) : (
-          <EmptyHint
-            text="Aucun logo pour l'instant."
-            action="Ajouter un logo"
-            onAction={onGoTo ? () => onGoTo("logo") : undefined}
-          />
-        )}
-      </Section>
-
+      {/* Photo, logo et réseaux se règlent dans leur propre panneau (comme
+          en les cliquant dans l'aperçu) : un seul endroit par réglage */}
       <Section
-        title="Réseaux sociaux"
-        {...section("icones")}
-        summary={summaries.icones}
+        title="Photo, logo et réseaux"
+        {...section("elements")}
+        summary={summaries.elements}
       >
-        {hasNetworks ? (
-          <>
-            <Row label="Style des réseaux">
-              <Choice
-                value={st.iconStyle}
-                onChange={(v) => setStyle({ iconStyle: v })}
-                options={[
-                  { value: "circle", label: "Rond" },
-                  { value: "rounded", label: "Arrondi" },
-                  { value: "square", label: "Carré" },
-                  { value: "plain", label: "Simple" },
-                ]}
-              />
-            </Row>
-            <Row
-              label="Couleur des icônes"
-              hint="Les couleurs de marque et les tons moyens gardent le même rendu en mode clair et sombre."
-            >
-              <Choice
-                value={st.iconColorMode}
-                onChange={(v) => setStyle({ iconColorMode: v })}
-                options={[
-                  { value: "brand", label: "Marque" },
-                  { value: "primary", label: "Principale" },
-                  { value: "custom", label: "Autre" },
-                ]}
-              />
-            </Row>
-            {st.iconColorMode === "custom" && (
-              <Nested>
-                <ColorRow
-                  label="Couleur personnalisée"
-                  value={st.iconColor}
-                  onChange={(v) => setStyle({ iconColor: v })}
+        <p className="text-sm text-muted-foreground">
+          Forme, taille et couleurs se règlent dans le panneau de chacun, ou
+          en le cliquant dans l&apos;aperçu.
+        </p>
+        <ul className="divide-y rounded-lg border">
+          {[
+            {
+              key: "photo",
+              label: "Photo",
+              has: hasPhoto,
+              detail: summaries.photo,
+              add: "Ajouter une photo",
+            },
+            {
+              key: "logo",
+              label: "Logo",
+              has: hasLogo,
+              detail: summaries.logo,
+              add: "Ajouter un logo",
+            },
+            {
+              key: "social",
+              label: "Réseaux sociaux",
+              has: hasNetworks,
+              detail: summaries.icones,
+              add: "Ajouter un réseau",
+            },
+          ].map((row) => (
+            <li key={row.key}>
+              <button
+                type="button"
+                onClick={() =>
+                  row.has
+                    ? onSelect?.({ level: "element", key: row.key })
+                    : onGoTo?.(row.key)
+                }
+                className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent cursor-pointer"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">{row.label}</span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {row.has ? row.detail : row.add}
+                  </span>
+                </span>
+                <ChevronRight
+                  size={14}
+                  className="shrink-0 text-muted-foreground"
+                  aria-hidden="true"
                 />
-              </Nested>
-            )}
-            <SliderRow
-              label="Taille des réseaux"
-              value={Math.min(st.iconSize, iconMax)}
-              min={16}
-              max={iconMax}
-              step={2}
-              hint={
-                iconMax < 40
-                  ? `Ce modèle limite les icônes à ${iconMax} px.`
-                  : null
-              }
-              onChange={(v) => setStyle({ iconSize: v })}
-            />
-          </>
-        ) : (
-          <EmptyHint
-            text="Aucun réseau pour l'instant."
-            action="Ajouter un réseau"
-            onAction={onGoTo ? () => onGoTo("social") : undefined}
-          />
-        )}
+              </button>
+            </li>
+          ))}
+        </ul>
       </Section>
     </div>
   );
