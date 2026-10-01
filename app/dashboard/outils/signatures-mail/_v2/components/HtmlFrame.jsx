@@ -361,11 +361,14 @@ export default function HtmlFrame({
     const onMessage = (event) => {
       if (event.source !== frameRef.current?.contentWindow) return;
       const data = event.data;
-      // Clic : champ et partie cliqués ; ⌘ + clic (`up`) : niveau au-dessus
+      // Clic : champ et partie cliqués (un trait n'a pas de champ, seulement
+      // sa partie) ; ⌘ + clic (`up`) : niveau au-dessus
       if (
         data &&
         data.type === "sig-field" &&
-        (typeof data.field === "string" || data.up)
+        (typeof data.field === "string" ||
+          typeof data.item === "string" ||
+          data.up)
       ) {
         onFieldClick(data.field || null, {
           edit: Boolean(data.edit),
@@ -468,7 +471,15 @@ export default function HtmlFrame({
     loaded.current = false;
     return buildDoc(content);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dark, padding, interactive, readOnly, interactive ? null : displayed]);
+  }, [
+    dark,
+    padding,
+    interactive,
+    readOnly,
+    interactive ? null : displayed,
+    // Script modifié (développement) : l'aperçu se recharge avec lui
+    EDITOR_SCRIPT,
+  ]);
 
   useEffect(() => {
     if (!interactive || !loaded.current) return;
