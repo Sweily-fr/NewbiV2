@@ -1,31 +1,58 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 
-const norm = (v) => String(v || "").trim().toLowerCase();
+const norm = (v) =>
+  String(v || "")
+    .trim()
+    .toLowerCase();
 
 /**
- * Sélecteur de couleur pour l'éditeur de signature.
+ * Sélecteur de couleur de l'éditeur de signature, à l'allure de celui des
+ * paramètres de facture : pastille + code, en pleine largeur.
  *
  * Le ColorPicker partagé émet un onChange au montage (conversion HSV puis
- * retour en hex, avec une dérive d'un ou deux points de couleur). Sans
- * garde, ouvrir l'onglet Style enregistrait une signature « modifiée » avec
- * des couleurs légèrement différentes. On n'accepte un changement qu'après
- * une interaction réelle, et seulement s'il diffère de la valeur courante.
+ * retour en hex, avec une dérive d'un ou deux points de couleur) et affiche
+ * cette couleur dérivée. Sans garde, ouvrir l'onglet Style enregistrait une
+ * signature « modifiée ». On n'accepte donc un changement qu'après une
+ * interaction réelle ; le champ visible affiche la vraie valeur, et le
+ * déclencheur du ColorPicker, transparent, le recouvre pour ouvrir le
+ * sélecteur.
  */
-export default function ColorField({ value, onChange, align = "end", side = "left" }) {
+export default function ColorField({
+  value,
+  onChange,
+  label,
+  align = "start",
+  side = "bottom",
+}) {
   const interacted = useRef(false);
+  const wrapper = useRef(null);
+  const hex = norm(value);
+
+  // Le déclencheur du ColorPicker porterait la couleur dérivée comme nom :
+  // les lecteurs d'écran annoncent le libellé et la vraie valeur
+  useEffect(() => {
+    const trigger = wrapper.current?.querySelector("button");
+    if (trigger) {
+      trigger.setAttribute(
+        "aria-label",
+        `${label ? `${label} : ` : "Couleur "}${hex || "aucune"}`,
+      );
+    }
+  });
 
   const handleChange = (next) => {
     if (!interacted.current) return;
-    if (norm(next) === norm(value)) return;
+    if (norm(next) === hex) return;
     onChange(norm(next));
   };
 
   return (
     <div
-      className="flex items-center gap-2"
+      ref={wrapper}
+      className="group relative w-full"
       onPointerDownCapture={() => {
         interacted.current = true;
       }}
@@ -33,8 +60,25 @@ export default function ColorField({ value, onChange, align = "end", side = "lef
         interacted.current = true;
       }}
     >
-      <span className="font-mono text-xs text-muted-foreground">{norm(value)}</span>
-      <ColorPicker color={value} onChange={handleChange} align={align} side={side} />
+      <div
+        aria-hidden
+        className="pointer-events-none flex h-8 w-full items-center gap-2 rounded-[9px] border border-[#e6e7ea] px-2.5 transition-[border,box-shadow] duration-[80ms] group-hover:border-[#D1D3D8] group-has-[:focus-visible]:ring-[3px] group-has-[:focus-visible]:ring-ring/50 dark:border-[#2E2E32] dark:group-hover:border-[#44444A]"
+      >
+        <span
+          className="h-4 w-4 shrink-0 rounded border border-black/10 dark:border-white/15"
+          style={{ backgroundColor: hex || "transparent" }}
+        />
+        <span className="font-mono text-xs uppercase text-[#242529] dark:text-white">
+          {hex.replace("#", "")}
+        </span>
+      </div>
+      <ColorPicker
+        color={value}
+        onChange={handleChange}
+        align={align}
+        side={side}
+        className="absolute inset-0 h-full w-full opacity-0"
+      />
     </div>
   );
 }

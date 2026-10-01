@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { cleanSlots } from "./slots";
 
 /**
  * Requêtes et mutations des signatures de mail v2.
@@ -6,6 +7,99 @@ import { gql } from "@apollo/client";
  * `renderEmailSignatureV2` renvoient toujours le HTML du générateur unique
  * de l'API, identique pour l'aperçu, la copie et le téléchargement.
  */
+
+/** Éléments de texte réglables un par un (clic dans l'aperçu). */
+export const TEXT_ELEMENTS = [
+  "name",
+  "firstName",
+  "lastName",
+  "jobTitle",
+  "company",
+  "tagline",
+  "contact",
+  // Chaque ligne de coordonnées, par-dessus le style des coordonnées
+  "phone",
+  "mobile",
+  "email",
+  "website",
+  "address",
+  "cta",
+  "disclaimer",
+];
+
+const TEXT_STYLE = "fontFamily fontSize color bold italic uppercase";
+const ELEMENT_STYLES = TEXT_ELEMENTS.map((k) => `${k} { ${TEXT_STYLE} }`).join("\n");
+
+/** Champs du style, communs aux signatures et aux modèles enregistrés. */
+const STYLE_FIELDS = `
+    fontFamily
+    fontSize
+    primaryColor
+    textColor
+    mutedColor
+    photoShape
+    photoSize
+    logoWidth
+    iconStyle
+    iconColorMode
+    iconColor
+    iconSize
+    showContactIcons
+    separatorColor
+    spacing
+    align
+    frame
+    frameColor
+    radius
+    photoBorder
+    photoBorderColor
+    identityZone
+    photoPosition
+    photoValign
+    photoColumn
+    divider
+    accent
+    identityStyle
+    titleStyle
+    contactStyle
+    socialPosition
+    logoPosition
+    footerStrip
+    footerPair
+    outside
+    textOrder
+    slots {
+      header
+      visual
+      text
+      side
+      footer
+      outside
+    }
+    visualSide
+    visualFill
+    headerPhoto
+    headerFill
+    nameLayout
+    socialRows
+    accentLength
+    accentThickness
+    dividerThickness
+    dividerLength
+    frameThickness
+    frameWidth
+    frameBarLength
+    contactIconSize
+    contactIconMode
+    contactIconColor
+    blocks
+    columns
+    rules
+    dividerSpace
+    elements {
+      ${ELEMENT_STYLES}
+    }
+`;
 
 export const SIGNATURE_V2_FIELDS = gql`
   fragment SignatureV2Fields on EmailSignatureV2 {
@@ -66,23 +160,9 @@ export const SIGNATURE_V2_FIELDS = gql`
       text
     }
     style {
-      fontFamily
-      fontSize
-      primaryColor
-      textColor
-      mutedColor
-      photoShape
-      photoSize
-      logoWidth
-      iconStyle
-      iconColorMode
-      iconColor
-      iconSize
-      showContactIcons
-      separatorColor
-      spacing
-      align
+      ${STYLE_FIELDS}
     }
+    memberUserId
     updatedAt
   }
 `;
@@ -94,6 +174,17 @@ export const RENDER_FIELDS = gql`
     text
     chars
     warnings
+    lines {
+      accentLength
+      accentThickness
+      dividerThickness
+      frameThickness
+      photoMax
+      iconMax
+    }
+    elements {
+      ${ELEMENT_STYLES}
+    }
   }
 `;
 
@@ -129,11 +220,14 @@ export const SIGNATURE_CATALOG_V2 = gql`
         id
         name
         description
+        inGallery
         supports {
           photo
           logo
           align
+          frame
         }
+        defaults
         preset {
           fontFamily
           fontSize
@@ -172,16 +266,80 @@ export const RENDER_SIGNATURE_V2 = gql`
 `;
 
 export const RENDER_TEMPLATE_V2 = gql`
-  query RenderTemplateV2($templateId: String!, $style: SignatureStyleV2Input) {
-    renderSignatureTemplateV2(templateId: $templateId, style: $style) {
+  query RenderTemplateV2(
+    $templateId: String!
+    $style: SignatureStyleV2Input
+    $id: ID
+  ) {
+    renderSignatureTemplateV2(templateId: $templateId, style: $style, id: $id) {
       html
     }
   }
 `;
 
+/**
+ * Vignette d'un modèle enregistré : la signature en cours (images comprises
+ * grâce à `id`) avec le style du modèle.
+ */
+export const RENDER_SAVED_TEMPLATE_V2 = gql`
+  query RenderSavedTemplateV2($id: ID, $input: EmailSignatureV2Input!) {
+    renderEmailSignatureV2(id: $id, input: $input) {
+      html
+    }
+  }
+`;
+
+/** Modèles enregistrés de l'espace (« Vos modèles »). */
+export const SIGNATURE_TEMPLATES_V2 = gql`
+  query SignatureTemplatesV2 {
+    emailSignatureTemplatesV2 {
+      id
+      name
+      templateId
+      mine
+      style {
+        ${STYLE_FIELDS}
+      }
+    }
+  }
+`;
+
+export const SAVE_SIGNATURE_TEMPLATE_V2 = gql`
+  mutation SaveSignatureTemplateV2($input: SignatureSavedTemplateV2Input!) {
+    saveEmailSignatureTemplateV2(input: $input) {
+      id
+      name
+    }
+  }
+`;
+
+export const DELETE_SIGNATURE_TEMPLATE_V2 = gql`
+  mutation DeleteSignatureTemplateV2($id: ID!) {
+    deleteEmailSignatureTemplateV2(id: $id)
+  }
+`;
+
+export const SEND_SIGNATURE_V2_TEST = gql`
+  mutation SendSignatureV2Test($id: ID!) {
+    sendEmailSignatureV2Test(id: $id)
+  }
+`;
+
+export const SIGNATURE_MEMBERS_V2 = gql`
+  query SignatureMembersV2 {
+    signatureMembersV2 {
+      userId
+      name
+      email
+      image
+      isMe
+    }
+  }
+`;
+
 export const CREATE_SIGNATURE_V2 = gql`
-  mutation CreateSignatureV2($input: EmailSignatureV2Input!) {
-    createEmailSignatureV2(input: $input) {
+  mutation CreateSignatureV2($input: EmailSignatureV2Input!, $memberUserId: ID) {
+    createEmailSignatureV2(input: $input, memberUserId: $memberUserId) {
       ...SignatureV2Fields
     }
   }
@@ -191,6 +349,15 @@ export const CREATE_SIGNATURE_V2 = gql`
 export const UPDATE_SIGNATURE_V2 = gql`
   mutation UpdateSignatureV2($id: ID!, $input: EmailSignatureV2Input!) {
     updateEmailSignatureV2(id: $id, input: $input) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
+export const APPLY_MEMBER_SIGNATURE_V2 = gql`
+  mutation ApplyMemberSignatureV2($id: ID!, $memberUserId: ID!) {
+    applyMemberToEmailSignatureV2(id: $id, memberUserId: $memberUserId) {
       ...SignatureV2Fields
     }
   }
@@ -245,6 +412,26 @@ const strip = (obj) =>
     Object.entries(obj || {}).filter(([k, v]) => !OMIT.has(k) && v !== undefined),
   );
 
+/** Réglages par élément sans les champs GraphQL techniques ni les vides. */
+export function cleanElements(elements) {
+  const out = {};
+  for (const key of TEXT_ELEMENTS) {
+    const e = strip(elements?.[key]);
+    const kept = Object.fromEntries(Object.entries(e).filter(([, v]) => v !== null));
+    if (Object.keys(kept).length > 0) out[key] = kept;
+  }
+  return out;
+}
+
+/** Style (forme du fragment) en entrée de mutation. */
+export function toStyleInput(style) {
+  return {
+    ...strip(style),
+    elements: cleanElements(style?.elements),
+    ...(style?.slots ? { slots: cleanSlots(style.slots) } : {}),
+  };
+}
+
 /** Convertit une signature (forme du fragment) en entrée de mutation. */
 export function toInput(sig) {
   if (!sig) return {};
@@ -257,6 +444,6 @@ export function toInput(sig) {
     cta: strip(sig.cta),
     banner: strip(sig.banner),
     disclaimer: strip(sig.disclaimer),
-    style: strip(sig.style),
+    style: toStyleInput(sig.style),
   };
 }

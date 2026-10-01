@@ -25,14 +25,29 @@ export function SignatureListV2Skeleton() {
 export function SignatureEditorV2Skeleton() {
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden">
-      <div className="w-[380px] border-r p-4 space-y-4">
-        <Skeleton className="h-9 w-full" />
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-9 w-full" />
-          </div>
-        ))}
+      <div className="flex w-[420px] shrink-0 flex-col border-r border-[#EEEFF1] dark:border-[#232323]">
+        <div className="flex items-center gap-3 px-6 pb-4 pt-6">
+          <Skeleton className="h-6 w-6 rounded-md" />
+          <Skeleton className="h-7 w-48" />
+        </div>
+        <div className="flex gap-2 border-b border-[#EEEFF1] px-6 pb-2 dark:border-[#232323]">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 w-20" />
+          ))}
+        </div>
+        <div className="space-y-8 px-6 py-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="space-y-4">
+              <Skeleton className="h-6 w-32" />
+              {Array.from({ length: 3 }).map((_, j) => (
+                <div key={j} className="space-y-2">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       <div className="flex-1 p-8">
         <div className="flex items-center justify-between mb-6">
