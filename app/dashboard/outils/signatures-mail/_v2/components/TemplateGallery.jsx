@@ -158,7 +158,10 @@ function SavedTemplateCard({ template, content, sigId, onSelect, onDelete }) {
   );
 }
 
-/** Couleurs de l'utilisateur reprises dans les vignettes des modèles. */
+/**
+ * Couleurs de l'utilisateur pour les vignettes : la palette d'un modèle
+ * l'emporte (Newbi), sinon ce sont les siennes, comme à l'application.
+ */
 const THUMB_COLORS = ["primaryColor", "textColor", "mutedColor"];
 
 /**
@@ -199,9 +202,9 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
       duration: 6000,
     });
 
-  // Le modèle apporte sa disposition, sa typographie et ses finitions
-  // (traits, icônes), adaptées à la présence d'une photo ; les couleurs
-  // principales de l'utilisateur ne sont jamais touchées.
+  // Le modèle apporte sa disposition, sa typographie, ses finitions
+  // (traits, icônes) et sa palette s'il en a une (Newbi : neutre), adaptées
+  // à la présence d'une photo.
   const apply = (t) => {
     const preset = Object.fromEntries(
       Object.entries(templateLayout(t.defaults, sig) || t.preset || {}).filter(
@@ -313,7 +316,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
     <div className="space-y-8">
       <Section
         title={templates.length > 1 ? "Modèles" : "Modèle"}
-        description="Il apporte sa disposition, sa typographie et ses finitions (traits, icônes). Vos textes, vos images et vos couleurs principales sont conservés."
+        description="Il apporte sa disposition, sa typographie et ses couleurs. Vos textes et vos images sont conservés."
       >
         <div className="grid grid-cols-1 gap-4">
           {templates.map((t) => (
@@ -370,9 +373,10 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
                 : `Appliquer le modèle ${target?.name} ?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {pending?.saved
-                ? "Vous avez personnalisé la disposition (éléments déplacés, largeurs, espaces ou traits sur mesure). Elle sera remplacée par celle du modèle, couleurs comprises. Vos textes et vos images sont conservés, et vous pourrez annuler."
-                : "Vous avez personnalisé la disposition (éléments déplacés, largeurs, espaces ou traits sur mesure). Elle sera remplacée par celle du modèle. Vos textes, vos images et vos couleurs principales sont conservés, et vous pourrez annuler."}
+              Vous avez personnalisé la disposition (éléments déplacés,
+              largeurs, espaces ou traits sur mesure). Elle sera remplacée par
+              celle du modèle, couleurs comprises. Vos textes et vos images
+              sont conservés, et vous pourrez annuler.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
