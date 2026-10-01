@@ -14,7 +14,7 @@ import {
 
 // Sélecteur de date identique aux autres calendriers de la plateforme
 // (Popover + Calendar, format dd/MM/yyyy). value = "YYYY-MM-DD" ou "".
-function DateField({ value, onChange, className = "" }) {
+function DateField({ value, onChange, className = "", align = "start" }) {
   const date = value ? new Date(`${value}T00:00:00`) : null;
   const valid = Boolean(date && !isNaN(date.getTime()));
   return (
@@ -33,7 +33,9 @@ function DateField({ value, onChange, className = "" }) {
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      {/* collisionPadding : garde une marge avec le bord de la fenêtre au
+          lieu de coller le calendrier contre le bord. */}
+      <PopoverContent className="w-auto p-0" align={align} collisionPadding={16}>
         <Calendar
           mode="single"
           selected={valid ? date : undefined}
@@ -61,6 +63,9 @@ export function OcrValueInput({
   options = [],
   placeholder = "",
   className = "",
+  // Alignement du calendrier sous le champ : "end" l'ouvre vers la gauche,
+  // utile quand le champ est en fin de ligne.
+  align = "start",
 }) {
   const base = `h-8 text-sm ${className}`;
   if (kind === "select") {
@@ -97,6 +102,7 @@ export function OcrValueInput({
       <DateField
         value={value ?? ""}
         onChange={onChange}
+        align={align}
         className={`${base} w-40`}
       />
     );

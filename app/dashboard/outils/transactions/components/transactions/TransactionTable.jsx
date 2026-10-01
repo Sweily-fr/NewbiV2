@@ -1159,6 +1159,18 @@ export default function TransactionTable({
         setSelectedTransaction(transaction);
         setIsDetailDrawerOpen(true);
       },
+      // Tag « À confirmer » de la colonne Justificatif : reprend une facture
+      // d'achat proposée restée en attente.
+      onConfirmProposal: (transaction, receiptFile) => {
+        setConfirmationQueue([
+          {
+            transactionId: transaction.originalTransaction?.id || transaction.id,
+            receiptFile,
+            transaction,
+          },
+        ]);
+        setConfirmationIndex(0);
+      },
       bankAccounts,
     },
   });
