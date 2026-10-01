@@ -719,7 +719,13 @@ export default function TransactionTable({
     CONFIRM_TRANSACTION_RECEIPT_INVOICE,
   );
 
-  const currentConfirmation = confirmationQueue[confirmationIndex] || null;
+  // La file peut rétrécir en cours de route (analyse en échec, justificatif
+  // rattaché) : l'index est borné pour ne pas fermer la modale à tort.
+  const safeConfirmationIndex = Math.min(
+    confirmationIndex,
+    Math.max(confirmationQueue.length - 1, 0),
+  );
+  const currentConfirmation = confirmationQueue[safeConfirmationIndex] || null;
 
   /**
    * Décision de l'utilisateur sur une facture proposée. Tant qu'il n'a pas
@@ -728,7 +734,11 @@ export default function TransactionTable({
    */
   const handleConfirmReceiptInvoice = useCallback(
     async (action, values, purchaseInvoiceId) => {
-      const item = confirmationQueue[confirmationIndex];
+      const index = Math.min(
+        confirmationIndex,
+        Math.max(confirmationQueue.length - 1, 0),
+      );
+      const item = confirmationQueue[index];
       if (!item) return;
       try {
         const { data } = await confirmReceiptInvoice({
@@ -759,15 +769,11 @@ export default function TransactionTable({
         return;
       }
       refetch();
-      // Fichier suivant de la file, ou fin
-      setConfirmationIndex((i) => {
-        const next = i + 1;
-        if (next >= confirmationQueue.length) {
-          setConfirmationQueue([]);
-          return 0;
-        }
-        return next;
-      });
+      // Le justificatif traité quitte la file ; la modale se ferme quand elle
+      // est vide.
+      setConfirmationQueue((queue) =>
+        queue.filter((q) => q.receiptFile?.id !== item.receiptFile?.id),
+      );
     },
     [
       confirmationQueue,
@@ -803,8 +809,6 @@ export default function TransactionTable({
         // bouge pas quand la déduplication rattache à une facture déjà liée.
         const pending = new Set(receiptIds);
         const outcomes = [];
-        // Factures d'achat proposées, à confirmer une par une
-        const proposals = [];
 
         while (!poll.cancelled && Date.now() < deadline) {
           await new Promise((resolve) =>
@@ -853,16 +857,31 @@ export default function TransactionTable({
             if (!invoice && !attachedElsewhere && !failed && file.proposal) {
               pending.delete(file.id);
               processed = true;
-              proposals.push({
-                transactionId,
-                receiptFile: file,
-                transaction,
-              });
+              // La modale est déjà ouverte depuis le dépôt : on y verse les
+              // valeurs lues. Si l'utilisateur l'a fermée entre-temps, la
+              // file est vide et on ne la rouvre pas (le tag « À confirmer »
+              // de la liste permet d'y revenir).
+              setConfirmationQueue((queue) =>
+                queue.length === 0
+                  ? queue
+                  : queue.map((item) =>
+                      item.receiptFile?.id === file.id
+                        ? { ...item, receiptFile: file, transaction }
+                        : item,
+                    ),
+              );
               continue;
             }
             if (!invoice && !attachedElsewhere && !failed) continue;
             pending.delete(file.id);
             processed = true;
+            // Rien à confirmer pour ce fichier (analyse en échec, ou
+            // rattachement déjà fait) : il quitte la file.
+            setConfirmationQueue((queue) =>
+              queue.length === 0
+                ? queue
+                : queue.filter((item) => item.receiptFile?.id !== file.id),
+            );
             outcomes.push({
               label: invoice?.invoiceNumber || invoice?.supplierName || null,
               // Facture déjà liée avant ce dépôt : document en double, aucune
@@ -885,14 +904,17 @@ export default function TransactionTable({
         }
 
         if (poll.cancelled) return;
-        // Les propositions ouvrent le dialogue de confirmation ; les autres
-        // issues (échec d'analyse, rattachement) gardent leur message.
-        if (proposals.length > 0) {
-          setConfirmationQueue(proposals);
-          setConfirmationIndex(0);
-        }
-        if (outcomes.length > 0 || (pending.size > 0 && proposals.length === 0)) {
+        // Les propositions se versent dans la modale déjà ouverte ; les
+        // autres issues (échec d'analyse, rattachement) gardent leur message.
+        if (outcomes.length > 0 || pending.size > 0) {
           announceReceiptOutcomes(outcomes, pending.size);
+        }
+        // Analyse jamais aboutie : on ne laisse pas la modale tourner
+        // indéfiniment sur un fichier sans proposition.
+        if (pending.size > 0) {
+          setConfirmationQueue((queue) =>
+            queue.filter((item) => !pending.has(item.receiptFile?.id)),
+          );
         }
         // Délai dépassé : un dernier rafraîchissement, au cas où l'analyse
         // aboutisse juste après.
@@ -993,6 +1015,17 @@ export default function TransactionTable({
       }
       refetch();
       if (isExpense && uploadedReceiptIds.length > 0) {
+        // Confirmation ouverte tout de suite, avec le document et l'analyse en
+        // cours : les champs se remplissent quand la lecture aboutit. Ouvrir
+        // la modale après coup la faisait surgir alors que l'utilisateur était
+        // passé à autre chose.
+        const uploaded = (data.uploadTransactionReceipt.receiptFiles || [])
+          .filter((f) => uploadedReceiptIds.includes(f?.id))
+          .map((f) => ({ transactionId, receiptFile: f, transaction }));
+        if (uploaded.length > 0) {
+          setConfirmationQueue(uploaded);
+          setConfirmationIndex(0);
+        }
         // L'OCR prend quelques secondes : on attend que le justificatif soit
         // traité pour afficher la facture d'achat dès qu'elle est prête.
         waitForReceiptsProcessed(
@@ -1905,7 +1938,6 @@ export default function TransactionTable({
           transaction={currentConfirmation.transaction}
           receiptFile={currentConfirmation.receiptFile}
           onConfirm={handleConfirmReceiptInvoice}
-          queueIndex={confirmationIndex}
           queueLength={confirmationQueue.length}
         />
       ) : null}

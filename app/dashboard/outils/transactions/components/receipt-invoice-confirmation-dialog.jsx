@@ -56,6 +56,14 @@ const FIELDS = [
 ];
 
 const NUMBER_KEYS = new Set(["amountHT", "amountTVA", "vatRate", "amountTTC"]);
+// Montants affichés avec les centimes (11,4 € se lit mal sur une facture)
+const MONEY_KEYS = new Set(["amountHT", "amountTVA", "amountTTC"]);
+
+const toNumber = (v) => {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+};
 
 const OPTIONS_BY_KEY = {
   paymentMethod: PAYMENT_METHOD_OPTIONS,
@@ -84,7 +92,10 @@ const INPUT_KEYS = [
 const toMutationValues = (values) => {
   const out = {};
   for (const key of INPUT_KEYS) {
-    if (values[key] !== undefined) out[key] = values[key];
+    if (values[key] === undefined) continue;
+    // Les montants sont saisis en texte (centimes affichés, virgule admise) :
+    // reconvertis en nombres pour l'API.
+    out[key] = NUMBER_KEYS.has(key) ? toNumber(values[key]) : values[key];
   }
   if (values.category) out.subcategory = values.category;
   return out;
@@ -117,7 +128,7 @@ const formatAmount = (amount, currency = "EUR") =>
  *
  * @param {Object} receiptFile justificatif porteur de `proposal`
  * @param {Function} onConfirm (action, values, purchaseInvoiceId) => Promise
- * @param {number} queueIndex position dans la file (0-based), pour « 2 sur 3 »
+ * @param {number} queueLength justificatifs restant à confirmer
  */
 export function ReceiptInvoiceConfirmationDialog({
   open,
@@ -125,7 +136,6 @@ export function ReceiptInvoiceConfirmationDialog({
   transaction,
   receiptFile,
   onConfirm,
-  queueIndex = 0,
   queueLength = 1,
 }) {
   const proposal = receiptFile?.proposal || null;
@@ -151,13 +161,17 @@ export function ReceiptInvoiceConfirmationDialog({
 
   // La liste de catégories affiche la sous-catégorie fine (référentiel
   // Transactions), avec repli sur le code large des anciennes propositions.
-  const initial = useMemo(
-    () =>
-      proposal
-        ? { ...proposal, category: proposal.subcategory || proposal.category }
-        : {},
-    [proposal],
-  );
+  const initial = useMemo(() => {
+    if (!proposal) return {};
+    const out = {
+      ...proposal,
+      category: proposal.subcategory || proposal.category,
+    };
+    for (const key of MONEY_KEYS) {
+      if (typeof out[key] === "number") out[key] = out[key].toFixed(2);
+    }
+    return out;
+  }, [proposal]);
 
   const values = useMemo(
     () => applyOcrDrafts(initial, drafts, NUMBER_KEYS),
@@ -185,9 +199,12 @@ export function ReceiptInvoiceConfirmationDialog({
     [receiptFile, transaction?.id],
   );
 
-  if (!proposal) return null;
-
-  const incomplete = ["partial", "none"].includes(proposal.extractionQuality);
+  // Ouverte dès le dépôt du justificatif : tant que l'analyse n'a pas rendu
+  // ses valeurs, les champs sont en attente et les actions désactivées. Elle
+  // ne s'ouvre donc jamais à l'improviste après coup.
+  const analyzing = !proposal;
+  const incomplete =
+    !analyzing && ["partial", "none"].includes(proposal.extractionQuality);
 
   const submit = async (action, purchaseInvoiceId = null) => {
     setPending(action);
@@ -227,16 +244,29 @@ export function ReceiptInvoiceConfirmationDialog({
             <FileText className="h-5 w-5 text-muted-foreground" />
             Confirmer la facture d&apos;achat
             {queueLength > 1 ? (
+              // La file est consommée au fur et à mesure : on annonce ce qui
+              // reste, pas une position qui ne bougerait pas.
               <Badge variant="secondary" className="ml-1 font-normal">
-                {queueIndex + 1} sur {queueLength}
+                {queueLength} à confirmer
               </Badge>
             ) : null}
           </DialogTitle>
           <DialogDescription>
-            Vérifiez les informations lues sur{" "}
-            <span className="font-medium">{receiptFile?.filename}</span> avant
-            de créer la facture. Rien n&apos;est enregistré tant que vous
-            n&apos;avez pas confirmé.
+            {analyzing ? (
+              <>
+                Lecture de{" "}
+                <span className="font-medium">{receiptFile?.filename}</span> en
+                cours. Les informations s&apos;afficheront ici dès qu&apos;elles
+                seront lues.
+              </>
+            ) : (
+              <>
+                Vérifiez les informations lues sur{" "}
+                <span className="font-medium">{receiptFile?.filename}</span>{" "}
+                avant de créer la facture. Rien n&apos;est enregistré tant que
+                vous n&apos;avez pas confirmé.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -259,6 +289,13 @@ export function ReceiptInvoiceConfirmationDialog({
               onClick={() => setPreviewOpen((v) => !v)}
             />
           </div>
+
+          {analyzing ? (
+            <div className="flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              <LoaderCircle className="h-4 w-4 animate-spin shrink-0" />
+              Analyse du document en cours...
+            </div>
+          ) : null}
 
           {incomplete ? (
             <div className="flex gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
@@ -310,7 +347,10 @@ export function ReceiptInvoiceConfirmationDialog({
             </div>
           ) : null}
 
-          <div className="space-y-2">
+          <div
+            className={`space-y-2 ${analyzing ? "opacity-50 pointer-events-none" : ""}`}
+            aria-busy={analyzing}
+          >
             {FIELDS.map(({ key, label, kind }) => (
               <div
                 key={key}
@@ -348,7 +388,7 @@ export function ReceiptInvoiceConfirmationDialog({
           <Button
             type="button"
             variant="ghost"
-            disabled={Boolean(pending)}
+            disabled={Boolean(pending) || analyzing}
             onClick={() => submit("SKIP")}
           >
             {pending === "SKIP" ? (
@@ -358,7 +398,7 @@ export function ReceiptInvoiceConfirmationDialog({
           </Button>
           <Button
             type="button"
-            disabled={Boolean(pending)}
+            disabled={Boolean(pending) || analyzing}
             onClick={() => submit("CREATE")}
           >
             {pending === "CREATE" ? (
