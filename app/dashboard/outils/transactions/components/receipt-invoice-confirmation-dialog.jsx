@@ -13,7 +13,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
-import { EXPENSE_CATEGORY_OPTIONS } from "@/lib/category-icons-config";
+import CategorySearchSelect from "@/src/components/category-search-select";
 import {
   DocumentEyeButton,
   DocumentPreviewPanel,
@@ -45,18 +45,19 @@ const FIELDS = [
   { key: "invoiceNumber", label: "Numéro de facture", kind: "text" },
   { key: "issueDate", label: "Date de facture", kind: "date" },
   { key: "dueDate", label: "Échéance", kind: "date" },
-  { key: "amountHT", label: "Montant HT", kind: "number" },
-  { key: "amountTVA", label: "TVA", kind: "number" },
-  { key: "vatRate", label: "Taux de TVA (%)", kind: "number" },
-  { key: "amountTTC", label: "Montant TTC", kind: "number" },
-  { key: "category", label: "Catégorie", kind: "select" },
+  // Montants en saisie texte : pas de compteur ni de molette, et la virgule
+  // décimale passe (la conversion est faite par NUMBER_KEYS).
+  { key: "amountHT", label: "Montant HT", kind: "text" },
+  { key: "amountTVA", label: "TVA", kind: "text" },
+  { key: "vatRate", label: "Taux de TVA (%)", kind: "text" },
+  { key: "amountTTC", label: "Montant TTC", kind: "text" },
+  { key: "category", label: "Catégorie", kind: "category" },
   { key: "paymentMethod", label: "Moyen de paiement", kind: "select" },
 ];
 
 const NUMBER_KEYS = new Set(["amountHT", "amountTVA", "vatRate", "amountTTC"]);
 
 const OPTIONS_BY_KEY = {
-  category: EXPENSE_CATEGORY_OPTIONS,
   paymentMethod: PAYMENT_METHOD_OPTIONS,
 };
 
@@ -316,13 +317,28 @@ export function ReceiptInvoiceConfirmationDialog({
                 className="flex items-center justify-between gap-3 border-b py-1.5 last:border-b-0"
               >
                 <label className="text-sm text-muted-foreground">{label}</label>
-                <OcrValueInput
-                  kind={kind}
-                  value={ocrDraftValue({ ...initial, ...drafts }, key, kind)}
-                  onChange={(v) => setDrafts((d) => ({ ...d, [key]: v }))}
-                  options={OPTIONS_BY_KEY[key] || []}
-                  className={kind === "text" ? "max-w-[18rem]" : ""}
-                />
+                {kind === "category" ? (
+                  // Même sélecteur que partout ailleurs (recherche, groupes,
+                  // référentiel Transactions) plutôt qu'une liste déroulante
+                  <CategorySearchSelect
+                    value={ocrDraftValue({ ...initial, ...drafts }, key, kind)}
+                    onValueChange={(v) =>
+                      setDrafts((d) => ({ ...d, [key]: v }))
+                    }
+                    triggerClassName="w-48 h-8 text-sm"
+                  />
+                ) : (
+                  <OcrValueInput
+                    kind={kind}
+                    value={ocrDraftValue({ ...initial, ...drafts }, key, kind)}
+                    onChange={(v) => setDrafts((d) => ({ ...d, [key]: v }))}
+                    options={OPTIONS_BY_KEY[key] || []}
+                    // Le calendrier s'ouvre vers la gauche : aligné à droite
+                    // sur un champ en fin de ligne, il collerait au bord.
+                    align="end"
+                    className={kind === "text" ? "max-w-[18rem]" : ""}
+                  />
+                )}
               </div>
             ))}
           </div>
