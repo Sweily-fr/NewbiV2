@@ -410,7 +410,63 @@ export const columns = [
         </TooltipProvider>
       ) : null;
 
-      return <LinkedPiecesCell counters={counters} extra={suggestion} />;
+      // Facture d'achat proposée par l'analyse et pas encore confirmée :
+      // signalée dans la liste pour qu'elle ne reste pas en attente sans
+      // qu'on le sache (le dialogue ne se rouvre pas tout seul).
+      // Mises de côté exclues : elles ne réclament plus d'action (elles
+      // restent créables depuis le tiroir du justificatif).
+      const toConfirm = receipts.filter(
+        (f) => f?.proposal && !f.proposal.dismissedAt,
+      );
+      const confirmTag =
+        toConfirm.length > 0 ? (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="inline-flex items-center text-[10px] leading-none px-1.5 py-1 rounded whitespace-nowrap bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const onConfirmProposal =
+                      table.options.meta?.onConfirmProposal;
+                    if (onConfirmProposal) {
+                      onConfirmProposal(row.original, toConfirm[0]);
+                    }
+                  }}
+                >
+                  À confirmer
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-center">
+                  <div className="font-medium">
+                    {toConfirm.length > 1
+                      ? `${toConfirm.length} factures d'achat à confirmer`
+                      : "Facture d'achat à confirmer"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Cliquez pour vérifier les informations lues et créer la
+                    facture
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null;
+
+      return (
+        <LinkedPiecesCell
+          counters={counters}
+          extra={
+            confirmTag || suggestion ? (
+              <>
+                {confirmTag}
+                {suggestion}
+              </>
+            ) : null
+          }
+        />
+      );
     },
     size: 120,
   },
