@@ -55,6 +55,10 @@ const FIELDS = [
   { key: "paymentMethod", label: "Moyen de paiement", kind: "select" },
 ];
 
+// Largeur commune à tous les champs du formulaire, sélecteur de catégorie
+// compris : une colonne alignée plutôt que des champs de tailles diverses.
+const FIELD_WIDTH = "w-48";
+
 const NUMBER_KEYS = new Set(["amountHT", "amountTVA", "vatRate", "amountTTC"]);
 // Montants affichés avec les centimes (11,4 € se lit mal sur une facture)
 const MONEY_KEYS = new Set(["amountHT", "amountTVA", "amountTTC"]);
@@ -365,7 +369,7 @@ export function ReceiptInvoiceConfirmationDialog({
                     onValueChange={(v) =>
                       setDrafts((d) => ({ ...d, [key]: v }))
                     }
-                    triggerClassName="w-48 h-8 text-sm"
+                    triggerClassName={`${FIELD_WIDTH} h-8 text-sm`}
                   />
                 ) : (
                   <OcrValueInput
@@ -376,7 +380,9 @@ export function ReceiptInvoiceConfirmationDialog({
                     // Le calendrier s'ouvre vers la gauche : aligné à droite
                     // sur un champ en fin de ligne, il collerait au bord.
                     align="end"
-                    className={kind === "text" ? "max-w-[18rem]" : ""}
+                    // Même largeur que le sélecteur de catégorie, pour une
+                    // colonne de champs alignée.
+                    widthClassName={FIELD_WIDTH}
                   />
                 )}
               </div>

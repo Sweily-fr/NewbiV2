@@ -66,14 +66,18 @@ export function OcrValueInput({
   // Alignement du calendrier sous le champ : "end" l'ouvre vers la gauche,
   // utile quand le champ est en fin de ligne.
   align = "start",
+  // Remplace la largeur par défaut du champ (qui varie selon le type) par
+  // une largeur unique, pour aligner une colonne de champs.
+  widthClassName = null,
 }) {
   const base = `h-8 text-sm ${className}`;
+  const width = (fallback) => widthClassName || fallback;
   if (kind === "select") {
     return (
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
-        className={`${base} w-full rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-2 focus:ring-ring`}
+        className={`${base} ${width("w-full")} rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-2 focus:ring-ring`}
       >
         <option value="">—</option>
         {options.map((o) => (
@@ -93,7 +97,7 @@ export function OcrValueInput({
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`${base} w-32`}
+        className={`${base} ${width("w-32")}`}
       />
     );
   }
@@ -103,7 +107,7 @@ export function OcrValueInput({
         value={value ?? ""}
         onChange={onChange}
         align={align}
-        className={`${base} w-40`}
+        className={`${base} ${width("w-40")}`}
       />
     );
   }
@@ -113,7 +117,7 @@ export function OcrValueInput({
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className={`${base} w-full min-w-[10rem]`}
+      className={`${base} ${width("w-full min-w-[10rem]")}`}
     />
   );
 }
