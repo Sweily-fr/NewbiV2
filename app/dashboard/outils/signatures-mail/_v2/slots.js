@@ -664,6 +664,59 @@ export function removeRule(st, key) {
   return { rules };
 }
 
+const CONTACT_KEYS = ["phone", "mobile", "email", "website", "address"];
+
+/**
+ * Touche Suppr sur une sélection de l'aperçu : ce qu'elle retire. Un texte
+ * est vidé, le bouton, la bannière et la mention sont masqués (leurs
+ * réglages restent), un trait est retiré. Renvoie { update } (patch
+ * annulable par ⌘Z), { image: "photo" | "logo" } (image à retirer côté
+ * serveur, hors historique : à confirmer), ou null (rien à retirer : une
+ * colonne, toute la signature, un élément déjà vide).
+ */
+export function deleteFor(sig, selected) {
+  if (!sig || !selected) return null;
+  const { level, key } = selected;
+  if (level !== "item" && level !== "element") return null;
+  const shown = shownItems(sig);
+  const items = ELEMENT_ITEMS[key] || [key];
+  if (!items.some((k) => shown.has(k))) return null;
+  const blank = (keys) => Object.fromEntries(keys.map((k) => [k, ""]));
+  if (level === "item") {
+    if (key === "firstName" || key === "lastName") {
+      return { update: { identity: { [key]: "" } } };
+    }
+    if (CONTACT_KEYS.includes(key)) return { update: { contact: { [key]: "" } } };
+    return null;
+  }
+  switch (key) {
+    case "name":
+      return { update: { identity: blank(["firstName", "lastName"]) } };
+    case "jobTitle":
+      return { update: { identity: blank(["jobTitle", "department"]) } };
+    case "company":
+    case "tagline":
+      return { update: { identity: { [key]: "" } } };
+    case "contact":
+      return { update: { contact: blank(CONTACT_KEYS) } };
+    case "social":
+      return { update: { social: [] } };
+    case "accent":
+      return { update: { style: { accent: "none" } } };
+    case "cta":
+    case "banner":
+    case "disclaimer":
+      return { update: { [key]: { enabled: false } } };
+    case "photo":
+    case "logo":
+      return { image: key };
+    default:
+      return RULE_ITEMS.includes(key)
+        ? { update: { style: removeRule(sig.style, key) } }
+        : null;
+  }
+}
+
 // ── Photo ──────────────────────────────────────────────────────────────
 
 /** Place de la photo : left, right, top (au-dessus du texte), header, autre. */

@@ -34,6 +34,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
  *   navigateur continue d'envoyer la souris à l'iframe où le bouton a été
  *   pressé : le script relaie donc aussi `onDragMove` / `onDragEnd`.
  * - `onHistory(redo)` : ⌘Z / ⇧⌘Z pressés dans l'aperçu (hors saisie).
+ * - `onDelete()` : Suppr (⌫) pressée sur une sélection, hors saisie.
  * - `readOnly` : ni modification en place ni poignée (abonnement expiré) ;
  *   un clic ouvre seulement le panneau de l'élément.
  */
@@ -113,6 +114,8 @@ if(dragging&&e.key==="Escape"){e.preventDefault();dragging=false;post({type:"sig
 if(editing&&(e.key==="Enter"||e.key==="Escape")){e.preventDefault();editing.blur();return;}
 var k=(e.key||"").toLowerCase();
 if(!editing&&(e.metaKey||e.ctrlKey)&&(k==="z"||k==="y")){e.preventDefault();post({type:"sig-history",redo:k==="y"||e.shiftKey});}
+/* Suppr (⌫ sur Mac) sur une sélection : la retirer (jamais pendant une saisie ou un geste) */
+if(!editing&&!rs&&!fs&&!dragging&&sel&&!window.SIG_READONLY&&(e.key==="Delete"||e.key==="Backspace")){e.preventDefault();post({type:"sig-delete"});}
 });
 document.addEventListener("focusout",function(e){
 if(editing&&e.target===editing){editing.removeAttribute("contenteditable");editing=null;post({type:"sig-editing",editing:false});
@@ -329,6 +332,7 @@ export default function HtmlFrame({
   onResize,
   onFont,
   onEscape,
+  onDelete,
   selection = null,
   readOnly = false,
   frozen = false,
@@ -371,6 +375,9 @@ export default function HtmlFrame({
       }
       if (data && data.type === "sig-escape") {
         onEscape?.();
+      }
+      if (data && data.type === "sig-delete") {
+        onDelete?.();
       }
       if (data && data.type === "sig-drag-cancel") {
         onDragCancel?.();
@@ -425,6 +432,7 @@ export default function HtmlFrame({
     onResize,
     onFont,
     onEscape,
+    onDelete,
   ]);
 
   // Pendant une modification en place, le HTML affiché ne change pas

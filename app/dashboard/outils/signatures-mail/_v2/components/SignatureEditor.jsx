@@ -53,6 +53,7 @@ import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSignatureV2 } from "../hooks/useSignatureV2";
 import {
   DELETE_SIGNATURE_V2,
+  REMOVE_SIGNATURE_V2_IMAGE,
   DUPLICATE_SIGNATURE_V2,
   RENDER_SIGNATURE_V2,
   SEND_SIGNATURE_V2_TEST,
@@ -72,6 +73,7 @@ import {
   BLOCK_OF,
   COLUMN_WIDTH,
   ELEMENT_ITEMS,
+  deleteFor,
   fontSizePatch,
   mainPiece,
   mergedRow,
@@ -85,6 +87,7 @@ import {
   LevelHeader,
   SlotPanel,
   ancestorsOf,
+  selectionLabel,
 } from "./LevelPanels";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
@@ -535,6 +538,61 @@ export default function SignatureEditor({ id }) {
   );
   const onEscape = useCallback(() => setSelected(null), []);
 
+  // Suppr (⌫) sur une sélection : un texte est vidé, le bouton, la bannière
+  // et la mention sont masqués, un trait est retiré ; « Annuler » revient en
+  // arrière. Photo et logo, hors historique, sont d'abord confirmés.
+  const [confirmImage, setConfirmImage] = useState(null);
+  const [removeImage] = useMutation(REMOVE_SIGNATURE_V2_IMAGE);
+  const deleteSelected = useCallback(() => {
+    if (isReadOnly) return;
+    const what = deleteFor(sig, selected);
+    if (!what) return;
+    if (what.image) {
+      setConfirmImage(what.image);
+      return;
+    }
+    const label = selectionLabel(selected, sig?.style);
+    update(what.update);
+    setSelected(null);
+    toast.document(`Retiré : ${label}`, {
+      fallbackIcon: Trash2,
+      action: { label: "Annuler", onClick: () => undo() },
+      duration: 6000,
+    });
+  }, [isReadOnly, sig, selected, update, undo]);
+  const confirmRemoveImage = async () => {
+    const kind = confirmImage === "photo" ? "PHOTO" : "LOGO";
+    try {
+      const { data } = await removeImage({ variables: { id, kind } });
+      replace(data?.removeEmailSignatureV2Image);
+      setSelected(null);
+      toast.success(confirmImage === "photo" ? "Photo retirée" : "Logo retiré");
+    } catch {
+      toast.error("Suppression impossible");
+    } finally {
+      setConfirmImage(null);
+    }
+  };
+  // Même touche, focus hors de l'aperçu (page, pas un champ ni le panneau)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      if (!selected || isReadOnly) return;
+      const t = e.target;
+      const onPage =
+        t === document.body ||
+        t === document.documentElement ||
+        t?.closest?.("[data-tour='preview']");
+      if (!onPage || t?.closest?.("input, textarea, select, [contenteditable]")) {
+        return;
+      }
+      e.preventDefault();
+      deleteSelected();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, isReadOnly, deleteSelected]);
+
   // Depuis un réglage sans objet (« Ajouter une photo »…) : onglet Contenu,
   // puis le champ concerné
   const goToField = useCallback((field) => {
@@ -983,6 +1041,7 @@ export default function SignatureEditor({ id }) {
               onResize={onResize}
               onFont={isReadOnly ? undefined : onFont}
               onEscape={onEscape}
+              onDelete={deleteSelected}
               readOnly={isReadOnly}
             />
           </div>
@@ -1033,6 +1092,32 @@ export default function SignatureEditor({ id }) {
         name={sig.name}
         gmailMaxChars={catalog?.gmailMaxChars || 10000}
       />
+
+      <AlertDialog
+        open={Boolean(confirmImage)}
+        onOpenChange={(open) => !open && setConfirmImage(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmImage === "photo" ? "Retirer la photo ?" : "Retirer le logo ?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              L&apos;image sera supprimée de la signature : pour la remettre, il
+              faudra l&apos;envoyer à nouveau.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemoveImage}
+              className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+            >
+              Retirer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

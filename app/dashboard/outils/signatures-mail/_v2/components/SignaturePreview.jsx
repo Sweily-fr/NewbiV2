@@ -5,6 +5,7 @@ import { useQuery } from "@apollo/client";
 import {
   ArrowUpToLine,
   CircleHelp,
+  Delete,
   GripVertical,
   Monitor,
   Moon,
@@ -33,6 +34,7 @@ const GESTURES = [
   { icon: ArrowUpToLine, label: () => `${modClick()} pour le niveau au-dessus` },
   { icon: GripVertical, label: "Poignée pour déplacer" },
   { icon: Scaling, label: "Bord ou coin pour agrandir" },
+  { icon: Delete, label: "Suppr (⌫) pour retirer l'élément sélectionné" },
 ];
 
 function useDebounced(value, delay) {
@@ -62,6 +64,7 @@ export default function SignaturePreview({
   onResize,
   onFont,
   onEscape,
+  onDelete,
   readOnly = false,
 }) {
   const [dark, setDark] = useState(false);
@@ -274,6 +277,7 @@ export default function SignaturePreview({
           onResize={readOnly ? undefined : onResize}
           onFont={readOnly ? undefined : onFont}
           onEscape={onEscape}
+          onDelete={readOnly ? undefined : onDelete}
           readOnly={readOnly}
           onDragMove={setDragPointer}
           onDragEnd={setDragRelease}
