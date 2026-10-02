@@ -179,6 +179,8 @@ export default function SignatureEditor({ id }) {
     update,
     replace,
     flush,
+    lockEdits,
+    editsLocked,
     undo,
     redo,
     canUndo,
@@ -566,7 +568,7 @@ export default function SignatureEditor({ id }) {
     const kind = confirmImage === "photo" ? "PHOTO" : "LOGO";
     try {
       const { data } = await removeImage({ variables: { id, kind } });
-      replace(data?.removeEmailSignatureV2Image);
+      replace(data?.removeEmailSignatureV2Image, { image: confirmImage });
       setSelected(null);
       toast.success(confirmImage === "photo" ? "Photo retirée" : "Logo retiré");
     } catch {
@@ -754,7 +756,7 @@ export default function SignatureEditor({ id }) {
               maxLength={120}
               className="h-10 min-w-0 flex-1 border-transparent px-2 text-xl font-medium shadow-none hover:border-[#e6e7ea] focus:border-[#D1D3D8] dark:border-transparent dark:hover:border-[#2E2E32] dark:focus:border-[#44444A]"
               aria-label="Nom de la signature"
-              disabled={isReadOnly}
+              disabled={isReadOnly || editsLocked}
             />
           </div>
           {/* Ligne toujours présente : l'état d'enregistrement qui apparaît
@@ -877,6 +879,8 @@ export default function SignatureEditor({ id }) {
                     update={update}
                     replace={replace}
                     flush={flush}
+                    lockEdits={lockEdits}
+                    editsLocked={editsLocked}
                     catalog={catalog}
                     template={template}
                   />

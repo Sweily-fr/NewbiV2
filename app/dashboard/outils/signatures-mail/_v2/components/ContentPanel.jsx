@@ -181,7 +181,7 @@ function MemberOption({ member }) {
  * société, le standard, le site et l'adresse ne complètent que les champs
  * vides. Le poste et le reste de la signature sont conservés.
  */
-function PersonField({ id, sig, replace, flush }) {
+function PersonField({ id, sig, replace, flush, lockEdits }) {
   const [busy, setBusy] = useState(false);
   const { data } = useQuery(SIGNATURE_MEMBERS_V2, { fetchPolicy: "cache-and-network" });
   const [apply] = useMutation(APPLY_MEMBER_SIGNATURE_V2);
@@ -192,9 +192,18 @@ function PersonField({ id, sig, replace, flush }) {
   const choose = async (memberUserId) => {
     if (!memberUserId || memberUserId === value) return;
     setBusy(true);
+    // Plus aucune modification jusqu'à la réponse, qui remplace tout le
+    // contenu : ce qui serait tapé pendant la requête serait perdu
+    lockEdits(true);
     try {
-      // Enregistre d'abord une saisie en cours, sinon elle écraserait le résultat
-      await flush();
+      // Enregistre d'abord une saisie en cours, sinon elle écraserait le
+      // résultat ; si elle ne passe pas, rien ne change
+      if ((await flush()) === false) {
+        toast.error(
+          "Vos dernières modifications ne sont pas encore enregistrées : réessayez dans un instant",
+        );
+        return;
+      }
       const { data: result } = await apply({ variables: { id, memberUserId } });
       replace(result?.applyMemberToEmailSignatureV2, { resetHistory: true });
       const member = members.find((m) => m.userId === memberUserId);
@@ -202,6 +211,7 @@ function PersonField({ id, sig, replace, flush }) {
     } catch (err) {
       toast.error(err?.graphQLErrors?.[0]?.message || "Changement impossible");
     } finally {
+      lockEdits(false);
       setBusy(false);
     }
   };
@@ -243,7 +253,17 @@ function PersonField({ id, sig, replace, flush }) {
  * les champs facultatifs vides attendent un clic sur « + … », comme le
  * bouton d'action, la bannière et la mention (« En plus »).
  */
-export default function ContentPanel({ id, sig, update, replace, flush, catalog, template }) {
+export default function ContentPanel({
+  id,
+  sig,
+  update,
+  replace,
+  flush,
+  lockEdits,
+  editsLocked = false,
+  catalog,
+  template,
+}) {
   const { identity, contact, social, images } = sig;
   // Champ facultatif affiché : rempli, ajouté à la demande, ou déjà vu
   // rempli (il ne disparaît pas quand on l'efface pour le retaper)
@@ -265,9 +285,20 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
   const showPhone = shows("phone", contact.phone);
   const showMobile = shows("mobile", contact.mobile);
 
+  // Changement de personne en cours : tout le panneau est gelé, la liste
+  // « Signature de » (première) affiche l'avancement
   return (
-    <div className="space-y-8">
-      <PersonField id={id} sig={sig} replace={replace} flush={flush} />
+    <fieldset
+      disabled={editsLocked}
+      className={`min-w-0 space-y-8 ${editsLocked ? "[&>*:not(:first-child)]:opacity-60" : ""}`}
+    >
+      <PersonField
+        id={id}
+        sig={sig}
+        replace={replace}
+        flush={flush}
+        lockEdits={lockEdits}
+      />
 
       <Section title="Vous">
         <div className="flex items-start gap-4">
@@ -445,6 +476,6 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
       </Section>
 
       <ExtrasSection id={id} sig={sig} update={update} replace={replace} />
-    </div>
+    </fieldset>
   );
 }

@@ -29,6 +29,62 @@ function merge(prev, patch) {
   return next;
 }
 
+/** Textes tapés par l'utilisateur, groupe par groupe. */
+const TYPED_FIELDS = {
+  identity: ["firstName", "lastName", "jobTitle", "department", "company", "tagline"],
+  contact: ["email", "phone", "mobile", "website", "address"],
+  cta: ["label", "url"],
+  banner: ["url", "alt"],
+  disclaimer: ["text"],
+};
+
+/**
+ * Texte rangé comme le serveur le range (blancs regroupés, bords rognés),
+ * sans sa troncature : un texte coupé à sa longueur maximale reste réaligné
+ * sur la réponse.
+ */
+const squash = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
+
+/**
+ * Réponse d'un enregistrement appliquée à la copie locale. Le serveur fait
+ * foi (couleurs, bornes, texte trop long coupé), sauf pour un texte qu'il
+ * n'a fait que nettoyer : la valeur tapée reste, sinon l'espace qu'on vient
+ * de taper disparaît pendant la pause et le mot suivant se colle au
+ * précédent (« Responsablecommercial »). Les images et « par défaut », que
+ * l'enregistrement ne change jamais, restent ceux affichés.
+ */
+function withServerValues(current, server) {
+  const next = {
+    ...current,
+    ...server,
+    images: current.images,
+    isDefault: current.isDefault,
+  };
+  for (const [group, keys] of Object.entries(TYPED_FIELDS)) {
+    const local = current[group];
+    if (!local || !server[group]) continue;
+    const kept = {};
+    for (const key of keys) {
+      if (typeof local[key] === "string" && squash(local[key]) === server[group][key]) {
+        kept[key] = local[key];
+      }
+    }
+    next[group] = { ...server[group], ...kept };
+  }
+  // Lien d'un réseau : même règle, s'il s'agit du même réseau au même rang
+  if (Array.isArray(current.social) && Array.isArray(server.social)) {
+    next.social = server.social.map((s, i) => {
+      const mine = current.social[i];
+      return mine?.network === s.network &&
+        typeof mine.url === "string" &&
+        squash(mine.url) === s.url
+        ? { ...s, url: mine.url }
+        : s;
+    });
+  }
+  return next;
+}
+
 /**
  * Charge une signature v2, garde une copie locale éditable, et enregistre
  * automatiquement après chaque modification (avec un léger délai). Le
@@ -56,6 +112,11 @@ export function useSignatureV2(id) {
   // Nom refusé par l'API (vide ou déjà pris) : gardé à l'écran, pas renvoyé
   // tant qu'il ne change pas, pour que le reste s'enregistre quand même
   const refusedName = useRef(null);
+  // Changement de personne en cours : aucune modification n'est acceptée,
+  // la réponse du serveur remplace tout le contenu (sinon elle effacerait
+  // ce qui serait tapé pendant la requête, ou serait effacée par lui)
+  const locked = useRef(false);
+  const [editsLocked, setEditsLocked] = useState(false);
 
   const setSig = useCallback((value) => {
     setSigState((prev) => {
@@ -123,17 +184,19 @@ export function useSignatureV2(id) {
       const server = saved?.updateEmailSignatureV2;
       if (server) {
         // Réaligne les champs normalisés (couleurs, bornes) sans toucher à
-        // une modification arrivée entre-temps, ni au nom refusé affiché
-        setSig((current) =>
-          pending.current
-            ? current
-            : {
-                ...current,
-                ...server,
-                images: server.images,
-                name: input.name === undefined ? current.name : server.name,
-              },
-        );
+        // une modification arrivée entre-temps, ni au nom refusé affiché,
+        // ni à un nom que le serveur n'a fait que rogner
+        setSig((current) => {
+          if (pending.current) return current;
+          const next = withServerValues(current, server);
+          if (
+            input.name === undefined ||
+            String(current.name ?? "").trim() === server.name
+          ) {
+            next.name = current.name;
+          }
+          return next;
+        });
       }
       setStatus(pending.current ? "dirty" : "saved");
       return true;
@@ -181,7 +244,7 @@ export function useSignatureV2(id) {
   const update = useCallback(
     (patch, { asIs = false } = {}) => {
       const prev = sigRef.current;
-      if (!prev) return;
+      if (!prev || locked.current) return;
       // Un élément déplacé ailleurs perd la largeur réglée pour son ancienne
       // place (déplacements par glisser-déposer comme par les réglages ;
       // une partie emmenée seule ne compte pas). `asIs` : style complet
@@ -213,7 +276,7 @@ export function useSignatureV2(id) {
     (from, to) => {
       const h = history.current;
       const current = sigRef.current;
-      if (!current || h[from].length === 0) return false;
+      if (!current || locked.current || h[from].length === 0) return false;
       const target = h[from].pop();
       h[to].push(current);
       h.lastPush = 0;
@@ -229,28 +292,34 @@ export function useSignatureV2(id) {
   const redo = useCallback(() => travel("future", "past"), [travel]);
 
   /**
-   * Remplace la signature locale par une réponse serveur (après un upload),
-   * ou y reporte un changement partiel ({ isDefault }) : les images ne
-   * changent que si la réponse les contient. Une saisie pas encore
-   * enregistrée garde la main : seuls les champs que l'utilisateur ne tape
-   * pas (images, par défaut) sont repris. `resetHistory` : la réponse
-   * remplace tout le contenu (autre personne), annuler n'y a plus de sens.
+   * Reporte une réponse serveur dans la signature locale. Envoi ou retrait
+   * d'image, « par défaut » : seuls les images et « par défaut » sont
+   * repris (`image` : seulement cette image-là). Le reste de la réponse a
+   * été lu au début de la requête, avant les secondes d'envoi : il
+   * effacerait ce qui a été tapé entre-temps. `resetHistory` : la réponse
+   * remplace tout le contenu (autre personne, modifications gelées pendant
+   * la requête), annuler n'y a plus de sens.
    */
   const replace = useCallback(
-    (server, { resetHistory = false } = {}) => {
+    (server, { resetHistory = false, image = null } = {}) => {
       if (!server) return;
       setSig((current) => {
-        const images = server.images ?? current.images;
-        if (pending.current) {
-          return {
-            ...current,
-            images,
-            ...(server.isDefault !== undefined
-              ? { isDefault: server.isDefault }
-              : {}),
-          };
+        if (resetHistory && !pending.current) {
+          return { ...current, ...server, images: server.images ?? current.images };
         }
-        return { ...current, ...server, images };
+        let images = current.images;
+        if (server.images) {
+          images = image
+            ? { ...current.images, [image]: server.images[image] ?? null }
+            : server.images;
+        }
+        return {
+          ...current,
+          images,
+          ...(server.isDefault !== undefined
+            ? { isDefault: server.isDefault }
+            : {}),
+        };
       });
       if (resetHistory) {
         history.current = { past: [], future: [], lastPush: 0 };
@@ -259,6 +328,12 @@ export function useSignatureV2(id) {
     },
     [setSig, syncHistoryFlags],
   );
+
+  /** Gèle (ou dégèle) les modifications, le temps d'un changement de personne. */
+  const lockEdits = useCallback((on) => {
+    locked.current = Boolean(on);
+    setEditsLocked(Boolean(on));
+  }, []);
 
   // Garde-fou : une modification non enregistrée ne doit pas être perdue en
   // fermant l'onglet.
@@ -282,6 +357,8 @@ export function useSignatureV2(id) {
     update,
     replace,
     flush,
+    lockEdits,
+    editsLocked,
     undo,
     redo,
     canUndo: historyFlags.canUndo,
