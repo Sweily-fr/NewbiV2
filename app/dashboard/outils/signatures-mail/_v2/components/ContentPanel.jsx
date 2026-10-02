@@ -12,6 +12,16 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
 import { AddChips, CheckedInput, Field, Section } from "./controls";
 import ImageField from "./ImageField";
@@ -181,9 +191,14 @@ function MemberOption({ member }) {
  * Le choisir reprend son nom, son e-mail, son portable et sa photo ; la
  * société, le standard, le site et l'adresse ne complètent que les champs
  * vides. Le poste et le reste de la signature sont conservés.
+ *
+ * Le changement est confirmé d'abord (il remplace des informations et ne
+ * s'annule pas), sauf sur une signature neuve encore intacte (`fresh`).
  */
-function PersonField({ id, sig, replace, flush, lockEdits }) {
+function PersonField({ id, sig, replace, flush, lockEdits, fresh = false }) {
   const [busy, setBusy] = useState(false);
+  // Personne choisie dans la liste, en attente de confirmation
+  const [asked, setAsked] = useState(null);
   const { data } = useQuery(SIGNATURE_MEMBERS_V2, { fetchPolicy: "cache-and-network" });
   // Un refus de l'API doit tomber dans le catch, pas passer pour une réussite
   const [apply] = useMutation(APPLY_MEMBER_SIGNATURE_V2, { errorPolicy: "none" });
@@ -218,6 +233,26 @@ function PersonField({ id, sig, replace, flush, lockEdits }) {
     }
   };
 
+  // Choix dans la liste : rien ne change avant la confirmation (une lettre
+  // tapée sur la liste fermée suffit à choisir une personne) ; la liste
+  // garde la personne actuelle jusque-là
+  const pick = (memberUserId) => {
+    if (!memberUserId || memberUserId === value) return;
+    if (fresh) {
+      choose(memberUserId);
+      return;
+    }
+    // Une fois la liste refermée (et le focus rendu à son bouton), pour que
+    // la fenêtre de confirmation le garde puis le lui rende
+    const member = members.find((m) => m.userId === memberUserId) || null;
+    setTimeout(() => setAsked(member), 0);
+  };
+  const confirmChange = () => {
+    const member = asked;
+    setAsked(null);
+    if (member) choose(member.userId);
+  };
+
   // Seul dans l'espace : rien à choisir, rien à afficher
   if (members.length <= 1) return null;
 
@@ -226,7 +261,7 @@ function PersonField({ id, sig, replace, flush, lockEdits }) {
       label="Signature de"
       hint="Son nom, son e-mail, son portable et sa photo sont repris de son profil."
     >
-      <Select value={value} onValueChange={choose} disabled={busy}>
+      <Select value={value} onValueChange={pick} disabled={busy}>
         <SelectTrigger id="sig-field-member" className="w-full">
           {busy ? (
             <span className="flex items-center gap-2 text-muted-foreground">
@@ -245,6 +280,36 @@ function PersonField({ id, sig, replace, flush, lockEdits }) {
           ))}
         </SelectContent>
       </Select>
+      <AlertDialog open={Boolean(asked)} onOpenChange={(open) => !open && setAsked(null)}>
+        <AlertDialogContent
+          // Le clavier revient à la liste « Signature de » à la fermeture
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.getElementById("sig-field-member")?.focus();
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {asked?.isMe
+                ? "Reprendre vos informations dans la signature ?"
+                : `Passer la signature au nom de ${asked?.name || "cette personne"} ?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {asked?.isMe
+                ? "Votre prénom, votre nom, votre e-mail et votre portable remplaceront ceux de la signature, et la photo de votre profil remplacera la photo actuelle (retirée si votre profil n'en a pas)."
+                : "Son prénom, son nom, son e-mail et son portable remplaceront ceux de la signature, et la photo de son profil remplacera la photo actuelle (retirée si son profil n'en a pas)."}{" "}
+              Le poste et le reste de la signature sont conservés. Ce changement ne
+              pourra pas être annulé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmChange} className="cursor-pointer">
+              Remplacer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Field>
   );
 }
@@ -263,6 +328,7 @@ export default function ContentPanel({
   flush,
   lockEdits,
   editsLocked = false,
+  fresh = false,
   catalog,
   template,
 }) {
@@ -300,6 +366,7 @@ export default function ContentPanel({
         replace={replace}
         flush={flush}
         lockEdits={lockEdits}
+        fresh={fresh}
       />
 
       <Section title="Vous">

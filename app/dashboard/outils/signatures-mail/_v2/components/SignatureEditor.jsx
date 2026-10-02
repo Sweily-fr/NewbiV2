@@ -221,6 +221,18 @@ export default function SignatureEditor({ id }) {
   // Un refus définitif d'enregistrement (signature supprimée, rôle,
   // abonnement) met l'éditeur en lecture seule, comme un abonnement expiré
   const isReadOnly = subscriptionReadOnly || Boolean(saveBlocked);
+  // Signature ouverte juste après sa création et pas encore modifiée (ni
+  // texte ni image) : choisir la personne n'y demande pas de confirmation.
+  // Valeurs du premier affichage, même si l'adresse perd ensuite ?new=1.
+  const [openedNew] = useState(isNew);
+  const openedImages = useRef(null);
+  if (sig && openedImages.current === null) {
+    openedImages.current = JSON.stringify(sig.images || null);
+  }
+  const fresh =
+    openedNew &&
+    !canUndo &&
+    openedImages.current === JSON.stringify(sig?.images || null);
 
   // Annuler / rétablir au clavier (⌘Z, ⇧⌘Z, Ctrl+Y) hors des champs de
   // saisie, qui gardent leur propre annulation
@@ -1008,6 +1020,7 @@ export default function SignatureEditor({ id }) {
                     flush={flush}
                     lockEdits={lockEdits}
                     editsLocked={editsLocked}
+                    fresh={fresh}
                     catalog={catalog}
                     template={template}
                   />
