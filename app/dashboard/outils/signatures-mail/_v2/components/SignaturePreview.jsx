@@ -10,6 +10,7 @@ import {
   Monitor,
   Moon,
   MousePointerClick,
+  MoveHorizontal,
   Scaling,
   Smartphone,
   Sun,
@@ -33,7 +34,8 @@ const GESTURES = [
   { icon: MousePointerClick, label: "Cliquer pour modifier" },
   { icon: ArrowUpToLine, label: () => `${modClick()} pour le niveau au-dessus` },
   { icon: GripVertical, label: "Poignée pour déplacer" },
-  { icon: Scaling, label: "Bord ou coin pour agrandir" },
+  { icon: MoveHorizontal, label: "Bord droit pour changer la largeur" },
+  { icon: Scaling, label: "Coin pour changer la taille du texte" },
   { icon: Delete, label: "Suppr (⌫) pour retirer l'élément sélectionné" },
 ];
 
