@@ -88,12 +88,16 @@ document.addEventListener("dragstart",function(e){e.preventDefault();},true);
 /* Appui en cours : un rendu reçu entre l'appui et le relâcher est mis de
    côté (sinon il remplace l'élément visé et le clic est perdu, cas d'un
    clic juste après une saisie) ; il est appliqué au clic ou au relâcher */
-document.addEventListener("pointerdown",function(e){justLeft=null;if(e.button===0)pressing=true;},true);
-function release(){if(!pressing)return;setTimeout(function(){pressing=false;
-if(deferred!==null&&!editing&&!rs&&!fs){var d=deferred;deferred=null;applyHtml(d);}},0);}
+var pressId=0;
+document.addEventListener("pointerdown",function(e){justLeft=null;if(e.button===0){pressing=true;pressId++;}},true);
+/* Au doigt ou au stylet, le clic peut suivre le relâcher de plus loin : le
+   rendu attend un peu plus (le clic, lui, l'applique tout de suite) */
+function release(e){if(!pressing)return;var id=pressId,late=e&&e.pointerType&&e.pointerType!=="mouse";
+setTimeout(function(){if(!pressing||id!==pressId)return;pressing=false;
+if(deferred!==null&&!editing&&!rs&&!fs){var d=deferred;deferred=null;applyHtml(d);}},late?400:0);}
 document.addEventListener("pointerup",release,true);document.addEventListener("pointercancel",release,true);
-/* Relâcher perdu (hors de la fenêtre) : le prochain mouvement sans bouton y met fin */
-document.addEventListener("pointermove",function(e){if(pressing&&!e.buttons)release();},true);
+/* Relâcher perdu (hors de la fenêtre) : le prochain mouvement de souris sans bouton y met fin */
+document.addEventListener("pointermove",function(e){if(pressing&&!e.buttons&&e.pointerType==="mouse")release(e);},true);
 window.addEventListener("blur",release);
 function startEdit(el,x,y){
 if(window.SIG_READONLY)return;
@@ -122,7 +126,7 @@ if(e.target===grip||box.contains(e.target))return;
 if(justDragged)return;
 hideHover();if(e.metaKey||e.ctrlKey){goUp(e);return;}
 if(e.target.closest("a"))e.preventDefault();
-var t=fresh(e);
+var t=fresh(e);pressing=false;
 var cb=blockAt(t,e.clientX,e.clientY);clickItem=cb?cb.getAttribute("data-sig-block"):null;
 /* Un trait visé (même à quelques pixels) : il est sélectionné, sans saisie */
 if(cb&&lineAt(e.clientX,e.clientY)===cb){e.stopPropagation();post({type:"sig-field",field:null,item:clickItem,edit:false});drawSel();return;}
