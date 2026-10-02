@@ -12,7 +12,12 @@ import {
   SwitchRow,
   Warning,
 } from "./controls";
-import { ctaLabelProblem, ctaLinkProblem, linkProblem } from "../links";
+import {
+  ctaLabelProblem,
+  ctaLinkHint,
+  ctaLinkProblem,
+  linkProblem,
+} from "../links";
 import ImageField from "./ImageField";
 
 /** Espace insécable : « 5 000 € » ou un groupe de chiffres ne se coupe pas. */
@@ -120,7 +125,8 @@ export default function ExtrasSection({ id, sig, update, replace }) {
     {
       key: "cta",
       label: "Bouton d'action",
-      description: "Un lien mis en avant : prise de rendez-vous, site, catalogue…",
+      description:
+        "Un lien mis en avant : prise de rendez-vous, site, appel, e-mail…",
       enabled: cta.enabled,
       toggle: (v) => update({ cta: { enabled: v } }),
       focus: "sig-cta-label",
@@ -136,7 +142,7 @@ export default function ExtrasSection({ id, sig, update, replace }) {
               onChange={(e) => update({ cta: { label: e.target.value } })}
             />
           </Row>
-          <Row label="Lien" htmlFor="sig-cta-url">
+          <Row label="Lien" htmlFor="sig-cta-url" hint={ctaLinkHint(cta.url)}>
             <CheckedInput
               id="sig-cta-url"
               value={cta.url}

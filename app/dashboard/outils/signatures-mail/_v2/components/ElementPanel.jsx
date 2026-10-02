@@ -30,6 +30,7 @@ import BlockControls from "./BlockControls";
 import { DisclaimerField } from "./ExtrasPanel";
 import {
   ctaLabelProblem,
+  ctaLinkHint,
   ctaLinkProblem,
   emailProblem,
   linkProblem,
@@ -573,7 +574,7 @@ export default function ElementPanel({
                 onChange={(e) => update({ cta: { label: e.target.value } })}
               />
             </Field>
-            <Field label="Lien">
+            <Field label="Lien" hint={ctaLinkHint(cta.url)}>
               <CheckedInput
                 value={cta.url}
                 placeholder="calendly.com/votre-nom"
