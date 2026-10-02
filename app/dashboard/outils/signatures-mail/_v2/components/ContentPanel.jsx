@@ -21,6 +21,7 @@ import ExtrasSection from "./ExtrasPanel";
 export { Field, ImageField };
 import { emailProblem, linkProblem, networkLinkProblem } from "../links";
 import { APPLY_MEMBER_SIGNATURE_V2, SIGNATURE_MEMBERS_V2 } from "../graphql";
+import { refusalToast } from "../errors";
 
 export function TextField({
   id,
@@ -184,7 +185,8 @@ function MemberOption({ member }) {
 function PersonField({ id, sig, replace, flush, lockEdits }) {
   const [busy, setBusy] = useState(false);
   const { data } = useQuery(SIGNATURE_MEMBERS_V2, { fetchPolicy: "cache-and-network" });
-  const [apply] = useMutation(APPLY_MEMBER_SIGNATURE_V2);
+  // Un refus de l'API doit tomber dans le catch, pas passer pour une réussite
+  const [apply] = useMutation(APPLY_MEMBER_SIGNATURE_V2, { errorPolicy: "none" });
   const members = data?.signatureMembersV2 || [];
   const me = members.find((m) => m.isMe);
   const value = sig.memberUserId || me?.userId || "";
@@ -209,7 +211,7 @@ function PersonField({ id, sig, replace, flush, lockEdits }) {
       const member = members.find((m) => m.userId === memberUserId);
       toast.success(`Informations de ${member?.name || "la personne"} reprises`);
     } catch (err) {
-      toast.error(err?.graphQLErrors?.[0]?.message || "Changement impossible");
+      toast.error("Changement impossible", refusalToast(err));
     } finally {
       lockEdits(false);
       setBusy(false);

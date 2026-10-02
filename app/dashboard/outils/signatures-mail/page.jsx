@@ -33,6 +33,7 @@ import {
   SET_DEFAULT_SIGNATURE_V2,
   SIGNATURES_V2,
 } from "./_v2/graphql";
+import { refusalToast } from "./_v2/errors";
 import HtmlFrame from "./_v2/components/HtmlFrame";
 import { SignatureListV2Skeleton } from "./_v2/components/signature-v2-skeleton";
 
@@ -123,10 +124,13 @@ function SignaturesV2Content() {
   const signatures = data?.emailSignaturesV2 || [];
 
   const refetch = { refetchQueries: [{ query: SIGNATURES_V2 }] };
+  // Un refus de l'API (rôle, abonnement…) doit tomber dans le catch, pas
+  // s'afficher comme une réussite
+  const refused = { ...refetch, errorPolicy: "none" };
   const [create] = useMutation(CREATE_SIGNATURE_V2, refetch);
-  const [duplicate] = useMutation(DUPLICATE_SIGNATURE_V2, refetch);
-  const [setDefault] = useMutation(SET_DEFAULT_SIGNATURE_V2, refetch);
-  const [remove] = useMutation(DELETE_SIGNATURE_V2, refetch);
+  const [duplicate] = useMutation(DUPLICATE_SIGNATURE_V2, refused);
+  const [setDefault] = useMutation(SET_DEFAULT_SIGNATURE_V2, refused);
+  const [remove] = useMutation(DELETE_SIGNATURE_V2, refused);
 
   const readOnlyTooltip = isReadOnly
     ? isOwner
@@ -151,8 +155,8 @@ function SignaturesV2Content() {
       const { data: copy } = await duplicate({ variables: { id } });
       toast.success("Signature dupliquée");
       router.push(EDITOR_URL(copy.duplicateEmailSignatureV2.id));
-    } catch {
-      toast.error("Duplication impossible");
+    } catch (err) {
+      toast.error("Duplication impossible", refusalToast(err));
     }
   };
 
@@ -160,8 +164,8 @@ function SignaturesV2Content() {
     try {
       await setDefault({ variables: { id } });
       toast.success("Signature définie par défaut");
-    } catch {
-      toast.error("Action impossible");
+    } catch (err) {
+      toast.error("Action impossible", refusalToast(err));
     }
   };
 
@@ -170,8 +174,8 @@ function SignaturesV2Content() {
     try {
       await remove({ variables: { id: toDelete.id } });
       toast.success("Signature supprimée");
-    } catch {
-      toast.error("Suppression impossible");
+    } catch (err) {
+      toast.error("Suppression impossible", refusalToast(err));
     } finally {
       setToDelete(null);
     }

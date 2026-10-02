@@ -31,8 +31,10 @@ export default function ImageField({
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [upload] = useMutation(UPLOAD_SIGNATURE_V2_IMAGE);
-  const [remove] = useMutation(REMOVE_SIGNATURE_V2_IMAGE);
+  // Un refus de l'API (image illisible, rôle…) doit tomber dans le catch :
+  // sinon « Image ajoutée » s'afficherait sans rien changer
+  const [upload] = useMutation(UPLOAD_SIGNATURE_V2_IMAGE, { errorPolicy: "none" });
+  const [remove] = useMutation(REMOVE_SIGNATURE_V2_IMAGE, { errorPolicy: "none" });
 
   const send = async (file) => {
     if (!file) return;
