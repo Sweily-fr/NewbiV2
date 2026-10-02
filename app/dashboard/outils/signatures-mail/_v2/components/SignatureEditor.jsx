@@ -213,6 +213,8 @@ export default function SignatureEditor({ id }) {
     isSaveBlocked,
     loading,
     error,
+    notFound,
+    refetch,
     catalog,
     initialRender,
   } = useSignatureV2(id);
@@ -762,13 +764,62 @@ export default function SignatureEditor({ id }) {
       // signature supprimée
       discard();
       toast.success("Signature supprimée");
-      router.push(LIST_URL);
+      // Remplace l'adresse : Précédent ne ramène pas à la signature supprimée
+      router.replace(LIST_URL);
     } catch (err) {
       toast.error("Suppression impossible", refusalToast(err));
     }
   };
 
-  if (error) {
+  // Nouvel essai de chargement après une panne (l'état de chargement de la
+  // requête ne bouge pas pendant un rechargement : suivi local)
+  const [retrying, setRetrying] = useState(false);
+  const retryLoad = async () => {
+    setRetrying(true);
+    try {
+      await refetch();
+    } catch {
+      // L'écran d'erreur reste affiché
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  // Panne réseau au chargement, après les essais automatiques : rien n'est
+  // perdu, on propose de réessayer
+  if (!sig && error?.networkError) {
+    return (
+      <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center gap-3 text-center">
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Impossible de charger la signature pour le moment. Vérifiez votre
+          connexion puis réessayez.
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push(LIST_URL)}
+            className="cursor-pointer"
+          >
+            <ArrowLeft size={14} />
+            Retour aux signatures
+          </Button>
+          <Button
+            variant="primary"
+            onClick={retryLoad}
+            disabled={retrying}
+            className="cursor-pointer"
+          >
+            {retrying && <Loader2 size={14} className="animate-spin" />}
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Signature supprimée, d'un collègue ou d'un autre espace (réponse vide),
+  // ou refusée par l'API
+  if (!sig && (error || notFound)) {
     return (
       <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center gap-3 text-center">
         <p className="text-sm text-muted-foreground">

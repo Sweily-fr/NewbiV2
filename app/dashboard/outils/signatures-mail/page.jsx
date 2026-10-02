@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client";
-import { CopyPlus, Loader2, Monitor, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react";
+import { CircleAlert, CopyPlus, Loader2, Monitor, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Button } from "@/src/components/ui/button";
@@ -120,8 +120,23 @@ function SignaturesV2Content() {
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState(null);
 
-  const { data, loading } = useQuery(SIGNATURES_V2, { fetchPolicy: "cache-and-network" });
+  const { data, loading, error, refetch: reload } = useQuery(SIGNATURES_V2, {
+    fetchPolicy: "cache-and-network",
+  });
   const signatures = data?.emailSignaturesV2 || [];
+  // Nouvel essai après un échec de chargement (l'état de chargement de la
+  // requête ne bouge pas pendant un rechargement : suivi local)
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await reload();
+    } catch {
+      // Le message d'erreur reste affiché
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const refetch = { refetchQueries: [{ query: SIGNATURES_V2 }] };
   // Un refus de l'API (rôle, abonnement…) doit tomber dans le catch, pas
@@ -222,6 +237,26 @@ function SignaturesV2Content() {
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {loading && signatures.length === 0 ? (
             <SignatureListV2Skeleton />
+          ) : error && signatures.length === 0 ? (
+            // Échec sans liste en cache : surtout pas l'accueil des
+            // nouveaux, qui ferait croire les signatures perdues
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <CircleAlert className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h2 className="text-lg font-medium">Impossible d&apos;afficher vos signatures</h2>
+              <p className="mb-4 mt-2 max-w-md text-sm text-muted-foreground">
+                Le chargement a échoué. Vos signatures enregistrées ne sont pas perdues :
+                vérifiez votre connexion, puis réessayez.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleRetry}
+                disabled={retrying}
+                className="cursor-pointer"
+              >
+                {retrying && <Loader2 size={14} className="animate-spin" />}
+                Réessayer
+              </Button>
+            </div>
           ) : signatures.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
               <div className="max-w-md space-y-2">

@@ -465,6 +465,9 @@ export function useSignatureV2(id) {
     isSaveBlocked,
     loading: loading && !sig,
     error,
+    // Réponse vide sans erreur : signature supprimée, d'un collègue ou d'un
+    // autre espace (jamais vrai pendant l'édition, la signature est chargée)
+    notFound: !sig && !error && data?.emailSignatureV2 === null,
     refetch,
     catalog,
     initialRender: data?.emailSignatureV2?.render || null,
