@@ -91,6 +91,7 @@ import {
   ancestorsOf,
   selectionLabel,
 } from "./LevelPanels";
+import { setPreviewWidths } from "./LayoutControls";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
@@ -240,6 +241,9 @@ export default function SignatureEditor({ id }) {
   }, [initialRender, render]);
 
   const onRender = useCallback((r) => setRender(r), []);
+  // Largeurs mesurées dans l'aperçu (réglages de largeur) : oubliées en
+  // quittant l'éditeur, pour ne jamais servir à une autre signature
+  useEffect(() => () => setPreviewWidths(null), []);
 
   // Texte modifié directement dans l'aperçu : même enregistrement qu'une
   // saisie dans le panneau
@@ -1081,6 +1085,7 @@ export default function SignatureEditor({ id }) {
               onFont={isReadOnly ? undefined : onFont}
               onEscape={onEscape}
               onDelete={deleteSelected}
+              onMeasure={setPreviewWidths}
               readOnly={isReadOnly}
             />
           </div>

@@ -37,6 +37,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - `onDelete()` : Suppr (⌫) pressée sur une sélection, hors saisie.
  * - `readOnly` : ni modification en place ni poignée (abonnement expiré) ;
  *   un clic ouvre seulement le panneau de l'élément.
+ * - `onMeasure({ frame, columns })` : après chaque rendu, les largeurs que
+ *   le contenu impose au cadre et aux colonnes ({ floor, natural } en px),
+ *   pour que les réglages de largeur ne proposent que le possible.
  */
 
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
@@ -259,13 +262,25 @@ else if(k==="icons"){el.querySelectorAll("img").forEach(function(im){im.style.wi
    d'aucun rendu (valeur inchangée, rendu ignoré), pour ne jamais garder les
    tailles provisoires de l'aperçu en direct */
 var sigRoot=document.querySelector(".sig"),lastHtml=sigRoot?sigRoot.innerHTML:"",pending=null,deferred=null;
-function applyHtml(html){clearTimeout(pending);pending=null;lastHtml=html;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();hideHover();watchSel();drawSel();h();}
+/* Largeurs que le contenu impose au cadre (ou à la signature sans cadre)
+   et à chaque colonne : plancher (conteneur bridé à 1 px : il ne descend
+   pas plus bas, quelle que soit la largeur choisie) et largeur naturelle
+   (conteneur à la taille de son contenu), mesurées sans rien afficher.
+   Envoyées au parent quand elles changent : les réglages de largeur ne
+   proposent que ce qui est possible. */
+function sizedEl(){return document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]");}
+function widths(el){var s=el.style.width;el.style.width="1px";var floor=Math.ceil(el.scrollWidth);el.style.width="max-content";var natural=Math.ceil(el.getBoundingClientRect().width);el.style.width=s;return{floor:floor,natural:Math.max(floor,natural)};}
+var lastMeasure="";
+function measure(){if(!sigRoot)return;var fr=sizedEl(),m={frame:fr?widths(fr):null,columns:{}};
+["visual","text","side"].forEach(function(k){var c=document.querySelector('[data-sig-slot="'+k+'"]');if(c)m.columns[k]=widths(c);});
+var key=JSON.stringify(m);if(key===lastMeasure)return;lastMeasure=key;post({type:"sig-measure",frame:m.frame,columns:m.columns});}
+function applyHtml(html){clearTimeout(pending);pending=null;lastHtml=html;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();hideHover();watchSel();drawSel();h();measure();}
 /* Rendu reçu pendant un réglage à la souris : il devient le dernier rendu,
    appliqué à la fin du réglage (sinon il arracherait la mesure en cours) */
 function takeDeferred(){if(deferred!==null){lastHtml=deferred;deferred=null;}}
 var selRO=new ResizeObserver(function(){drawSel();});
 function watchSel(){selRO.disconnect();selEls().forEach(function(el){selRO.observe(el);});}
-function restore(){if(editing||rs||fs)return;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();watchSel();drawSel();h();}
+function restore(){if(editing||rs||fs)return;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();watchSel();drawSel();h();measure();}
 function awaitRender(){clearTimeout(pending);pending=setTimeout(function(){pending=null;restore();},3000);}
 /* Bord : la largeur (ou la taille) suit le pointeur dans l'aperçu même,
    et la valeur retenue est celle que l'aperçu affiche vraiment : un texte
@@ -300,17 +315,19 @@ if(!n)return null;var cs=getComputedStyle(n),px=function(v){return parseFloat(v)
 return Math.round(n.getBoundingClientRect().width-px(cs.paddingLeft)-px(cs.paddingRight)-px(cs.borderLeftWidth)-px(cs.borderRightWidth));}
 knob.addEventListener("pointerdown",function(e){if(!sel||!sel.resize)return;e.preventDefault();e.stopPropagation();if(editing)editing.blur();
 var r=selRect();if(!r)return;var z=sel.resize,kind=z.kind,icons=kind==="icons",w=Math.ceil(r.r-r.l);
-var tables=kind==="wrap"||kind==="column"||kind==="frame"?wrapTables():[];
 /* Cadre, colonne : largeur réglée (l'aperçu téléphone peut la brider),
-   sinon celle affichée */
-if(kind==="frame"||kind==="column")w=z.width||(tables[0]?Math.ceil(tables[0].getBoundingClientRect().width):w);
+   sinon celle affichée ; jamais sous le plancher du contenu, pour que le
+   bord suive la souris et que la bulle dise la largeur obtenue */
+var floor=0;if(kind==="frame"||kind==="column"){var sized=kind==="frame"?sizedEl():selEls()[0];if(sized)floor=widths(sized).floor;}
+var tables=kind==="wrap"||kind==="column"||kind==="frame"?wrapTables():[];
+if(kind==="frame"||kind==="column")w=Math.max(floor,z.width||(tables[0]?Math.ceil(tables[0].getBoundingClientRect().width):w));
 if(kind==="square"||kind==="image"){var cw=shownWidth(kind);if(cw)w=cw;}
 /* Texte : part de sa largeur choisie ; largeur naturelle (sur une ligne)
    au-delà de laquelle il redevient automatique, sauf plafond automatique
    du rendu (accroche, mention longues) : on garde alors cette largeur */
 var natural=0,capped=false;if(kind==="wrap"){tables.forEach(function(d){var before=d.tagName==="TABLE"?[d.getAttribute("width"),d.style.width,d.style.maxWidth]:[d.style.maxWidth];if(hasWrap(d)&&!z.width)capped=true;setWrap(d,0);natural=Math.max(natural,Math.ceil(vrect(d).w));
 if(d.tagName==="TABLE"){if(before[0])d.setAttribute("width",before[0]);d.style.width=before[1];d.style.maxWidth=before[2];}else d.style.maxWidth=before[0];});if(z.width)w=z.width;}
-var start=icons?z.size:w,min=z.min,max=z.max,fit=kind==="image"?logoFit():null;if(fit){min=fit.f(min);max=fit.f(max);}
+var start=icons?z.size:w,min=Math.max(z.min,floor),max=z.max,fit=kind==="image"?logoFit():null;if(fit){min=fit.f(min);max=fit.f(max);}
 rs={kind:kind,width:z.width||0,min0:z.min,max0:z.max,x:e.clientX,w:w,start:start,shown:start,cur:fit?fit.inv(start):kind==="wrap"?z.width||0:start,icons:icons,moved:false,min:min,max:max,fit:fit,tables:tables,natural:natural,capped:capped,auto:false};
 liveTables=tables;
 knob.setPointerCapture(e.pointerId);hideGrip();hideHover();tipAt("value");tip.style.display="block";tip.textContent=start+" px";});
@@ -344,6 +361,7 @@ function endFont(){if(!fs)return;var v=fs.cur,changed=fs.moved&&v!==fs.start;fs=
 corner.addEventListener("pointerup",endFont);corner.addEventListener("pointercancel",endFont);corner.addEventListener("lostpointercapture",endFont);
 corner.addEventListener("click",function(e){e.stopPropagation();});
 new ResizeObserver(drawSel).observe(document.body);document.addEventListener("load",drawSel,true);window.addEventListener("resize",drawSel);
+document.addEventListener("load",measure,true);window.addEventListener("load",function(){lastMeasure="";measure();});measure();
 document.addEventListener("keydown",function(e){if(e.key!=="Escape"||e.defaultPrevented)return;
 if(rs||fs){e.preventDefault();rs=null;fs=null;tip.style.display="none";takeDeferred();restore();return;}
 if(!editing&&sel)post({type:"sig-escape"});});
@@ -374,6 +392,7 @@ export default function HtmlFrame({
   onFont,
   onEscape,
   onDelete,
+  onMeasure,
   selection = null,
   readOnly = false,
   frozen = false,
@@ -426,6 +445,25 @@ export default function HtmlFrame({
       if (data && data.type === "sig-drag-cancel") {
         onDragCancel?.();
       }
+      if (data && data.type === "sig-measure") {
+        const widths = (m) =>
+          m && Number.isFinite(m.floor)
+            ? {
+                floor: Math.round(m.floor),
+                natural: Math.round(
+                  Number.isFinite(m.natural) ? m.natural : m.floor,
+                ),
+              }
+            : null;
+        onMeasure?.({
+          frame: widths(data.frame),
+          columns: Object.fromEntries(
+            ["visual", "text", "side"]
+              .map((k) => [k, widths(data.columns?.[k])])
+              .filter(([, m]) => m),
+          ),
+        });
+      }
       if (data && (data.type === "sig-drag-move" || data.type === "sig-drag-end")) {
         const box = frameRef.current?.getBoundingClientRect();
         if (box) {
@@ -477,6 +515,7 @@ export default function HtmlFrame({
     onFont,
     onEscape,
     onDelete,
+    onMeasure,
   ]);
 
   // Pendant une modification en place, le HTML affiché ne change pas

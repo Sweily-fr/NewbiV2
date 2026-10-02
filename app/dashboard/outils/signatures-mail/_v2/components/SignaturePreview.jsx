@@ -67,6 +67,7 @@ export default function SignaturePreview({
   onFont,
   onEscape,
   onDelete,
+  onMeasure,
   readOnly = false,
 }) {
   const [dark, setDark] = useState(false);
@@ -288,6 +289,7 @@ export default function SignaturePreview({
           onDragMove={setDragPointer}
           onDragEnd={setDragRelease}
           onDragCancel={cancelDrag}
+          onMeasure={onMeasure}
           frozen={editing}
         />
         {drag && (

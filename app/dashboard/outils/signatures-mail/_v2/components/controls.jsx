@@ -266,7 +266,10 @@ export function SliderRow({
 /**
  * Longueur automatique (toute la hauteur, ajustée au contenu…) ou sur
  * mesure, en px. `value` 0 = automatique ; `initial` = valeur proposée au
- * passage en sur mesure.
+ * passage en sur mesure. `floor` : largeur sous laquelle le contenu ne
+ * descend pas (mesurée dans l'aperçu, 0 si inconnue) : le curseur ne va pas
+ * plus bas et affiche la largeur obtenue, jamais une valeur sans effet ;
+ * `note` : message sous le curseur (valeur enregistrée sous ce plancher…).
  */
 export function LengthRow({
   label,
@@ -278,14 +281,20 @@ export function LengthRow({
   max,
   step = 2,
   initial,
+  floor = 0,
+  note,
 }) {
   const custom = value > 0;
+  // Plancher arrondi au pas : le curseur tombe juste jusqu'à son maximum
+  const low =
+    floor > min ? Math.min(max - step, Math.ceil(floor / step) * step) : min;
+  const within = (v) => Math.max(low, Math.min(max, v));
   return (
     <Row label={label} hint={hint}>
       <Choice
         label={label}
         value={custom ? "custom" : "auto"}
-        onChange={(v) => onChange(v === "custom" ? initial : 0)}
+        onChange={(v) => onChange(v === "custom" ? within(initial) : 0)}
         options={[
           { value: "auto", label: autoLabel },
           { value: "custom", label: "Sur mesure" },
@@ -295,17 +304,18 @@ export function LengthRow({
         <div className="animate-in fade-in-0 slide-in-from-top-1 ml-1 flex items-center gap-3 border-l-2 border-[#5b4fff]/30 py-0.5 pl-4 duration-200">
           <Slider
             className="flex-1"
-            value={[value]}
-            min={min}
+            value={[within(value)]}
+            min={low}
             max={max}
             step={step}
             onValueChange={(v) => onChange(v[0])}
           />
           <span className="w-14 shrink-0 text-right text-xs font-medium tabular-nums text-[#242529] dark:text-white">
-            {value} px
+            {Math.max(value, Math.min(floor, max))} px
           </span>
         </div>
       )}
+      {custom && note}
     </Row>
   );
 }
