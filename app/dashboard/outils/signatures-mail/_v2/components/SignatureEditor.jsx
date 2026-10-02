@@ -1097,8 +1097,9 @@ export default function SignatureEditor({ id }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cette signature ?</AlertDialogTitle>
             <AlertDialogDescription>
-              « {sig.name} » et ses images seront supprimées. Cette action est
-              irréversible.
+              « {sig.name} » sera supprimée de Newbi. Si elle est installée dans
+              votre messagerie, elle continuera de s&apos;afficher normalement,
+              images comprises. Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
