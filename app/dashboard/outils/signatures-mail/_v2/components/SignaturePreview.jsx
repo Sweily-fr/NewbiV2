@@ -86,6 +86,8 @@ export default function SignaturePreview({
   }, []);
   // Échap pendant le glisser, pointeur dans l'aperçu
   const cancelDrag = useCallback(() => setDrag(null), []);
+  // Conteneur qui défile (faux message et aperçu)
+  const scrollRef = useRef(null);
   const input = useMemo(() => toInput(sig), [sig]);
   const debouncedInput = useDebounced(input, RENDER_DELAY_MS);
   const lastRender = useRef(initialRender);
@@ -214,8 +216,10 @@ export default function SignaturePreview({
       </div>
 
       {/* Fenêtre de client mail stylisée autour de l'iframe ; elle défile
-          quand la signature dépasse la hauteur disponible. */}
+          quand la signature dépasse la hauteur disponible, y compris
+          pendant un glisser (le calque de dépôt la fait défiler). */}
       <div
+        ref={scrollRef}
         className={`min-h-0 flex-1 overflow-y-auto rounded-xl border shadow-sm ${
           mobile ? "mx-auto w-full max-w-[390px]" : ""
         } ${dark ? "border-neutral-700 bg-[#1f1f1f]" : "border-neutral-200 bg-white"}`}
@@ -290,6 +294,7 @@ export default function SignaturePreview({
             style={sig.style}
             pointer={dragPointer}
             release={dragRelease}
+            scroller={scrollRef}
             onCancel={() => setDrag(null)}
             onDrop={(patch, info) => {
               setDrag(null);
