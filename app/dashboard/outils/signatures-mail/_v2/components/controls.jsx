@@ -134,7 +134,7 @@ export function EmptyHint({ text, action, onAction }) {
           type="button"
           onClick={onAction}
           className={cn(
-            "inline-flex shrink-0 items-center gap-1 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer",
+            "inline-flex shrink-0 items-center gap-1 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline dark:text-[#8b7fff] cursor-pointer",
             FOCUS_RING,
           )}
         >
@@ -611,7 +611,7 @@ export function ChoiceCard({
       <span
         className={cn(
           "mt-1.5 flex h-4 items-center text-xs font-medium leading-4",
-          selected ? "text-foreground" : "text-muted-foreground/80",
+          selected ? "text-foreground" : "text-muted-foreground",
         )}
       >
         {label}

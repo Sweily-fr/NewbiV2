@@ -154,7 +154,11 @@ function SaveStatus({ status }) {
       className: "text-muted-foreground",
     },
     saving: { label: "Enregistrement…", className: "text-muted-foreground" },
-    saved: { label: "Enregistré", className: "text-emerald-600" },
+    // emerald-600 restait trop clair sur blanc (3,7:1)
+    saved: {
+      label: "Enregistré",
+      className: "text-emerald-700 dark:text-emerald-400",
+    },
     error: { label: "Non enregistré", className: "text-red-600" },
   };
   const s = map[status];
@@ -919,7 +923,7 @@ export default function SignatureEditor({ id }) {
               >
                 <LayoutTemplate size={14} />
                 Modèle <span className="font-medium text-foreground">{template.name}</span>
-                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 dark:text-[#8b7fff]">
                   Changer
                   <ChevronRight size={12} />
                 </span>

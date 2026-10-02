@@ -103,7 +103,7 @@ function ResetLayout({ sig, template, setStyle }) {
         // Places, traits et bordures, blocs, colonnes, nom, réseaux et logo
         // du modèle ; couleurs et typographie inchangées
         onClick={() => setStyle(layoutReset(sig, template))}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer ${FOCUS_RING}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline dark:text-[#8b7fff] cursor-pointer ${FOCUS_RING}`}
       >
         <RotateCcw size={12} />
         Revenir au modèle {template.name}

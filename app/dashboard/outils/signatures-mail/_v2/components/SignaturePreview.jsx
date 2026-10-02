@@ -29,6 +29,13 @@ import DropOverlay from "./DropOverlay";
 // Court : un déplacement ou un réglage doit se voir tout de suite
 const RENDER_DELAY_MS = 150;
 
+// Modes de l'aperçu en segments, comme les choix des panneaux : pastille
+// blanche et icône foncée pour le mode actif, sur une piste qui tranche
+// sur le fond de l'aperçu ; icône grise pour l'autre mode
+const MODE_GROUP =
+  "gap-0.5 rounded-[9px] bg-neutral-200/70 p-0.5 dark:bg-neutral-800";
+const MODE_ITEM = `h-7 rounded-md px-2.5 text-[#606164] hover:bg-transparent hover:text-[#242529] focus-visible:ring-0 dark:text-white/55 dark:hover:text-white data-[state=on]:bg-white data-[state=on]:text-[#242529] data-[state=on]:shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)] dark:data-[state=on]:bg-neutral-600 dark:data-[state=on]:text-white ${FOCUS_RING}`;
+
 /** Les gestes de l'aperçu, rappelés au-dessus de lui. */
 const GESTURES = [
   { icon: MousePointerClick, label: "Cliquer pour modifier" },
@@ -168,6 +175,7 @@ export default function SignaturePreview({
           <ToggleGroup
             type="single"
             size="sm"
+            className={MODE_GROUP}
             value={mobile ? "mobile" : "desktop"}
             onValueChange={(v) => v && setMobile(v === "mobile")}
           >
@@ -175,7 +183,7 @@ export default function SignaturePreview({
               value="desktop"
               aria-label="Aperçu ordinateur"
               title="Aperçu sur ordinateur"
-              className="px-2.5"
+              className={MODE_ITEM}
             >
               <Monitor size={14} />
             </ToggleGroupItem>
@@ -183,7 +191,7 @@ export default function SignaturePreview({
               value="mobile"
               aria-label="Aperçu téléphone"
               title="Aperçu sur téléphone"
-              className="px-2.5"
+              className={MODE_ITEM}
             >
               <Smartphone size={14} />
             </ToggleGroupItem>
@@ -191,6 +199,7 @@ export default function SignaturePreview({
           <ToggleGroup
             type="single"
             size="sm"
+            className={MODE_GROUP}
             value={dark ? "dark" : "light"}
             onValueChange={(v) => v && setDark(v === "dark")}
           >
@@ -198,7 +207,7 @@ export default function SignaturePreview({
               value="light"
               aria-label="Aperçu clair"
               title="Mode clair"
-              className="px-2.5"
+              className={MODE_ITEM}
             >
               <Sun size={14} />
             </ToggleGroupItem>
@@ -206,7 +215,7 @@ export default function SignaturePreview({
               value="dark"
               aria-label="Aperçu sombre"
               title="Mode sombre"
-              className="px-2.5"
+              className={MODE_ITEM}
             >
               <Moon size={14} />
             </ToggleGroupItem>
