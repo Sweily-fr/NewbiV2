@@ -116,8 +116,9 @@ export function Section({
             />
           </button>
         </h3>
+        {/* Sur deux lignes au plus : la place, au début, n'est pas coupée */}
         {!open && summary && (
-          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+          <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
             {summary}
           </p>
         )}

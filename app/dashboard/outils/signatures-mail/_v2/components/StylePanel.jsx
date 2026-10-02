@@ -156,7 +156,8 @@ const FRAME_LABELS = {
   "accent-left": "Barre à gauche",
   "accent-top": "Barre en haut",
 };
-const PHOTO_LABELS = {
+// Aussi le début du résumé de « Disposition » du panneau Photo
+export const PHOTO_LABELS = {
   left: "Photo à gauche",
   top: "Photo au-dessus",
   right: "Photo à droite",

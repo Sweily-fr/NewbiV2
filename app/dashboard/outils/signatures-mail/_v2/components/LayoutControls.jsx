@@ -734,10 +734,11 @@ export function OutsideControls({ st, setStyle, shown }) {
 }
 
 /**
- * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
- * l'autre (comme les dépôts « À côté », « Au-dessus », « Sous »).
+ * Réseaux et logo qui se suivent en bas : vrai s'ils sont côte à côte,
+ * faux s'ils sont l'un sous l'autre, null s'ils ne se suivent pas (pas de
+ * choix à faire).
  */
-export function FooterPairControl({ st, setStyle, shown }) {
+export function footerPaired(st, shown) {
   const footer = (st.slots?.footer || []).filter((k) => !shown || shown.has(k));
   const a = footer.indexOf("social");
   const b = footer.indexOf("logo");
@@ -745,6 +746,17 @@ export function FooterPairControl({ st, setStyle, shown }) {
   // Un alignement choisi pour l'un des deux les garde l'un sous l'autre
   const blocks = st.blocks || {};
   const aligned = Boolean(blocks.social?.align || blocks.logo?.align);
+  return st.footerPair !== false && !aligned;
+}
+
+/**
+ * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
+ * l'autre (comme les dépôts « À côté », « Au-dessus », « Sous »).
+ */
+export function FooterPairControl({ st, setStyle, shown }) {
+  const paired = footerPaired(st, shown);
+  if (paired === null) return null;
+  const blocks = st.blocks || {};
   const unaligned = (k) => {
     // eslint-disable-next-line no-unused-vars
     const { align, ...rest } = blocks[k] || {};
@@ -755,7 +767,7 @@ export function FooterPairControl({ st, setStyle, shown }) {
       id="sig-footer-pair"
       label="Réseaux et logo côte à côte"
       description="Sinon, l'un sous l'autre."
-      checked={st.footerPair !== false && !aligned}
+      checked={paired}
       onCheckedChange={(v) =>
         setStyle(
           v
