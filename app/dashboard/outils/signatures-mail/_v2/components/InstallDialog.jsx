@@ -277,9 +277,11 @@ export default function InstallDialog({ open, onOpenChange, render, name, gmailM
         )}
 
         <Tabs defaultValue="gmail">
+          {/* Deux rangées d'onglets : chacun garde sa hauteur, pour que la
+              seconde reste dans le fond de la liste */}
           <TabsList className="flex flex-wrap h-auto">
             {GUIDES.map((g) => (
-              <TabsTrigger key={g.id} value={g.id} className="text-xs">
+              <TabsTrigger key={g.id} value={g.id} className="h-auto text-xs">
                 {g.label}
               </TabsTrigger>
             ))}
