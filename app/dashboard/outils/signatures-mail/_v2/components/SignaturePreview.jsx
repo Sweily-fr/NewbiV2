@@ -5,6 +5,7 @@ import { useQuery } from "@apollo/client";
 import {
   ArrowUpToLine,
   CircleHelp,
+  CornerDownLeft,
   Delete,
   GripVertical,
   Monitor,
@@ -12,7 +13,9 @@ import {
   MousePointerClick,
   Scaling,
   Smartphone,
+  SquareDashedMousePointer,
   Sun,
+  Undo2,
 } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import {
@@ -21,7 +24,7 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
-import { modClick } from "./LevelPanels";
+import { modClick, undoKeys } from "./LevelPanels";
 import { FOCUS_RING } from "./controls";
 import HtmlFrame from "./HtmlFrame";
 import DropOverlay from "./DropOverlay";
@@ -42,8 +45,62 @@ const GESTURES = [
   { icon: ArrowUpToLine, label: () => `${modClick()} pour le niveau au-dessus` },
   { icon: GripVertical, label: "Poignée pour déplacer" },
   { icon: Scaling, label: "Bord ou coin pour agrandir" },
+  {
+    icon: CornerDownLeft,
+    label: "Entrée ou Échap pour valider un texte modifié",
+  },
+  {
+    icon: SquareDashedMousePointer,
+    label: "Échap ou clic à côté pour désélectionner",
+  },
   { icon: Delete, label: "Suppr (⌫) pour retirer l'élément sélectionné" },
+  {
+    icon: Undo2,
+    label: () => {
+      const keys = undoKeys();
+      return `${keys.undo} pour annuler, ${keys.redo} pour rétablir`;
+    },
+  },
 ];
+
+/**
+ * Aide « ? » : tous les gestes de l'aperçu. Toujours au même endroit, y
+ * compris en aperçu sombre ou sur téléphone, où l'aperçu reste modifiable.
+ */
+function GesturesHelp() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Tous les gestes de l'aperçu"
+          title="Tous les gestes de l'aperçu"
+          className={`ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer ${FOCUS_RING}`}
+        >
+          <CircleHelp size={14} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-3">
+        <p className="mb-2 text-sm font-medium">Dans l&apos;aperçu</p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          {GESTURES.map(({ icon: Icon, label }) => {
+            const text = typeof label === "function" ? label() : label;
+            return (
+              <li key={text} className="flex items-start gap-2">
+                <Icon size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                {text}
+              </li>
+            );
+          })}
+        </ul>
+        <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+          Tout se règle aussi à gauche : onglet Style, rubrique « Un élément
+          en particulier ».
+        </p>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function useDebounced(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -126,51 +183,26 @@ export default function SignaturePreview({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-4 px-1 pb-3">
-        {mobile && overflow ? (
-          <p className="text-xs text-amber-700 dark:text-amber-300">
-            Trop large pour un téléphone : la signature y défilera de côté.
-            Placez des éléments en dessous plutôt qu&apos;à côté.
-          </p>
-        ) : dark ? (
-          <p className="text-xs text-muted-foreground">
-            Simulation du mode sombre (Apple Mail, Outlook) : les textes
-            sombres sont inversés, pas les images.
-          </p>
-        ) : readOnly ? (
-          <span />
-        ) : (
-          // Une phrase pour commencer ; les autres gestes dans l'aide « ? »
-          <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-            <MousePointerClick size={14} aria-hidden="true" />
-            <span className="truncate">Cliquez un élément pour le modifier</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Tous les gestes de l'aperçu"
-                  title="Tous les gestes de l'aperçu"
-                  className={`ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent hover:text-foreground cursor-pointer ${FOCUS_RING}`}
-                >
-                  <CircleHelp size={14} />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-72 p-3">
-                <p className="mb-2 text-sm font-medium">Dans l&apos;aperçu</p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  {GESTURES.map(({ icon: Icon, label }) => {
-                    const text = typeof label === "function" ? label() : label;
-                    return (
-                      <li key={text} className="flex items-start gap-2">
-                        <Icon size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
-                        {text}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
+        <div className="flex min-w-0 items-center gap-1.5">
+          {mobile && overflow ? (
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              Trop large pour un téléphone : la signature y défilera de côté.
+              Placez des éléments en dessous plutôt qu&apos;à côté.
+            </p>
+          ) : dark ? (
+            <p className="text-xs text-muted-foreground">
+              Simulation du mode sombre (Apple Mail, Outlook) : les textes
+              sombres sont inversés, pas les images.
+            </p>
+          ) : readOnly ? null : (
+            // Une phrase pour commencer ; les autres gestes dans l'aide « ? »
+            <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+              <MousePointerClick size={14} aria-hidden="true" />
+              <span className="truncate">Cliquez un élément pour le modifier</span>
+            </div>
+          )}
+          {!readOnly && <GesturesHelp />}
+        </div>
         <div className="flex shrink-0 items-center gap-2">
           <ToggleGroup
             type="single"

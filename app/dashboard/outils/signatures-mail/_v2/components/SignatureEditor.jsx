@@ -88,6 +88,7 @@ import {
   SlotPanel,
   ancestorsOf,
   selectionLabel,
+  undoKeys,
 } from "./LevelPanels";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
@@ -965,7 +966,7 @@ export default function SignatureEditor({ id }) {
                 onClick={undo}
                 disabled={!canUndo || isReadOnly}
                 aria-label="Annuler"
-                title="Annuler (⌘Z)"
+                title={`Annuler (${undoKeys().undo})`}
               >
                 <Undo2 size={16} />
               </Button>
@@ -976,7 +977,7 @@ export default function SignatureEditor({ id }) {
                 onClick={redo}
                 disabled={!canRedo || isReadOnly}
                 aria-label="Rétablir"
-                title="Rétablir (⇧⌘Z)"
+                title={`Rétablir (${undoKeys().redo})`}
               >
                 <Redo2 size={16} />
               </Button>

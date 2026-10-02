@@ -104,12 +104,24 @@ const PARTS = {
   address: { title: "Adresse", group: "contact", maxLength: 300 },
 };
 
+/** Mac (iPhone, iPad) : raccourcis avec ⌘ ; ailleurs, avec Ctrl. */
+export function isMac() {
+  return (
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "")
+  );
+}
+
 /** « ⌘ + clic » sur un Mac, « Ctrl + clic » ailleurs (côté navigateur). */
 export function modClick() {
-  const mac =
-    typeof navigator !== "undefined" &&
-    /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
-  return mac ? "⌘ + clic" : "Ctrl + clic";
+  return isMac() ? "⌘ + clic" : "Ctrl + clic";
+}
+
+/** Raccourcis d'annulation, tels que le système de l'utilisateur les écrit. */
+export function undoKeys() {
+  return isMac()
+    ? { undo: "⌘Z", redo: "⇧⌘Z" }
+    : { undo: "Ctrl+Z", redo: "Ctrl+Y" };
 }
 
 /** Libellé d'une sélection, pour le titre et le fil d'Ariane. */
