@@ -257,6 +257,9 @@ export default function SignatureEditor({ id }) {
   }, [selectionKey]);
   const [render, setRender] = useState(initialRender);
   const [installOpen, setInstallOpen] = useState(false);
+  // Visite guidée relancée depuis l'aide « ? » : chaque relance la remonte
+  const [tourRun, setTourRun] = useState(0);
+  const replayTour = useCallback(() => setTourRun((n) => n + 1), []);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -1073,6 +1076,7 @@ export default function SignatureEditor({ id }) {
               onFont={isReadOnly ? undefined : onFont}
               onEscape={onEscape}
               onDelete={deleteSelected}
+              onReplayTour={isReadOnly ? undefined : replayTour}
               readOnly={isReadOnly}
             />
           </div>
@@ -1096,6 +1100,8 @@ export default function SignatureEditor({ id }) {
 
       {!isReadOnly && (
         <EditorTour
+          key={tourRun}
+          replay={tourRun > 0}
           steps={[
             {
               target: "preview",

@@ -66,10 +66,15 @@ const GESTURES = [
 /**
  * Aide « ? » : tous les gestes de l'aperçu. Toujours au même endroit, y
  * compris en aperçu sombre ou sur téléphone, où l'aperçu reste modifiable.
+ * `onReplayTour` : relance la visite guidée.
  */
-function GesturesHelp() {
+function GesturesHelp({ onReplayTour }) {
+  const [open, setOpen] = useState(false);
+  // La visite relancée prend le focus : l'aide qui se ferme ne le rend pas
+  // à son bouton
+  const replaying = useRef(false);
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -80,7 +85,15 @@ function GesturesHelp() {
           <CircleHelp size={14} />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-3">
+      <PopoverContent
+        align="start"
+        className="w-72 p-3"
+        onCloseAutoFocus={(e) => {
+          if (!replaying.current) return;
+          replaying.current = false;
+          e.preventDefault();
+        }}
+      >
         <p className="mb-2 text-sm font-medium">Dans l&apos;aperçu</p>
         <ul className="space-y-2 text-sm text-muted-foreground">
           {GESTURES.map(({ icon: Icon, label }) => {
@@ -97,6 +110,19 @@ function GesturesHelp() {
           Tout se règle aussi à gauche : onglet Style, rubrique « Un élément
           en particulier ».
         </p>
+        {onReplayTour && (
+          <button
+            type="button"
+            onClick={() => {
+              replaying.current = true;
+              setOpen(false);
+              onReplayTour();
+            }}
+            className={`mt-2 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline dark:text-[#8b7fff] cursor-pointer ${FOCUS_RING}`}
+          >
+            Revoir la visite guidée
+          </button>
+        )}
       </PopoverContent>
     </Popover>
   );
@@ -130,6 +156,7 @@ export default function SignaturePreview({
   onFont,
   onEscape,
   onDelete,
+  onReplayTour,
   readOnly = false,
 }) {
   const [dark, setDark] = useState(false);
@@ -201,7 +228,7 @@ export default function SignaturePreview({
               <span className="truncate">Cliquez un élément pour le modifier</span>
             </div>
           )}
-          {!readOnly && <GesturesHelp />}
+          {!readOnly && <GesturesHelp onReplayTour={onReplayTour} />}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <ToggleGroup
