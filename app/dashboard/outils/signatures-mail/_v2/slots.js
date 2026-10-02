@@ -316,6 +316,157 @@ export function layoutReset(sig, template) {
 }
 
 /**
+ * Familles des réglages qu'un modèle apporte, dans l'ordre où le retour au
+ * modèle les cite (« Cela remet les couleurs et l'encadré comme dans le
+ * modèle »).
+ */
+const CHANGE_FAMILIES = [
+  [
+    "les couleurs",
+    [
+      "primaryColor",
+      "textColor",
+      "mutedColor",
+      "iconColorMode",
+      "iconColor",
+      "contactIconMode",
+      "contactIconColor",
+    ],
+  ],
+  ["la typographie", ["fontFamily", "fontSize"]],
+  [
+    "la disposition",
+    [
+      ...LAYOUT_KEYS,
+      "identityZone",
+      "photoPosition",
+      "photoValign",
+      "photoColumn",
+      "socialPosition",
+      "logoPosition",
+      "textOrder",
+      "footerPair",
+      "spacing",
+      "align",
+      "columns",
+      "frameWidth",
+    ],
+  ],
+  [
+    "les traits",
+    [
+      "divider",
+      "accent",
+      "separatorColor",
+      "accentLength",
+      "accentThickness",
+      "dividerThickness",
+      "dividerLength",
+      "rules",
+      "dividerSpace",
+    ],
+  ],
+  [
+    "l'encadré",
+    [
+      "frame",
+      "frameColor",
+      "frameThickness",
+      "frameBarLength",
+      "footerStrip",
+      "outside",
+      "radius",
+    ],
+  ],
+  ["la photo", ["photoShape", "photoSize", "photoBorder", "photoBorderColor"]],
+  ["le logo", ["logoWidth"]],
+  ["les réseaux", ["iconStyle", "iconSize", "socialRows"]],
+  ["les coordonnées", ["contactStyle", "showContactIcons", "contactIconSize"]],
+  [
+    "les réglages élément par élément",
+    ["identityStyle", "titleStyle", "nameLayout", "elements", "blocks"],
+  ],
+];
+const OTHER_CHANGES = "d'autres réglages";
+const FAMILY_OF = Object.fromEntries(
+  CHANGE_FAMILIES.flatMap(([family, keys]) => keys.map((k) => [k, family])),
+);
+
+/** Couleurs : comparées sans tenir compte de la casse. */
+const COLOR_KEYS = new Set([
+  "primaryColor",
+  "textColor",
+  "mutedColor",
+  "iconColor",
+  "contactIconColor",
+  "separatorColor",
+  "frameColor",
+  "photoBorderColor",
+]);
+
+/**
+ * Réglages sans effet visible dans un état donné (`shown` : éléments
+ * affichés) : jamais signalés tant qu'ils le restent des deux côtés.
+ */
+const IDLE = {
+  iconColor: (st) => st?.iconColorMode !== "custom",
+  contactIconColor: (st) => st?.contactIconMode !== "custom",
+  frameColor: (st) => !st?.frame || st.frame === "none",
+  photoBorderColor: (st) => !st?.photoBorder,
+  // Centrer n'a d'effet que si rien n'est à côté du texte (comme le rendu)
+  align: (st, shown) => (st?.slots?.visual || []).some((k) => shown.has(k)),
+};
+
+/** Même réglage, à la normalisation près (0 = automatique, ordre, casse) ? */
+function sameSetting(key, a, b) {
+  if (key === "slots") {
+    return JSON.stringify(cleanSlots(a)) === JSON.stringify(cleanSlots(b));
+  }
+  if (key === "blocks") return sameObject(blockSettings(a), blockSettings(b));
+  if (key === "columns") return sameObject(columnWidths(a), columnWidths(b));
+  if (key === "rules") return !rulesDiffer(a, b);
+  if (key === "dividerSpace") return !spaceDiffers(a, b);
+  if (key === "footerPair") return (a !== false) === (b !== false);
+  if (key === "nameLayout") return (a || "inline") === (b || "inline");
+  if (LINE_KEYS.includes(key) || key === "contactIconSize") {
+    return (a || 0) === (b || 0);
+  }
+  if (COLOR_KEYS.has(key)) {
+    return String(a || "").toLowerCase() === String(b || "").toLowerCase();
+  }
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return JSON.stringify(a || []) === JSON.stringify(b || []);
+  }
+  if (typeof a === "boolean" || typeof b === "boolean") return !a === !b;
+  if (typeof a === "object" || typeof b === "object") return sameObject(a, b);
+  return a === b;
+}
+
+/**
+ * Ce que remettrait un retour au modèle `template` (la référence de la
+ * signature) : les familles de réglages qui s'en écartent, dans l'ordre
+ * de CHANGE_FAMILIES ; vide si la signature le suit déjà. Seuls les
+ * réglages que le modèle apporte comptent, comme à son application.
+ */
+export function templateChanges(sig, template) {
+  const defaults = templateLayout(template?.defaults, sig);
+  if (!defaults) return [];
+  const st = sig?.style || {};
+  const shown = shownItems(sig);
+  const found = new Set();
+  for (const [key, value] of Object.entries(defaults)) {
+    if (key === "__typename" || value === null || value === undefined) continue;
+    if (IDLE[key]?.(st, shown) && IDLE[key](defaults, shown)) continue;
+    if (!sameSetting(key, st[key], value)) {
+      found.add(FAMILY_OF[key] || OTHER_CHANGES);
+    }
+  }
+  return [...CHANGE_FAMILIES.map(([family]) => family), OTHER_CHANGES].filter(
+    (family) => found.has(family),
+  );
+}
+
+/**
  * Nom d'un emplacement : « Sous le cadre » n'a de sens qu'avec un cadre,
  * sans cadre c'est « Tout en bas ».
  */

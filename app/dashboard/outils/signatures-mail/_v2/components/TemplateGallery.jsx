@@ -35,7 +35,12 @@ import {
   toInput,
   toStyleInput,
 } from "../graphql";
-import { layoutCustomized, templateLayout, templateReference } from "../slots";
+import {
+  layoutCustomized,
+  templateChanges,
+  templateLayout,
+  templateReference,
+} from "../slots";
 import HtmlFrame from "./HtmlFrame";
 import { Row, Section } from "./controls";
 
@@ -172,6 +177,12 @@ function SavedTemplateCard({
  */
 const THUMB_COLORS = ["primaryColor", "textColor", "mutedColor"];
 
+/** « a, b et c ». */
+const listing = (items) =>
+  items.length > 1
+    ? `${items.slice(0, -1).join(", ")} et ${items[items.length - 1]}`
+    : items[0] || "";
+
 /**
  * Galerie des modèles, rendus par l'API avec les informations de la
  * signature (ou des données d'exemple tant qu'elle n'a pas de nom), pour
@@ -183,8 +194,15 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   // qui les utilisent encore)
   const all = catalog?.templates || [];
   const templates = all.filter((t) => t.inGallery !== false);
-  // Modèle en attente de confirmation (disposition personnalisée)
+  // Modèle en attente de confirmation (disposition personnalisée, retour
+  // au modèle) : gardé pendant la fermeture, le texte ne change pas en
+  // plein fondu
   const [pending, setPending] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const askConfirm = (request) => {
+    setPending(request);
+    setConfirmOpen(true);
+  };
   // Enregistrement d'un modèle (nom saisi) et suppression à confirmer
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
@@ -252,11 +270,20 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   };
 
   const choose = (t, isSaved = false) => {
-    const customized = layoutCustomized(sig, current);
-    const returning = isCurrent(t, isSaved);
-    if (returning && !customized) return;
-    if (customized) setPending({ template: t, saved: isSaved, returning });
-    else if (isSaved) applySaved(t);
+    // Modèle de la signature : un retour, confirmé en nommant ce qu'il
+    // remet, ou rien à faire s'il est déjà suivi
+    if (isCurrent(t, isSaved)) {
+      const changes = templateChanges(sig, current);
+      if (changes.length === 0) {
+        toast.info(`Votre signature suit déjà le modèle ${t.name}`);
+        return;
+      }
+      askConfirm({ template: t, saved: isSaved, changes });
+      return;
+    }
+    if (layoutCustomized(sig, current)) {
+      askConfirm({ template: t, saved: isSaved });
+    } else if (isSaved) applySaved(t);
     else apply(t);
   };
 
@@ -342,6 +369,8 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   };
 
   const target = pending?.template;
+  // Retour au modèle de la signature (ce qu'il remet est nommé)
+  const returning = Boolean(pending?.changes);
   return (
     <div className="space-y-8">
       <Section
@@ -392,39 +421,34 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
         )}
       </Section>
 
-      <AlertDialog
-        open={Boolean(pending)}
-        onOpenChange={(open) => !open && setPending(null)}
-      >
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {pending?.returning
+              {returning
                 ? `Revenir au modèle ${target?.name} ?`
                 : `Appliquer le modèle ${target?.name} ?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez personnalisé la disposition (éléments déplacés,
-              largeurs, espaces ou traits sur mesure). Elle sera remplacée par
-              celle du modèle, couleurs comprises. Vos textes et vos images
-              sont conservés, et vous pourrez annuler.
+              {returning
+                ? `Cela remet ${listing(pending.changes)} comme dans le modèle. Vos textes et vos images sont conservés, et vous pourrez annuler.`
+                : "Vous avez personnalisé la disposition (éléments déplacés, largeurs, espaces ou traits sur mesure). Elle sera remplacée par celle du modèle, couleurs comprises. Vos textes et vos images sont conservés, et vous pourrez annuler."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="cursor-pointer">
-              Garder ma disposition
+              {returning ? "Garder mes réglages" : "Garder ma disposition"}
             </AlertDialogCancel>
             <AlertDialogAction
               className="cursor-pointer"
               onClick={() => {
-                const p = pending;
-                setPending(null);
-                if (!p) return;
-                if (p.saved) applySaved(p.template);
-                else apply(p.template);
+                setConfirmOpen(false);
+                if (!pending) return;
+                if (pending.saved) applySaved(pending.template);
+                else apply(pending.template);
               }}
             >
-              Appliquer le modèle
+              {returning ? "Revenir au modèle" : "Appliquer le modèle"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
