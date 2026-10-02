@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { toast } from "@/src/components/ui/sonner";
+import { roleRefusal } from "../roles";
 import {
   DELETE_SIGNATURE_TEMPLATE_V2,
   RENDER_SAVED_TEMPLATE_V2,
@@ -284,13 +285,17 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
             style: toStyleInput(sig.style),
           },
         },
+        // Un refus (rôle, nom…) tombe dans le catch au lieu de passer pour
+        // une réussite
+        errorPolicy: "none",
       });
       setSaveOpen(false);
       toast.success(`Modèle « ${trimmedName} » enregistré`);
       refetchSaved();
     } catch (err) {
       toast.error(
-        err?.graphQLErrors?.[0]?.message ||
+        roleRefusal(err) ||
+          err?.graphQLErrors?.[0]?.message ||
           "Enregistrement du modèle impossible pour l'instant",
       );
     }
@@ -301,12 +306,14 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
     setToDelete(null);
     if (!t) return;
     try {
-      await deleteTemplate({ variables: { id: t.id } });
+      await deleteTemplate({ variables: { id: t.id }, errorPolicy: "none" });
       toast.success(`Modèle « ${t.name} » supprimé`);
       refetchSaved();
     } catch (err) {
       toast.error(
-        err?.graphQLErrors?.[0]?.message || "Suppression impossible",
+        roleRefusal(err) ||
+          err?.graphQLErrors?.[0]?.message ||
+          "Suppression impossible",
       );
     }
   };
