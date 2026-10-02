@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
 import { Textarea } from "@/src/components/ui/textarea";
+import { toast } from "@/src/components/ui/sonner";
 import { PhotoBorderControls } from "./StylePanel";
 import {
   CheckedInput,
@@ -18,7 +19,7 @@ import {
   SwitchRow,
 } from "./controls";
 import TextStyleControls from "./TextStyleControls";
-import { PartLinks, PlaceRow } from "./LevelPanels";
+import { ELEMENT_TITLE, PartLinks, PlaceRow } from "./LevelPanels";
 import {
   RULE_COLORS,
   elementSlot,
@@ -162,7 +163,7 @@ const PLACE_IN_LIST = new Set([
 /**
  * Panneau d'un élément de l'aperçu : son contenu et tous ses réglages au
  * même endroit. `onSelect(sélection)` : ouvre une partie seule (prénom, une
- * ligne de coordonnées).
+ * ligne de coordonnées) ; `onUndo` : annule la dernière modification.
  */
 export default function ElementPanel({
   element,
@@ -174,6 +175,7 @@ export default function ElementPanel({
   resolved,
   lines,
   onSelect,
+  onUndo,
 }) {
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
   const setStyle = (patch) => update({ style: patch });
@@ -637,6 +639,23 @@ export default function ElementPanel({
         setStyle({
           rules: { ...(st.rules || {}), [element]: { ...rule, ...patch } },
         });
+      // Même retour que Suppr dans l'aperçu ; le bouton disparaît avec le
+      // trait, le focus revient au titre du panneau au lieu de la page
+      const removeThisRule = () => {
+        setStyle(removeRule(st, element));
+        toast.document(`Retiré : ${ELEMENT_TITLE[element]}`, {
+          fallbackIcon: Trash2,
+          action: onUndo
+            ? { label: "Annuler", onClick: () => onUndo() }
+            : undefined,
+          duration: 6000,
+        });
+        requestAnimationFrame(() =>
+          document
+            .querySelector("[data-panel-title]")
+            ?.focus({ preventScroll: true }),
+        );
+      };
       body = rule ? (
         <Section title="Mise en forme">
           <SliderRow
@@ -666,7 +685,7 @@ export default function ElementPanel({
           <TraitMargins element={element} st={st} setStyle={setStyle} />
           <button
             type="button"
-            onClick={() => setStyle(removeRule(st, element))}
+            onClick={removeThisRule}
             className={`rounded-sm text-xs font-medium text-red-600 hover:underline cursor-pointer ${FOCUS_RING}`}
           >
             Retirer ce trait

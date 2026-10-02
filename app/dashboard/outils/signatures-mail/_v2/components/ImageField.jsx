@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@apollo/client";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -29,6 +29,9 @@ export default function ImageField({
   compact = false,
 }) {
   const inputRef = useRef(null);
+  // Bouton d'ajout de l'image : il reprend le focus après un retrait
+  const pickRef = useRef(null);
+  const refocus = useRef(false);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [upload] = useMutation(UPLOAD_SIGNATURE_V2_IMAGE);
@@ -58,6 +61,7 @@ export default function ImageField({
   };
 
   const clear = async () => {
+    refocus.current = true;
     setBusy(true);
     try {
       const { data } = await remove({ variables: { id, kind } });
@@ -68,6 +72,17 @@ export default function ImageField({
       setBusy(false);
     }
   };
+
+  // « Retirer » disparaît avec l'image (ou pendant l'envoi) : le focus
+  // retomberait sur la page, il revient au bouton d'ajout
+  useEffect(() => {
+    if (busy || !refocus.current) return;
+    refocus.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body) {
+      pickRef.current?.focus({ preventScroll: true });
+    }
+  }, [busy]);
 
   const input = (
     <input
@@ -84,6 +99,7 @@ export default function ImageField({
     return (
       <div className="flex shrink-0 flex-col items-center gap-1">
         <button
+          ref={pickRef}
           id={fieldId}
           type="button"
           disabled={busy}
@@ -175,6 +191,7 @@ export default function ImageField({
         </button>
         <div className="flex shrink-0 flex-col gap-1.5">
           <Button
+            ref={pickRef}
             type="button"
             variant="outline"
             size="sm"

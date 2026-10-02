@@ -169,7 +169,11 @@ export function LevelHeader({ selected, ancestors, onSelect, onClose, st }) {
           ))}
         </nav>
       )}
-      <h2 className="text-xl font-medium">{selectionLabel(selected, st)}</h2>
+      {/* Reçoit le focus à l'ouverture du panneau depuis la barre latérale
+          (SignatureEditor) : les lecteurs d'écran annoncent le panneau */}
+      <h2 tabIndex={-1} data-panel-title className="text-xl font-medium outline-none">
+        {selectionLabel(selected, st)}
+      </h2>
       {selected.level !== "signature" && (
         <Hint>{modClick()} dans l&apos;aperçu : le niveau au-dessus.</Hint>
       )}

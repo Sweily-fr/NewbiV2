@@ -229,6 +229,31 @@ export default function SignatureEditor({ id }) {
   const [selected, setSelected] = useState(null);
   const element = selected?.level === "element" ? selected.key : null;
   const select = useCallback((next) => setSelected(next), []);
+  // Panneau ouvert ou refermé depuis la barre latérale (liste, fil
+  // d'Ariane, « Tous les réglages ») : le bouton cliqué disparaît avec
+  // l'ancien panneau et le focus retomberait sur la page. Il va au titre du
+  // nouveau panneau, ou à l'onglet actif au retour, que les lecteurs d'écran
+  // annoncent. Un focus resté ailleurs (aperçu, champ amené) ne bouge pas.
+  const selectionKey = selected
+    ? `${selected.level}-${selected.key || ""}`
+    : "";
+  const focusedSelection = useRef(selectionKey);
+  useEffect(() => {
+    if (focusedSelection.current === selectionKey) return undefined;
+    focusedSelection.current = selectionKey;
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (active && active !== document.body) return;
+      panelRef.current
+        ?.querySelector(
+          selectionKey
+            ? "[data-panel-title]"
+            : '[role="tab"][aria-selected="true"]',
+        )
+        ?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectionKey]);
   const [render, setRender] = useState(initialRender);
   const [installOpen, setInstallOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -810,6 +835,7 @@ export default function SignatureEditor({ id }) {
                   resolved={render?.elements}
                   lines={render?.lines}
                   onSelect={select}
+                  onUndo={undo}
                 />
               )}
               {selected.level === "item" && (
