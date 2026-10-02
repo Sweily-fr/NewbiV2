@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client";
 import { CopyPlus, Loader2, Monitor, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { PermissionButton } from "@/src/components/rbac/PermissionButton";
+import { usePermissions } from "@/src/hooks/usePermissions";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import {
@@ -35,6 +37,7 @@ import {
 } from "./_v2/graphql";
 import HtmlFrame from "./_v2/components/HtmlFrame";
 import { SignatureListV2Skeleton } from "./_v2/components/signature-v2-skeleton";
+import { roleRefusal, VIEWER_CANNOT_CREATE, VIEWER_HINT, VIEWER_TITLE } from "./_v2/roles";
 
 const EDITOR_URL = (id) => `/dashboard/outils/signatures-mail/${id}`;
 
@@ -113,9 +116,31 @@ function SignatureCard({ sig, onOpen, onDuplicate, onSetDefault, onDelete, readO
   );
 }
 
+/**
+ * Droit de créer, et donc de modifier ou supprimer, une signature : faux
+ * pour un lecteur, qui consulte seulement. Vrai tant que les droits se
+ * chargent, pour ne pas montrer l'état d'un lecteur à tout le monde.
+ */
+function useSignatureWriteAccess() {
+  const { hasPermission, isReady } = usePermissions();
+  const [canWrite, setCanWrite] = useState(true);
+  useEffect(() => {
+    if (!isReady) return undefined;
+    let active = true;
+    hasPermission("signatures", "create").then((allowed) => {
+      if (active) setCanWrite(allowed);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isReady, hasPermission]);
+  return canWrite;
+}
+
 function SignaturesV2Content() {
   const router = useRouter();
-  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { isReadOnly } = useSubscriptionAccess();
+  const canWrite = useSignatureWriteAccess();
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState(null);
 
@@ -128,20 +153,19 @@ function SignaturesV2Content() {
   const [setDefault] = useMutation(SET_DEFAULT_SIGNATURE_V2, refetch);
   const [remove] = useMutation(DELETE_SIGNATURE_V2, refetch);
 
-  const readOnlyTooltip = isReadOnly
-    ? isOwner
-      ? "Mode lecture seule · Renouvelez votre abonnement"
-      : "Mode lecture seule · Contactez l'administrateur"
-    : undefined;
-
   const handleCreate = async () => {
     setCreating(true);
     try {
-      // L'API pré-remplit avec le profil du créateur et l'entreprise
-      const { data: created } = await create({ variables: { input: { name: "Ma signature" } } });
+      // L'API pré-remplit avec le profil du créateur et l'entreprise. Un
+      // refus (rôle…) doit tomber dans le catch, pas passer pour une réussite
+      const { data: created } = await create({
+        variables: { input: { name: "Ma signature" } },
+        errorPolicy: "none",
+      });
       router.push(`${EDITOR_URL(created.createEmailSignatureV2.id)}?new=1`);
-    } catch {
-      toast.error("Création impossible");
+    } catch (err) {
+      const reason = roleRefusal(err);
+      toast.error("Création impossible", reason ? { description: reason } : undefined);
       setCreating(false);
     }
   };
@@ -203,16 +227,20 @@ function SignaturesV2Content() {
               Une signature propre dans Gmail, Outlook et Apple Mail, en clair comme en sombre.
             </p>
           </div>
-          <Button
+          {/* Désactivé et expliqué pour un lecteur ou un abonnement inactif */}
+          <PermissionButton
+            resource="signatures"
+            action="create"
+            requiresActiveSubscription
             variant="primary"
             onClick={handleCreate}
-            disabled={isReadOnly || creating}
-            title={readOnlyTooltip}
+            disabled={creating}
+            tooltipNoAccess={VIEWER_CANNOT_CREATE}
             className="cursor-pointer"
           >
             {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
             Nouvelle signature
-          </Button>
+          </PermissionButton>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -220,17 +248,34 @@ function SignaturesV2Content() {
             <SignatureListV2Skeleton />
           ) : signatures.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-              <div className="max-w-md space-y-2">
-                <h2 className="text-lg font-medium">Créez votre première signature</h2>
-                <p className="text-sm text-muted-foreground">
-                  Choisissez un modèle, complétez vos coordonnées, puis copiez la signature dans
-                  votre messagerie. Vos informations de profil sont pré-remplies.
-                </p>
-              </div>
-              <Button variant="primary" onClick={handleCreate} disabled={isReadOnly || creating} className="cursor-pointer">
+              {canWrite ? (
+                <div className="max-w-md space-y-2">
+                  <h2 className="text-lg font-medium">Créez votre première signature</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Choisissez un modèle, complétez vos coordonnées, puis copiez la signature dans
+                    votre messagerie. Vos informations de profil sont pré-remplies.
+                  </p>
+                </div>
+              ) : (
+                // Lecteur : la création lui est fermée, autant le dire ici
+                <div className="max-w-md space-y-2">
+                  <h2 className="text-lg font-medium">{VIEWER_TITLE}</h2>
+                  <p className="text-sm text-muted-foreground">{VIEWER_HINT}</p>
+                </div>
+              )}
+              <PermissionButton
+                resource="signatures"
+                action="create"
+                requiresActiveSubscription
+                variant="primary"
+                onClick={handleCreate}
+                disabled={creating}
+                tooltipNoAccess={VIEWER_CANNOT_CREATE}
+                className="cursor-pointer"
+              >
                 <Plus size={14} />
                 Commencer
-              </Button>
+              </PermissionButton>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -238,7 +283,8 @@ function SignaturesV2Content() {
                 <SignatureCard
                   key={sig.id}
                   sig={sig}
-                  readOnly={isReadOnly}
+                  // Un lecteur ne peut ni dupliquer, ni changer, ni supprimer
+                  readOnly={isReadOnly || !canWrite}
                   onOpen={() => router.push(EDITOR_URL(sig.id))}
                   onDuplicate={() => handleDuplicate(sig.id)}
                   onSetDefault={() => handleSetDefault(sig.id)}
