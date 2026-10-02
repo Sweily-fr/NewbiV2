@@ -7,6 +7,7 @@ import ColorField from "./ColorField";
 import {
   AddChips,
   CheckedInput,
+  ResetLink,
   Row,
   Section,
   SwitchRow,
@@ -19,6 +20,73 @@ import {
   linkProblem,
 } from "../links";
 import ImageField from "./ImageField";
+
+/**
+ * Texte lisible sur un fond : blanc ou #1f1f1f, celui qui contraste le plus
+ * (formule WCAG), comme le texte automatique du bouton dans le rendu.
+ */
+function readableOn(background) {
+  const hex = /^#?([0-9a-f]{6})$/i.exec(String(background || "").trim());
+  const luminance = (c) => {
+    const channel = (i) => {
+      const v = parseInt(c.slice(i, i + 2), 16) / 255;
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+  };
+  const l = luminance(hex ? hex[1] : "000000");
+  const onDark = (l + 0.05) / (luminance("1f1f1f") + 0.05);
+  return onDark > 1.05 / (l + 0.05) ? "#1f1f1f" : "#ffffff";
+}
+
+/**
+ * Couleurs du bouton d'action. Vides, elles sont automatiques : le fond
+ * suit la couleur principale (changer celle-ci ou appliquer un modèle
+ * recolore le bouton), le texte est blanc ou foncé selon ce fond. Une
+ * couleur choisie à la main se retire par « Couleur principale » ou
+ * « Automatique ». Partagé avec le panneau du bouton.
+ */
+export function CtaColorFields({ cta, primaryColor, update }) {
+  const background = cta.backgroundColor || primaryColor;
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Row
+        label="Fond"
+        hint={cta.backgroundColor ? null : "Suit la couleur principale."}
+        action={
+          cta.backgroundColor ? (
+            <ResetLink onClick={() => update({ cta: { backgroundColor: "" } })}>
+              Couleur principale
+            </ResetLink>
+          ) : null
+        }
+      >
+        <ColorField
+          label="Fond du bouton"
+          value={background}
+          onChange={(v) => update({ cta: { backgroundColor: v } })}
+        />
+      </Row>
+      <Row
+        label="Texte"
+        hint={cta.textColor ? null : "Blanc ou foncé selon le fond."}
+        action={
+          cta.textColor ? (
+            <ResetLink onClick={() => update({ cta: { textColor: "" } })}>
+              Automatique
+            </ResetLink>
+          ) : null
+        }
+      >
+        <ColorField
+          label="Texte du bouton"
+          value={cta.textColor || readableOn(background)}
+          onChange={(v) => update({ cta: { textColor: v } })}
+        />
+      </Row>
+    </div>
+  );
+}
 
 /** Espace insécable : « 5 000 € » ou un groupe de chiffres ne se coupe pas. */
 const NBSP = "\u00a0";
@@ -151,22 +219,11 @@ export default function ExtrasSection({ id, sig, update, replace }) {
               onChange={(e) => update({ cta: { url: e.target.value } })}
             />
           </Row>
-          <div className="grid grid-cols-2 gap-4">
-            <Row label="Fond">
-              <ColorField
-                label="Fond du bouton"
-                value={cta.backgroundColor || style.primaryColor}
-                onChange={(v) => update({ cta: { backgroundColor: v } })}
-              />
-            </Row>
-            <Row label="Texte">
-              <ColorField
-                label="Texte du bouton"
-                value={cta.textColor}
-                onChange={(v) => update({ cta: { textColor: v } })}
-              />
-            </Row>
-          </div>
+          <CtaColorFields
+            cta={cta}
+            primaryColor={style.primaryColor}
+            update={update}
+          />
         </>
       ),
     },

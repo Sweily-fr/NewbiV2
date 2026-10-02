@@ -25,9 +25,8 @@ import {
   slotLabel,
 } from "../slots";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
-import ColorField from "./ColorField";
 import BlockControls from "./BlockControls";
-import { DisclaimerField } from "./ExtrasPanel";
+import { CtaColorFields, DisclaimerField } from "./ExtrasPanel";
 import {
   ctaLabelProblem,
   ctaLinkHint,
@@ -582,22 +581,11 @@ export default function ElementPanel({
                 onChange={(e) => update({ cta: { url: e.target.value } })}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Fond">
-                <ColorField
-                  label="Fond du bouton"
-                  value={cta.backgroundColor || st.primaryColor}
-                  onChange={(v) => update({ cta: { backgroundColor: v } })}
-                />
-              </Field>
-              <Field label="Texte">
-                <ColorField
-                  label="Texte du bouton"
-                  value={cta.textColor}
-                  onChange={(v) => update({ cta: { textColor: v } })}
-                />
-              </Field>
-            </div>
+            <CtaColorFields
+              cta={cta}
+              primaryColor={st.primaryColor}
+              update={update}
+            />
           </Section>
           <TextStyleControls
             elementKey="cta"
