@@ -81,6 +81,10 @@ post({type:"sig-drag",field:fields[0],fields:fields,whole:!!(sel&&sel.level==="e
 document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
 document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
+/* Texte d'un élément modifié en place : ses sauts de ligne (<br> de la
+   mention en paragraphes) redeviennent des retours à la ligne ; jamais
+   innerText, qui appliquerait les capitales du style */
+function plain(n){return n.nodeType===3?n.data:n.nodeName==="BR"?"\\n":[].map.call(n.childNodes,plain).join("");}
 function startEdit(el,x,y){
 if(window.SIG_READONLY)return;
 editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();
@@ -109,7 +113,7 @@ if(ed)startEdit(ed,e.clientX,e.clientY);
 drawSel();
 },true);
 document.addEventListener("input",function(){
-if(editing){post({type:"sig-input",field:editing.getAttribute("data-sig-edit"),value:editing.textContent});drawSel();}
+if(editing){post({type:"sig-input",field:editing.getAttribute("data-sig-edit"),value:plain(editing)});drawSel();}
 });
 document.addEventListener("keydown",function(e){
 if(dragging&&e.key==="Escape"){e.preventDefault();dragging=false;post({type:"sig-drag-cancel"});drawSel();return;}

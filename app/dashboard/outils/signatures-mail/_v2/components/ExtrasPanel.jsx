@@ -1,10 +1,112 @@
 "use client";
 
 import { Textarea } from "@/src/components/ui/textarea";
+import { useActiveOrganization } from "@/src/lib/organization-client";
+import { generateDynamicFooter } from "@/src/utils/document-suggestions";
 import ColorField from "./ColorField";
-import { AddChips, CheckedInput, Row, Section, SwitchRow } from "./controls";
+import {
+  AddChips,
+  CheckedInput,
+  Row,
+  Section,
+  SwitchRow,
+  Warning,
+} from "./controls";
 import { ctaLabelProblem, ctaLinkProblem, linkProblem } from "../links";
 import ImageField from "./ImageField";
+
+/** Espace insécable : « 5 000 € » ou un groupe de chiffres ne se coupe pas. */
+const NBSP = "\u00a0";
+
+/** Textes prêts à insérer dans la mention : sobres, sans promesse juridique. */
+const CONFIDENTIALITY =
+  "Ce message et ses pièces jointes sont confidentiels et destinés exclusivement à leurs destinataires. Si vous l'avez reçu par erreur, merci d'en avertir l'expéditeur et de le supprimer.";
+const ECOLOGY = `Pensez à l'environnement${NBSP}: n'imprimez ce message que si nécessaire.`;
+
+/**
+ * Mentions légales de l'entreprise, comme en pied de page des factures
+ * (forme juridique, capital, SIRET, RCS, siège, TVA), avec des espaces
+ * insécables dans les groupes de chiffres et devant « € » et « : ». Vide
+ * sans SIRET ni RCS : rien de légal à mentionner.
+ */
+export function legalMention(organization) {
+  if (!organization?.siret && !organization?.rcs) return "";
+  return generateDynamicFooter(organization, "standard-compact")
+    .replace(/^\s*•\s*/, "")
+    .replace(/(\d) (?=\d)/g, `$1${NBSP}`)
+    .replace(/(\d) ?€/g, `$1${NBSP}€`)
+    .replace(/(\S) ?: /g, `$1${NBSP}: `)
+    .trim();
+}
+
+/** Lignes de la mention gardées par le rendu (une ligne vide au plus). */
+const MAX_LINES = 8;
+const lineCount = (text) =>
+  String(text || "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .split("\n").length;
+
+/**
+ * Texte de la mention, en paragraphes, et des textes prêts à insérer :
+ * confidentialité, mentions légales de l'entreprise, écologie. Champ vide,
+ * le texte le remplit ; sinon il s'ajoute en nouveau paragraphe (⌘Z
+ * l'annule). Partagé avec le panneau de la mention.
+ */
+export function DisclaimerField({ id, value, onChange, placeholder }) {
+  const { organization } = useActiveOrganization();
+  const legal = legalMention(organization);
+  const snippets = [
+    { key: "confidentiality", label: "Confidentialité", text: CONFIDENTIALITY },
+    legal ? { key: "legal", label: "Mentions légales", text: legal } : null,
+    { key: "ecology", label: "Écologie", text: ECOLOGY },
+  ].filter(Boolean);
+  const text = value || "";
+  const insert = (snippet) => {
+    const current = text.replace(/\s+$/, "");
+    // Déjà dans la mention : rien à ajouter
+    if (current.includes(snippet)) return;
+    onChange((current ? `${current}\n\n${snippet}` : snippet).slice(0, 1000));
+  };
+  return (
+    <div className="space-y-2">
+      <Textarea
+        id={id}
+        value={text}
+        maxLength={1000}
+        rows={3}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+        <span>Insérer :</span>
+        {snippets.map((s, i) => (
+          <span key={s.key} className="inline-flex items-center gap-1.5">
+            {i > 0 && <span aria-hidden="true">·</span>}
+            <button
+              type="button"
+              title={s.text}
+              onClick={() => insert(s.text)}
+              className="font-medium text-[#5b4fff] hover:underline cursor-pointer"
+            >
+              {s.label}
+            </button>
+          </span>
+        ))}
+      </p>
+      {text.trim() && lineCount(text) > MAX_LINES && (
+        <Warning>
+          Au-delà de 8 lignes, la fin de la mention n&apos;apparaît pas dans
+          la signature.
+        </Warning>
+      )}
+    </div>
+  );
+}
 
 /**
  * « En plus », en bas de l'onglet Contenu : bouton d'action, bannière,
@@ -115,13 +217,11 @@ export default function ExtrasSection({ id, sig, update, replace }) {
       focus: "sig-disclaimer-text",
       fields: (
         <Row label="Texte de la mention" htmlFor="sig-disclaimer-text">
-          <Textarea
+          <DisclaimerField
             id="sig-disclaimer-text"
             value={disclaimer.text}
-            maxLength={1000}
-            rows={3}
             placeholder="Ce message et ses pièces jointes sont confidentiels…"
-            onChange={(e) => update({ disclaimer: { text: e.target.value } })}
+            onChange={(text) => update({ disclaimer: { text } })}
           />
         </Row>
       ),

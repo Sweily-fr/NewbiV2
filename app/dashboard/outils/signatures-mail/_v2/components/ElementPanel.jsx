@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { RotateCcw } from "lucide-react";
-import { Textarea } from "@/src/components/ui/textarea";
 import { PhotoBorderControls } from "./StylePanel";
 import {
   CheckedInput,
@@ -28,6 +27,7 @@ import {
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import ColorField from "./ColorField";
 import BlockControls from "./BlockControls";
+import { DisclaimerField } from "./ExtrasPanel";
 import {
   ctaLabelProblem,
   ctaLinkProblem,
@@ -610,12 +610,10 @@ export default function ElementPanel({
       body = (
         <>
           <Section title="Contenu">
-            <Textarea
+            <DisclaimerField
               id="sig-field-disclaimer"
               value={disclaimer.text}
-              maxLength={1000}
-              rows={3}
-              onChange={(e) => update({ disclaimer: { text: e.target.value } })}
+              onChange={(text) => update({ disclaimer: { text } })}
             />
           </Section>
           <TextStyleControls elementKey="disclaimer" {...textProps} />
