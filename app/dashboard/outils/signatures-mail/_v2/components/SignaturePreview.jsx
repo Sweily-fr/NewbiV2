@@ -291,9 +291,9 @@ export default function SignaturePreview({
             pointer={dragPointer}
             release={dragRelease}
             onCancel={() => setDrag(null)}
-            onDrop={(patch) => {
+            onDrop={(patch, info) => {
               setDrag(null);
-              onStylePatch?.(patch);
+              onStylePatch?.(patch, info);
             }}
           />
         )}

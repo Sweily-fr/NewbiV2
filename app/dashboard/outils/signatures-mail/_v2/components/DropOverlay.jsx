@@ -431,8 +431,13 @@ export default function DropOverlay({
     () => targetsFor(drag.field, style, drag),
     [drag, style],
   );
-  // Élément tiré : toutes ses parties
+  // Élément tiré : toutes ses parties, et son nom (près du pointeur, puis
+  // dans le message du dépôt)
   const group = drag.fields?.length ? drag.fields : [drag.field];
+  const what =
+    (group.length > 1 && ITEM_LABEL[BLOCK_OF[drag.field]]) ||
+    ITEM_LABEL[drag.field] ||
+    drag.field;
   const source = (drag.items || [])
     .filter((i) => group.includes(i.item) && i.rect?.h > 0)
     .reduce((r, { rect: c }) => {
@@ -464,7 +469,7 @@ export default function DropOverlay({
     done.current = true;
     const target =
       movedFrom(x, y) && !onSource(x, y) ? nearest(targets, x, y) : null;
-    if (target) onDrop(target.patch);
+    if (target) onDrop(target.patch, { what, where: target.label });
     else onCancel();
   };
 
@@ -563,9 +568,7 @@ export default function DropOverlay({
         className="pointer-events-none fixed whitespace-nowrap rounded-md bg-neutral-900/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg"
         style={{ left: pointer.x + 14, top: pointer.y + 14 }}
       >
-        {(group.length > 1 && ITEM_LABEL[BLOCK_OF[drag.field]]) ||
-          ITEM_LABEL[drag.field] ||
-          drag.field}
+        {what}
         {!active && (
           <span className="font-normal text-neutral-300">
             {" "}

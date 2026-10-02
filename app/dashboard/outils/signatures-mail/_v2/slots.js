@@ -624,6 +624,22 @@ export function resetMovedBlocks(prevSig, patch) {
 }
 
 /**
+ * Réglages de bloc perdus entre deux états (`before`, `after` : blocs du
+ * style) : une largeur ou un alignement choisis qui n'existent plus après un
+ * déplacement (resetMovedBlocks, dépôt « À gauche » ou « À droite » qui
+ * retire un alignement), pour le dire à l'utilisateur.
+ */
+export function layoutLost(before, after) {
+  const lost = { width: false, align: false };
+  for (const [key, block] of Object.entries(before || {})) {
+    const next = after?.[key] || {};
+    if (block?.width && !next.width) lost.width = true;
+    if (block?.align && !next.align) lost.align = true;
+  }
+  return lost;
+}
+
+/**
  * Éléments réellement affichés, selon le contenu de la signature (mêmes
  * règles que le rendu de l'API).
  */

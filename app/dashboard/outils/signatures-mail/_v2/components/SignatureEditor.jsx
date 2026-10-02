@@ -75,9 +75,11 @@ import {
   ELEMENT_ITEMS,
   deleteFor,
   fontSizePatch,
+  layoutLost,
   mainPiece,
   mergedRow,
   partHasWidth,
+  resetMovedBlocks,
   selectUp,
   selectionChain,
   shownItems,
@@ -92,6 +94,9 @@ import {
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
+
+/** Message d'un dépôt dans l'aperçu : un seul à la fois. */
+const MOVE_TOAST = "signature-move";
 
 /**
  * Bord du bloc sélectionné dans l'aperçu : largeur réglable à la souris,
@@ -247,18 +252,57 @@ export default function SignatureEditor({ id }) {
   );
 
   // Élément déposé sur une ligne de l'aperçu : nouvel emplacement, avec
-  // de quoi revenir en arrière tout de suite
+  // de quoi revenir en arrière tout de suite. Le message nomme l'élément et
+  // dit ce que sa nouvelle place a remis en automatique (calculé comme
+  // update le fera) ; un nouveau dépôt le remplace au lieu de l'empiler.
+  const moveToast = useRef(null);
   const onStylePatch = useCallback(
-    (patch) => {
+    (patch, info) => {
+      const before = sig?.style?.blocks || {};
+      const lost = layoutLost(
+        before,
+        resetMovedBlocks(sig, patch).blocks ?? before,
+      );
       update({ style: patch });
-      toast.document("Élément déplacé", {
+      let description;
+      if (lost.align && !lost.width && patch.footerPair === true) {
+        description =
+          "Alignement remis en automatique pour les mettre côte à côte.";
+      } else if (lost.width || lost.align) {
+        const both = lost.width && lost.align;
+        const reset = both
+          ? "Largeur et alignement remis"
+          : lost.width
+            ? "Largeur remise"
+            : "Alignement remis";
+        description = `${reset} en automatique pour sa nouvelle place (réglable${both ? "s" : ""} dans Disposition).`;
+      }
+      toast.document(info?.what ? `Déplacé : ${info.what}` : "Élément déplacé", {
+        id: MOVE_TOAST,
         fallbackIcon: Move,
+        description,
         action: { label: "Annuler", onClick: () => undo() },
-        duration: 5000,
+        duration: 6000,
       });
+      moveToast.current = "armed";
     },
-    [update, undo],
+    [sig, update, undo],
   );
+  // « Annuler » ne vaut que pour le déplacement : à la modification
+  // suivante (réglage, frappe, ⌘Z), le message disparaît. Le réalignement
+  // qui suit l'enregistrement (statut « Enregistré ») ne compte pas.
+  useEffect(() => {
+    const moved = moveToast.current;
+    if (!moved) return;
+    if (moved === "armed") {
+      moveToast.current = sig;
+      return;
+    }
+    if (sig !== moved && status === "dirty") {
+      toast.dismiss(MOVE_TOAST);
+      moveToast.current = null;
+    }
+  }, [sig, status]);
   const onHistory = useCallback(
     (isRedo) => (isRedo ? redo() : undo()),
     [undo, redo],
