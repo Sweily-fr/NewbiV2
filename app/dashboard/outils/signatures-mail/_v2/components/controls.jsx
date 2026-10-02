@@ -33,6 +33,34 @@ export const FOCUS_RING =
 const THUMB_FOCUS_RING =
   "[&_[role=slider]:focus-visible]:outline-solid [&_[role=slider]:focus-visible]:outline-2 [&_[role=slider]:focus-visible]:outline-offset-2 [&_[role=slider]:focus-visible]:outline-[#5a50ff] dark:[&_[role=slider]:focus-visible]:outline-[#8b7fff]";
 
+/**
+ * Choix exclusifs au clavier, comme des boutons radio natifs : une seule
+ * tabulation par groupe, sur l'option cochée (sinon la première), puis les
+ * flèches, Début et Fin passent à l'option voisine et la cochent.
+ */
+export const radioTabStop = (values, value) =>
+  values.includes(value) ? value : values[0];
+
+export function onRadioKeyDown(e) {
+  const radios = [
+    ...e.currentTarget.querySelectorAll('[role="radio"]'),
+  ].filter((r) => !r.disabled);
+  const at = radios.indexOf(e.target);
+  const to = {
+    ArrowRight: at + 1,
+    ArrowDown: at + 1,
+    ArrowLeft: at - 1,
+    ArrowUp: at - 1,
+    Home: 0,
+    End: radios.length - 1,
+  }[e.key];
+  if (at < 0 || to === undefined) return;
+  e.preventDefault();
+  const next = radios[(to + radios.length) % radios.length];
+  next.focus();
+  if (next.getAttribute("aria-checked") !== "true") next.click();
+}
+
 /** Valeur d'un curseur dite par les lecteurs d'écran : « 13 pixels ». */
 const spokenValue = (value, unit) =>
   unit === "px" ? `${value} pixels` : unit ? `${value} ${unit}` : String(value);
@@ -224,8 +252,17 @@ const segment = (active) =>
 
 /** Choix exclusif en segments, sur toute la largeur. */
 export function Choice({ value, onChange, options, label }) {
+  const stop = radioTabStop(
+    options.map((o) => o.value),
+    value,
+  );
   return (
-    <div role="radiogroup" aria-label={label} className={SEGMENTS}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={onRadioKeyDown}
+      className={SEGMENTS}
+    >
       {options.map((o) => (
         <button
           key={o.value}
@@ -233,6 +270,7 @@ export function Choice({ value, onChange, options, label }) {
           role="radio"
           aria-checked={o.value === value}
           aria-label={o.label ? undefined : o.ariaLabel}
+          tabIndex={o.value === stop ? 0 : -1}
           onClick={() => onChange(o.value)}
           className={segment(o.value === value)}
         >
@@ -535,14 +573,24 @@ export function Nested({ children }) {
 
 /**
  * Carte de choix visuelle (vignette + libellé), comme « Position du client
- * dans le PDF » des paramètres de facture.
+ * dans le PDF » des paramètres de facture. Dans un groupe (role="radiogroup"
+ * avec onRadioKeyDown), `tabIndex` : 0 pour l'option qui reçoit la
+ * tabulation (radioTabStop), -1 pour les autres.
  */
-export function ChoiceCard({ selected, onClick, label, children, className }) {
+export function ChoiceCard({
+  selected,
+  onClick,
+  label,
+  children,
+  className,
+  tabIndex,
+}) {
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      tabIndex={tabIndex}
       onClick={onClick}
       className={cn(
         "group flex flex-col items-center rounded-md cursor-pointer",

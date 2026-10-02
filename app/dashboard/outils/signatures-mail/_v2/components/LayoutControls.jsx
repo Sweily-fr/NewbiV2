@@ -30,6 +30,8 @@ import {
   Row,
   SliderRow,
   SwitchRow,
+  onRadioKeyDown,
+  radioTabStop,
 } from "./controls";
 import {
   COLUMN_WIDTH,
@@ -124,11 +126,16 @@ export function Pick({ label, hint, value, onChange, options }) {
  * « Position du client dans le PDF » des paramètres de facture.
  */
 export function PictoPick({ label, hint, value, onChange, options, columns = 3 }) {
+  const stop = radioTabStop(
+    options.map((o) => o.value),
+    value,
+  );
   return (
     <Row label={label} hint={hint}>
       <div
         role="radiogroup"
         aria-label={label}
+        onKeyDown={onRadioKeyDown}
         className={cn(
           "grid gap-2",
           columns === 4 ? "grid-cols-4" : columns === 2 ? "grid-cols-2" : "grid-cols-3",
@@ -140,6 +147,7 @@ export function PictoPick({ label, hint, value, onChange, options, columns = 3 }
             <ChoiceCard
               key={o.value}
               selected={selected}
+              tabIndex={o.value === stop ? 0 : -1}
               onClick={() => onChange(o.value)}
               label={
                 <span className="inline-flex items-center gap-1">
@@ -499,6 +507,10 @@ export function SocialRowsControl({ st, setStyle, count }) {
   const options = socialRowOptions(count);
   if (options.length === 0) return null;
   const current = distribute(count, st.socialRows || []).join("+");
+  const stop = radioTabStop(
+    options.map((o) => o.key),
+    current,
+  );
   const justify = JUSTIFY[socialAlign(st)];
   return (
     <div className="space-y-2">
@@ -506,6 +518,7 @@ export function SocialRowsControl({ st, setStyle, count }) {
       <div
         role="radiogroup"
         aria-label="Disposition des icônes"
+        onKeyDown={onRadioKeyDown}
         className="grid grid-cols-4 gap-2"
       >
         {options.map((o) => {
@@ -514,6 +527,7 @@ export function SocialRowsControl({ st, setStyle, count }) {
             <ChoiceCard
               key={o.key}
               selected={selected}
+              tabIndex={o.key === stop ? 0 : -1}
               onClick={() => setStyle({ socialRows: o.plan })}
               label={
                 <span className="inline-flex items-center gap-1">
