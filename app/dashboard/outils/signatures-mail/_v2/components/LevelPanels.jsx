@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -10,13 +11,16 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  ChevronDown,
   ChevronRight,
 } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 import {
   BLOCK_OF,
   ELEMENT_ITEMS,
   ITEM_LABEL,
   SLOTS,
+  canShiftRow,
   elementSlot,
   isDetached,
   partHasWidth,
@@ -26,9 +30,10 @@ import {
   moveElement,
   moveItem,
   selectionChain,
-  shiftItem,
+  shiftRow,
   shownItems,
   slotOf,
+  slotRows,
 } from "../slots";
 import { emailProblem, linkProblem } from "../links";
 import { Choice, Hint, LengthRow, Row, Section, SpaceRow } from "./controls";
@@ -375,6 +380,59 @@ const FILL_OPTIONS = [
   { value: "solid", label: "Couleur", picto: <FillPicto fill="solid" /> },
 ];
 
+const partTitle = (k) => PARTS[k]?.title || ITEM_LABEL[k] || k;
+
+/**
+ * Titre d'une ligne du panneau d'une colonne (voir slotRows) et, en gris,
+ * ses parties : « Coordonnées · Téléphone, E-mail ». Un morceau placé à
+ * part de son élément se nomme par ses parties.
+ */
+function rowLabel(row) {
+  const multi = (ELEMENT_ITEMS[row.element] || []).length > 1;
+  if (!multi) {
+    return {
+      title:
+        ELEMENT_TITLE[row.element] || ITEM_LABEL[row.items[0]] || row.items[0],
+      detail: null,
+    };
+  }
+  const parts = row.items.map(partTitle).join(", ");
+  if (!row.main) return { title: parts, detail: null };
+  // Prénom et nom réunis : le titre suffit
+  const whole = row.element === "name" && row.items.length === 2;
+  return { title: ELEMENT_TITLE[row.element], detail: whole ? null : parts };
+}
+
+/** Flèches « Monter » et « Descendre », nommées d'après ce qu'elles déplacent. */
+function MoveButtons({ name, canUp, canDown, onUp, onDown }) {
+  const arrow =
+    "rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default";
+  return (
+    <>
+      <button
+        type="button"
+        aria-label={`Monter ${name}`}
+        title={`Monter ${name}`}
+        disabled={!canUp}
+        onClick={onUp}
+        className={arrow}
+      >
+        <ArrowUp size={14} />
+      </button>
+      <button
+        type="button"
+        aria-label={`Descendre ${name}`}
+        title={`Descendre ${name}`}
+        disabled={!canDown}
+        onClick={onDown}
+        className={arrow}
+      >
+        <ArrowDown size={14} />
+      </button>
+    </>
+  );
+}
+
 /**
  * Une colonne (emplacement) : ses éléments dans l'ordre, sa largeur, son
  * fond et son alignement.
@@ -384,7 +442,39 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
   const setStyle = (patch) => update({ style: patch });
   const shown = shownItems(sig);
   const L = layoutState(st, shown);
-  const items = (st.slots?.[slot] || []).filter((k) => shown.has(k));
+  // Un élément par ligne (prénom et nom, coordonnées : d'un bloc), ses
+  // parties dépliées à la demande pour en changer l'ordre
+  const rows = slotRows(st, shown, slot);
+  const [open, setOpen] = useState(() => new Set());
+  // Repère stable d'une ligne : son élément (ses parties peuvent changer
+  // d'ordre sans la replier), sa première partie pour un morceau à part
+  const seen = new Set();
+  const ids = rows.map((row) => {
+    if (row.main && !seen.has(row.element)) {
+      seen.add(row.element);
+      return row.element;
+    }
+    return `${row.element}-${row.items[0]}`;
+  });
+  const toggle = (id) =>
+    setOpen((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const shift = (index, dir, part) =>
+    setStyle({ slots: shiftRow(st, shown, slot, index, dir, part) });
+  // Un élément s'ouvre entier ; un morceau à part, sur sa première partie
+  const openRow = (row) =>
+    onSelect(
+      !row.main
+        ? { level: "item", key: row.items[0] }
+        : BLOCK_OF[row.items[0]]
+          ? { level: "element", key: row.element }
+          : selectionChain(row.items[0], st, shown)[0],
+      row.items[0],
+    );
 
   let settings = null;
   if (slot === "visual") {
@@ -459,54 +549,105 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
   return (
     <>
       <Section title="Contenu">
-        {items.length === 0 ? (
+        {rows.length === 0 ? (
           <Hint>
             Aucun élément ici : tirez-en un par sa poignée ⠿ dans l&apos;aperçu.
           </Hint>
         ) : (
           <ul className="divide-y rounded-lg border">
-            {items.map((k, i) => (
-              <li key={k} className="flex items-center gap-1 px-2 py-1">
-                <button
-                  type="button"
-                  onClick={() => onSelect(selectionChain(k, st, shown)[0], k)}
-                  className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer"
-                >
-                  <span className="truncate">
-                    {PARTS[k]?.title || ELEMENT_TITLE[BLOCK_OF[k]] || ITEM_LABEL[k]}
-                  </span>
-                  <ChevronRight
-                    size={12}
-                    className="ml-auto shrink-0 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Monter"
-                  title="Monter"
-                  disabled={i === 0}
-                  onClick={() =>
-                    setStyle({ slots: shiftItem(st.slots, slot, k, -1, shown) })
-                  }
-                  className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default"
-                >
-                  <ArrowUp size={14} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Descendre"
-                  title="Descendre"
-                  disabled={i === items.length - 1}
-                  onClick={() =>
-                    setStyle({ slots: shiftItem(st.slots, slot, k, 1, shown) })
-                  }
-                  className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default"
-                >
-                  <ArrowDown size={14} />
-                </button>
-              </li>
-            ))}
+            {rows.map((row, i) => {
+              const { title, detail } = rowLabel(row);
+              const id = ids[i];
+              const nested = row.items.length > 1;
+              const expanded = nested && open.has(id);
+              const what = row.element === "contact" ? "lignes" : "parties";
+              return (
+                <li key={id}>
+                  <div className="flex items-center gap-1 px-2 py-1">
+                    <button
+                      type="button"
+                      onClick={() => openRow(row)}
+                      className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer"
+                    >
+                      <span className="truncate">
+                        {title}
+                        {detail && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {detail}
+                          </span>
+                        )}
+                      </span>
+                      <ChevronRight
+                        size={12}
+                        className="ml-auto shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                    </button>
+                    {nested && (
+                      <button
+                        type="button"
+                        aria-expanded={expanded}
+                        aria-label={`Ordre des ${what} : ${title}`}
+                        title={`Ordre des ${what}`}
+                        onClick={() => toggle(id)}
+                        className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                      >
+                        <ChevronDown
+                          size={14}
+                          className={cn(
+                            "transition-transform duration-200",
+                            expanded && "rotate-180",
+                          )}
+                        />
+                      </button>
+                    )}
+                    <MoveButtons
+                      name={title}
+                      canUp={canShiftRow(rows, i, -1)}
+                      canDown={canShiftRow(rows, i, 1)}
+                      onUp={() => shift(i, -1)}
+                      onDown={() => shift(i, 1)}
+                    />
+                  </div>
+                  {/* Parties de l'élément : leur ordre ; au bord, une
+                      partie sort seule au-dessus ou en dessous de la ligne
+                      voisine */}
+                  {expanded && (
+                    <ul className="border-t bg-muted/40 py-1">
+                      {row.items.map((k) => (
+                        <li
+                          key={k}
+                          className="flex items-center gap-1 py-0.5 pl-6 pr-2"
+                        >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onSelect({ level: "item", key: k }, k)
+                            }
+                            className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer"
+                          >
+                            <span className="truncate">{partTitle(k)}</span>
+                            <ChevronRight
+                              size={12}
+                              className="ml-auto shrink-0 text-muted-foreground"
+                              aria-hidden="true"
+                            />
+                          </button>
+                          <MoveButtons
+                            name={partTitle(k)}
+                            canUp={canShiftRow(rows, i, -1, k)}
+                            canDown={canShiftRow(rows, i, 1, k)}
+                            onUp={() => shift(i, -1, k)}
+                            onDown={() => shift(i, 1, k)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </Section>

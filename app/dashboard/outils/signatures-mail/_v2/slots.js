@@ -412,20 +412,98 @@ export function moveElement(slots, element, slot) {
 }
 
 /**
- * Échange une partie avec sa voisine affichée (`dir` -1 : avant, 1 :
- * après) dans son emplacement. `shown` : parties affichées.
+ * Lignes du panneau d'une colonne, dans l'ordre : un élément fait de
+ * plusieurs parties (prénom et nom, coordonnées) n'en forme qu'une tant
+ * que ses parties se suivent, les autres éléments ont chacun la leur. Un
+ * morceau placé à part de son élément reste une ligne distincte (`main`
+ * faux). `line` : première ligne de la ligne du rendu qui la contient
+ * (identité en ligne, poste suivi de l'entreprise en capitales), que les
+ * flèches des autres sautent d'un bloc. `shown` : parties affichées.
  */
-export function shiftItem(slots, slot, item, dir, shown) {
-  const next = cleanSlots(slots);
-  const list = next[slot];
-  const visible = list.filter((k) => !shown || shown.has(k));
-  const other = visible[visible.indexOf(item) + dir];
-  if (!visible.includes(item) || !other) return next;
-  const a = list.indexOf(item);
-  const b = list.indexOf(other);
-  list[a] = other;
-  list[b] = item;
-  return next;
+export function slotRows(st, shown, slot) {
+  const list = (st?.slots?.[slot] || []).filter((k) => !shown || shown.has(k));
+  const rows = [];
+  for (const k of list) {
+    const element = BLOCK_OF[k] || k;
+    const last = rows[rows.length - 1];
+    if (last?.element === element && ELEMENT_ITEMS[element]?.length > 1) {
+      last.items.push(k);
+    } else {
+      rows.push({ element, items: [k] });
+    }
+  }
+  // Même regroupement que le rendu (mergedRow)
+  const joined = (a, b) =>
+    st?.identityStyle === "inline"
+      ? [...a.items, ...b.items].every((k) => INLINE_IDENTITY.includes(k))
+      : st?.titleStyle === "caps" &&
+        a.element === "jobTitle" &&
+        b.element === "company";
+  rows.forEach((row, i) => {
+    const main = mainPiece(st, shown, row.element);
+    row.main = !main || row.items.some((k) => main.includes(k));
+    row.line = i > 0 && joined(rows[i - 1], row) ? rows[i - 1].line : i;
+  });
+  return rows;
+}
+
+/**
+ * Place voisine d'une ligne du panneau (`dir` -1 : au-dessus, 1 : en
+ * dessous) : avant la ligne précédente ou après la suivante ; au bord d'une
+ * ligne du rendu, toute la ligne voisine est sautée. null au bout de la
+ * colonne.
+ */
+function rowAnchor(rows, index, dir) {
+  let j = index + dir;
+  if (!rows[j]) return null;
+  if (rows[j].line !== rows[index].line) {
+    while (rows[j + dir] && rows[j + dir].line === rows[j].line) j += dir;
+  }
+  const items = rows[j].items;
+  return dir < 0 ? { before: items[0] } : { after: items[items.length - 1] };
+}
+
+/** Une ligne du panneau, ou l'une de ses parties, peut-elle bouger ? */
+export function canShiftRow(rows, index, dir, part = null) {
+  const items = rows[index]?.items || [];
+  if (part && items[items.indexOf(part) + dir]) return true;
+  return Boolean(rowAnchor(rows, index, dir));
+}
+
+/**
+ * Déplace d'un cran une ligne du panneau d'une colonne (`index` dans
+ * slotRows), sans jamais couper un élément ni une ligne du rendu : un
+ * déplacement, pas un échange, pour que les éléments vides (accroche,
+ * fixe, traits) gardent leur place. Les parties vides de l'élément placées
+ * dans la colonne le suivent, comme au glisser-déposer. Avec `part` : cette
+ * partie seule change de place dans sa ligne, ou en sort au bord.
+ */
+export function shiftRow(st, shown, slot, index, dir, part = null) {
+  const rows = slotRows(st, shown, slot);
+  const row = rows[index];
+  if (!row) return cleanSlots(st?.slots);
+  if (part) {
+    const mate = row.items[row.items.indexOf(part) + dir];
+    const at = mate
+      ? dir < 0
+        ? { before: mate }
+        : { after: mate }
+      : rowAnchor(rows, index, dir);
+    return at ? moveItem(st.slots, part, slot, at) : cleanSlots(st.slots);
+  }
+  const at = rowAnchor(rows, index, dir);
+  if (!at) return cleanSlots(st.slots);
+  const order = st.slots?.[slot] || [];
+  const hidden = row.main
+    ? (ELEMENT_ITEMS[row.element] || []).filter(
+        (k) => shown && !shown.has(k) && order.includes(k),
+      )
+    : [];
+  // Dans leur ordre d'origine (un prénom vide reste avant le nom)
+  const moving = [...row.items, ...hidden].sort(
+    (a, b) => order.indexOf(a) - order.indexOf(b),
+  );
+  return moveItems(st.slots, moving, slot, at);
 }
 
 /**
