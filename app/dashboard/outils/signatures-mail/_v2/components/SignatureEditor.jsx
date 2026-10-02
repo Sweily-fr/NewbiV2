@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useApolloClient, useMutation } from "@apollo/client";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   ArrowLeft,
   Check,
@@ -59,6 +59,7 @@ import {
   SEND_SIGNATURE_V2_TEST,
   SET_DEFAULT_SIGNATURE_V2,
   SIGNATURES_V2,
+  SIGNATURE_TEMPLATES_V2,
   toInput,
 } from "../graphql";
 import { SignatureEditorV2Skeleton } from "./signature-v2-skeleton";
@@ -207,7 +208,19 @@ export default function SignatureEditor({ id }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo, isReadOnly]);
 
-  const [tab, setTabState] = useState(isNew ? "template" : "content");
+  // Onglet d'ouverture : Contenu, où se complète la signature (photo, logo,
+  // réseaux). Une signature neuve ne s'ouvre sur Modèle que s'il y a
+  // vraiment à choisir : plusieurs modèles proposés, ou des modèles
+  // enregistrés par l'équipe (liste demandée pour elle seule). Il est
+  // déduit au premier affichage puis figé (`openingTab`) : supprimer le
+  // dernier modèle enregistré ne fait pas changer d'onglet sous les yeux.
+  const { data: savedTemplates, loading: savedLoading } = useQuery(
+    SIGNATURE_TEMPLATES_V2,
+    { skip: !isNew, fetchPolicy: "cache-and-network" },
+  );
+  const openingTab = useRef(null);
+  // Onglet choisi par l'utilisateur, sinon celui d'ouverture
+  const [tab, setTabState] = useState(null);
   // Chaque onglet s'ouvre en haut de sa liste de réglages
   const panelRef = useRef(null);
   const setTab = useCallback((next) => {
@@ -730,7 +743,18 @@ export default function SignatureEditor({ id }) {
     );
   }
 
-  if (loading || !sig) return <SignatureEditorV2Skeleton />;
+  // Signature neuve : la liste des modèles enregistrés décide de l'onglet
+  // d'ouverture, on l'attend pour qu'il ne change pas sous les yeux
+  if (loading || !sig || (isNew && savedLoading && !savedTemplates)) {
+    return <SignatureEditorV2Skeleton />;
+  }
+  if (openingTab.current === null) {
+    const choice =
+      (catalog?.templates || []).filter((t) => t.inGallery !== false).length >
+        1 || (savedTemplates?.emailSignatureTemplatesV2?.length || 0) > 0;
+    openingTab.current = isNew && choice ? "template" : "content";
+  }
+  const activeTab = tab ?? openingTab.current;
 
   // Conseil sous l'aperçu : l'alerte de taille Gmail est portée par la jauge
   const footerWarning =
@@ -842,7 +866,7 @@ export default function SignatureEditor({ id }) {
           </ScrollArea>
         ) : (
           <TabsNew
-            value={tab}
+            value={activeTab}
             onValueChange={setTab}
             className="min-h-0 flex-1"
           >
