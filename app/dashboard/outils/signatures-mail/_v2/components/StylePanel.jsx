@@ -329,13 +329,14 @@ export default function StylePanel({
       >
         <Row
           label="Police"
+          htmlFor="sig-font"
           hint="Seules ces polices s'affichent partout : Gmail, Outlook, Apple Mail."
         >
           <Select
             value={st.fontFamily}
             onValueChange={(v) => setStyle({ fontFamily: v })}
           >
-            <SelectTrigger className={`w-full ${FOCUS_RING}`}>
+            <SelectTrigger id="sig-font" className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -417,6 +418,7 @@ export default function StylePanel({
             hint="Pour un seul élément, cliquez-le dans l'aperçu."
           >
             <Choice
+              label="Espace entre les éléments"
               value={st.spacing}
               onChange={(v) => setStyle({ spacing: v })}
               options={[
@@ -491,12 +493,12 @@ export default function StylePanel({
         {...section("encadre")}
         summary={summaries.encadre}
       >
-        <Row label="Style">
+        <Row label="Style" htmlFor="sig-frame">
           <Select
             value={st.frame}
             onValueChange={(v) => setStyle({ frame: v })}
           >
-            <SelectTrigger className={`w-full ${FOCUS_RING}`}>
+            <SelectTrigger id="sig-frame" className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

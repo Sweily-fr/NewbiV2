@@ -731,7 +731,12 @@ export default function SignatureEditor({ id }) {
   if (loading || !sig) return <SignatureEditorV2Skeleton />;
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950">
+    // La page se déclare en anglais (app/layout.jsx) : l'éditeur, lui, est
+    // lu par les lecteurs d'écran avec une prononciation française
+    <div
+      lang="fr"
+      className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950"
+    >
       {/* Panneau gauche, au style des éditeurs de documents */}
       <aside
         ref={panelRef}

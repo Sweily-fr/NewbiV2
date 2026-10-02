@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -86,6 +87,8 @@ export function layoutState(st, shown = null) {
 
 /** Choix court (≤ 3) en boutons, plus long en liste. */
 export function Pick({ label, hint, value, onChange, options }) {
+  // Libellé relié à la liste, quand c'en est une
+  const selectId = useId();
   if (options.length <= 3) {
     return (
       <Row label={label} hint={hint}>
@@ -99,9 +102,9 @@ export function Pick({ label, hint, value, onChange, options }) {
     );
   }
   return (
-    <Row label={label} hint={hint}>
+    <Row label={label} hint={hint} htmlFor={selectId}>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className={cn("w-full", FOCUS_RING)}>
+        <SelectTrigger id={selectId} className={cn("w-full", FOCUS_RING)}>
           <SelectValue placeholder="Autre place" />
         </SelectTrigger>
         <SelectContent>

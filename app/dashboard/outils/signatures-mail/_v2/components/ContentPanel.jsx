@@ -211,6 +211,7 @@ function PersonField({ id, sig, replace, flush }) {
   return (
     <Field
       label="Signature de"
+      htmlFor="sig-field-member"
       hint="Son nom, son e-mail, son portable et sa photo sont repris de son profil."
     >
       <Select value={value} onValueChange={choose} disabled={busy}>

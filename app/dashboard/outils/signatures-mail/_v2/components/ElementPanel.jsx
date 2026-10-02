@@ -400,6 +400,7 @@ export default function ElementPanel({
           <Section title="Mise en forme">
             <Row label="Forme">
               <Choice
+                label="Forme des icônes"
                 value={st.iconStyle}
                 onChange={(v) => setStyle({ iconStyle: v })}
                 options={[
@@ -461,6 +462,7 @@ export default function ElementPanel({
           <Section title="Mise en forme">
             <Row label="Forme">
               <Choice
+                label="Forme de la photo"
                 value={st.photoShape}
                 onChange={(v) => setStyle({ photoShape: v })}
                 options={[
@@ -548,8 +550,9 @@ export default function ElementPanel({
             checked={banner.enabled}
             onCheckedChange={(v) => update({ banner: { enabled: v } })}
           >
-            <Field label="Lien au clic">
+            <Field label="Lien au clic" htmlFor="sig-el-banner-url">
               <CheckedInput
+                id="sig-el-banner-url"
                 value={banner.url}
                 placeholder="votre-site.fr/offre"
                 warning={linkProblem(banner.url)}
@@ -564,7 +567,7 @@ export default function ElementPanel({
       body = (
         <>
           <Section title="Contenu">
-            <Field label="Texte du bouton">
+            <Field label="Texte du bouton" htmlFor="sig-field-cta">
               <CheckedInput
                 id="sig-field-cta"
                 value={cta.label}
@@ -574,8 +577,9 @@ export default function ElementPanel({
                 onChange={(e) => update({ cta: { label: e.target.value } })}
               />
             </Field>
-            <Field label="Lien">
+            <Field label="Lien" htmlFor="sig-el-cta-url">
               <CheckedInput
+                id="sig-el-cta-url"
                 value={cta.url}
                 placeholder="calendly.com/votre-nom"
                 warning={ctaLinkProblem(cta)}
@@ -613,6 +617,7 @@ export default function ElementPanel({
           <Section title="Contenu">
             <Textarea
               id="sig-field-disclaimer"
+              aria-label="Texte de la mention"
               value={disclaimer.text}
               maxLength={1000}
               rows={3}

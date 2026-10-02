@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, Minus, Plus, RotateCcw } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -32,6 +32,28 @@ export const FOCUS_RING =
 /** Même anneau sur la poignée d'un curseur (Slider partagé). */
 const THUMB_FOCUS_RING =
   "[&_[role=slider]:focus-visible]:outline-solid [&_[role=slider]:focus-visible]:outline-2 [&_[role=slider]:focus-visible]:outline-offset-2 [&_[role=slider]:focus-visible]:outline-[#5a50ff] dark:[&_[role=slider]:focus-visible]:outline-[#8b7fff]";
+
+/** Valeur d'un curseur dite par les lecteurs d'écran : « 13 pixels ». */
+const spokenValue = (value, unit) =>
+  unit === "px" ? `${value} pixels` : unit ? `${value} ${unit}` : String(value);
+
+/**
+ * Nom et valeur dite de la poignée d'un curseur (role="slider") : le
+ * Slider partagé ne transmet pas les attributs aria à sa poignée, ils sont
+ * posés dessus après chaque rendu, comme ColorField le fait pour son
+ * déclencheur. Renvoie la référence de l'élément qui contient le curseur.
+ */
+function useThumbName({ labelledBy, label, valueText }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const thumb = ref.current?.querySelector('[role="slider"]');
+    if (!thumb) return;
+    if (labelledBy) thumb.setAttribute("aria-labelledby", labelledBy);
+    if (label) thumb.setAttribute("aria-label", label);
+    thumb.setAttribute("aria-valuetext", valueText);
+  });
+  return ref;
+}
 
 export function Hint({ children }) {
   return <p className="text-xs text-muted-foreground">{children}</p>;
@@ -263,10 +285,18 @@ export function SliderRow({
   hint,
   onChange,
 }) {
+  // « Taille, 13 pixels » au lieu de « curseur, 13 »
+  const labelId = useId();
+  const ref = useThumbName({
+    labelledBy: labelId,
+    valueText: spokenValue(value, unit),
+  });
   return (
-    <div className="space-y-3">
+    <div ref={ref} className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <Label className={FIELD_LABEL}>{label}</Label>
+        <Label id={labelId} className={FIELD_LABEL}>
+          {label}
+        </Label>
         <span className="text-xs font-medium tabular-nums text-[#242529] dark:text-white">
           {unit ? `${value} ${unit}` : value}
         </span>
@@ -301,6 +331,7 @@ export function LengthRow({
   initial,
 }) {
   const custom = value > 0;
+  const ref = useThumbName({ label, valueText: spokenValue(value, "px") });
   return (
     <Row label={label} hint={hint}>
       <Choice
@@ -313,7 +344,10 @@ export function LengthRow({
         ]}
       />
       {custom && (
-        <div className="animate-in fade-in-0 slide-in-from-top-1 ml-1 flex items-center gap-3 border-l-2 border-[#5b4fff]/30 py-0.5 pl-4 duration-200">
+        <div
+          ref={ref}
+          className="animate-in fade-in-0 slide-in-from-top-1 ml-1 flex items-center gap-3 border-l-2 border-[#5b4fff]/30 py-0.5 pl-4 duration-200"
+        >
           <Slider
             className={cn("flex-1", THUMB_FOCUS_RING)}
             value={[value]}
@@ -373,7 +407,11 @@ export function SpaceRow({ label, value, onChange, min = -24, max = 64 }) {
         >
           <Minus size={14} />
         </button>
-        <span className="flex-1 text-center text-xs font-medium tabular-nums text-[#242529] dark:text-white">
+        {/* La nouvelle valeur est lue après chaque clic sur − ou + */}
+        <span
+          aria-live="polite"
+          className="flex-1 text-center text-xs font-medium tabular-nums text-[#242529] dark:text-white"
+        >
           {shown}
         </span>
         <button
