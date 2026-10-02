@@ -337,7 +337,15 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
         },
       });
       setSaveOpen(false);
-      toast.success(`Modèle « ${trimmedName} » enregistré`);
+      // Un modèle remplacé ne change aucune signature d'elle-même
+      if (replacing) {
+        toast.success(`Modèle « ${trimmedName} » mis à jour`, {
+          description:
+            "Les autres signatures qui l'utilisent gardent l'ancienne version.",
+        });
+      } else {
+        toast.success(`Modèle « ${trimmedName} » enregistré`);
+      }
       refetchSaved();
       // Cette signature est désormais ce modèle : il est coché, et c'est à
       // lui qu'elle revient
@@ -495,7 +503,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               htmlFor="sig-template-name"
               hint={
                 replacing
-                  ? `Remplacera votre modèle « ${trimmedName} ».`
+                  ? `Remplacera votre modèle « ${trimmedName} ». Les signatures qui l'utilisent déjà ne changeront pas : chacun devra l'appliquer à nouveau, puis réinstaller sa signature.`
                   : null
               }
             >
