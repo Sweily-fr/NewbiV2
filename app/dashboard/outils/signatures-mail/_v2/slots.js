@@ -271,8 +271,8 @@ const spaceDiffers = (a, b) =>
 /**
  * La signature s'écarte-t-elle de son modèle : éléments déplacés, traits,
  * blocs ou colonnes sur mesure ? (Changer de modèle remplacerait ces
- * réglages.) Blocs, colonnes et logo et réseaux superposés se comparent à
- * ceux du modèle : un modèle d'équipe peut en avoir.
+ * réglages.) Les blocs, les colonnes et le choix « logo et réseaux côte à
+ * côte » se comparent à ceux du modèle : un modèle d'équipe peut en avoir.
  */
 export function layoutCustomized(sig, template) {
   const defaults = templateLayout(template?.defaults, sig);
