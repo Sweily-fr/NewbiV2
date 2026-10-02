@@ -8,7 +8,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { ColorRow, MultiChoice, ResetLink, Row, Section, SliderRow } from "./controls";
+import {
+  ColorRow,
+  FOCUS_RING,
+  MultiChoice,
+  ResetLink,
+  Row,
+  Section,
+  SliderRow,
+} from "./controls";
 import { fontSizePatch } from "../slots";
 
 const DEFAULT_FONT = "__signature";
@@ -63,7 +71,7 @@ export default function TextStyleControls({
             set({ fontFamily: v === DEFAULT_FONT ? null : v })
           }
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className={`w-full ${FOCUS_RING}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

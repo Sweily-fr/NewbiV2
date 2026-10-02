@@ -31,7 +31,15 @@ import {
   slotOf,
 } from "../slots";
 import { emailProblem, linkProblem } from "../links";
-import { Choice, Hint, LengthRow, Row, Section, SpaceRow } from "./controls";
+import {
+  Choice,
+  FOCUS_RING,
+  Hint,
+  LengthRow,
+  Row,
+  Section,
+  SpaceRow,
+} from "./controls";
 import { TextField } from "./ContentPanel";
 import TextStyleControls from "./TextStyleControls";
 import {
@@ -134,7 +142,7 @@ export function LevelHeader({ selected, ancestors, onSelect, onClose, st }) {
       <button
         type="button"
         onClick={onClose}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+        className={`inline-flex items-center gap-1.5 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer ${FOCUS_RING}`}
       >
         <ArrowLeft size={14} />
         Tous les réglages
@@ -152,7 +160,7 @@ export function LevelHeader({ selected, ancestors, onSelect, onClose, st }) {
               <button
                 type="button"
                 onClick={() => onSelect(a)}
-                className="rounded px-1 py-0.5 -mx-1 hover:bg-accent hover:text-foreground cursor-pointer"
+                className={`rounded px-1 py-0.5 -mx-1 hover:bg-accent hover:text-foreground cursor-pointer ${FOCUS_RING}`}
               >
                 {selectionLabel(a, st)}
               </button>
@@ -187,7 +195,7 @@ export function PartLinks({ element, sig, onSelect }) {
             key={k}
             type="button"
             onClick={() => onSelect({ level: "item", key: k }, k)}
-            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent cursor-pointer"
+            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent cursor-pointer ${FOCUS_RING}`}
           >
             {PARTS[k].title}
             <ChevronRight size={12} aria-hidden="true" />
@@ -470,7 +478,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
                 <button
                   type="button"
                   onClick={() => onSelect(selectionChain(k, st, shown)[0], k)}
-                  className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer"
+                  className={`flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer ${FOCUS_RING}`}
                 >
                   <span className="truncate">
                     {PARTS[k]?.title || ELEMENT_TITLE[BLOCK_OF[k]] || ITEM_LABEL[k]}
@@ -489,7 +497,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
                   onClick={() =>
                     setStyle({ slots: shiftItem(st.slots, slot, k, -1, shown) })
                   }
-                  className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                  className={`rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default ${FOCUS_RING}`}
                 >
                   <ArrowUp size={14} />
                 </button>
@@ -501,7 +509,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
                   onClick={() =>
                     setStyle({ slots: shiftItem(st.slots, slot, k, 1, shown) })
                   }
-                  className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default"
+                  className={`rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default ${FOCUS_RING}`}
                 >
                   <ArrowDown size={14} />
                 </button>

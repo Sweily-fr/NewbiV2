@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/src/components/ui/button";
+import { FOCUS_RING } from "./controls";
 
 const STORAGE_KEY = "sig-editor-tour-v2";
 
@@ -91,7 +92,7 @@ export default function EditorTour({ steps }) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="cursor-pointer"
+                className={`cursor-pointer ${FOCUS_RING}`}
                 onClick={finish}
               >
                 Passer
@@ -101,7 +102,7 @@ export default function EditorTour({ steps }) {
               type="button"
               variant="primary"
               size="sm"
-              className="cursor-pointer"
+              className={`cursor-pointer ${FOCUS_RING}`}
               onClick={() => (last ? finish() : setIndex(index + 1))}
             >
               {last ? "C'est parti" : "Suivant"}

@@ -8,6 +8,7 @@ import {
   CheckedInput,
   Choice,
   ColorRow,
+  FOCUS_RING,
   Hint,
   Nested,
   Row,
@@ -661,7 +662,7 @@ export default function ElementPanel({
           <button
             type="button"
             onClick={() => setStyle(removeRule(st, element))}
-            className="text-xs font-medium text-red-600 hover:underline cursor-pointer"
+            className={`rounded-sm text-xs font-medium text-red-600 hover:underline cursor-pointer ${FOCUS_RING}`}
           >
             Retirer ce trait
           </button>

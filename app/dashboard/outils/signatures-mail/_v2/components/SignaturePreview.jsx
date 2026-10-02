@@ -22,6 +22,7 @@ import {
 } from "@/src/components/ui/popover";
 import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
 import { modClick } from "./LevelPanels";
+import { FOCUS_RING } from "./controls";
 import HtmlFrame from "./HtmlFrame";
 import DropOverlay from "./DropOverlay";
 
@@ -141,7 +142,7 @@ export default function SignaturePreview({
                   type="button"
                   aria-label="Tous les gestes de l'aperçu"
                   title="Tous les gestes de l'aperçu"
-                  className="ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent hover:text-foreground cursor-pointer"
+                  className={`ml-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-accent hover:text-foreground cursor-pointer ${FOCUS_RING}`}
                 >
                   <CircleHelp size={14} />
                 </button>

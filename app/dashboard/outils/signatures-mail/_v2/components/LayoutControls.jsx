@@ -21,6 +21,7 @@ import {
   ChoiceCard,
   ColorRow,
   FIELD_LABEL,
+  FOCUS_RING,
   Hint,
   LengthRow,
   MultiChoice,
@@ -100,7 +101,7 @@ export function Pick({ label, hint, value, onChange, options }) {
   return (
     <Row label={label} hint={hint}>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className={cn("w-full", FOCUS_RING)}>
           <SelectValue placeholder="Autre place" />
         </SelectTrigger>
         <SelectContent>

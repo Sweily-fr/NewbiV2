@@ -68,7 +68,7 @@ import ContentPanel from "./ContentPanel";
 import StylePanel from "./StylePanel";
 import SignaturePreview from "./SignaturePreview";
 import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
-import { GmailSize } from "./controls";
+import { FOCUS_RING, GmailSize } from "./controls";
 import {
   BLOCK_OF,
   COLUMN_WIDTH,
@@ -719,7 +719,7 @@ export default function SignatureEditor({ id }) {
         <Button
           variant="outline"
           onClick={() => router.push(LIST_URL)}
-          className="cursor-pointer"
+          className={`cursor-pointer ${FOCUS_RING}`}
         >
           <ArrowLeft size={14} />
           Retour aux signatures
@@ -742,7 +742,7 @@ export default function SignatureEditor({ id }) {
             <Button
               variant="ghost"
               size="icon"
-              className="-ml-2 h-8 w-8 shrink-0 cursor-pointer"
+              className={`-ml-2 h-8 w-8 shrink-0 cursor-pointer ${FOCUS_RING}`}
               onClick={handleBack}
               aria-label="Retour aux signatures"
             >
@@ -843,15 +843,15 @@ export default function SignatureEditor({ id }) {
             <TabsNewList>
               {/* Toujours là, même avec un seul modèle proposé : on y
                   enregistre et réutilise ses propres modèles */}
-              <TabsNewTrigger value="template">
+              <TabsNewTrigger value="template" className={FOCUS_RING}>
                 <LayoutTemplate className="h-3.5 w-3.5" />
                 Modèle
               </TabsNewTrigger>
-              <TabsNewTrigger value="content">
+              <TabsNewTrigger value="content" className={FOCUS_RING}>
                 <PenLine className="h-3.5 w-3.5" />
                 Contenu
               </TabsNewTrigger>
-              <TabsNewTrigger value="style">
+              <TabsNewTrigger value="style" className={FOCUS_RING}>
                 <Palette className="h-3.5 w-3.5" />
                 Style
               </TabsNewTrigger>
@@ -910,7 +910,7 @@ export default function SignatureEditor({ id }) {
                   setSelected(null);
                   setTab("template");
                 }}
-                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                className={`group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer ${FOCUS_RING}`}
               >
                 <LayoutTemplate size={14} />
                 Modèle <span className="font-medium text-foreground">{template.name}</span>
@@ -926,7 +926,7 @@ export default function SignatureEditor({ id }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 cursor-pointer"
+                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
                 onClick={undo}
                 disabled={!canUndo || isReadOnly}
                 aria-label="Annuler"
@@ -937,7 +937,7 @@ export default function SignatureEditor({ id }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 cursor-pointer"
+                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
                 onClick={redo}
                 disabled={!canRedo || isReadOnly}
                 aria-label="Rétablir"
@@ -950,7 +950,7 @@ export default function SignatureEditor({ id }) {
               variant="outline"
               onClick={handleCopy}
               disabled={!render?.html}
-              className="cursor-pointer"
+              className={`cursor-pointer ${FOCUS_RING}`}
               title="Copier la signature pour la coller dans les réglages de votre messagerie"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -961,7 +961,7 @@ export default function SignatureEditor({ id }) {
                 variant="outline"
                 onClick={handleTest}
                 disabled={!render?.html || testing}
-                className="cursor-pointer"
+                className={`cursor-pointer ${FOCUS_RING}`}
                 title="Recevoir la signature dans votre boîte mail pour la vérifier"
               >
                 {testing ? (
@@ -975,7 +975,7 @@ export default function SignatureEditor({ id }) {
                 variant="primary"
                 onClick={() => setInstallOpen(true)}
                 disabled={!render?.html}
-                className="cursor-pointer"
+                className={`cursor-pointer ${FOCUS_RING}`}
               >
                 <Send size={14} />
                 Installer dans ma messagerie
@@ -986,7 +986,7 @@ export default function SignatureEditor({ id }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-9 w-9 p-0 cursor-pointer"
+                  className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
                   aria-label="Plus d'actions"
                 >
                   <MoreHorizontal size={16} />
@@ -1124,12 +1124,12 @@ export default function SignatureEditor({ id }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
+            <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
               Annuler
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+              className={`bg-red-600 text-white hover:bg-red-700 cursor-pointer ${FOCUS_RING}`}
             >
               Supprimer
             </AlertDialogAction>

@@ -13,7 +13,7 @@ import {
 } from "@/src/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import { toast } from "@/src/components/ui/sonner";
-import { AddChips, CheckedInput, Field, Section } from "./controls";
+import { AddChips, CheckedInput, FOCUS_RING, Field, Section } from "./controls";
 import ImageField from "./ImageField";
 import ExtrasSection from "./ExtrasPanel";
 
@@ -69,8 +69,7 @@ export function SocialLinks({ social, networks, update }) {
     next.splice(index + delta, 0, row);
     update({ social: next });
   };
-  const arrow =
-    "flex h-4 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground cursor-pointer disabled:cursor-default";
+  const arrow = `flex h-4 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground cursor-pointer disabled:cursor-default ${FOCUS_RING}`;
 
   return (
     <div className="space-y-2">
@@ -122,7 +121,7 @@ export function SocialLinks({ social, networks, update }) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 cursor-pointer"
+            className={`h-8 w-8 p-0 text-muted-foreground hover:text-red-600 cursor-pointer ${FOCUS_RING}`}
             onClick={() => removeRow(index)}
             aria-label={`Retirer ${byId[s.network]?.label || s.network}`}
           >
@@ -132,7 +131,7 @@ export function SocialLinks({ social, networks, update }) {
       ))}
       {available.length > 0 && (
         <Select value="" onValueChange={addRow}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className={`w-full ${FOCUS_RING}`}>
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <Plus size={14} />
               Ajouter un réseau
@@ -215,7 +214,7 @@ function PersonField({ id, sig, replace, flush }) {
       hint="Son nom, son e-mail, son portable et sa photo sont repris de son profil."
     >
       <Select value={value} onValueChange={choose} disabled={busy}>
-        <SelectTrigger id="sig-field-member" className="w-full">
+        <SelectTrigger id="sig-field-member" className={`w-full ${FOCUS_RING}`}>
           {busy ? (
             <span className="flex items-center gap-2 text-muted-foreground">
               <Loader2 size={14} className="animate-spin" />

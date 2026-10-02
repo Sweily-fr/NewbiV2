@@ -20,6 +20,19 @@ import ColorField from "./ColorField";
 export const FIELD_LABEL =
   "text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55";
 
+/**
+ * Anneau de focus au clavier (jamais au clic), net sur tous les fonds :
+ * boutons, listes, onglets et choix de l'éditeur, dont les composants
+ * partagés n'en montrent pas. outline-solid est indispensable : sous
+ * Tailwind 4, leur outline-none retire aussi le style du contour.
+ */
+export const FOCUS_RING =
+  "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5a50ff] dark:focus-visible:outline-[#8b7fff]";
+
+/** Même anneau sur la poignée d'un curseur (Slider partagé). */
+const THUMB_FOCUS_RING =
+  "[&_[role=slider]:focus-visible]:outline-solid [&_[role=slider]:focus-visible]:outline-2 [&_[role=slider]:focus-visible]:outline-offset-2 [&_[role=slider]:focus-visible]:outline-[#5a50ff] dark:[&_[role=slider]:focus-visible]:outline-[#8b7fff]";
+
 export function Hint({ children }) {
   return <p className="text-xs text-muted-foreground">{children}</p>;
 }
@@ -70,7 +83,10 @@ export function EmptyHint({ text, action, onAction }) {
         <button
           type="button"
           onClick={onAction}
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer",
+            FOCUS_RING,
+          )}
         >
           <Plus size={12} />
           {action}
@@ -104,7 +120,10 @@ export function Section({
             type="button"
             aria-expanded={open}
             onClick={onToggle}
-            className="flex w-full items-center justify-between gap-3 text-left text-lg font-medium cursor-pointer"
+            className={cn(
+              "flex w-full items-center justify-between gap-3 rounded-md text-left text-lg font-medium cursor-pointer",
+              FOCUS_RING,
+            )}
           >
             {title}
             <ChevronDown
@@ -175,6 +194,7 @@ const SEGMENTS = "flex w-full gap-0.5 rounded-[9px] bg-[#F5F5F5] p-0.5 dark:bg-n
 const segment = (active) =>
   cn(
     "flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-[color,background-color,box-shadow] duration-150 cursor-pointer",
+    FOCUS_RING,
     active
       ? "bg-white text-[#242529] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)] dark:bg-[#2a2a2a] dark:text-white"
       : "text-[#606164] hover:text-[#242529] dark:text-white/55 dark:hover:text-white",
@@ -252,6 +272,7 @@ export function SliderRow({
         </span>
       </div>
       <Slider
+        className={THUMB_FOCUS_RING}
         value={[value]}
         min={min}
         max={max}
@@ -294,7 +315,7 @@ export function LengthRow({
       {custom && (
         <div className="animate-in fade-in-0 slide-in-from-top-1 ml-1 flex items-center gap-3 border-l-2 border-[#5b4fff]/30 py-0.5 pl-4 duration-200">
           <Slider
-            className="flex-1"
+            className={cn("flex-1", THUMB_FOCUS_RING)}
             value={[value]}
             min={min}
             max={max}
@@ -316,7 +337,10 @@ export function ResetLink({ onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+      className={cn(
+        "inline-flex items-center gap-1 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer",
+        FOCUS_RING,
+      )}
     >
       <RotateCcw size={11} />
       {children}
@@ -333,8 +357,10 @@ export function SpaceRow({ label, value, onChange, min = -24, max = 64 }) {
   const shown =
     value === 0 ? "Normal" : `${value > 0 ? "+" : "−"}${Math.abs(value)} px`;
   const set = (v) => onChange(Math.max(min, Math.min(max, v)));
-  const button =
-    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#242529] transition-colors hover:bg-white disabled:pointer-events-none disabled:opacity-30 dark:text-white dark:hover:bg-neutral-800 cursor-pointer";
+  const button = cn(
+    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#242529] transition-colors hover:bg-white disabled:pointer-events-none disabled:opacity-30 dark:text-white dark:hover:bg-neutral-800 cursor-pointer",
+    FOCUS_RING,
+  );
   return (
     <Row label={label}>
       <div className={cn(SEGMENTS, "items-center")}>
@@ -401,7 +427,10 @@ export function AddChips({ items, onAdd }) {
           key={f.key}
           type="button"
           onClick={() => onAdd(f.key)}
-          className="inline-flex items-center gap-1 rounded-md border border-dashed border-[#D1D3D8] px-2 py-1 text-xs text-muted-foreground hover:border-[#9FA1A7] hover:text-foreground cursor-pointer dark:border-[#44444A]"
+          className={cn(
+            "inline-flex items-center gap-1 rounded-md border border-dashed border-[#D1D3D8] px-2 py-1 text-xs text-muted-foreground hover:border-[#9FA1A7] hover:text-foreground cursor-pointer dark:border-[#44444A]",
+            FOCUS_RING,
+          )}
         >
           <Plus size={12} />
           {f.label}
@@ -477,7 +506,11 @@ export function ChoiceCard({ selected, onClick, label, children, className }) {
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className={cn("group flex flex-col items-center cursor-pointer", className)}
+      className={cn(
+        "group flex flex-col items-center rounded-md cursor-pointer",
+        FOCUS_RING,
+        className,
+      )}
     >
       <span
         className={cn(

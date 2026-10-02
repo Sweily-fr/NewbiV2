@@ -37,7 +37,7 @@ import {
 } from "../graphql";
 import { layoutCustomized, templateLayout } from "../slots";
 import HtmlFrame from "./HtmlFrame";
-import { Row, Section } from "./controls";
+import { FOCUS_RING, Row, Section } from "./controls";
 
 const THUMB_WIDTH = 560;
 const THUMB_HEIGHT = 300;
@@ -59,6 +59,7 @@ function TemplateTile({
         onClick={onSelect}
         className={cn(
           "relative w-full overflow-hidden rounded-xl border text-left shadow-xs transition-[border-color,box-shadow] cursor-pointer",
+          FOCUS_RING,
           selected ? "border-ring" : "border-input hover:border-ring/60",
         )}
         aria-pressed={selected}
@@ -105,7 +106,10 @@ function TemplateTile({
           onClick={onDelete}
           aria-label={`Supprimer le modèle ${name}`}
           title="Supprimer ce modèle"
-          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 cursor-pointer"
+          className={cn(
+            "absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md border bg-background text-muted-foreground opacity-0 shadow-xs transition-opacity hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 cursor-pointer",
+            FOCUS_RING,
+          )}
         >
           <Trash2 size={14} aria-hidden="true" />
         </button>
@@ -339,7 +343,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
         <Button
           type="button"
           variant="outline"
-          className="w-full cursor-pointer"
+          className={cn("w-full cursor-pointer", FOCUS_RING)}
           onClick={openSave}
         >
           <BookmarkPlus className="h-4 w-4" aria-hidden="true" />
@@ -380,11 +384,11 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
+            <AlertDialogCancel className={cn("cursor-pointer", FOCUS_RING)}>
               Garder ma disposition
             </AlertDialogCancel>
             <AlertDialogAction
-              className="cursor-pointer"
+              className={cn("cursor-pointer", FOCUS_RING)}
               onClick={() => {
                 const p = pending;
                 setPending(null);
@@ -414,10 +418,13 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
+            <AlertDialogCancel className={cn("cursor-pointer", FOCUS_RING)}>
               Garder
             </AlertDialogCancel>
-            <AlertDialogAction className="cursor-pointer" onClick={remove}>
+            <AlertDialogAction
+              className={cn("cursor-pointer", FOCUS_RING)}
+              onClick={remove}
+            >
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -457,14 +464,14 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               <Button
                 type="button"
                 variant="outline"
-                className="cursor-pointer"
+                className={cn("cursor-pointer", FOCUS_RING)}
                 onClick={() => setSaveOpen(false)}
               >
                 Annuler
               </Button>
               <Button
                 type="submit"
-                className="cursor-pointer"
+                className={cn("cursor-pointer", FOCUS_RING)}
                 disabled={!trimmedName || savingTemplate}
               >
                 {replacing ? "Remplacer" : "Enregistrer"}

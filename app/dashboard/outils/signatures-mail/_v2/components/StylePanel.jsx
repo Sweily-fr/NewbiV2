@@ -22,6 +22,7 @@ import {
   AddChips,
   Choice,
   ColorRow,
+  FOCUS_RING,
   Group,
   LengthRow,
   Nested,
@@ -102,7 +103,7 @@ function ResetLayout({ sig, template, setStyle }) {
         // Places, traits et bordures, blocs, colonnes, nom, réseaux et logo
         // du modèle ; couleurs et typographie inchangées
         onClick={() => setStyle(layoutReset(sig, template))}
-        className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer ${FOCUS_RING}`}
       >
         <RotateCcw size={12} />
         Revenir au modèle {template.name}
@@ -334,7 +335,7 @@ export default function StylePanel({
             value={st.fontFamily}
             onValueChange={(v) => setStyle({ fontFamily: v })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -457,7 +458,7 @@ export default function StylePanel({
                 key={key}
                 type="button"
                 onClick={() => onSelect?.({ level: "element", key })}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-accent cursor-pointer"
+                className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-accent cursor-pointer ${FOCUS_RING}`}
               >
                 <span>
                   Trait {i + 1}
@@ -495,7 +496,7 @@ export default function StylePanel({
             value={st.frame}
             onValueChange={(v) => setStyle({ frame: v })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -594,7 +595,7 @@ export default function StylePanel({
                     ? onSelect?.({ level: "element", key: row.key })
                     : onGoTo?.(row.key)
                 }
-                className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent cursor-pointer"
+                className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent cursor-pointer ${FOCUS_RING}`}
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-medium">{row.label}</span>
