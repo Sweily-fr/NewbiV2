@@ -638,10 +638,10 @@ export default function DropOverlay({
     let raf = 0;
     const tick = () => {
       const p = last.current;
+      // Seulement une fois le pointeur vraiment parti (pas un simple appui
+      // sur une poignée proche du bord, ni la seule molette)
       const moved =
-        p &&
-        Math.hypot(p.x - drag.x, p.y - shiftRef.current - drag.y) >
-          DRAG_THRESHOLD;
+        p && Math.hypot(p.x - drag.x, p.y - drag.y) > DRAG_THRESHOLD;
       if (moved && !done.current) {
         const r = sc.getBoundingClientRect();
         const near = p.x >= r.left - EDGE && p.x <= r.right + EDGE;
@@ -661,9 +661,9 @@ export default function DropOverlay({
 
   // Repère du dessin : la zone visible de l'aperçu (rien ne déborde sur la
   // barre d'outils ou la jauge), décalée de ce qu'il a défilé
-  const top0 = clip ? clip.top : 0;
-  const Y = (y) => y + shift - top0;
-  const area = clip
+  const originY = clip ? clip.top : 0;
+  const Y = (y) => y + shift - originY;
+  const zone = clip
     ? { top: clip.top, height: clip.bottom - clip.top }
     : { top: 0, bottom: 0 };
 
@@ -684,7 +684,7 @@ export default function DropOverlay({
     >
       <div
         className="pointer-events-none fixed inset-x-0 overflow-hidden"
-        style={area}
+        style={zone}
       >
         {/* Élément tiré, repéré en pointillés */}
         {source && (
