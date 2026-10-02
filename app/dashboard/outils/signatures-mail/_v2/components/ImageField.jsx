@@ -36,7 +36,10 @@ export default function ImageField({
 
   const send = async (file) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    // Photo HEIC (iPhone) : sans type sur certains systèmes, reconnue à son
+    // extension ; l'API la convertit
+    const heic = /\.hei[cf]$/i.test(file.name || "");
+    if (!file.type.startsWith("image/") && !heic) {
       toast.error("Choisissez une image (JPG, PNG ou WebP)");
       return;
     }
@@ -72,7 +75,7 @@ export default function ImageField({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         className="hidden"
         onChange={(e) => send(e.target.files?.[0])}
       />

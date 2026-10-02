@@ -452,7 +452,7 @@ export default function ElementPanel({
               kind="PHOTO"
               fieldId="sig-field-photo"
               label="Photo"
-              hint="Recadrée automatiquement en carré, nette sur écran retina."
+              hint="JPG, PNG, WebP ou HEIC (10 Mo max.), recadrée automatiquement en carré et nette sur écran retina."
               image={images.photo}
               onChanged={replace}
             />
@@ -511,7 +511,7 @@ export default function ElementPanel({
               kind="LOGO"
               fieldId="sig-field-logo"
               label="Logo"
-              hint="Privilégiez un PNG à fond transparent : il s'adapte à tous les clients mail, y compris en mode sombre."
+              hint="JPG, PNG, WebP ou SVG (10 Mo max.). Un PNG à fond transparent évite le cadre blanc en mode sombre. Si votre logo est noir ou très foncé, il y devient presque invisible : gardez-le alors sur fond blanc."
               image={images.logo}
               onChanged={replace}
               aspect="logo"
@@ -537,6 +537,7 @@ export default function ElementPanel({
             kind="BANNER"
             fieldId="sig-field-banner"
             label="Image"
+            hint="Une image large (1200 px de large par exemple), en JPG, PNG ou WebP, 10 Mo max."
             image={images.banner}
             onChanged={replace}
             aspect="wide"

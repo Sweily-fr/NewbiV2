@@ -592,6 +592,25 @@ export default function SignatureEditor({ id }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, isReadOnly, deleteSelected]);
 
+  // Fichier lâché à côté d'une case d'image : le navigateur l'ouvrirait
+  // (Safari et Firefox à la place de l'éditeur). Les cases d'image le
+  // traitent avant (defaultPrevented) ; ailleurs, curseur « interdit » et
+  // rien ne se passe. L'aperçu a sa propre garde (HtmlFrame).
+  useEffect(() => {
+    const guard = (e) => {
+      const types = Array.from(e.dataTransfer?.types || []);
+      if (e.defaultPrevented || !types.includes("Files")) return;
+      e.preventDefault();
+      if (e.type === "dragover") e.dataTransfer.dropEffect = "none";
+    };
+    window.addEventListener("dragover", guard);
+    window.addEventListener("drop", guard);
+    return () => {
+      window.removeEventListener("dragover", guard);
+      window.removeEventListener("drop", guard);
+    };
+  }, []);
+
   // Depuis un réglage sans objet (« Ajouter une photo »…) : onglet Contenu,
   // puis le champ concerné
   const goToField = useCallback((field) => {

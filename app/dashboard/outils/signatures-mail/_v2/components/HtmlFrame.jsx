@@ -81,6 +81,9 @@ post({type:"sig-drag",field:fields[0],fields:fields,whole:!!(sel&&sel.level==="e
 document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
 document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
+/* Fichier lâché sur l'aperçu : rien ne s'ouvre (le navigateur remplacerait l'éditeur) */
+function noFile(e){var t=e.dataTransfer&&e.dataTransfer.types;if(e.defaultPrevented||!t||[].indexOf.call(t,"Files")<0)return;e.preventDefault();if(e.type==="dragover")e.dataTransfer.dropEffect="none";}
+document.addEventListener("dragover",noFile);document.addEventListener("drop",noFile);
 function startEdit(el,x,y){
 if(window.SIG_READONLY)return;
 editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();
