@@ -119,9 +119,13 @@ export default function SignaturePreview({
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-4 px-1 pb-3">
         {mobile && overflow ? (
+          // Les textes et les largeurs choisies se resserrent sur un
+          // téléphone : seuls les éléments côte à côte (logo, réseaux)
+          // peuvent encore déborder
           <p className="text-xs text-amber-700 dark:text-amber-300">
             Trop large pour un téléphone : la signature y défilera de côté.
-            Placez des éléments en dessous plutôt qu&apos;à côté.
+            Mettez le logo sous les réseaux, ou répartissez les réseaux sur
+            deux lignes.
           </p>
         ) : dark ? (
           <p className="text-xs text-muted-foreground">
