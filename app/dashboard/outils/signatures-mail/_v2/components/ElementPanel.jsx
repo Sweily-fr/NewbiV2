@@ -28,6 +28,7 @@ import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
 import BlockControls from "./BlockControls";
 import { CtaColorFields, DisclaimerField } from "./ExtrasPanel";
 import {
+  bannerAltFallback,
   ctaLabelProblem,
   ctaLinkHint,
   ctaLinkProblem,
@@ -553,6 +554,23 @@ export default function ElementPanel({
                 placeholder="votre-site.fr/offre"
                 warning={linkProblem(banner.url)}
                 onChange={(e) => update({ banner: { url: e.target.value } })}
+              />
+            </Field>
+            {/* Même champ que dans « En plus » : la bannière se règle
+                entièrement depuis l'aperçu */}
+            <Field
+              label="Texte de remplacement"
+              htmlFor="sig-element-banner-alt"
+              hint="Lu par les lecteurs d'écran et affiché quand la messagerie bloque les images."
+            >
+              <CheckedInput
+                id="sig-element-banner-alt"
+                value={banner.alt}
+                maxLength={120}
+                placeholder={
+                  bannerAltFallback(banner.url) || "Description de l'image"
+                }
+                onChange={(e) => update({ banner: { alt: e.target.value } })}
               />
             </Field>
           </SwitchRow>

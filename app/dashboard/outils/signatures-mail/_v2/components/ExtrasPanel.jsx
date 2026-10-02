@@ -14,6 +14,7 @@ import {
   Warning,
 } from "./controls";
 import {
+  bannerAltFallback,
   ctaLabelProblem,
   ctaLinkHint,
   ctaLinkProblem,
@@ -258,13 +259,16 @@ export default function ExtrasSection({ id, sig, update, replace }) {
           <Row
             label="Texte de remplacement"
             htmlFor="sig-banner-alt"
-            hint="Affiché quand la messagerie bloque les images."
+            hint="Lu par les lecteurs d'écran et affiché quand la messagerie bloque les images."
           >
             <CheckedInput
               id="sig-banner-alt"
               value={banner.alt}
               maxLength={120}
-              placeholder="Description de l'image"
+              // Sans description, le rendu nomme la bannière d'après son lien
+              placeholder={
+                bannerAltFallback(banner.url) || "Description de l'image"
+              }
               onChange={(e) => update({ banner: { alt: e.target.value } })}
             />
           </Row>
