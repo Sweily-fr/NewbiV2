@@ -99,7 +99,7 @@ export async function copySignature(
   } else {
     toast.error("La copie n'a pas abouti", {
       description:
-        "Passez par le fichier : « Télécharger le HTML » dans la fenêtre d'installation, ouvrez-le, sélectionnez tout (Ctrl+A ou Cmd+A), copiez puis collez.",
+        "Passez par le fichier : « Télécharger le HTML » dans la fenêtre d'installation, puis ouvrez le fichier, sélectionnez tout (Ctrl+A ou Cmd+A), copiez et collez.",
     });
   }
   return ok;
