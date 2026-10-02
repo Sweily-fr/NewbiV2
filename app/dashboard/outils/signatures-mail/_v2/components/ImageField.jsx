@@ -6,10 +6,8 @@ import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import { Field } from "./controls";
-import {
-  REMOVE_SIGNATURE_V2_IMAGE,
-  UPLOAD_SIGNATURE_V2_IMAGE,
-} from "../graphql";
+import ConfirmRemoveImage, { useRemoveSignatureImage } from "./ConfirmRemoveImage";
+import { UPLOAD_SIGNATURE_V2_IMAGE } from "../graphql";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -32,7 +30,9 @@ export default function ImageField({
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [upload] = useMutation(UPLOAD_SIGNATURE_V2_IMAGE);
-  const [remove] = useMutation(REMOVE_SIGNATURE_V2_IMAGE);
+  const removeImage = useRemoveSignatureImage(id);
+  // « Retirer » demande confirmation, comme la touche Suppr dans l'aperçu
+  const [confirming, setConfirming] = useState(false);
 
   const send = async (file) => {
     if (!file) return;
@@ -60,23 +60,29 @@ export default function ImageField({
   const clear = async () => {
     setBusy(true);
     try {
-      const { data } = await remove({ variables: { id, kind } });
-      onChanged(data?.removeEmailSignatureV2Image);
-    } catch {
-      toast.error("Suppression impossible");
+      const updated = await removeImage(kind);
+      if (updated) onChanged(updated);
     } finally {
       setBusy(false);
     }
   };
 
   const input = (
-    <input
-      ref={inputRef}
-      type="file"
-      accept="image/*"
-      className="hidden"
-      onChange={(e) => send(e.target.files?.[0])}
-    />
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => send(e.target.files?.[0])}
+      />
+      <ConfirmRemoveImage
+        kind={kind}
+        open={confirming}
+        onOpenChange={setConfirming}
+        onConfirm={clear}
+      />
+    </>
   );
   // Vignette seule (à côté du nom, de l'entreprise) : un clic ou un dépôt
   // pour ajouter ou changer l'image, « Retirer » dessous
@@ -121,7 +127,7 @@ export default function ImageField({
         {image?.url && !busy && (
           <button
             type="button"
-            onClick={clear}
+            onClick={() => setConfirming(true)}
             className="text-[11px] text-muted-foreground hover:text-red-600 cursor-pointer"
           >
             Retirer
@@ -191,7 +197,7 @@ export default function ImageField({
               size="sm"
               className="h-8 text-xs text-red-600 hover:text-red-700 cursor-pointer"
               disabled={busy}
-              onClick={clear}
+              onClick={() => setConfirming(true)}
             >
               <Trash2 size={12} />
               Retirer

@@ -53,7 +53,6 @@ import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSignatureV2 } from "../hooks/useSignatureV2";
 import {
   DELETE_SIGNATURE_V2,
-  REMOVE_SIGNATURE_V2_IMAGE,
   DUPLICATE_SIGNATURE_V2,
   RENDER_SIGNATURE_V2,
   SEND_SIGNATURE_V2_TEST,
@@ -90,6 +89,7 @@ import {
   selectionLabel,
 } from "./LevelPanels";
 import InstallDialog, { copySignatureHtml } from "./InstallDialog";
+import ConfirmRemoveImage, { useRemoveSignatureImage } from "./ConfirmRemoveImage";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
 
@@ -542,15 +542,18 @@ export default function SignatureEditor({ id }) {
 
   // Suppr (⌫) sur une sélection : un texte est vidé, le bouton, la bannière
   // et la mention sont masqués, un trait est retiré ; « Annuler » revient en
-  // arrière. Photo et logo, hors historique, sont d'abord confirmés.
+  // arrière. Photo et logo, hors historique, sont d'abord confirmés (même
+  // confirmation que le lien « Retirer » des champs d'image).
   const [confirmImage, setConfirmImage] = useState(null);
-  const [removeImage] = useMutation(REMOVE_SIGNATURE_V2_IMAGE);
+  const [confirmImageOpen, setConfirmImageOpen] = useState(false);
+  const removeImage = useRemoveSignatureImage(id);
   const deleteSelected = useCallback(() => {
     if (isReadOnly) return;
     const what = deleteFor(sig, selected);
     if (!what) return;
     if (what.image) {
       setConfirmImage(what.image);
+      setConfirmImageOpen(true);
       return;
     }
     const label = selectionLabel(selected, sig?.style);
@@ -563,16 +566,10 @@ export default function SignatureEditor({ id }) {
     });
   }, [isReadOnly, sig, selected, update, undo]);
   const confirmRemoveImage = async () => {
-    const kind = confirmImage === "photo" ? "PHOTO" : "LOGO";
-    try {
-      const { data } = await removeImage({ variables: { id, kind } });
-      replace(data?.removeEmailSignatureV2Image);
+    const updated = await removeImage(confirmImage === "photo" ? "PHOTO" : "LOGO");
+    if (updated) {
+      replace(updated);
       setSelected(null);
-      toast.success(confirmImage === "photo" ? "Photo retirée" : "Logo retiré");
-    } catch {
-      toast.error("Suppression impossible");
-    } finally {
-      setConfirmImage(null);
     }
   };
   // Même touche, focus hors de l'aperçu (page, pas un champ ni le panneau)
@@ -1088,31 +1085,12 @@ export default function SignatureEditor({ id }) {
         gmailMaxChars={catalog?.gmailMaxChars || 10000}
       />
 
-      <AlertDialog
-        open={Boolean(confirmImage)}
-        onOpenChange={(open) => !open && setConfirmImage(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmImage === "photo" ? "Retirer la photo ?" : "Retirer le logo ?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              L&apos;image sera supprimée de la signature : pour la remettre, il
-              faudra l&apos;envoyer à nouveau.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmRemoveImage}
-              className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
-            >
-              Retirer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmRemoveImage
+        kind={confirmImage === "photo" ? "PHOTO" : "LOGO"}
+        open={confirmImageOpen}
+        onOpenChange={setConfirmImageOpen}
+        onConfirm={confirmRemoveImage}
+      />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
