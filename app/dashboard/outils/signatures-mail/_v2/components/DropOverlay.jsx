@@ -86,6 +86,25 @@ export function targetsFor(field, st, g) {
   );
   const move = (slot, at) => moveItems(slots, moving, slot, at);
   const NAME = ["firstName", "lastName"];
+  const CONTACT = ELEMENT_ITEMS.contact;
+  // Éléments voisins que le rendu réunit sur une même ligne, selon leur
+  // ordre et non leur place à l'écran (même règle que rowsOf dans le moteur
+  // de l'API) : prénom et nom (même l'un sous l'autre), identité en ligne,
+  // poste et entreprise en capitales, coordonnées en ligne. Un autre élément
+  // posé entre eux couperait la ligne en deux, même repliée à l'écran
+  // (aperçu téléphone, colonne étroite).
+  const gluedRun = (a, b) => {
+    const both = (list) => list.includes(a) && list.includes(b);
+    if (both(NAME)) return NAME;
+    if (st.identityStyle === "inline" && both(IDENTITY_LINE)) {
+      return IDENTITY_LINE;
+    }
+    if (st.titleStyle === "caps" && a === "title" && b === "company") {
+      return ["title", "company"];
+    }
+    if (st.contactStyle === "inline" && both(CONTACT)) return CONTACT;
+    return null;
+  };
   const inStrip = (k) => k === "social" || k === "logo";
   const stripOn =
     (st.frame === "outline" || st.frame === "soft") && Boolean(st.footerStrip);
@@ -168,24 +187,11 @@ export function targetsFor(field, st, g) {
         const r = entry.rect;
         const prev = shown[i - 1];
         const patch = { slots: move(slot, { before: entry.item }) };
+        // Au milieu d'une ligne réunie par le rendu : seulement pour l'un de
+        // ses éléments (réordonner une coordonnée, inverser prénom et nom)
+        const run = prev ? gluedRun(prev.item, entry.item) : null;
+        if (run && !group.every((k) => run.includes(k))) return;
         if (prev && sameRow(prev.rect, r)) {
-          // Pas d'insertion au milieu du nom (ou de l'identité en ligne)
-          // pour un autre élément : il couperait « Prénom Nom » en deux
-          if (
-            IDENTITY_LINE.includes(prev.item) &&
-            IDENTITY_LINE.includes(entry.item) &&
-            !group.every((k) => IDENTITY_LINE.includes(k))
-          ) {
-            return;
-          }
-          // Entre le prénom et le nom : seulement l'un d'eux
-          if (
-            NAME.includes(prev.item) &&
-            NAME.includes(entry.item) &&
-            !group.every((k) => NAME.includes(k))
-          ) {
-            return;
-          }
           // Ni entre des réseaux et un logo côte à côte : ils passeraient
           // l'un sous l'autre, pas de part et d'autre
           if (slot === "footer" && PAIR[prev.item] === entry.item) return;
