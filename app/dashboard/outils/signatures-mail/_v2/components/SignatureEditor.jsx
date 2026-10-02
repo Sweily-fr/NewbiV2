@@ -89,7 +89,7 @@ import {
   ancestorsOf,
   selectionLabel,
 } from "./LevelPanels";
-import InstallDialog, { copySignatureHtml } from "./InstallDialog";
+import InstallDialog, { copySignature } from "./InstallDialog";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
 
@@ -642,30 +642,32 @@ export default function SignatureEditor({ id }) {
     catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
   const client = useApolloClient();
 
-  const handleCopy = async () => {
-    await flush();
-    // Rendu à jour : l'aperçu peut avoir un temps de retard sur la frappe
-    let fresh = render;
-    try {
-      const { data } = await client.query({
+  // Copie demandée dès le clic, sans rien attendre : Safari 18 et
+  // antérieurs la refusent après un aller-retour réseau. Le presse-papiers
+  // attend lui-même le rendu à jour (l'aperçu peut avoir un temps de retard
+  // sur la frappe), calculé depuis la saisie locale pendant que
+  // l'enregistrement part en parallèle.
+  const handleCopy = () => {
+    flush();
+    const shown = render;
+    const fresh = client
+      .query({
         query: RENDER_SIGNATURE_V2,
         variables: { id, input: toInput(sig) },
         fetchPolicy: "no-cache",
-      });
-      fresh = data?.renderEmailSignatureV2 || render;
-    } catch {
-      // À défaut, le dernier rendu affiché
-    }
-    const ok = await copySignatureHtml(fresh?.html, fresh?.text);
-    if (ok) {
-      setCopied(true);
-      toast.success("Signature copiée, collez-la dans votre client mail");
-      setTimeout(() => setCopied(false), 2500);
-    } else {
-      toast.error(
-        "Copie impossible, utilisez « Installer » puis le téléchargement HTML",
+      })
+      .then(
+        ({ data }) => data?.renderEmailSignatureV2 || shown,
+        // À défaut, le dernier rendu affiché
+        () => shown,
       );
-    }
+    copySignature(shown, {
+      fresher: fresh,
+      onCopied: () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      },
+    });
   };
 
   const handleBack = async () => {
@@ -1074,7 +1076,7 @@ export default function SignatureEditor({ id }) {
             {
               target: "actions",
               title: "Vérifiez, puis installez",
-              body: "Envoyez-vous un e-mail de test pour la voir dans votre messagerie, puis installez-la dans Gmail, Outlook ou Apple Mail.",
+              body: "Envoyez-vous un e-mail de test pour la voir dans votre messagerie, puis installez-la dans Gmail, Outlook ou Apple Mail. Après une modification, recopiez-la : votre messagerie garde l'ancienne version.",
             },
           ]}
         />
