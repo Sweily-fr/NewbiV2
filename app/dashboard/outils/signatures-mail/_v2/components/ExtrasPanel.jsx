@@ -105,7 +105,13 @@ const ECOLOGY = `Pensez à l'environnement${NBSP}: n'imprimez ce message que si 
  */
 export function legalMention(organization) {
   if (!organization?.siret && !organization?.rcs) return "";
-  return generateDynamicFooter(organization, "standard-compact")
+  // L'organisation Better Auth porte aussi le nom de l'espace (`name`) :
+  // le pied de page doit nommer l'entreprise
+  const company = {
+    ...organization,
+    name: organization.companyName || organization.name || "",
+  };
+  return generateDynamicFooter(company, "standard-compact")
     .replace(/^\s*•\s*/, "")
     .replace(/(\d) (?=\d)/g, `$1${NBSP}`)
     .replace(/(\d) ?€/g, `$1${NBSP}€`)
