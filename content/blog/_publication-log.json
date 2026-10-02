@@ -357,5 +357,12 @@
       "gestion-factures-fournisseurs-achats-tpe",
       "taux-de-conversion-devis-ameliorer"
     ]
+  },
+  {
+    "date": "2026-10-02",
+    "articles": [
+      "credit-de-tva-remboursement-demande",
+      "facture-agent-commercial-independant"
+    ]
   }
 ]
