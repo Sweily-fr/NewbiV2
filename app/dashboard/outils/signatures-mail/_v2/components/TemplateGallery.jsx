@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import { BookmarkPlus, Check, LayoutTemplate, Trash2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
@@ -44,8 +44,19 @@ import {
 import HtmlFrame from "./HtmlFrame";
 import { Row, Section } from "./controls";
 
-const THUMB_WIDTH = 560;
-const THUMB_HEIGHT = 300;
+/** Vignette : marge autour de la signature, dans l'aperçu (px). */
+const THUMB_PADDING = 16;
+/** Échelle maximale : une signature étroite n'est pas grossie au-delà. */
+const THUMB_MAX_SCALE = 0.75;
+/** Hauteurs de vignette (px) ; au-delà du plafond, un fondu en bas. */
+const THUMB_MIN_HEIGHT = 72;
+const THUMB_MAX_HEIGHT = 320;
+/**
+ * Largeur de mise en page de l'aperçu, au moins : plus que la plus large
+ * signature (720 px et ses marges), pour qu'elle s'y étale comme dans un
+ * e-mail, sans retour à la ligne.
+ */
+const LAYOUT_WIDTH = 800;
 
 /** Carte d'un modèle : vignette, nom, description ; suppression à part. */
 function TemplateTile({
@@ -57,6 +68,32 @@ function TemplateTile({
   onSelect,
   onDelete,
 }) {
+  // La signature entière dans la largeur de la tuile : sa taille, mesurée
+  // dans l'aperçu, donne l'échelle (0,75 au plus) et la hauteur de la
+  // vignette. Squelette jusqu'à la première mesure.
+  const boxRef = useRef(null);
+  const [boxWidth, setBoxWidth] = useState(0);
+  const [size, setSize] = useState(null);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return undefined;
+    const observer = new ResizeObserver(([entry]) =>
+      setBoxWidth(Math.floor(entry.contentRect.width)),
+    );
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, []);
+  const ready = Boolean(size && boxWidth);
+  const scale = ready
+    ? Math.min(
+        THUMB_MAX_SCALE,
+        boxWidth / Math.max(1, size.width + 2 * THUMB_PADDING),
+      )
+    : 0.5;
+  const fullHeight = ready ? Math.ceil(size.height * scale) : 0;
+  const height = ready
+    ? Math.max(THUMB_MIN_HEIGHT, Math.min(THUMB_MAX_HEIGHT, fullHeight))
+    : 150;
   return (
     <div className="group relative">
       <button
@@ -69,22 +106,35 @@ function TemplateTile({
         aria-pressed={selected}
       >
         <div
+          ref={boxRef}
           className="relative overflow-hidden bg-white"
-          style={{ height: THUMB_HEIGHT * 0.5, width: "100%" }}
+          style={{ height, width: "100%" }}
         >
-          {loading && !html ? (
-            <Skeleton className="absolute inset-3" />
-          ) : (
-            <div className="pointer-events-none absolute left-0 top-0">
+          {!(loading && !html) && (
+            <div
+              className={cn(
+                "pointer-events-none absolute left-0 top-0",
+                !ready && "opacity-0",
+              )}
+            >
               <HtmlFrame
                 html={html}
-                width={THUMB_WIDTH}
-                height={THUMB_HEIGHT}
-                scale={0.5}
-                padding={16}
+                width={Math.max(
+                  LAYOUT_WIDTH,
+                  ready ? Math.ceil(boxWidth / scale) : 0,
+                )}
+                height={ready ? size.height : 600}
+                scale={scale}
+                padding={THUMB_PADDING}
                 title={`Modèle ${name}`}
+                onSize={setSize}
               />
             </div>
+          )}
+          {!ready && <Skeleton className="absolute inset-3" />}
+          {/* Signature plus haute que la vignette : fondu en bas */}
+          {fullHeight > THUMB_MAX_HEIGHT && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent" />
           )}
         </div>
         <div

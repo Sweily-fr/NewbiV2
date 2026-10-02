@@ -37,7 +37,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - `onDelete()` : Suppr (⌫) pressée sur une sélection, hors saisie.
  * - `readOnly` : ni modification en place ni poignée (abonnement expiré) ;
  *   un clic ouvre seulement le panneau de l'élément.
+ *
+ * Hors éditeur (vignettes), `onSize({ width, height })` reçoit la taille de
+ * la signature : largeur de son contenu et hauteur du document, marges
+ * comprises, à chaque changement (images chargées…). Un court script de
+ * mesure est alors autorisé dans le bac à sable, sans accès au parent.
+ * Un aperçu hors éditeur ne défile jamais (pas de barre de défilement).
  */
+
+/** Script de mesure des aperçus hors éditeur (vignettes). */
+const SIZE_SCRIPT = `(function(){var last="";
+function m(){var s=document.querySelector(".sig");if(!s)return;var g=document.createRange();g.selectNodeContents(s);var r=g.getBoundingClientRect();
+var w=Math.ceil(r.width),h=Math.ceil(document.body.getBoundingClientRect().height),k=w+"x"+h;if(k===last)return;last=k;
+parent.postMessage({type:"sig-size",width:w,height:h},"*");}
+new ResizeObserver(m).observe(document.body);window.addEventListener("load",m);document.addEventListener("load",m,true);m();
+})();`;
 
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
 const EDITOR_SCRIPT = `(function(){
@@ -348,13 +362,34 @@ export default function HtmlFrame({
   onFont,
   onEscape,
   onDelete,
+  onSize,
   selection = null,
   readOnly = false,
   frozen = false,
 }) {
   const frameRef = useRef(null);
   const interactive = typeof onFieldClick === "function";
+  // Vignette mesurée : sa taille remonte au parent
+  const measured = !interactive && typeof onSize === "function";
   const [contentHeight, setContentHeight] = useState(null);
+
+  useEffect(() => {
+    if (!measured) return undefined;
+    const onMessage = (event) => {
+      if (event.source !== frameRef.current?.contentWindow) return;
+      const data = event.data;
+      if (
+        data &&
+        data.type === "sig-size" &&
+        Number.isFinite(data.width) &&
+        Number.isFinite(data.height)
+      ) {
+        onSize({ width: data.width, height: data.height });
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [measured, onSize]);
 
   useEffect(() => {
     if (!interactive) return undefined;
@@ -475,6 +510,7 @@ export default function HtmlFrame({
     dark,
     padding,
     interactive,
+    measured,
     readOnly,
     interactive ? null : displayed,
     // Script modifié (développement) : l'aperçu se recharge avec lui
@@ -501,13 +537,17 @@ export default function HtmlFrame({
       : "";
     // <base target="_blank"> : un clic sur un lien de la signature ouvre un
     // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
-    // une page d'erreur si l'adresse est incomplète).
+    // une page d'erreur si l'adresse est incomplète). Hors éditeur, l'aperçu
+    // ne défile jamais (pas de barre de défilement dans une vignette).
     const editorCss = interactive
       ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
-      : "";
+      : "html{overflow:hidden;}";
+    // Script de l'éditeur, ou de mesure d'une vignette
     const editorScript = interactive
       ? `<script>window.SIG_READONLY=${readOnly ? "true" : "false"};${EDITOR_SCRIPT}</script>`
-      : "";
+      : measured
+        ? `<script>${SIZE_SCRIPT}</script>`
+        : "";
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><meta name="color-scheme" content="${
       dark ? "dark" : "light"
     }"><style>html,body{margin:0;padding:0;background:${bg};} body{padding:${padding}px;} ${invert} ${editorCss}</style></head><body><div class="sig">${
@@ -530,7 +570,7 @@ export default function HtmlFrame({
       title={title}
       srcDoc={srcDoc}
       sandbox={
-        interactive
+        interactive || measured
           ? "allow-scripts allow-popups allow-popups-to-escape-sandbox"
           : "allow-popups allow-popups-to-escape-sandbox"
       }
