@@ -364,6 +364,16 @@ export const APPLY_MEMBER_SIGNATURE_V2 = gql`
   ${SIGNATURE_V2_FIELDS}
 `;
 
+/** « Utiliser le logo de l'entreprise » : l'API relit le logo des factures. */
+export const APPLY_COMPANY_LOGO_SIGNATURE_V2 = gql`
+  mutation ApplyCompanyLogoSignatureV2($id: ID!) {
+    applyCompanyLogoToEmailSignatureV2(id: $id) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
 export const DELETE_SIGNATURE_V2 = gql`
   mutation DeleteSignatureV2($id: ID!) {
     deleteEmailSignatureV2(id: $id)

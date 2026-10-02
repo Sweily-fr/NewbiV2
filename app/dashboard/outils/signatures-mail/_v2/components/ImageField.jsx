@@ -5,9 +5,13 @@ import { useMutation } from "@apollo/client";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 import { Field } from "./controls";
 import ConfirmRemoveImage, { useRemoveSignatureImage } from "./ConfirmRemoveImage";
-import { UPLOAD_SIGNATURE_V2_IMAGE } from "../graphql";
+import {
+  APPLY_COMPANY_LOGO_SIGNATURE_V2,
+  UPLOAD_SIGNATURE_V2_IMAGE,
+} from "../graphql";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -33,6 +37,12 @@ export default function ImageField({
   const removeImage = useRemoveSignatureImage(id);
   // « Retirer » demande confirmation, comme la touche Suppr dans l'aperçu
   const [confirming, setConfirming] = useState(false);
+  // Logo vide alors que l'entreprise en a un (celui des factures) : il se
+  // reprend en un clic, relu par l'API (jamais l'adresse vue ici)
+  const { organization } = useActiveOrganization();
+  const [applyCompanyLogo] = useMutation(APPLY_COMPANY_LOGO_SIGNATURE_V2);
+  const offerCompanyLogo =
+    kind === "LOGO" && !image?.url && !busy && Boolean(organization?.logo);
 
   const send = async (file) => {
     if (!file) return;
@@ -69,6 +79,32 @@ export default function ImageField({
       setBusy(false);
     }
   };
+
+  const takeCompanyLogo = async () => {
+    setBusy(true);
+    try {
+      const { data } = await applyCompanyLogo({ variables: { id } });
+      onChanged(data?.applyCompanyLogoToEmailSignatureV2);
+      toast.success("Logo ajouté");
+    } catch (err) {
+      toast.error(
+        err?.graphQLErrors?.[0]?.message ||
+          "Le logo de l'entreprise n'a pas pu être repris",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const companyLogoLink = (className) =>
+    offerCompanyLogo && (
+      <button
+        type="button"
+        onClick={takeCompanyLogo}
+        className={`${className} text-[#5b4fff] hover:underline cursor-pointer`}
+      >
+        Utiliser le logo de l&apos;entreprise
+      </button>
+    );
 
   const input = (
     <>
@@ -136,6 +172,7 @@ export default function ImageField({
             Retirer
           </button>
         )}
+        {companyLogoLink("w-24 text-center text-[11px] leading-tight")}
         {input}
       </div>
     );
@@ -193,6 +230,7 @@ export default function ImageField({
           >
             {image?.url ? "Changer" : "Choisir une image"}
           </Button>
+          {companyLogoLink("text-left text-xs")}
           {image?.url && (
             <Button
               type="button"
