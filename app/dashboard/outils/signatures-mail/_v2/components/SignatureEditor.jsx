@@ -732,6 +732,10 @@ export default function SignatureEditor({ id }) {
 
   if (loading || !sig) return <SignatureEditorV2Skeleton />;
 
+  // Conseil sous l'aperçu : l'alerte de taille Gmail est portée par la jauge
+  const footerWarning =
+    render?.warnings?.find((w) => !w.includes("Gmail")) || "";
+
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950">
       {/* Panneau gauche, au style des éditeurs de documents */}
@@ -900,11 +904,14 @@ export default function SignatureEditor({ id }) {
         )}
       </aside>
 
-      {/* Aperçu */}
-      <main className="flex min-w-0 flex-1 flex-col bg-neutral-50 dark:bg-neutral-900">
+      {/* Aperçu. Ses libellés d'actions raccourcissent selon la largeur de
+          cette colonne (@container), pas de la fenêtre : sur un portable,
+          les boutons ne se chevauchent plus */}
+      <main className="@container flex min-w-0 flex-1 flex-col bg-neutral-50 dark:bg-neutral-900">
         <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
           <div className="min-w-0">
             <h1 className="sr-only">{sig.name}</h1>
+            {/* Colonne étroite : la puce s'efface, l'onglet Modèle reste */}
             {template && (
               <button
                 type="button"
@@ -912,18 +919,18 @@ export default function SignatureEditor({ id }) {
                   setSelected(null);
                   setTab("template");
                 }}
-                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[600px]:hidden"
               >
                 <LayoutTemplate size={14} />
                 Modèle <span className="font-medium text-foreground">{template.name}</span>
-                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[860px]:hidden">
                   Changer
                   <ChevronRight size={12} />
                 </span>
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="mr-1 flex items-center">
               <Button
                 variant="ghost"
@@ -956,9 +963,12 @@ export default function SignatureEditor({ id }) {
               title="Copier la signature pour la coller dans les réglages de votre messagerie"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? "Copiée" : "Copier"}
+              {/* Icône seule en colonne étroite : le nom reste lu */}
+              <span className="@max-[720px]:sr-only">
+                {copied ? "Copiée" : "Copier"}
+              </span>
             </Button>
-            <div data-tour="actions" className="flex items-center gap-2">
+            <div data-tour="actions" className="flex shrink-0 items-center gap-2">
               <Button
                 variant="outline"
                 onClick={handleTest}
@@ -971,7 +981,8 @@ export default function SignatureEditor({ id }) {
                 ) : (
                   <MailCheck size={14} />
                 )}
-                M&apos;envoyer un test
+                <span className="@max-[720px]:hidden">M&apos;envoyer un test</span>
+                <span className="hidden @max-[720px]:inline">Tester</span>
               </Button>
               <Button
                 variant="primary"
@@ -980,7 +991,10 @@ export default function SignatureEditor({ id }) {
                 className="cursor-pointer"
               >
                 <Send size={14} />
-                Installer dans ma messagerie
+                <span className="@max-[860px]:hidden">
+                  Installer dans ma messagerie
+                </span>
+                <span className="hidden @max-[860px]:inline">Installer</span>
               </Button>
             </div>
             <DropdownMenu>
@@ -1046,9 +1060,12 @@ export default function SignatureEditor({ id }) {
 
         {(render?.warnings?.length > 0 || render?.chars > 0) && (
           <div className="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-2 text-xs dark:border-neutral-800">
-            <div className="min-w-0 truncate text-amber-700 dark:text-amber-300">
-              {/* L'alerte de taille Gmail est portée par la jauge */}
-              {render?.warnings?.find((w) => !w.includes("Gmail")) || ""}
+            {/* Sur deux lignes au plus, le conseil entier au survol */}
+            <div
+              className="min-w-0 line-clamp-2 text-amber-700 dark:text-amber-300"
+              title={footerWarning || undefined}
+            >
+              {footerWarning}
             </div>
             {render?.chars > 0 && (
               <GmailSize
