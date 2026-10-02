@@ -8,7 +8,9 @@ import {
   ITEM_OF,
   ITEM_THE,
   moveItems,
+  setPhotoPlacement,
   slotOf,
+  withDividerSpace,
 } from "../slots";
 
 /**
@@ -111,13 +113,26 @@ export function targetsFor(field, st, g) {
   const targets = [];
   const B = g.body || g.sig;
 
+  // Éléments affichés dans l'aperçu
+  const shownNow = new Set(
+    (g.items || []).filter((i) => i.rect?.h > 0).map((i) => i.item),
+  );
   // Emplacements sans élément affiché (hors élément tiré)
   const emptySlot = (slot) =>
     !(g.items || []).some(
       (i) => i.slot === slot && !group.includes(i.item) && i.rect?.h > 0,
     );
+  // Photo seule dans sa colonne (rien d'autre n'y est affiché) : ses deux
+  // places de bord sont celles de « Position de la photo » (plus bas)
+  const photoAlone =
+    group.length === 1 && group[0] === "photo" && emptySlot("visual");
+  // Bord droit de la signature, décalé si la colonne principale se crée
+  // aussi à droite
+  const rightEdge = () =>
+    right(B) + (emptySlot("text") && current !== "text" ? 44 : 16);
 
   for (const slot of SLOTS) {
+    if (photoAlone && slot === "visual") continue;
     // Éléments affichés de l'emplacement, dans l'ordre de lecture
     const inSlot = (g.items || [])
       .filter((i) => i.slot === slot && i.rect?.h > 0)
@@ -233,14 +248,18 @@ export function targetsFor(field, st, g) {
         targets.push({ ...line, label, create: true });
       const into = { slots: move(slot) };
       if (slot === "visual") {
-        create(
-          "Nouvelle colonne à gauche",
-          vLine("", B.x - 16, B.y, B.h, { ...into, visualSide: "left" }),
-        );
+        create("Nouvelle colonne à gauche", {
+          ...vLine("", B.x - 16, B.y, B.h, { ...into, visualSide: "left" }),
+          edge: "left",
+        });
       } else if (slot === "side") {
-        // Décalée si la colonne principale se crée aussi à droite
-        const x = right(B) + (emptySlot("text") && current !== "text" ? 44 : 16);
-        create("Nouvelle colonne à droite", vLine("", x, B.y, B.h, into));
+        // Photo seule : « Photo à droite » la remplace (plus bas)
+        if (!photoAlone) {
+          create(
+            "Nouvelle colonne à droite",
+            vLine("", rightEdge(), B.y, B.h, into),
+          );
+        }
       } else if (slot === "header") {
         const top = (g.frame || B).y;
         create("En-tête coloré", hLine("", B.x, top - 12, B.w, into));
@@ -254,6 +273,33 @@ export function targetsFor(field, st, g) {
       } else if (slot === "text") {
         create("Colonne principale", vLine("", right(B) + 16, B.y, B.h, into));
       }
+    }
+  }
+
+  // Photo seule dans sa colonne : à gauche ou à droite du texte, exactement
+  // comme « Position de la photo » (sa colonne garde son fond, sa largeur,
+  // son alignement, et les marges du séparateur changent de côté avec
+  // elle), y compris pour revenir à gauche ; jamais le côté où elle est
+  if (photoAlone) {
+    const side =
+      current === "visual"
+        ? st.visualSide === "right"
+          ? "right"
+          : "left"
+        : null;
+    const place = (to) => setPhotoPlacement(st, to, shownNow);
+    if (side !== "left") {
+      targets.push({
+        ...vLine("Photo à gauche", B.x - 16, B.y, B.h, place("left")),
+        create: true,
+        edge: "left",
+      });
+    }
+    if (side !== "right") {
+      targets.push({
+        ...vLine("Photo à droite", rightEdge(), B.y, B.h, place("right")),
+        create: true,
+      });
     }
   }
 
@@ -337,6 +383,9 @@ export function targetsFor(field, st, g) {
       Math.min(a.x + a.len, b.x + b.len) - Math.max(a.x, b.x) > 0;
     if (overlapX && b.y - a.y < 12) b.y = a.y + 12;
   }
+  // Photo passée de l'autre côté du texte (ou colonne photo vidée) : les
+  // marges du séparateur la suivent, comme par les réglages
+  for (const t of targets) t.patch = withDividerSpace(st, t.patch, shownNow);
   return targets;
 }
 

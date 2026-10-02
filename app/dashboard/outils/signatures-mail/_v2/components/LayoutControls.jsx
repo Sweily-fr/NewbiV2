@@ -214,7 +214,7 @@ export function PhotoLayoutControls({ st, setStyle, shown }) {
       <PictoPick
         label="Position de la photo"
         value={["left", "top", "right"].includes(L.photo) ? L.photo : ""}
-        onChange={(v) => setStyle(setPhotoPlacement(st, v))}
+        onChange={(v) => setStyle(setPhotoPlacement(st, v, shown))}
         options={PHOTO_OPTIONS}
       />
       {L.hasVisual && (

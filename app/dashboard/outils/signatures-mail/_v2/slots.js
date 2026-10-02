@@ -757,18 +757,56 @@ export function photoPlacement(st) {
   return slot || "left";
 }
 
-export function setPhotoPlacement(st, placement) {
+/**
+ * Côté du séparateur vertical où se trouve la photo : à droite seulement si
+ * la colonne photo est affichée à droite. Sans elle, le trait borde le texte
+ * à gauche, comme avec une photo à gauche. `shown` : éléments affichés
+ * (tous si absent).
+ */
+function photoEdge(st, shown) {
+  const visible = (st?.slots?.visual || []).some((k) => !shown || shown.has(k));
+  return visible && st?.visualSide === "right" ? "right" : "left";
+}
+
+/**
+ * Les marges du séparateur vertical sont posées à gauche et à droite du
+ * trait : quand la photo passe de l'autre côté du texte, elles s'échangent,
+ * pour que l'air prévu entre la photo et le trait (« dividerSpace » du
+ * modèle Newbi) reste du côté de la photo. `patch` : nouveau placement
+ * (slots, visualSide), renvoyé complété au besoin.
+ */
+export function withDividerSpace(st, patch, shown = null) {
+  const ds = st?.dividerSpace || {};
+  if ((ds.left || 0) === (ds.right || 0)) return patch;
+  if (photoEdge(st, shown) === photoEdge({ ...st, ...patch }, shown)) {
+    return patch;
+  }
+  const swapped = {};
+  if (ds.right) swapped.left = ds.right;
+  if (ds.left) swapped.right = ds.left;
+  return { ...patch, dividerSpace: swapped };
+}
+
+export function setPhotoPlacement(st, placement, shown = null) {
   if (placement === "left" || placement === "right") {
     const slots =
       slotOf(st.slots, "photo") === "visual"
         ? cleanSlots(st.slots)
         : moveItem(st.slots, "photo", "visual", { first: true });
-    return { slots, visualSide: placement };
+    return withDividerSpace(st, { slots, visualSide: placement }, shown);
   }
   if (placement === "top") {
-    return { slots: moveItem(st.slots, "photo", "text", { first: true }) };
+    return withDividerSpace(
+      st,
+      { slots: moveItem(st.slots, "photo", "text", { first: true }) },
+      shown,
+    );
   }
-  return { slots: moveItem(st.slots, "photo", placement, { first: true }) };
+  return withDividerSpace(
+    st,
+    { slots: moveItem(st.slots, "photo", placement, { first: true }) },
+    shown,
+  );
 }
 
 // ── Bloc de couleur (identité sur un fond de la couleur principale) ─────
