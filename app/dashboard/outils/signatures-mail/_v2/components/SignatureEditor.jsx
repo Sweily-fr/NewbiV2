@@ -928,11 +928,14 @@ export default function SignatureEditor({ id }) {
         )}
       </aside>
 
-      {/* Aperçu. Ses libellés d'actions raccourcissent selon la largeur de
-          cette colonne (@container), pas de la fenêtre : sur un portable,
-          les boutons ne se chevauchent plus */}
-      <main className="@container flex min-w-0 flex-1 flex-col bg-neutral-50 dark:bg-neutral-900">
-        <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
+      {/* Aperçu */}
+      <main className="flex min-w-0 flex-1 flex-col bg-neutral-50 dark:bg-neutral-900">
+        {/* Barre d'actions : ses libellés raccourcissent selon sa propre
+            largeur (@container ; seuils mesurés sans ses 48 px de marges),
+            pas celle de la fenêtre, pour ne plus se chevaucher sur un
+            portable. Le conteneur est la barre et non la colonne : Safari
+            y rattacherait les repères fixes du glisser-déposer de l'aperçu */}
+        <div className="@container flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
           <div className="min-w-0">
             <h1 className="sr-only">{sig.name}</h1>
             {/* Colonne étroite : la puce s'efface, l'onglet Modèle reste */}
@@ -943,11 +946,11 @@ export default function SignatureEditor({ id }) {
                   setSelected(null);
                   setTab("template");
                 }}
-                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[600px]:hidden"
+                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[552px]:hidden"
               >
                 <LayoutTemplate size={14} />
                 Modèle <span className="font-medium text-foreground">{template.name}</span>
-                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[860px]:hidden">
+                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden">
                   Changer
                   <ChevronRight size={12} />
                 </span>
@@ -988,7 +991,7 @@ export default function SignatureEditor({ id }) {
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
               {/* Icône seule en colonne étroite : le nom reste lu */}
-              <span className="@max-[720px]:sr-only">
+              <span className="@max-[672px]:sr-only">
                 {copied ? "Copiée" : "Copier"}
               </span>
             </Button>
@@ -1005,8 +1008,8 @@ export default function SignatureEditor({ id }) {
                 ) : (
                   <MailCheck size={14} />
                 )}
-                <span className="@max-[720px]:hidden">M&apos;envoyer un test</span>
-                <span className="hidden @max-[720px]:inline">Tester</span>
+                <span className="@max-[672px]:hidden">M&apos;envoyer un test</span>
+                <span className="hidden @max-[672px]:inline">Tester</span>
               </Button>
               <Button
                 variant="primary"
@@ -1015,10 +1018,10 @@ export default function SignatureEditor({ id }) {
                 className="cursor-pointer"
               >
                 <Send size={14} />
-                <span className="@max-[860px]:hidden">
+                <span className="@max-[812px]:hidden">
                   Installer dans ma messagerie
                 </span>
-                <span className="hidden @max-[860px]:inline">Installer</span>
+                <span className="hidden @max-[812px]:inline">Installer</span>
               </Button>
             </div>
             <DropdownMenu>
