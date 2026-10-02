@@ -42,7 +42,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
 const EDITOR_SCRIPT = `(function(){
 var post=function(m){parent.postMessage(m,"*");};
-var editing=null,dragging=false,gripEl=null;
+var editing=null,dragging=false,dragId=null,gripEl=null;
 /* Hauteur du contenu (jamais celle de l'affichage précédent : l'aperçu
    rétrécit aussi), infobulle du cadre comprise, et celle placée sous le
    coin quand il passe sous le bord */
@@ -54,9 +54,9 @@ new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function crect(el){var g=document.createRange();g.selectNodeContents(el);var r=g.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function q(s,content){var el=document.querySelector(s);return el?(content?crect(el):rect(el)):null;}
-var grip=document.createElement("div");
+var grip=document.createElement("div");grip.className="sig-grip";
 grip.textContent="\u283F";grip.title="Déplacer";
-grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);";
+grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);touch-action:none;-webkit-touch-callout:none;";
 document.body.appendChild(grip);
 /* Poignée : seulement sur l'élément sélectionné (rien au survol), à côté
    du morceau cliqué ; elle reste pendant la modification d'un texte */
@@ -77,11 +77,15 @@ document.querySelectorAll("[data-sig-slot]").forEach(function(el){var k=el.getAt
 var sig=document.querySelector(".sig > table")||document.querySelector(".sig");
 var field=hover.getAttribute("data-sig-block"),fields=[field];
 if(sel&&sel.level==="element"){fields=[];groupEls().forEach(function(el){var k=el.getAttribute("data-sig-block");if(fields.indexOf(k)<0)fields.push(k);});if(fields.indexOf(field)<0)fields=[field];}
-dragging=true;hideGrip();
+dragging=true;dragId=e.pointerId;hideGrip();
 post({type:"sig-drag",field:fields[0],fields:fields,whole:!!(sel&&sel.level==="element"),sig:rect(sig),items:items,slots:slots,body:q("[data-sig-body]",true),frame:q("[data-sig-frame] > table")||q("[data-sig-frame]",true),x:e.clientX,y:e.clientY});
 });
-document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
-document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
+/* Seul le pointeur qui a saisi la poignée mène le glisser (un second doigt
+   ne compte pas) ; un geste repris par le navigateur (pointercancel)
+   l'annule au lieu de laisser le calque de dépôt en place */
+document.addEventListener("pointermove",function(e){if(dragging&&e.pointerId===dragId)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
+document.addEventListener("pointerup",function(e){if(dragging&&e.pointerId===dragId){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
+document.addEventListener("pointercancel",function(e){if(dragging&&e.pointerId===dragId){dragging=false;post({type:"sig-drag-cancel"});drawSel();}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
 function startEdit(el,x,y){
 if(window.SIG_READONLY)return;
@@ -128,10 +132,10 @@ if(deferred!==null&&!rs&&!fs){var d=deferred;deferred=null;applyHtml(d);}}
 var sel=null,rs=null,fs=null;
 var box=document.createElement("div");
 box.style.cssText="position:absolute;display:none;pointer-events:none;border:2px solid #5a50ff;border-radius:5px;z-index:9;";
-var knob=document.createElement("div");
+var knob=document.createElement("div");knob.className="sig-knob";
 knob.style.cssText="position:absolute;right:-9px;top:50%;width:10px;height:20px;margin-top:-10px;background:#fff;border:2px solid #5a50ff;border-radius:4px;cursor:ew-resize;pointer-events:auto;display:none;touch-action:none;";
 box.appendChild(knob);
-var corner=document.createElement("div");
+var corner=document.createElement("div");corner.className="sig-corner";
 corner.title="Tirer pour agrandir le texte";
 corner.style.cssText="position:absolute;right:-9px;bottom:-9px;width:12px;height:12px;background:#5a50ff;border:2px solid #fff;border-radius:3px;cursor:nwse-resize;pointer-events:auto;display:none;touch-action:none;box-shadow:0 0 0 1px #5a50ff;";
 box.appendChild(corner);
@@ -524,8 +528,10 @@ export default function HtmlFrame({
     // <base target="_blank"> : un clic sur un lien de la signature ouvre un
     // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
     // une page d'erreur si l'adresse est incomplète).
+    // Au doigt (pointeur grossier) : poignée, bord et coin gardent leur
+    // dessin, mais se saisissent 8 px autour
     const editorCss = interactive
-      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
+      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;} @media (pointer:coarse){.sig-grip::before,.sig-knob::before,.sig-corner::before{content:\"\";position:absolute;inset:-8px;touch-action:none;}}"
       : "";
     const editorScript = interactive
       ? `<script>window.SIG_READONLY=${readOnly ? "true" : "false"};${EDITOR_SCRIPT}</script>`

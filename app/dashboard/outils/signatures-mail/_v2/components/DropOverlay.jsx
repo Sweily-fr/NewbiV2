@@ -671,6 +671,14 @@ export default function DropOverlay({
     <div
       ref={root}
       className="fixed inset-0 z-50 cursor-grabbing"
+      // Un appui reçu ici : le geste d'origine est perdu (pendant un vrai
+      // glisser, le bouton ou le doigt est déjà appuyé). On annule au lieu
+      // de déposer l'élément là où l'on touche.
+      onPointerDown={() => {
+        if (done.current) return;
+        done.current = true;
+        onCancel();
+      }}
       onPointerMove={(e) => setOwn({ x: e.clientX, y: e.clientY })}
       onPointerUp={(e) => finish(e.clientX, e.clientY)}
     >
