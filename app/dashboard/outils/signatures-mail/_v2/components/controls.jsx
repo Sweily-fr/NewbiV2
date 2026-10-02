@@ -62,8 +62,10 @@ export function onRadioKeyDown(e) {
 }
 
 /** Valeur d'un curseur dite par les lecteurs d'écran : « 13 pixels ». */
-const spokenValue = (value, unit) =>
-  unit === "px" ? `${value} pixels` : unit ? `${value} ${unit}` : String(value);
+const spokenValue = (value, unit) => {
+  if (unit === "px") return `${value} ${Math.abs(value) >= 2 ? "pixels" : "pixel"}`;
+  return unit ? `${value} ${unit}` : String(value);
+};
 
 /**
  * Nom et valeur dite de la poignée d'un curseur (role="slider") : le
