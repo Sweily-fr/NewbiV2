@@ -10,12 +10,17 @@ import {
 } from "@/src/components/ui/select";
 import { ChevronRight, MousePointerClick, RotateCcw } from "lucide-react";
 import {
+  BLOCK_OF,
+  ELEMENT_ITEMS,
   RULE_ITEMS,
+  SLOTS,
   addRule,
+  elementSlot,
   layoutCustomized,
   layoutReset,
   logoFit,
   shownItems,
+  slotLabel,
   slotOf,
 } from "../slots";
 import {
@@ -44,6 +49,7 @@ import {
   SignatureWidthRow,
   layoutState,
 } from "./LayoutControls";
+import { ELEMENT_TITLE } from "./LevelPanels";
 
 export { Choice, ColorRow, ResetLink, Row, SliderRow };
 
@@ -256,58 +262,63 @@ export default function StylePanel({
       ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${Math.min(st.iconSize, iconMax)} px`
       : "Aucun réseau",
   };
+  // Tous les éléments affichés, dans l'ordre de l'aperçu (colonne par
+  // colonne, le séparateur vertical après la colonne photo) : sans souris,
+  // c'est le chemin vers le panneau de chacun, y compris pour ce qui ne se
+  // règle que là (marges du séparateur…)
+  const listed = [];
+  const list = (key) => {
+    if (key && !listed.includes(key)) listed.push(key);
+  };
+  for (const slot of SLOTS) {
+    for (const item of st.slots?.[slot] || []) {
+      if (shown.has(item)) list(BLOCK_OF[item]);
+    }
+    if (slot === "visual" && shown.has("divider")) list("divider");
+  }
+  // Un élément affiché hors des colonnes reste proposé, à la fin
+  for (const [key, items] of Object.entries(ELEMENT_ITEMS)) {
+    if (items.some((k) => shown.has(k))) list(key);
+  }
+  const ROW_DETAIL = {
+    name:
+      st.identityStyle === "inline"
+        ? "Sur une ligne avec le poste"
+        : st.nameLayout === "stacked"
+          ? "L'un sous l'autre"
+          : "Sur une ligne",
+    jobTitle: st.titleStyle === "caps" ? "En capitales" : "Normal",
+    contact: capitalize(CONTACT_LABELS[st.contactStyle] || ""),
+    photo: summaries.photo,
+    logo: summaries.logo,
+    social: summaries.icones,
+    divider: L.hasVisual ? "Entre la photo et le texte" : "À gauche du texte",
+  };
   const elementRows = [
-    shown.has("firstName") || shown.has("lastName")
-      ? {
-          key: "name",
-          label: "Prénom et nom",
-          has: true,
-          detail:
-            st.identityStyle === "inline"
-              ? "Sur une ligne avec le poste"
-              : st.nameLayout === "stacked"
-                ? "L'un sous l'autre"
-                : "Sur une ligne",
-        }
-      : null,
-    shown.has("title")
-      ? {
-          key: "jobTitle",
-          label: "Poste",
-          has: true,
-          detail: st.titleStyle === "caps" ? "En capitales" : "Normal",
-        }
-      : null,
-    ["phone", "mobile", "email", "website", "address"].some((k) => shown.has(k))
-      ? {
-          key: "contact",
-          label: "Coordonnées",
-          has: true,
-          detail: capitalize(CONTACT_LABELS[st.contactStyle] || ""),
-        }
-      : null,
-    {
-      key: "photo",
-      label: "Photo",
-      has: hasPhoto,
-      detail: summaries.photo,
-      add: "Ajouter une photo",
-    },
-    {
-      key: "logo",
-      label: "Logo",
-      has: hasLogo,
-      detail: summaries.logo,
-      add: "Ajouter un logo",
-    },
-    {
-      key: "social",
-      label: "Réseaux sociaux",
-      has: hasNetworks,
-      detail: summaries.icones,
-      add: "Ajouter un réseau",
-    },
-  ].filter(Boolean);
+    ...listed.map((key) => {
+      const rule = RULE_ITEMS.includes(key);
+      return {
+        key,
+        // Traits libres numérotés comme dans la section Traits
+        label: rule ? `Trait ${freeRules.indexOf(key) + 1}` : ELEMENT_TITLE[key],
+        has: true,
+        // Sinon, sa place dans la signature
+        detail:
+          ROW_DETAIL[key] ||
+          (rule
+            ? `${st.rules[key].length} px`
+            : slotLabel(elementSlot(st, shown, key), st)),
+      };
+    }),
+    // Images et réseaux absents : de quoi les ajouter
+    ...[
+      { key: "photo", label: "Photo", add: "Ajouter une photo" },
+      { key: "logo", label: "Logo", add: "Ajouter un logo" },
+      { key: "social", label: "Réseaux sociaux", add: "Ajouter un réseau" },
+    ]
+      .filter((r) => !listed.includes(r.key))
+      .map((r) => ({ ...r, has: false })),
+  ];
   summaries.elements = elementRows
     .filter((r) => r.has)
     .map((r) => r.label)
