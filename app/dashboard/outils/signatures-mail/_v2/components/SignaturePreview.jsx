@@ -84,8 +84,24 @@ export default function SignaturePreview({
     setDragRelease(null);
     setDrag(d);
   }, []);
+  // Fin d'un glisser (dépôt ou abandon) : le clic que le navigateur peut
+  // émettre juste après ne doit pas désélectionner
+  const dropped = useRef(false);
+  const endDrag = useCallback(() => {
+    dropped.current = true;
+    setTimeout(() => {
+      dropped.current = false;
+    }, 0);
+    setDrag(null);
+  }, []);
   // Échap pendant le glisser, pointeur dans l'aperçu
-  const cancelDrag = useCallback(() => setDrag(null), []);
+  const cancelDrag = endDrag;
+  // Clic à côté de la signature (en-tête du faux message, sous l'aperçu) :
+  // la sélection est retirée
+  const onWindowClick = (e) => {
+    if (drag || dropped.current || e.target.closest?.("button, a, input")) return;
+    onEscape?.();
+  };
   const input = useMemo(() => toInput(sig), [sig]);
   const debouncedInput = useDebounced(input, RENDER_DELAY_MS);
   const lastRender = useRef(initialRender);
@@ -219,6 +235,7 @@ export default function SignaturePreview({
         className={`min-h-0 flex-1 overflow-y-auto rounded-xl border shadow-sm ${
           mobile ? "mx-auto w-full max-w-[390px]" : ""
         } ${dark ? "border-neutral-700 bg-[#1f1f1f]" : "border-neutral-200 bg-white"}`}
+        onClick={onWindowClick}
       >
         <div
           className={`flex items-center gap-2 border-b px-4 py-2 text-xs ${
@@ -290,9 +307,9 @@ export default function SignaturePreview({
             style={sig.style}
             pointer={dragPointer}
             release={dragRelease}
-            onCancel={() => setDrag(null)}
+            onCancel={endDrag}
             onDrop={(patch) => {
-              setDrag(null);
+              endDrag();
               onStylePatch?.(patch);
             }}
           />

@@ -42,7 +42,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
 const EDITOR_SCRIPT = `(function(){
 var post=function(m){parent.postMessage(m,"*");};
-var editing=null,dragging=false,gripEl=null;
+var editing=null,dragging=false,gripEl=null,pressing=false,justDragged=false,justLeft=null;
 /* Hauteur du contenu (jamais celle de l'affichage précédent : l'aperçu
    rétrécit aussi), infobulle du cadre comprise */
 function h(){var d=document.documentElement,y=document.body.getBoundingClientRect().height;
@@ -79,8 +79,22 @@ dragging=true;hideGrip();
 post({type:"sig-drag",field:fields[0],fields:fields,whole:!!(sel&&sel.level==="element"),sig:rect(sig),items:items,slots:slots,body:q("[data-sig-body]",true),frame:q("[data-sig-frame] > table")||q("[data-sig-frame]",true),x:e.clientX,y:e.clientY});
 });
 document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
-document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
+document.addEventListener("pointerup",function(e){if(dragging){dragging=false;
+/* Le navigateur émet un clic à la fin du glisser : il ne doit ni
+   sélectionner ni désélectionner */
+justDragged=true;setTimeout(function(){justDragged=false;},0);
+post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
+/* Appui en cours : un rendu reçu entre l'appui et le relâcher est mis de
+   côté (sinon il remplace l'élément visé et le clic est perdu, cas d'un
+   clic juste après une saisie) ; il est appliqué au clic ou au relâcher */
+document.addEventListener("pointerdown",function(e){justLeft=null;if(e.button===0)pressing=true;},true);
+function release(){if(!pressing)return;setTimeout(function(){pressing=false;
+if(deferred!==null&&!editing&&!rs&&!fs){var d=deferred;deferred=null;applyHtml(d);}},0);}
+document.addEventListener("pointerup",release,true);document.addEventListener("pointercancel",release,true);
+/* Relâcher perdu (hors de la fenêtre) : le prochain mouvement sans bouton y met fin */
+document.addEventListener("pointermove",function(e){if(pressing&&!e.buttons)release();},true);
+window.addEventListener("blur",release);
 function startEdit(el,x,y){
 if(window.SIG_READONLY)return;
 editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();
@@ -92,18 +106,33 @@ function goUp(e){e.preventDefault();e.stopPropagation();var cb=blockAt(e.target,
 if(editing)editing.blur();post({type:"sig-field",field:null,item:clickItem,up:true});drawSel();}
 /* Sur un Mac, Ctrl + clic ouvre le menu contextuel au lieu de cliquer */
 document.addEventListener("contextmenu",function(e){if(e.ctrlKey&&/Mac|iPhone|iPad/.test(navigator.platform||""))goUp(e);},true);
+/* Rendu mis de côté pendant l'appui : appliqué avant de traiter le clic,
+   puis la cible est cherchée de nouveau dans le nouveau contenu (le même
+   texte de préférence). Sans cela, il serait appliqué à la fin de la
+   saisie suivante et le texte tapé reviendrait un instant en arrière. */
+function fresh(e){var t=e.target;if(deferred===null||editing||rs||fs)return t;
+var f=t.closest?t.closest("[data-sig-edit]"):null,k=f?f.getAttribute("data-sig-edit"):null;
+var d=deferred;deferred=null;applyHtml(d);
+var n=document.elementFromPoint(e.clientX,e.clientY);
+if(n&&(n===grip||box.contains(n)))n=null;
+if(k&&!(n&&n.closest&&n.closest('[data-sig-edit="'+k+'"]'))){var q=sigRoot&&sigRoot.querySelector('[data-sig-edit="'+k+'"]');if(q)n=q;}
+return n||sigRoot||t;}
 document.addEventListener("click",function(e){
 if(e.target===grip||box.contains(e.target))return;
+if(justDragged)return;
 hideHover();if(e.metaKey||e.ctrlKey){goUp(e);return;}
-var cb=blockAt(e.target,e.clientX,e.clientY);clickItem=cb?cb.getAttribute("data-sig-block"):null;
 if(e.target.closest("a"))e.preventDefault();
+var t=fresh(e);
+var cb=blockAt(t,e.clientX,e.clientY);clickItem=cb?cb.getAttribute("data-sig-block"):null;
 /* Un trait visé (même à quelques pixels) : il est sélectionné, sans saisie */
 if(cb&&lineAt(e.clientX,e.clientY)===cb){e.stopPropagation();post({type:"sig-field",field:null,item:clickItem,edit:false});drawSel();return;}
-if(editing&&editing.contains(e.target))return;
+if(editing&&editing.contains(t))return;
 e.stopPropagation();
-var ed=e.target.closest("[data-sig-edit]");
-var m=e.target.closest("[data-sig-field]");
-var bk=m?null:e.target.closest("[data-sig-block]");
+var ed=t.closest("[data-sig-edit]");
+var m=t.closest("[data-sig-field]");
+var bk=m?null:t.closest("[data-sig-block]");
+/* Clic dans le vide de l'aperçu : la sélection est retirée */
+if(!m&&!bk&&!cb){if(sel)post({type:"sig-escape"});drawSel();return;}
 if(m||bk)post({type:"sig-field",field:m?m.getAttribute("data-sig-field"):bk.getAttribute("data-sig-block"),item:clickItem,edit:!!ed&&!window.SIG_READONLY});
 if(ed)startEdit(ed,e.clientX,e.clientY);
 drawSel();
@@ -111,9 +140,27 @@ drawSel();
 document.addEventListener("input",function(){
 if(editing){post({type:"sig-input",field:editing.getAttribute("data-sig-edit"),value:editing.textContent});drawSel();}
 });
+/* Rouvre le texte validé par Entrée (cherché dans la sélection, le contenu
+   a pu être remplacé par un rendu), curseur à la fin, et efface sa
+   dernière lettre comme un ⌫ pendant la saisie */
+function reopen(left){var el=null;selEls().forEach(function(s){if(!el)el=s.getAttribute("data-sig-edit")===left.f?s:s.querySelector('[data-sig-edit="'+left.f+'"]');});
+if(!el)return false;
+if(el.textContent!==left.v)el.textContent=left.v;
+editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();
+var end=function(){var g=document.createRange();g.selectNodeContents(el);g.collapse(false);var s=getSelection();s.removeAllRanges();s.addRange(g);};end();
+post({type:"sig-editing",editing:true});
+var before=el.textContent,ok=false;try{ok=document.execCommand("delete");}catch(x){}
+/* Sans execCommand : la lettre est retirée à la main, comme une frappe */
+if(!ok||el.textContent===before){if(before){el.textContent=before.slice(0,-1);end();}post({type:"sig-input",field:left.f,value:el.textContent});drawSel();}
+return true;}
 document.addEventListener("keydown",function(e){
 if(dragging&&e.key==="Escape"){e.preventDefault();dragging=false;post({type:"sig-drag-cancel"});drawSel();return;}
-if(editing&&(e.key==="Enter"||e.key==="Escape")){e.preventDefault();editing.blur();return;}
+/* Entrée valide le texte, qui reste retenu : un ⌫ juste après le rouvre */
+if(editing&&(e.key==="Enter"||e.key==="Escape")){e.preventDefault();justLeft=e.key==="Enter"?{f:editing.getAttribute("data-sig-edit"),v:editing.textContent}:null;editing.blur();return;}
+/* ⌫ juste après Entrée : corrige le texte qu'on vient de valider au lieu de
+   retirer l'élément (Suppr, ou Échap puis ⌫, le retirent toujours) */
+var left=justLeft;if(!/^(Shift|Control|Alt|Meta)$/.test(e.key))justLeft=null;
+if(left&&e.key==="Backspace"&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!editing&&!rs&&!fs&&!dragging&&!window.SIG_READONLY&&reopen(left)){e.preventDefault();return;}
 var k=(e.key||"").toLowerCase();
 if(!editing&&(e.metaKey||e.ctrlKey)&&(k==="z"||k==="y")){e.preventDefault();post({type:"sig-history",redo:k==="y"||e.shiftKey});}
 /* Suppr (⌫ sur Mac) sur une sélection : la retirer (jamais pendant une saisie ou un geste) */
@@ -121,7 +168,8 @@ if(!editing&&!rs&&!fs&&!dragging&&sel&&!window.SIG_READONLY&&(e.key==="Delete"||
 });
 document.addEventListener("focusout",function(e){
 if(editing&&e.target===editing){editing.removeAttribute("contenteditable");editing=null;post({type:"sig-editing",editing:false});
-if(deferred!==null&&!rs&&!fs){var d=deferred;deferred=null;applyHtml(d);}}
+/* Fin de saisie par un appui ailleurs : le rendu attend le clic */
+if(deferred!==null&&!rs&&!fs&&!pressing){var d=deferred;deferred=null;applyHtml(d);}}
 });
 var sel=null,rs=null,fs=null;
 var box=document.createElement("div");
@@ -322,8 +370,8 @@ document.addEventListener("keydown",function(e){if(e.key!=="Escape"||e.defaultPr
 if(rs||fs){e.preventDefault();rs=null;fs=null;tip.style.display="none";takeDeferred();restore();return;}
 if(!editing&&sel)post({type:"sig-escape"});});
 window.addEventListener("message",function(e){if(e.source!==parent)return;var d=e.data||{};
-if(d.type==="sig-html"){var html=d.html||"";if(editing||rs||fs){deferred=html;return;}deferred=null;applyHtml(html);}
-if(d.type==="sig-select"){var was=selKey(sel);sel=d.selection||null;if(selKey(sel)!==was)liveTables=[];watchSel();drawSel();}
+if(d.type==="sig-html"){var html=d.html||"";if(editing||rs||fs||pressing){deferred=html;return;}deferred=null;applyHtml(html);}
+if(d.type==="sig-select"){var was=selKey(sel);sel=d.selection||null;if(selKey(sel)!==was){liveTables=[];justLeft=null;}watchSel();drawSel();}
 });
 })();`;
 export default function HtmlFrame({

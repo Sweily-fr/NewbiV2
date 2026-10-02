@@ -297,7 +297,7 @@ export default function SignatureEditor({ id }) {
   );
 
   // Clic dans l'aperçu : la partie la plus précise, dont le panneau s'ouvre
-  // avec le champ cliqué amené et focalisé (sauf texte modifié en place) ;
+  // avec le champ cliqué amené à l'écran (sauf texte modifié en place) ;
   // ⌘ + clic (Ctrl + clic) : le niveau au-dessus de la sélection.
   const onFieldClick = useCallback(
     (field, { edit = false, item = null, up = false } = {}) => {
@@ -316,17 +316,18 @@ export default function SignatureEditor({ id }) {
       setSelected(selectionChain(part, st, shown)[0]);
       // Lecture seule : rien à saisir, le panneau n'est qu'affiché
       if (edit || !field || isReadOnly) return;
-      const focus = (attempt = 0) => {
+      // Le champ est amené sans prendre le clavier : Suppr, Échap et ⌘Z
+      // restent à l'aperçu (un champ focalisé, son texte sélectionné, était
+      // effacé par Suppr sans « Annuler »)
+      const reveal = (attempt = 0) => {
         const el = document.getElementById(`sig-field-${field}`);
         if (el) {
           el.scrollIntoView({ block: "center", behavior: "smooth" });
-          if (typeof el.focus === "function") el.focus({ preventScroll: true });
-          if (typeof el.select === "function") el.select();
         } else if (attempt < 10) {
-          setTimeout(() => focus(attempt + 1), 60);
+          setTimeout(() => reveal(attempt + 1), 60);
         }
       };
-      setTimeout(() => focus(), 30);
+      setTimeout(() => reveal(), 30);
     },
     [sig, isReadOnly],
   );
@@ -588,7 +589,7 @@ export default function SignatureEditor({ id }) {
       return;
     }
     const label = selectionLabel(selected, sig?.style);
-    update(what.update);
+    update(what.update, { step: true });
     setSelected(null);
     toast.document(`Retiré : ${label}`, {
       fallbackIcon: Trash2,
@@ -628,6 +629,22 @@ export default function SignatureEditor({ id }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, isReadOnly, deleteSelected]);
+  // Échap hors de l'aperçu : quitte d'abord un champ, puis la sélection. Un
+  // menu, une liste ou une fenêtre qui se ferme l'a déjà traité (Radix
+  // marque l'événement), comme un glisser annulé.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape" || e.defaultPrevented || !selected) return;
+      const t = e.target;
+      if (t?.closest?.("input, textarea, select, [contenteditable]")) {
+        t.blur();
+        return;
+      }
+      setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
 
   // Depuis un réglage sans objet (« Ajouter une photo »…) : onglet Contenu,
   // puis le champ concerné

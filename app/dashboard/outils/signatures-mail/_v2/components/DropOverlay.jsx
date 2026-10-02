@@ -417,10 +417,16 @@ export default function DropOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [release]);
 
+  // Échap annule le glisser, et seulement lui : écouté en premier et marqué
+  // traité, il ne désélectionne pas l'élément (écouteur de la page)
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onCancel();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      onCancel();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [onCancel]);
 
   return (

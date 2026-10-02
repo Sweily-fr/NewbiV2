@@ -306,7 +306,7 @@ export function useSignatureV2(id) {
   );
 
   const update = useCallback(
-    (patch, { asIs = false } = {}) => {
+    (patch, { asIs = false, step = false } = {}) => {
       const prev = sigRef.current;
       if (!prev || locked.current || blocked.current) return;
       // Un élément déplacé ailleurs perd la largeur réglée pour son ancienne
@@ -322,11 +322,14 @@ export function useSignatureV2(id) {
       );
       const h = history.current;
       const now = Date.now();
-      if (now - h.lastPush > HISTORY_COALESCE_MS) {
+      // `step` : une étape à elle seule (retrait d'un élément), jamais
+      // fondue avec la frappe qui précède ou qui suit, pour qu'« Annuler »
+      // rende exactement le texte d'avant
+      if (step || now - h.lastPush > HISTORY_COALESCE_MS) {
         h.past.push(prev);
         if (h.past.length > HISTORY_LIMIT) h.past.shift();
       }
-      h.lastPush = now;
+      h.lastPush = step ? 0 : now;
       h.future = [];
       syncHistoryFlags();
       setSig(next);
