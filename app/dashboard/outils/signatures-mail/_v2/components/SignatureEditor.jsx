@@ -1069,7 +1069,7 @@ export default function SignatureEditor({ id }) {
             {
               target: "preview",
               title: "Déplacez et élargissez",
-              body: "Cliquez sur un élément : sa poignée ⠿ apparaît, tirez-la pour le déplacer. Tirez le bord de son cadre pour l'élargir, ou son coin pour agrandir le texte.",
+              body: "Cliquez sur un élément : sa poignée ⠿ apparaît, tirez-la pour le déplacer. Tirez le bord de son cadre pour l'élargir, ou son coin pour agrandir le texte. Pour une disposition toute faite (photo au-dessus, nom dans un bandeau), voyez l'onglet Modèle.",
             },
             {
               target: "actions",
