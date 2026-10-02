@@ -111,11 +111,14 @@ function TemplateTile({
           style={{ height, width: "100%" }}
         >
           {!(loading && !html) && (
+            // Image seulement : ni ses liens ni le cadre ne sont atteignables
+            // au clavier ou annoncés, un seul arrêt par tuile
             <div
               className={cn(
                 "pointer-events-none absolute left-0 top-0",
                 !ready && "opacity-0",
               )}
+              inert
             >
               <HtmlFrame
                 html={html}

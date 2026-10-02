@@ -48,7 +48,9 @@ function SignatureCard({ sig, onOpen, onDuplicate, onSetDefault, onDelete, readO
         aria-label={`Ouvrir ${sig.name}`}
       >
         <div className="relative h-44 overflow-hidden">
-          <div className="pointer-events-none absolute left-0 top-0">
+          {/* Image seulement : ni ses liens ni le cadre ne sont atteignables
+              au clavier ou annoncés */}
+          <div className="pointer-events-none absolute left-0 top-0" inert>
             <HtmlFrame
               html={sig.render?.html || ""}
               width={720}
