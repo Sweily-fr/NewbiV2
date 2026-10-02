@@ -181,6 +181,77 @@ export function hasBlockSettings(st) {
   );
 }
 
+/**
+ * Copie comparable d'un réglage : clés triées, sans champ GraphQL technique
+ * ni valeur vide (null, objet vide).
+ */
+function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (!value || typeof value !== "object") return value;
+  const out = {};
+  for (const key of Object.keys(value).sort()) {
+    if (key === "__typename") continue;
+    const v = canonical(value[key]);
+    if (v === null || v === undefined) continue;
+    if (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length) {
+      continue;
+    }
+    out[key] = v;
+  }
+  return out;
+}
+
+const sameObject = (a, b) =>
+  JSON.stringify(canonical(a || {})) === JSON.stringify(canonical(b || {}));
+
+/** Réglages par bloc effectifs : une valeur nulle (0) est automatique. */
+const blockSettings = (blocks) =>
+  Object.fromEntries(
+    Object.entries(canonical(blocks || {}))
+      .map(([key, b]) => [
+        key,
+        Object.fromEntries(Object.entries(b || {}).filter(([, v]) => v !== 0)),
+      ])
+      .filter(([, b]) => Object.keys(b).length > 0),
+  );
+
+/** Largeurs de colonne choisies (0 : ajustée au contenu, non comptée). */
+const columnWidths = (columns) =>
+  Object.fromEntries(
+    Object.entries(canonical(columns || {})).filter(([, w]) => w > 0),
+  );
+
+/** Blocs ou colonnes réglés autrement que dans `defaults` (un modèle) ? */
+function blocksDiffer(st, defaults) {
+  return (
+    !sameObject(blockSettings(st?.blocks), blockSettings(defaults?.blocks)) ||
+    !sameObject(columnWidths(st?.columns), columnWidths(defaults?.columns))
+  );
+}
+
+/**
+ * Modèle de référence d'une signature : le modèle d'équipe appliqué
+ * (savedTemplateId) tant qu'il existe, sinon son modèle intégré. C'est lui
+ * que la galerie coche, que l'en-tête nomme et auquel « Revenir au modèle »
+ * ramène. Un modèle d'équipe garde le reste de son modèle de base (capacités,
+ * caractère), dont le rendu dépend toujours. `saved` : modèles de l'équipe,
+ * null tant qu'ils se chargent (rien plutôt qu'un nom faux).
+ */
+export function templateReference(sig, templates, saved) {
+  const base =
+    (templates || []).find((t) => t.id === sig?.templateId) || null;
+  if (sig?.savedTemplateId) {
+    if (!saved) return null;
+    const team = saved.find((t) => t.id === sig.savedTemplateId);
+    if (team) {
+      // eslint-disable-next-line no-unused-vars
+      const { __typename, ...defaults } = team.style || {};
+      return { ...base, id: team.id, name: team.name, saved: true, defaults };
+    }
+  }
+  return base;
+}
+
 /** Traits libres différents (posés, longueur, épaisseur, couleur) ? */
 function rulesDiffer(a, b) {
   return RULE_ITEMS.some((k) => {
@@ -200,7 +271,8 @@ const spaceDiffers = (a, b) =>
 /**
  * La signature s'écarte-t-elle de son modèle : éléments déplacés, traits,
  * blocs ou colonnes sur mesure ? (Changer de modèle remplacerait ces
- * réglages.)
+ * réglages.) Blocs, colonnes et logo et réseaux superposés se comparent à
+ * ceux du modèle : un modèle d'équipe peut en avoir.
  */
 export function layoutCustomized(sig, template) {
   const defaults = templateLayout(template?.defaults, sig);
@@ -209,8 +281,8 @@ export function layoutCustomized(sig, template) {
   return (
     layoutDiffers(st, defaults) ||
     LINE_KEYS.some((k) => (st[k] || 0) !== (defaults[k] || 0)) ||
-    hasBlockSettings(st) ||
-    st.footerPair === false ||
+    blocksDiffer(st, defaults) ||
+    (st.footerPair !== false) !== (defaults.footerPair !== false) ||
     (st.nameLayout || "inline") !== (defaults.nameLayout || "inline") ||
     JSON.stringify(st.socialRows || []) !==
       JSON.stringify(defaults.socialRows || []) ||
@@ -233,9 +305,10 @@ export function layoutReset(sig, template) {
     ...Object.fromEntries(LINE_KEYS.map((k) => [k, defaults[k] || 0])),
     nameLayout: defaults.nameLayout || "inline",
     socialRows: [...(defaults.socialRows || [])],
-    blocks: {},
-    columns: {},
-    footerPair: true,
+    // Blocs, colonnes, logo et réseaux côte à côte ou non : comme le modèle
+    blocks: blockSettings(defaults.blocks),
+    columns: columnWidths(defaults.columns),
+    footerPair: defaults.footerPair !== false,
     // Traits libres et marges du séparateur : ceux du modèle
     rules: { ...(defaults.rules || {}) },
     dividerSpace: { ...(defaults.dividerSpace || {}) },

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useApolloClient, useMutation } from "@apollo/client";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   ArrowLeft,
   Check,
@@ -58,6 +58,7 @@ import {
   RENDER_SIGNATURE_V2,
   SEND_SIGNATURE_V2_TEST,
   SET_DEFAULT_SIGNATURE_V2,
+  SIGNATURE_TEMPLATES_V2,
   SIGNATURES_V2,
   toInput,
 } from "../graphql";
@@ -81,6 +82,7 @@ import {
   selectUp,
   selectionChain,
   shownItems,
+  templateReference,
 } from "../slots";
 import {
   ItemPanel,
@@ -640,6 +642,20 @@ export default function SignatureEditor({ id }) {
 
   const template =
     catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
+  // Modèle de référence, nommé dans l'en-tête et repris par « Revenir au
+  // modèle » : le modèle d'équipe appliqué s'il existe encore, sinon le
+  // modèle intégré. Le contenu garde le modèle intégré (ses capacités).
+  const { data: savedData, loading: savedLoading } = useQuery(
+    SIGNATURE_TEMPLATES_V2,
+    { fetchPolicy: "cache-first" },
+  );
+  const reference = templateReference(
+    sig,
+    catalog?.templates,
+    savedData || !savedLoading
+      ? savedData?.emailSignatureTemplatesV2 || []
+      : null,
+  );
   const client = useApolloClient();
 
   const handleCopy = async () => {
@@ -826,7 +842,7 @@ export default function SignatureEditor({ id }) {
                   sig={sig}
                   update={update}
                   catalog={catalog}
-                  template={template}
+                  template={reference}
                   lines={render?.lines}
                   onGoTo={goToField}
                   onSelect={select}
@@ -886,7 +902,7 @@ export default function SignatureEditor({ id }) {
                     sig={sig}
                     update={update}
                     catalog={catalog}
-                    template={template}
+                    template={reference}
                     lines={render?.lines}
                     onGoTo={goToField}
                     onSelect={select}
@@ -903,7 +919,7 @@ export default function SignatureEditor({ id }) {
         <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
           <div className="min-w-0">
             <h1 className="sr-only">{sig.name}</h1>
-            {template && (
+            {reference && (
               <button
                 type="button"
                 onClick={() => {
@@ -913,7 +929,7 @@ export default function SignatureEditor({ id }) {
                 className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
               >
                 <LayoutTemplate size={14} />
-                Modèle <span className="font-medium text-foreground">{template.name}</span>
+                Modèle <span className="font-medium text-foreground">{reference.name}</span>
                 <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100">
                   Changer
                   <ChevronRight size={12} />

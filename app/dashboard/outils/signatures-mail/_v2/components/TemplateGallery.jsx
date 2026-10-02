@@ -35,7 +35,7 @@ import {
   toInput,
   toStyleInput,
 } from "../graphql";
-import { layoutCustomized, templateLayout } from "../slots";
+import { layoutCustomized, templateLayout, templateReference } from "../slots";
 import HtmlFrame from "./HtmlFrame";
 import { Row, Section } from "./controls";
 
@@ -133,7 +133,14 @@ function TemplateCard({ template, style, sigId, selected, onSelect }) {
   );
 }
 
-function SavedTemplateCard({ template, content, sigId, onSelect, onDelete }) {
+function SavedTemplateCard({
+  template,
+  content,
+  sigId,
+  selected,
+  onSelect,
+  onDelete,
+}) {
   // La signature en cours (textes, images) avec le style du modèle
   const input = useMemo(
     () => ({
@@ -152,6 +159,7 @@ function SavedTemplateCard({ template, content, sigId, onSelect, onDelete }) {
       html={data?.renderEmailSignatureV2?.html}
       loading={loading}
       name={template.name}
+      selected={selected}
       onSelect={onSelect}
       onDelete={template.mine ? onDelete : null}
     />
@@ -175,7 +183,6 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   // qui les utilisent encore)
   const all = catalog?.templates || [];
   const templates = all.filter((t) => t.inGallery !== false);
-  const current = all.find((t) => t.id === sig.templateId);
   // Modèle en attente de confirmation (disposition personnalisée)
   const [pending, setPending] = useState(null);
   // Enregistrement d'un modèle (nom saisi) et suppression à confirmer
@@ -183,11 +190,23 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   const [saveName, setSaveName] = useState("");
   const [toDelete, setToDelete] = useState(null);
 
-  const { data: savedData, refetch: refetchSaved } = useQuery(
-    SIGNATURE_TEMPLATES_V2,
-    { fetchPolicy: "cache-and-network" },
-  );
+  const {
+    data: savedData,
+    loading: savedLoading,
+    refetch: refetchSaved,
+  } = useQuery(SIGNATURE_TEMPLATES_V2, { fetchPolicy: "cache-and-network" });
   const saved = savedData?.emailSignatureTemplatesV2 || [];
+  // Modèle de référence : le modèle d'équipe appliqué s'il existe encore,
+  // sinon le modèle intégré (coché, et celui auquel on revient)
+  const current = templateReference(
+    sig,
+    all,
+    savedData || !savedLoading ? saved : null,
+  );
+  const isCurrent = (t, isSaved) =>
+    Boolean(current) &&
+    current.id === t.id &&
+    Boolean(current.saved) === isSaved;
   const [saveTemplate, { loading: savingTemplate }] = useMutation(
     SAVE_SIGNATURE_TEMPLATE_V2,
   );
@@ -204,7 +223,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
 
   // Le modèle apporte sa disposition, sa typographie, ses finitions
   // (traits, icônes) et sa palette s'il en a une (Newbi : neutre), adaptées
-  // à la présence d'une photo.
+  // à la présence d'une photo. Plus aucun modèle d'équipe n'est suivi.
   const apply = (t) => {
     const preset = Object.fromEntries(
       Object.entries(templateLayout(t.defaults, sig) || t.preset || {}).filter(
@@ -212,17 +231,21 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
           key !== "__typename" && value !== null && value !== undefined,
       ),
     );
-    update({ templateId: t.id, style: preset });
+    update({ templateId: t.id, savedTemplateId: null, style: preset });
     applied(t.name);
   };
 
   // Modèle enregistré : tout son style, couleurs comprises, tel quel (ses
-  // largeurs vont avec ses places)
+  // largeurs vont avec ses places) ; la signature le suit désormais
   const applySaved = (t) => {
     // eslint-disable-next-line no-unused-vars
     const { __typename, ...style } = t.style;
     update(
-      { templateId: t.templateId, style: templateLayout(style, sig) },
+      {
+        templateId: t.templateId,
+        savedTemplateId: t.id,
+        style: templateLayout(style, sig),
+      },
       { asIs: true },
     );
     applied(t.name);
@@ -230,8 +253,9 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
 
   const choose = (t, isSaved = false) => {
     const customized = layoutCustomized(sig, current);
-    if (!isSaved && t.id === sig.templateId && !customized) return;
-    if (customized) setPending({ template: t, saved: isSaved });
+    const returning = isCurrent(t, isSaved);
+    if (returning && !customized) return;
+    if (customized) setPending({ template: t, saved: isSaved, returning });
     else if (isSaved) applySaved(t);
     else apply(t);
   };
@@ -276,7 +300,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
     e.preventDefault();
     if (!trimmedName || savingTemplate) return;
     try {
-      await saveTemplate({
+      const { data } = await saveTemplate({
         variables: {
           input: {
             name: trimmedName,
@@ -288,6 +312,12 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
       setSaveOpen(false);
       toast.success(`Modèle « ${trimmedName} » enregistré`);
       refetchSaved();
+      // Cette signature est désormais ce modèle : il est coché, et c'est à
+      // lui qu'elle revient
+      const savedId = data?.saveEmailSignatureTemplateV2?.id;
+      if (savedId && savedId !== sig.savedTemplateId) {
+        update({ savedTemplateId: savedId });
+      }
     } catch (err) {
       toast.error(
         err?.graphQLErrors?.[0]?.message ||
@@ -324,7 +354,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               key={t.id}
               template={t}
               style={style}
-              selected={sig.templateId === t.id}
+              selected={isCurrent(t, false)}
               sigId={sig.id}
               onSelect={() => choose(t)}
             />
@@ -353,6 +383,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
                 template={t}
                 content={content}
                 sigId={sig.id}
+                selected={isCurrent(t, true)}
                 onSelect={() => choose(t, true)}
                 onDelete={() => setToDelete(t)}
               />
@@ -368,7 +399,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {!pending?.saved && target?.id === sig.templateId
+              {pending?.returning
                 ? `Revenir au modèle ${target?.name} ?`
                 : `Appliquer le modèle ${target?.name} ?`}
             </AlertDialogTitle>
