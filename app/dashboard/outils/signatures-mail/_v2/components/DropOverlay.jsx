@@ -305,12 +305,11 @@ export function targetsFor(field, st, g) {
 
   // Réseaux et logo en bas : qui se suivent, ils sont côte à côte, sauf
   // s'ils ont été mis l'un sous l'autre. « Au-dessus » et « Sous » les
-  // empilent (comme annoncé), « À côté » les réunit.
+  // empilent (comme annoncé), « À gauche » et « À droite » les mettent côte
+  // à côte de ce côté de l'autre (inverser la paire en un seul glisser).
   const partner = group.length === 1 ? PAIR[field] : null;
   if (partner) {
-    const visible = new Set(
-      (g.items || []).filter((i) => i.rect?.h > 0).map((i) => i.item),
-    );
+    const visible = shownNow;
     const adjacent = (sl) => {
       const list = (sl?.footer || []).filter(
         (k) => k === field || visible.has(k),
@@ -332,8 +331,22 @@ export function targetsFor(field, st, g) {
       adjacent(slots) &&
       !blocks[field]?.align &&
       !blocks[partner]?.align;
+    // Côte à côte, à gauche ou à droite de l'autre
+    const leftOf = (patch) =>
+      vLine(`À gauche ${ITEM_OF[partner]}`, p.rect.x - 12, p.rect.y, p.rect.h, {
+        ...patch,
+        slots: move("footer", { before: partner }),
+        footerPair: true,
+      });
+    const rightOf = (patch) =>
+      vLine(`À droite ${ITEM_OF[partner]}`, right(p.rect) + 12, p.rect.y, p.rect.h, {
+        ...patch,
+        slots: move("footer", { after: partner }),
+        footerPair: true,
+      });
     if (p && paired) {
-      // Déjà côte à côte : les mettre l'un sous l'autre, dans le même ordre
+      // Déjà côte à côte : les mettre l'un sous l'autre, dans le même ordre,
+      // ou les inverser (jamais le côté où il est déjà)
       const list = (slots.footer || []).filter((k) => visible.has(k));
       const below = list.indexOf(field) > list.indexOf(partner);
       const col = g.slots?.footer || p.rect;
@@ -345,31 +358,20 @@ export function targetsFor(field, st, g) {
           col.w,
           { slots, footerPair: false },
         ),
+        below ? leftOf({}) : rightOf({}),
       );
     } else if (p) {
-      // Côte à côte, à droite de l'autre (un alignement propre les
-      // empêcherait : retiré)
-      const unaligned = (k) => {
+      // Un alignement propre les empêcherait d'être côte à côte : retiré
+      const unaligned = { ...blocks };
+      for (const k of [field, partner]) {
         // eslint-disable-next-line no-unused-vars
         const { align, ...rest } = blocks[k] || {};
-        return rest;
-      };
+        if (Object.keys(rest).length > 0) unaligned[k] = rest;
+        else delete unaligned[k];
+      }
       targets.push(
-        vLine(
-          `À côté ${ITEM_OF[partner]}`,
-          right(p.rect) + 12,
-          p.rect.y,
-          p.rect.h,
-          {
-            slots: move("footer", { after: partner }),
-            footerPair: true,
-            blocks: {
-              ...blocks,
-              [field]: unaligned(field),
-              [partner]: unaligned(partner),
-            },
-          },
-        ),
+        leftOf({ blocks: unaligned }),
+        rightOf({ blocks: unaligned }),
       );
     }
   }

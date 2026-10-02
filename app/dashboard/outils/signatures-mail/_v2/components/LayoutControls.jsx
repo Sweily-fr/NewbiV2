@@ -735,7 +735,8 @@ export function OutsideControls({ st, setStyle, shown }) {
 
 /**
  * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
- * l'autre (comme les dépôts « À côté », « Au-dessus », « Sous »).
+ * l'autre (comme les dépôts « À gauche », « À droite », « Au-dessus »,
+ * « Sous »).
  */
 export function FooterPairControl({ st, setStyle, shown }) {
   const footer = (st.slots?.footer || []).filter((k) => !shown || shown.has(k));
