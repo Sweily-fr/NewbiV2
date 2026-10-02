@@ -132,8 +132,23 @@ export function ancestorsOf(sel, sig) {
   return chain.slice(at + 1).reverse();
 }
 
-/** En-tête d'un panneau : retour aux onglets, niveaux au-dessus, titre. */
-export function LevelHeader({ selected, ancestors, onSelect, onClose, st }) {
+/** Onglet resté ouvert sous la sélection, que le lien de retour rouvre. */
+const TAB_LABEL = { template: "Modèle", content: "Contenu", style: "Style" };
+
+/**
+ * En-tête d'un panneau : retour à l'onglet ouvert (`tab`), niveaux
+ * au-dessus, titre.
+ */
+export function LevelHeader({
+  selected,
+  ancestors,
+  onSelect,
+  onClose,
+  st,
+  tab,
+}) {
+  // Niveau qu'un ⌘ + clic dans la sélection atteint : le plus proche
+  const parent = ancestors[ancestors.length - 1];
   return (
     <div className="space-y-2">
       <button
@@ -142,7 +157,9 @@ export function LevelHeader({ selected, ancestors, onSelect, onClose, st }) {
         className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
       >
         <ArrowLeft size={14} />
-        Tous les réglages
+        {TAB_LABEL[tab]
+          ? `Retour à l'onglet ${TAB_LABEL[tab]}`
+          : "Retour aux onglets"}
       </button>
       {ancestors.length > 0 && (
         <nav
@@ -167,8 +184,10 @@ export function LevelHeader({ selected, ancestors, onSelect, onClose, st }) {
         </nav>
       )}
       <h2 className="text-xl font-medium">{selectionLabel(selected, st)}</h2>
-      {selected.level !== "signature" && (
-        <Hint>{modClick()} dans l&apos;aperçu : le niveau au-dessus.</Hint>
+      {parent && (
+        <Hint>
+          {`${modClick()} dans l'aperçu : remonter à « ${selectionLabel(parent, st)} ».`}
+        </Hint>
       )}
     </div>
   );
@@ -184,7 +203,7 @@ export function PartLinks({ element, sig, onSelect }) {
   return (
     <Row
       label={element === "contact" ? "Une ligne seule" : "Une partie seule"}
-      hint="Ou cliquez-la dans l'aperçu."
+      hint="Ou cliquez dessus dans l'aperçu."
     >
       <div className="flex flex-wrap gap-1.5">
         {parts.map((k) => (

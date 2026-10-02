@@ -227,6 +227,11 @@ export const SIGNATURE_CATALOG_V2 = gql`
           align
           frame
         }
+        colorRoles {
+          name
+          company
+          caption
+        }
         defaults
         preset {
           fontFamily

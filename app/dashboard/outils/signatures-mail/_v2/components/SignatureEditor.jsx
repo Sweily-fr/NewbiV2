@@ -784,6 +784,8 @@ export default function SignatureEditor({ id }) {
                 ancestors={ancestorsOf(selected, sig)}
                 onSelect={select}
                 onClose={() => setSelected(null)}
+                // Le retour rouvre l'onglet resté ouvert : le lien le nomme
+                tab={tab}
               />
             </div>
             <div
