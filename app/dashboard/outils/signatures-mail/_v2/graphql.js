@@ -298,6 +298,7 @@ export const SIGNATURE_TEMPLATES_V2 = gql`
       name
       templateId
       mine
+      canDelete
       style {
         ${STYLE_FIELDS}
       }

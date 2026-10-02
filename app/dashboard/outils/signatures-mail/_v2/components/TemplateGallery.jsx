@@ -219,7 +219,8 @@ function SavedTemplateCard({
       name={template.name}
       selected={selected}
       onSelect={onSelect}
-      onDelete={template.mine ? onDelete : null}
+      // Corbeille pour son auteur, le propriétaire ou un administrateur
+      onDelete={template.canDelete ? onDelete : null}
     />
   );
 }
@@ -422,6 +423,9 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
       await deleteTemplate({ variables: { id: t.id } });
       toast.success(`Modèle « ${t.name} » supprimé`);
       refetchSaved();
+      // La signature qui le suivait revient au modèle intégré comme
+      // référence (sa mise en forme ne change pas)
+      if (t.id === sig.savedTemplateId) update({ savedTemplateId: null });
     } catch (err) {
       toast.error(
         err?.graphQLErrors?.[0]?.message || "Suppression impossible",
@@ -525,6 +529,9 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               Supprimer le modèle « {toDelete?.name} » ?
             </AlertDialogTitle>
             <AlertDialogDescription>
+              {toDelete && !toDelete.mine
+                ? "Il a été enregistré par un autre membre de l'équipe. "
+                : ""}
               Il ne sera plus proposé à votre équipe. Les signatures qui
               l&apos;utilisent gardent leur mise en forme.
             </AlertDialogDescription>
