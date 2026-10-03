@@ -223,7 +223,7 @@ export default function SignatureEditor({ id }) {
   const isReadOnly = subscriptionReadOnly || Boolean(saveBlocked);
   // Signature ouverte juste après sa création et pas encore modifiée (ni
   // texte ni image) : choisir la personne n'y demande pas de confirmation.
-  // Valeurs du premier affichage, même si l'adresse perd ensuite ?new=1.
+  // Valeurs du premier affichage : l'adresse perd aussitôt ?new=1.
   const [openedNew] = useState(isNew);
   const openedImages = useRef(null);
   if (sig && openedImages.current === null) {
@@ -233,6 +233,13 @@ export default function SignatureEditor({ id }) {
     openedNew &&
     !canUndo &&
     openedImages.current === JSON.stringify(sig?.images || null);
+  // ?new=1 ne vaut que pour la première ouverture : retiré de l'adresse,
+  // sinon un rechargement ou Précédent ferait passer pour neuve une
+  // signature déjà modifiée (personne changée sans confirmation). Même
+  // page, rien n'est remonté : openedNew et l'onglet de départ restent.
+  useEffect(() => {
+    if (isNew) router.replace(`${LIST_URL}/${id}`, { scroll: false });
+  }, [isNew, id, router]);
 
   // Annuler / rétablir au clavier (⌘Z, ⇧⌘Z, Ctrl+Y) hors des champs de
   // saisie, qui gardent leur propre annulation
