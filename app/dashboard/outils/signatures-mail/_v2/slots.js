@@ -417,8 +417,9 @@ export function moveElement(slots, element, slot) {
  * que ses parties se suivent, les autres éléments ont chacun la leur. Un
  * morceau placé à part de son élément reste une ligne distincte (`main`
  * faux). `line` : première ligne de la ligne du rendu qui la contient
- * (identité en ligne, poste suivi de l'entreprise en capitales), que les
- * flèches des autres sautent d'un bloc. `shown` : parties affichées.
+ * (identité en ligne, poste suivi de l'entreprise en capitales, réseaux et
+ * logo côte à côte en bas), que les flèches des autres sautent d'un bloc.
+ * `shown` : parties affichées.
  */
 export function slotRows(st, shown, slot) {
   const list = (st?.slots?.[slot] || []).filter((k) => !shown || shown.has(k));
@@ -432,13 +433,23 @@ export function slotRows(st, shown, slot) {
       rows.push({ element, items: [k] });
     }
   }
-  // Même regroupement que le rendu (mergedRow)
+  // Réseaux et logo qui se suivent en bas : côte à côte, une seule ligne du
+  // rendu, sauf mis l'un sous l'autre ou un alignement choisi pour l'un des
+  // deux (comme footerPaired)
+  const paired = (a, b) =>
+    slot === "footer" &&
+    st?.footerPair !== false &&
+    [a.element, b.element].sort().join() === "logo,social" &&
+    !st?.blocks?.social?.align &&
+    !st?.blocks?.logo?.align;
+  // Même regroupement que le rendu (mergedRow, paire du bas)
   const joined = (a, b) =>
-    st?.identityStyle === "inline"
+    paired(a, b) ||
+    (st?.identityStyle === "inline"
       ? [...a.items, ...b.items].every((k) => INLINE_IDENTITY.includes(k))
       : st?.titleStyle === "caps" &&
         a.element === "jobTitle" &&
-        b.element === "company";
+        b.element === "company");
   rows.forEach((row, i) => {
     const main = mainPiece(st, shown, row.element);
     row.main = !main || row.items.some((k) => main.includes(k));
