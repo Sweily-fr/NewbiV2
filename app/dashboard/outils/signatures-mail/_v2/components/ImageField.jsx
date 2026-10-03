@@ -40,9 +40,12 @@ export default function ImageField({
   // « Retirer » demande confirmation, comme la touche Suppr dans l'aperçu
   const [confirming, setConfirming] = useState(false);
   // Logo vide alors que l'entreprise en a un (celui des factures) : il se
-  // reprend en un clic, relu par l'API (jamais l'adresse vue ici)
+  // reprend en un clic, relu par l'API (jamais l'adresse vue ici). Un refus
+  // (logo hors de Newbi, reprise ratée) tombe dans le catch, comme l'envoi
   const { organization } = useActiveOrganization();
-  const [applyCompanyLogo] = useMutation(APPLY_COMPANY_LOGO_SIGNATURE_V2);
+  const [applyCompanyLogo] = useMutation(APPLY_COMPANY_LOGO_SIGNATURE_V2, {
+    errorPolicy: "none",
+  });
   const offerCompanyLogo =
     kind === "LOGO" && !image?.url && !busy && Boolean(organization?.logo);
 
