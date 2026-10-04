@@ -188,8 +188,8 @@ export function DisclaimerField({
       </p>
       {text.trim() && lineCount(text) > MAX_LINES && (
         <Warning>
-          Au-delà de 8 lignes, la fin de la mention n&apos;apparaît pas dans
-          la signature.
+          Au-delà de 8 lignes, la fin de la mention est retirée à
+          l&apos;enregistrement.
         </Warning>
       )}
     </div>
