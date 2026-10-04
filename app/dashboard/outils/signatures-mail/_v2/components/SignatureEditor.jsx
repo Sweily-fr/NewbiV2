@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useApolloClient, useMutation } from "@apollo/client";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client";
 import {
   ArrowLeft,
   Check,
@@ -58,6 +58,7 @@ import {
   SEND_SIGNATURE_V2_TEST,
   SET_DEFAULT_SIGNATURE_V2,
   SIGNATURES_V2,
+  SIGNATURE_TEMPLATES_V2,
   toInput,
 } from "../graphql";
 import { refusalToast } from "../errors";
@@ -89,7 +90,7 @@ import {
   ancestorsOf,
   selectionLabel,
 } from "./LevelPanels";
-import InstallDialog, { copySignatureHtml } from "./InstallDialog";
+import InstallDialog, { copySignature } from "./InstallDialog";
 import ConfirmRemoveImage, { useRemoveSignatureImage } from "./ConfirmRemoveImage";
 
 const LIST_URL = "/dashboard/outils/signatures-mail";
@@ -258,7 +259,21 @@ export default function SignatureEditor({ id }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [undo, redo, isReadOnly]);
 
-  const [tab, setTabState] = useState(isNew ? "template" : "content");
+  // Onglet d'ouverture : Contenu, où se complète la signature (photo, logo,
+  // réseaux). Une signature neuve ne s'ouvre sur Modèle que s'il y a
+  // vraiment à choisir : plusieurs modèles proposés, ou des modèles
+  // enregistrés par l'équipe (liste demandée pour elle seule). Il est
+  // déduit au premier affichage puis figé (`openingTab`) : supprimer le
+  // dernier modèle enregistré ne fait pas changer d'onglet sous les yeux.
+  // Neuve s'entend à l'ouverture (`openedNew`) : l'adresse perd aussitôt
+  // ?new=1, la liste ne doit pas cesser d'être attendue pour autant.
+  const { data: savedTemplates, loading: savedLoading } = useQuery(
+    SIGNATURE_TEMPLATES_V2,
+    { skip: !openedNew, fetchPolicy: "cache-and-network" },
+  );
+  const openingTab = useRef(null);
+  // Onglet choisi par l'utilisateur, sinon celui d'ouverture
+  const [tab, setTabState] = useState(null);
   // Chaque onglet s'ouvre en haut de sa liste de réglages
   const panelRef = useRef(null);
   const setTab = useCallback((next) => {
@@ -739,30 +754,32 @@ export default function SignatureEditor({ id }) {
     catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
   const client = useApolloClient();
 
-  const handleCopy = async () => {
-    await flush();
-    // Rendu à jour : l'aperçu peut avoir un temps de retard sur la frappe
-    let fresh = render;
-    try {
-      const { data } = await client.query({
+  // Copie demandée dès le clic, sans rien attendre : Safari 18 et
+  // antérieurs la refusent après un aller-retour réseau. Le presse-papiers
+  // attend lui-même le rendu à jour (l'aperçu peut avoir un temps de retard
+  // sur la frappe), calculé depuis la saisie locale pendant que
+  // l'enregistrement part en parallèle.
+  const handleCopy = () => {
+    flush();
+    const shown = render;
+    const fresh = client
+      .query({
         query: RENDER_SIGNATURE_V2,
         variables: { id, input: toInput(sig) },
         fetchPolicy: "no-cache",
-      });
-      fresh = data?.renderEmailSignatureV2 || render;
-    } catch {
-      // À défaut, le dernier rendu affiché
-    }
-    const ok = await copySignatureHtml(fresh?.html, fresh?.text);
-    if (ok) {
-      setCopied(true);
-      toast.success("Signature copiée, collez-la dans votre client mail");
-      setTimeout(() => setCopied(false), 2500);
-    } else {
-      toast.error(
-        "Copie impossible, utilisez « Installer » puis le téléchargement HTML",
+      })
+      .then(
+        ({ data }) => data?.renderEmailSignatureV2 || shown,
+        // À défaut, le dernier rendu affiché
+        () => shown,
       );
-    }
+    copySignature(shown, {
+      fresher: fresh,
+      onCopied: () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      },
+    });
   };
 
   // Départ alors que la dernière modification ne passe pas (connexion
@@ -891,7 +908,22 @@ export default function SignatureEditor({ id }) {
     );
   }
 
-  if (loading || !sig) return <SignatureEditorV2Skeleton />;
+  // Signature neuve : la liste des modèles enregistrés décide de l'onglet
+  // d'ouverture, on l'attend pour qu'il ne change pas sous les yeux
+  if (loading || !sig || (openedNew && savedLoading && !savedTemplates)) {
+    return <SignatureEditorV2Skeleton />;
+  }
+  if (openingTab.current === null) {
+    const choice =
+      (catalog?.templates || []).filter((t) => t.inGallery !== false).length >
+        1 || (savedTemplates?.emailSignatureTemplatesV2?.length || 0) > 0;
+    openingTab.current = openedNew && choice ? "template" : "content";
+  }
+  const activeTab = tab ?? openingTab.current;
+
+  // Conseil sous l'aperçu : l'alerte de taille Gmail est portée par la jauge
+  const footerWarning =
+    render?.warnings?.find((w) => !w.includes("Gmail")) || "";
 
   return (
     <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950">
@@ -1002,7 +1034,7 @@ export default function SignatureEditor({ id }) {
           </ScrollArea>
         ) : (
           <TabsNew
-            value={tab}
+            value={activeTab}
             onValueChange={setTab}
             className="min-h-0 flex-1"
           >
@@ -1069,9 +1101,15 @@ export default function SignatureEditor({ id }) {
 
       {/* Aperçu */}
       <main className="flex min-w-0 flex-1 flex-col bg-neutral-50 dark:bg-neutral-900">
-        <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
+        {/* Barre d'actions : ses libellés raccourcissent selon sa propre
+            largeur (@container ; seuils mesurés sans ses 48 px de marges),
+            pas celle de la fenêtre, pour ne plus se chevaucher sur un
+            portable. Le conteneur est la barre et non la colonne : Safari
+            y rattacherait les repères fixes du glisser-déposer de l'aperçu */}
+        <div className="@container flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
           <div className="min-w-0">
             <h1 className="sr-only">{sig.name}</h1>
+            {/* Colonne étroite : la puce s'efface, l'onglet Modèle reste */}
             {template && (
               <button
                 type="button"
@@ -1079,18 +1117,18 @@ export default function SignatureEditor({ id }) {
                   setSelected(null);
                   setTab("template");
                 }}
-                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[552px]:hidden"
               >
                 <LayoutTemplate size={14} />
                 Modèle <span className="font-medium text-foreground">{template.name}</span>
-                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden">
                   Changer
                   <ChevronRight size={12} />
                 </span>
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <div className="mr-1 flex items-center">
               <Button
                 variant="ghost"
@@ -1123,9 +1161,12 @@ export default function SignatureEditor({ id }) {
               title="Copier la signature pour la coller dans les réglages de votre messagerie"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
-              {copied ? "Copiée" : "Copier"}
+              {/* Icône seule en colonne étroite : le nom reste lu */}
+              <span className="@max-[672px]:sr-only">
+                {copied ? "Copiée" : "Copier"}
+              </span>
             </Button>
-            <div data-tour="actions" className="flex items-center gap-2">
+            <div data-tour="actions" className="flex shrink-0 items-center gap-2">
               <Button
                 variant="outline"
                 onClick={handleTest}
@@ -1138,7 +1179,8 @@ export default function SignatureEditor({ id }) {
                 ) : (
                   <MailCheck size={14} />
                 )}
-                M&apos;envoyer un test
+                <span className="@max-[672px]:hidden">M&apos;envoyer un test</span>
+                <span className="hidden @max-[672px]:inline">Tester</span>
               </Button>
               <Button
                 variant="primary"
@@ -1147,7 +1189,10 @@ export default function SignatureEditor({ id }) {
                 className="cursor-pointer"
               >
                 <Send size={14} />
-                Installer dans ma messagerie
+                <span className="@max-[812px]:hidden">
+                  Installer dans ma messagerie
+                </span>
+                <span className="hidden @max-[812px]:inline">Installer</span>
               </Button>
             </div>
             <DropdownMenu>
@@ -1231,9 +1276,12 @@ export default function SignatureEditor({ id }) {
 
         {(render?.warnings?.length > 0 || render?.chars > 0) && (
           <div className="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-2 text-xs dark:border-neutral-800">
-            <div className="min-w-0 truncate text-amber-700 dark:text-amber-300">
-              {/* L'alerte de taille Gmail est portée par la jauge */}
-              {render?.warnings?.find((w) => !w.includes("Gmail")) || ""}
+            {/* Sur deux lignes au plus, le conseil entier au survol */}
+            <div
+              className="min-w-0 line-clamp-2 text-amber-700 dark:text-amber-300"
+              title={footerWarning || undefined}
+            >
+              {footerWarning}
             </div>
             {render?.chars > 0 && (
               <GmailSize
@@ -1261,7 +1309,7 @@ export default function SignatureEditor({ id }) {
             {
               target: "actions",
               title: "Vérifiez, puis installez",
-              body: "Envoyez-vous un e-mail de test pour la voir dans votre messagerie, puis installez-la dans Gmail, Outlook ou Apple Mail.",
+              body: "Envoyez-vous un e-mail de test pour la voir dans votre messagerie, puis installez-la dans Gmail, Outlook ou Apple Mail. Après une modification, recopiez-la : votre messagerie garde l'ancienne version.",
             },
           ]}
         />
