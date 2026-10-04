@@ -24,7 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { RENDER_SIGNATURE_V2, toInput } from "../graphql";
+import { RENDER_SIGNATURE_V2, renderKey, toInput } from "../graphql";
 import { modClick, undoKeys } from "./LevelPanels";
 import { FOCUS_RING } from "./controls";
 import HtmlFrame from "./HtmlFrame";
@@ -221,10 +221,18 @@ export default function SignaturePreview({
   }, [imagesKey, refetch]);
 
   const render = data?.renderEmailSignatureV2 || lastRender.current;
+  // Saisie rendue par la requête en cours (un résultat reçu est toujours
+  // celui de la saisie actuelle : un plus ancien est abandonné)
+  const renderedInput = useRef(debouncedInput);
+  renderedInput.current = debouncedInput;
   useEffect(() => {
     if (data?.renderEmailSignatureV2) {
       lastRender.current = data.renderEmailSignatureV2;
-      onRender?.(data.renderEmailSignatureV2);
+      // Avec la clé de ce qu'il montre : la copie sait s'il est à jour
+      onRender?.(
+        data.renderEmailSignatureV2,
+        renderKey(renderedInput.current, firstImagesKey.current),
+      );
     }
   }, [data, onRender]);
 

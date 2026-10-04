@@ -72,10 +72,11 @@ export async function copySignatureHtml(render, fresher = null) {
  * Un refus du navigateur propose « Réessayer » : ce nouveau clic copie la
  * signature déjà prête, ce qui passe partout. S'il échoue encore, reste le
  * fichier, ouvert dans le navigateur puis copié à la main.
+ * `waitingToast` : le message « Copie en cours… », retiré à la fin.
  */
 export async function copySignature(
   render,
-  { fresher = null, onCopied, retry = true } = {},
+  { fresher = null, onCopied, retry = true, waitingToast = null } = {},
 ) {
   // Dernière signature connue : celle que « Réessayer » copiera
   let latest = render;
@@ -84,6 +85,7 @@ export async function copySignature(
     () => latest,
   );
   const ok = await copySignatureHtml(render, fresh);
+  if (waitingToast !== null) toast.dismiss(waitingToast);
   if (ok) {
     onCopied?.();
     toast.success("Signature copiée, collez-la dans votre client mail");

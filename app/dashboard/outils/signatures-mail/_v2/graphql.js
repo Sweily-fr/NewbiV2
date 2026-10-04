@@ -440,6 +440,13 @@ export function cleanElements(elements) {
   return out;
 }
 
+/**
+ * Clé d'un rendu : la saisie (entrée de mutation) et les images (JSON) qu'il
+ * montre. La copie s'en sert pour savoir si l'aperçu affiché est à jour.
+ */
+export const renderKey = (input, imagesJson) =>
+  `${JSON.stringify(input)}|${imagesJson}`;
+
 /** Style (forme du fragment) en entrée de mutation. */
 export function toStyleInput(style) {
   return {

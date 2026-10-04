@@ -59,6 +59,7 @@ import {
   SET_DEFAULT_SIGNATURE_V2,
   SIGNATURES_V2,
   SIGNATURE_TEMPLATES_V2,
+  renderKey,
   toInput,
 } from "../graphql";
 import { refusalToast } from "../errors";
@@ -341,7 +342,13 @@ export default function SignatureEditor({ id }) {
     if (initialRender && !render) setRender(initialRender);
   }, [initialRender, render]);
 
-  const onRender = useCallback((r) => setRender(r), []);
+  // Saisie et images que montre `render` (inconnues pour le rendu initial :
+  // la copie attend alors un rendu à jour)
+  const shownKey = useRef(null);
+  const onRender = useCallback((r, key) => {
+    shownKey.current = key || null;
+    setRender(r);
+  }, []);
   // Largeurs mesurées dans l'aperçu (réglages de largeur) : oubliées en
   // quittant l'éditeur, pour ne jamais servir à une autre signature
   useEffect(() => () => setPreviewWidths(null), []);
@@ -856,6 +863,20 @@ export default function SignatureEditor({ id }) {
   const handleCopy = () => {
     flush();
     const shown = render;
+    const onCopied = () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    };
+    // Aperçu à jour (même saisie, mêmes images) : copié tout de suite, sans
+    // attendre l'API
+    const now = renderKey(toInput(sig), JSON.stringify(sig?.images || null));
+    if (shown?.html && shownKey.current === now) {
+      copySignature(shown, { onCopied });
+      return;
+    }
+    // Sinon le presse-papiers attend le rendu de la dernière saisie : on le
+    // dit, pour qu'un collage trop rapide ne surprenne pas
+    const waiting = toast.loading("Copie en cours…");
     const fresh = client
       .query({
         query: RENDER_SIGNATURE_V2,
@@ -867,13 +888,7 @@ export default function SignatureEditor({ id }) {
         // À défaut, le dernier rendu affiché
         () => shown,
       );
-    copySignature(shown, {
-      fresher: fresh,
-      onCopied: () => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      },
-    });
+    copySignature(shown, { fresher: fresh, onCopied, waitingToast: waiting });
   };
 
   // Départ alors que la dernière modification ne passe pas (connexion
