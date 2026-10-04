@@ -653,7 +653,7 @@ export function SignatureWidthRow({ st, setStyle, label }) {
     <LengthRow
       label={label || "Largeur de la signature"}
       autoLabel="Ajustée au contenu"
-      hint="Ou tirez le bord de la signature dans l'aperçu. Sur un téléphone, elle ne dépasse jamais la largeur de l'écran."
+      hint="Ou tirez le bord de la signature dans l'aperçu. Sur un téléphone, elle se resserre à la largeur de l'écran."
       value={st.frameWidth}
       onChange={(v) => setStyle({ frameWidth: v })}
       min={240}

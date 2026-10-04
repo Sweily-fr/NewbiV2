@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { RotateCcw } from "lucide-react";
-import { Textarea } from "@/src/components/ui/textarea";
 import { PhotoBorderControls } from "./StylePanel";
 import {
   CheckedInput,
@@ -26,10 +25,12 @@ import {
   slotLabel,
 } from "../slots";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
-import ColorField from "./ColorField";
 import BlockControls from "./BlockControls";
+import { CtaColorFields, DisclaimerField } from "./ExtrasPanel";
 import {
+  bannerAltFallback,
   ctaLabelProblem,
+  ctaLinkHint,
   ctaLinkProblem,
   emailProblem,
   linkProblem,
@@ -556,6 +557,23 @@ export default function ElementPanel({
                 onChange={(e) => update({ banner: { url: e.target.value } })}
               />
             </Field>
+            {/* Même champ que dans « En plus » : la bannière se règle
+                entièrement depuis l'aperçu */}
+            <Field
+              label="Texte de remplacement"
+              htmlFor="sig-element-banner-alt"
+              hint="Lu par les lecteurs d'écran et affiché quand la messagerie bloque les images."
+            >
+              <CheckedInput
+                id="sig-element-banner-alt"
+                value={banner.alt}
+                maxLength={120}
+                placeholder={
+                  bannerAltFallback(banner.url) || "Description de l'image"
+                }
+                onChange={(e) => update({ banner: { alt: e.target.value } })}
+              />
+            </Field>
           </SwitchRow>
         </Section>
       );
@@ -574,7 +592,7 @@ export default function ElementPanel({
                 onChange={(e) => update({ cta: { label: e.target.value } })}
               />
             </Field>
-            <Field label="Lien">
+            <Field label="Lien" hint={ctaLinkHint(cta.url)}>
               <CheckedInput
                 value={cta.url}
                 placeholder="calendly.com/votre-nom"
@@ -582,22 +600,11 @@ export default function ElementPanel({
                 onChange={(e) => update({ cta: { url: e.target.value } })}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Fond">
-                <ColorField
-                  label="Fond du bouton"
-                  value={cta.backgroundColor || st.primaryColor}
-                  onChange={(v) => update({ cta: { backgroundColor: v } })}
-                />
-              </Field>
-              <Field label="Texte">
-                <ColorField
-                  label="Texte du bouton"
-                  value={cta.textColor}
-                  onChange={(v) => update({ cta: { textColor: v } })}
-                />
-              </Field>
-            </div>
+            <CtaColorFields
+              cta={cta}
+              primaryColor={st.primaryColor}
+              update={update}
+            />
           </Section>
           <TextStyleControls
             elementKey="cta"
@@ -611,12 +618,10 @@ export default function ElementPanel({
       body = (
         <>
           <Section title="Contenu">
-            <Textarea
+            <DisclaimerField
               id="sig-field-disclaimer"
               value={disclaimer.text}
-              maxLength={1000}
-              rows={3}
-              onChange={(e) => update({ disclaimer: { text: e.target.value } })}
+              onChange={(text) => update({ disclaimer: { text } })}
             />
           </Section>
           <TextStyleControls elementKey="disclaimer" {...textProps} />

@@ -35,9 +35,14 @@ import {
   toInput,
   toStyleInput,
 } from "../graphql";
-import { layoutCustomized, templateLayout } from "../slots";
+import { layoutCustomized, shownItems, templateLayout } from "../slots";
 import HtmlFrame from "./HtmlFrame";
 import { Row, Section } from "./controls";
+import {
+  IdentityZoneControl,
+  PhotoLayoutControls,
+  TextAlignControl,
+} from "./LayoutControls";
 
 const THUMB_WIDTH = 560;
 const THUMB_HEIGHT = 300;
@@ -311,6 +316,12 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
     }
   };
 
+  // Dispositions toutes faites : les vignettes de Style › Disposition,
+  // montrées dès l'onglet Modèle (une signature neuve s'ouvre ici)
+  const setStyle = (patch) => update({ style: patch });
+  const shown = shownItems(sig);
+  const hasPhoto = Boolean(sig.images?.photo?.url);
+
   const target = pending?.template;
   return (
     <div className="space-y-8">
@@ -330,6 +341,18 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
             />
           ))}
         </div>
+      </Section>
+
+      <Section
+        title="Disposition"
+        description="Photo au-dessus, nom dans un bandeau ou dans une colonne de couleur, en un clic : vos couleurs et votre police sont gardées."
+      >
+        <IdentityZoneControl st={sig.style} setStyle={setStyle} />
+        {hasPhoto ? (
+          <PhotoLayoutControls st={sig.style} setStyle={setStyle} shown={shown} />
+        ) : (
+          <TextAlignControl st={sig.style} setStyle={setStyle} shown={shown} />
+        )}
       </Section>
 
       <Section

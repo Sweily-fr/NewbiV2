@@ -198,13 +198,21 @@ export function PartLinks({ element, sig, onSelect }) {
   );
 }
 
-/** Emplacements proposés pour déplacer une partie ou un élément. */
-function placeOptions(st, current) {
-  const L = layoutState(st);
+/**
+ * Emplacements proposés pour déplacer une partie ou un élément. `shown` :
+ * éléments affichés ; un en-tête encore vide est annoncé comme ce qu'il
+ * deviendra, un bandeau coloré sur toute la largeur (comme la ligne de
+ * dépôt « En-tête coloré » de l'aperçu).
+ */
+function placeOptions(st, current, shown) {
+  const L = layoutState(st, shown);
   // Tout en bas (sous le cadre) : avec un cadre, ou s'il y est déjà
   return SLOTS.filter(
     (s) => s !== "outside" || L.framed || current === "outside",
-  ).map((s) => ({ value: s, label: slotLabel(s, st) }));
+  ).map((s) => ({
+    value: s,
+    label: s === "header" && !L.hasHeader ? "En-tête coloré" : slotLabel(s, st),
+  }));
 }
 
 /**
@@ -213,9 +221,10 @@ function placeOptions(st, current) {
  */
 export function PlaceRow({ item, element, sig, setStyle }) {
   const st = sig.style;
+  const shown = shownItems(sig);
   const current = item
     ? slotOf(st.slots, item)
-    : elementSlot(st, shownItems(sig), element);
+    : elementSlot(st, shown, element);
   if (!current) return null;
   return (
     <Pick
@@ -229,7 +238,7 @@ export function PlaceRow({ item, element, sig, setStyle }) {
             : moveElement(st.slots, element, v),
         })
       }
-      options={placeOptions(st, current)}
+      options={placeOptions(st, current, shown)}
     />
   );
 }

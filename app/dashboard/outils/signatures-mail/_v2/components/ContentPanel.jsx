@@ -23,13 +23,22 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
+import { useActiveOrganization } from "@/src/lib/organization-client";
 import { AddChips, CheckedInput, Field, Hint, Section } from "./controls";
 import ImageField from "./ImageField";
 import ExtrasSection from "./ExtrasPanel";
 
 // Partagés avec les panneaux d'élément
 export { Field, ImageField };
-import { emailProblem, linkProblem, networkLinkProblem } from "../links";
+import {
+  emailProblem,
+  linkProblem,
+  networkExample,
+  networkLinkProblem,
+  phoneRegion,
+  socialLinkPreview,
+  whatsappNational,
+} from "../links";
 import { APPLY_MEMBER_SIGNATURE_V2, SIGNATURE_MEMBERS_V2 } from "../graphql";
 import { refusalToast } from "../errors";
 
@@ -63,6 +72,10 @@ export function TextField({
 }
 
 export function SocialLinks({ social, networks, update }) {
+  // Pays de l'espace : un numéro WhatsApp national y est rattaché, comme
+  // dans le rendu
+  const { organization } = useActiveOrganization();
+  const region = phoneRegion(organization?.addressCountry);
   const used = new Set(social.map((s) => s.network));
   const available = networks.filter((n) => !used.has(n.id));
   const byId = Object.fromEntries(networks.map((n) => [n.id, n]));
@@ -119,7 +132,7 @@ export function SocialLinks({ social, networks, update }) {
           <div className="min-w-0 flex-1 space-y-1">
             <CheckedInput
               value={s.url}
-              placeholder={`${byId[s.network]?.host || "https://"}/votre-profil`}
+              placeholder={networkExample(s.network)}
               onChange={(e) => setRow(index, { url: e.target.value })}
               aria-label={`Lien ${byId[s.network]?.label || s.network}`}
               warning={networkLinkProblem(
@@ -128,6 +141,15 @@ export function SocialLinks({ social, networks, update }) {
                 byId[s.network]?.label || s.network,
               )}
             />
+            {/* Nom de compte ou numéro : le lien qui partira réellement */}
+            {socialLinkPreview(s.network, s.url, region) && (
+              <Hint>Lien : {socialLinkPreview(s.network, s.url, region)}</Hint>
+            )}
+            {s.network === "whatsapp" && whatsappNational(s.url) && (
+              <Hint>
+                Numéro étranger : commencez par l&apos;indicatif (+32…).
+              </Hint>
+            )}
           </div>
           <Button
             type="button"
