@@ -50,13 +50,14 @@ var editing=null,dragging=false,dragId=null,gripEl=null;
    rétrécit aussi), infobulle du cadre comprise, et celle placée sous le
    coin quand il passe sous le bord. Le débordement en largeur est celui de
    la signature seule : cadre de sélection et poignée sont masqués le temps
-   de la mesure (au doigt, leurs zones de prise dépassent à droite) */
+   de la mesure (au doigt, leurs zones de prise dépassent à droite). Cette
+   largeur borne aussi la zone de prise du bord et du coin (reach) */
 function h(){var d=document.documentElement,y=document.body.getBoundingClientRect().height;
 if(box&&box.style.display==="block"){y=Math.max(y,box.getBoundingClientRect().bottom+scrollY+30);
 if(low&&corner.style.display==="block")y=Math.max(y,corner.getBoundingClientRect().bottom+scrollY+32);}
 var hide=[box,grip].filter(Boolean),was=hide.map(function(el){var v=el.style.display;el.style.display="none";return v;});
-var ov=d.scrollWidth>d.clientWidth+1;hide.forEach(function(el,i){el.style.display=was[i];});
-post({type:"sig-height",height:Math.ceil(y),overflow:ov});}
+var w=d.scrollWidth;hide.forEach(function(el,i){el.style.display=was[i];});if(box)reach(w);
+post({type:"sig-height",height:Math.ceil(y),overflow:w>d.clientWidth+1});}
 new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function crect(el){var g=document.createRange();g.selectNodeContents(el);var r=g.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
@@ -159,6 +160,12 @@ var coarse=Boolean(window.matchMedia&&matchMedia("(pointer:coarse)").matches),lo
 function placeHandles(){var H=box.clientHeight;
 if(!rs&&!fs)low=knob.style.display==="block"&&corner.style.display==="block"&&H<(coarse?78:46);
 if(low){corner.style.top=(H/2+cgap)+"px";corner.style.bottom="auto";}else{corner.style.top="auto";corner.style.bottom="-9px";}}
+/* Au doigt, la zone de prise du bord et du coin s'arrête à droite à la
+   largeur du contenu w (mesurée par h()) : l'aperçu ne défile pas de côté
+   pour quelques pixels que le doigt n'atteint pas. La zone se compte
+   depuis l'intérieur de leur bordure de 2 px. */
+function reach(w){var r=Math.max(knob.getBoundingClientRect().right,corner.getBoundingClientRect().right)+scrollX-2;
+box.style.setProperty("--sig-reach",Math.max(0,Math.min(8,w-r))+"px");}
 /* Bulle : la valeur pendant un geste et « Taille du texte » au survol du
    coin, sous le coin ; le nom du bord à son survol, au-dessus de lui */
 function tipAt(over){var H=box.clientHeight;
@@ -572,9 +579,10 @@ export default function HtmlFrame({
     // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
     // une page d'erreur si l'adresse est incomplète).
     // Au doigt (pointeur grossier) : poignée, bord et coin gardent leur
-    // dessin, mais se saisissent 8 px autour
+    // dessin, mais se saisissent 8 px autour ; à droite, bord et coin
+    // jamais au-delà du contenu (--sig-reach, posé par le script)
     const editorCss = interactive
-      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;} @media (pointer:coarse){.sig-grip::before,.sig-knob::before,.sig-corner::before{content:\"\";position:absolute;inset:-8px;touch-action:none;}}"
+      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;} @media (pointer:coarse){.sig-grip::before,.sig-knob::before,.sig-corner::before{content:\"\";position:absolute;inset:-8px;touch-action:none;} .sig-knob::before,.sig-corner::before{right:calc(0px - var(--sig-reach,8px));}}"
       : "";
     const editorScript = interactive
       ? `<script>window.SIG_READONLY=${readOnly ? "true" : "false"};${EDITOR_SCRIPT}</script>`
