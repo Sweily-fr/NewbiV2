@@ -12,21 +12,25 @@ export function ItemCellWithImage({ imageUrl, children }) {
   if (!imageUrl) return children;
 
   return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imageUrl}
         alt=""
         data-pdf-item-image
         style={{
-          width: "44px",
-          height: "44px",
+          width: "52px",
+          height: "52px",
           objectFit: "contain",
           flexShrink: 0,
-          borderRadius: "4px",
+          padding: "3px",
+          backgroundColor: "#ffffff",
+          border: "1px solid #E6E6E6",
+          borderRadius: "6px",
+          boxSizing: "border-box",
         }}
       />
-      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+      <div style={{ flex: 1, minWidth: 0, paddingTop: "2px" }}>{children}</div>
     </div>
   );
 }

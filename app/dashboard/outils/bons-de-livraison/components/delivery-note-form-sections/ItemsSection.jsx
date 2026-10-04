@@ -135,6 +135,9 @@ function ProductSearchCombobox({
       imageUrl: product.imageUrl,
     })) || [];
 
+  // Une case image par ligne dès qu'un produit de la liste a une image
+  const hasImages = products.some((p) => p.imageUrl);
+
   const handleSelect = (value) => {
     const product = products.find((p) => p.value === value);
     if (product && onSelect) {
@@ -215,27 +218,27 @@ function ProductSearchCombobox({
                     key={product.value}
                     value={product.value}
                     onSelect={() => handleSelect(product.value)}
-                    className="flex flex-col items-start gap-1 p-3"
+                    className="flex flex-row items-start gap-3 p-3"
                   >
-                    <span className="flex items-center gap-2">
-                      {product.imageUrl && (
-                        <ProductThumbnail
-                          src={product.imageUrl}
-                          className="size-6"
-                        />
-                      )}
+                    {hasImages && (
+                      <ProductThumbnail
+                        src={product.imageUrl}
+                        className="size-10 mt-0.5"
+                      />
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
                       <span className="font-normal">{product.label}</span>
-                    </span>
-                    {product.description && (
-                      <span className="text-sm text-muted-foreground">
-                        {product.description}
-                      </span>
-                    )}
-                    {product.reference && (
-                      <span className="text-xs text-muted-foreground">
-                        Réf: {product.reference}
-                      </span>
-                    )}
+                      {product.description && (
+                        <span className="text-sm text-muted-foreground">
+                          {product.description}
+                        </span>
+                      )}
+                      {product.reference && (
+                        <span className="text-xs text-muted-foreground">
+                          Réf: {product.reference}
+                        </span>
+                      )}
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -495,7 +498,7 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
                                   {currentItem.imageUrl && (
                                     <ProductThumbnail
                                       src={currentItem.imageUrl}
-                                      className="size-7"
+                                      className="size-9 rounded-lg"
                                     />
                                   )}
                                   <div className="font-normal break-all [overflow-wrap:anywhere]">

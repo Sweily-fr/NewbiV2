@@ -142,12 +142,15 @@ const baseColumns = [
   {
     header: "Nom du produit",
     accessorKey: "name",
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const product = row.original;
+      // Dès qu'un produit de la liste a une image, chaque ligne réserve sa
+      // case pour garder les noms alignés
+      const showThumbnail = table.options.data.some((p) => p?.imageUrl);
       return (
-        <div className="flex items-center gap-2">
-          {product.imageUrl && (
-            <ProductThumbnail src={product.imageUrl} className="size-6" />
+        <div className="flex items-center gap-2.5">
+          {showThumbnail && (
+            <ProductThumbnail src={product.imageUrl} className="size-8" />
           )}
           <div
             className="font-normal max-w-[120px] md:max-w-[180px] truncate"

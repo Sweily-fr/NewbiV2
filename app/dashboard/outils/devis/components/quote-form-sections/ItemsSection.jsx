@@ -607,7 +607,7 @@ export default function ItemsSection({
                                     {currentItem.imageUrl && (
                                       <ProductThumbnail
                                         src={currentItem.imageUrl}
-                                        className="size-7"
+                                        className="size-9 rounded-lg"
                                       />
                                     )}
                                     <div className="font-normal break-all [overflow-wrap:anywhere]">
