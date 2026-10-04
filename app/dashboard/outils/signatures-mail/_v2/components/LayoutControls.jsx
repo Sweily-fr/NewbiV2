@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -7,6 +8,7 @@ import {
   AlignVerticalJustifyEnd,
   AlignVerticalJustifyStart,
   Check,
+  RotateCcw,
 } from "lucide-react";
 import {
   Select,
@@ -28,6 +30,7 @@ import {
   Row,
   SliderRow,
   SwitchRow,
+  Warning,
 } from "./controls";
 import {
   COLUMN_WIDTH,
@@ -214,7 +217,7 @@ export function PhotoLayoutControls({ st, setStyle, shown }) {
       <PictoPick
         label="Position de la photo"
         value={["left", "top", "right"].includes(L.photo) ? L.photo : ""}
-        onChange={(v) => setStyle(setPhotoPlacement(st, v))}
+        onChange={(v) => setStyle(setPhotoPlacement(st, v, shown))}
         options={PHOTO_OPTIONS}
       />
       {L.hasVisual && (
@@ -644,11 +647,67 @@ export function LogoWidthRow({ sig, setStyle }) {
 }
 
 /**
+ * Largeurs que le contenu impose au cadre et aux colonnes, mesurées dans
+ * l'aperçu de l'éditeur ({ frame, columns: { visual, text, side } }, chacune
+ * { floor, natural } en px ; null tant que rien n'est mesuré). L'éditeur
+ * les dépose ici (setPreviewWidths) et les réglages de largeur les lisent,
+ * dans l'onglet Style comme dans le panneau d'une colonne.
+ */
+let previewWidths = null;
+const widthListeners = new Set();
+export function setPreviewWidths(next) {
+  previewWidths = next;
+  widthListeners.forEach((listener) => listener());
+}
+function usePreviewWidths() {
+  return useSyncExternalStore(
+    (listener) => {
+      widthListeners.add(listener);
+      return () => widthListeners.delete(listener);
+    },
+    () => previewWidths,
+    () => null,
+  );
+}
+
+/**
+ * Largeur enregistrée sous le plancher du contenu : la largeur obtenue, et
+ * de quoi descendre plus bas quand c'est possible.
+ */
+function FloorNote({ children, action }) {
+  return (
+    <div className="space-y-1.5">
+      <Warning>{children}</Warning>
+      {action && (
+        <button
+          type="button"
+          onClick={action.onClick}
+          className="inline-flex items-center gap-1 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+        >
+          <RotateCcw size={11} aria-hidden="true" />
+          {action.label}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Valeur proposée au passage en sur mesure : la largeur affichée (rien ne
+ * saute), arrondie au pas, sinon `fallback`.
+ */
+const startFrom = (natural, step, fallback) =>
+  natural ? Math.round(natural / step) * step : fallback;
+
+/**
  * Largeur de toute la signature (le cadre s'il y en a un) : ajustée au
- * contenu ou sur mesure.
+ * contenu ou sur mesure, jamais sous la largeur que le contenu impose.
  */
 export function SignatureWidthRow({ st, setStyle, label }) {
-  const L = layoutState(st);
+  const widths = usePreviewWidths();
+  const floor = widths?.frame?.floor || 0;
+  // Une colonne sur mesure élargit la signature : la remettre en automatique
+  const customColumns = Object.values(st.columns || {}).some((w) => w > 0);
   return (
     <LengthRow
       label={label || "Largeur de la signature"}
@@ -659,28 +718,63 @@ export function SignatureWidthRow({ st, setStyle, label }) {
       min={240}
       max={720}
       step={10}
-      initial={480}
+      initial={startFrom(widths?.frame?.natural, 10, 480)}
+      floor={floor}
+      note={
+        floor > st.frameWidth ? (
+          <FloorNote
+            action={
+              customColumns
+                ? {
+                    label: "Remettre les colonnes en automatique",
+                    onClick: () =>
+                      setStyle({ columns: { visual: 0, text: 0, side: 0 } }),
+                  }
+                : null
+            }
+          >
+            Le contenu impose au moins {floor} px : la signature ne peut pas
+            être plus étroite.
+          </FloorNote>
+        ) : null
+      }
     />
   );
 }
 
-/** Largeur d'une colonne : ajustée au contenu ou sur mesure. */
+/**
+ * Largeur d'une colonne : ajustée au contenu ou sur mesure, jamais sous la
+ * largeur que son contenu impose.
+ */
 export function ColumnWidthRow({ slot, st, setStyle, label }) {
+  const widths = usePreviewWidths();
   const c = COLUMN_WIDTH[slot];
   if (!c) return null;
+  const m = widths?.columns?.[slot];
+  const floor = m?.floor || 0;
+  const value = st.columns?.[slot] || 0;
   return (
     <LengthRow
       label={label || SLOT_LABEL[slot]}
       hint="Vous pouvez aussi tirer le bord de la colonne dans l'aperçu."
       autoLabel="Ajustée au contenu"
-      value={st.columns?.[slot] || 0}
+      value={value}
       onChange={(v) =>
         setStyle({ columns: { ...(st.columns || {}), [slot]: v } })
       }
       min={c.min}
       max={c.max}
       step={10}
-      initial={c.initial}
+      initial={startFrom(m?.natural, 10, c.initial)}
+      floor={floor}
+      note={
+        floor > value ? (
+          <FloorNote>
+            Son contenu impose au moins {floor} px : la colonne ne peut pas
+            être plus étroite.
+          </FloorNote>
+        ) : null
+      }
     />
   );
 }
@@ -735,7 +829,8 @@ export function OutsideControls({ st, setStyle, shown }) {
 
 /**
  * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
- * l'autre (comme les dépôts « À côté », « Au-dessus », « Sous »).
+ * l'autre (comme les dépôts « À gauche », « À droite », « Au-dessus »,
+ * « Sous »).
  */
 export function FooterPairControl({ st, setStyle, shown }) {
   const footer = (st.slots?.footer || []).filter((k) => !shown || shown.has(k));

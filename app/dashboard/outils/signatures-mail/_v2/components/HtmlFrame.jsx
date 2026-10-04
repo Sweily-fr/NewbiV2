@@ -37,24 +37,34 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - `onDelete()` : Suppr (⌫) pressée sur une sélection, hors saisie.
  * - `readOnly` : ni modification en place ni poignée (abonnement expiré) ;
  *   un clic ouvre seulement le panneau de l'élément.
+ * - `onMeasure({ frame, columns })` : après chaque rendu, les largeurs que
+ *   le contenu impose au cadre et aux colonnes ({ floor, natural } en px),
+ *   pour que les réglages de largeur ne proposent que le possible.
  */
 
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
 const EDITOR_SCRIPT = `(function(){
 var post=function(m){parent.postMessage(m,"*");};
-var editing=null,dragging=false,gripEl=null,pressing=false,justDragged=false,justLeft=null;
+var editing=null,dragging=false,dragId=null,gripEl=null,pressing=false,justDragged=false,justLeft=null;
 /* Hauteur du contenu (jamais celle de l'affichage précédent : l'aperçu
-   rétrécit aussi), infobulle du cadre comprise */
+   rétrécit aussi), infobulle du cadre comprise, et celle placée sous le
+   coin quand il passe sous le bord. Le débordement en largeur est celui de
+   la signature seule : cadre de sélection et poignée sont masqués le temps
+   de la mesure (au doigt, leurs zones de prise dépassent à droite). Cette
+   largeur borne aussi la zone de prise du bord et du coin (reach) */
 function h(){var d=document.documentElement,y=document.body.getBoundingClientRect().height;
-if(box&&box.style.display==="block"){y=Math.max(y,box.getBoundingClientRect().bottom+scrollY+30);}
-post({type:"sig-height",height:Math.ceil(y),overflow:d.scrollWidth>d.clientWidth+1});}
+if(box&&box.style.display==="block"){y=Math.max(y,box.getBoundingClientRect().bottom+scrollY+30);
+if(low&&corner.style.display==="block")y=Math.max(y,corner.getBoundingClientRect().bottom+scrollY+32);}
+var hide=[box,grip].filter(Boolean),was=hide.map(function(el){var v=el.style.display;el.style.display="none";return v;});
+var w=d.scrollWidth;hide.forEach(function(el,i){el.style.display=was[i];});if(box)reach(w);
+post({type:"sig-height",height:Math.ceil(y),overflow:w>d.clientWidth+1});}
 new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function crect(el){var g=document.createRange();g.selectNodeContents(el);var r=g.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function q(s,content){var el=document.querySelector(s);return el?(content?crect(el):rect(el)):null;}
-var grip=document.createElement("div");
+var grip=document.createElement("div");grip.className="sig-grip";
 grip.textContent="\u283F";grip.title="Déplacer";
-grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);";
+grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);touch-action:none;-webkit-touch-callout:none;";
 document.body.appendChild(grip);
 /* Poignée : seulement sur l'élément sélectionné (rien au survol), à côté
    du morceau cliqué ; elle reste pendant la modification d'un texte */
@@ -75,15 +85,19 @@ document.querySelectorAll("[data-sig-slot]").forEach(function(el){var k=el.getAt
 var sig=document.querySelector(".sig > table")||document.querySelector(".sig");
 var field=hover.getAttribute("data-sig-block"),fields=[field];
 if(sel&&sel.level==="element"){fields=[];groupEls().forEach(function(el){var k=el.getAttribute("data-sig-block");if(fields.indexOf(k)<0)fields.push(k);});if(fields.indexOf(field)<0)fields=[field];}
-dragging=true;hideGrip();
+dragging=true;dragId=e.pointerId;hideGrip();
 post({type:"sig-drag",field:fields[0],fields:fields,whole:!!(sel&&sel.level==="element"),sig:rect(sig),items:items,slots:slots,body:q("[data-sig-body]",true),frame:q("[data-sig-frame] > table")||q("[data-sig-frame]",true),x:e.clientX,y:e.clientY});
 });
-document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
-document.addEventListener("pointerup",function(e){if(dragging){dragging=false;
+/* Seul le pointeur qui a saisi la poignée mène le glisser (un second doigt
+   ne compte pas) ; un geste repris par le navigateur (pointercancel)
+   l'annule au lieu de laisser le calque de dépôt en place */
+document.addEventListener("pointermove",function(e){if(dragging&&e.pointerId===dragId)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
+document.addEventListener("pointerup",function(e){if(dragging&&e.pointerId===dragId){dragging=false;
 /* Le navigateur émet un clic à la fin du glisser : il ne doit ni
    sélectionner ni désélectionner */
 justDragged=true;setTimeout(function(){justDragged=false;},0);
 post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
+document.addEventListener("pointercancel",function(e){if(dragging&&e.pointerId===dragId){dragging=false;post({type:"sig-drag-cancel"});drawSel();}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
 /* Appui en cours : un rendu reçu entre l'appui et le relâcher est mis de
    côté (sinon il remplace l'élément visé et le clic est perdu, cas d'un
@@ -187,10 +201,10 @@ if(deferred!==null&&!rs&&!fs&&!pressing){var d=deferred;deferred=null;applyHtml(
 var sel=null,rs=null,fs=null;
 var box=document.createElement("div");
 box.style.cssText="position:absolute;display:none;pointer-events:none;border:2px solid #5a50ff;border-radius:5px;z-index:9;";
-var knob=document.createElement("div");
-knob.style.cssText="position:absolute;right:-7px;top:50%;width:10px;height:20px;margin-top:-10px;background:#fff;border:2px solid #5a50ff;border-radius:4px;cursor:ew-resize;pointer-events:auto;display:none;touch-action:none;";
+var knob=document.createElement("div");knob.className="sig-knob";
+knob.style.cssText="position:absolute;right:-9px;top:50%;width:10px;height:20px;margin-top:-10px;background:#fff;border:2px solid #5a50ff;border-radius:4px;cursor:ew-resize;pointer-events:auto;display:none;touch-action:none;";
 box.appendChild(knob);
-var corner=document.createElement("div");
+var corner=document.createElement("div");corner.className="sig-corner";
 corner.title="Tirer pour agrandir le texte";
 corner.style.cssText="position:absolute;right:-9px;bottom:-9px;width:12px;height:12px;background:#5a50ff;border:2px solid #fff;border-radius:3px;cursor:nwse-resize;pointer-events:auto;display:none;touch-action:none;box-shadow:0 0 0 1px #5a50ff;";
 box.appendChild(corner);
@@ -198,6 +212,32 @@ var tip=document.createElement("div");
 tip.style.cssText="position:absolute;right:-7px;bottom:-28px;background:#1f1f1f;color:#fff;font:11px/19px Arial,sans-serif;padding:0 7px;border-radius:4px;display:none;white-space:nowrap;";
 box.appendChild(tip);
 document.body.appendChild(box);
+/* Bord (largeur) et coin (taille du texte) : sur un cadre trop bas pour
+   les séparer (texte d'une ligne), le coin passe sous le bord, sur la même
+   verticale, au lieu d'en recouvrir la moitié ; au doigt, plus d'écart
+   (zones de prise agrandies). Décidé hors geste : rien ne saute sous le
+   pointeur pendant un réglage. */
+var coarse=Boolean(window.matchMedia&&matchMedia("(pointer:coarse)").matches),low=false,cgap=coarse?32:16;
+function placeHandles(){var H=box.clientHeight;
+if(!rs&&!fs)low=knob.style.display==="block"&&corner.style.display==="block"&&H<(coarse?78:46);
+if(low){corner.style.top=(H/2+cgap)+"px";corner.style.bottom="auto";}else{corner.style.top="auto";corner.style.bottom="-9px";}}
+/* Au doigt, la zone de prise du bord et du coin s'arrête à droite à la
+   largeur du contenu w (mesurée par h()) : l'aperçu ne défile pas de côté
+   pour quelques pixels que le doigt n'atteint pas. La zone se compte
+   depuis l'intérieur de leur bordure de 2 px. */
+function reach(w){var r=Math.max(knob.getBoundingClientRect().right,corner.getBoundingClientRect().right)+scrollX-2;
+box.style.setProperty("--sig-reach",Math.max(0,Math.min(8,w-r))+"px");}
+/* Bulle : la valeur pendant un geste et « Taille du texte » au survol du
+   coin, sous le coin ; le nom du bord à son survol, au-dessus de lui */
+function tipAt(over){var H=box.clientHeight;
+if(over==="knob"){tip.style.top=Math.max(H/2-33,-(box.getBoundingClientRect().top+2))+"px";tip.style.bottom="auto";}
+else if(low){tip.style.top=(H/2+cgap+20)+"px";tip.style.bottom="auto";}
+else{tip.style.top="auto";tip.style.bottom="-28px";}}
+function hoverTip(el,over,text){
+el.addEventListener("pointerenter",function(){if(rs||fs||dragging)return;tipAt(over);tip.textContent=text();tip.style.display="block";});
+el.addEventListener("pointerleave",function(){if(!rs&&!fs)tip.style.display="none";});}
+hoverTip(knob,"knob",function(){var k=sel&&sel.resize&&sel.resize.kind;return k==="wrap"||k==="button"||k==="column"||k==="frame"?"Largeur":k==="bar"?"Longueur":"Taille";});
+hoverTip(corner,"corner",function(){return "Taille du texte";});
 function selEls(){var out=[];if(!sel)return out;
 if(sel.whole)return sigRoot?[sigRoot]:out;
 if(sel.slot){document.querySelectorAll('[data-sig-slot="'+sel.slot+'"]').forEach(function(el){out.push(el);});return out;}
@@ -287,10 +327,10 @@ return out;}
 function selRect(){var els=groupEls(),r=union(els);
 if(!r||!els[0])return r;var ts=liveTables.filter(function(t){return t.isConnected;});if(!ts.length)ts=sizedTables(els);
 ts.forEach(function(t){var c=crect(t);r.l=Math.min(r.l,c.x);r.r=Math.max(r.r,c.x+c.w);});return r;}
-function place(r){box.style.left=(r.l+scrollX-3)+"px";box.style.top=(r.t+scrollY-3)+"px";box.style.width=(r.r-r.l+6)+"px";box.style.height=(r.b-r.t+6)+"px";}
+function place(r){box.style.left=(r.l+scrollX-3)+"px";box.style.top=(r.t+scrollY-3)+"px";box.style.width=(r.r-r.l+6)+"px";box.style.height=(r.b-r.t+6)+"px";placeHandles();}
 function drawSel(){if(rs||fs)return;var r=selRect();drawGhosts();if(!r){box.style.display="none";hideGrip();return;}
 box.style.display="block";place(r);showGrip();
-var ro=window.SIG_READONLY;knob.style.display=sel.resize&&!ro?"block":"none";corner.style.display=sel.font&&!ro?"block":"none";
+var ro=window.SIG_READONLY;knob.style.display=sel.resize&&!ro?"block":"none";corner.style.display=sel.font&&!ro?"block":"none";placeHandles();
 var k=sel.resize&&sel.resize.kind;knob.title=k==="wrap"||k==="button"||k==="column"||k==="frame"?"Tirer pour changer la largeur":"Tirer pour changer la taille";h();}
 function live(v,k){selEls().forEach(function(el){
 if(k==="square"||k==="image"){var im=el.querySelector("img");if(!im)return;var ratio=k==="square"?1:(im.naturalWidth?im.naturalHeight/im.naturalWidth:(im.height/Math.max(1,im.width)));im.style.width=v+"px";im.style.height=Math.round(v*ratio)+"px";}
@@ -301,13 +341,25 @@ else if(k==="icons"){el.querySelectorAll("img").forEach(function(im){im.style.wi
    d'aucun rendu (valeur inchangée, rendu ignoré), pour ne jamais garder les
    tailles provisoires de l'aperçu en direct */
 var sigRoot=document.querySelector(".sig"),lastHtml=sigRoot?sigRoot.innerHTML:"",pending=null,deferred=null;
-function applyHtml(html){clearTimeout(pending);pending=null;lastHtml=html;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();hideHover();watchSel();drawSel();h();}
+/* Largeurs que le contenu impose au cadre (ou à la signature sans cadre)
+   et à chaque colonne : plancher (conteneur bridé à 1 px : il ne descend
+   pas plus bas, quelle que soit la largeur choisie) et largeur naturelle
+   (conteneur à la taille de son contenu), mesurées sans rien afficher.
+   Envoyées au parent quand elles changent : les réglages de largeur ne
+   proposent que ce qui est possible. */
+function sizedEl(){return document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]");}
+function widths(el){var s=el.style.width;el.style.width="1px";var floor=Math.ceil(el.scrollWidth);el.style.width="max-content";var natural=Math.ceil(el.getBoundingClientRect().width);el.style.width=s;return{floor:floor,natural:Math.max(floor,natural)};}
+var lastMeasure="";
+function measure(){if(!sigRoot)return;var fr=sizedEl(),m={frame:fr?widths(fr):null,columns:{}};
+["visual","text","side"].forEach(function(k){var c=document.querySelector('[data-sig-slot="'+k+'"]');if(c)m.columns[k]=widths(c);});
+var key=JSON.stringify(m);if(key===lastMeasure)return;lastMeasure=key;post({type:"sig-measure",frame:m.frame,columns:m.columns});}
+function applyHtml(html){clearTimeout(pending);pending=null;lastHtml=html;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();hideHover();watchSel();drawSel();h();measure();}
 /* Rendu reçu pendant un réglage à la souris : il devient le dernier rendu,
    appliqué à la fin du réglage (sinon il arracherait la mesure en cours) */
 function takeDeferred(){if(deferred!==null){lastHtml=deferred;deferred=null;}}
 var selRO=new ResizeObserver(function(){drawSel();});
 function watchSel(){selRO.disconnect();selEls().forEach(function(el){selRO.observe(el);});}
-function restore(){if(editing||rs||fs)return;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();watchSel();drawSel();h();}
+function restore(){if(editing||rs||fs)return;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();watchSel();drawSel();h();measure();}
 function awaitRender(){clearTimeout(pending);pending=setTimeout(function(){pending=null;restore();},3000);}
 /* Bord : la largeur (ou la taille) suit le pointeur dans l'aperçu même,
    et la valeur retenue est celle que l'aperçu affiche vraiment : un texte
@@ -343,20 +395,22 @@ if(!n)return null;var cs=getComputedStyle(n),px=function(v){return parseFloat(v)
 return Math.round(n.getBoundingClientRect().width-px(cs.paddingLeft)-px(cs.paddingRight)-px(cs.borderLeftWidth)-px(cs.borderRightWidth));}
 knob.addEventListener("pointerdown",function(e){if(!sel||!sel.resize)return;e.preventDefault();e.stopPropagation();if(editing)editing.blur();
 var r=selRect();if(!r)return;var z=sel.resize,kind=z.kind,icons=kind==="icons",w=Math.ceil(r.r-r.l);
-var tables=kind==="wrap"||kind==="column"||kind==="frame"?wrapTables():[];
 /* Cadre, colonne : largeur réglée (l'aperçu téléphone peut la brider),
-   sinon celle affichée */
-if(kind==="frame"||kind==="column")w=z.width||(tables[0]?Math.ceil(tables[0].getBoundingClientRect().width):w);
+   sinon celle affichée ; jamais sous le plancher du contenu, pour que le
+   bord suive la souris et que la bulle dise la largeur obtenue */
+var floor=0;if(kind==="frame"||kind==="column"){var sized=kind==="frame"?sizedEl():selEls()[0];if(sized)floor=widths(sized).floor;}
+var tables=kind==="wrap"||kind==="column"||kind==="frame"?wrapTables():[];
+if(kind==="frame"||kind==="column")w=Math.max(floor,z.width||(tables[0]?Math.ceil(tables[0].getBoundingClientRect().width):w));
 if(kind==="square"||kind==="image"){var cw=shownWidth(kind);if(cw)w=cw;}
 /* Texte : part de sa largeur choisie ; largeur naturelle (sur une ligne)
    au-delà de laquelle il redevient automatique, sauf plafond automatique
    du rendu (accroche, mention longues) : on garde alors cette largeur */
 var natural=0,capped=false;if(kind==="wrap"){tables.forEach(function(d){var c=cellOf(d),before=c?[c.getAttribute("width"),c.style.width]:[d.style.maxWidth];if(hasWrap(d)&&!z.width)capped=true;setWrap(d,0);natural=Math.max(natural,Math.ceil(vrect(d).w));
 if(c){if(before[0])c.setAttribute("width",before[0]);c.style.width=before[1];}else d.style.maxWidth=before[0];});if(z.width)w=z.width;}
-var start=icons?z.size:w,min=z.min,max=z.max,fit=kind==="image"?logoFit():null;if(fit){min=fit.f(min);max=fit.f(max);}
+var start=icons?z.size:w,min=Math.max(z.min,floor),max=z.max,fit=kind==="image"?logoFit():null;if(fit){min=fit.f(min);max=fit.f(max);}
 rs={kind:kind,width:z.width||0,min0:z.min,max0:z.max,x:e.clientX,w:w,start:start,shown:start,cur:fit?fit.inv(start):kind==="wrap"?z.width||0:start,icons:icons,moved:false,min:min,max:max,fit:fit,tables:tables,natural:natural,capped:capped,auto:false};
 liveTables=tables;
-knob.setPointerCapture(e.pointerId);hideGrip();hideHover();tip.style.display="block";tip.textContent=start+" px";});
+knob.setPointerCapture(e.pointerId);hideGrip();hideHover();tipAt("value");tip.style.display="block";tip.textContent=start+" px";});
 knob.addEventListener("pointermove",function(e){if(!rs)return;if(!rs.moved){if(Math.abs(e.clientX-rs.x)<3)return;rs.moved=true;}
 var w=rs.w+(e.clientX-rs.x),v=rs.icons?Math.round(rs.start*w/rs.w):Math.round(w),k=rs.kind;v=Math.max(rs.min,Math.min(rs.max,v));var shown=v;
 if(k==="wrap"&&rs.tables.length){rs.auto=v>=rs.natural;shown=0;rs.tables.forEach(function(d){setWrap(d,rs.auto?0:v);shown=Math.max(shown,Math.ceil(vrect(d).w));});}
@@ -378,7 +432,7 @@ selEls().forEach(function(el){var found=false;[el].concat([].slice.call(el.query
 if(!found&&part){var ps=getComputedStyle(el);el.style.fontSize=ps.fontSize;el.style.lineHeight=ps.lineHeight;add(el);}
 else if(!found){var an=el.parentElement;while(an&&an!==sigRoot&&!(an.style&&an.style.fontSize))an=an.parentElement;if(an&&an!==sigRoot)add(an);}
 if(sel.font.icons)el.querySelectorAll("img").forEach(function(im){imgs.push({n:im,w:im.width,h:im.height});});});
-fs={x:e.clientX,y:e.clientY,w:r.r-r.l,h:r.b-r.t,min:sel.font.min,max:sel.font.max,start:sel.font.size,cur:sel.font.size,texts:texts,imgs:imgs,moved:false};corner.setPointerCapture(e.pointerId);hideGrip();hideHover();tip.style.display="block";tip.textContent=fs.start+" px";});
+fs={x:e.clientX,y:e.clientY,w:r.r-r.l,h:r.b-r.t,min:sel.font.min,max:sel.font.max,start:sel.font.size,cur:sel.font.size,texts:texts,imgs:imgs,moved:false};corner.setPointerCapture(e.pointerId);hideGrip();hideHover();tipAt("value");tip.style.display="block";tip.textContent=fs.start+" px";});
 corner.addEventListener("pointermove",function(e){if(!fs)return;if(!fs.moved){if(Math.abs(e.clientX-fs.x)+Math.abs(e.clientY-fs.y)<4)return;fs.moved=true;}var f=1+((e.clientX-fs.x)+(e.clientY-fs.y))/(fs.w+fs.h);
 var v=Math.max(fs.min,Math.min(fs.max,Math.round(fs.start*f))),k=v/fs.start;fs.cur=v;tip.textContent=v+" px";
 fs.texts.forEach(function(t){t.n.style.fontSize=(t.fs*k)+"px";if(t.lh)t.n.style.lineHeight=(t.lh*k)+"px";});
@@ -387,6 +441,7 @@ function endFont(){if(!fs)return;var v=fs.cur,changed=fs.moved&&v!==fs.start;fs=
 corner.addEventListener("pointerup",endFont);corner.addEventListener("pointercancel",endFont);corner.addEventListener("lostpointercapture",endFont);
 corner.addEventListener("click",function(e){e.stopPropagation();});
 new ResizeObserver(drawSel).observe(document.body);document.addEventListener("load",drawSel,true);window.addEventListener("resize",drawSel);
+document.addEventListener("load",measure,true);window.addEventListener("load",function(){lastMeasure="";measure();});measure();
 document.addEventListener("keydown",function(e){if(e.key!=="Escape"||e.defaultPrevented)return;
 if(rs||fs){e.preventDefault();rs=null;fs=null;tip.style.display="none";takeDeferred();restore();return;}
 if(!editing&&sel)post({type:"sig-escape"});});
@@ -417,6 +472,7 @@ export default function HtmlFrame({
   onFont,
   onEscape,
   onDelete,
+  onMeasure,
   selection = null,
   readOnly = false,
   frozen = false,
@@ -469,6 +525,25 @@ export default function HtmlFrame({
       if (data && data.type === "sig-drag-cancel") {
         onDragCancel?.();
       }
+      if (data && data.type === "sig-measure") {
+        const widths = (m) =>
+          m && Number.isFinite(m.floor)
+            ? {
+                floor: Math.round(m.floor),
+                natural: Math.round(
+                  Number.isFinite(m.natural) ? m.natural : m.floor,
+                ),
+              }
+            : null;
+        onMeasure?.({
+          frame: widths(data.frame),
+          columns: Object.fromEntries(
+            ["visual", "text", "side"]
+              .map((k) => [k, widths(data.columns?.[k])])
+              .filter(([, m]) => m),
+          ),
+        });
+      }
       if (data && (data.type === "sig-drag-move" || data.type === "sig-drag-end")) {
         const box = frameRef.current?.getBoundingClientRect();
         if (box) {
@@ -520,6 +595,7 @@ export default function HtmlFrame({
     onFont,
     onEscape,
     onDelete,
+    onMeasure,
   ]);
 
   // Pendant une modification en place, le HTML affiché ne change pas
@@ -571,8 +647,11 @@ export default function HtmlFrame({
     // <base target="_blank"> : un clic sur un lien de la signature ouvre un
     // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
     // une page d'erreur si l'adresse est incomplète).
+    // Au doigt (pointeur grossier) : poignée, bord et coin gardent leur
+    // dessin, mais se saisissent 8 px autour ; à droite, bord et coin
+    // jamais au-delà du contenu (--sig-reach, posé par le script)
     const editorCss = interactive
-      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
+      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;} @media (pointer:coarse){.sig-grip::before,.sig-knob::before,.sig-corner::before{content:\"\";position:absolute;inset:-8px;touch-action:none;} .sig-knob::before,.sig-corner::before{right:calc(0px - var(--sig-reach,8px));}}"
       : "";
     const editorScript = interactive
       ? `<script>window.SIG_READONLY=${readOnly ? "true" : "false"};${EDITOR_SCRIPT}</script>`

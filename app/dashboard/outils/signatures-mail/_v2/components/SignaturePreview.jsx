@@ -10,6 +10,7 @@ import {
   Monitor,
   Moon,
   MousePointerClick,
+  MoveHorizontal,
   Scaling,
   Smartphone,
   Sun,
@@ -33,7 +34,8 @@ const GESTURES = [
   { icon: MousePointerClick, label: "Cliquer pour modifier" },
   { icon: ArrowUpToLine, label: () => `${modClick()} pour le niveau au-dessus` },
   { icon: GripVertical, label: "Poignée pour déplacer" },
-  { icon: Scaling, label: "Bord ou coin pour agrandir" },
+  { icon: MoveHorizontal, label: "Bord droit pour changer la largeur" },
+  { icon: Scaling, label: "Coin pour changer la taille du texte" },
   { icon: Delete, label: "Suppr (⌫) pour retirer l'élément sélectionné" },
 ];
 
@@ -65,6 +67,7 @@ export default function SignaturePreview({
   onFont,
   onEscape,
   onDelete,
+  onMeasure,
   readOnly = false,
 }) {
   const [dark, setDark] = useState(false);
@@ -102,6 +105,8 @@ export default function SignaturePreview({
     if (drag || dropped.current || e.target.closest?.("button, a, input")) return;
     onEscape?.();
   };
+  // Conteneur qui défile (faux message et aperçu)
+  const scrollRef = useRef(null);
   const input = useMemo(() => toInput(sig), [sig]);
   const debouncedInput = useDebounced(input, RENDER_DELAY_MS);
   const lastRender = useRef(initialRender);
@@ -234,8 +239,10 @@ export default function SignaturePreview({
       </div>
 
       {/* Fenêtre de client mail stylisée autour de l'iframe ; elle défile
-          quand la signature dépasse la hauteur disponible. */}
+          quand la signature dépasse la hauteur disponible, y compris
+          pendant un glisser (le calque de dépôt la fait défiler). */}
       <div
+        ref={scrollRef}
         className={`min-h-0 flex-1 overflow-y-auto rounded-xl border shadow-sm ${
           mobile ? "mx-auto w-full max-w-[390px]" : ""
         } ${dark ? "border-neutral-700 bg-[#1f1f1f]" : "border-neutral-200 bg-white"}`}
@@ -303,6 +310,7 @@ export default function SignaturePreview({
           onDragMove={setDragPointer}
           onDragEnd={setDragRelease}
           onDragCancel={cancelDrag}
+          onMeasure={onMeasure}
           frozen={editing}
         />
         {drag && (
@@ -311,10 +319,11 @@ export default function SignaturePreview({
             style={sig.style}
             pointer={dragPointer}
             release={dragRelease}
+            scroller={scrollRef}
             onCancel={endDrag}
-            onDrop={(patch) => {
+            onDrop={(patch, info) => {
               endDrag();
-              onStylePatch?.(patch);
+              onStylePatch?.(patch, info);
             }}
           />
         )}

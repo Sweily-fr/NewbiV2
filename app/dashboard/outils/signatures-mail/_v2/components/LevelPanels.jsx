@@ -29,6 +29,7 @@ import {
   shiftItem,
   shownItems,
   slotOf,
+  withDividerSpace,
 } from "../slots";
 import { emailProblem, linkProblem } from "../links";
 import { Choice, Hint, LengthRow, Row, Section, SpaceRow } from "./controls";
@@ -403,7 +404,10 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
           <Choice
             label="Côté"
             value={st.visualSide}
-            onChange={(v) => setStyle({ visualSide: v })}
+            // Les marges du séparateur changent de côté avec la colonne
+            onChange={(v) =>
+              setStyle(withDividerSpace(st, { visualSide: v }, shown))
+            }
             options={[
               { value: "left", label: "À gauche" },
               { value: "right", label: "À droite" },
