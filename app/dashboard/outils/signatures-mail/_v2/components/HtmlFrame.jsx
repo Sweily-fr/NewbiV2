@@ -99,6 +99,9 @@ document.addEventListener("pointerup",release,true);document.addEventListener("p
 /* Relâcher perdu (hors de la fenêtre) : le prochain mouvement de souris sans bouton y met fin */
 document.addEventListener("pointermove",function(e){if(pressing&&!e.buttons&&e.pointerType==="mouse")release(e);},true);
 window.addEventListener("blur",release);
+/* Fichier lâché sur l'aperçu : rien ne s'ouvre (le navigateur remplacerait l'éditeur) */
+function noFile(e){var t=e.dataTransfer&&e.dataTransfer.types;if(e.defaultPrevented||!t||[].indexOf.call(t,"Files")<0)return;e.preventDefault();if(e.type==="dragover")e.dataTransfer.dropEffect="none";}
+document.addEventListener("dragover",noFile);document.addEventListener("drop",noFile);
 function startEdit(el,x,y){
 if(window.SIG_READONLY)return;
 editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();

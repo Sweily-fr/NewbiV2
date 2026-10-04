@@ -76,7 +76,7 @@ export default function ExtrasSection({ id, sig, update, replace }) {
             kind="BANNER"
             fieldId="sig-field-banner"
             label="Image"
-            hint="Une image large (1200 px de large par exemple), en JPG ou PNG."
+            hint="Une image large (1200 px de large par exemple), en JPG, PNG ou WebP, 10 Mo max."
             image={images.banner}
             onChanged={replace}
             aspect="wide"

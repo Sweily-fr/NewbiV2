@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
-import { AddChips, CheckedInput, Field, Section } from "./controls";
+import { AddChips, CheckedInput, Field, Hint, Section } from "./controls";
 import ImageField from "./ImageField";
 import ExtrasSection from "./ExtrasPanel";
 
@@ -410,6 +410,16 @@ export default function ContentPanel({
             />
           </div>
         </div>
+        {/* Conseils toujours visibles (la vignette n'a que son infobulle),
+            collés à leur rangée */}
+        {photoOk && (
+          <div className="-mt-2">
+            <Hint>
+              Photo : cliquez ou déposez un JPG, PNG, WebP ou HEIC (10 Mo max.),
+              recadrée en carré.
+            </Hint>
+          </div>
+        )}
         {shows("department", identity.department) && (
           <TextField
             id="sig-field-department"
@@ -448,7 +458,7 @@ export default function ContentPanel({
               kind="LOGO"
               fieldId="sig-field-logo"
               label="Logo"
-              hint="un PNG à fond transparent s'adapte au mode sombre"
+              hint="PNG transparent conseillé, sauf logo noir ou très foncé"
               image={images.logo}
               onChanged={replace}
               aspect="logo"
@@ -464,6 +474,14 @@ export default function ContentPanel({
             />
           </div>
         </div>
+        {logoOk && (
+          <div className="-mt-2">
+            <Hint>
+              Logo : JPG, PNG, WebP ou SVG (10 Mo max.). PNG à fond transparent
+              conseillé, sauf pour un logo noir ou très foncé.
+            </Hint>
+          </div>
+        )}
         {shows("website", contact.website) && (
           <TextField
             id="sig-field-website"
