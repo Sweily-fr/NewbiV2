@@ -12,6 +12,7 @@ import { ChevronRight, MousePointerClick, RotateCcw } from "lucide-react";
 import {
   RULE_ITEMS,
   addRule,
+  elementSlot,
   layoutCustomized,
   layoutReset,
   logoFit,
@@ -23,6 +24,7 @@ import {
   Choice,
   ColorRow,
   Group,
+  Hint,
   LengthRow,
   Nested,
   ResetLink,
@@ -156,7 +158,8 @@ const FRAME_LABELS = {
   "accent-left": "Barre à gauche",
   "accent-top": "Barre en haut",
 };
-const PHOTO_LABELS = {
+// Aussi le début du résumé de « Disposition » du panneau Photo
+export const PHOTO_LABELS = {
   left: "Photo à gauche",
   top: "Photo au-dessus",
   right: "Photo à droite",
@@ -187,6 +190,77 @@ const ICON_COLOR_LABELS = {
 };
 const capitalize = (text) =>
   text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+
+/** Textes de la signature, dans l'ordre, pour l'aide des couleurs de texte. */
+const TEXT_ROLES = [
+  ["name", ["prénom", "nom"]],
+  ["jobTitle", ["poste"]],
+  ["company", ["entreprise"]],
+  ["tagline", ["accroche"]],
+  ["contact", ["coordonnées"]],
+  ["disclaimer", ["mention"]],
+];
+const THE = {
+  prénom: "le prénom",
+  nom: "le nom",
+  poste: "le poste",
+  entreprise: "l'entreprise",
+};
+/** « a, b et c ». */
+const listing = (words) =>
+  words.length > 1
+    ? `${words.slice(0, -1).join(", ")} et ${words[words.length - 1]}`
+    : words[0] || "";
+
+/**
+ * Ce que colorent « Texte » et « Texte secondaire » : selon le modèle (nom
+ * ou entreprise dans la couleur principale, colorRoles du catalogue) et la
+ * disposition (identité sur une ligne, poste en capitales, texte blanc sur
+ * un bloc de couleur). Mêmes règles que le rendu de l'API.
+ */
+function textColorsHint(sig, template) {
+  const st = sig.style;
+  const roles = {
+    name: "text",
+    company: "text",
+    caption: "muted",
+    ...(template?.colorRoles || {}),
+  };
+  const inline = st.identityStyle === "inline";
+  const caps = !inline && st.titleStyle === "caps";
+  const source = {
+    name: inline ? "text" : roles.name,
+    jobTitle: caps ? roles.caption : "muted",
+    company: inline ? "text" : caps ? roles.caption : roles.company,
+    tagline: "muted",
+    contact: "muted",
+    disclaimer: "muted",
+  };
+  const shown = shownItems(sig);
+  const onBlock = (element) => {
+    const slot = elementSlot(st, shown, element);
+    return (
+      (slot === "header" && st.headerFill !== "tint") ||
+      (slot === "visual" && st.visualFill === "solid")
+    );
+  };
+  const words = { text: [], muted: [], primary: [] };
+  let white = false;
+  for (const [element, w] of TEXT_ROLES) {
+    if (onBlock(element)) white = true;
+    else words[source[element]]?.push(...w);
+  }
+  const primary = words.primary.map((w) => THE[w] || w);
+  return [
+    words.text.length > 0 && `Texte : ${listing(words.text)}.`,
+    words.muted.length > 0 && `Texte secondaire : ${listing(words.muted)}.`,
+    primary.length > 0 &&
+      `${capitalize(listing(primary))} ${primary.length > 1 ? "suivent" : "suit"} la couleur principale.`,
+    white && "Sur un bloc de couleur, le texte est blanc.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
 export default function StylePanel({
   sig,
@@ -318,8 +392,8 @@ export default function StylePanel({
           seul depuis l'aperçu */}
       <p className="flex items-start gap-2 pb-5 text-sm text-muted-foreground">
         <MousePointerClick size={16} className="mt-0.5 shrink-0" />
-        Réglages de toute la signature. Pour un seul élément, cliquez-le dans
-        l&apos;aperçu.
+        Réglages de toute la signature. Pour un seul élément, cliquez dessus
+        dans l&apos;aperçu.
       </p>
       <Section
         title="Texte et couleurs"
@@ -328,7 +402,7 @@ export default function StylePanel({
       >
         <Row
           label="Police"
-          hint="Seules ces polices s'affichent partout : Gmail, Outlook, Apple Mail."
+          hint="Polices courantes des messageries. Selon l'appareil du destinataire, une police proche peut s'afficher à la place : Arial au lieu de Calibri sur Mac et iPhone, ou au lieu d'Helvetica sur Windows."
         >
           <Select
             value={st.fontFamily}
@@ -359,17 +433,22 @@ export default function StylePanel({
           onChange={(v) => setStyle({ primaryColor: v })}
           hint="Accents, icônes et bouton. Une couleur de ton moyen reste lisible en mode sombre."
         />
-        <div className="grid grid-cols-2 gap-4">
-          <ColorRow
-            label="Texte"
-            value={st.textColor}
-            onChange={(v) => setStyle({ textColor: v })}
-          />
-          <ColorRow
-            label="Texte secondaire"
-            value={st.mutedColor}
-            onChange={(v) => setStyle({ mutedColor: v })}
-          />
+        {/* Une seule aide sous les deux couleurs, pour ne pas désaligner
+            les champs */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <ColorRow
+              label="Texte"
+              value={st.textColor}
+              onChange={(v) => setStyle({ textColor: v })}
+            />
+            <ColorRow
+              label="Texte secondaire"
+              value={st.mutedColor}
+              onChange={(v) => setStyle({ mutedColor: v })}
+            />
+          </div>
+          <Hint>{textColorsHint(sig, template)}</Hint>
         </div>
         {hasNetworks && (
           <IconColorControls
@@ -413,7 +492,7 @@ export default function StylePanel({
           />
           <Row
             label="Espace entre les éléments"
-            hint="Pour un seul élément, cliquez-le dans l'aperçu."
+            hint="Pour un seul élément, cliquez dessus dans l'aperçu."
           >
             <Choice
               value={st.spacing}
@@ -443,7 +522,7 @@ export default function StylePanel({
         />
         <ColorRow
           label="Couleur des traits"
-          hint="Celle du séparateur « Couleur des traits » et du contour de l'encadré."
+          hint="Séparateur vertical et traits libres qui l'utilisent, contour de l'encadré. Le trait sous le nom suit la couleur principale."
           value={st.separatorColor}
           onChange={(v) => setStyle({ separatorColor: v })}
         />
@@ -573,16 +652,17 @@ export default function StylePanel({
         )}
       </Section>
 
-      {/* Un élément se règle dans son propre panneau (comme en le cliquant
-          dans l'aperçu) : un seul endroit par réglage, ici des raccourcis */}
+      {/* Un élément se règle dans son propre panneau (comme en cliquant
+          dessus dans l'aperçu) : un seul endroit par réglage, ici des
+          raccourcis */}
       <Section
         title="Un élément en particulier"
         {...section("elements")}
         summary={summaries.elements}
       >
         <p className="text-sm text-muted-foreground">
-          Présentation, place, forme et taille de chacun : dans son panneau,
-          ou en le cliquant dans l&apos;aperçu.
+          Présentation, place, forme et taille de chacun : dans son panneau, ou
+          en cliquant dessus dans l&apos;aperçu.
         </p>
         <ul className="divide-y rounded-lg border">
           {elementRows.map((row) => (

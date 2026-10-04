@@ -4,6 +4,7 @@ import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
 import {
   ELEMENT_ITEMS,
   ITEM_LABEL,
+  ITEM_OF,
   mainPiece,
   mergedRow,
   piecesOf,
@@ -45,6 +46,40 @@ function cleanBlock(block) {
       ([, v]) => v !== 0 && v !== null && v !== undefined && v !== "",
     ),
   );
+}
+
+/** Ligne d'un autre élément (identité en ligne, poste en capitales). */
+const LINE_OF = {
+  name: ITEM_OF.name,
+  jobTitle: ITEM_OF.title,
+  company: ITEM_OF.company,
+};
+
+const ALIGN_SUMMARY = {
+  left: "alignement à gauche",
+  center: "alignement centré",
+  right: "alignement à droite",
+};
+
+/**
+ * Réglages sur mesure d'un bloc, pour le résumé de « Disposition »
+ * repliée : seulement ceux que la section propose (ni largeur pour une
+ * image, ni espaces pour un trait). Sur la ligne d'un autre élément : cette
+ * ligne, qui porte ses réglages.
+ */
+export function blockSummary(element, sig, withSpaces = true) {
+  const st = sig.style;
+  const row = mergedRow(sig, element);
+  if (row && row[0] !== element) return [`sur la ligne ${LINE_OF[row[0]]}`];
+  if (element === "photo" && slotOf(st.slots, "photo") === "header") return [];
+  const block = st.blocks?.[element] || {};
+  return [
+    WIDTH[element] && block.width ? `${block.width} px de large` : null,
+    withSpaces && (block.spaceBefore || block.spaceAfter)
+      ? "espaces ajustés"
+      : null,
+    ALIGN_SUMMARY[block.align] || null,
+  ].filter(Boolean);
 }
 
 /**
@@ -98,14 +133,26 @@ export default function BlockControls({
     else delete all[element];
     setStyle({ blocks: all });
   };
+  // Réglages de cette section seulement : les marges d'un trait, rangées
+  // dans sa mise en forme, ne sont pas remises par le lien de retour
+  const own = [
+    ...(width ? ["width"] : []),
+    ...(withSpaces ? ["spaceBefore", "spaceAfter"] : []),
+    "align",
+  ].filter((k) => block[k]);
+  // Morceau principal (encadré dans l'aperçu) : des lignes de coordonnées,
+  // ou le prénom ou le nom seul
+  const unit = element === "contact" ? "ligne" : "partie";
 
   return (
     <>
       {split && (
         <Hint>
-          Réglages du groupe principal ({items.map((k) => ITEM_LABEL[k]).join(", ")}),
-          entouré dans l&apos;aperçu. Les parties placées ailleurs restent
-          automatiques.
+          Ces réglages valent pour{" "}
+          {items.length > 1 ? `les ${unit}s encadrées` : `la ${unit} encadrée`}{" "}
+          dans l&apos;aperçu ({items.map((k) => ITEM_LABEL[k]).join(", ")}). Une{" "}
+          {unit} placée ailleurs (en pointillés) a ses propres espaces et son
+          alignement : cliquez dessus pour les régler.
         </Hint>
       )}
       {width && (
@@ -138,7 +185,11 @@ export default function BlockControls({
       {canAlign && (
         <Row
           label={alignLabel}
-          hint={block.align ? null : "Auto : l'alignement prévu par le modèle."}
+          hint={
+            block.align
+              ? null
+              : "Auto : comme le reste de sa colonne (centré dans la colonne photo, à droite dans celle de droite)."
+          }
         >
           <Choice
             label={alignLabel}
@@ -153,15 +204,11 @@ export default function BlockControls({
           />
         </Row>
       )}
-      {Object.keys(block).length > 0 && (
+      {own.length > 0 && (
         <ResetLink
-          onClick={() => {
-            const all = { ...blocks };
-            delete all[element];
-            setStyle({ blocks: all });
-          }}
+          onClick={() => set(Object.fromEntries(own.map((k) => [k, null])))}
         >
-          Revenir aux valeurs du modèle pour cet élément
+          Tout remettre en automatique
         </ResetLink>
       )}
     </>

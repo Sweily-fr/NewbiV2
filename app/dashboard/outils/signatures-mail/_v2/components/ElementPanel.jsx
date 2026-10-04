@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RotateCcw } from "lucide-react";
-import { PhotoBorderControls } from "./StylePanel";
+import { PHOTO_LABELS, PhotoBorderControls } from "./StylePanel";
 import {
   CheckedInput,
   Choice,
@@ -20,12 +20,15 @@ import { PartLinks, PlaceRow } from "./LevelPanels";
 import {
   RULE_COLORS,
   elementSlot,
+  identityZone,
   removeRule,
   shownItems,
   slotLabel,
+  slotOf,
 } from "../slots";
+import { distribute, socialRowOptions } from "../socialRows";
 import { Field, ImageField, SocialLinks, TextField } from "./ContentPanel";
-import BlockControls from "./BlockControls";
+import BlockControls, { blockSummary } from "./BlockControls";
 import { CtaColorFields, DisclaimerField } from "./ExtrasPanel";
 import {
   bannerAltFallback,
@@ -49,6 +52,8 @@ import {
   SocialPositionControl,
   SocialRowsControl,
   TitleStyleControl,
+  footerPaired,
+  layoutState,
 } from "./LayoutControls";
 
 /** Élément de la signature piloté par chaque champ cliquable de l'aperçu. */
@@ -159,6 +164,67 @@ const PLACE_IN_LIST = new Set([
   "rule3",
 ]);
 
+const HEADER_PHOTO = { left: "à gauche", top: "au-dessus", right: "à droite" };
+const FILL_SUMMARY = { tint: "fond teinté", solid: "fond de couleur" };
+
+/**
+ * Résumé de « Disposition » repliée : la place de l'élément d'abord (pour
+ * la photo, sa position), puis les réglages de la section qui comptent,
+ * avec leur valeur, comme les résumés de l'onglet Style ; jamais un réglage
+ * que la section n'a pas. « Photo à gauche · fond teinté · séparateur »,
+ * « Bas de la signature · sur une ligne · à côté du logo ».
+ */
+function layoutSummary(element, sig, withSpaces) {
+  const st = sig.style;
+  const shown = shownItems(sig);
+  const L = layoutState(st, shown);
+  const parts = [];
+  if (element === "photo") {
+    parts.push(
+      PHOTO_LABELS[L.photo] || slotLabel(slotOf(st.slots, "photo"), st),
+    );
+    if (L.photo === "header") {
+      parts.push(HEADER_PHOTO[st.headerPhoto]);
+    } else {
+      if (L.hasVisual) parts.push(FILL_SUMMARY[st.visualFill]);
+      else if (st.align === "center") parts.push("texte centré");
+    }
+    if (st.divider !== "none") parts.push("séparateur");
+  } else {
+    parts.push(slotLabel(elementSlot(st, shown, element), st));
+  }
+  if (element === "name") {
+    const zone = identityZone(st);
+    if (zone === "band-top") parts.push("bloc de couleur en en-tête");
+    if (zone === "band-left") parts.push("bloc de couleur à gauche");
+    parts.push(
+      st.identityStyle === "inline"
+        ? "nom, poste et société sur une ligne"
+        : st.nameLayout === "stacked"
+          ? "prénom et nom l'un sous l'autre"
+          : "prénom et nom sur une ligne",
+    );
+  }
+  if (element === "social") {
+    const count = sig.social.filter((s) => s.url?.trim()).length;
+    const key = distribute(count, st.socialRows || []).join("+");
+    const rows = socialRowOptions(count).find((o) => o.key === key);
+    if (rows) {
+      parts.push(
+        rows.rows.length === 1
+          ? "sur une ligne"
+          : rows.label.charAt(0).toLowerCase() + rows.label.slice(1),
+      );
+    }
+  }
+  if ((element === "social" || element === "logo") && footerPaired(st, shown)) {
+    parts.push(element === "social" ? "à côté du logo" : "à côté des réseaux");
+  }
+  parts.push(...blockSummary(element, sig, withSpaces));
+  const text = parts.filter(Boolean).join(" · ");
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : null;
+}
+
 /**
  * Panneau d'un élément de l'aperçu : son contenu et tous ses réglages au
  * même endroit. `onSelect(sélection)` : ouvre une partie seule (prénom, une
@@ -179,7 +245,6 @@ export default function ElementPanel({
   const setStyle = (patch) => update({ style: patch });
   const textProps = { sig, update, resolved, catalog };
   const [layoutOpen, setLayoutOpen] = useState(layoutOpenPref);
-  const place = slotLabel(elementSlot(st, shownItems(sig), element), st);
   // Plafonds du modèle : les curseurs s'arrêtent à ce qui s'affiche
   const photoMax = lines?.photoMax || 160;
   const iconMax = lines?.iconMax || 40;
@@ -270,10 +335,15 @@ export default function ElementPanel({
               maxLength={120}
             />
           </Section>
-          <TextStyleControls elementKey="jobTitle" {...textProps} />
+          {/* En capitales : avec la mise en forme qu'il change, pas dans
+              « Disposition » repliée */}
+          <TextStyleControls
+            elementKey="jobTitle"
+            {...textProps}
+            intro={<TitleStyleControl st={st} setStyle={setStyle} />}
+          />
         </>
       );
-      layout = <TitleStyleControl st={st} setStyle={setStyle} />;
       break;
     case "company":
       body = (
@@ -355,35 +425,39 @@ export default function ElementPanel({
               maxLength={300}
             />
           </Section>
+          {/* Présentation en tête, la taille et la couleur des icônes
+              juste dessous : sous le choix qui les fait apparaître */}
           <TextStyleControls
             elementKey="contact"
             {...textProps}
             intro={
-              <PartLinks element="contact" sig={sig} onSelect={onSelect} />
-            }
-            footer={
-              st.contactStyle === "icons" ? (
-                <>
-                  <SliderRow
-                    label="Taille des icônes"
-                    value={st.contactIconSize || 16}
-                    min={12}
-                    max={32}
-                    onChange={(v) => setStyle({ contactIconSize: v })}
-                  />
-                  <IconColorControls
-                    target="contact"
-                    st={st}
-                    setStyle={setStyle}
-                  />
-                </>
-              ) : null
+              <>
+                <ContactStyleControl
+                  st={st}
+                  setStyle={setStyle}
+                  label="Présentation"
+                />
+                {st.contactStyle === "icons" && (
+                  <Nested>
+                    <SliderRow
+                      label="Taille des icônes"
+                      value={st.contactIconSize || 16}
+                      min={12}
+                      max={32}
+                      onChange={(v) => setStyle({ contactIconSize: v })}
+                    />
+                    <IconColorControls
+                      target="contact"
+                      st={st}
+                      setStyle={setStyle}
+                    />
+                  </Nested>
+                )}
+                <PartLinks element="contact" sig={sig} onSelect={onSelect} />
+              </>
             }
           />
         </>
-      );
-      layout = (
-        <ContactStyleControl st={st} setStyle={setStyle} label="Présentation" />
       );
       break;
     case "social":
@@ -681,6 +755,8 @@ export default function ElementPanel({
       body = null;
   }
 
+  // Les traits ont leurs marges dans leur mise en forme
+  const withSpaces = !HORIZONTAL_TRAITS.has(element);
   return (
     <div className="space-y-8">
       {body}
@@ -693,11 +769,7 @@ export default function ElementPanel({
             layoutOpenPref = !layoutOpen;
             setLayoutOpen(!layoutOpen);
           }}
-          summary={
-            place
-              ? `${place} · largeur, espaces, alignement`
-              : "Place, largeur, espaces, alignement"
-          }
+          summary={layoutSummary(element, sig, withSpaces)}
         >
           {PLACE_IN_LIST.has(element) && (
             <PlaceRow element={element} sig={sig} setStyle={setStyle} />
@@ -710,7 +782,7 @@ export default function ElementPanel({
             alignLabel={
               element === "photo" ? "Alignement horizontal" : undefined
             }
-            withSpaces={!HORIZONTAL_TRAITS.has(element)}
+            withSpaces={withSpaces}
           />
         </Section>
       )}

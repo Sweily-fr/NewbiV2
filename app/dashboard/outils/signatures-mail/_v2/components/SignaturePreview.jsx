@@ -159,7 +159,9 @@ export default function SignaturePreview({
           // Une phrase pour commencer ; les autres gestes dans l'aide « ? »
           <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
             <MousePointerClick size={14} aria-hidden="true" />
-            <span className="truncate">Cliquez un élément pour le modifier</span>
+            <span className="truncate">
+              Cliquez sur un élément pour le modifier
+            </span>
             <Popover>
               <PopoverTrigger asChild>
                 <button
