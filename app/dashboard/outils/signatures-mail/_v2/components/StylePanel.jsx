@@ -263,22 +263,53 @@ export default function StylePanel({
       : "Aucun réseau",
   };
   // Tous les éléments affichés, dans l'ordre de l'aperçu (colonne par
-  // colonne, le séparateur vertical après la colonne photo) : sans souris,
-  // c'est le chemin vers le panneau de chacun, y compris pour ce qui ne se
-  // règle que là (marges du séparateur…)
+  // colonne, de gauche à droite) : sans souris, c'est le chemin vers le
+  // panneau de chacun, y compris pour ce qui ne se règle que là (marges du
+  // séparateur…)
   const listed = [];
   const list = (key) => {
     if (key && !listed.includes(key)) listed.push(key);
   };
-  for (const slot of SLOTS) {
+  const occupied = (slot) => (st.slots?.[slot] || []).some((k) => shown.has(k));
+  // Séparateur vertical réellement dessiné (mêmes règles que le rendu) : au
+  // bord de la colonne photo s'il a une colonne à côté ; sans elle, la barre
+  // ou le trait de couleur borde le texte à gauche, et le trait gris
+  // n'apparaît qu'entre le texte et une colonne de droite
+  const dividerDrawn =
+    shown.has("divider") &&
+    (L.hasVisual
+      ? occupied("text") || occupied("side")
+      : occupied("text") && (st.divider !== "line" || occupied("side")));
+  // Photo à droite : sa colonne passe après le texte. La colonne de droite
+  // la suit si la colonne photo a un fond de couleur ou si un trait sépare
+  // chaque colonne, sinon elle reste à côté du texte
+  const right = L.hasVisual && st.visualSide === "right";
+  const sideLast =
+    st.visualFill === "solid" ||
+    (st.visualFill !== "tint" && ["line", "accent"].includes(st.divider));
+  const order = !right
+    ? SLOTS
+    : sideLast
+      ? ["header", "text", "visual", "side", "footer", "outside"]
+      : ["header", "text", "side", "visual", "footer", "outside"];
+  // Le séparateur se range devant la colonne à sa droite
+  const dividerBefore = L.hasVisual
+    ? right
+      ? "visual"
+      : "text"
+    : st.divider === "line"
+      ? "side"
+      : "text";
+  for (const slot of order) {
+    if (dividerDrawn && slot === dividerBefore) list("divider");
     for (const item of st.slots?.[slot] || []) {
       if (shown.has(item)) list(BLOCK_OF[item]);
     }
-    if (slot === "visual" && shown.has("divider")) list("divider");
   }
-  // Un élément affiché hors des colonnes reste proposé, à la fin
+  // Un élément affiché hors des colonnes reste proposé, à la fin (le
+  // séparateur n'est dans aucune colonne : sa place est réglée au-dessus)
   for (const [key, items] of Object.entries(ELEMENT_ITEMS)) {
-    if (items.some((k) => shown.has(k))) list(key);
+    if (key !== "divider" && items.some((k) => shown.has(k))) list(key);
   }
   const ROW_DETAIL = {
     name:
@@ -292,7 +323,11 @@ export default function StylePanel({
     photo: summaries.photo,
     logo: summaries.logo,
     social: summaries.icones,
-    divider: L.hasVisual ? "Entre la photo et le texte" : "À gauche du texte",
+    divider: L.hasVisual
+      ? "Entre la photo et le texte"
+      : st.divider === "line"
+        ? "Entre le texte et la colonne de droite"
+        : "À gauche du texte",
   };
   const elementRows = [
     ...listed.map((key) => {
