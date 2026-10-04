@@ -58,11 +58,27 @@ const TYPED_FIELDS = {
 const squash = (v) => String(v ?? "").replace(/\s+/g, " ").trim();
 
 /**
+ * La mention, rangée comme le serveur la range (multiline) : retours à la
+ * ligne et espaces insécables gardés, blancs regroupés et bords rognés
+ * ligne par ligne, une ligne vide au plus. Sans sa limite de lignes ni de
+ * longueur, comme squash : une mention coupée reste réalignée.
+ */
+const squashLines = (v) =>
+  String(v ?? "")
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[^\S\n\u00a0\u202f]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+/**
  * Réponse d'un enregistrement appliquée à la copie locale. Le serveur fait
  * foi (couleurs, bornes, texte trop long coupé), sauf pour un texte qu'il
  * n'a fait que nettoyer : la valeur tapée reste, sinon l'espace qu'on vient
  * de taper disparaît pendant la pause et le mot suivant se colle au
- * précédent (« Responsablecommercial »). Les images et « par défaut », que
+ * précédent (« Responsablecommercial »), ou la ligne qu'on vient d'ouvrir
+ * dans la mention se referme. Les images et « par défaut », que
  * l'enregistrement ne change jamais, restent ceux affichés.
  */
 function withServerValues(current, server) {
@@ -75,9 +91,11 @@ function withServerValues(current, server) {
   for (const [group, keys] of Object.entries(TYPED_FIELDS)) {
     const local = current[group];
     if (!local || !server[group]) continue;
+    // La mention garde ses paragraphes : comparée ligne par ligne
+    const tidy = group === "disclaimer" ? squashLines : squash;
     const kept = {};
     for (const key of keys) {
-      if (typeof local[key] === "string" && squash(local[key]) === server[group][key]) {
+      if (typeof local[key] === "string" && tidy(local[key]) === server[group][key]) {
         kept[key] = local[key];
       }
     }
