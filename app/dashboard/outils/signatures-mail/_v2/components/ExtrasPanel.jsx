@@ -135,9 +135,16 @@ const lineCount = (text) =>
  * Texte de la mention, en paragraphes, et des textes prêts à insérer :
  * confidentialité, mentions légales de l'entreprise, écologie. Champ vide,
  * le texte le remplit ; sinon il s'ajoute en nouveau paragraphe (⌘Z
- * l'annule). Partagé avec le panneau de la mention.
+ * l'annule). Partagé avec le panneau de la mention. `aria-label` : nom du
+ * champ quand aucun libellé ne lui est relié.
  */
-export function DisclaimerField({ id, value, onChange, placeholder }) {
+export function DisclaimerField({
+  id,
+  value,
+  onChange,
+  placeholder,
+  "aria-label": ariaLabel,
+}) {
   const { organization } = useActiveOrganization();
   const legal = legalMention(organization);
   const snippets = [
@@ -156,6 +163,7 @@ export function DisclaimerField({ id, value, onChange, placeholder }) {
     <div className="space-y-2">
       <Textarea
         id={id}
+        aria-label={ariaLabel}
         value={text}
         maxLength={1000}
         rows={3}

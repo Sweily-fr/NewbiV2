@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@apollo/client";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import { useActiveOrganization } from "@/src/lib/organization-client";
-import { Field } from "./controls";
+import { FOCUS_RING, Field } from "./controls";
 import ConfirmRemoveImage, { useRemoveSignatureImage } from "./ConfirmRemoveImage";
 import {
   APPLY_COMPANY_LOGO_SIGNATURE_V2,
@@ -31,6 +31,9 @@ export default function ImageField({
   compact = false,
 }) {
   const inputRef = useRef(null);
+  // Bouton d'ajout de l'image : il reprend le focus après un retrait
+  const pickRef = useRef(null);
+  const refocus = useRef(false);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   // Un refus de l'API (image illisible, rôle…) doit tomber dans le catch :
@@ -79,6 +82,7 @@ export default function ImageField({
   };
 
   const clear = async () => {
+    refocus.current = true;
     setBusy(true);
     try {
       const updated = await removeImage(kind);
@@ -115,6 +119,17 @@ export default function ImageField({
       </button>
     );
 
+  // « Retirer » disparaît avec l'image (ou pendant l'envoi) : le focus
+  // retomberait sur la page, il revient au bouton d'ajout
+  useEffect(() => {
+    if (busy || !refocus.current) return;
+    refocus.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body) {
+      pickRef.current?.focus({ preventScroll: true });
+    }
+  }, [busy]);
+
   const input = (
     <>
       <input
@@ -138,6 +153,7 @@ export default function ImageField({
     return (
       <div className="flex shrink-0 flex-col items-center gap-1">
         <button
+          ref={pickRef}
           id={fieldId}
           type="button"
           disabled={busy}
@@ -154,7 +170,7 @@ export default function ImageField({
           }}
           title={`${image?.url ? "Changer" : "Ajouter"} : ${hint || label}`}
           aria-label={`${image?.url ? "Changer" : "Ajouter"} ${label.toLowerCase()}`}
-          className={`flex ${aspect === "logo" ? "h-14 w-24" : "h-[72px] w-[72px]"} items-center justify-center overflow-hidden rounded-[9px] border border-dashed text-muted-foreground transition-[border] duration-[80ms] cursor-pointer ${
+          className={`flex ${aspect === "logo" ? "h-14 w-24" : "h-[72px] w-[72px]"} items-center justify-center overflow-hidden rounded-[9px] border border-dashed text-muted-foreground transition-[border] duration-[80ms] cursor-pointer ${FOCUS_RING} ${
             dragging
               ? "border-[#5b4fff]"
               : "border-[#D1D3D8] hover:border-[#9FA1A7] dark:border-[#44444A] dark:hover:border-[#5c5c63]"
@@ -176,7 +192,7 @@ export default function ImageField({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="text-[11px] text-muted-foreground hover:text-red-600 cursor-pointer"
+            className={`rounded-sm text-[11px] text-muted-foreground hover:text-red-600 cursor-pointer ${FOCUS_RING}`}
           >
             Retirer
           </button>
@@ -212,7 +228,7 @@ export default function ImageField({
             setDragging(false);
             send(e.dataTransfer.files?.[0]);
           }}
-          className={`relative flex ${box} items-center justify-center overflow-hidden rounded-[9px] border border-dashed bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px] text-muted-foreground transition-[border] duration-[80ms] cursor-pointer dark:bg-none dark:bg-neutral-900 ${
+          className={`relative flex ${box} items-center justify-center overflow-hidden rounded-[9px] border border-dashed bg-[linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%),linear-gradient(45deg,#f5f5f5_25%,transparent_25%,transparent_75%,#f5f5f5_75%)] bg-[length:12px_12px] bg-[position:0_0,6px_6px] text-muted-foreground transition-[border] duration-[80ms] cursor-pointer dark:bg-none dark:bg-neutral-900 ${FOCUS_RING} ${
             dragging
               ? "border-[#5b4fff]"
               : "border-[#D1D3D8] hover:border-[#9FA1A7] dark:border-[#44444A] dark:hover:border-[#5c5c63]"
@@ -230,10 +246,11 @@ export default function ImageField({
         </button>
         <div className="flex shrink-0 flex-col gap-1.5">
           <Button
+            ref={pickRef}
             type="button"
             variant="outline"
             size="sm"
-            className="h-8 text-xs cursor-pointer"
+            className={`h-8 text-xs cursor-pointer ${FOCUS_RING}`}
             disabled={busy}
             onClick={() => inputRef.current?.click()}
           >
@@ -245,7 +262,7 @@ export default function ImageField({
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 text-xs text-red-600 hover:text-red-700 cursor-pointer"
+              className={`h-8 text-xs text-red-600 hover:text-red-700 cursor-pointer ${FOCUS_RING}`}
               disabled={busy}
               onClick={() => setConfirming(true)}
             >

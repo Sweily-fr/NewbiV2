@@ -37,7 +37,15 @@ import {
   withDividerSpace,
 } from "../slots";
 import { emailProblem, linkProblem } from "../links";
-import { Choice, Hint, LengthRow, Row, Section, SpaceRow } from "./controls";
+import {
+  Choice,
+  FOCUS_RING,
+  Hint,
+  LengthRow,
+  Row,
+  Section,
+  SpaceRow,
+} from "./controls";
 import { TextField } from "./ContentPanel";
 import TextStyleControls from "./TextStyleControls";
 import {
@@ -102,12 +110,24 @@ const PARTS = {
   address: { title: "Adresse", group: "contact", maxLength: 300 },
 };
 
+/** Mac (iPhone, iPad) : raccourcis avec ⌘ ; ailleurs, avec Ctrl. */
+export function isMac() {
+  return (
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "")
+  );
+}
+
 /** « ⌘ + clic » sur un Mac, « Ctrl + clic » ailleurs (côté navigateur). */
 export function modClick() {
-  const mac =
-    typeof navigator !== "undefined" &&
-    /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
-  return mac ? "⌘ + clic" : "Ctrl + clic";
+  return isMac() ? "⌘ + clic" : "Ctrl + clic";
+}
+
+/** Raccourcis d'annulation, tels que le système de l'utilisateur les écrit. */
+export function undoKeys() {
+  return isMac()
+    ? { undo: "⌘Z", redo: "⇧⌘Z" }
+    : { undo: "Ctrl+Z", redo: "Ctrl+Y" };
 }
 
 /** Libellé d'une sélection, pour le titre et le fil d'Ariane. */
@@ -155,7 +175,7 @@ export function LevelHeader({
       <button
         type="button"
         onClick={onClose}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+        className={`inline-flex items-center gap-1.5 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer ${FOCUS_RING}`}
       >
         <ArrowLeft size={14} />
         {TAB_LABEL[tab]
@@ -175,7 +195,7 @@ export function LevelHeader({
               <button
                 type="button"
                 onClick={() => onSelect(a)}
-                className="rounded px-1 py-0.5 -mx-1 hover:bg-accent hover:text-foreground cursor-pointer"
+                className={`rounded px-1 py-0.5 -mx-1 hover:bg-accent hover:text-foreground cursor-pointer ${FOCUS_RING}`}
               >
                 {selectionLabel(a, st)}
               </button>
@@ -184,7 +204,11 @@ export function LevelHeader({
           ))}
         </nav>
       )}
-      <h2 className="text-xl font-medium">{selectionLabel(selected, st)}</h2>
+      {/* Reçoit le focus à l'ouverture du panneau depuis la barre latérale
+          (SignatureEditor) : les lecteurs d'écran annoncent le panneau */}
+      <h2 tabIndex={-1} data-panel-title className="text-xl font-medium outline-none">
+        {selectionLabel(selected, st)}
+      </h2>
       {parent && (
         <Hint>
           {`${modClick()} dans l'aperçu : remonter à « ${selectionLabel(parent, st)} ».`}
@@ -212,7 +236,7 @@ export function PartLinks({ element, sig, onSelect }) {
             key={k}
             type="button"
             onClick={() => onSelect({ level: "item", key: k }, k)}
-            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent cursor-pointer"
+            className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent cursor-pointer ${FOCUS_RING}`}
           >
             {PARTS[k].title}
             <ChevronRight size={12} aria-hidden="true" />
@@ -434,8 +458,7 @@ function rowLabel(row) {
 
 /** Flèches « Monter » et « Descendre », nommées d'après ce qu'elles déplacent. */
 function MoveButtons({ name, canUp, canDown, onUp, onDown }) {
-  const arrow =
-    "rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default";
+  const arrow = `rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-30 cursor-pointer disabled:cursor-default ${FOCUS_RING}`;
   return (
     <>
       <button
@@ -599,7 +622,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
                     <button
                       type="button"
                       onClick={() => openRow(row)}
-                      className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer"
+                      className={`flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer ${FOCUS_RING}`}
                     >
                       <span className="truncate">
                         {title}
@@ -623,7 +646,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
                         aria-label={`Ordre des ${what} : ${title}`}
                         title={`Ordre des ${what}`}
                         onClick={() => toggle(id)}
-                        className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer"
+                        className={`rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer ${FOCUS_RING}`}
                       >
                         <ChevronDown
                           size={14}
@@ -657,7 +680,7 @@ export function SlotPanel({ slot, sig, update, lines, onSelect }) {
                             onClick={() =>
                               onSelect({ level: "item", key: k }, k)
                             }
-                            className="flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer"
+                            className={`flex min-w-0 flex-1 items-center gap-1 rounded px-1 py-1 text-left text-sm hover:bg-accent cursor-pointer ${FOCUS_RING}`}
                           >
                             <span className="truncate">{partTitle(k)}</span>
                             <ChevronRight

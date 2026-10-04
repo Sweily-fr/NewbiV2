@@ -10,19 +10,24 @@ import {
 } from "@/src/components/ui/select";
 import { ChevronRight, MousePointerClick, RotateCcw } from "lucide-react";
 import {
+  BLOCK_OF,
+  ELEMENT_ITEMS,
   RULE_ITEMS,
+  SLOTS,
   addRule,
   elementSlot,
   layoutCustomized,
   layoutReset,
   logoFit,
   shownItems,
+  slotLabel,
   slotOf,
 } from "../slots";
 import {
   AddChips,
   Choice,
   ColorRow,
+  FOCUS_RING,
   Group,
   Hint,
   LengthRow,
@@ -45,6 +50,7 @@ import {
   SignatureWidthRow,
   layoutState,
 } from "./LayoutControls";
+import { ELEMENT_TITLE } from "./LevelPanels";
 
 export { Choice, ColorRow, ResetLink, Row, SliderRow };
 
@@ -105,7 +111,7 @@ function ResetLayout({ sig, template, setStyle }) {
         // du modèle ; couleurs et typographie inchangées. Appliqué tel quel :
         // les largeurs des blocs du modèle vont avec ses places
         onClick={() => setStyle(layoutReset(sig, template), { asIs: true })}
-        className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline dark:text-[#8b7fff] cursor-pointer ${FOCUS_RING}`}
       >
         <RotateCcw size={12} />
         Revenir au modèle {template.name}
@@ -330,58 +336,98 @@ export default function StylePanel({
       ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${Math.min(st.iconSize, iconMax)} px`
       : "Aucun réseau",
   };
+  // Tous les éléments affichés, dans l'ordre de l'aperçu (colonne par
+  // colonne, de gauche à droite) : sans souris, c'est le chemin vers le
+  // panneau de chacun, y compris pour ce qui ne se règle que là (marges du
+  // séparateur…)
+  const listed = [];
+  const list = (key) => {
+    if (key && !listed.includes(key)) listed.push(key);
+  };
+  const occupied = (slot) => (st.slots?.[slot] || []).some((k) => shown.has(k));
+  // Séparateur vertical réellement dessiné (mêmes règles que le rendu) : au
+  // bord de la colonne photo s'il a une colonne à côté ; sans elle, la barre
+  // ou le trait de couleur borde le texte à gauche, et le trait gris
+  // n'apparaît qu'entre le texte et une colonne de droite
+  const dividerDrawn =
+    shown.has("divider") &&
+    (L.hasVisual
+      ? occupied("text") || occupied("side")
+      : occupied("text") && (st.divider !== "line" || occupied("side")));
+  // Photo à droite : sa colonne passe après le texte. La colonne de droite
+  // la suit si la colonne photo a un fond de couleur ou si un trait sépare
+  // chaque colonne, sinon elle reste à côté du texte
+  const right = L.hasVisual && st.visualSide === "right";
+  const sideLast =
+    st.visualFill === "solid" ||
+    (st.visualFill !== "tint" && ["line", "accent"].includes(st.divider));
+  const order = !right
+    ? SLOTS
+    : sideLast
+      ? ["header", "text", "visual", "side", "footer", "outside"]
+      : ["header", "text", "side", "visual", "footer", "outside"];
+  // Le séparateur se range devant la colonne à sa droite
+  const dividerBefore = L.hasVisual
+    ? right
+      ? "visual"
+      : "text"
+    : st.divider === "line"
+      ? "side"
+      : "text";
+  for (const slot of order) {
+    if (dividerDrawn && slot === dividerBefore) list("divider");
+    for (const item of st.slots?.[slot] || []) {
+      if (shown.has(item)) list(BLOCK_OF[item]);
+    }
+  }
+  // Un élément affiché hors des colonnes reste proposé, à la fin (le
+  // séparateur n'est dans aucune colonne : sa place est réglée au-dessus)
+  for (const [key, items] of Object.entries(ELEMENT_ITEMS)) {
+    if (key !== "divider" && items.some((k) => shown.has(k))) list(key);
+  }
+  const ROW_DETAIL = {
+    name:
+      st.identityStyle === "inline"
+        ? "Sur une ligne avec le poste"
+        : st.nameLayout === "stacked"
+          ? "L'un sous l'autre"
+          : "Sur une ligne",
+    jobTitle: st.titleStyle === "caps" ? "En capitales" : "Normal",
+    contact: capitalize(CONTACT_LABELS[st.contactStyle] || ""),
+    photo: summaries.photo,
+    logo: summaries.logo,
+    social: summaries.icones,
+    divider: L.hasVisual
+      ? "Entre la photo et le texte"
+      : st.divider === "line"
+        ? "Entre le texte et la colonne de droite"
+        : "À gauche du texte",
+  };
   const elementRows = [
-    shown.has("firstName") || shown.has("lastName")
-      ? {
-          key: "name",
-          label: "Prénom et nom",
-          has: true,
-          detail:
-            st.identityStyle === "inline"
-              ? "Sur une ligne avec le poste"
-              : st.nameLayout === "stacked"
-                ? "L'un sous l'autre"
-                : "Sur une ligne",
-        }
-      : null,
-    shown.has("title")
-      ? {
-          key: "jobTitle",
-          label: "Poste",
-          has: true,
-          detail: st.titleStyle === "caps" ? "En capitales" : "Normal",
-        }
-      : null,
-    ["phone", "mobile", "email", "website", "address"].some((k) => shown.has(k))
-      ? {
-          key: "contact",
-          label: "Coordonnées",
-          has: true,
-          detail: capitalize(CONTACT_LABELS[st.contactStyle] || ""),
-        }
-      : null,
-    {
-      key: "photo",
-      label: "Photo",
-      has: hasPhoto,
-      detail: summaries.photo,
-      add: "Ajouter une photo",
-    },
-    {
-      key: "logo",
-      label: "Logo",
-      has: hasLogo,
-      detail: summaries.logo,
-      add: "Ajouter un logo",
-    },
-    {
-      key: "social",
-      label: "Réseaux sociaux",
-      has: hasNetworks,
-      detail: summaries.icones,
-      add: "Ajouter un réseau",
-    },
-  ].filter(Boolean);
+    ...listed.map((key) => {
+      const rule = RULE_ITEMS.includes(key);
+      return {
+        key,
+        // Traits libres numérotés comme dans la section Traits
+        label: rule ? `Trait ${freeRules.indexOf(key) + 1}` : ELEMENT_TITLE[key],
+        has: true,
+        // Sinon, sa place dans la signature
+        detail:
+          ROW_DETAIL[key] ||
+          (rule
+            ? `${st.rules[key].length} px`
+            : slotLabel(elementSlot(st, shown, key), st)),
+      };
+    }),
+    // Images et réseaux absents : de quoi les ajouter
+    ...[
+      { key: "photo", label: "Photo", add: "Ajouter une photo" },
+      { key: "logo", label: "Logo", add: "Ajouter un logo" },
+      { key: "social", label: "Réseaux sociaux", add: "Ajouter un réseau" },
+    ]
+      .filter((r) => !listed.includes(r.key))
+      .map((r) => ({ ...r, has: false })),
+  ];
   summaries.elements = elementRows
     .filter((r) => r.has)
     .map((r) => r.label)
@@ -403,13 +449,14 @@ export default function StylePanel({
       >
         <Row
           label="Police"
+          htmlFor="sig-font"
           hint="Polices courantes des messageries. Selon l'appareil du destinataire, une police proche peut s'afficher à la place : Arial au lieu de Calibri sur Mac et iPhone, ou au lieu d'Helvetica sur Windows."
         >
           <Select
             value={st.fontFamily}
             onValueChange={(v) => setStyle({ fontFamily: v })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="sig-font" className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -496,6 +543,7 @@ export default function StylePanel({
             hint="Pour un seul élément, cliquez dessus dans l'aperçu."
           >
             <Choice
+              label="Espace entre les éléments"
               value={st.spacing}
               onChange={(v) => setStyle({ spacing: v })}
               options={[
@@ -537,7 +585,7 @@ export default function StylePanel({
                 key={key}
                 type="button"
                 onClick={() => onSelect?.({ level: "element", key })}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-accent cursor-pointer"
+                className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-accent cursor-pointer ${FOCUS_RING}`}
               >
                 <span>
                   Trait {i + 1}
@@ -570,12 +618,12 @@ export default function StylePanel({
         {...section("encadre")}
         summary={summaries.encadre}
       >
-        <Row label="Style">
+        <Row label="Style" htmlFor="sig-frame">
           <Select
             value={st.frame}
             onValueChange={(v) => setStyle({ frame: v })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="sig-frame" className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -675,7 +723,7 @@ export default function StylePanel({
                     ? onSelect?.({ level: "element", key: row.key })
                     : onGoTo?.(row.key)
                 }
-                className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent cursor-pointer"
+                className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent cursor-pointer ${FOCUS_RING}`}
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-medium">{row.label}</span>

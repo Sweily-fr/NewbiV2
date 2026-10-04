@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Bold, CaseUpper, Italic } from "lucide-react";
 import {
   Select,
@@ -8,7 +9,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { ColorRow, MultiChoice, ResetLink, Row, Section, SliderRow } from "./controls";
+import {
+  ColorRow,
+  FOCUS_RING,
+  MultiChoice,
+  ResetLink,
+  Row,
+  Section,
+  SliderRow,
+} from "./controls";
 import { fontSizePatch } from "../slots";
 
 const DEFAULT_FONT = "__signature";
@@ -52,18 +61,20 @@ export default function TextStyleControls({
   };
 
   const flags = ["bold", "italic", "uppercase"].filter((k) => value(k, false));
+  // Libellé « Police » relié à sa liste
+  const fontId = useId();
 
   return (
     <Section title="Mise en forme">
       {intro}
-      <Row label="Police">
+      <Row label="Police" htmlFor={fontId}>
         <Select
           value={own.fontFamily || DEFAULT_FONT}
           onValueChange={(v) =>
             set({ fontFamily: v === DEFAULT_FONT ? null : v })
           }
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger id={fontId} className={`w-full ${FOCUS_RING}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

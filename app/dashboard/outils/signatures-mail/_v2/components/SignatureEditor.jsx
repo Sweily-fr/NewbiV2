@@ -69,7 +69,7 @@ import ContentPanel from "./ContentPanel";
 import StylePanel from "./StylePanel";
 import SignaturePreview from "./SignaturePreview";
 import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
-import { GmailSize } from "./controls";
+import { FOCUS_RING, GmailSize } from "./controls";
 import {
   BLOCK_OF,
   COLUMN_WIDTH,
@@ -92,6 +92,7 @@ import {
   SlotPanel,
   ancestorsOf,
   selectionLabel,
+  undoKeys,
 } from "./LevelPanels";
 import { setPreviewWidths } from "./LayoutControls";
 import InstallDialog, { copySignature } from "./InstallDialog";
@@ -174,7 +175,11 @@ function SaveStatus({ status, onRetry }) {
       className: "text-muted-foreground",
     },
     saving: { label: "Enregistrement…", className: "text-muted-foreground" },
-    saved: { label: "Enregistré", className: "text-emerald-600" },
+    // emerald-600 restait trop clair sur blanc (3,7:1)
+    saved: {
+      label: "Enregistré",
+      className: "text-emerald-700 dark:text-emerald-400",
+    },
     error: { label: "Non enregistré", className: "text-red-600" },
   };
   const s = map[status];
@@ -299,8 +304,36 @@ export default function SignatureEditor({ id }) {
   const [selected, setSelected] = useState(null);
   const element = selected?.level === "element" ? selected.key : null;
   const select = useCallback((next) => setSelected(next), []);
+  // Panneau ouvert ou refermé depuis la barre latérale (liste, fil
+  // d'Ariane, « Tous les réglages ») : le bouton cliqué disparaît avec
+  // l'ancien panneau et le focus retomberait sur la page. Il va au titre du
+  // nouveau panneau, ou à l'onglet actif au retour, que les lecteurs d'écran
+  // annoncent. Un focus resté ailleurs (aperçu, champ amené) ne bouge pas.
+  const selectionKey = selected
+    ? `${selected.level}-${selected.key || ""}`
+    : "";
+  const focusedSelection = useRef(selectionKey);
+  useEffect(() => {
+    if (focusedSelection.current === selectionKey) return undefined;
+    focusedSelection.current = selectionKey;
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (active && active !== document.body) return;
+      panelRef.current
+        ?.querySelector(
+          selectionKey
+            ? "[data-panel-title]"
+            : '[role="tab"][aria-selected="true"]',
+        )
+        ?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectionKey]);
   const [render, setRender] = useState(initialRender);
   const [installOpen, setInstallOpen] = useState(false);
+  // Visite guidée relancée depuis l'aide « ? » : chaque relance la remonte
+  const [tourRun, setTourRun] = useState(0);
+  const replayTour = useCallback(() => setTourRun((n) => n + 1), []);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -960,7 +993,7 @@ export default function SignatureEditor({ id }) {
         <Button
           variant="outline"
           onClick={() => router.push(LIST_URL)}
-          className="cursor-pointer"
+          className={`cursor-pointer ${FOCUS_RING}`}
         >
           <ArrowLeft size={14} />
           Retour aux signatures
@@ -987,7 +1020,12 @@ export default function SignatureEditor({ id }) {
     render?.warnings?.find((w) => !w.includes("Gmail")) || "";
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950">
+    // La page se déclare en anglais (app/layout.jsx) : l'éditeur, lui, est
+    // lu par les lecteurs d'écran avec une prononciation française
+    <div
+      lang="fr"
+      className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950"
+    >
       {/* Panneau gauche, au style des éditeurs de documents */}
       <aside
         ref={panelRef}
@@ -998,7 +1036,7 @@ export default function SignatureEditor({ id }) {
             <Button
               variant="ghost"
               size="icon"
-              className="-ml-2 h-8 w-8 shrink-0 cursor-pointer"
+              className={`-ml-2 h-8 w-8 shrink-0 cursor-pointer ${FOCUS_RING}`}
               onClick={handleBack}
               aria-label="Retour aux signatures"
             >
@@ -1062,6 +1100,7 @@ export default function SignatureEditor({ id }) {
                   resolved={render?.elements}
                   lines={render?.lines}
                   onSelect={select}
+                  onUndo={undo}
                 />
               )}
               {selected.level === "item" && (
@@ -1104,15 +1143,15 @@ export default function SignatureEditor({ id }) {
             <TabsNewList>
               {/* Toujours là, même avec un seul modèle proposé : on y
                   enregistre et réutilise ses propres modèles */}
-              <TabsNewTrigger value="template">
+              <TabsNewTrigger value="template" className={FOCUS_RING}>
                 <LayoutTemplate className="h-3.5 w-3.5" />
                 Modèle
               </TabsNewTrigger>
-              <TabsNewTrigger value="content">
+              <TabsNewTrigger value="content" className={FOCUS_RING}>
                 <PenLine className="h-3.5 w-3.5" />
                 Contenu
               </TabsNewTrigger>
-              <TabsNewTrigger value="style">
+              <TabsNewTrigger value="style" className={FOCUS_RING}>
                 <Palette className="h-3.5 w-3.5" />
                 Style
               </TabsNewTrigger>
@@ -1180,11 +1219,11 @@ export default function SignatureEditor({ id }) {
                   setSelected(null);
                   setTab("template");
                 }}
-                className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[552px]:hidden"
+                className={`group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[552px]:hidden ${FOCUS_RING}`}
               >
                 <LayoutTemplate size={14} />
                 Modèle <span className="font-medium text-foreground">{reference.name}</span>
-                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden">
+                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden dark:text-[#8b7fff]">
                   Changer
                   <ChevronRight size={12} />
                 </span>
@@ -1196,22 +1235,22 @@ export default function SignatureEditor({ id }) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 cursor-pointer"
+                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
                 onClick={undo}
                 disabled={!canUndo || isReadOnly}
                 aria-label="Annuler"
-                title="Annuler (⌘Z)"
+                title={`Annuler (${undoKeys().undo})`}
               >
                 <Undo2 size={16} />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 w-9 p-0 cursor-pointer"
+                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
                 onClick={redo}
                 disabled={!canRedo || isReadOnly}
                 aria-label="Rétablir"
-                title="Rétablir (⇧⌘Z)"
+                title={`Rétablir (${undoKeys().redo})`}
               >
                 <Redo2 size={16} />
               </Button>
@@ -1220,7 +1259,7 @@ export default function SignatureEditor({ id }) {
               variant="outline"
               onClick={handleCopy}
               disabled={!render?.html}
-              className="cursor-pointer"
+              className={`cursor-pointer ${FOCUS_RING}`}
               title="Copier la signature pour la coller dans les réglages de votre messagerie"
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -1234,7 +1273,7 @@ export default function SignatureEditor({ id }) {
                 variant="outline"
                 onClick={handleTest}
                 disabled={!render?.html || testing}
-                className="cursor-pointer"
+                className={`cursor-pointer ${FOCUS_RING}`}
                 title="Recevoir la signature dans votre boîte mail pour la vérifier"
               >
                 {testing ? (
@@ -1249,7 +1288,7 @@ export default function SignatureEditor({ id }) {
                 variant="primary"
                 onClick={() => setInstallOpen(true)}
                 disabled={!render?.html}
-                className="cursor-pointer"
+                className={`cursor-pointer ${FOCUS_RING}`}
               >
                 <Send size={14} />
                 <span className="@max-[812px]:hidden">
@@ -1263,7 +1302,7 @@ export default function SignatureEditor({ id }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-9 w-9 p-0 cursor-pointer"
+                  className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
                   aria-label="Plus d'actions"
                 >
                   <MoreHorizontal size={16} />
@@ -1333,6 +1372,7 @@ export default function SignatureEditor({ id }) {
               onEscape={onEscape}
               onDelete={deleteSelected}
               onMeasure={setPreviewWidths}
+              onReplayTour={isReadOnly ? undefined : replayTour}
               readOnly={isReadOnly}
             />
           </div>
@@ -1359,6 +1399,8 @@ export default function SignatureEditor({ id }) {
 
       {!isReadOnly && (
         <EditorTour
+          key={tourRun}
+          replay={tourRun > 0}
           steps={[
             {
               target: "preview",
@@ -1429,12 +1471,12 @@ export default function SignatureEditor({ id }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
+            <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
               Annuler
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+              className={`bg-red-600 text-white hover:bg-red-700 cursor-pointer ${FOCUS_RING}`}
             >
               Supprimer
             </AlertDialogAction>

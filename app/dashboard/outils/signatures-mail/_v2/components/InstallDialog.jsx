@@ -12,7 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
-import { GmailSize } from "./controls";
+import { FOCUS_RING, GmailSize } from "./controls";
 
 /**
  * Copie le HTML dans le presse-papiers. L'API Clipboard passe en premier :
@@ -248,7 +248,7 @@ export default function InstallDialog({ open, onOpenChange, render, name, gmailM
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="primary" onClick={handleCopy} disabled={!html} className="cursor-pointer">
+          <Button variant="primary" onClick={handleCopy} disabled={!html} className={`cursor-pointer ${FOCUS_RING}`}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? "Copiée" : "Copier la signature"}
           </Button>
@@ -256,7 +256,7 @@ export default function InstallDialog({ open, onOpenChange, render, name, gmailM
             variant="outline"
             onClick={() => downloadSignatureHtml(html, name)}
             disabled={!html}
-            className="cursor-pointer"
+            className={`cursor-pointer ${FOCUS_RING}`}
           >
             <Download size={14} />
             Télécharger le HTML
@@ -281,7 +281,11 @@ export default function InstallDialog({ open, onOpenChange, render, name, gmailM
               seconde reste dans le fond de la liste */}
           <TabsList className="flex flex-wrap h-auto">
             {GUIDES.map((g) => (
-              <TabsTrigger key={g.id} value={g.id} className="h-auto text-xs">
+              <TabsTrigger
+                key={g.id}
+                value={g.id}
+                className={`h-auto text-xs ${FOCUS_RING}`}
+              >
                 {g.label}
               </TabsTrigger>
             ))}

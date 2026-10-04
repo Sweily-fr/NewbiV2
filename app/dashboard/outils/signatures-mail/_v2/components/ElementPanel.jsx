@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
+import { toast } from "@/src/components/ui/sonner";
 import { PHOTO_LABELS, PhotoBorderControls } from "./StylePanel";
 import {
   CheckedInput,
   Choice,
   ColorRow,
+  FOCUS_RING,
   Hint,
   Nested,
   Row,
@@ -16,7 +18,7 @@ import {
   SwitchRow,
 } from "./controls";
 import TextStyleControls from "./TextStyleControls";
-import { PartLinks, PlaceRow } from "./LevelPanels";
+import { ELEMENT_TITLE, PartLinks, PlaceRow } from "./LevelPanels";
 import {
   RULE_COLORS,
   elementSlot,
@@ -228,7 +230,7 @@ function layoutSummary(element, sig, withSpaces) {
 /**
  * Panneau d'un élément de l'aperçu : son contenu et tous ses réglages au
  * même endroit. `onSelect(sélection)` : ouvre une partie seule (prénom, une
- * ligne de coordonnées).
+ * ligne de coordonnées) ; `onUndo` : annule la dernière modification.
  */
 export default function ElementPanel({
   element,
@@ -240,6 +242,7 @@ export default function ElementPanel({
   resolved,
   lines,
   onSelect,
+  onUndo,
 }) {
   const { identity, contact, images, style: st, cta, banner, disclaimer } = sig;
   const setStyle = (patch) => update({ style: patch });
@@ -474,6 +477,7 @@ export default function ElementPanel({
           <Section title="Mise en forme">
             <Row label="Forme">
               <Choice
+                label="Forme des icônes"
                 value={st.iconStyle}
                 onChange={(v) => setStyle({ iconStyle: v })}
                 options={[
@@ -535,6 +539,7 @@ export default function ElementPanel({
           <Section title="Mise en forme">
             <Row label="Forme">
               <Choice
+                label="Forme de la photo"
                 value={st.photoShape}
                 onChange={(v) => setStyle({ photoShape: v })}
                 options={[
@@ -623,8 +628,9 @@ export default function ElementPanel({
             checked={banner.enabled}
             onCheckedChange={(v) => update({ banner: { enabled: v } })}
           >
-            <Field label="Lien au clic">
+            <Field label="Lien au clic" htmlFor="sig-el-banner-url">
               <CheckedInput
+                id="sig-el-banner-url"
                 value={banner.url}
                 placeholder="votre-site.fr/offre"
                 warning={linkProblem(banner.url)}
@@ -656,7 +662,7 @@ export default function ElementPanel({
       body = (
         <>
           <Section title="Contenu">
-            <Field label="Texte du bouton">
+            <Field label="Texte du bouton" htmlFor="sig-field-cta">
               <CheckedInput
                 id="sig-field-cta"
                 value={cta.label}
@@ -666,8 +672,9 @@ export default function ElementPanel({
                 onChange={(e) => update({ cta: { label: e.target.value } })}
               />
             </Field>
-            <Field label="Lien" hint={ctaLinkHint(cta.url)}>
+            <Field label="Lien" htmlFor="sig-el-cta-url" hint={ctaLinkHint(cta.url)}>
               <CheckedInput
+                id="sig-el-cta-url"
                 value={cta.url}
                 placeholder="calendly.com/votre-nom"
                 warning={ctaLinkProblem(cta)}
@@ -694,6 +701,7 @@ export default function ElementPanel({
           <Section title="Contenu">
             <DisclaimerField
               id="sig-field-disclaimer"
+              aria-label="Texte de la mention"
               value={disclaimer.text}
               onChange={(text) => update({ disclaimer: { text } })}
             />
@@ -711,6 +719,24 @@ export default function ElementPanel({
         setStyle({
           rules: { ...(st.rules || {}), [element]: { ...rule, ...patch } },
         });
+      // Même retour que Suppr dans l'aperçu (une étape d'annulation à elle
+      // seule) ; le bouton disparaît avec le trait, le focus revient au
+      // titre du panneau au lieu de la page
+      const removeThisRule = () => {
+        update({ style: removeRule(st, element) }, { step: true });
+        toast.document(`Retiré : ${ELEMENT_TITLE[element]}`, {
+          fallbackIcon: Trash2,
+          action: onUndo
+            ? { label: "Annuler", onClick: () => onUndo() }
+            : undefined,
+          duration: 6000,
+        });
+        requestAnimationFrame(() =>
+          document
+            .querySelector("[data-panel-title]")
+            ?.focus({ preventScroll: true }),
+        );
+      };
       body = rule ? (
         <Section title="Mise en forme">
           <SliderRow
@@ -740,8 +766,8 @@ export default function ElementPanel({
           <TraitMargins element={element} st={st} setStyle={setStyle} />
           <button
             type="button"
-            onClick={() => setStyle(removeRule(st, element))}
-            className="text-xs font-medium text-red-600 hover:underline cursor-pointer"
+            onClick={removeThisRule}
+            className={`rounded-sm text-xs font-medium text-red-600 hover:underline cursor-pointer ${FOCUS_RING}`}
           >
             Retirer ce trait
           </button>

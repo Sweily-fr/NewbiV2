@@ -60,9 +60,11 @@ export default function ColorField({
         interacted.current = true;
       }}
     >
+      {/* Le déclencheur, invisible, a le focus : l'anneau est dessiné ici,
+          le même que sur les autres réglages de l'éditeur */}
       <div
         aria-hidden
-        className="pointer-events-none flex h-8 w-full items-center gap-2 rounded-[9px] border border-[#e6e7ea] px-2.5 transition-[border,box-shadow] duration-[80ms] group-hover:border-[#D1D3D8] group-has-[:focus-visible]:ring-[3px] group-has-[:focus-visible]:ring-ring/50 dark:border-[#2E2E32] dark:group-hover:border-[#44444A]"
+        className="pointer-events-none flex h-8 w-full items-center gap-2 rounded-[9px] border border-[#e6e7ea] px-2.5 transition-[border,box-shadow] duration-[80ms] group-hover:border-[#D1D3D8] group-has-[:focus-visible]:outline-solid group-has-[:focus-visible]:outline-2 group-has-[:focus-visible]:outline-offset-2 group-has-[:focus-visible]:outline-[#5a50ff] dark:border-[#2E2E32] dark:group-hover:border-[#44444A] dark:group-has-[:focus-visible]:outline-[#8b7fff]"
       >
         <span
           className="h-4 w-4 shrink-0 rounded border border-black/10 dark:border-white/15"
