@@ -48,11 +48,15 @@ var post=function(m){parent.postMessage(m,"*");};
 var editing=null,dragging=false,dragId=null,gripEl=null;
 /* Hauteur du contenu (jamais celle de l'affichage précédent : l'aperçu
    rétrécit aussi), infobulle du cadre comprise, et celle placée sous le
-   coin quand il passe sous le bord */
+   coin quand il passe sous le bord. Le débordement en largeur est celui de
+   la signature seule : cadre de sélection et poignée sont masqués le temps
+   de la mesure (au doigt, leurs zones de prise dépassent à droite) */
 function h(){var d=document.documentElement,y=document.body.getBoundingClientRect().height;
 if(box&&box.style.display==="block"){y=Math.max(y,box.getBoundingClientRect().bottom+scrollY+30);
 if(low&&corner.style.display==="block")y=Math.max(y,corner.getBoundingClientRect().bottom+scrollY+32);}
-post({type:"sig-height",height:Math.ceil(y),overflow:d.scrollWidth>d.clientWidth+1});}
+var hide=[box,grip].filter(Boolean),was=hide.map(function(el){var v=el.style.display;el.style.display="none";return v;});
+var ov=d.scrollWidth>d.clientWidth+1;hide.forEach(function(el,i){el.style.display=was[i];});
+post({type:"sig-height",height:Math.ceil(y),overflow:ov});}
 new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function crect(el){var g=document.createRange();g.selectNodeContents(el);var r=g.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
