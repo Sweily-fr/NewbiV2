@@ -25,6 +25,11 @@ const formatDate = (value) => {
     : new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(d);
 };
 
+// À côté du volet d'aperçu du justificatif : la modale se cale à droite
+// (largeur 480 px + marge 2rem, cf. sidebarWidth du volet) pour laisser la
+// pièce visible à gauche.
+const BESIDE_PREVIEW_CLASS = "md:left-auto md:right-8 md:translate-x-0";
+
 /**
  * Facture d'achat créée alors que le paiement est déjà passé : l'API a
  * trouvé une transaction sûre (montant, fournisseur, date). On demande
@@ -37,10 +42,13 @@ export function ReconcileCandidateDialog({
   loading = false,
   onCancel,
   onConfirm,
+  besidePreview = false,
 }) {
   return (
     <AlertDialog open={open} onOpenChange={(next) => !next && onCancel?.()}>
-      <AlertDialogContent>
+      <AlertDialogContent
+        className={besidePreview ? BESIDE_PREVIEW_CLASS : undefined}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>Transaction trouvée</AlertDialogTitle>
           <AlertDialogDescription>
