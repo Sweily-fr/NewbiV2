@@ -15,6 +15,7 @@ export const GET_CLIENT_CUSTOM_FIELDS = gql`
       placeholder
       isRequired
       order
+      showOnDocuments
       isActive
       createdAt
       updatedAt
@@ -37,9 +38,21 @@ export const GET_CLIENT_CUSTOM_FIELD = gql`
       placeholder
       isRequired
       order
+      showOnDocuments
       isActive
       createdAt
       updatedAt
+    }
+  }
+`;
+
+// Champs personnalisés d'un client à afficher sur les documents (valeurs mises
+// en forme par l'API) : sert à l'aperçu en direct des éditeurs de documents.
+export const GET_CLIENT_DOCUMENT_FIELDS = gql`
+  query GetClientDocumentFields($workspaceId: ID!, $clientId: ID!) {
+    clientDocumentFields(workspaceId: $workspaceId, clientId: $clientId) {
+      label
+      value
     }
   }
 `;

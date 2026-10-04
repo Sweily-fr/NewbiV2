@@ -53,6 +53,10 @@ export const QUOTE_FRAGMENT = gql`
       siret
       vatNumber
       isInternational
+      documentFields {
+        label
+        value
+      }
       hasDifferentShippingAddress
       address {
         street
@@ -247,6 +251,10 @@ export const QUOTE_LIST_FRAGMENT = gql`
       siret
       vatNumber
       isInternational
+      documentFields {
+        label
+        value
+      }
       address {
         street
         city

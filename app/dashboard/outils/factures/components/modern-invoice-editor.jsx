@@ -38,6 +38,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
 import { useClient } from "@/src/graphql/clientQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import InvoiceSettingsView from "./invoice-settings-view";
 import { toast } from "@/src/components/ui/sonner";
@@ -196,6 +197,13 @@ export default function ModernInvoiceEditor({
 
     return () => clearTimeout(timer);
   }, [formDataKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Champs personnalisés du client « Afficher sur mes documents » : suivent le
+  // client choisi tant que la facture est un brouillon ou en création
+  const previewFormData = useWithClientDocumentFields(
+    debouncedFormData,
+    mode === "create" || loadedInvoice?.status === "DRAFT",
+  );
 
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
@@ -801,7 +809,7 @@ export default function ModernInvoiceEditor({
             {debouncedFormData ? (
               <div ref={pdfRef}>
                 <UniversalPreviewPDF
-                  data={debouncedFormData}
+                  data={previewFormData}
                   type="invoice"
                   previousSituationInvoices={previousSituationInvoices}
                 />

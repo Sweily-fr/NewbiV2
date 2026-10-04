@@ -38,6 +38,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQuoteEditor } from "../hooks/use-quote-editor";
 import { useClient } from "@/src/graphql/clientQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedQuoteForm from "./enhanced-quote-form";
 import QuoteSettingsView from "./quote-settings-view";
 import { toast } from "@/src/components/ui/sonner";
@@ -177,6 +178,13 @@ export default function ModernQuoteEditor({
 
     return () => clearTimeout(timer);
   }, [formDataKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Champs personnalisés du client « Afficher sur mes documents » : suivent le
+  // client choisi tant que le devis est un brouillon ou en création
+  const previewFormData = useWithClientDocumentFields(
+    debouncedFormData,
+    mode === "create" || loadedQuote?.status === "DRAFT",
+  );
 
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
@@ -719,7 +727,7 @@ export default function ModernQuoteEditor({
                 bons de commande. */}
             {debouncedFormData ? (
               <div ref={pdfRef}>
-                <UniversalPreviewPDF data={debouncedFormData} type="quote" />
+                <UniversalPreviewPDF data={previewFormData} type="quote" />
               </div>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">

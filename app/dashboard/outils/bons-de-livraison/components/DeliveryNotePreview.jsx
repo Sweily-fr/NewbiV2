@@ -409,6 +409,15 @@ const DeliveryNotePreview = ({
                       {data.client.email}
                     </div>
                   )}
+                  {/* Champs personnalisés du client cochés « Afficher sur mes documents » */}
+                  {data.client?.documentFields?.map((field, index) => (
+                    <div
+                      key={`${field.label}-${index}`}
+                      className="dark:text-[#0A0A0A]"
+                    >
+                      {field.label}: {field.value}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
