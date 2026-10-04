@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import { BookmarkPlus, Check, LayoutTemplate, Trash2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
@@ -35,7 +35,13 @@ import {
   toInput,
   toStyleInput,
 } from "../graphql";
-import { layoutCustomized, shownItems, templateLayout } from "../slots";
+import {
+  layoutCustomized,
+  shownItems,
+  templateChanges,
+  templateLayout,
+  templateReference,
+} from "../slots";
 import HtmlFrame from "./HtmlFrame";
 import { Row, Section } from "./controls";
 import {
@@ -44,8 +50,19 @@ import {
   TextAlignControl,
 } from "./LayoutControls";
 
-const THUMB_WIDTH = 560;
-const THUMB_HEIGHT = 300;
+/** Vignette : marge autour de la signature, dans l'aperçu (px). */
+const THUMB_PADDING = 16;
+/** Échelle maximale : une signature étroite n'est pas grossie au-delà. */
+const THUMB_MAX_SCALE = 0.75;
+/** Hauteurs de vignette (px) ; au-delà du plafond, un fondu en bas. */
+const THUMB_MIN_HEIGHT = 72;
+const THUMB_MAX_HEIGHT = 320;
+/**
+ * Largeur de mise en page de l'aperçu, au moins : plus que la plus large
+ * signature (720 px et ses marges), pour qu'elle s'y étale comme dans un
+ * e-mail, sans retour à la ligne.
+ */
+const LAYOUT_WIDTH = 800;
 
 /** Carte d'un modèle : vignette, nom, description ; suppression à part. */
 function TemplateTile({
@@ -57,6 +74,32 @@ function TemplateTile({
   onSelect,
   onDelete,
 }) {
+  // La signature entière dans la largeur de la tuile : sa taille, mesurée
+  // dans l'aperçu, donne l'échelle (0,75 au plus) et la hauteur de la
+  // vignette. Squelette jusqu'à la première mesure.
+  const boxRef = useRef(null);
+  const [boxWidth, setBoxWidth] = useState(0);
+  const [size, setSize] = useState(null);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return undefined;
+    const observer = new ResizeObserver(([entry]) =>
+      setBoxWidth(Math.floor(entry.contentRect.width)),
+    );
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, []);
+  const ready = Boolean(size && boxWidth);
+  const scale = ready
+    ? Math.min(
+        THUMB_MAX_SCALE,
+        boxWidth / Math.max(1, size.width + 2 * THUMB_PADDING),
+      )
+    : 0.5;
+  const fullHeight = ready ? Math.ceil(size.height * scale) : 0;
+  const height = ready
+    ? Math.max(THUMB_MIN_HEIGHT, Math.min(THUMB_MAX_HEIGHT, fullHeight))
+    : 150;
   return (
     <div className="group relative">
       <button
@@ -69,22 +112,38 @@ function TemplateTile({
         aria-pressed={selected}
       >
         <div
+          ref={boxRef}
           className="relative overflow-hidden bg-white"
-          style={{ height: THUMB_HEIGHT * 0.5, width: "100%" }}
+          style={{ height, width: "100%" }}
         >
-          {loading && !html ? (
-            <Skeleton className="absolute inset-3" />
-          ) : (
-            <div className="pointer-events-none absolute left-0 top-0">
+          {!(loading && !html) && (
+            // Image seulement : ni ses liens ni le cadre ne sont atteignables
+            // au clavier ou annoncés, un seul arrêt par tuile
+            <div
+              className={cn(
+                "pointer-events-none absolute left-0 top-0",
+                !ready && "opacity-0",
+              )}
+              inert
+            >
               <HtmlFrame
                 html={html}
-                width={THUMB_WIDTH}
-                height={THUMB_HEIGHT}
-                scale={0.5}
-                padding={16}
+                width={Math.max(
+                  LAYOUT_WIDTH,
+                  ready ? Math.ceil(boxWidth / scale) : 0,
+                )}
+                height={ready ? size.height : 600}
+                scale={scale}
+                padding={THUMB_PADDING}
                 title={`Modèle ${name}`}
+                onSize={setSize}
               />
             </div>
+          )}
+          {!ready && <Skeleton className="absolute inset-3" />}
+          {/* Signature plus haute que la vignette : fondu en bas */}
+          {fullHeight > THUMB_MAX_HEIGHT && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent" />
           )}
         </div>
         <div
@@ -138,7 +197,14 @@ function TemplateCard({ template, style, sigId, selected, onSelect }) {
   );
 }
 
-function SavedTemplateCard({ template, content, sigId, onSelect, onDelete }) {
+function SavedTemplateCard({
+  template,
+  content,
+  sigId,
+  selected,
+  onSelect,
+  onDelete,
+}) {
   // La signature en cours (textes, images) avec le style du modèle
   const input = useMemo(
     () => ({
@@ -157,8 +223,10 @@ function SavedTemplateCard({ template, content, sigId, onSelect, onDelete }) {
       html={data?.renderEmailSignatureV2?.html}
       loading={loading}
       name={template.name}
+      selected={selected}
       onSelect={onSelect}
-      onDelete={template.mine ? onDelete : null}
+      // Corbeille pour son auteur, le propriétaire ou un administrateur
+      onDelete={template.canDelete ? onDelete : null}
     />
   );
 }
@@ -168,6 +236,12 @@ function SavedTemplateCard({ template, content, sigId, onSelect, onDelete }) {
  * l'emporte (Newbi), sinon ce sont les siennes, comme à l'application.
  */
 const THUMB_COLORS = ["primaryColor", "textColor", "mutedColor"];
+
+/** « a, b et c ». */
+const listing = (items) =>
+  items.length > 1
+    ? `${items.slice(0, -1).join(", ")} et ${items[items.length - 1]}`
+    : items[0] || "";
 
 /**
  * Galerie des modèles, rendus par l'API avec les informations de la
@@ -180,19 +254,37 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   // qui les utilisent encore)
   const all = catalog?.templates || [];
   const templates = all.filter((t) => t.inGallery !== false);
-  const current = all.find((t) => t.id === sig.templateId);
-  // Modèle en attente de confirmation (disposition personnalisée)
+  // Modèle en attente de confirmation (disposition personnalisée, retour
+  // au modèle) : gardé pendant la fermeture, le texte ne change pas en
+  // plein fondu
   const [pending, setPending] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const askConfirm = (request) => {
+    setPending(request);
+    setConfirmOpen(true);
+  };
   // Enregistrement d'un modèle (nom saisi) et suppression à confirmer
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [toDelete, setToDelete] = useState(null);
 
-  const { data: savedData, refetch: refetchSaved } = useQuery(
-    SIGNATURE_TEMPLATES_V2,
-    { fetchPolicy: "cache-and-network" },
-  );
+  const {
+    data: savedData,
+    loading: savedLoading,
+    refetch: refetchSaved,
+  } = useQuery(SIGNATURE_TEMPLATES_V2, { fetchPolicy: "cache-and-network" });
   const saved = savedData?.emailSignatureTemplatesV2 || [];
+  // Modèle de référence : le modèle d'équipe appliqué s'il existe encore,
+  // sinon le modèle intégré (coché, et celui auquel on revient)
+  const current = templateReference(
+    sig,
+    all,
+    savedData || !savedLoading ? saved : null,
+  );
+  const isCurrent = (t, isSaved) =>
+    Boolean(current) &&
+    current.id === t.id &&
+    Boolean(current.saved) === isSaved;
   const [saveTemplate, { loading: savingTemplate }] = useMutation(
     SAVE_SIGNATURE_TEMPLATE_V2,
   );
@@ -209,7 +301,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
 
   // Le modèle apporte sa disposition, sa typographie, ses finitions
   // (traits, icônes) et sa palette s'il en a une (Newbi : neutre), adaptées
-  // à la présence d'une photo.
+  // à la présence d'une photo. Plus aucun modèle d'équipe n'est suivi.
   const apply = (t) => {
     const preset = Object.fromEntries(
       Object.entries(templateLayout(t.defaults, sig) || t.preset || {}).filter(
@@ -217,27 +309,41 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
           key !== "__typename" && value !== null && value !== undefined,
       ),
     );
-    update({ templateId: t.id, style: preset });
+    update({ templateId: t.id, savedTemplateId: null, style: preset });
     applied(t.name);
   };
 
   // Modèle enregistré : tout son style, couleurs comprises, tel quel (ses
-  // largeurs vont avec ses places)
+  // largeurs vont avec ses places) ; la signature le suit désormais
   const applySaved = (t) => {
     // eslint-disable-next-line no-unused-vars
     const { __typename, ...style } = t.style;
     update(
-      { templateId: t.templateId, style: templateLayout(style, sig) },
+      {
+        templateId: t.templateId,
+        savedTemplateId: t.id,
+        style: templateLayout(style, sig),
+      },
       { asIs: true },
     );
     applied(t.name);
   };
 
   const choose = (t, isSaved = false) => {
-    const customized = layoutCustomized(sig, current);
-    if (!isSaved && t.id === sig.templateId && !customized) return;
-    if (customized) setPending({ template: t, saved: isSaved });
-    else if (isSaved) applySaved(t);
+    // Modèle de la signature : un retour, confirmé en nommant ce qu'il
+    // remet, ou rien à faire s'il est déjà suivi
+    if (isCurrent(t, isSaved)) {
+      const changes = templateChanges(sig, current);
+      if (changes.length === 0) {
+        toast.info(`Votre signature suit déjà le modèle ${t.name}`);
+        return;
+      }
+      askConfirm({ template: t, saved: isSaved, changes });
+      return;
+    }
+    if (layoutCustomized(sig, current)) {
+      askConfirm({ template: t, saved: isSaved });
+    } else if (isSaved) applySaved(t);
     else apply(t);
   };
 
@@ -281,7 +387,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
     e.preventDefault();
     if (!trimmedName || savingTemplate) return;
     try {
-      await saveTemplate({
+      const { data } = await saveTemplate({
         variables: {
           input: {
             name: trimmedName,
@@ -291,8 +397,22 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
         },
       });
       setSaveOpen(false);
-      toast.success(`Modèle « ${trimmedName} » enregistré`);
+      // Un modèle remplacé ne change aucune signature d'elle-même
+      if (replacing) {
+        toast.success(`Modèle « ${trimmedName} » mis à jour`, {
+          description:
+            "Les autres signatures qui l'utilisent gardent l'ancienne version.",
+        });
+      } else {
+        toast.success(`Modèle « ${trimmedName} » enregistré`);
+      }
       refetchSaved();
+      // Cette signature est désormais ce modèle : il est coché, et c'est à
+      // lui qu'elle revient
+      const savedId = data?.saveEmailSignatureTemplateV2?.id;
+      if (savedId && savedId !== sig.savedTemplateId) {
+        update({ savedTemplateId: savedId });
+      }
     } catch (err) {
       toast.error(
         err?.graphQLErrors?.[0]?.message ||
@@ -309,6 +429,9 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
       await deleteTemplate({ variables: { id: t.id } });
       toast.success(`Modèle « ${t.name} » supprimé`);
       refetchSaved();
+      // La signature qui le suivait revient au modèle intégré comme
+      // référence (sa mise en forme ne change pas)
+      if (t.id === sig.savedTemplateId) update({ savedTemplateId: null });
     } catch (err) {
       toast.error(
         err?.graphQLErrors?.[0]?.message || "Suppression impossible",
@@ -323,6 +446,8 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
   const hasPhoto = Boolean(sig.images?.photo?.url);
 
   const target = pending?.template;
+  // Retour au modèle de la signature (ce qu'il remet est nommé)
+  const returning = Boolean(pending?.changes);
   return (
     <div className="space-y-8">
       <Section
@@ -335,7 +460,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               key={t.id}
               template={t}
               style={style}
-              selected={sig.templateId === t.id}
+              selected={isCurrent(t, false)}
               sigId={sig.id}
               onSelect={() => choose(t)}
             />
@@ -376,6 +501,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
                 template={t}
                 content={content}
                 sigId={sig.id}
+                selected={isCurrent(t, true)}
                 onSelect={() => choose(t, true)}
                 onDelete={() => setToDelete(t)}
               />
@@ -384,39 +510,34 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
         )}
       </Section>
 
-      <AlertDialog
-        open={Boolean(pending)}
-        onOpenChange={(open) => !open && setPending(null)}
-      >
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {!pending?.saved && target?.id === sig.templateId
+              {returning
                 ? `Revenir au modèle ${target?.name} ?`
                 : `Appliquer le modèle ${target?.name} ?`}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez personnalisé la disposition (éléments déplacés,
-              largeurs, espaces ou traits sur mesure). Elle sera remplacée par
-              celle du modèle, couleurs comprises. Vos textes et vos images
-              sont conservés, et vous pourrez annuler.
+              {returning
+                ? `Cela remet ${listing(pending.changes)} comme dans le modèle. Vos textes et vos images sont conservés, et vous pourrez annuler.`
+                : "Vous avez personnalisé la disposition (éléments déplacés, largeurs, espaces ou traits sur mesure). Elle sera remplacée par celle du modèle, couleurs comprises. Vos textes et vos images sont conservés, et vous pourrez annuler."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="cursor-pointer">
-              Garder ma disposition
+              {returning ? "Garder mes réglages" : "Garder ma disposition"}
             </AlertDialogCancel>
             <AlertDialogAction
               className="cursor-pointer"
               onClick={() => {
-                const p = pending;
-                setPending(null);
-                if (!p) return;
-                if (p.saved) applySaved(p.template);
-                else apply(p.template);
+                setConfirmOpen(false);
+                if (!pending) return;
+                if (pending.saved) applySaved(pending.template);
+                else apply(pending.template);
               }}
             >
-              Appliquer le modèle
+              {returning ? "Revenir au modèle" : "Appliquer le modèle"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -432,6 +553,9 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               Supprimer le modèle « {toDelete?.name} » ?
             </AlertDialogTitle>
             <AlertDialogDescription>
+              {toDelete && !toDelete.mine
+                ? "Il a été enregistré par un autre membre de l'équipe. "
+                : ""}
               Il ne sera plus proposé à votre équipe. Les signatures qui
               l&apos;utilisent gardent leur mise en forme.
             </AlertDialogDescription>
@@ -463,7 +587,7 @@ export default function TemplateGallery({ sig, update, catalog, onUndo }) {
               htmlFor="sig-template-name"
               hint={
                 replacing
-                  ? `Remplacera votre modèle « ${trimmedName} ».`
+                  ? `Remplacera votre modèle « ${trimmedName} ». Les signatures qui l'utilisent déjà ne changeront pas : chacun devra l'appliquer à nouveau, puis réinstaller sa signature.`
                   : null
               }
             >

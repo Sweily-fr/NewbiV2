@@ -84,6 +84,7 @@ import {
   selectUp,
   selectionChain,
   shownItems,
+  templateReference,
 } from "../slots";
 import {
   ItemPanel,
@@ -268,14 +269,15 @@ export default function SignatureEditor({ id }) {
   // Onglet d'ouverture : Contenu, où se complète la signature (photo, logo,
   // réseaux). Une signature neuve ne s'ouvre sur Modèle que s'il y a
   // vraiment à choisir : plusieurs modèles proposés, ou des modèles
-  // enregistrés par l'équipe (liste demandée pour elle seule). Il est
-  // déduit au premier affichage puis figé (`openingTab`) : supprimer le
-  // dernier modèle enregistré ne fait pas changer d'onglet sous les yeux.
-  // Neuve s'entend à l'ouverture (`openedNew`) : l'adresse perd aussitôt
-  // ?new=1, la liste ne doit pas cesser d'être attendue pour autant.
+  // enregistrés par l'équipe (liste à jour pour elle). Il est déduit au
+  // premier affichage puis figé (`openingTab`) : supprimer le dernier
+  // modèle enregistré ne fait pas changer d'onglet sous les yeux. Neuve
+  // s'entend à l'ouverture (`openedNew`) : l'adresse perd aussitôt ?new=1.
+  // La même liste donne le modèle de référence de l'en-tête (`reference`,
+  // plus bas) : elle est lue pour toute signature, le cache suffit alors.
   const { data: savedTemplates, loading: savedLoading } = useQuery(
     SIGNATURE_TEMPLATES_V2,
-    { skip: !openedNew, fetchPolicy: "cache-and-network" },
+    { fetchPolicy: openedNew ? "cache-and-network" : "cache-first" },
   );
   const openingTab = useRef(null);
   // Onglet choisi par l'utilisateur, sinon celui d'ouverture
@@ -800,6 +802,17 @@ export default function SignatureEditor({ id }) {
 
   const template =
     catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
+  // Modèle de référence, nommé dans l'en-tête et repris par « Revenir au
+  // modèle » : le modèle d'équipe appliqué s'il existe encore, sinon le
+  // modèle intégré. Le contenu garde le modèle intégré (ses capacités).
+  // Modèles enregistrés : la requête de l'onglet d'ouverture (plus haut)
+  const reference = templateReference(
+    sig,
+    catalog?.templates,
+    savedTemplates || !savedLoading
+      ? savedTemplates?.emailSignatureTemplatesV2 || []
+      : null,
+  );
   const client = useApolloClient();
 
   // Copie demandée dès le clic, sans rien attendre : Safari 18 et
@@ -1074,7 +1087,7 @@ export default function SignatureEditor({ id }) {
                   sig={sig}
                   update={update}
                   catalog={catalog}
-                  template={template}
+                  template={reference}
                   lines={render?.lines}
                   onGoTo={goToField}
                   onSelect={select}
@@ -1137,7 +1150,7 @@ export default function SignatureEditor({ id }) {
                     sig={sig}
                     update={update}
                     catalog={catalog}
-                    template={template}
+                    template={reference}
                     lines={render?.lines}
                     onGoTo={goToField}
                     onSelect={select}
@@ -1160,7 +1173,7 @@ export default function SignatureEditor({ id }) {
           <div className="min-w-0">
             <h1 className="sr-only">{sig.name}</h1>
             {/* Colonne étroite : la puce s'efface, l'onglet Modèle reste */}
-            {template && (
+            {reference && (
               <button
                 type="button"
                 onClick={() => {
@@ -1170,7 +1183,7 @@ export default function SignatureEditor({ id }) {
                 className="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[552px]:hidden"
               >
                 <LayoutTemplate size={14} />
-                Modèle <span className="font-medium text-foreground">{template.name}</span>
+                Modèle <span className="font-medium text-foreground">{reference.name}</span>
                 <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden">
                   Changer
                   <ChevronRight size={12} />

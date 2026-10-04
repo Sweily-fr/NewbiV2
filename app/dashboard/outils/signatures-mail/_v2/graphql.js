@@ -107,6 +107,7 @@ export const SIGNATURE_V2_FIELDS = gql`
     name
     isDefault
     templateId
+    savedTemplateId
     identity {
       firstName
       lastName
@@ -302,6 +303,7 @@ export const SIGNATURE_TEMPLATES_V2 = gql`
       name
       templateId
       mine
+      canDelete
       style {
         ${STYLE_FIELDS}
       }
@@ -453,6 +455,8 @@ export function toInput(sig) {
   return {
     name: sig.name,
     templateId: sig.templateId,
+    // Modèle d'équipe appliqué (null : le modèle intégré)
+    savedTemplateId: sig.savedTemplateId ?? null,
     identity: strip(sig.identity),
     contact: strip(sig.contact),
     social: (sig.social || []).map((s) => ({ network: s.network, url: s.url })),

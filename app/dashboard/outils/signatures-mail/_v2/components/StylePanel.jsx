@@ -102,8 +102,9 @@ function ResetLayout({ sig, template, setStyle }) {
       <button
         type="button"
         // Places, traits et bordures, blocs, colonnes, nom, réseaux et logo
-        // du modèle ; couleurs et typographie inchangées
-        onClick={() => setStyle(layoutReset(sig, template))}
+        // du modèle ; couleurs et typographie inchangées. Appliqué tel quel :
+        // les largeurs des blocs du modèle vont avec ses places
+        onClick={() => setStyle(layoutReset(sig, template), { asIs: true })}
         className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
       >
         <RotateCcw size={12} />
@@ -272,7 +273,7 @@ export default function StylePanel({
   onSelect,
 }) {
   const st = sig.style;
-  const setStyle = (patch) => update({ style: patch });
+  const setStyle = (patch, options) => update({ style: patch }, options);
   // Éléments affichés : les réglages d'éléments absents sont masqués
   const shown = shownItems(sig);
   const L = layoutState(st, shown);
