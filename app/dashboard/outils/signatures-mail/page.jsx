@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client";
-import { CopyPlus, Loader2, Monitor, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react";
+import { CircleAlert, CopyPlus, Loader2, Monitor, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { Button } from "@/src/components/ui/button";
@@ -33,6 +33,7 @@ import {
   SET_DEFAULT_SIGNATURE_V2,
   SIGNATURES_V2,
 } from "./_v2/graphql";
+import { refusalToast } from "./_v2/errors";
 import HtmlFrame from "./_v2/components/HtmlFrame";
 import { SignatureListV2Skeleton } from "./_v2/components/signature-v2-skeleton";
 
@@ -119,14 +120,32 @@ function SignaturesV2Content() {
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState(null);
 
-  const { data, loading } = useQuery(SIGNATURES_V2, { fetchPolicy: "cache-and-network" });
+  const { data, loading, error, refetch: reload } = useQuery(SIGNATURES_V2, {
+    fetchPolicy: "cache-and-network",
+  });
   const signatures = data?.emailSignaturesV2 || [];
+  // Nouvel essai après un échec de chargement (l'état de chargement de la
+  // requête ne bouge pas pendant un rechargement : suivi local)
+  const [retrying, setRetrying] = useState(false);
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await reload();
+    } catch {
+      // Le message d'erreur reste affiché
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const refetch = { refetchQueries: [{ query: SIGNATURES_V2 }] };
+  // Un refus de l'API (rôle, abonnement…) doit tomber dans le catch, pas
+  // s'afficher comme une réussite
+  const refused = { ...refetch, errorPolicy: "none" };
   const [create] = useMutation(CREATE_SIGNATURE_V2, refetch);
-  const [duplicate] = useMutation(DUPLICATE_SIGNATURE_V2, refetch);
-  const [setDefault] = useMutation(SET_DEFAULT_SIGNATURE_V2, refetch);
-  const [remove] = useMutation(DELETE_SIGNATURE_V2, refetch);
+  const [duplicate] = useMutation(DUPLICATE_SIGNATURE_V2, refused);
+  const [setDefault] = useMutation(SET_DEFAULT_SIGNATURE_V2, refused);
+  const [remove] = useMutation(DELETE_SIGNATURE_V2, refused);
 
   const readOnlyTooltip = isReadOnly
     ? isOwner
@@ -151,8 +170,8 @@ function SignaturesV2Content() {
       const { data: copy } = await duplicate({ variables: { id } });
       toast.success("Signature dupliquée");
       router.push(EDITOR_URL(copy.duplicateEmailSignatureV2.id));
-    } catch {
-      toast.error("Duplication impossible");
+    } catch (err) {
+      toast.error("Duplication impossible", refusalToast(err));
     }
   };
 
@@ -160,8 +179,8 @@ function SignaturesV2Content() {
     try {
       await setDefault({ variables: { id } });
       toast.success("Signature définie par défaut");
-    } catch {
-      toast.error("Action impossible");
+    } catch (err) {
+      toast.error("Action impossible", refusalToast(err));
     }
   };
 
@@ -170,8 +189,8 @@ function SignaturesV2Content() {
     try {
       await remove({ variables: { id: toDelete.id } });
       toast.success("Signature supprimée");
-    } catch {
-      toast.error("Suppression impossible");
+    } catch (err) {
+      toast.error("Suppression impossible", refusalToast(err));
     } finally {
       setToDelete(null);
     }
@@ -218,6 +237,26 @@ function SignaturesV2Content() {
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           {loading && signatures.length === 0 ? (
             <SignatureListV2Skeleton />
+          ) : error && signatures.length === 0 ? (
+            // Échec sans liste en cache : surtout pas l'accueil des
+            // nouveaux, qui ferait croire les signatures perdues
+            <div className="flex h-full flex-col items-center justify-center text-center">
+              <CircleAlert className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h2 className="text-lg font-medium">Impossible d&apos;afficher vos signatures</h2>
+              <p className="mb-4 mt-2 max-w-md text-sm text-muted-foreground">
+                Le chargement a échoué. Vos signatures enregistrées ne sont pas perdues :
+                vérifiez votre connexion, puis réessayez.
+              </p>
+              <Button
+                variant="outline"
+                onClick={handleRetry}
+                disabled={retrying}
+                className="cursor-pointer"
+              >
+                {retrying && <Loader2 size={14} className="animate-spin" />}
+                Réessayer
+              </Button>
+            </div>
           ) : signatures.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
               <div className="max-w-md space-y-2">

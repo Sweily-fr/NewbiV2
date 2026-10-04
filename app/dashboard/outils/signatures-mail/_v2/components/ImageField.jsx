@@ -31,8 +31,10 @@ export default function ImageField({
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [upload] = useMutation(UPLOAD_SIGNATURE_V2_IMAGE);
-  const [remove] = useMutation(REMOVE_SIGNATURE_V2_IMAGE);
+  // Un refus de l'API (image illisible, rôle…) doit tomber dans le catch :
+  // sinon « Image ajoutée » s'afficherait sans rien changer
+  const [upload] = useMutation(UPLOAD_SIGNATURE_V2_IMAGE, { errorPolicy: "none" });
+  const [remove] = useMutation(REMOVE_SIGNATURE_V2_IMAGE, { errorPolicy: "none" });
 
   const send = async (file) => {
     if (!file) return;
@@ -47,7 +49,9 @@ export default function ImageField({
     setBusy(true);
     try {
       const { data } = await upload({ variables: { id, kind, file } });
-      onChanged(data?.uploadEmailSignatureV2Image);
+      // Seule cette image est reprise : le reste de la réponse date du
+      // début de l'envoi
+      onChanged(data?.uploadEmailSignatureV2Image, { image: kind.toLowerCase() });
       toast.success("Image ajoutée");
     } catch (err) {
       toast.error(err?.graphQLErrors?.[0]?.message || "Envoi impossible");
@@ -61,7 +65,7 @@ export default function ImageField({
     setBusy(true);
     try {
       const { data } = await remove({ variables: { id, kind } });
-      onChanged(data?.removeEmailSignatureV2Image);
+      onChanged(data?.removeEmailSignatureV2Image, { image: kind.toLowerCase() });
     } catch {
       toast.error("Suppression impossible");
     } finally {
