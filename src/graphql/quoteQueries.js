@@ -116,6 +116,7 @@ export const QUOTE_FRAGMENT = gql`
       linkedQuantity
       linkedPer
       linkedRounding
+      imageUrl
       progressPercentage
     }
     customFields {
@@ -431,6 +432,7 @@ export const GET_QUOTE_BY_NUMBER = gql`
         linkedQuantity
         linkedPer
         linkedRounding
+        imageUrl
         unit
         discount
         discountType
@@ -1055,6 +1057,7 @@ export const GET_QUOTE_TEMPLATES = gql`
         linkedQuantity
         linkedPer
         linkedRounding
+        imageUrl
         progressPercentage
       }
       headerNotes

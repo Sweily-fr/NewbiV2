@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import {
   ColumnDef,
@@ -144,11 +145,16 @@ const baseColumns = [
     cell: ({ row }) => {
       const product = row.original;
       return (
-        <div
-          className="font-normal max-w-[120px] md:max-w-[180px] truncate"
-          title={product.name}
-        >
-          {product.name}
+        <div className="flex items-center gap-2">
+          {product.imageUrl && (
+            <ProductThumbnail src={product.imageUrl} className="size-6" />
+          )}
+          <div
+            className="font-normal max-w-[120px] md:max-w-[180px] truncate"
+            title={product.name}
+          >
+            {product.name}
+          </div>
         </div>
       );
     },

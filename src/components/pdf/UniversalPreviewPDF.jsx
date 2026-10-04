@@ -10,6 +10,7 @@ import {
 } from "@/src/utils/document-suggestions";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
+import { ItemCellWithImage } from "@/src/components/pdf/PdfItemImage";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (
@@ -1438,23 +1439,25 @@ const UniversalPreviewPDF = ({
                               overflowWrap: "break-word",
                             }}
                           >
-                            <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
-                              {item.description || ""}
-                            </div>
-                            {item.details && (
-                              <div className="text-[10px] text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
-                                {stripHtml(item.details)}
+                            <ItemCellWithImage imageUrl={item.imageUrl}>
+                              <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
+                                {item.description || ""}
                               </div>
-                            )}
-                            {item.discount > 0 && (
-                              <div className="pdf-remise text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
-                                Remise:{" "}
-                                {item.discountType?.toUpperCase() ===
-                                "PERCENTAGE"
-                                  ? `${parseFloat(item.discount).toFixed(2)}%`
-                                  : formatCurrency(parseFloat(item.discount))}
-                              </div>
-                            )}
+                              {item.details && (
+                                <div className="text-[10px] text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
+                                  {stripHtml(item.details)}
+                                </div>
+                              )}
+                              {item.discount > 0 && (
+                                <div className="pdf-remise text-[9px] text-amber-600 dark:text-amber-400 mt-0.5">
+                                  Remise:{" "}
+                                  {item.discountType?.toUpperCase() ===
+                                  "PERCENTAGE"
+                                    ? `${parseFloat(item.discount).toFixed(2)}%`
+                                    : formatCurrency(parseFloat(item.discount))}
+                                </div>
+                              )}
+                            </ItemCellWithImage>
                           </td>
                           <td
                             className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top"

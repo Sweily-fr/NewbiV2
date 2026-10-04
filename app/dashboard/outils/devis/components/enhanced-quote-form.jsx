@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useId, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { ChevronDownIcon, ChevronRight, ChevronLeft, Link2 } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronRight,
+  ChevronLeft,
+  Link2,
+} from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -42,6 +47,7 @@ import {
   CommandList,
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
+import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import ClientSelector from "./quote-form-sections/client-selector";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -94,6 +100,7 @@ function ProductSearchCombobox({
       category: product.category,
       reference: product.reference,
       linkedProducts: product.linkedProducts,
+      imageUrl: product.imageUrl,
     })) || [];
 
   // Noms des produits liés d'un produit (tag dans la liste)
@@ -116,6 +123,7 @@ function ProductSearchCombobox({
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité(s)",
         linkedProducts: selectedProduct.linkedProducts,
+        imageUrl: selectedProduct.imageUrl,
       });
     }
     setValue("");
@@ -198,13 +206,22 @@ function ProductSearchCombobox({
                   >
                     <div className="flex items-center justify-between w-full">
                       <span className="flex flex-wrap items-center gap-2 min-w-0">
+                        {product.imageUrl && (
+                          <ProductThumbnail
+                            src={product.imageUrl}
+                            className="size-6"
+                          />
+                        )}
                         <span className="font-normal">{product.label}</span>
                         {linkedNames(product) && (
                           <Badge
                             variant="secondary"
                             className="font-normal whitespace-normal max-w-full"
                           >
-                            <Link2 size={12} className="!size-3 shrink-0 mr-1" />
+                            <Link2
+                              size={12}
+                              className="!size-3 shrink-0 mr-1"
+                            />
                             Produits liés : {linkedNames(product)}
                           </Badge>
                         )}
