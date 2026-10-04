@@ -15,6 +15,7 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { REMOVE_SIGNATURE_V2_IMAGE } from "../graphql";
 import { refusalToast } from "../errors";
+import { FOCUS_RING } from "./controls";
 
 /** Titre de la confirmation et message de réussite, par type d'image de l'API. */
 const LABELS = {
@@ -65,10 +66,12 @@ export default function ConfirmRemoveImage({ kind, open, onOpenChange, onConfirm
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+          <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
+            Annuler
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+            className={`bg-red-600 text-white hover:bg-red-700 cursor-pointer ${FOCUS_RING}`}
           >
             Retirer
           </AlertDialogAction>

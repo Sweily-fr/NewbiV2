@@ -325,8 +325,13 @@ function PersonField({ id, sig, replace, flush, lockEdits, fresh = false }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmChange} className="cursor-pointer">
+            <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmChange}
+              className={`cursor-pointer ${FOCUS_RING}`}
+            >
               Remplacer
             </AlertDialogAction>
           </AlertDialogFooter>

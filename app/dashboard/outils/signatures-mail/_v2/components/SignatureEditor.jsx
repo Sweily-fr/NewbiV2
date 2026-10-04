@@ -963,7 +963,7 @@ export default function SignatureEditor({ id }) {
           <Button
             variant="outline"
             onClick={() => router.push(LIST_URL)}
-            className="cursor-pointer"
+            className={`cursor-pointer ${FOCUS_RING}`}
           >
             <ArrowLeft size={14} />
             Retour aux signatures
@@ -972,7 +972,7 @@ export default function SignatureEditor({ id }) {
             variant="primary"
             onClick={retryLoad}
             disabled={retrying}
-            className="cursor-pointer"
+            className={`cursor-pointer ${FOCUS_RING}`}
           >
             {retrying && <Loader2 size={14} className="animate-spin" />}
             Réessayer
@@ -1347,7 +1347,7 @@ export default function SignatureEditor({ id }) {
               variant="outline"
               size="sm"
               onClick={() => router.push(LIST_URL)}
-              className="shrink-0 cursor-pointer"
+              className={`shrink-0 cursor-pointer ${FOCUS_RING}`}
             >
               <ArrowLeft size={14} />
               Retour aux signatures
@@ -1447,12 +1447,12 @@ export default function SignatureEditor({ id }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="cursor-pointer">
+            <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
               Rester sur la page
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={leaveWithoutSaving}
-              className="bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+              className={`bg-red-600 text-white hover:bg-red-700 cursor-pointer ${FOCUS_RING}`}
             >
               Quitter sans enregistrer
             </AlertDialogAction>
