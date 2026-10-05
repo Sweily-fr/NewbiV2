@@ -1,0 +1,1503 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  ChevronRight,
+  LayoutTemplate,
+  Loader2,
+  MailCheck,
+  MoreHorizontal,
+  Move,
+  Palette,
+  PenLine,
+  Redo2,
+  Send,
+  Undo2,
+  Star,
+  Trash2,
+  CopyPlus,
+} from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import {
+  TabsNew,
+  TabsNewContent,
+  TabsNewList,
+  TabsNewTrigger,
+} from "@/src/components/ui/tabs-new";
+import { ScrollArea } from "@/src/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import { toast } from "@/src/components/ui/sonner";
+import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useSignatureV2 } from "../hooks/useSignatureV2";
+import {
+  DELETE_SIGNATURE_V2,
+  DUPLICATE_SIGNATURE_V2,
+  RENDER_SIGNATURE_V2,
+  SEND_SIGNATURE_V2_TEST,
+  SET_DEFAULT_SIGNATURE_V2,
+  SIGNATURES_V2,
+  SIGNATURE_TEMPLATES_V2,
+  renderKey,
+  toInput,
+} from "../graphql";
+import { refusalToast } from "../errors";
+import { SignatureEditorV2Skeleton } from "./signature-v2-skeleton";
+import TemplateGallery from "./TemplateGallery";
+import EditorTour from "./EditorTour";
+import ContentPanel from "./ContentPanel";
+import StylePanel from "./StylePanel";
+import SignaturePreview from "./SignaturePreview";
+import ElementPanel, { FIELD_ELEMENT } from "./ElementPanel";
+import { FOCUS_RING, GmailSize } from "./controls";
+import {
+  BLOCK_OF,
+  COLUMN_WIDTH,
+  ELEMENT_ITEMS,
+  deleteFor,
+  fontSizePatch,
+  layoutLost,
+  mainPiece,
+  mergedRow,
+  partHasWidth,
+  resetMovedBlocks,
+  selectUp,
+  selectionChain,
+  shownItems,
+  templateReference,
+} from "../slots";
+import {
+  ItemPanel,
+  LevelHeader,
+  SlotPanel,
+  ancestorsOf,
+  selectionLabel,
+  undoKeys,
+} from "./LevelPanels";
+import { setPreviewWidths } from "./LayoutControls";
+import InstallDialog, { copySignature } from "./InstallDialog";
+import ConfirmRemoveImage, { useRemoveSignatureImage } from "./ConfirmRemoveImage";
+
+const LIST_URL = "/dashboard/outils/signatures-mail";
+
+/** Message d'un dépôt dans l'aperçu : un seul à la fois. */
+const MOVE_TOAST = "signature-move";
+
+/**
+ * Bord du bloc sélectionné dans l'aperçu : largeur réglable à la souris,
+ * suivie en direct. `kind` : image carrée, image, trait, bouton, icônes ou
+ * texte (« wrap », qui revient à la ligne).
+ */
+const RESIZE = {
+  photo: { kind: "square", min: 40, max: 160 },
+  logo: { kind: "image", min: 40, max: 300 },
+  accent: { kind: "bar", min: 8, max: 240 },
+  banner: { kind: "image", min: 120, max: 640 },
+  social: { kind: "icons", min: 16, max: 40 },
+  cta: { kind: "button", min: 80, max: 640 },
+  name: { kind: "wrap", min: 40, max: 640 },
+  jobTitle: { kind: "wrap", min: 40, max: 640 },
+  company: { kind: "wrap", min: 40, max: 640 },
+  tagline: { kind: "wrap", min: 40, max: 640 },
+  contact: { kind: "wrap", min: 80, max: 640 },
+  disclaimer: { kind: "wrap", min: 80, max: 640 },
+  // Traits libres : leur longueur
+  rule1: { kind: "bar", min: 16, max: 640 },
+  rule2: { kind: "bar", min: 16, max: 640 },
+  rule3: { kind: "bar", min: 16, max: 640 },
+};
+
+/** Textes dont le coin du cadre, dans l'aperçu, règle la taille. */
+const FONT = { min: 9, max: 36 };
+const FONT_ELEMENTS = new Set([
+  "name",
+  "jobTitle",
+  "company",
+  "tagline",
+  "contact",
+  "cta",
+  "disclaimer",
+]);
+
+/** Textes modifiables dans l'aperçu (data-sig-edit) → champ de la signature. */
+const TEXT_FIELDS = {
+  firstName: ["identity", "firstName"],
+  lastName: ["identity", "lastName"],
+  jobTitle: ["identity", "jobTitle"],
+  department: ["identity", "department"],
+  company: ["identity", "company"],
+  tagline: ["identity", "tagline"],
+  phone: ["contact", "phone"],
+  mobile: ["contact", "mobile"],
+  email: ["contact", "email"],
+  website: ["contact", "website"],
+  address: ["contact", "address"],
+  ctaLabel: ["cta", "label"],
+  disclaimer: ["disclaimer", "text"],
+};
+
+/** Refus définitif d'un enregistrement : ce que le bandeau en dit. */
+const SAVE_BLOCKED = {
+  notFound:
+    "Cette signature n'existe plus (supprimée depuis un autre onglet ?). Vos dernières modifications n'ont pas pu être enregistrées.",
+  forbidden:
+    "Votre rôle dans cet espace ne permet pas de modifier cette signature : vos dernières modifications n'ont pas été enregistrées.",
+  subscription:
+    "Votre abonnement est inactif : vos dernières modifications n'ont pas été enregistrées. Renouvelez-le pour modifier vos signatures.",
+};
+
+/** `onRetry` : « Non enregistré » propose de réessayer tout de suite. */
+function SaveStatus({ status, onRetry }) {
+  const map = {
+    idle: null,
+    dirty: {
+      label: "Modifications en cours…",
+      className: "text-muted-foreground",
+    },
+    saving: { label: "Enregistrement…", className: "text-muted-foreground" },
+    // emerald-600 restait trop clair sur blanc (3,7:1)
+    saved: {
+      label: "Enregistré",
+      className: "text-emerald-700 dark:text-emerald-400",
+    },
+    error: { label: "Non enregistré", className: "text-red-600" },
+  };
+  const s = map[status];
+  if (!s) return null;
+  return (
+    <span className={`flex items-center gap-1 text-xs ${s.className}`}>
+      {status === "saving" && <Loader2 size={12} className="animate-spin" />}
+      {status === "saved" && <Check size={12} />}
+      {s.label}
+      {status === "error" && onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          title="Réessayer maintenant"
+          className="ml-1 font-medium underline underline-offset-2 hover:text-red-700 cursor-pointer dark:hover:text-red-400"
+        >
+          Réessayer
+        </button>
+      )}
+    </span>
+  );
+}
+
+export default function SignatureEditor({ id }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isNew = searchParams?.get("new") === "1";
+  const { isReadOnly: subscriptionReadOnly } = useSubscriptionAccess();
+
+  const {
+    sig,
+    update,
+    replace,
+    flush,
+    discard,
+    lockEdits,
+    editsLocked,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    status,
+    saveBlocked,
+    isSaveBlocked,
+    loading,
+    error,
+    notFound,
+    refetch,
+    catalog,
+    initialRender,
+  } = useSignatureV2(id);
+  // Un refus définitif d'enregistrement (signature supprimée, rôle,
+  // abonnement) met l'éditeur en lecture seule, comme un abonnement expiré
+  const isReadOnly = subscriptionReadOnly || Boolean(saveBlocked);
+  // Signature ouverte juste après sa création et pas encore modifiée (ni
+  // texte ni image) : choisir la personne n'y demande pas de confirmation.
+  // Valeurs du premier affichage : l'adresse perd aussitôt ?new=1.
+  const [openedNew] = useState(isNew);
+  const openedImages = useRef(null);
+  if (sig && openedImages.current === null) {
+    openedImages.current = JSON.stringify(sig.images || null);
+  }
+  const fresh =
+    openedNew &&
+    !canUndo &&
+    openedImages.current === JSON.stringify(sig?.images || null);
+  // ?new=1 ne vaut que pour la première ouverture : retiré de l'adresse,
+  // sinon un rechargement ou Précédent ferait passer pour neuve une
+  // signature déjà modifiée (personne changée sans confirmation). Même
+  // page, rien n'est remonté : openedNew et l'onglet de départ restent.
+  useEffect(() => {
+    if (isNew) router.replace(`${LIST_URL}/${id}`, { scroll: false });
+  }, [isNew, id, router]);
+
+  // Annuler / rétablir au clavier (⌘Z, ⇧⌘Z, Ctrl+Y) hors des champs de
+  // saisie, qui gardent leur propre annulation
+  useEffect(() => {
+    const onKey = (e) => {
+      const k = (e.key || "").toLowerCase();
+      if (isReadOnly) return;
+      if (!(e.metaKey || e.ctrlKey) || (k !== "z" && k !== "y")) return;
+      const t = e.target;
+      if (t?.closest?.("input, textarea, [contenteditable]")) return;
+      e.preventDefault();
+      if (k === "y" || e.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo, isReadOnly]);
+
+  // Onglet d'ouverture : Contenu, où se complète la signature (photo, logo,
+  // réseaux). Une signature neuve ne s'ouvre sur Modèle que s'il y a
+  // vraiment à choisir : plusieurs modèles proposés, ou des modèles
+  // enregistrés par l'équipe (liste à jour pour elle). Il est déduit au
+  // premier affichage puis figé (`openingTab`) : supprimer le dernier
+  // modèle enregistré ne fait pas changer d'onglet sous les yeux. Neuve
+  // s'entend à l'ouverture (`openedNew`) : l'adresse perd aussitôt ?new=1.
+  // La même liste donne le modèle de référence de l'en-tête (`reference`,
+  // plus bas) : elle est lue pour toute signature, le cache suffit alors.
+  const { data: savedTemplates, loading: savedLoading } = useQuery(
+    SIGNATURE_TEMPLATES_V2,
+    { fetchPolicy: openedNew ? "cache-and-network" : "cache-first" },
+  );
+  const openingTab = useRef(null);
+  // Onglet choisi par l'utilisateur, sinon celui d'ouverture
+  const [tab, setTabState] = useState(null);
+  // Chaque onglet s'ouvre en haut de sa liste de réglages
+  const panelRef = useRef(null);
+  const setTab = useCallback((next) => {
+    setTabState(next);
+    requestAnimationFrame(() => {
+      const viewport = panelRef.current?.querySelector(
+        "[data-radix-scroll-area-viewport]",
+      );
+      if (viewport) viewport.scrollTop = 0;
+    });
+  }, []);
+  // Sélection dans l'aperçu (son panneau remplace les onglets), du plus
+  // précis au plus large : une partie (prénom, une ligne de coordonnées),
+  // un élément, une colonne, toute la signature.
+  const [selected, setSelected] = useState(null);
+  const element = selected?.level === "element" ? selected.key : null;
+  const select = useCallback((next) => setSelected(next), []);
+  // Panneau ouvert ou refermé depuis la barre latérale (liste, fil
+  // d'Ariane, « Tous les réglages ») : le bouton cliqué disparaît avec
+  // l'ancien panneau et le focus retomberait sur la page. Il va au titre du
+  // nouveau panneau, ou à l'onglet actif au retour, que les lecteurs d'écran
+  // annoncent. Un focus resté ailleurs (aperçu, champ amené) ne bouge pas.
+  const selectionKey = selected
+    ? `${selected.level}-${selected.key || ""}`
+    : "";
+  const focusedSelection = useRef(selectionKey);
+  useEffect(() => {
+    if (focusedSelection.current === selectionKey) return undefined;
+    focusedSelection.current = selectionKey;
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (active && active !== document.body) return;
+      panelRef.current
+        ?.querySelector(
+          selectionKey
+            ? "[data-panel-title]"
+            : '[role="tab"][aria-selected="true"]',
+        )
+        ?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectionKey]);
+  const [render, setRender] = useState(initialRender);
+  const [installOpen, setInstallOpen] = useState(false);
+  // Visite guidée relancée depuis l'aide « ? » : chaque relance la remonte
+  const [tourRun, setTourRun] = useState(0);
+  const replayTour = useCallback(() => setTourRun((n) => n + 1), []);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (initialRender && !render) setRender(initialRender);
+  }, [initialRender, render]);
+
+  // Saisie et images que montre `render` (inconnues pour le rendu initial :
+  // la copie attend alors un rendu à jour)
+  const shownKey = useRef(null);
+  const onRender = useCallback((r, key) => {
+    shownKey.current = key || null;
+    setRender(r);
+  }, []);
+  // Largeurs mesurées dans l'aperçu (réglages de largeur) : oubliées en
+  // quittant l'éditeur, pour ne jamais servir à une autre signature
+  useEffect(() => () => setPreviewWidths(null), []);
+
+  // Texte modifié directement dans l'aperçu : même enregistrement qu'une
+  // saisie dans le panneau
+  const onTextInput = useCallback(
+    (field, value) => {
+      const path = TEXT_FIELDS[field];
+      if (path) update({ [path[0]]: { [path[1]]: value } });
+    },
+    [update],
+  );
+
+  // Élément déposé sur une ligne de l'aperçu : nouvel emplacement, avec
+  // de quoi revenir en arrière tout de suite. Le message nomme l'élément et
+  // dit ce que sa nouvelle place a remis en automatique (calculé comme
+  // update le fera) ; un nouveau dépôt le remplace au lieu de l'empiler.
+  const moveToast = useRef(null);
+  const onStylePatch = useCallback(
+    (patch, info) => {
+      const before = sig?.style?.blocks || {};
+      const lost = layoutLost(
+        before,
+        resetMovedBlocks(sig, patch).blocks ?? before,
+      );
+      update({ style: patch });
+      let description;
+      if (lost.align && !lost.width && patch.footerPair === true) {
+        description =
+          "Alignement remis en automatique pour les mettre côte à côte.";
+      } else if (lost.width || lost.align) {
+        const both = lost.width && lost.align;
+        const reset = both
+          ? "Largeur et alignement remis"
+          : lost.width
+            ? "Largeur remise"
+            : "Alignement remis";
+        description = `${reset} en automatique pour sa nouvelle place (réglable${both ? "s" : ""} dans Disposition).`;
+      }
+      toast.document(info?.what ? `Déplacé : ${info.what}` : "Élément déplacé", {
+        id: MOVE_TOAST,
+        fallbackIcon: Move,
+        description,
+        action: { label: "Annuler", onClick: () => undo() },
+        duration: 6000,
+      });
+      moveToast.current = "armed";
+    },
+    [sig, update, undo],
+  );
+  // « Annuler » ne vaut que pour le déplacement : à la modification
+  // suivante (réglage, frappe, ⌘Z), le message disparaît. Le réalignement
+  // qui suit l'enregistrement (statut « Enregistré ») ne compte pas.
+  useEffect(() => {
+    const moved = moveToast.current;
+    if (!moved) return;
+    if (moved === "armed") {
+      moveToast.current = sig;
+      return;
+    }
+    if (sig !== moved && status === "dirty") {
+      toast.dismiss(MOVE_TOAST);
+      moveToast.current = null;
+    }
+  }, [sig, status]);
+  const onHistory = useCallback(
+    (isRedo) => (isRedo ? redo() : undo()),
+    [undo, redo],
+  );
+
+  // Clic dans l'aperçu : la partie la plus précise, dont le panneau s'ouvre
+  // avec le champ cliqué amené à l'écran (sauf texte modifié en place) ;
+  // ⌘ + clic (Ctrl + clic) : le niveau au-dessus de la sélection.
+  const onFieldClick = useCallback(
+    (field, { edit = false, item = null, up = false } = {}) => {
+      const st = sig?.style;
+      const shown = shownItems(sig);
+      const part = BLOCK_OF[item]
+        ? item
+        : BLOCK_OF[field]
+          ? field
+          : (ELEMENT_ITEMS[FIELD_ELEMENT[field]] || [])[0] || null;
+      if (up) {
+        setSelected((current) => selectUp(current, part, st, shown));
+        return;
+      }
+      if (!part) return;
+      setSelected(selectionChain(part, st, shown)[0]);
+      // Lecture seule : rien à saisir, le panneau n'est qu'affiché
+      if (edit || !field || isReadOnly) return;
+      // Le champ est amené sans prendre le clavier : Suppr, Échap et ⌘Z
+      // restent à l'aperçu (un champ focalisé, son texte sélectionné, était
+      // effacé par Suppr sans « Annuler »)
+      const reveal = (attempt = 0) => {
+        const el = document.getElementById(`sig-field-${field}`);
+        if (el) {
+          el.scrollIntoView({ block: "center", behavior: "smooth" });
+        } else if (attempt < 10) {
+          setTimeout(() => reveal(attempt + 1), 60);
+        }
+      };
+      setTimeout(() => reveal(), 30);
+    },
+    [sig, isReadOnly],
+  );
+
+  // Sélection dessinée dans l'aperçu : chaque niveau a un bord qui règle
+  // sa largeur. Élément : la taille qui lui est réservée, bornée par le
+  // modèle (photo, icônes), le coin d'un texte règle ses caractères.
+  // Partie : sa largeur (ligne de coordonnées, prénom ou nom seul sur sa
+  // ligne) et ses caractères. Colonne : sa largeur ; en-tête et bas : celle
+  // de la signature. Signature : sa largeur, la taille du texte.
+  const st0 = sig?.style;
+  const level = selected?.level || null;
+  const key = selected?.key || null;
+  const blockWidth = (element && st0?.blocks?.[element]?.width) || 0;
+  const photoMax = render?.lines?.photoMax || 160;
+  const iconMax = render?.lines?.iconMax || 40;
+  const iconSize = Math.min(st0?.iconSize || 22, iconMax);
+  const baseFont = st0?.fontSize || 13;
+  const fontSize =
+    (element && render?.elements?.[element]?.fontSize) || baseFont;
+  const itemFont =
+    (level === "item" &&
+      (render?.elements?.[key]?.fontSize ||
+        render?.elements?.[BLOCK_OF[key]]?.fontSize)) ||
+    baseFont;
+  const frameWidth = st0?.frameWidth || 0;
+  const partWidth =
+    level === "item" && partHasWidth(sig, key)
+      ? {
+          width: st0?.blocks?.[key]?.width || 0,
+          line: BLOCK_OF[key] === "contact",
+        }
+      : null;
+  const partWidthKey = partWidth ? `${partWidth.width}-${partWidth.line}` : "";
+  const columnWidth = (level === "slot" && st0?.columns?.[key]) || 0;
+  const contactIcons = st0?.contactStyle === "icons";
+  // Élément réparti en morceaux : ses réglages ne valent que pour le
+  // principal, que le cadre entoure
+  const mainKey =
+    element === "name" || element === "contact"
+      ? (mainPiece(st0, shownItems(sig), element) || []).join()
+      : "";
+  // Sur la ligne d'un autre élément : sa largeur se règle sur lui
+  const rowCarrier =
+    element && (mergedRow(sig, element) || [element])[0] !== element;
+  const selection = useMemo(() => {
+    if (!level) return null;
+    const signatureWidth = isReadOnly
+      ? null
+      : { kind: "frame", min: 240, max: 720, width: frameWidth };
+    if (level === "signature") {
+      return {
+        level,
+        whole: true,
+        resize: signatureWidth,
+        font: isReadOnly ? null : { min: 11, max: 18, size: baseFont },
+      };
+    }
+    if (level === "slot") {
+      const c = COLUMN_WIDTH[key];
+      return {
+        level,
+        slot: key,
+        resize: c
+          ? isReadOnly
+            ? null
+            : { kind: "column", min: c.min, max: c.max, width: columnWidth }
+          : key === "header" || key === "footer"
+            ? signatureWidth
+            : null,
+        font: null,
+      };
+    }
+    if (level === "item") {
+      const [pw, pl] = partWidthKey.split("-");
+      return {
+        level,
+        items: [key],
+        resize:
+          partWidthKey && !isReadOnly
+            ? {
+                kind: "wrap",
+                min: 40,
+                max: 640,
+                width: Number(pw) || 0,
+                line: pl === "true",
+              }
+            : null,
+        font: isReadOnly ? null : { ...FONT, size: itemFont },
+      };
+    }
+    const base = !isReadOnly && !rowCarrier && RESIZE[key];
+    let resize = null;
+    if (base && key === "photo") {
+      resize = { ...base, max: Math.min(base.max, photoMax) };
+    } else if (base && key === "social") {
+      resize = { ...base, max: iconMax, size: iconSize };
+    } else if (base) {
+      resize = { ...base, width: blockWidth };
+    }
+    return {
+      level,
+      items: ELEMENT_ITEMS[key] || [key],
+      // Le séparateur vertical se règle mais ne se déplace pas
+      nograb: key === "divider",
+      main: mainKey ? mainKey.split(",") : null,
+      resize,
+      font:
+        !isReadOnly && FONT_ELEMENTS.has(key)
+          ? { ...FONT, size: fontSize, icons: key === "contact" && contactIcons }
+          : null,
+    };
+  }, [
+    level,
+    key,
+    isReadOnly,
+    blockWidth,
+    photoMax,
+    iconMax,
+    iconSize,
+    fontSize,
+    itemFont,
+    baseFont,
+    frameWidth,
+    partWidthKey,
+    columnWidth,
+    contactIcons,
+    mainKey,
+    rowCarrier,
+  ]);
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, Math.round(v)));
+  // Bord tiré dans l'aperçu : largeur du cadre, d'une colonne, ou réglage
+  // de l'élément
+  const onResize = useCallback(
+    (width) => {
+      if (!sig || !level) return;
+      const st = sig.style;
+      if (
+        level === "signature" ||
+        (level === "slot" && (key === "header" || key === "footer"))
+      ) {
+        update({ style: { frameWidth: clamp(width, 240, 720) } });
+        return;
+      }
+      // Largeur d'un texte : 0 = automatique (tiré jusqu'à sa largeur
+      // naturelle), le réglage est alors retiré
+      const withWidth = (blocks, k, value) => {
+        // eslint-disable-next-line no-unused-vars
+        const { width: _w, ...rest } = blocks[k] || {};
+        const next = value ? { ...rest, width: value } : rest;
+        const all = { ...blocks };
+        if (Object.keys(next).length > 0) all[k] = next;
+        else delete all[k];
+        return all;
+      };
+      if (level === "item") {
+        update({
+          style: {
+            blocks: withWidth(
+              st.blocks || {},
+              key,
+              width ? clamp(width, 40, 640) : 0,
+            ),
+          },
+        });
+        return;
+      }
+      if (level === "slot") {
+        const c = COLUMN_WIDTH[key];
+        if (!c) return;
+        update({
+          style: {
+            columns: { ...(st.columns || {}), [key]: clamp(width, c.min, c.max) },
+          },
+        });
+        return;
+      }
+      if (!element || !RESIZE[element]) return;
+      const { min, max } = RESIZE[element];
+      if (!width && RESIZE[element].kind === "wrap") {
+        update({ style: { blocks: withWidth(st.blocks || {}, element, 0) } });
+        return;
+      }
+      const value = clamp(width, min, max);
+      let patch;
+      if (element === "photo") patch = { photoSize: value };
+      else if (element === "social") patch = { iconSize: value };
+      else if (element === "logo") patch = { logoWidth: value };
+      else if (element === "accent") patch = { accentLength: value };
+      else if (st.rules?.[element]) {
+        patch = {
+          rules: {
+            ...st.rules,
+            [element]: { ...st.rules[element], length: value },
+          },
+        };
+      }
+      else {
+        patch = { blocks: withWidth(st.blocks || {}, element, value) };
+      }
+      update({ style: patch });
+    },
+    [level, key, element, sig, update],
+  );
+  // Coin tiré dans l'aperçu : taille des caractères. Signature : la taille
+  // de base, les éléments réglés à part suivent. Élément : ses parties
+  // réglées à part suivent, les icônes des coordonnées aussi. Partie : elle
+  // seule.
+  const onFont = useCallback(
+    (size) => {
+      if (!sig || !level) return;
+      const style = sig.style;
+      const all = style.elements || {};
+      if (level === "signature") {
+        const value = clamp(size, 11, 18);
+        const factor = value / baseFont;
+        const elements = Object.fromEntries(
+          Object.entries(all).map(([k, e]) => [
+            k,
+            e?.fontSize
+              ? { ...e, fontSize: clamp(e.fontSize * factor, FONT.min, FONT.max) }
+              : e,
+          ]),
+        );
+        update({ style: { fontSize: value, elements } });
+        return;
+      }
+      if (level === "item") {
+        const value = clamp(size, FONT.min, FONT.max);
+        update({
+          style: {
+            elements: { ...all, [key]: { ...(all[key] || {}), fontSize: value } },
+          },
+        });
+        return;
+      }
+      if (!element || !FONT_ELEMENTS.has(element)) return;
+      // Même règle que le curseur « Taille » du panneau
+      const value = clamp(size, FONT.min, FONT.max);
+      update({ style: fontSizePatch(style, element, value, fontSize) });
+    },
+    [level, key, element, sig, update, fontSize, baseFont],
+  );
+  const onEscape = useCallback(() => setSelected(null), []);
+
+  // Suppr (⌫) sur une sélection : un texte est vidé, le bouton, la bannière
+  // et la mention sont masqués, un trait est retiré ; « Annuler » revient en
+  // arrière. Photo et logo, hors historique, sont d'abord confirmés (même
+  // confirmation que le lien « Retirer » des champs d'image).
+  const [confirmImage, setConfirmImage] = useState(null);
+  const [confirmImageOpen, setConfirmImageOpen] = useState(false);
+  // errorPolicy « none » pour le retrait (dans useRemoveSignatureImage) et
+  // pour les actions ci-dessous : un refus de l'API doit tomber dans le
+  // catch, pas passer pour une réussite
+  const removeImage = useRemoveSignatureImage(id);
+  const deleteSelected = useCallback(() => {
+    if (isReadOnly) return;
+    const what = deleteFor(sig, selected);
+    if (!what) return;
+    if (what.image) {
+      setConfirmImage(what.image);
+      setConfirmImageOpen(true);
+      return;
+    }
+    const label = selectionLabel(selected, sig?.style);
+    update(what.update, { step: true });
+    setSelected(null);
+    toast.document(`Retiré : ${label}`, {
+      fallbackIcon: Trash2,
+      action: { label: "Annuler", onClick: () => undo() },
+      duration: 6000,
+    });
+  }, [isReadOnly, sig, selected, update, undo]);
+  const confirmRemoveImage = async () => {
+    // Messages de réussite et de refus (avec sa raison) donnés par le hook
+    const updated = await removeImage(confirmImage === "photo" ? "PHOTO" : "LOGO");
+    if (updated) {
+      replace(updated, { image: confirmImage });
+      setSelected(null);
+    }
+  };
+  // Même touche, focus hors de l'aperçu (page, pas un champ ni le panneau)
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      if (!selected || isReadOnly) return;
+      const t = e.target;
+      const onPage =
+        t === document.body ||
+        t === document.documentElement ||
+        t?.closest?.("[data-tour='preview']");
+      if (!onPage || t?.closest?.("input, textarea, select, [contenteditable]")) {
+        return;
+      }
+      e.preventDefault();
+      deleteSelected();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, isReadOnly, deleteSelected]);
+  // Échap hors de l'aperçu : quitte d'abord un champ, puis la sélection. Un
+  // menu, une liste ou une fenêtre qui se ferme l'a déjà traité (Radix
+  // marque l'événement), comme un glisser annulé.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape" || e.defaultPrevented || !selected) return;
+      const t = e.target;
+      if (t?.closest?.("input, textarea, select, [contenteditable]")) {
+        t.blur();
+        return;
+      }
+      setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
+
+  // Fichier lâché à côté d'une case d'image : le navigateur l'ouvrirait
+  // (Safari et Firefox à la place de l'éditeur). Les cases d'image le
+  // traitent avant (defaultPrevented) ; ailleurs, curseur « interdit » et
+  // rien ne se passe. L'aperçu a sa propre garde (HtmlFrame).
+  useEffect(() => {
+    const guard = (e) => {
+      const types = Array.from(e.dataTransfer?.types || []);
+      if (e.defaultPrevented || !types.includes("Files")) return;
+      e.preventDefault();
+      if (e.type === "dragover") e.dataTransfer.dropEffect = "none";
+    };
+    window.addEventListener("dragover", guard);
+    window.addEventListener("drop", guard);
+    return () => {
+      window.removeEventListener("dragover", guard);
+      window.removeEventListener("drop", guard);
+    };
+  }, []);
+
+  // Depuis un réglage sans objet (« Ajouter une photo »…) : onglet Contenu,
+  // puis le champ concerné
+  const goToField = useCallback((field) => {
+    setSelected(null);
+    setTab("content");
+    const focus = (attempt = 0) => {
+      const el = document.getElementById(`sig-field-${field}`);
+      if (el) {
+        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        if (typeof el.focus === "function") el.focus({ preventScroll: true });
+      } else if (attempt < 10) {
+        setTimeout(() => focus(attempt + 1), 60);
+      }
+    };
+    setTimeout(() => focus(), 30);
+  }, []);
+
+  // E-mail de test : la saisie en cours est d'abord enregistrée, sinon le
+  // test partirait avec l'ancienne version
+  const [sendTest, { loading: testing }] = useMutation(SEND_SIGNATURE_V2_TEST, {
+    errorPolicy: "none",
+  });
+  const handleTest = async () => {
+    if ((await flush()) === false) {
+      toast.error(
+        "Vos dernières modifications ne sont pas enregistrées : l'e-mail de test n'a pas été envoyé",
+      );
+      return;
+    }
+    try {
+      const { data } = await sendTest({ variables: { id } });
+      toast.success(
+        `E-mail de test envoyé à ${data?.sendEmailSignatureV2Test || "votre adresse"}`,
+      );
+    } catch (err) {
+      toast.error("L'e-mail de test n'a pas été envoyé", refusalToast(err));
+    }
+  };
+
+  const [duplicate] = useMutation(DUPLICATE_SIGNATURE_V2, {
+    refetchQueries: [{ query: SIGNATURES_V2 }],
+    errorPolicy: "none",
+  });
+  const [setDefault] = useMutation(SET_DEFAULT_SIGNATURE_V2, {
+    refetchQueries: [{ query: SIGNATURES_V2 }],
+    errorPolicy: "none",
+  });
+  const [remove] = useMutation(DELETE_SIGNATURE_V2, {
+    refetchQueries: [{ query: SIGNATURES_V2 }],
+    errorPolicy: "none",
+  });
+
+  const template =
+    catalog?.templates?.find((t) => t.id === sig?.templateId) || null;
+  // Modèle de référence, nommé dans l'en-tête et repris par « Revenir au
+  // modèle » : le modèle d'équipe appliqué s'il existe encore, sinon le
+  // modèle intégré. Le contenu garde le modèle intégré (ses capacités).
+  // Modèles enregistrés : la requête de l'onglet d'ouverture (plus haut)
+  const reference = templateReference(
+    sig,
+    catalog?.templates,
+    savedTemplates || !savedLoading
+      ? savedTemplates?.emailSignatureTemplatesV2 || []
+      : null,
+  );
+  const client = useApolloClient();
+
+  // Copie demandée dès le clic, sans rien attendre : Safari 18 et
+  // antérieurs la refusent après un aller-retour réseau. Le presse-papiers
+  // attend lui-même le rendu à jour (l'aperçu peut avoir un temps de retard
+  // sur la frappe), calculé depuis la saisie locale pendant que
+  // l'enregistrement part en parallèle.
+  const handleCopy = () => {
+    flush();
+    const shown = render;
+    const onCopied = () => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    };
+    // Aperçu à jour (même saisie, mêmes images) : copié tout de suite, sans
+    // attendre l'API
+    const now = renderKey(toInput(sig), JSON.stringify(sig?.images || null));
+    if (shown?.html && shownKey.current === now) {
+      copySignature(shown, { onCopied });
+      return;
+    }
+    // Sinon le presse-papiers attend le rendu de la dernière saisie : on le
+    // dit, pour qu'un collage trop rapide ne surprenne pas
+    const waiting = toast.loading("Copie en cours…");
+    const fresh = client
+      .query({
+        query: RENDER_SIGNATURE_V2,
+        variables: { id, input: toInput(sig) },
+        fetchPolicy: "no-cache",
+      })
+      .then(
+        ({ data }) => data?.renderEmailSignatureV2 || shown,
+        // À défaut, le dernier rendu affiché
+        () => shown,
+      );
+    copySignature(shown, { fresher: fresh, onCopied, waitingToast: waiting });
+  };
+
+  // Départ alors que la dernière modification ne passe pas (connexion
+  // coupée) : on demande avant de la perdre
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const handleBack = async () => {
+    // Une modification pas encore enregistrée ne se perd pas en partant ;
+    // après un refus définitif, il n'y a plus rien à enregistrer
+    if ((await flush()) === false && !isSaveBlocked()) {
+      setConfirmLeave(true);
+      return;
+    }
+    router.push(LIST_URL);
+  };
+  const leaveWithoutSaving = () => {
+    discard();
+    setConfirmLeave(false);
+    router.push(LIST_URL);
+  };
+
+  const handleDuplicate = async () => {
+    // La copie part de la version enregistrée : sans la dernière
+    // modification, elle en serait privée
+    if ((await flush()) === false) {
+      toast.error(
+        "Vos dernières modifications ne sont pas enregistrées : la signature n'a pas été dupliquée",
+      );
+      return;
+    }
+    try {
+      const { data } = await duplicate({ variables: { id } });
+      toast.success("Signature dupliquée");
+      router.push(`${LIST_URL}/${data.duplicateEmailSignatureV2.id}`);
+    } catch (err) {
+      toast.error("Duplication impossible", refusalToast(err));
+    }
+  };
+
+  const handleSetDefault = async () => {
+    try {
+      await setDefault({ variables: { id } });
+      replace({ isDefault: true });
+      toast.success("Signature définie par défaut");
+    } catch (err) {
+      toast.error("Action impossible", refusalToast(err));
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await remove({ variables: { id } });
+      // Plus rien à enregistrer : une saisie en attente partirait vers une
+      // signature supprimée
+      discard();
+      toast.success("Signature supprimée");
+      // Remplace l'adresse : Précédent ne ramène pas à la signature supprimée
+      router.replace(LIST_URL);
+    } catch (err) {
+      toast.error("Suppression impossible", refusalToast(err));
+    }
+  };
+
+  // Nouvel essai de chargement après une panne (l'état de chargement de la
+  // requête ne bouge pas pendant un rechargement : suivi local)
+  const [retrying, setRetrying] = useState(false);
+  const retryLoad = async () => {
+    setRetrying(true);
+    try {
+      await refetch();
+    } catch {
+      // L'écran d'erreur reste affiché
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  // Panne réseau au chargement, après les essais automatiques : rien n'est
+  // perdu, on propose de réessayer
+  if (!sig && error?.networkError) {
+    return (
+      <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center gap-3 text-center">
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Impossible de charger la signature pour le moment. Vérifiez votre
+          connexion puis réessayez.
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push(LIST_URL)}
+            className={`cursor-pointer ${FOCUS_RING}`}
+          >
+            <ArrowLeft size={14} />
+            Retour aux signatures
+          </Button>
+          <Button
+            variant="primary"
+            onClick={retryLoad}
+            disabled={retrying}
+            className={`cursor-pointer ${FOCUS_RING}`}
+          >
+            {retrying && <Loader2 size={14} className="animate-spin" />}
+            Réessayer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Signature supprimée, d'un collègue ou d'un autre espace (réponse vide),
+  // ou refusée par l'API
+  if (!sig && (error || notFound)) {
+    return (
+      <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center gap-3 text-center">
+        <p className="text-sm text-muted-foreground">
+          {"Cette signature est introuvable ou n'est plus accessible."}
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => router.push(LIST_URL)}
+          className={`cursor-pointer ${FOCUS_RING}`}
+        >
+          <ArrowLeft size={14} />
+          Retour aux signatures
+        </Button>
+      </div>
+    );
+  }
+
+  // Signature neuve : la liste des modèles enregistrés décide de l'onglet
+  // d'ouverture, on l'attend pour qu'il ne change pas sous les yeux
+  if (loading || !sig || (openedNew && savedLoading && !savedTemplates)) {
+    return <SignatureEditorV2Skeleton />;
+  }
+  if (openingTab.current === null) {
+    const choice =
+      (catalog?.templates || []).filter((t) => t.inGallery !== false).length >
+        1 || (savedTemplates?.emailSignatureTemplatesV2?.length || 0) > 0;
+    openingTab.current = openedNew && choice ? "template" : "content";
+  }
+  const activeTab = tab ?? openingTab.current;
+
+  // Conseil sous l'aperçu : l'alerte de taille Gmail est portée par la jauge
+  const footerWarning =
+    render?.warnings?.find((w) => !w.includes("Gmail")) || "";
+
+  return (
+    // La page se déclare en anglais (app/layout.jsx) : l'éditeur, lui, est
+    // lu par les lecteurs d'écran avec une prononciation française
+    <div
+      lang="fr"
+      className="flex h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950"
+    >
+      {/* Panneau gauche, au style des éditeurs de documents */}
+      <aside
+        ref={panelRef}
+        className="flex w-[420px] shrink-0 flex-col border-r border-[#EEEFF1] dark:border-[#232323]"
+      >
+        <div className="px-6 pb-4 pt-5">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`-ml-2 h-8 w-8 shrink-0 cursor-pointer ${FOCUS_RING}`}
+              onClick={handleBack}
+              aria-label="Retour aux signatures"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Input
+              value={sig.name}
+              onChange={(e) => update({ name: e.target.value })}
+              maxLength={120}
+              className="h-10 min-w-0 flex-1 border-transparent px-2 text-xl font-medium shadow-none hover:border-[#e6e7ea] focus:border-[#D1D3D8] dark:border-transparent dark:hover:border-[#2E2E32] dark:focus:border-[#44444A]"
+              aria-label="Nom de la signature"
+              disabled={isReadOnly || editsLocked}
+            />
+          </div>
+          {/* Ligne toujours présente : l'état d'enregistrement qui apparaît
+              et disparaît ne fait pas bouger les onglets */}
+          <div className="flex h-5 items-center gap-3 pl-9">
+            <SaveStatus
+              status={status}
+              onRetry={saveBlocked ? undefined : () => flush()}
+            />
+            {sig.isDefault && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Star size={11} className="fill-current" />
+                Par défaut
+              </span>
+            )}
+          </div>
+        </div>
+
+        {selected ? (
+          <ScrollArea
+            key={`${selected.level}-${selected.key || ""}`}
+            className="min-h-0 flex-1 border-t border-[#EEEFF1] dark:border-[#232323]"
+          >
+            {/* Lecture seule : l'en-tête (retour, niveaux) reste utilisable,
+                les réglages sont seulement affichés */}
+            <div className="px-6 pt-6">
+              <LevelHeader
+                selected={selected}
+                st={sig.style}
+                ancestors={ancestorsOf(selected, sig)}
+                onSelect={select}
+                onClose={() => setSelected(null)}
+                // Le retour rouvre l'onglet resté ouvert : le lien le nomme
+                tab={tab}
+              />
+            </div>
+            <div
+              className={`space-y-8 px-6 pb-6 pt-8 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+              inert={isReadOnly}
+            >
+              {selected.level === "element" && (
+                <ElementPanel
+                  element={selected.key}
+                  id={id}
+                  sig={sig}
+                  update={update}
+                  replace={replace}
+                  catalog={catalog}
+                  resolved={render?.elements}
+                  lines={render?.lines}
+                  onSelect={select}
+                  onUndo={undo}
+                />
+              )}
+              {selected.level === "item" && (
+                <ItemPanel
+                  item={selected.key}
+                  sig={sig}
+                  update={update}
+                  resolved={render?.elements}
+                  catalog={catalog}
+                />
+              )}
+              {selected.level === "slot" && (
+                <SlotPanel
+                  slot={selected.key}
+                  sig={sig}
+                  update={update}
+                  lines={render?.lines}
+                  onSelect={select}
+                />
+              )}
+              {selected.level === "signature" && (
+                <StylePanel
+                  sig={sig}
+                  update={update}
+                  catalog={catalog}
+                  template={reference}
+                  lines={render?.lines}
+                  onGoTo={goToField}
+                  onSelect={select}
+                />
+              )}
+            </div>
+          </ScrollArea>
+        ) : (
+          <TabsNew
+            value={activeTab}
+            onValueChange={setTab}
+            className="min-h-0 flex-1"
+          >
+            <TabsNewList>
+              {/* Toujours là, même avec un seul modèle proposé : on y
+                  enregistre et réutilise ses propres modèles */}
+              <TabsNewTrigger value="template" className={FOCUS_RING}>
+                <LayoutTemplate className="h-3.5 w-3.5" />
+                Modèle
+              </TabsNewTrigger>
+              <TabsNewTrigger value="content" className={FOCUS_RING}>
+                <PenLine className="h-3.5 w-3.5" />
+                Contenu
+              </TabsNewTrigger>
+              <TabsNewTrigger value="style" className={FOCUS_RING}>
+                <Palette className="h-3.5 w-3.5" />
+                Style
+              </TabsNewTrigger>
+            </TabsNewList>
+            <ScrollArea className="min-h-0 flex-1">
+              <div
+                className={`px-6 py-6 ${isReadOnly ? "pointer-events-none opacity-60" : ""}`}
+                // Lecture seule : ni souris ni clavier (onglets, champs)
+                inert={isReadOnly}
+              >
+                <TabsNewContent value="template">
+                  <TemplateGallery
+                    sig={sig}
+                    update={update}
+                    catalog={catalog}
+                    onUndo={undo}
+                  />
+                </TabsNewContent>
+                <TabsNewContent value="content">
+                  <ContentPanel
+                    id={id}
+                    sig={sig}
+                    update={update}
+                    replace={replace}
+                    flush={flush}
+                    lockEdits={lockEdits}
+                    editsLocked={editsLocked}
+                    fresh={fresh}
+                    catalog={catalog}
+                    template={template}
+                  />
+                </TabsNewContent>
+                <TabsNewContent value="style">
+                  <StylePanel
+                    sig={sig}
+                    update={update}
+                    catalog={catalog}
+                    template={reference}
+                    lines={render?.lines}
+                    onGoTo={goToField}
+                    onSelect={select}
+                  />
+                </TabsNewContent>
+              </div>
+            </ScrollArea>
+          </TabsNew>
+        )}
+      </aside>
+
+      {/* Aperçu */}
+      <main className="flex min-w-0 flex-1 flex-col bg-neutral-50 dark:bg-neutral-900">
+        {/* Barre d'actions : ses libellés raccourcissent selon sa propre
+            largeur (@container ; seuils mesurés sans ses 48 px de marges),
+            pas celle de la fenêtre, pour ne plus se chevaucher sur un
+            portable. Le conteneur est la barre et non la colonne : Safari
+            y rattacherait les repères fixes du glisser-déposer de l'aperçu */}
+        <div className="@container flex items-center justify-between gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800">
+          <div className="min-w-0">
+            <h1 className="sr-only">{sig.name}</h1>
+            {/* Colonne étroite : la puce s'efface, l'onglet Modèle reste */}
+            {reference && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelected(null);
+                  setTab("template");
+                }}
+                className={`group inline-flex items-center gap-1.5 rounded-md px-2 py-1 -ml-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer @max-[552px]:hidden ${FOCUS_RING}`}
+              >
+                <LayoutTemplate size={14} />
+                Modèle <span className="font-medium text-foreground">{reference.name}</span>
+                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden dark:text-[#8b7fff]">
+                  Changer
+                  <ChevronRight size={12} />
+                </span>
+              </button>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="mr-1 flex items-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
+                onClick={undo}
+                disabled={!canUndo || isReadOnly}
+                aria-label="Annuler"
+                title={`Annuler (${undoKeys().undo})`}
+              >
+                <Undo2 size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
+                onClick={redo}
+                disabled={!canRedo || isReadOnly}
+                aria-label="Rétablir"
+                title={`Rétablir (${undoKeys().redo})`}
+              >
+                <Redo2 size={16} />
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleCopy}
+              disabled={!render?.html}
+              className={`cursor-pointer ${FOCUS_RING}`}
+              title="Copier la signature pour la coller dans les réglages de votre messagerie"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {/* Icône seule en colonne étroite : le nom reste lu */}
+              <span className="@max-[672px]:sr-only">
+                {copied ? "Copiée" : "Copier"}
+              </span>
+            </Button>
+            <div data-tour="actions" className="flex shrink-0 items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={!render?.html || testing}
+                className={`cursor-pointer ${FOCUS_RING}`}
+                title="Recevoir la signature dans votre boîte mail pour la vérifier"
+              >
+                {testing ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <MailCheck size={14} />
+                )}
+                <span className="@max-[672px]:hidden">M&apos;envoyer un test</span>
+                <span className="hidden @max-[672px]:inline">Tester</span>
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => setInstallOpen(true)}
+                disabled={!render?.html}
+                className={`cursor-pointer ${FOCUS_RING}`}
+              >
+                <Send size={14} />
+                <span className="@max-[812px]:hidden">
+                  Installer dans ma messagerie
+                </span>
+                <span className="hidden @max-[812px]:inline">Installer</span>
+              </Button>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
+                  aria-label="Plus d'actions"
+                >
+                  <MoreHorizontal size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={handleSetDefault}
+                  disabled={sig.isDefault || isReadOnly}
+                >
+                  <Star size={14} />
+                  Définir par défaut
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleDuplicate}
+                  disabled={isReadOnly}
+                >
+                  <CopyPlus size={14} />
+                  Dupliquer
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={isReadOnly}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 size={14} />
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {saveBlocked && (
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-4 border-b border-red-200 bg-red-50 px-6 py-2.5 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+          >
+            <p className="min-w-0">{SAVE_BLOCKED[saveBlocked]}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(LIST_URL)}
+              className={`shrink-0 cursor-pointer ${FOCUS_RING}`}
+            >
+              <ArrowLeft size={14} />
+              Retour aux signatures
+            </Button>
+          </div>
+        )}
+
+        <div className="min-h-0 flex-1 p-6">
+          <div data-tour="preview" className="mx-auto h-full max-w-3xl">
+            <SignaturePreview
+              id={id}
+              sig={sig}
+              initialRender={initialRender}
+              onRender={onRender}
+              onFieldClick={onFieldClick}
+              onTextInput={isReadOnly ? undefined : onTextInput}
+              onStylePatch={onStylePatch}
+              onHistory={isReadOnly ? undefined : onHistory}
+              selection={selection}
+              onResize={onResize}
+              onFont={isReadOnly ? undefined : onFont}
+              onEscape={onEscape}
+              onDelete={deleteSelected}
+              onMeasure={setPreviewWidths}
+              onReplayTour={isReadOnly ? undefined : replayTour}
+              readOnly={isReadOnly}
+            />
+          </div>
+        </div>
+
+        {(render?.warnings?.length > 0 || render?.chars > 0) && (
+          <div className="flex items-center justify-between gap-4 border-t border-neutral-200 px-6 py-2 text-xs dark:border-neutral-800">
+            {/* Sur deux lignes au plus, le conseil entier au survol */}
+            <div
+              className="min-w-0 line-clamp-2 text-amber-700 dark:text-amber-300"
+              title={footerWarning || undefined}
+            >
+              {footerWarning}
+            </div>
+            {render?.chars > 0 && (
+              <GmailSize
+                chars={render.chars}
+                max={catalog?.gmailMaxChars || 10000}
+              />
+            )}
+          </div>
+        )}
+      </main>
+
+      {!isReadOnly && (
+        <EditorTour
+          key={tourRun}
+          replay={tourRun > 0}
+          steps={[
+            {
+              target: "preview",
+              title: "Cliquez sur un élément pour le modifier",
+              body: "Un texte se change directement dans l'aperçu. Ses réglages s'ouvrent à gauche. ⌘ + clic (Ctrl + clic) sélectionne le niveau au-dessus : l'élément entier, sa colonne, puis toute la signature.",
+            },
+            {
+              target: "preview",
+              title: "Déplacez et élargissez",
+              body: "Cliquez sur un élément : sa poignée ⠿ apparaît, tirez-la pour le déplacer. Tirez le bord de son cadre pour l'élargir, ou son coin pour agrandir le texte. Pour une disposition toute faite (photo au-dessus, nom dans un bandeau), voyez l'onglet Modèle.",
+            },
+            {
+              target: "actions",
+              title: "Vérifiez, puis installez",
+              body: "Envoyez-vous un e-mail de test pour la voir dans votre messagerie, puis installez-la dans Gmail, Outlook ou Apple Mail. Après une modification, recopiez-la : votre messagerie garde l'ancienne version.",
+            },
+          ]}
+        />
+      )}
+
+      <InstallDialog
+        open={installOpen}
+        onOpenChange={setInstallOpen}
+        render={render}
+        name={sig.name}
+        gmailMaxChars={catalog?.gmailMaxChars || 10000}
+      />
+
+      <ConfirmRemoveImage
+        kind={confirmImage === "photo" ? "PHOTO" : "LOGO"}
+        open={confirmImageOpen}
+        onOpenChange={setConfirmImageOpen}
+        onConfirm={confirmRemoveImage}
+      />
+
+      <AlertDialog open={confirmLeave} onOpenChange={setConfirmLeave}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Quitter sans enregistrer ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vos dernières modifications n&apos;ont pas pu être enregistrées
+              (connexion interrompue ?). Si vous quittez maintenant, elles
+              seront perdues.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
+              Rester sur la page
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={leaveWithoutSaving}
+              className={`bg-red-600 text-white hover:bg-red-700 cursor-pointer ${FOCUS_RING}`}
+            >
+              Quitter sans enregistrer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette signature ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              « {sig.name} » sera supprimée de Newbi. Si elle est installée dans
+              votre messagerie, elle continuera de s&apos;afficher normalement,
+              images comprises. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className={`bg-red-600 text-white hover:bg-red-700 cursor-pointer ${FOCUS_RING}`}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

@@ -376,14 +376,13 @@ export function ColorPicker({
     }
   }, [currentColor, colorFormat]);
 
-  // EyeDropper API
+  // EyeDropper API : Chrome et Edge seulement. Ailleurs (Safari, Firefox),
+  // le bouton Pipette n'est pas affiché. Le sélecteur n'est monté qu'à
+  // l'ouverture, côté navigateur : aucun écart avec le rendu serveur.
+  const canUseEyeDropper =
+    typeof window !== "undefined" && "EyeDropper" in window;
   const handleEyeDropper = async () => {
-    if (!window.EyeDropper) {
-      alert(
-        "L'outil pipette n'est pas supporté par votre navigateur. Essayez Chrome ou Edge.",
-      );
-      return;
-    }
+    if (!canUseEyeDropper) return;
 
     try {
       const eyeDropper = new window.EyeDropper();
@@ -630,16 +629,18 @@ export function ColorPicker({
                   : "0°, 0%, 0%"
             }
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-9 w-9"
-            onClick={handleEyeDropper}
-            title="Capturer une couleur"
-          >
-            <Pipette className="h-4 w-4" />
-          </Button>
+          {canUseEyeDropper && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={handleEyeDropper}
+              title="Capturer une couleur"
+            >
+              <Pipette className="h-4 w-4" />
+            </Button>
+          )}
           <div
             className="w-9 h-9 rounded border-2 border-gray-300"
             style={{ backgroundColor: currentColor }}
