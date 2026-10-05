@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { pickLinkFields } from "@/src/utils/linked-products";
+import { pickItemImage } from "@/src/utils/item-image";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -2815,6 +2816,7 @@ function transformQuoteToFormData(quote) {
         discountType: item.discountType || "PERCENTAGE",
         vatExemptionText: item.vatExemptionText || "",
         ...pickLinkFields(item),
+        ...pickItemImage(item),
       })) || [],
 
     discount: quote.discount || 0,
@@ -3249,6 +3251,7 @@ function transformFormDataToInput(
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",
           ...pickLinkFields(item),
+          ...pickItemImage(item),
         };
 
         // Ajouter vatExemptionText uniquement si vatRate est 0

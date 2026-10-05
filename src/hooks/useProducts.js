@@ -3,6 +3,7 @@ import {
   CREATE_PRODUCT,
   UPDATE_PRODUCT,
   DELETE_PRODUCT,
+  UPLOAD_PRODUCT_IMAGE,
 } from "../graphql/mutations/products";
 import { GET_PRODUCTS, GET_PRODUCT } from "../graphql/queries/products";
 import { toast } from "@/src/components/ui/sonner";
@@ -131,6 +132,33 @@ export const useUpdateProduct = () => {
     },
     loading,
     error,
+  };
+};
+
+// Envoi d'une image de produit : renvoie son URL, ou null en cas d'échec
+// (message d'erreur affiché ici)
+export const useUploadProductImage = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  const [uploadProductImage, { loading }] = useMutation(UPLOAD_PRODUCT_IMAGE);
+
+  return {
+    uploadProductImage: async (file) => {
+      try {
+        const { data } = await uploadProductImage({
+          variables: { workspaceId, file },
+        });
+        const result = data?.uploadProductImage;
+        if (!result?.success || !result.url) {
+          toast.error(result?.message || "Impossible d'envoyer l'image");
+          return null;
+        }
+        return result.url;
+      } catch (error) {
+        toast.error(error.message || "Impossible d'envoyer l'image");
+        return null;
+      }
+    },
+    loading,
   };
 };
 

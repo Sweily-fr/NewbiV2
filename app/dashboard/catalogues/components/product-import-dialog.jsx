@@ -12,10 +12,21 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import { toast } from "@/src/components/ui/sonner";
-import { ArrowLeft, ArrowRight, Loader2, Upload, CheckCircle2, XCircle, Download } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  Upload,
+  CheckCircle2,
+  XCircle,
+  Download,
+} from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { CREATE_PRODUCT } from "@/src/graphql/mutations/products";
-import { useProductCustomFields, useCreateProductCustomField } from "@/src/hooks/useProductCustomFields";
+import {
+  useProductCustomFields,
+  useCreateProductCustomField,
+} from "@/src/hooks/useProductCustomFields";
 import {
   parseCSVRaw,
   parseExcelRaw,
@@ -40,7 +51,10 @@ export default function ProductImportDialog({ open, onOpenChange }) {
   const apolloClient = useApolloClient();
   const [createProduct] = useMutation(CREATE_PRODUCT);
   const { fields: allCustomFields } = useProductCustomFields(workspaceId);
-  const existingCustomFields = useMemo(() => allCustomFields.filter(f => f.isActive), [allCustomFields]);
+  const existingCustomFields = useMemo(
+    () => allCustomFields.filter((f) => f.isActive),
+    [allCustomFields],
+  );
   const { createField } = useCreateProductCustomField();
 
   // State
@@ -51,13 +65,21 @@ export default function ProductImportDialog({ open, onOpenChange }) {
   const [mapping, setMapping] = useState({});
   const [customFieldMappings, setCustomFieldMappings] = useState([]);
   const [isImporting, setIsImporting] = useState(false);
-  const [importResults, setImportResults] = useState({ successCount: 0, errors: [] });
+  const [importResults, setImportResults] = useState({
+    successCount: 0,
+    errors: [],
+  });
 
   // Transformed products
   const transformedProducts = useMemo(() => {
     if (!parsedData) return [];
     return parsedData.rows.map((row) =>
-      transformRowToProduct(row, parsedData.headers, mapping, customFieldMappings)
+      transformRowToProduct(
+        row,
+        parsedData.headers,
+        mapping,
+        customFieldMappings,
+      ),
     );
   }, [parsedData, mapping, customFieldMappings]);
 
@@ -68,7 +90,9 @@ export default function ProductImportDialog({ open, onOpenChange }) {
     }).length;
   }, [transformedProducts]);
 
-  const importFinished = !isImporting && (importResults.successCount > 0 || importResults.errors.length > 0);
+  const importFinished =
+    !isImporting &&
+    (importResults.successCount > 0 || importResults.errors.length > 0);
 
   // Reset all state
   const resetState = useCallback(() => {
@@ -101,10 +125,13 @@ export default function ProductImportDialog({ open, onOpenChange }) {
     setCustomFieldMappings([]);
   }, []);
 
-  const handleCreateCustomField = useCallback(async (formData) => {
-    if (!workspaceId) return null;
-    return await createField(workspaceId, formData);
-  }, [workspaceId, createField]);
+  const handleCreateCustomField = useCallback(
+    async (formData) => {
+      if (!workspaceId) return null;
+      return await createField(workspaceId, formData);
+    },
+    [workspaceId, createField],
+  );
 
   const handleParseAndGoToMapping = useCallback(async () => {
     if (!file) return;
@@ -119,7 +146,9 @@ export default function ProductImportDialog({ open, onOpenChange }) {
       }
 
       // Filter out completely empty rows
-      data.rows = data.rows.filter((row) => row.some((cell) => cell.trim() !== ""));
+      data.rows = data.rows.filter((row) =>
+        row.some((cell) => cell.trim() !== ""),
+      );
 
       if (data.rows.length === 0) {
         toast.error("Le fichier ne contient aucune ligne de données.");
@@ -129,7 +158,7 @@ export default function ProductImportDialog({ open, onOpenChange }) {
 
       if (data.rows.length > 500) {
         toast.warning(
-          `Le fichier contient ${data.rows.length} lignes. L'import sera effectué par lots de ${BATCH_SIZE}.`
+          `Le fichier contient ${data.rows.length} lignes. L'import sera effectué par lots de ${BATCH_SIZE}.`,
         );
       }
 
@@ -176,8 +205,8 @@ export default function ProductImportDialog({ open, onOpenChange }) {
                 workspaceId,
               },
             },
-          }).then(() => ({ idx }))
-        )
+          }).then(() => ({ idx })),
+        ),
       );
 
       for (let j = 0; j < results.length; j++) {
@@ -204,12 +233,23 @@ export default function ProductImportDialog({ open, onOpenChange }) {
       } catch {
         // Ignore refetch errors
       }
-      toast.success(`${successCount} produit${successCount > 1 ? "s" : ""} importé${successCount > 1 ? "s" : ""}`);
+      toast.success(
+        `${successCount} produit${successCount > 1 ? "s" : ""} importé${successCount > 1 ? "s" : ""}`,
+      );
     }
     if (errors.length > 0) {
-      toast.error(`${errors.length} erreur${errors.length > 1 ? "s" : ""} lors de l'import`);
+      toast.error(
+        `${errors.length} erreur${errors.length > 1 ? "s" : ""} lors de l'import`,
+      );
     }
-  }, [parsedData, workspaceId, transformedProducts, mapping, createProduct, apolloClient]);
+  }, [
+    parsedData,
+    workspaceId,
+    transformedProducts,
+    mapping,
+    createProduct,
+    apolloClient,
+  ]);
 
   // ── Navigation ──
 
@@ -218,7 +258,11 @@ export default function ProductImportDialog({ open, onOpenChange }) {
       case 0:
         return !!file;
       case 1:
-        return mapping.name !== null && mapping.name !== undefined && importableCount > 0;
+        return (
+          mapping.name !== null &&
+          mapping.name !== undefined &&
+          importableCount > 0
+        );
       default:
         return false;
     }
@@ -253,7 +297,9 @@ export default function ProductImportDialog({ open, onOpenChange }) {
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogHeader>
-            <DialogTitle className="text-base">Importer des produits</DialogTitle>
+            <DialogTitle className="text-base">
+              Importer des produits
+            </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               {step.label} — Étape {step.number} sur {STEPS.length}
             </DialogDescription>
@@ -270,18 +316,21 @@ export default function ProductImportDialog({ open, onOpenChange }) {
               onFileRemoved={handleFileRemoved}
             />
           )}
-          {currentStep === 1 && parsedData && !isImporting && !importFinished && (
-            <ImportStepMapping
-              headers={parsedData.headers}
-              firstRow={parsedData.rows[0]}
-              mapping={mapping}
-              onMappingChange={setMapping}
-              customFieldMappings={customFieldMappings}
-              onCustomFieldMappingsChange={setCustomFieldMappings}
-              onCreateCustomField={handleCreateCustomField}
-              existingCustomFields={existingCustomFields}
-            />
-          )}
+          {currentStep === 1 &&
+            parsedData &&
+            !isImporting &&
+            !importFinished && (
+              <ImportStepMapping
+                headers={parsedData.headers}
+                firstRow={parsedData.rows[0]}
+                mapping={mapping}
+                onMappingChange={setMapping}
+                customFieldMappings={customFieldMappings}
+                onCustomFieldMappingsChange={setCustomFieldMappings}
+                onCreateCustomField={handleCreateCustomField}
+                existingCustomFields={existingCustomFields}
+              />
+            )}
 
           {/* Import progress */}
           {currentStep === 1 && isImporting && (
@@ -289,10 +338,21 @@ export default function ProductImportDialog({ open, onOpenChange }) {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               <div className="text-center space-y-2 w-full max-w-md">
                 <p className="text-sm font-medium">
-                  Import en cours... {importResults.successCount + importResults.errors.length} / {importableCount}
+                  Import en cours...{" "}
+                  {importResults.successCount + importResults.errors.length} /{" "}
+                  {importableCount}
                 </p>
                 <Progress
-                  value={importableCount > 0 ? Math.round(((importResults.successCount + importResults.errors.length) / importableCount) * 100) : 0}
+                  value={
+                    importableCount > 0
+                      ? Math.round(
+                          ((importResults.successCount +
+                            importResults.errors.length) /
+                            importableCount) *
+                            100,
+                        )
+                      : 0
+                  }
                   className="h-2"
                 />
               </div>
@@ -306,7 +366,9 @@ export default function ProductImportDialog({ open, onOpenChange }) {
                 <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
                   <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                   <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                    {importResults.successCount} produit{importResults.successCount > 1 ? "s" : ""} importé{importResults.successCount > 1 ? "s" : ""} avec succès
+                    {importResults.successCount} produit
+                    {importResults.successCount > 1 ? "s" : ""} importé
+                    {importResults.successCount > 1 ? "s" : ""} avec succès
                   </p>
                 </div>
 
@@ -315,7 +377,8 @@ export default function ProductImportDialog({ open, onOpenChange }) {
                     <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/10">
                       <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                       <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                        {importResults.errors.length} erreur{importResults.errors.length > 1 ? "s" : ""}
+                        {importResults.errors.length} erreur
+                        {importResults.errors.length > 1 ? "s" : ""}
                       </p>
                     </div>
 
@@ -338,7 +401,9 @@ export default function ProductImportDialog({ open, onOpenChange }) {
                       variant="outline"
                       size="sm"
                       className="gap-2"
-                      onClick={() => downloadProductErrorsCSV(importResults.errors)}
+                      onClick={() =>
+                        downloadProductErrorsCSV(importResults.errors)
+                      }
                     >
                       <Download className="h-3.5 w-3.5" />
                       Télécharger les erreurs (CSV)
@@ -354,11 +419,7 @@ export default function ProductImportDialog({ open, onOpenChange }) {
         <div className="px-6 py-4 border-t flex items-center justify-between flex-shrink-0">
           <div>
             {currentStep > 0 && !isImporting && !importFinished && (
-              <Button
-                variant="outline"
-                onClick={handlePrev}
-                className="gap-2"
-              >
+              <Button variant="outline" onClick={handlePrev} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Précédent
               </Button>
@@ -396,14 +457,11 @@ export default function ProductImportDialog({ open, onOpenChange }) {
                 className="gap-2"
               >
                 <Upload className="h-4 w-4" />
-                Importer {importableCount} produit{importableCount > 1 ? "s" : ""}
+                Importer {importableCount} produit
+                {importableCount > 1 ? "s" : ""}
               </Button>
             )}
-            {importFinished && (
-              <Button onClick={handleClose}>
-                Fermer
-              </Button>
-            )}
+            {importFinished && <Button onClick={handleClose}>Fermer</Button>}
           </div>
         </div>
       </DialogContent>

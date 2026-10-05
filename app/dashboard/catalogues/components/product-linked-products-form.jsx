@@ -61,7 +61,10 @@ function HelpTip({ label, children }) {
           <CircleHelp className="size-3.5" />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-[280px] text-xs leading-relaxed">
+      <TooltipContent
+        side="top"
+        className="max-w-[280px] text-xs leading-relaxed"
+      >
         {children}
       </TooltipContent>
     </Tooltip>
@@ -91,7 +94,8 @@ export default function ProductLinkedProductsForm({
   const { data, loading } = useQuery(GET_PRODUCTS, {
     variables: {
       workspaceId,
-      search: debouncedSearchTerm.trim() !== "" ? debouncedSearchTerm : undefined,
+      search:
+        debouncedSearchTerm.trim() !== "" ? debouncedSearchTerm : undefined,
       limit: 20,
     },
     fetchPolicy: "cache-and-network",
@@ -164,8 +168,8 @@ export default function ProductLinkedProductsForm({
           </p>
           <p className="mt-1.5">
             Exemple : un pot de peinture couvre 20 m². Réglez « pour 20 m²,
-            ajouter 1 pot ». Pour 90 m² de peinture, la facture affichera
-            5 pots.
+            ajouter 1 pot ». Pour 90 m² de peinture, la facture affichera 5
+            pots.
           </p>
         </HelpTip>
       </Label>
@@ -231,7 +235,11 @@ export default function ProductLinkedProductsForm({
                     min="0.01"
                     value={link.quantity}
                     onChange={(e) =>
-                      handleFieldChange(link.productId, "quantity", e.target.value)
+                      handleFieldChange(
+                        link.productId,
+                        "quantity",
+                        e.target.value,
+                      )
                     }
                     aria-label={`Quantité de ${link.product?.name || "produit lié"} à ajouter`}
                     className="w-20 text-right"

@@ -64,6 +64,9 @@ import {
   CommandList,
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
+import { ProductThumbnail } from "@/src/components/product-thumbnail";
+import { ItemImageControl } from "@/src/components/item-image-control";
+import { pickItemImage } from "@/src/utils/item-image";
 
 // Mêmes unités que les devis / factures / bons de commande (une valeur hors
 // liste, ex. produit du catalogue, est affichée via une option de secours).
@@ -129,7 +132,11 @@ function ProductSearchCombobox({
       description: product.description,
       unit: product.unit,
       reference: product.reference,
+      imageUrl: product.imageUrl,
     })) || [];
+
+  // Une case image par ligne dès qu'un produit de la liste a une image
+  const hasImages = products.some((p) => p.imageUrl);
 
   const handleSelect = (value) => {
     const product = products.find((p) => p.value === value);
@@ -141,6 +148,7 @@ function ProductSearchCombobox({
         productId: product.value,
         quantity: 1,
         unit: product.unit || "unité",
+        ...(product.imageUrl && { imageUrl: product.imageUrl }),
       });
     }
     setSearchTerm("");
@@ -210,19 +218,27 @@ function ProductSearchCombobox({
                     key={product.value}
                     value={product.value}
                     onSelect={() => handleSelect(product.value)}
-                    className="flex flex-col items-start gap-1 p-3"
+                    className="flex flex-row items-start gap-3 p-3"
                   >
-                    <span className="font-normal">{product.label}</span>
-                    {product.description && (
-                      <span className="text-sm text-muted-foreground">
-                        {product.description}
-                      </span>
+                    {hasImages && (
+                      <ProductThumbnail
+                        src={product.imageUrl}
+                        className="size-10 mt-0.5"
+                      />
                     )}
-                    {product.reference && (
-                      <span className="text-xs text-muted-foreground">
-                        Réf: {product.reference}
-                      </span>
-                    )}
+                    <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                      <span className="font-normal">{product.label}</span>
+                      {product.description && (
+                        <span className="text-sm text-muted-foreground">
+                          {product.description}
+                        </span>
+                      )}
+                      {product.reference && (
+                        <span className="text-xs text-muted-foreground">
+                          Réf: {product.reference}
+                        </span>
+                      )}
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -267,6 +283,7 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
   const {
     watch,
     register,
+    setValue,
     formState: { errors },
   } = useFormContext();
   const {
@@ -367,6 +384,7 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
       details: productData.details || "",
       reference: productData.reference || "",
       productId: productData.productId || "",
+      ...pickItemImage(productData),
       quantity: productData.quantity || 1,
       unit: productData.unit !== undefined ? productData.unit : "unité",
     });
@@ -477,6 +495,12 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
                                       <GripVertical className="h-4 w-4" />
                                     </span>
                                   )}
+                                  {currentItem.imageUrl && (
+                                    <ProductThumbnail
+                                      src={currentItem.imageUrl}
+                                      className="size-9 rounded-lg"
+                                    />
+                                  )}
                                   <div className="font-normal break-all [overflow-wrap:anywhere]">
                                     {description}
                                   </div>
@@ -510,6 +534,15 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
                           </AccordionTrigger>
                           <AccordionContent className="pb-6 pt-2 px-2 overflow-visible [&_input]:bg-background [&_textarea]:bg-background [&_[role=combobox]]:bg-background">
                             <div className="space-y-4 pt-2">
+                              <ItemImageControl
+                                imageUrl={currentItem.imageUrl}
+                                disabled={!canEdit}
+                                onRemove={() =>
+                                  setValue(`items.${index}.imageUrl`, "", {
+                                    shouldDirty: true,
+                                  })
+                                }
+                              />
                               {/* Nom */}
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2">

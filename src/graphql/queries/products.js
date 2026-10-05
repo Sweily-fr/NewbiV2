@@ -13,6 +13,7 @@ export const GET_PRODUCTS = gql`
         unit
         category
         reference
+        imageUrl
         customFields {
           fieldId
           value
@@ -30,6 +31,7 @@ export const GET_PRODUCTS = gql`
             vatRate
             unit
             reference
+            imageUrl
           }
         }
         createdAt
@@ -53,6 +55,7 @@ export const GET_PRODUCT = gql`
       unit
       category
       reference
+      imageUrl
       linkedProducts {
         productId
         quantity
@@ -66,6 +69,7 @@ export const GET_PRODUCT = gql`
           vatRate
           unit
           reference
+          imageUrl
         }
       }
       createdBy {
