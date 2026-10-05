@@ -108,6 +108,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
       linkedQuantity
       linkedPer
       linkedRounding
+      imageUrl
       progressPercentage
     }
     customFields {

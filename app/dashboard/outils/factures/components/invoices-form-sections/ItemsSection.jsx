@@ -41,6 +41,9 @@ import {
   newLinkKey,
   pickLinkFields,
 } from "@/src/utils/linked-products";
+import { pickItemImage } from "@/src/utils/item-image";
+import { ProductThumbnail } from "@/src/components/product-thumbnail";
+import { ItemImageControl } from "@/src/components/item-image-control";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Select,
@@ -437,6 +440,7 @@ export default function ItemsSection({
       vatExemptionText: productData.vatExemptionText || "",
       progressPercentage: productData.progressPercentage ?? 100,
       ...pickLinkFields(productData),
+      ...pickItemImage(productData),
       total: calculateItemTotal(
         quantity,
         unitPrice,
@@ -692,6 +696,12 @@ export default function ItemsSection({
                                       </span>
                                     )}
                                     <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                      {currentItem.imageUrl && (
+                                        <ProductThumbnail
+                                          src={currentItem.imageUrl}
+                                          className="size-9 rounded-lg"
+                                        />
+                                      )}
                                       <div className="font-normal break-all [overflow-wrap:anywhere]">
                                         {description}
                                       </div>
@@ -803,6 +813,15 @@ export default function ItemsSection({
                             </AccordionTrigger>
                             <AccordionContent className="pb-6 pt-2 px-2 overflow-visible [&_input]:bg-background [&_textarea]:bg-background [&_[role=combobox]]:bg-background">
                               <div className="space-y-4 pt-2">
+                                <ItemImageControl
+                                  imageUrl={currentItem.imageUrl}
+                                  disabled={!canEdit || isItemFieldLocked}
+                                  onRemove={() =>
+                                    setValue(`items.${index}.imageUrl`, "", {
+                                      shouldDirty: true,
+                                    })
+                                  }
+                                />
                                 {/* Description */}
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2">

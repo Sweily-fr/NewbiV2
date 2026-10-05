@@ -146,6 +146,7 @@ export function buildLinkedItems(product, { mainQuantity = 1, parentKey } = {}) 
             : 20,
         unit: target.unit || "unité",
         productId: target.id,
+        ...(target.imageUrl && { imageUrl: target.imageUrl }),
         linkKey: newLinkKey(),
         linkedFromKey: parentKey,
         ...rule,
