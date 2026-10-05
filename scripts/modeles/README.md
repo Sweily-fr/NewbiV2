@@ -1,8 +1,15 @@
 # Modèles téléchargeables (Word, Excel, PDF)
 
-Les cinq articles « modèle » du blog et la page `/modeles` promettent un
-fichier à télécharger. Ces scripts génèrent les quinze fichiers réellement
-servis depuis `public/modeles/`.
+Les articles « modèle » du blog et la page `/modeles` promettent un fichier à
+télécharger. Ces scripts génèrent les dix-sept fichiers réellement servis
+depuis `public/modeles/` : six modèles en Word et Excel, dont cinq également
+en PDF.
+
+Le bon de commande n'a pas de PDF. Les PDF sont rendus par le gabarit du
+produit via `/pdf-generator/<type>/preview`, et cette route n'existe que pour
+`invoice` et `quote` ; côté bon de commande, seul `/pdf-generator/purchase-order/[id]`
+est en place. La créer toucherait le pipeline PDF partagé avec la WebView
+mobile et l'endpoint `POST /api/invoices/preview-pdf`.
 
 Les trois formats montrent **le même document, au gabarit Newbi** : titre à
 droite, méta sous le titre, blocs émetteur et client côte à côte, tableau à
