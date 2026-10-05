@@ -12,7 +12,7 @@ export const metadata = {
       "Générateur de devis gratuit : créez et téléchargez votre devis | Newbi",
   },
   description:
-    "Créez un devis professionnel en ligne et téléchargez-le en PDF, gratuitement et sans inscription. Mentions obligatoires, durée de validité, TVA et calcul automatique des totaux.",
+    "Créez un devis professionnel et téléchargez-le en PDF, gratuitement et sans inscription. Mentions obligatoires, durée de validité et TVA.",
   alternates: { canonical: "/outils/generateur-de-devis" },
   openGraph: {
     title: "Générateur de devis gratuit, sans inscription | Newbi",

@@ -290,6 +290,66 @@
     ],
     "termsAndConditions": "TVA non applicable, article 293 B du Code général des impôts. Paiement à 30 jours à compter de la date d'émission. En cas de retard, pénalités au taux de 3 fois le taux d'intérêt légal et indemnité forfaitaire pour frais de recouvrement de 40 euros."
    }
+  },
+  {
+   "slug": "modele-bon-de-commande",
+   "type": "purchaseOrder",
+   "data": {
+    "issueDate": "2026-01-15",
+    "executionDate": "2026-01-15",
+    "dueDate": "2026-02-14",
+    "prefix": "BC-2026",
+    "number": "001",
+    "status": "PENDING",
+    "validUntil": "2026-04-15",
+    "companyInfo": {
+     "name": "[Votre entreprise]",
+     "address": {
+      "street": "[Numéro et rue]",
+      "postalCode": "[Code postal]",
+      "city": "[Ville]",
+      "country": "France"
+     },
+     "email": "[contact@votre-entreprise.fr]",
+     "phone": "[01 23 45 67 89]",
+     "siren": "[9 chiffres]",
+     "legalForm": "[Forme juridique]",
+     "bankDetails": {
+      "bankName": "[Nom de la banque]",
+      "iban": "[FR76 0000 0000 0000 0000 0000 000]",
+      "bic": "[XXXXFRPP]"
+     },
+     "vatNumber": "[FR00 000000000]"
+    },
+    "client": {
+     "name": "[Nom ou dénomination du client]",
+     "address": {
+      "street": "[Numéro et rue]",
+      "postalCode": "[Code postal]",
+      "city": "[Ville]",
+      "country": "France"
+     },
+     "email": "[client@exemple.fr]",
+     "siret": "000 000 000 00000"
+    },
+    "items": [
+     {
+      "description": "[Désignation de l'article ou de la prestation commandée]",
+      "quantity": 1,
+      "unitPrice": 1000,
+      "vatRate": 20,
+      "unit": "unité"
+     },
+     {
+      "description": "[Deuxième ligne]",
+      "quantity": 2,
+      "unitPrice": 250,
+      "vatRate": 20,
+      "unit": "unité"
+     }
+    ],
+    "termsAndConditions": "Bon de commande à retourner daté et signé avec la mention « Bon pour accord ». Livraison sous [délai] à compter de la réception du bon signé. Toute modification de la commande fera l'objet d'un nouveau bon de commande."
+   }
   }
  ]
 }

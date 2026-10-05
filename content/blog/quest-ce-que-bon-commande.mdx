@@ -31,7 +31,25 @@ import { Check } from "lucide-react"
 
 Un bon de commande est le document par lequel un acheteur confirme à un vendeur une commande de biens ou de services, avec les quantités, les prix et les conditions de livraison et de paiement. Signé par les deux parties, il a valeur de contrat : il intervient après le devis et avant la facture, et sert de preuve en cas de litige.
 
-Vous trouverez ci-dessous la définition précise du bon de commande, sa valeur juridique, sa différence avec le devis et la facture, les mentions à y faire figurer, les cas où il est recommandé et la trame à suivre pour le rédiger.
+Vous trouverez ci-dessous le modèle à télécharger, la définition précise du bon de commande, sa valeur juridique, sa différence avec le devis et la facture, les mentions à y faire figurer, les cas où il est recommandé et la trame à suivre pour le rédiger.
+
+<div className="not-prose my-8 rounded-xl border border-gray-200 p-6">
+  <p className="text-base font-medium text-gray-900 mb-1">Télécharger le modèle de bon de commande</p>
+  <p className="text-sm text-gray-600 mb-4">
+    Fichier prêt à remplir, avec le détail des articles, la durée de validité et la mention « Bon pour accord » à faire signer. Le classeur Excel calcule les totaux automatiquement.
+  </p>
+  <div className="flex flex-wrap gap-3">
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-bon-de-commande.docx" download>Word (.docx)</a>
+    </Button>
+    <Button asChild variant="outline">
+      <a href="/modeles/modele-bon-de-commande.xlsx" download>Excel (.xlsx)</a>
+    </Button>
+  </div>
+  <p className="text-xs text-gray-500 mt-4">
+    Sans inscription. Les autres modèles (facture, devis, acompte, franchise en base) sont réunis sur la page des <a href="/modeles" className="underline">modèles gratuits à télécharger</a>.
+  </p>
+</div>
 
 {/* image-pending : illustration à générer (scripts/generate-blog-images.py), retirer ce commentaire une fois le fichier présent
 <Image
@@ -204,7 +222,7 @@ Le bon de commande s'inscrit dans un processus commercial structuré. Voici les 
 
 ### 1. Le devis
 
-Le vendeur établit un [devis professionnel](/blog/comment-faire-devis-professionnel) détaillant les produits ou services proposés, les prix et les conditions. L'acheteur l'étudie, négocie éventuellement, puis l'accepte.
+Le vendeur établit un [devis professionnel](/blog/comment-faire-devis-professionnel) détaillant les produits ou services proposés, les prix et les conditions, à la main depuis un [modèle](/modeles) ou avec un [générateur de devis](/outils/generateur-de-devis). L'acheteur l'étudie, négocie éventuellement, puis l'accepte.
 
 ### 2. Le bon de commande
 

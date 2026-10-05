@@ -24,7 +24,7 @@ export const metadata = {
       "Logiciel de facturation gratuit 30 jours : devis et factures conformes | Newbi",
   },
   description:
-    "Créez vos devis et factures gratuitement pendant 30 jours, sans carte bancaire : mentions obligatoires, numérotation, relances, facturation électronique 2026. Et ce qu'un logiciel 100 % gratuit ne fait pas.",
+    "Devis et factures gratuits pendant 30 jours, sans carte bancaire : mentions obligatoires, numérotation, relances, facturation électronique.",
   alternates: { canonical: "/logiciel-facturation-gratuit" },
   openGraph: {
     title: "Logiciel de facturation gratuit 30 jours | Newbi",

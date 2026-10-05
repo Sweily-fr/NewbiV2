@@ -32,6 +32,11 @@ const ligneAdresse = (adr = {}) => [
 function modeleDocument(rendu) {
   const d = rendu.data;
   const estDevis = rendu.type === "quote";
+  // Le bon de commande partage la mise en page du devis (seconde date = date
+  // de validité) mais porte son propre titre et son propre libellé de numéro.
+  // Libellés repris tels quels de UniversalPreviewPDF, pour que le modèle
+  // téléchargé et le document produit par l'application soient identiques.
+  const estBonCommande = rendu.type === "purchaseOrder";
   const estAcompte = Boolean(d.isDepositInvoice || d.invoiceType === "deposit");
   const items = d.items || [];
 
@@ -39,12 +44,25 @@ function modeleDocument(rendu) {
   // lignes de TVA du récapitulatif, et ajoute la mention au pied de page.
   const franchise = items.every((i) => Number(i.vatRate || 0) === 0);
 
-  const titre = estAcompte ? "Facture d'acompte" : estDevis ? "Devis" : "Facture";
+  const titre = estBonCommande
+    ? "Bon de commande"
+    : estAcompte
+      ? "Facture d'acompte"
+      : estDevis
+        ? "Devis"
+        : "Facture";
 
   const meta = [
-    [estDevis ? "Numéro de devis" : "Numéro de facture", `${d.prefix}-${d.number}`],
+    [
+      estBonCommande
+        ? "Numéro de BC"
+        : estDevis
+          ? "Numéro de devis"
+          : "Numéro de facture",
+      `${d.prefix}-${d.number}`,
+    ],
     ["Date d'émission", dateFr(d.issueDate)],
-    estDevis
+    estDevis || estBonCommande
       ? ["Date de validité", dateFr(d.validUntil)]
       : ["Date d'échéance", dateFr(d.dueDate)],
   ];

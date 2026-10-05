@@ -12,7 +12,7 @@ export const metadata = {
       "Générateur de facture gratuit : créez et téléchargez votre facture | Newbi",
   },
   description:
-    "Créez une facture conforme en ligne et téléchargez-la en PDF, gratuitement et sans inscription. Mentions obligatoires, TVA ou franchise en base, calcul automatique des totaux.",
+    "Créez une facture conforme et téléchargez-la en PDF, gratuitement et sans inscription. Mentions obligatoires, TVA ou franchise en base.",
   alternates: { canonical: "/outils/generateur-de-facture" },
   openGraph: {
     title: "Générateur de facture gratuit, sans inscription | Newbi",

@@ -33,7 +33,7 @@ export const metadata = {
       "Guide facturation électronique 2026-2027 : obligations et checklist | Newbi",
   },
   description:
-    "Téléchargez gratuitement le guide complet sur la facturation électronique obligatoire en 2026. Calendrier de la réforme, formats acceptés (Factur-X, UBL, CII), obligations par statut, PPF, PDP et checklist pratique pour votre entreprise.",
+    "Guide gratuit : calendrier de la réforme, formats Factur-X, UBL et CII, obligations par statut, PPF et PDP, et checklist pour votre entreprise.",
   keywords: [
     "facturation électronique",
     "facturation électronique obligatoire 2026",
@@ -54,7 +54,7 @@ export const metadata = {
     title:
       "Guide Facturation Électronique 2026 - Tout comprendre sur la réforme",
     description:
-      "Guide gratuit de 20 pages : calendrier, obligations par statut, formats acceptés, PPF vs PDP, et checklist pratique pour préparer votre entreprise à la facturation électronique obligatoire.",
+      "Guide gratuit de 20 pages : calendrier, obligations par statut, formats acceptés, PPF et PDP, checklist pour la facturation électronique.",
     url: "/guide-facturation-electronique",
     siteName: "Newbi",
     type: "website",
