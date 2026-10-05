@@ -364,5 +364,11 @@
       "credit-de-tva-remboursement-demande",
       "facture-agent-commercial-independant"
     ]
+  },
+  {
+    "date": "2026-10-05",
+    "articles": [
+      "modele-mise-en-demeure-facture-impayee"
+    ]
   }
 ]
