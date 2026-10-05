@@ -15,7 +15,7 @@ export const metadata = {
       "Comparatifs et alternatives : Newbi face aux logiciels de facturation",
   },
   description:
-    "Newbi comparé à Pennylane, Abby, Tiime, Indy, Freebe, Axonaut, Sellsy, QuickBooks et Zoho, plus les alternatives à Excel et les meilleurs logiciels par métier. Comparatifs honnêtes, mis à jour 2026.",
+    "Newbi comparé à Pennylane, Abby, Tiime, Indy, Freebe, Axonaut, Sellsy et QuickBooks, plus les alternatives à Excel. Comparatifs 2026.",
   alternates: { canonical: "/alternatives" },
   openGraph: {
     title: "Comparatifs et alternatives aux logiciels de facturation | Newbi",

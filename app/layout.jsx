@@ -23,7 +23,7 @@ export const metadata = {
     template: "%s | Newbi",
   },
   description:
-    "Gérer sa boîte, ce n'est pas censé être un deuxième métier. Devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
+    "Gérer sa boîte n'est pas censé être un deuxième métier. Devis, factures, clients, banque et facturation électronique au même endroit.",
   keywords: [
     "freelance",
     "facturation",

@@ -17,7 +17,7 @@ export const metadata = {
       "Calculateur de pénalités de retard et indemnité de 40 € | Newbi",
   },
   description:
-    "Calculez gratuitement les pénalités de retard dues sur une facture impayée, avec l'indemnité forfaitaire de recouvrement de 40 euros, et copiez le paragraphe de relance à envoyer à votre client.",
+    "Calculez les pénalités de retard d'une facture impayée et l'indemnité de 40 euros, puis copiez le paragraphe de relance. Gratuit.",
   alternates: { canonical: "/outils/calculateur-penalites-retard" },
   openGraph: {
     title: "Calculateur de pénalités de retard gratuit | Newbi",
