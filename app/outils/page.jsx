@@ -15,7 +15,7 @@ export const metadata = {
     absolute: "Outils gratuits pour facturer et gérer son activité | Newbi",
   },
   description:
-    "Des outils gratuits et sans inscription pour les indépendants et les TPE : générateurs de facture et de devis en ligne, et modèles à télécharger en Word, Excel et PDF.",
+    "Outils gratuits et sans inscription pour indépendants et TPE : générateurs de facture et de devis, modèles Word, Excel et PDF.",
   alternates: { canonical: "/outils" },
   openGraph: {
     title: "Outils gratuits pour facturer | Newbi",

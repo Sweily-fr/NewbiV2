@@ -23,7 +23,7 @@ export const metadata = {
       "Modèles de facture et de devis gratuits à télécharger (Word, Excel, PDF) | Newbi",
   },
   description:
-    "Cinq modèles gratuits à remplir : facture, devis, facture d'acompte, facture auto-entrepreneur et facture sans TVA. Word, Excel et PDF, avec toutes les mentions obligatoires, sans inscription.",
+    "Cinq modèles gratuits à remplir : facture, devis, acompte, auto-entrepreneur, sans TVA. Word, Excel et PDF, mentions obligatoires incluses.",
   alternates: { canonical: "/modeles" },
   openGraph: {
     title: "Modèles de facture et de devis gratuits | Newbi",

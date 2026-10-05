@@ -34,7 +34,7 @@ export const metadata = {
     absolute: "Logiciel de gestion de trésorerie : suivi et prévisions | Newbi",
   },
   description:
-    "Pilotez votre trésorerie en temps réel avec newbi. Synchronisation bancaire automatique, prévisions de cash flow, alertes personnalisées. Le logiciel de gestion de trésorerie pour PME et entrepreneurs.",
+    "Pilotez votre trésorerie en temps réel : synchronisation bancaire, prévisions de cash flow et alertes. Pour TPE, PME et indépendants.",
   keywords:
     "gestion trésorerie, logiciel trésorerie, cash flow, suivi trésorerie, prévision trésorerie, trésorerie PME, gestion financière, synchronisation bancaire, tableau de bord financier",
   openGraph: {

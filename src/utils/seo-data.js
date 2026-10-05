@@ -41,7 +41,7 @@ export const seoData = {
     title:
       "Newbi - Solution de gestion complète pour entrepreneurs et freelances",
     description:
-      "Simplifiez votre gestion d'entreprise avec Newbi : facturation, devis, signatures de mail, kanban, transferts de fichiers, gestion de trésorerie. Essai gratuit de 30 jours sans engagement.",
+      "Devis, factures, clients, trésorerie et facturation électronique au même endroit. Essai gratuit de 30 jours, sans carte bancaire.",
     keywords:
       "gestion entreprise, facturation, devis, signature de mail, kanban, freelance, entrepreneur, comptabilité, CRM, logiciel gestion, auto-entrepreneur, TPE, PME",
     canonical: `${baseUrl}`,
@@ -109,7 +109,7 @@ export const seoData = {
   factures: {
     title: "Logiciel de facturation en ligne : devis, factures, avoirs | Newbi",
     description:
-      "Créez devis, factures et avoirs conformes en 2 minutes, suivez les paiements et relancez vos clients. Compatible facturation électronique 2026. 30 jours gratuits, sans carte bancaire.",
+      "Créez devis, factures et avoirs conformes en 2 minutes, suivez les paiements et relancez vos clients. 30 jours gratuits, sans carte bancaire.",
     keywords:
       "logiciel facturation, facture professionnelle, gestion factures, suivi paiements, relance automatique, TVA, comptabilité, facturation en ligne, auto-entrepreneur",
     canonical: `${baseUrl}/produits/factures`,
@@ -214,7 +214,7 @@ export const seoData = {
   signatures: {
     title: "Générateur de Signature Mail Gratuit | Newbi",
     description:
-      "Créez des signatures mail professionnelles gratuitement. Compatible Gmail, Outlook et Apple Mail. Templates personnalisables, export HTML et prévisualisation en temps réel.",
+      "Créez une signature mail professionnelle gratuitement. Compatible Gmail, Outlook et Apple Mail. Modèles personnalisables, export HTML.",
     keywords:
       "générateur signature mail gratuit, créer signature email professionnelle, signature gmail, signature outlook, template signature mail, signature email HTML, outil signature mail gratuit en ligne",
     canonical: `${baseUrl}/produits/signatures`,
@@ -293,7 +293,7 @@ export const seoData = {
   kanban: {
     title: "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
     description:
-      "Organisez vos projets et vos tâches sur des tableaux kanban simples, partagés avec votre équipe et reliés à vos clients et à vos factures. Inclus dans Newbi, 30 jours gratuits.",
+      "Organisez vos projets sur des tableaux kanban partagés, reliés à vos clients et à vos factures. Inclus dans Newbi, 30 jours gratuits.",
     keywords:
       "kanban, gestion projet, organisation, productivité, collaboration équipe, suivi tâches, méthode agile, tableau kanban, outil gratuit",
     canonical: `${baseUrl}/produits/kanban`,
