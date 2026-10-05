@@ -23,12 +23,12 @@ export const metadata = {
       "Modèles de facture et de devis gratuits à télécharger (Word, Excel, PDF) | Newbi",
   },
   description:
-    "Cinq modèles gratuits à remplir : facture, devis, acompte, auto-entrepreneur, sans TVA. Word, Excel et PDF, mentions obligatoires incluses.",
+    "Six modèles gratuits à remplir : facture, devis, acompte, auto-entrepreneur, sans TVA et bon de commande. Word, Excel, PDF.",
   alternates: { canonical: "/modeles" },
   openGraph: {
     title: "Modèles de facture et de devis gratuits | Newbi",
     description:
-      "Facture, devis, acompte, auto-entrepreneur, franchise en base : cinq modèles conformes à télécharger en Word, Excel et PDF.",
+      "Facture, devis, acompte, auto-entrepreneur, franchise en base, bon de commande : six modèles conformes à télécharger en Word, Excel et PDF.",
     url: "/modeles",
     siteName: "Newbi",
     type: "website",
@@ -73,6 +73,19 @@ const MODELES = [
     pour: "Franchise en base de TVA",
     article: "modele-facture-sans-tva-franchise-en-base",
   },
+  {
+    slug: "modele-bon-de-commande",
+    nom: "Modèle de bon de commande",
+    desc: "Le document que le client date et signe pour valider sa commande, avec le détail des articles, la durée de validité et la mention « Bon pour accord ».",
+    pour: "Faire confirmer une commande avant livraison",
+    article: "quest-ce-que-bon-commande",
+    // Word et Excel seulement : les PDF sont rendus par le gabarit du produit
+    // via /pdf-generator/<type>/preview, et cette route n'existe pas encore
+    // pour les bons de commande (seul /pdf-generator/purchase-order/[id] est
+    // en place). La créer touche le pipeline PDF partagé avec la WebView
+    // mobile, ce qui dépasse le cadre de ce modèle téléchargeable.
+    formats: ["docx", "xlsx"],
+  },
 ];
 
 const FORMATS = [
@@ -84,7 +97,7 @@ const FORMATS = [
 const FAQ = [
   {
     q: "Ces modèles de facture sont-ils vraiment gratuits ?",
-    r: "Oui. Les quinze fichiers se téléchargent sans compte, sans adresse e-mail et sans limite d'utilisation. Vous pouvez les modifier, y mettre votre logo et les réutiliser autant de fois que vous voulez.",
+    r: "Oui. Les dix-sept fichiers se téléchargent sans compte, sans adresse e-mail et sans limite d'utilisation. Vous pouvez les modifier, y mettre votre logo et les réutiliser autant de fois que vous voulez.",
   },
   {
     q: "Une facture faite sous Word ou Excel est-elle légale ?",
@@ -167,15 +180,16 @@ export default function ModelesPage() {
               Modèles de facture et de devis à télécharger
             </h1>
             <p className="mt-4 text-gray-600 leading-relaxed">
-              Cinq modèles prêts à remplir, chacun disponible en Word, Excel et
-              PDF. Ils contiennent déjà toutes les mentions obligatoires et les
-              formules de calcul. Téléchargement immédiat, sans inscription et
-              sans adresse e-mail à laisser.
+              Six modèles prêts à remplir, chacun au format Word et Excel, et
+              en PDF pour les cinq modèles de facture et de devis. Ils
+              contiennent déjà toutes les mentions obligatoires et les formules
+              de calcul. Téléchargement immédiat, sans inscription et sans
+              adresse e-mail à laisser.
             </p>
           </header>
 
           <ul className="grid gap-4 lg:grid-cols-2">
-            {MODELES.map(({ slug, nom, desc, pour, article }) => (
+            {MODELES.map(({ slug, nom, desc, pour, article, formats }) => (
               <li
                 key={slug}
                 id={slug}
@@ -190,7 +204,9 @@ export default function ModelesPage() {
                 </p>
 
                 <div className="mt-5 flex flex-wrap items-center gap-2">
-                  {FORMATS.map(({ ext, label, icon: Icon }) => (
+                  {FORMATS.filter(
+                    ({ ext }) => !formats || formats.includes(ext)
+                  ).map(({ ext, label, icon: Icon }) => (
                     <a
                       key={ext}
                       href={`/modeles/${slug}.${ext}`}

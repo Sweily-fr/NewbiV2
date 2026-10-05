@@ -55,7 +55,7 @@ const OUTILS = [
     href: "/modeles",
     icon: Download,
     title: "Modèles de facture et de devis",
-    desc: "Cinq modèles prêts à remplir en Word, Excel et PDF : facture, devis, acompte, auto-entrepreneur et facture sans TVA.",
+    desc: "Six modèles prêts à remplir en Word, Excel et PDF : facture, devis, acompte, auto-entrepreneur, facture sans TVA et bon de commande.",
     tag: "À télécharger",
   },
 ];
