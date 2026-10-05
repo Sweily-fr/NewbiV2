@@ -91,7 +91,7 @@ export default function ProductImageField({
         className={cn(
           "group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
           value
-            ? "bg-white dark:bg-neutral-100"
+            ? "bg-muted"
             : "border-dashed bg-muted/40 hover:border-foreground/30 hover:bg-muted/70",
           dragging && "border-primary bg-primary/5 ring-4 ring-primary/15",
           loading && "cursor-wait",
@@ -103,7 +103,7 @@ export default function ProductImageField({
             <img
               src={value}
               alt="Image du produit"
-              className="size-full object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03]"
+              className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             />
             <div className="absolute right-2 top-2 flex gap-1.5">
               <button

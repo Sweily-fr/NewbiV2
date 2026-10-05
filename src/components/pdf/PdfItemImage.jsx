@@ -21,10 +21,8 @@ export function ItemCellWithImage({ imageUrl, children }) {
         style={{
           width: "52px",
           height: "52px",
-          objectFit: "contain",
+          objectFit: "cover",
           flexShrink: 0,
-          padding: "3px",
-          backgroundColor: "#ffffff",
           border: "1px solid #E6E6E6",
           borderRadius: "6px",
           boxSizing: "border-box",
