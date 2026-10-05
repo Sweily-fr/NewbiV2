@@ -12,15 +12,35 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
-import { AddChips, CheckedInput, Field, Section } from "./controls";
+import { useActiveOrganization } from "@/src/lib/organization-client";
+import { AddChips, CheckedInput, FOCUS_RING, Field, Hint, Section } from "./controls";
 import ImageField from "./ImageField";
 import ExtrasSection from "./ExtrasPanel";
 
 // Partagés avec les panneaux d'élément
 export { Field, ImageField };
-import { emailProblem, linkProblem, networkLinkProblem } from "../links";
+import {
+  emailProblem,
+  linkProblem,
+  networkExample,
+  networkLinkProblem,
+  phoneRegion,
+  socialLinkPreview,
+  whatsappNational,
+} from "../links";
 import { APPLY_MEMBER_SIGNATURE_V2, SIGNATURE_MEMBERS_V2 } from "../graphql";
+import { refusalToast } from "../errors";
 
 export function TextField({
   id,
@@ -52,6 +72,10 @@ export function TextField({
 }
 
 export function SocialLinks({ social, networks, update }) {
+  // Pays de l'espace : un numéro WhatsApp national y est rattaché, comme
+  // dans le rendu
+  const { organization } = useActiveOrganization();
+  const region = phoneRegion(organization?.addressCountry);
   const used = new Set(social.map((s) => s.network));
   const available = networks.filter((n) => !used.has(n.id));
   const byId = Object.fromEntries(networks.map((n) => [n.id, n]));
@@ -69,8 +93,7 @@ export function SocialLinks({ social, networks, update }) {
     next.splice(index + delta, 0, row);
     update({ social: next });
   };
-  const arrow =
-    "flex h-4 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground cursor-pointer disabled:cursor-default";
+  const arrow = `flex h-4 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground cursor-pointer disabled:cursor-default ${FOCUS_RING}`;
 
   return (
     <div className="space-y-2">
@@ -108,7 +131,7 @@ export function SocialLinks({ social, networks, update }) {
           <div className="min-w-0 flex-1 space-y-1">
             <CheckedInput
               value={s.url}
-              placeholder={`${byId[s.network]?.host || "https://"}/votre-profil`}
+              placeholder={networkExample(s.network)}
               onChange={(e) => setRow(index, { url: e.target.value })}
               aria-label={`Lien ${byId[s.network]?.label || s.network}`}
               warning={networkLinkProblem(
@@ -117,12 +140,21 @@ export function SocialLinks({ social, networks, update }) {
                 byId[s.network]?.label || s.network,
               )}
             />
+            {/* Nom de compte ou numéro : le lien qui partira réellement */}
+            {socialLinkPreview(s.network, s.url, region) && (
+              <Hint>Lien : {socialLinkPreview(s.network, s.url, region)}</Hint>
+            )}
+            {s.network === "whatsapp" && whatsappNational(s.url) && (
+              <Hint>
+                Numéro étranger : commencez par l&apos;indicatif (+32…).
+              </Hint>
+            )}
           </div>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 cursor-pointer"
+            className={`h-8 w-8 p-0 text-muted-foreground hover:text-red-600 cursor-pointer ${FOCUS_RING}`}
             onClick={() => removeRow(index)}
             aria-label={`Retirer ${byId[s.network]?.label || s.network}`}
           >
@@ -132,7 +164,7 @@ export function SocialLinks({ social, networks, update }) {
       ))}
       {available.length > 0 && (
         <Select value="" onValueChange={addRow}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className={`w-full ${FOCUS_RING}`}>
             <span className="flex items-center gap-1.5 text-muted-foreground">
               <Plus size={14} />
               Ajouter un réseau
@@ -180,11 +212,17 @@ function MemberOption({ member }) {
  * Le choisir reprend son nom, son e-mail, son portable et sa photo ; la
  * société, le standard, le site et l'adresse ne complètent que les champs
  * vides. Le poste et le reste de la signature sont conservés.
+ *
+ * Le changement est confirmé d'abord (il remplace des informations et ne
+ * s'annule pas), sauf sur une signature neuve encore intacte (`fresh`).
  */
-function PersonField({ id, sig, replace, flush }) {
+function PersonField({ id, sig, replace, flush, lockEdits, fresh = false }) {
   const [busy, setBusy] = useState(false);
+  // Personne choisie dans la liste, en attente de confirmation
+  const [asked, setAsked] = useState(null);
   const { data } = useQuery(SIGNATURE_MEMBERS_V2, { fetchPolicy: "cache-and-network" });
-  const [apply] = useMutation(APPLY_MEMBER_SIGNATURE_V2);
+  // Un refus de l'API doit tomber dans le catch, pas passer pour une réussite
+  const [apply] = useMutation(APPLY_MEMBER_SIGNATURE_V2, { errorPolicy: "none" });
   const members = data?.signatureMembersV2 || [];
   const me = members.find((m) => m.isMe);
   const value = sig.memberUserId || me?.userId || "";
@@ -192,18 +230,48 @@ function PersonField({ id, sig, replace, flush }) {
   const choose = async (memberUserId) => {
     if (!memberUserId || memberUserId === value) return;
     setBusy(true);
+    // Plus aucune modification jusqu'à la réponse, qui remplace tout le
+    // contenu : ce qui serait tapé pendant la requête serait perdu
+    lockEdits(true);
     try {
-      // Enregistre d'abord une saisie en cours, sinon elle écraserait le résultat
-      await flush();
+      // Enregistre d'abord une saisie en cours, sinon elle écraserait le
+      // résultat ; si elle ne passe pas, rien ne change
+      if ((await flush()) === false) {
+        toast.error(
+          "Vos dernières modifications ne sont pas encore enregistrées : réessayez dans un instant",
+        );
+        return;
+      }
       const { data: result } = await apply({ variables: { id, memberUserId } });
       replace(result?.applyMemberToEmailSignatureV2, { resetHistory: true });
       const member = members.find((m) => m.userId === memberUserId);
       toast.success(`Informations de ${member?.name || "la personne"} reprises`);
     } catch (err) {
-      toast.error(err?.graphQLErrors?.[0]?.message || "Changement impossible");
+      toast.error("Changement impossible", refusalToast(err));
     } finally {
+      lockEdits(false);
       setBusy(false);
     }
+  };
+
+  // Choix dans la liste : rien ne change avant la confirmation (une lettre
+  // tapée sur la liste fermée suffit à choisir une personne) ; la liste
+  // garde la personne actuelle jusque-là
+  const pick = (memberUserId) => {
+    if (!memberUserId || memberUserId === value) return;
+    if (fresh) {
+      choose(memberUserId);
+      return;
+    }
+    // Une fois la liste refermée (et le focus rendu à son bouton), pour que
+    // la fenêtre de confirmation le garde puis le lui rende
+    const member = members.find((m) => m.userId === memberUserId) || null;
+    setTimeout(() => setAsked(member), 0);
+  };
+  const confirmChange = () => {
+    const member = asked;
+    setAsked(null);
+    if (member) choose(member.userId);
   };
 
   // Seul dans l'espace : rien à choisir, rien à afficher
@@ -212,10 +280,11 @@ function PersonField({ id, sig, replace, flush }) {
   return (
     <Field
       label="Signature de"
+      htmlFor="sig-field-member"
       hint="Son nom, son e-mail, son portable et sa photo sont repris de son profil."
     >
-      <Select value={value} onValueChange={choose} disabled={busy}>
-        <SelectTrigger id="sig-field-member" className="w-full">
+      <Select value={value} onValueChange={pick} disabled={busy}>
+        <SelectTrigger id="sig-field-member" className={`w-full ${FOCUS_RING}`}>
           {busy ? (
             <span className="flex items-center gap-2 text-muted-foreground">
               <Loader2 size={14} className="animate-spin" />
@@ -233,6 +302,41 @@ function PersonField({ id, sig, replace, flush }) {
           ))}
         </SelectContent>
       </Select>
+      <AlertDialog open={Boolean(asked)} onOpenChange={(open) => !open && setAsked(null)}>
+        <AlertDialogContent
+          // Le clavier revient à la liste « Signature de » à la fermeture
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.getElementById("sig-field-member")?.focus();
+          }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {asked?.isMe
+                ? "Reprendre vos informations dans la signature ?"
+                : `Passer la signature au nom de ${asked?.name || "cette personne"} ?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {asked?.isMe
+                ? "Votre prénom, votre nom, votre e-mail et votre portable remplaceront ceux de la signature, et la photo de votre profil remplacera la photo actuelle (retirée si votre profil n'en a pas)."
+                : "Son prénom, son nom, son e-mail et son portable remplaceront ceux de la signature, et la photo de son profil remplacera la photo actuelle (retirée si son profil n'en a pas)."}{" "}
+              Le poste et le reste de la signature sont conservés. Ce changement ne
+              pourra pas être annulé.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className={`cursor-pointer ${FOCUS_RING}`}>
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmChange}
+              className={`cursor-pointer ${FOCUS_RING}`}
+            >
+              Remplacer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Field>
   );
 }
@@ -243,7 +347,18 @@ function PersonField({ id, sig, replace, flush }) {
  * les champs facultatifs vides attendent un clic sur « + … », comme le
  * bouton d'action, la bannière et la mention (« En plus »).
  */
-export default function ContentPanel({ id, sig, update, replace, flush, catalog, template }) {
+export default function ContentPanel({
+  id,
+  sig,
+  update,
+  replace,
+  flush,
+  lockEdits,
+  editsLocked = false,
+  fresh = false,
+  catalog,
+  template,
+}) {
   const { identity, contact, social, images } = sig;
   // Champ facultatif affiché : rempli, ajouté à la demande, ou déjà vu
   // rempli (il ne disparaît pas quand on l'efface pour le retaper)
@@ -265,9 +380,21 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
   const showPhone = shows("phone", contact.phone);
   const showMobile = shows("mobile", contact.mobile);
 
+  // Changement de personne en cours : tout le panneau est gelé, la liste
+  // « Signature de » (première) affiche l'avancement
   return (
-    <div className="space-y-8">
-      <PersonField id={id} sig={sig} replace={replace} flush={flush} />
+    <fieldset
+      disabled={editsLocked}
+      className={`min-w-0 space-y-8 ${editsLocked ? "[&>*:not(:first-child)]:opacity-60" : ""}`}
+    >
+      <PersonField
+        id={id}
+        sig={sig}
+        replace={replace}
+        flush={flush}
+        lockEdits={lockEdits}
+        fresh={fresh}
+      />
 
       <Section title="Vous">
         <div className="flex items-start gap-4">
@@ -310,6 +437,16 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
             />
           </div>
         </div>
+        {/* Conseils toujours visibles (la vignette n'a que son infobulle),
+            collés à leur rangée */}
+        {photoOk && (
+          <div className="-mt-2">
+            <Hint>
+              Photo : cliquez ou déposez un JPG, PNG, WebP ou HEIC (10 Mo max.),
+              recadrée en carré.
+            </Hint>
+          </div>
+        )}
         {shows("department", identity.department) && (
           <TextField
             id="sig-field-department"
@@ -348,7 +485,7 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
               kind="LOGO"
               fieldId="sig-field-logo"
               label="Logo"
-              hint="un PNG à fond transparent s'adapte au mode sombre"
+              hint="PNG transparent conseillé, sauf logo noir ou très foncé"
               image={images.logo}
               onChanged={replace}
               aspect="logo"
@@ -364,6 +501,14 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
             />
           </div>
         </div>
+        {logoOk && (
+          <div className="-mt-2">
+            <Hint>
+              Logo : JPG, PNG, WebP ou SVG (10 Mo max.). PNG à fond transparent
+              conseillé, sauf pour un logo noir ou très foncé.
+            </Hint>
+          </div>
+        )}
         {shows("website", contact.website) && (
           <TextField
             id="sig-field-website"
@@ -445,6 +590,6 @@ export default function ContentPanel({ id, sig, update, replace, flush, catalog,
       </Section>
 
       <ExtrasSection id={id} sig={sig} update={update} replace={replace} />
-    </div>
+    </fieldset>
   );
 }

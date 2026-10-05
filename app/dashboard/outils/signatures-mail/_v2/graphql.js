@@ -107,6 +107,7 @@ export const SIGNATURE_V2_FIELDS = gql`
     name
     isDefault
     templateId
+    savedTemplateId
     identity {
       firstName
       lastName
@@ -227,6 +228,11 @@ export const SIGNATURE_CATALOG_V2 = gql`
           align
           frame
         }
+        colorRoles {
+          name
+          company
+          caption
+        }
         defaults
         preset {
           fontFamily
@@ -297,6 +303,7 @@ export const SIGNATURE_TEMPLATES_V2 = gql`
       name
       templateId
       mine
+      canDelete
       style {
         ${STYLE_FIELDS}
       }
@@ -364,6 +371,16 @@ export const APPLY_MEMBER_SIGNATURE_V2 = gql`
   ${SIGNATURE_V2_FIELDS}
 `;
 
+/** « Utiliser le logo de l'entreprise » : l'API relit le logo des factures. */
+export const APPLY_COMPANY_LOGO_SIGNATURE_V2 = gql`
+  mutation ApplyCompanyLogoSignatureV2($id: ID!) {
+    applyCompanyLogoToEmailSignatureV2(id: $id) {
+      ...SignatureV2Fields
+    }
+  }
+  ${SIGNATURE_V2_FIELDS}
+`;
+
 export const DELETE_SIGNATURE_V2 = gql`
   mutation DeleteSignatureV2($id: ID!) {
     deleteEmailSignatureV2(id: $id)
@@ -423,6 +440,13 @@ export function cleanElements(elements) {
   return out;
 }
 
+/**
+ * Clé d'un rendu : la saisie (entrée de mutation) et les images (JSON) qu'il
+ * montre. La copie s'en sert pour savoir si l'aperçu affiché est à jour.
+ */
+export const renderKey = (input, imagesJson) =>
+  `${JSON.stringify(input)}|${imagesJson}`;
+
 /** Style (forme du fragment) en entrée de mutation. */
 export function toStyleInput(style) {
   return {
@@ -438,6 +462,8 @@ export function toInput(sig) {
   return {
     name: sig.name,
     templateId: sig.templateId,
+    // Modèle d'équipe appliqué (null : le modèle intégré)
+    savedTemplateId: sig.savedTemplateId ?? null,
     identity: strip(sig.identity),
     contact: strip(sig.contact),
     social: (sig.social || []).map((s) => ({ network: s.network, url: s.url })),

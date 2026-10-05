@@ -163,7 +163,8 @@ export function usePermissions() {
           fileTransfers: ["view", "create", "download"],
           sharedDocuments: ["view", "create", "edit", "download"],
           kanban: ["view", "create", "edit", "assign"],
-          signatures: ["view", "create", "edit", "set-default"],
+          // Ses propres signatures seulement (l'API filtre sur l'auteur)
+          signatures: ["view", "create", "edit", "delete", "set-default"],
           calendar: ["view", "create", "edit"],
           reports: ["view", "export"],
           analytics: ["view", "export"],
@@ -379,16 +380,21 @@ export function usePermissions() {
    * @param {boolean} isOwn - Si c'est la propre ressource de l'utilisateur
    * @returns {Promise<boolean>}
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const canDeleteResource = async (resource, isOwn = false) => {
     const role = getUserRole();
 
-    // Seuls Owner et Admin peuvent supprimer
+    // Owner et Admin peuvent tout supprimer
     if (role === "owner" || role === "admin") {
       return await canDelete(resource);
     }
 
-    // Member, Viewer et Accountant ne peuvent pas supprimer
+    // Member supprime ses propres ressources quand son rôle le permet
+    // (signatures de mail), comme pour l'édition
+    if (role === "member" && isOwn) {
+      return await canDelete(resource);
+    }
+
+    // Viewer et Accountant ne peuvent pas supprimer
     return false;
   };
 

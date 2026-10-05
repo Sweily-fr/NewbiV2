@@ -37,24 +37,48 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * - `onDelete()` : Suppr (⌫) pressée sur une sélection, hors saisie.
  * - `readOnly` : ni modification en place ni poignée (abonnement expiré) ;
  *   un clic ouvre seulement le panneau de l'élément.
+ * - `onMeasure({ frame, columns })` : après chaque rendu, les largeurs que
+ *   le contenu impose au cadre et aux colonnes ({ floor, natural } en px),
+ *   pour que les réglages de largeur ne proposent que le possible.
+ *
+ * Hors éditeur (vignettes), `onSize({ width, height })` reçoit la taille de
+ * la signature : largeur de son contenu et hauteur du document, marges
+ * comprises, à chaque changement (images chargées…). Un court script de
+ * mesure est alors autorisé dans le bac à sable, sans accès au parent.
+ * Un aperçu hors éditeur ne défile jamais (pas de barre de défilement).
  */
+
+/** Script de mesure des aperçus hors éditeur (vignettes). */
+const SIZE_SCRIPT = `(function(){var last="";
+function m(){var s=document.querySelector(".sig");if(!s)return;var g=document.createRange();g.selectNodeContents(s);var r=g.getBoundingClientRect();
+var w=Math.ceil(r.width),h=Math.ceil(document.body.getBoundingClientRect().height),k=w+"x"+h;if(k===last)return;last=k;
+parent.postMessage({type:"sig-size",width:w,height:h},"*");}
+new ResizeObserver(m).observe(document.body);window.addEventListener("load",m);document.addEventListener("load",m,true);m();
+})();`;
 
 /** Script injecté dans l'aperçu éditeur (sans accès au parent). */
 const EDITOR_SCRIPT = `(function(){
 var post=function(m){parent.postMessage(m,"*");};
-var editing=null,dragging=false,gripEl=null;
+var editing=null,dragging=false,dragId=null,gripEl=null,pressing=false,justDragged=false,justLeft=null;
 /* Hauteur du contenu (jamais celle de l'affichage précédent : l'aperçu
-   rétrécit aussi), infobulle du cadre comprise */
+   rétrécit aussi), infobulle du cadre comprise, et celle placée sous le
+   coin quand il passe sous le bord. Le débordement en largeur est celui de
+   la signature seule : cadre de sélection et poignée sont masqués le temps
+   de la mesure (au doigt, leurs zones de prise dépassent à droite). Cette
+   largeur borne aussi la zone de prise du bord et du coin (reach) */
 function h(){var d=document.documentElement,y=document.body.getBoundingClientRect().height;
-if(box&&box.style.display==="block"){y=Math.max(y,box.getBoundingClientRect().bottom+scrollY+30);}
-post({type:"sig-height",height:Math.ceil(y),overflow:d.scrollWidth>d.clientWidth+1});}
+if(box&&box.style.display==="block"){y=Math.max(y,box.getBoundingClientRect().bottom+scrollY+30);
+if(low&&corner.style.display==="block")y=Math.max(y,corner.getBoundingClientRect().bottom+scrollY+32);}
+var hide=[box,grip].filter(Boolean),was=hide.map(function(el){var v=el.style.display;el.style.display="none";return v;});
+var w=d.scrollWidth;hide.forEach(function(el,i){el.style.display=was[i];});if(box)reach(w);
+post({type:"sig-height",height:Math.ceil(y),overflow:w>d.clientWidth+1});}
 new ResizeObserver(h).observe(document.body);window.addEventListener("load",h);h();
 function rect(el){var r=el.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function crect(el){var g=document.createRange();g.selectNodeContents(el);var r=g.getBoundingClientRect();return{x:r.left,y:r.top,w:r.width,h:r.height};}
 function q(s,content){var el=document.querySelector(s);return el?(content?crect(el):rect(el)):null;}
-var grip=document.createElement("div");
+var grip=document.createElement("div");grip.className="sig-grip";
 grip.textContent="\u283F";grip.title="Déplacer";
-grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);";
+grip.style.cssText="position:absolute;display:none;width:16px;height:22px;border-radius:4px;background:#5a50ff;color:#fff;font:13px/22px Arial,sans-serif;text-align:center;cursor:grab;z-index:10;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3);touch-action:none;-webkit-touch-callout:none;";
 document.body.appendChild(grip);
 /* Poignée : seulement sur l'élément sélectionné (rien au survol), à côté
    du morceau cliqué ; elle reste pendant la modification d'un texte */
@@ -75,12 +99,43 @@ document.querySelectorAll("[data-sig-slot]").forEach(function(el){var k=el.getAt
 var sig=document.querySelector(".sig > table")||document.querySelector(".sig");
 var field=hover.getAttribute("data-sig-block"),fields=[field];
 if(sel&&sel.level==="element"){fields=[];groupEls().forEach(function(el){var k=el.getAttribute("data-sig-block");if(fields.indexOf(k)<0)fields.push(k);});if(fields.indexOf(field)<0)fields=[field];}
-dragging=true;hideGrip();
+dragging=true;dragId=e.pointerId;hideGrip();
 post({type:"sig-drag",field:fields[0],fields:fields,whole:!!(sel&&sel.level==="element"),sig:rect(sig),items:items,slots:slots,body:q("[data-sig-body]",true),frame:q("[data-sig-frame] > table")||q("[data-sig-frame]",true),x:e.clientX,y:e.clientY});
 });
-document.addEventListener("pointermove",function(e){if(dragging)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
-document.addEventListener("pointerup",function(e){if(dragging){dragging=false;post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
+/* Seul le pointeur qui a saisi la poignée mène le glisser (un second doigt
+   ne compte pas) ; un geste repris par le navigateur (pointercancel)
+   l'annule au lieu de laisser le calque de dépôt en place */
+document.addEventListener("pointermove",function(e){if(dragging&&e.pointerId===dragId)post({type:"sig-drag-move",x:e.clientX,y:e.clientY});},true);
+document.addEventListener("pointerup",function(e){if(dragging&&e.pointerId===dragId){dragging=false;
+/* Le navigateur émet un clic à la fin du glisser : il ne doit ni
+   sélectionner ni désélectionner */
+justDragged=true;setTimeout(function(){justDragged=false;},0);
+post({type:"sig-drag-end",x:e.clientX,y:e.clientY});drawSel();}},true);
+document.addEventListener("pointercancel",function(e){if(dragging&&e.pointerId===dragId){dragging=false;post({type:"sig-drag-cancel"});drawSel();}},true);
 document.addEventListener("dragstart",function(e){e.preventDefault();},true);
+/* Appui en cours : un rendu reçu entre l'appui et le relâcher est mis de
+   côté (sinon il remplace l'élément visé et le clic est perdu, cas d'un
+   clic juste après une saisie) ; il est appliqué au clic ou au relâcher */
+var pressId=0;
+document.addEventListener("pointerdown",function(e){justLeft=null;if(e.button===0){pressing=true;pressId++;}},true);
+/* Au doigt ou au stylet, le clic peut suivre le relâcher de plus loin : le
+   rendu attend un peu plus (le clic, lui, l'applique tout de suite) */
+function release(e){if(!pressing)return;var id=pressId,late=e&&e.pointerType&&e.pointerType!=="mouse";
+setTimeout(function(){if(!pressing||id!==pressId)return;pressing=false;
+if(deferred!==null&&!editing&&!rs&&!fs){var d=deferred;deferred=null;applyHtml(d);}},late?400:0);}
+document.addEventListener("pointerup",release,true);document.addEventListener("pointercancel",release,true);
+/* Relâcher perdu (hors de la fenêtre) : le prochain mouvement de souris sans bouton y met fin */
+document.addEventListener("pointermove",function(e){if(pressing&&!e.buttons&&e.pointerType==="mouse")release(e);},true);
+window.addEventListener("blur",release);
+/* Fichier lâché sur l'aperçu : rien ne s'ouvre (le navigateur remplacerait l'éditeur) */
+function noFile(e){var t=e.dataTransfer&&e.dataTransfer.types;if(e.defaultPrevented||!t||[].indexOf.call(t,"Files")<0)return;e.preventDefault();if(e.type==="dragover")e.dataTransfer.dropEffect="none";}
+document.addEventListener("dragover",noFile);document.addEventListener("drop",noFile);
+/* Texte d'un élément modifié en place : ses sauts de ligne (<br> de la
+   mention en paragraphes) redeviennent des retours à la ligne ; jamais
+   innerText, qui appliquerait les capitales du style */
+function plain(n){return n.nodeType===3?n.data:n.nodeName==="BR"?"\\n":[].map.call(n.childNodes,plain).join("");}
+/* Et inversement : un texte remis en place garde ses sauts de ligne */
+function setPlain(el,v){el.textContent="";String(v).split("\\n").forEach(function(s,i){if(i)el.appendChild(document.createElement("br"));if(s)el.appendChild(document.createTextNode(s));});}
 function startEdit(el,x,y){
 if(window.SIG_READONLY)return;
 editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();
@@ -92,28 +147,61 @@ function goUp(e){e.preventDefault();e.stopPropagation();var cb=blockAt(e.target,
 if(editing)editing.blur();post({type:"sig-field",field:null,item:clickItem,up:true});drawSel();}
 /* Sur un Mac, Ctrl + clic ouvre le menu contextuel au lieu de cliquer */
 document.addEventListener("contextmenu",function(e){if(e.ctrlKey&&/Mac|iPhone|iPad/.test(navigator.platform||""))goUp(e);},true);
+/* Rendu mis de côté pendant l'appui : appliqué avant de traiter le clic,
+   puis la cible est cherchée de nouveau dans le nouveau contenu (le même
+   texte de préférence). Sans cela, il serait appliqué à la fin de la
+   saisie suivante et le texte tapé reviendrait un instant en arrière. */
+function fresh(e){var t=e.target;if(deferred===null||editing||rs||fs)return t;
+var f=t.closest?t.closest("[data-sig-edit]"):null,k=f?f.getAttribute("data-sig-edit"):null;
+var d=deferred;deferred=null;applyHtml(d);
+var n=document.elementFromPoint(e.clientX,e.clientY);
+if(n&&(n===grip||box.contains(n)))n=null;
+if(k&&!(n&&n.closest&&n.closest('[data-sig-edit="'+k+'"]'))){var q=sigRoot&&sigRoot.querySelector('[data-sig-edit="'+k+'"]');if(q)n=q;}
+return n||sigRoot||t;}
 document.addEventListener("click",function(e){
 if(e.target===grip||box.contains(e.target))return;
+if(justDragged)return;
 hideHover();if(e.metaKey||e.ctrlKey){goUp(e);return;}
-var cb=blockAt(e.target,e.clientX,e.clientY);clickItem=cb?cb.getAttribute("data-sig-block"):null;
 if(e.target.closest("a"))e.preventDefault();
+var t=fresh(e);pressing=false;
+var cb=blockAt(t,e.clientX,e.clientY);clickItem=cb?cb.getAttribute("data-sig-block"):null;
 /* Un trait visé (même à quelques pixels) : il est sélectionné, sans saisie */
 if(cb&&lineAt(e.clientX,e.clientY)===cb){e.stopPropagation();post({type:"sig-field",field:null,item:clickItem,edit:false});drawSel();return;}
-if(editing&&editing.contains(e.target))return;
+if(editing&&editing.contains(t))return;
 e.stopPropagation();
-var ed=e.target.closest("[data-sig-edit]");
-var m=e.target.closest("[data-sig-field]");
-var bk=m?null:e.target.closest("[data-sig-block]");
+var ed=t.closest("[data-sig-edit]");
+var m=t.closest("[data-sig-field]");
+var bk=m?null:t.closest("[data-sig-block]");
+/* Clic dans le vide de l'aperçu : la sélection est retirée */
+if(!m&&!bk&&!cb){if(sel)post({type:"sig-escape"});drawSel();return;}
 if(m||bk)post({type:"sig-field",field:m?m.getAttribute("data-sig-field"):bk.getAttribute("data-sig-block"),item:clickItem,edit:!!ed&&!window.SIG_READONLY});
 if(ed)startEdit(ed,e.clientX,e.clientY);
 drawSel();
 },true);
 document.addEventListener("input",function(){
-if(editing){post({type:"sig-input",field:editing.getAttribute("data-sig-edit"),value:editing.textContent});drawSel();}
+if(editing){post({type:"sig-input",field:editing.getAttribute("data-sig-edit"),value:plain(editing)});drawSel();}
 });
+/* Rouvre le texte validé par Entrée (cherché dans la sélection, le contenu
+   a pu être remplacé par un rendu), curseur à la fin, et efface sa
+   dernière lettre comme un ⌫ pendant la saisie */
+function reopen(left){var el=null;selEls().forEach(function(s){if(!el)el=s.getAttribute("data-sig-edit")===left.f?s:s.querySelector('[data-sig-edit="'+left.f+'"]');});
+if(!el)return false;
+if(plain(el)!==left.v)setPlain(el,left.v);
+editing=el;el.setAttribute("contenteditable","plaintext-only");el.focus();
+var end=function(){var g=document.createRange();g.selectNodeContents(el);g.collapse(false);var s=getSelection();s.removeAllRanges();s.addRange(g);};end();
+post({type:"sig-editing",editing:true});
+var before=plain(el),ok=false;try{ok=document.execCommand("delete");}catch(x){}
+/* Sans execCommand : la lettre est retirée à la main, comme une frappe */
+if(!ok||plain(el)===before){if(before){setPlain(el,before.slice(0,-1));end();}post({type:"sig-input",field:left.f,value:plain(el)});drawSel();}
+return true;}
 document.addEventListener("keydown",function(e){
 if(dragging&&e.key==="Escape"){e.preventDefault();dragging=false;post({type:"sig-drag-cancel"});drawSel();return;}
-if(editing&&(e.key==="Enter"||e.key==="Escape")){e.preventDefault();editing.blur();return;}
+/* Entrée valide le texte, qui reste retenu : un ⌫ juste après le rouvre */
+if(editing&&(e.key==="Enter"||e.key==="Escape")){e.preventDefault();justLeft=e.key==="Enter"?{f:editing.getAttribute("data-sig-edit"),v:plain(editing)}:null;editing.blur();return;}
+/* ⌫ juste après Entrée : corrige le texte qu'on vient de valider au lieu de
+   retirer l'élément (Suppr, ou Échap puis ⌫, le retirent toujours) */
+var left=justLeft;if(!/^(Shift|Control|Alt|Meta)$/.test(e.key))justLeft=null;
+if(left&&e.key==="Backspace"&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!editing&&!rs&&!fs&&!dragging&&!window.SIG_READONLY&&reopen(left)){e.preventDefault();return;}
 var k=(e.key||"").toLowerCase();
 if(!editing&&(e.metaKey||e.ctrlKey)&&(k==="z"||k==="y")){e.preventDefault();post({type:"sig-history",redo:k==="y"||e.shiftKey});}
 /* Suppr (⌫ sur Mac) sur une sélection : la retirer (jamais pendant une saisie ou un geste) */
@@ -121,15 +209,16 @@ if(!editing&&!rs&&!fs&&!dragging&&sel&&!window.SIG_READONLY&&(e.key==="Delete"||
 });
 document.addEventListener("focusout",function(e){
 if(editing&&e.target===editing){editing.removeAttribute("contenteditable");editing=null;post({type:"sig-editing",editing:false});
-if(deferred!==null&&!rs&&!fs){var d=deferred;deferred=null;applyHtml(d);}}
+/* Fin de saisie par un appui ailleurs : le rendu attend le clic */
+if(deferred!==null&&!rs&&!fs&&!pressing){var d=deferred;deferred=null;applyHtml(d);}}
 });
 var sel=null,rs=null,fs=null;
 var box=document.createElement("div");
 box.style.cssText="position:absolute;display:none;pointer-events:none;border:2px solid #5a50ff;border-radius:5px;z-index:9;";
-var knob=document.createElement("div");
-knob.style.cssText="position:absolute;right:-7px;top:50%;width:10px;height:20px;margin-top:-10px;background:#fff;border:2px solid #5a50ff;border-radius:4px;cursor:ew-resize;pointer-events:auto;display:none;touch-action:none;";
+var knob=document.createElement("div");knob.className="sig-knob";
+knob.style.cssText="position:absolute;right:-9px;top:50%;width:10px;height:20px;margin-top:-10px;background:#fff;border:2px solid #5a50ff;border-radius:4px;cursor:ew-resize;pointer-events:auto;display:none;touch-action:none;";
 box.appendChild(knob);
-var corner=document.createElement("div");
+var corner=document.createElement("div");corner.className="sig-corner";
 corner.title="Tirer pour agrandir le texte";
 corner.style.cssText="position:absolute;right:-9px;bottom:-9px;width:12px;height:12px;background:#5a50ff;border:2px solid #fff;border-radius:3px;cursor:nwse-resize;pointer-events:auto;display:none;touch-action:none;box-shadow:0 0 0 1px #5a50ff;";
 box.appendChild(corner);
@@ -137,6 +226,32 @@ var tip=document.createElement("div");
 tip.style.cssText="position:absolute;right:-7px;bottom:-28px;background:#1f1f1f;color:#fff;font:11px/19px Arial,sans-serif;padding:0 7px;border-radius:4px;display:none;white-space:nowrap;";
 box.appendChild(tip);
 document.body.appendChild(box);
+/* Bord (largeur) et coin (taille du texte) : sur un cadre trop bas pour
+   les séparer (texte d'une ligne), le coin passe sous le bord, sur la même
+   verticale, au lieu d'en recouvrir la moitié ; au doigt, plus d'écart
+   (zones de prise agrandies). Décidé hors geste : rien ne saute sous le
+   pointeur pendant un réglage. */
+var coarse=Boolean(window.matchMedia&&matchMedia("(pointer:coarse)").matches),low=false,cgap=coarse?32:16;
+function placeHandles(){var H=box.clientHeight;
+if(!rs&&!fs)low=knob.style.display==="block"&&corner.style.display==="block"&&H<(coarse?78:46);
+if(low){corner.style.top=(H/2+cgap)+"px";corner.style.bottom="auto";}else{corner.style.top="auto";corner.style.bottom="-9px";}}
+/* Au doigt, la zone de prise du bord et du coin s'arrête à droite à la
+   largeur du contenu w (mesurée par h()) : l'aperçu ne défile pas de côté
+   pour quelques pixels que le doigt n'atteint pas. La zone se compte
+   depuis l'intérieur de leur bordure de 2 px. */
+function reach(w){var r=Math.max(knob.getBoundingClientRect().right,corner.getBoundingClientRect().right)+scrollX-2;
+box.style.setProperty("--sig-reach",Math.max(0,Math.min(8,w-r))+"px");}
+/* Bulle : la valeur pendant un geste et « Taille du texte » au survol du
+   coin, sous le coin ; le nom du bord à son survol, au-dessus de lui */
+function tipAt(over){var H=box.clientHeight;
+if(over==="knob"){tip.style.top=Math.max(H/2-33,-(box.getBoundingClientRect().top+2))+"px";tip.style.bottom="auto";}
+else if(low){tip.style.top=(H/2+cgap+20)+"px";tip.style.bottom="auto";}
+else{tip.style.top="auto";tip.style.bottom="-28px";}}
+function hoverTip(el,over,text){
+el.addEventListener("pointerenter",function(){if(rs||fs||dragging)return;tipAt(over);tip.textContent=text();tip.style.display="block";});
+el.addEventListener("pointerleave",function(){if(!rs&&!fs)tip.style.display="none";});}
+hoverTip(knob,"knob",function(){var k=sel&&sel.resize&&sel.resize.kind;return k==="wrap"||k==="button"||k==="column"||k==="frame"?"Largeur":k==="bar"?"Longueur":"Taille";});
+hoverTip(corner,"corner",function(){return "Taille du texte";});
 function selEls(){var out=[];if(!sel)return out;
 if(sel.whole)return sigRoot?[sigRoot]:out;
 if(sel.slot){document.querySelectorAll('[data-sig-slot="'+sel.slot+'"]').forEach(function(el){out.push(el);});return out;}
@@ -206,23 +321,30 @@ function selKey(x){return x?x.level+"|"+(x.slot||"")+"|"+(x.whole?1:0)+"|"+(x.it
 function lineTarget(el){var it=el.getAttribute("data-sig-block");return (sel&&sel.resize&&sel.resize.line&&el.querySelector('[data-sig-field="'+it+'"]'))||el;}
 /* Boîte de largeur d'un texte posée par le rendu (wrapAt, repère
    data-sig-wrap : largeur choisie ou plafond automatique d'une accroche,
-   d'une mention) : boîte ajustée (div) ou tableau de cette largeur */
+   d'une mention) : boîte ajustée (div) ou tableau dont la cellule a cette
+   largeur */
 function wrapDivOf(el){var d=lineTarget(el).closest("[data-sig-wrap]");return d&&sigRoot.contains(d)?d:null;}
+/* Largeur fixe : portée par la cellule d'un tableau à une cellule, jamais
+   par le tableau (une cellule se resserre sur un téléphone, un tableau de
+   largeur fixe déborde), comme le rendu */
+function cellOf(t){return t&&t.tagName==="TABLE"&&t.rows.length===1&&t.rows[0].cells.length===1?t.rows[0].cells[0]:null;}
+function sizedCell(t){var c=cellOf(t);return c&&c.hasAttribute("width")?c:null;}
+function setCellWidth(t,v){var c=cellOf(t)||t;c.setAttribute("width",v);c.style.width=v+"px";}
 /* Largeur de retour à la ligne d'une boîte de texte : v px, ou aucune */
-function setWrap(d,v){if(d.tagName==="TABLE"){if(v){d.setAttribute("width",v);d.style.width=v+"px";d.style.maxWidth="100%";}else{d.removeAttribute("width");d.style.width="auto";d.style.maxWidth="none";}}
+function setWrap(d,v){var c=cellOf(d);if(c){if(v){c.setAttribute("width",v);c.style.width=v+"px";}else{c.removeAttribute("width");c.style.width="auto";}}
 else d.style.maxWidth=v?v+"px":"none";}
-function hasWrap(d){return d.tagName==="TABLE"?d.hasAttribute("width"):Boolean(d.style.maxWidth&&d.style.maxWidth!=="none");}
+function hasWrap(d){var c=cellOf(d);return c?c.hasAttribute("width"):Boolean(d.style.maxWidth&&d.style.maxWidth!=="none");}
 function sizedTables(els){var out=[];if(!sel||!sel.resize||!sel.resize.width)return out;
-if(sel.slot)els.forEach(function(reg){var t0=reg.firstElementChild;if(t0&&t0.tagName==="TABLE"&&t0.getAttribute("width"))out.push(t0);});
-if(sel.whole||sel.resize.kind==="frame"){var fr=document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]"),f0=fr&&fr.firstElementChild;if(f0&&f0.tagName==="TABLE"&&f0.getAttribute("width"))out.push(f0);}
+if(sel.slot)els.forEach(function(reg){var t0=reg.firstElementChild;if(sizedCell(t0))out.push(t0);});
+if(sel.whole||sel.resize.kind==="frame"){var fr=document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]"),f0=fr&&fr.firstElementChild;if(sizedCell(f0))out.push(f0);}
 return out;}
 function selRect(){var els=groupEls(),r=union(els);
 if(!r||!els[0])return r;var ts=liveTables.filter(function(t){return t.isConnected;});if(!ts.length)ts=sizedTables(els);
 ts.forEach(function(t){var c=crect(t);r.l=Math.min(r.l,c.x);r.r=Math.max(r.r,c.x+c.w);});return r;}
-function place(r){box.style.left=(r.l+scrollX-3)+"px";box.style.top=(r.t+scrollY-3)+"px";box.style.width=(r.r-r.l+6)+"px";box.style.height=(r.b-r.t+6)+"px";}
+function place(r){box.style.left=(r.l+scrollX-3)+"px";box.style.top=(r.t+scrollY-3)+"px";box.style.width=(r.r-r.l+6)+"px";box.style.height=(r.b-r.t+6)+"px";placeHandles();}
 function drawSel(){if(rs||fs)return;var r=selRect();drawGhosts();if(!r){box.style.display="none";hideGrip();return;}
 box.style.display="block";place(r);showGrip();
-var ro=window.SIG_READONLY;knob.style.display=sel.resize&&!ro?"block":"none";corner.style.display=sel.font&&!ro?"block":"none";
+var ro=window.SIG_READONLY;knob.style.display=sel.resize&&!ro?"block":"none";corner.style.display=sel.font&&!ro?"block":"none";placeHandles();
 var k=sel.resize&&sel.resize.kind;knob.title=k==="wrap"||k==="button"||k==="column"||k==="frame"?"Tirer pour changer la largeur":"Tirer pour changer la taille";h();}
 function live(v,k){selEls().forEach(function(el){
 if(k==="square"||k==="image"){var im=el.querySelector("img");if(!im)return;var ratio=k==="square"?1:(im.naturalWidth?im.naturalHeight/im.naturalWidth:(im.height/Math.max(1,im.width)));im.style.width=v+"px";im.style.height=Math.round(v*ratio)+"px";}
@@ -233,13 +355,25 @@ else if(k==="icons"){el.querySelectorAll("img").forEach(function(im){im.style.wi
    d'aucun rendu (valeur inchangée, rendu ignoré), pour ne jamais garder les
    tailles provisoires de l'aperçu en direct */
 var sigRoot=document.querySelector(".sig"),lastHtml=sigRoot?sigRoot.innerHTML:"",pending=null,deferred=null;
-function applyHtml(html){clearTimeout(pending);pending=null;lastHtml=html;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();hideHover();watchSel();drawSel();h();}
+/* Largeurs que le contenu impose au cadre (ou à la signature sans cadre)
+   et à chaque colonne : plancher (conteneur bridé à 1 px : il ne descend
+   pas plus bas, quelle que soit la largeur choisie) et largeur naturelle
+   (conteneur à la taille de son contenu), mesurées sans rien afficher.
+   Envoyées au parent quand elles changent : les réglages de largeur ne
+   proposent que ce qui est possible. */
+function sizedEl(){return document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]");}
+function widths(el){var s=el.style.width;el.style.width="1px";var floor=Math.ceil(el.scrollWidth);el.style.width="max-content";var natural=Math.ceil(el.getBoundingClientRect().width);el.style.width=s;return{floor:floor,natural:Math.max(floor,natural)};}
+var lastMeasure="";
+function measure(){if(!sigRoot)return;var fr=sizedEl(),m={frame:fr?widths(fr):null,columns:{}};
+["visual","text","side"].forEach(function(k){var c=document.querySelector('[data-sig-slot="'+k+'"]');if(c)m.columns[k]=widths(c);});
+var key=JSON.stringify(m);if(key===lastMeasure)return;lastMeasure=key;post({type:"sig-measure",frame:m.frame,columns:m.columns});}
+function applyHtml(html){clearTimeout(pending);pending=null;lastHtml=html;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();hideHover();watchSel();drawSel();h();measure();}
 /* Rendu reçu pendant un réglage à la souris : il devient le dernier rendu,
    appliqué à la fin du réglage (sinon il arracherait la mesure en cours) */
 function takeDeferred(){if(deferred!==null){lastHtml=deferred;deferred=null;}}
 var selRO=new ResizeObserver(function(){drawSel();});
 function watchSel(){selRO.disconnect();selEls().forEach(function(el){selRO.observe(el);});}
-function restore(){if(editing||rs||fs)return;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();watchSel();drawSel();h();}
+function restore(){if(editing||rs||fs)return;if(sigRoot)sigRoot.innerHTML=lastHtml;liveTables=[];hideGrip();watchSel();drawSel();h();measure();}
 function awaitRender(){clearTimeout(pending);pending=setTimeout(function(){pending=null;restore();},3000);}
 /* Bord : la largeur (ou la taille) suit le pointeur dans l'aperçu même,
    et la valeur retenue est celle que l'aperçu affiche vraiment : un texte
@@ -253,9 +387,10 @@ function newTable(){var t=document.createElement("table");t.setAttribute("role",
 function rowRoot(el){var a=el;if(/^(TR|TBODY|THEAD|TD|TH)$/.test(a.tagName))a=a.closest("table");
 while(a&&a.parentNode&&a.parentNode!==sigRoot&&a.parentNode.tagName!=="TD"&&!a.parentNode.hasAttribute("data-sig-slot"))a=a.parentNode;return a;}
 function wrapTables(){var els=groupEls();if(!els.length)return [];var w=sel.resize.width,k=sel.resize.kind;
-if(k==="frame"){var fr=document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]");if(!fr)return [];var f0=fr.firstElementChild;if(f0&&f0.tagName==="TABLE")return [f0];
-var ft=newTable(),fd=ft.insertRow().insertCell();while(fr.firstChild)fd.appendChild(fr.firstChild);fr.appendChild(ft);return [ft];}
-if(k==="column"){var reg=els[0],t0=reg.firstElementChild;if(w&&t0&&t0.tagName==="TABLE"&&t0.getAttribute("width")===String(w))return [t0];
+if(k==="frame"){var fr=document.querySelector("[data-sig-frame]")||document.querySelector("[data-sig-sized]");if(!fr)return [];var f0=fr.firstElementChild;if(sizedCell(f0))return [f0];
+/* Pas encore de largeur : une cellule autour du cadre, qui la remplit */
+var ft=newTable(),fd=ft.insertRow().insertCell();while(fr.firstChild)fd.appendChild(fr.firstChild);fr.appendChild(ft);if(f0&&f0.tagName==="TABLE"){f0.setAttribute("width","100%");f0.style.width="100%";}return [ft];}
+if(k==="column"){var reg=els[0],t0=reg.firstElementChild,c0=sizedCell(t0);if(w&&c0&&c0.getAttribute("width")===String(w))return [t0];
 var ct=newTable(),cd=ct.insertRow().insertCell();while(reg.firstChild)cd.appendChild(reg.firstChild);reg.appendChild(ct);return [ct];}
 /* Texte : une enveloppe ajustée et bornée par ligne (celle du rendu,
    sinon une nouvelle), comme wrapAt : il revient à la ligne sans jamais
@@ -274,24 +409,26 @@ if(!n)return null;var cs=getComputedStyle(n),px=function(v){return parseFloat(v)
 return Math.round(n.getBoundingClientRect().width-px(cs.paddingLeft)-px(cs.paddingRight)-px(cs.borderLeftWidth)-px(cs.borderRightWidth));}
 knob.addEventListener("pointerdown",function(e){if(!sel||!sel.resize)return;e.preventDefault();e.stopPropagation();if(editing)editing.blur();
 var r=selRect();if(!r)return;var z=sel.resize,kind=z.kind,icons=kind==="icons",w=Math.ceil(r.r-r.l);
-var tables=kind==="wrap"||kind==="column"||kind==="frame"?wrapTables():[];
 /* Cadre, colonne : largeur réglée (l'aperçu téléphone peut la brider),
-   sinon celle affichée */
-if(kind==="frame"||kind==="column")w=z.width||(tables[0]?Math.ceil(tables[0].getBoundingClientRect().width):w);
+   sinon celle affichée ; jamais sous le plancher du contenu, pour que le
+   bord suive la souris et que la bulle dise la largeur obtenue */
+var floor=0;if(kind==="frame"||kind==="column"){var sized=kind==="frame"?sizedEl():selEls()[0];if(sized)floor=widths(sized).floor;}
+var tables=kind==="wrap"||kind==="column"||kind==="frame"?wrapTables():[];
+if(kind==="frame"||kind==="column")w=Math.max(floor,z.width||(tables[0]?Math.ceil(tables[0].getBoundingClientRect().width):w));
 if(kind==="square"||kind==="image"){var cw=shownWidth(kind);if(cw)w=cw;}
 /* Texte : part de sa largeur choisie ; largeur naturelle (sur une ligne)
    au-delà de laquelle il redevient automatique, sauf plafond automatique
    du rendu (accroche, mention longues) : on garde alors cette largeur */
-var natural=0,capped=false;if(kind==="wrap"){tables.forEach(function(d){var before=d.tagName==="TABLE"?[d.getAttribute("width"),d.style.width,d.style.maxWidth]:[d.style.maxWidth];if(hasWrap(d)&&!z.width)capped=true;setWrap(d,0);natural=Math.max(natural,Math.ceil(vrect(d).w));
-if(d.tagName==="TABLE"){if(before[0])d.setAttribute("width",before[0]);d.style.width=before[1];d.style.maxWidth=before[2];}else d.style.maxWidth=before[0];});if(z.width)w=z.width;}
-var start=icons?z.size:w,min=z.min,max=z.max,fit=kind==="image"?logoFit():null;if(fit){min=fit.f(min);max=fit.f(max);}
+var natural=0,capped=false;if(kind==="wrap"){tables.forEach(function(d){var c=cellOf(d),before=c?[c.getAttribute("width"),c.style.width]:[d.style.maxWidth];if(hasWrap(d)&&!z.width)capped=true;setWrap(d,0);natural=Math.max(natural,Math.ceil(vrect(d).w));
+if(c){if(before[0])c.setAttribute("width",before[0]);c.style.width=before[1];}else d.style.maxWidth=before[0];});if(z.width)w=z.width;}
+var start=icons?z.size:w,min=Math.max(z.min,floor),max=z.max,fit=kind==="image"?logoFit():null;if(fit){min=fit.f(min);max=fit.f(max);}
 rs={kind:kind,width:z.width||0,min0:z.min,max0:z.max,x:e.clientX,w:w,start:start,shown:start,cur:fit?fit.inv(start):kind==="wrap"?z.width||0:start,icons:icons,moved:false,min:min,max:max,fit:fit,tables:tables,natural:natural,capped:capped,auto:false};
 liveTables=tables;
-knob.setPointerCapture(e.pointerId);hideGrip();hideHover();tip.style.display="block";tip.textContent=start+" px";});
+knob.setPointerCapture(e.pointerId);hideGrip();hideHover();tipAt("value");tip.style.display="block";tip.textContent=start+" px";});
 knob.addEventListener("pointermove",function(e){if(!rs)return;if(!rs.moved){if(Math.abs(e.clientX-rs.x)<3)return;rs.moved=true;}
 var w=rs.w+(e.clientX-rs.x),v=rs.icons?Math.round(rs.start*w/rs.w):Math.round(w),k=rs.kind;v=Math.max(rs.min,Math.min(rs.max,v));var shown=v;
 if(k==="wrap"&&rs.tables.length){rs.auto=v>=rs.natural;shown=0;rs.tables.forEach(function(d){setWrap(d,rs.auto?0:v);shown=Math.max(shown,Math.ceil(vrect(d).w));});}
-else if(rs.tables.length){rs.tables.forEach(function(t){t.setAttribute("width",v);t.style.width=v+"px";t.style.maxWidth="100%";});}
+else if(rs.tables.length){rs.tables.forEach(function(t){setCellWidth(t,v);});}
 else if(!rs.icons){live(v,k);var a=shownWidth(k);if(a)shown=k==="bar"||k==="button"?a:Math.min(v,a);}else live(v,k);
 shown=Math.max(rs.min,Math.min(rs.max,shown));rs.shown=shown;
 rs.cur=rs.auto?(rs.capped?rs.natural:0):rs.fit?Math.max(rs.min0,Math.min(rs.max0,rs.fit.inv(shown))):shown;
@@ -309,7 +446,7 @@ selEls().forEach(function(el){var found=false;[el].concat([].slice.call(el.query
 if(!found&&part){var ps=getComputedStyle(el);el.style.fontSize=ps.fontSize;el.style.lineHeight=ps.lineHeight;add(el);}
 else if(!found){var an=el.parentElement;while(an&&an!==sigRoot&&!(an.style&&an.style.fontSize))an=an.parentElement;if(an&&an!==sigRoot)add(an);}
 if(sel.font.icons)el.querySelectorAll("img").forEach(function(im){imgs.push({n:im,w:im.width,h:im.height});});});
-fs={x:e.clientX,y:e.clientY,w:r.r-r.l,h:r.b-r.t,min:sel.font.min,max:sel.font.max,start:sel.font.size,cur:sel.font.size,texts:texts,imgs:imgs,moved:false};corner.setPointerCapture(e.pointerId);hideGrip();hideHover();tip.style.display="block";tip.textContent=fs.start+" px";});
+fs={x:e.clientX,y:e.clientY,w:r.r-r.l,h:r.b-r.t,min:sel.font.min,max:sel.font.max,start:sel.font.size,cur:sel.font.size,texts:texts,imgs:imgs,moved:false};corner.setPointerCapture(e.pointerId);hideGrip();hideHover();tipAt("value");tip.style.display="block";tip.textContent=fs.start+" px";});
 corner.addEventListener("pointermove",function(e){if(!fs)return;if(!fs.moved){if(Math.abs(e.clientX-fs.x)+Math.abs(e.clientY-fs.y)<4)return;fs.moved=true;}var f=1+((e.clientX-fs.x)+(e.clientY-fs.y))/(fs.w+fs.h);
 var v=Math.max(fs.min,Math.min(fs.max,Math.round(fs.start*f))),k=v/fs.start;fs.cur=v;tip.textContent=v+" px";
 fs.texts.forEach(function(t){t.n.style.fontSize=(t.fs*k)+"px";if(t.lh)t.n.style.lineHeight=(t.lh*k)+"px";});
@@ -318,12 +455,13 @@ function endFont(){if(!fs)return;var v=fs.cur,changed=fs.moved&&v!==fs.start;fs=
 corner.addEventListener("pointerup",endFont);corner.addEventListener("pointercancel",endFont);corner.addEventListener("lostpointercapture",endFont);
 corner.addEventListener("click",function(e){e.stopPropagation();});
 new ResizeObserver(drawSel).observe(document.body);document.addEventListener("load",drawSel,true);window.addEventListener("resize",drawSel);
+document.addEventListener("load",measure,true);window.addEventListener("load",function(){lastMeasure="";measure();});measure();
 document.addEventListener("keydown",function(e){if(e.key!=="Escape"||e.defaultPrevented)return;
 if(rs||fs){e.preventDefault();rs=null;fs=null;tip.style.display="none";takeDeferred();restore();return;}
 if(!editing&&sel)post({type:"sig-escape"});});
 window.addEventListener("message",function(e){if(e.source!==parent)return;var d=e.data||{};
-if(d.type==="sig-html"){var html=d.html||"";if(editing||rs||fs){deferred=html;return;}deferred=null;applyHtml(html);}
-if(d.type==="sig-select"){var was=selKey(sel);sel=d.selection||null;if(selKey(sel)!==was)liveTables=[];watchSel();drawSel();}
+if(d.type==="sig-html"){var html=d.html||"";if(editing||rs||fs||pressing){deferred=html;return;}deferred=null;applyHtml(html);}
+if(d.type==="sig-select"){var was=selKey(sel);sel=d.selection||null;if(selKey(sel)!==was){liveTables=[];justLeft=null;}watchSel();drawSel();}
 });
 })();`;
 export default function HtmlFrame({
@@ -348,13 +486,35 @@ export default function HtmlFrame({
   onFont,
   onEscape,
   onDelete,
+  onMeasure,
+  onSize,
   selection = null,
   readOnly = false,
   frozen = false,
 }) {
   const frameRef = useRef(null);
   const interactive = typeof onFieldClick === "function";
+  // Vignette mesurée : sa taille remonte au parent
+  const measured = !interactive && typeof onSize === "function";
   const [contentHeight, setContentHeight] = useState(null);
+
+  useEffect(() => {
+    if (!measured) return undefined;
+    const onMessage = (event) => {
+      if (event.source !== frameRef.current?.contentWindow) return;
+      const data = event.data;
+      if (
+        data &&
+        data.type === "sig-size" &&
+        Number.isFinite(data.width) &&
+        Number.isFinite(data.height)
+      ) {
+        onSize({ width: data.width, height: data.height });
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [measured, onSize]);
 
   useEffect(() => {
     if (!interactive) return undefined;
@@ -399,6 +559,25 @@ export default function HtmlFrame({
       }
       if (data && data.type === "sig-drag-cancel") {
         onDragCancel?.();
+      }
+      if (data && data.type === "sig-measure") {
+        const widths = (m) =>
+          m && Number.isFinite(m.floor)
+            ? {
+                floor: Math.round(m.floor),
+                natural: Math.round(
+                  Number.isFinite(m.natural) ? m.natural : m.floor,
+                ),
+              }
+            : null;
+        onMeasure?.({
+          frame: widths(data.frame),
+          columns: Object.fromEntries(
+            ["visual", "text", "side"]
+              .map((k) => [k, widths(data.columns?.[k])])
+              .filter(([, m]) => m),
+          ),
+        });
       }
       if (data && (data.type === "sig-drag-move" || data.type === "sig-drag-end")) {
         const box = frameRef.current?.getBoundingClientRect();
@@ -451,6 +630,7 @@ export default function HtmlFrame({
     onFont,
     onEscape,
     onDelete,
+    onMeasure,
   ]);
 
   // Pendant une modification en place, le HTML affiché ne change pas
@@ -475,6 +655,7 @@ export default function HtmlFrame({
     dark,
     padding,
     interactive,
+    measured,
     readOnly,
     interactive ? null : displayed,
     // Script modifié (développement) : l'aperçu se recharge avec lui
@@ -501,13 +682,20 @@ export default function HtmlFrame({
       : "";
     // <base target="_blank"> : un clic sur un lien de la signature ouvre un
     // nouvel onglet au lieu de remplacer l'aperçu par la page cible (ou par
-    // une page d'erreur si l'adresse est incomplète).
+    // une page d'erreur si l'adresse est incomplète). Hors éditeur, l'aperçu
+    // ne défile jamais (pas de barre de défilement dans une vignette).
+    // Au doigt (pointeur grossier) : poignée, bord et coin gardent leur
+    // dessin, mais se saisissent 8 px autour ; à droite, bord et coin
+    // jamais au-delà du contenu (--sig-reach, posé par le script)
     const editorCss = interactive
-      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;}"
-      : "";
+      ? "div[data-sig-block],div[data-sig-field],div[data-sig-slot]{display:flow-root;} [data-sig-field],[data-sig-block]{cursor:pointer;} td[data-sig-edge]{cursor:auto;} a{cursor:pointer;} [data-sig-edit]{cursor:text;} [data-sig-edit]:hover{outline:1px dashed #5a50ff;outline-offset:1px;} [contenteditable]{outline:2px solid #5a50ff;outline-offset:2px;border-radius:2px;cursor:text;} img{-webkit-user-drag:none;user-select:none;} @media (pointer:coarse){.sig-grip::before,.sig-knob::before,.sig-corner::before{content:\"\";position:absolute;inset:-8px;touch-action:none;} .sig-knob::before,.sig-corner::before{right:calc(0px - var(--sig-reach,8px));}}"
+      : "html{overflow:hidden;}";
+    // Script de l'éditeur, ou de mesure d'une vignette
     const editorScript = interactive
       ? `<script>window.SIG_READONLY=${readOnly ? "true" : "false"};${EDITOR_SCRIPT}</script>`
-      : "";
+      : measured
+        ? `<script>${SIZE_SCRIPT}</script>`
+        : "";
     return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><meta name="color-scheme" content="${
       dark ? "dark" : "light"
     }"><style>html,body{margin:0;padding:0;background:${bg};} body{padding:${padding}px;} ${invert} ${editorCss}</style></head><body><div class="sig">${
@@ -530,7 +718,7 @@ export default function HtmlFrame({
       title={title}
       srcDoc={srcDoc}
       sandbox={
-        interactive
+        interactive || measured
           ? "allow-scripts allow-popups allow-popups-to-escape-sandbox"
           : "allow-popups allow-popups-to-escape-sandbox"
       }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useId, useSyncExternalStore } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -7,6 +8,7 @@ import {
   AlignVerticalJustifyEnd,
   AlignVerticalJustifyStart,
   Check,
+  RotateCcw,
 } from "lucide-react";
 import {
   Select,
@@ -21,6 +23,7 @@ import {
   ChoiceCard,
   ColorRow,
   FIELD_LABEL,
+  FOCUS_RING,
   Hint,
   LengthRow,
   MultiChoice,
@@ -28,6 +31,9 @@ import {
   Row,
   SliderRow,
   SwitchRow,
+  Warning,
+  onRadioKeyDown,
+  radioTabStop,
 } from "./controls";
 import {
   COLUMN_WIDTH,
@@ -85,6 +91,8 @@ export function layoutState(st, shown = null) {
 
 /** Choix court (≤ 3) en boutons, plus long en liste. */
 export function Pick({ label, hint, value, onChange, options }) {
+  // Libellé relié à la liste, quand c'en est une
+  const selectId = useId();
   if (options.length <= 3) {
     return (
       <Row label={label} hint={hint}>
@@ -98,9 +106,9 @@ export function Pick({ label, hint, value, onChange, options }) {
     );
   }
   return (
-    <Row label={label} hint={hint}>
+    <Row label={label} hint={hint} htmlFor={selectId}>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger id={selectId} className={cn("w-full", FOCUS_RING)}>
           <SelectValue placeholder="Autre place" />
         </SelectTrigger>
         <SelectContent>
@@ -120,11 +128,16 @@ export function Pick({ label, hint, value, onChange, options }) {
  * « Position du client dans le PDF » des paramètres de facture.
  */
 export function PictoPick({ label, hint, value, onChange, options, columns = 3 }) {
+  const stop = radioTabStop(
+    options.map((o) => o.value),
+    value,
+  );
   return (
     <Row label={label} hint={hint}>
       <div
         role="radiogroup"
         aria-label={label}
+        onKeyDown={onRadioKeyDown}
         className={cn(
           "grid gap-2",
           columns === 4 ? "grid-cols-4" : columns === 2 ? "grid-cols-2" : "grid-cols-3",
@@ -136,6 +149,7 @@ export function PictoPick({ label, hint, value, onChange, options, columns = 3 }
             <ChoiceCard
               key={o.value}
               selected={selected}
+              tabIndex={o.value === stop ? 0 : -1}
               onClick={() => onChange(o.value)}
               label={
                 <span className="inline-flex items-center gap-1">
@@ -214,7 +228,7 @@ export function PhotoLayoutControls({ st, setStyle, shown }) {
       <PictoPick
         label="Position de la photo"
         value={["left", "top", "right"].includes(L.photo) ? L.photo : ""}
-        onChange={(v) => setStyle(setPhotoPlacement(st, v))}
+        onChange={(v) => setStyle(setPhotoPlacement(st, v, shown))}
         options={PHOTO_OPTIONS}
       />
       {L.hasVisual && (
@@ -495,6 +509,10 @@ export function SocialRowsControl({ st, setStyle, count }) {
   const options = socialRowOptions(count);
   if (options.length === 0) return null;
   const current = distribute(count, st.socialRows || []).join("+");
+  const stop = radioTabStop(
+    options.map((o) => o.key),
+    current,
+  );
   const justify = JUSTIFY[socialAlign(st)];
   return (
     <div className="space-y-2">
@@ -502,6 +520,7 @@ export function SocialRowsControl({ st, setStyle, count }) {
       <div
         role="radiogroup"
         aria-label="Disposition des icônes"
+        onKeyDown={onRadioKeyDown}
         className="grid grid-cols-4 gap-2"
       >
         {options.map((o) => {
@@ -510,6 +529,7 @@ export function SocialRowsControl({ st, setStyle, count }) {
             <ChoiceCard
               key={o.key}
               selected={selected}
+              tabIndex={o.key === stop ? 0 : -1}
               onClick={() => setStyle({ socialRows: o.plan })}
               label={
                 <span className="inline-flex items-center gap-1">
@@ -644,43 +664,134 @@ export function LogoWidthRow({ sig, setStyle }) {
 }
 
 /**
+ * Largeurs que le contenu impose au cadre et aux colonnes, mesurées dans
+ * l'aperçu de l'éditeur ({ frame, columns: { visual, text, side } }, chacune
+ * { floor, natural } en px ; null tant que rien n'est mesuré). L'éditeur
+ * les dépose ici (setPreviewWidths) et les réglages de largeur les lisent,
+ * dans l'onglet Style comme dans le panneau d'une colonne.
+ */
+let previewWidths = null;
+const widthListeners = new Set();
+export function setPreviewWidths(next) {
+  previewWidths = next;
+  widthListeners.forEach((listener) => listener());
+}
+function usePreviewWidths() {
+  return useSyncExternalStore(
+    (listener) => {
+      widthListeners.add(listener);
+      return () => widthListeners.delete(listener);
+    },
+    () => previewWidths,
+    () => null,
+  );
+}
+
+/**
+ * Largeur enregistrée sous le plancher du contenu : la largeur obtenue, et
+ * de quoi descendre plus bas quand c'est possible.
+ */
+function FloorNote({ children, action }) {
+  return (
+    <div className="space-y-1.5">
+      <Warning>{children}</Warning>
+      {action && (
+        <button
+          type="button"
+          onClick={action.onClick}
+          className="inline-flex items-center gap-1 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+        >
+          <RotateCcw size={11} aria-hidden="true" />
+          {action.label}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Valeur proposée au passage en sur mesure : la largeur affichée (rien ne
+ * saute), arrondie au pas, sinon `fallback`.
+ */
+const startFrom = (natural, step, fallback) =>
+  natural ? Math.round(natural / step) * step : fallback;
+
+/**
  * Largeur de toute la signature (le cadre s'il y en a un) : ajustée au
- * contenu ou sur mesure.
+ * contenu ou sur mesure, jamais sous la largeur que le contenu impose.
  */
 export function SignatureWidthRow({ st, setStyle, label }) {
-  const L = layoutState(st);
+  const widths = usePreviewWidths();
+  const floor = widths?.frame?.floor || 0;
+  // Une colonne sur mesure élargit la signature : la remettre en automatique
+  const customColumns = Object.values(st.columns || {}).some((w) => w > 0);
   return (
     <LengthRow
       label={label || "Largeur de la signature"}
       autoLabel="Ajustée au contenu"
-      hint="Ou tirez le bord de la signature dans l'aperçu. Sur un téléphone, elle ne dépasse jamais la largeur de l'écran."
+      hint="Ou tirez le bord de la signature dans l'aperçu. Sur un téléphone, elle se resserre à la largeur de l'écran."
       value={st.frameWidth}
       onChange={(v) => setStyle({ frameWidth: v })}
       min={240}
       max={720}
       step={10}
-      initial={480}
+      initial={startFrom(widths?.frame?.natural, 10, 480)}
+      floor={floor}
+      note={
+        floor > st.frameWidth ? (
+          <FloorNote
+            action={
+              customColumns
+                ? {
+                    label: "Remettre les colonnes en automatique",
+                    onClick: () =>
+                      setStyle({ columns: { visual: 0, text: 0, side: 0 } }),
+                  }
+                : null
+            }
+          >
+            Le contenu impose au moins {floor} px : la signature ne peut pas
+            être plus étroite.
+          </FloorNote>
+        ) : null
+      }
     />
   );
 }
 
-/** Largeur d'une colonne : ajustée au contenu ou sur mesure. */
+/**
+ * Largeur d'une colonne : ajustée au contenu ou sur mesure, jamais sous la
+ * largeur que son contenu impose.
+ */
 export function ColumnWidthRow({ slot, st, setStyle, label }) {
+  const widths = usePreviewWidths();
   const c = COLUMN_WIDTH[slot];
   if (!c) return null;
+  const m = widths?.columns?.[slot];
+  const floor = m?.floor || 0;
+  const value = st.columns?.[slot] || 0;
   return (
     <LengthRow
       label={label || SLOT_LABEL[slot]}
       hint="Vous pouvez aussi tirer le bord de la colonne dans l'aperçu."
       autoLabel="Ajustée au contenu"
-      value={st.columns?.[slot] || 0}
+      value={value}
       onChange={(v) =>
         setStyle({ columns: { ...(st.columns || {}), [slot]: v } })
       }
       min={c.min}
       max={c.max}
       step={10}
-      initial={c.initial}
+      initial={startFrom(m?.natural, 10, c.initial)}
+      floor={floor}
+      note={
+        floor > value ? (
+          <FloorNote>
+            Son contenu impose au moins {floor} px : la colonne ne peut pas
+            être plus étroite.
+          </FloorNote>
+        ) : null
+      }
     />
   );
 }
@@ -734,10 +845,11 @@ export function OutsideControls({ st, setStyle, shown }) {
 }
 
 /**
- * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
- * l'autre (comme les dépôts « À côté », « Au-dessus », « Sous »).
+ * Réseaux et logo qui se suivent en bas : vrai s'ils sont côte à côte,
+ * faux s'ils sont l'un sous l'autre, null s'ils ne se suivent pas (pas de
+ * choix à faire).
  */
-export function FooterPairControl({ st, setStyle, shown }) {
+export function footerPaired(st, shown) {
   const footer = (st.slots?.footer || []).filter((k) => !shown || shown.has(k));
   const a = footer.indexOf("social");
   const b = footer.indexOf("logo");
@@ -745,6 +857,18 @@ export function FooterPairControl({ st, setStyle, shown }) {
   // Un alignement choisi pour l'un des deux les garde l'un sous l'autre
   const blocks = st.blocks || {};
   const aligned = Boolean(blocks.social?.align || blocks.logo?.align);
+  return st.footerPair !== false && !aligned;
+}
+
+/**
+ * Réseaux et logo qui se suivent en bas : côte à côte ou l'un sous
+ * l'autre (comme les dépôts « À gauche », « À droite », « Au-dessus »,
+ * « Sous »).
+ */
+export function FooterPairControl({ st, setStyle, shown }) {
+  const paired = footerPaired(st, shown);
+  if (paired === null) return null;
+  const blocks = st.blocks || {};
   const unaligned = (k) => {
     // eslint-disable-next-line no-unused-vars
     const { align, ...rest } = blocks[k] || {};
@@ -755,7 +879,7 @@ export function FooterPairControl({ st, setStyle, shown }) {
       id="sig-footer-pair"
       label="Réseaux et logo côte à côte"
       description="Sinon, l'un sous l'autre."
-      checked={st.footerPair !== false && !aligned}
+      checked={paired}
       onCheckedChange={(v) =>
         setStyle(
           v
