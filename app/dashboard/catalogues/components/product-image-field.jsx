@@ -89,10 +89,10 @@ export default function ProductImageField({
           handleFile(e.dataTransfer.files?.[0]);
         }}
         className={cn(
-          "group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
+          "group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring",
           value
             ? "bg-muted"
-            : "border-dashed bg-muted/40 hover:border-foreground/30 hover:bg-muted/70",
+            : "border border-dashed bg-muted/40 hover:border-foreground/30 hover:bg-muted/70",
           dragging && "border-primary bg-primary/5 ring-4 ring-primary/15",
           loading && "cursor-wait",
         )}

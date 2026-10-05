@@ -23,7 +23,6 @@ export function ItemCellWithImage({ imageUrl, children }) {
           height: "52px",
           objectFit: "cover",
           flexShrink: 0,
-          border: "1px solid #E6E6E6",
           borderRadius: "6px",
           boxSizing: "border-box",
         }}

@@ -19,7 +19,7 @@ export function ProductThumbnail({ src, alt = "", className }) {
         "relative inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md",
         failed
           ? "border border-dashed bg-muted/60 text-muted-foreground/60"
-          : "bg-white shadow-[0_0_0_1px_rgb(0_0_0/0.06)] dark:shadow-[0_0_0_1px_rgb(255_255_255/0.08)]",
+          : "bg-muted",
         className,
       )}
     >
