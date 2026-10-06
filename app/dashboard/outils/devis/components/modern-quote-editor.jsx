@@ -72,6 +72,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import { getOrganizationAnnex } from "@/src/utils/document-annex";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -390,6 +391,7 @@ export default function ModernQuoteEditor({
       "",
     termsAndConditionsLink: "",
     termsAndConditionsLinkTitle: "",
+    annex: getOrganizationAnnex(organization, "quote"),
     customFields: [],
     discount: 0,
     discountType: "PERCENTAGE",
@@ -816,6 +818,7 @@ export default function ModernQuoteEditor({
             )
           }
           pdfRef={pdfRef}
+          annex={formData?.annex}
         />
       )}
 

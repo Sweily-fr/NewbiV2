@@ -15,6 +15,10 @@ import { generateQuotePrefix } from "@/src/utils/quoteUtils";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { useQuoteNumber } from "../hooks/use-quote-number";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import {
+  getOrganizationAnnex,
+  serializeOrganizationAnnex,
+} from "@/src/utils/document-annex";
 
 // Données de démonstration pour la preview
 const getDemoQuoteData = (formData, organization) => {
@@ -256,6 +260,8 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
               org?.quoteTermsAndConditions ||
               org?.documentTermsAndConditions ||
               "",
+            // Annexe PDF par défaut (JSON dans l'organisation)
+            annex: getOrganizationAnnex(org, "quote"),
             showBankDetails: org?.showBankDetails || false,
             primaryColor:
               org?.quoteHeaderBgColor ||
@@ -320,6 +326,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
       headerNotes: "",
       footerNotes: "",
       termsAndConditions: "",
+      annex: null,
       showBankDetails: false,
       primaryColor: "#5b4fff",
       appearance: {
@@ -416,6 +423,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         quoteHeaderNotes: formValues.headerNotes,
         quoteFooterNotes: formValues.footerNotes,
         quoteTermsAndConditions: formValues.termsAndConditions,
+        quoteAnnex: serializeOrganizationAnnex(formValues.annex),
 
         // Couleurs spécifiques aux devis
         quoteHeaderBgColor:

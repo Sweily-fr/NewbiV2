@@ -1748,6 +1748,23 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Annexes PDF par défaut (JSON { key, fileName, size, pageCount }),
+        // ajoutées à la fin du PDF des nouveaux documents
+        quoteAnnex: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        invoiceAnnex: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderAnnex: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Bank details display setting
         showBankDetails: {
           type: "boolean",

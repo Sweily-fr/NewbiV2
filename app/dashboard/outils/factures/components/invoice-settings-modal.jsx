@@ -18,6 +18,10 @@ import {
 import { useInvoiceNumber } from "../hooks/use-invoice-number";
 import { useSession } from "@/src/lib/auth-client";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import {
+  getOrganizationAnnex,
+  serializeOrganizationAnnex,
+} from "@/src/utils/document-annex";
 
 // Données de démonstration pour la preview
 const getDemoInvoiceData = (formData, organization, userName) => {
@@ -265,6 +269,8 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               org?.invoiceTermsAndConditions ||
               org?.documentTermsAndConditions ||
               "",
+            // Annexe PDF par défaut (JSON dans l'organisation)
+            annex: getOrganizationAnnex(org, "invoice"),
             showBankDetails: org?.showBankDetails || false,
             primaryColor:
               org?.invoiceHeaderBgColor ||
@@ -330,6 +336,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
       headerNotes: "",
       footerNotes: "",
       termsAndConditions: "",
+      annex: null,
       showBankDetails: false,
       clientPositionRight: false,
       beneficiaryNameType: "companyName",
@@ -426,6 +433,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         invoiceHeaderNotes: formValues.headerNotes,
         invoiceFooterNotes: formValues.footerNotes,
         invoiceTermsAndConditions: formValues.termsAndConditions,
+        invoiceAnnex: serializeOrganizationAnnex(formValues.annex),
 
         // Couleurs spécifiques aux factures
         invoiceTextColor: formValues.appearance?.textColor || "#000000",

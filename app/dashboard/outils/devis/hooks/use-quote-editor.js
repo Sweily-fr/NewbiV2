@@ -26,6 +26,11 @@ import posthog from "posthog-js";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
+import {
+  getOrganizationAnnex,
+  normalizeAnnex,
+  toAnnexInput,
+} from "@/src/utils/document-annex";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1181,6 +1186,8 @@ export function useQuoteEditor({
                 organization.documentTermsAndConditions ||
                 "",
             );
+            // Annexe PDF par défaut des devis
+            setValue("annex", getOrganizationAnnex(organization, "quote"));
 
             // Charger showBankDetails depuis l'organisation
             setValue("showBankDetails", organization.showBankDetails || false);
@@ -2504,6 +2511,9 @@ function getInitialFormData(mode, initialData, session, organization) {
     footerNotes: "",
     termsAndConditions: "",
 
+    // Annexe PDF ajoutée à la fin du document
+    annex: null,
+
     // Champs personnalisés
     customFields: [],
 
@@ -2830,6 +2840,7 @@ function transformQuoteToFormData(quote) {
     // L'API expose `termsAndConditions` (pas de champ `terms`) : lire `terms`
     // rechargeait des CGV vides, puis le réenregistrement les effaçait.
     termsAndConditions: quote.termsAndConditions || "",
+    annex: normalizeAnnex(quote.annex),
 
     customFields:
       quote.customFields?.map((field) => ({
@@ -3272,6 +3283,7 @@ function transformFormDataToInput(
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
     termsAndConditions: formData.termsAndConditions || "",
+    annex: toAnnexInput(formData.annex),
     customFields:
       formData.customFields?.map((field) => ({
         key: field.name,

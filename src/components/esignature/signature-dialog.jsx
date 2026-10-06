@@ -16,6 +16,10 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { useQuery } from "@apollo/client";
 import { GET_QUOTE } from "@/src/graphql/quoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  appendAnnexInBrowser,
+  uint8ArrayToBase64,
+} from "@/src/utils/document-annex";
 
 const DOCUMENT_TYPE_LABELS = {
   invoice: "facture",
@@ -101,7 +105,7 @@ function computeSignaturePlacement(componentRef) {
 /**
  * Génère un PDF en base64 à partir d'un ref DOM
  */
-async function generatePdfBase64FromRef(componentRef) {
+async function generatePdfBase64FromRef(componentRef, annex) {
   if (!componentRef.current) {
     throw new Error("Référence du composant non trouvée");
   }
@@ -227,13 +231,13 @@ async function generatePdfBase64FromRef(componentRef) {
     );
   }
 
-  const pdfArrayBuffer = pdf.output("arraybuffer");
-  const bytes = new Uint8Array(pdfArrayBuffer);
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
+  // Annexe (ex : CGV) ajoutée après le devis : la zone de signature, placée
+  // sur une page du devis, ne bouge pas
+  const bytes = await appendAnnexInBrowser(
+    new Uint8Array(pdf.output("arraybuffer")),
+    annex,
+  );
+  return uint8ArrayToBase64(new Uint8Array(bytes));
 }
 
 export function SignatureDialog({
@@ -334,7 +338,10 @@ export function SignatureDialog({
       let documentBase64;
 
       try {
-        documentBase64 = await generatePdfBase64FromRef(pdfRef);
+        documentBase64 = await generatePdfBase64FromRef(
+          pdfRef,
+          documentToRender?.annex,
+        );
       } catch (err) {
         toast.error("Erreur lors de la génération du PDF", {
           description: err.message,

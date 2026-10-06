@@ -66,6 +66,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import { getOrganizationAnnex } from "@/src/utils/document-annex";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -397,6 +398,7 @@ export default function ModernPurchaseOrderEditor({
       "",
     termsAndConditionsLink: "",
     termsAndConditionsLinkTitle: "",
+    annex: getOrganizationAnnex(organization, "purchaseOrder"),
     customFields: [],
     discount: 0,
     discountType: "PERCENTAGE",
@@ -805,6 +807,7 @@ export default function ModernPurchaseOrderEditor({
             )
           }
           pdfRef={pdfRef}
+          annex={formData?.annex}
         />
       )}
 

@@ -84,6 +84,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import { getOrganizationAnnex } from "@/src/utils/document-annex";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -452,6 +453,7 @@ export default function ModernInvoiceEditor({
       "",
     termsAndConditionsLink: "",
     termsAndConditionsLinkTitle: "",
+    annex: getOrganizationAnnex(organization, "invoice"),
     customFields: [],
     discount: 0,
     discountType: "PERCENTAGE",
@@ -969,6 +971,7 @@ export default function ModernInvoiceEditor({
             )
           }
           pdfRef={pdfRef}
+          annex={formData?.annex}
         />
       )}
     </div>
