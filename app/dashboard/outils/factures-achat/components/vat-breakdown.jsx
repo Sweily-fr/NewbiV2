@@ -26,16 +26,22 @@ const lineTva = (rate, base) => {
  * qui ne vaut pas HT + TVA (pourboire, frais hors TVA, facture rapprochée)
  * est signalé, pas corrigé.
  */
+// Sélecteur de taux sur toute la largeur restante : le libellé le plus long
+// (« 10% - Taux intermédiaire ») demande ~205 px, le tiroir en laisse ~220.
+const LINE_GRID =
+  "grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_2rem] items-center gap-2";
+const RATE_TRIGGER =
+  "w-full h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block";
+
 export function VatBreakdownEditor({
   lines,
   currency,
   amountTTC,
   onChange,
-  // Colonnes resserrées pour un volet étroit (confirmation d'un justificatif)
+  // Volet étroit (confirmation d'un justificatif) : le taux prend une ligne
+  // entière, base HT et TVA se partagent la suivante
   compact = false,
 }) {
-  const rateWidth = compact ? "w-28" : "w-36";
-  const amountWidth = compact ? "w-20" : "w-24";
   const update = (index, field, value) => {
     onChange(
       lines.map((line, i) => {
@@ -56,50 +62,77 @@ export function VatBreakdownEditor({
       ? Math.round((ttc - totals.amountHT - totals.amountTVA) * 100) / 100
       : 0;
 
+  const rateSelect = (line, index) => (
+    <VatRateSelect
+      value={line.rate}
+      onChange={(v) => update(index, "rate", String(v))}
+      className={RATE_TRIGGER}
+    />
+  );
+  const amountInput = (line, index, field, label) => (
+    <Input
+      type="number"
+      step="0.01"
+      value={line[field]}
+      onChange={(e) => update(index, field, e.target.value)}
+      placeholder="0.00"
+      aria-label={`${label} à ${formatVatRate(line.rate)}`}
+      className="w-full h-8 text-sm text-right"
+    />
+  );
+  const removeButton = (index) => (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 shrink-0 text-muted-foreground"
+      onClick={() => onChange(lines.filter((_, i) => i !== index))}
+      title="Retirer ce taux"
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+    </Button>
+  );
+
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span className={rateWidth}>Taux</span>
-        <span className={`${amountWidth} text-right`}>Base HT</span>
-        <span className={`${amountWidth} text-right`}>TVA</span>
-      </div>
-      {lines.map((line, index) => (
-        <div key={index} className="flex items-center gap-2">
-          <VatRateSelect
-            value={line.rate}
-            onChange={(v) => update(index, "rate", String(v))}
-            className={`${rateWidth} h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block`}
-          />
-          <Input
-            type="number"
-            step="0.01"
-            value={line.baseHT}
-            onChange={(e) => update(index, "baseHT", e.target.value)}
-            placeholder="0.00"
-            aria-label={`Base HT à ${formatVatRate(line.rate)}`}
-            className={`${amountWidth} h-8 text-sm text-right`}
-          />
-          <Input
-            type="number"
-            step="0.01"
-            value={line.amountTVA}
-            onChange={(e) => update(index, "amountTVA", e.target.value)}
-            placeholder="0.00"
-            aria-label={`TVA à ${formatVatRate(line.rate)}`}
-            className={`${amountWidth} h-8 text-sm text-right`}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 text-muted-foreground"
-            onClick={() => onChange(lines.filter((_, i) => i !== index))}
-            title="Retirer ce taux"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      ))}
+      {compact ? (
+        lines.map((line, index) => (
+          <div key={index} className="space-y-2 rounded-md border p-2.5">
+            <div className="flex items-center gap-2">
+              <div className="min-w-0 flex-1">{rateSelect(line, index)}</div>
+              {removeButton(index)}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="space-y-1">
+                <span className="block text-xs text-muted-foreground">
+                  Base HT
+                </span>
+                {amountInput(line, index, "baseHT", "Base HT")}
+              </label>
+              <label className="space-y-1">
+                <span className="block text-xs text-muted-foreground">TVA</span>
+                {amountInput(line, index, "amountTVA", "TVA")}
+              </label>
+            </div>
+          </div>
+        ))
+      ) : (
+        <>
+          <div className={`${LINE_GRID} text-xs text-muted-foreground`}>
+            <span>Taux</span>
+            <span className="text-right">Base HT</span>
+            <span className="text-right">TVA</span>
+          </div>
+          {lines.map((line, index) => (
+            <div key={index} className={LINE_GRID}>
+              {rateSelect(line, index)}
+              {amountInput(line, index, "baseHT", "Base HT")}
+              {amountInput(line, index, "amountTVA", "TVA")}
+              {removeButton(index)}
+            </div>
+          ))}
+        </>
+      )}
       <AddVatRateButton
         onClick={() =>
           onChange([
