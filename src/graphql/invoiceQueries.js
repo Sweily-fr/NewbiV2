@@ -137,6 +137,8 @@ export const INVOICE_FRAGMENT = gql`
       linkedQuantity
       linkedPer
       linkedRounding
+      imageUrl
+      showImage
       progressPercentage
     }
     customFields {
@@ -439,6 +441,8 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
         linkedQuantity
         linkedPer
         linkedRounding
+        imageUrl
+        showImage
         unit
         discount
         discountType
@@ -1420,6 +1424,8 @@ export const GET_INVOICE_TEMPLATES = gql`
         linkedQuantity
         linkedPer
         linkedRounding
+        imageUrl
+        showImage
         progressPercentage
       }
       headerNotes

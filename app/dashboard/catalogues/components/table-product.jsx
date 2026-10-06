@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
 import {
   ColumnDef,
@@ -141,14 +142,22 @@ const baseColumns = [
   {
     header: "Nom du produit",
     accessorKey: "name",
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const product = row.original;
+      // Dès qu'un produit de la liste a une image, chaque ligne réserve sa
+      // case pour garder les noms alignés
+      const showThumbnail = table.options.data.some((p) => p?.imageUrl);
       return (
-        <div
-          className="font-normal max-w-[120px] md:max-w-[180px] truncate"
-          title={product.name}
-        >
-          {product.name}
+        <div className="flex items-center gap-2.5">
+          {showThumbnail && (
+            <ProductThumbnail src={product.imageUrl} className="size-8" />
+          )}
+          <div
+            className="font-normal max-w-[120px] md:max-w-[180px] truncate"
+            title={product.name}
+          >
+            {product.name}
+          </div>
         </div>
       );
     },

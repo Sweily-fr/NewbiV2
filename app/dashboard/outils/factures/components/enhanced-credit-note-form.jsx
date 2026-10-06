@@ -23,7 +23,9 @@ import {
   Package,
   CheckIcon,
   ChevronDownIcon,
-  Info, Link2 } from "lucide-react";
+  Info,
+  Link2,
+} from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -87,6 +89,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { ProductThumbnail } from "@/src/components/product-thumbnail";
+import { productItemImage } from "@/src/utils/item-image";
 
 import ItemsSection from "./invoices-form-sections/ItemsSection";
 import DiscountsAndTotalsSection from "./invoices-form-sections/DiscountsAndTotalsSection";
@@ -160,7 +164,12 @@ function ProductSearchCombobox({
       category: product.category,
       reference: product.reference,
       linkedProducts: product.linkedProducts,
+      imageUrl: product.imageUrl,
+      showImageOnDocuments: product.showImageOnDocuments,
     })) || [];
+
+  // Une case image par ligne dès qu'un produit de la liste a une image
+  const hasImages = products.some((p) => p.imageUrl);
 
   // Noms des produits liés d'un produit (tag dans la liste)
   const linkedNames = (product) => {
@@ -182,6 +191,7 @@ function ProductSearchCombobox({
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
         linkedProducts: selectedProduct.linkedProducts,
+        ...productItemImage(selectedProduct),
       });
     }
     setValue("");
@@ -259,35 +269,46 @@ function ProductSearchCombobox({
                     key={product.value}
                     value={product.value}
                     onSelect={() => handleSelect(product.value)}
-                    className="flex flex-col items-start gap-1 p-3"
+                    className="flex flex-row items-start gap-3 p-3"
                   >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="flex flex-wrap items-center gap-2 min-w-0">
-                        <span className="font-normal">{product.label}</span>
-                        {linkedNames(product) && (
-                          <Badge
-                            variant="secondary"
-                            className="font-normal whitespace-normal max-w-full"
-                          >
-                            <Link2 size={12} className="!size-3 shrink-0 mr-1" />
-                            Produits liés : {linkedNames(product)}
-                          </Badge>
-                        )}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {product.price ? `${product.price}€` : ""}
-                      </span>
+                    {hasImages && (
+                      <ProductThumbnail
+                        src={product.imageUrl}
+                        className="size-10 mt-0.5"
+                      />
+                    )}
+                    <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                      <div className="flex items-center justify-between w-full">
+                        <span className="flex flex-wrap items-center gap-2 min-w-0">
+                          <span className="font-normal">{product.label}</span>
+                          {linkedNames(product) && (
+                            <Badge
+                              variant="secondary"
+                              className="font-normal whitespace-normal max-w-full"
+                            >
+                              <Link2
+                                size={12}
+                                className="!size-3 shrink-0 mr-1"
+                              />
+                              Produits liés : {linkedNames(product)}
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {product.price ? `${product.price}€` : ""}
+                        </span>
+                      </div>
+                      {product.description && (
+                        <span className="text-sm text-muted-foreground">
+                          {product.description}
+                        </span>
+                      )}
+                      {product.reference && (
+                        <span className="text-xs text-muted-foreground">
+                          Réf: {product.reference}
+                        </span>
+                      )}
                     </div>
-                    {product.description && (
-                      <span className="text-sm text-muted-foreground">
-                        {product.description}
-                      </span>
-                    )}
-                    {product.reference && (
-                      <span className="text-xs text-muted-foreground">
-                        Réf: {product.reference}
-                      </span>
-                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -30,7 +30,7 @@ export const metadata = {
     absolute: "Logiciel de facturation et devis pour freelances et TPE | Newbi",
   },
   description:
-    "Newbi, la plateforme tout-en-un pour indépendants et petites équipes : devis, factures, clients, reçus, banque et facturation électronique au même endroit. 30 jours gratuits, sans carte bancaire.",
+    "Devis, factures, clients, banque et facturation électronique au même endroit, pour indépendants et petites équipes. 30 jours gratuits.",
   keywords: [
     "logiciel de facturation",
     "logiciel devis facture",

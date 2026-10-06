@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { pickItemImage } from "@/src/utils/item-image";
 import { FormProvider } from "react-hook-form";
 import {
   ArrowLeft,
@@ -451,6 +452,7 @@ export default function ModernQuoteEditor({
             discount: item.discount || 0,
             discountType: item.discountType || "PERCENTAGE",
             details: item.details || "",
+            ...pickItemImage(item),
             vatExemptionText: item.vatExemptionText || "",
             progressPercentage:
               item.progressPercentage != null ? item.progressPercentage : 100,

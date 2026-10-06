@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { pickItemImage } from "@/src/utils/item-image";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -127,6 +128,7 @@ function transformDeliveryNoteToFormData(dn, organization) {
       details: item.details || "",
       reference: item.reference || "",
       productId: item.productId || "",
+      ...pickItemImage(item),
       quantity: item.quantity ?? 1,
       unit: item.unit || "",
     })),
@@ -234,6 +236,7 @@ function transformFormDataToInput(formData, { includeStatus = true } = {}) {
         details: item.details || "",
         reference: item.reference || "",
         productId: item.productId || "",
+        ...pickItemImage(item),
         quantity,
         orderedQuantity: quantity,
         deliveredQuantity: quantity,

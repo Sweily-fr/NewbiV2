@@ -28,6 +28,7 @@ import { PackagePlusIcon } from "lucide-react";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
 import ProductCustomFieldsForm from "./product-custom-fields-form";
 import ProductLinkedProductsForm from "./product-linked-products-form";
+import ProductImageField from "./product-image-field";
 
 // Unités utilisées dans les devis
 const UNITS = [
@@ -102,6 +103,11 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   // Produits liés (ajoutés automatiquement dans les documents)
   const [linkedProducts, setLinkedProducts] = useState([]);
 
+  // Image du produit (URL R2, envoyée dès qu'elle est choisie)
+  const [imageUrl, setImageUrl] = useState(null);
+  const [showImageOnDocuments, setShowImageOnDocuments] = useState(true);
+  const [imageUploading, setImageUploading] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -161,6 +167,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         });
       }
       setCustomFieldValues(cfValues);
+      setImageUrl(product.imageUrl || null);
+      setShowImageOnDocuments(product.showImageOnDocuments !== false);
       setLinkedProducts(
         (product.linkedProducts || [])
           .filter((link) => link?.product)
@@ -184,6 +192,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         description: "",
       });
       setCustomFieldValues({});
+      setImageUrl(null);
+      setShowImageOnDocuments(true);
       setLinkedProducts([]);
     }
   }, [product, open, reset]);
@@ -211,6 +221,9 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         unitPrice: parseFloat(formData.unitPrice),
         vatRate: parseFloat(formData.vatRate),
         ...(customFields.length > 0 && { customFields }),
+        // null à la modification retire l'image de la fiche
+        ...(imageUrl ? { imageUrl } : isEditing ? { imageUrl: null } : {}),
+        showImageOnDocuments,
         linkedProducts: linkedProducts.map((link) => ({
           productId: link.productId,
           quantity: parseFloat(link.quantity),
@@ -474,10 +487,17 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                 />
               </div>
 
-              {/* Colonne droite - Aperçu des prix */}
+              {/* Colonne droite - Image et aperçu des prix */}
               <div
-                className={`${isMobile ? "w-full" : "w-[260px] flex-shrink-0 sticky top-0 self-start"}`}
+                className={`space-y-4 ${isMobile ? "w-full" : "w-[260px] flex-shrink-0 sticky top-0 self-start"}`}
               >
+                <ProductImageField
+                  value={imageUrl}
+                  onChange={setImageUrl}
+                  onUploadingChange={setImageUploading}
+                  showOnDocuments={showImageOnDocuments}
+                  onShowOnDocumentsChange={setShowImageOnDocuments}
+                />
                 <div className="bg-muted/50 rounded-lg p-4 border">
                   <div className="text-sm font-medium text-muted-foreground mb-3">
                     Aperçu des prix
@@ -531,7 +551,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
             </Button>
             <Button
               onClick={handleSubmit(onSubmit)}
-              disabled={loading}
+              disabled={loading || imageUploading}
               className="flex-1"
             >
               {loading

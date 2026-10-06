@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { pickLinkFields } from "@/src/utils/linked-products";
+import { pickItemImage } from "@/src/utils/item-image";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -1672,6 +1673,7 @@ export function useInvoiceEditor({
                 vatExemptionText: item.vatExemptionText || "",
                 progressPercentage: item.progressPercentage ?? 100,
                 ...pickLinkFields(item),
+                ...pickItemImage(item),
               })),
             );
           }
@@ -1728,6 +1730,7 @@ export function useInvoiceEditor({
                 vatExemptionText: item.vatExemptionText || "",
                 progressPercentage: item.progressPercentage ?? 100,
                 ...pickLinkFields(item),
+                ...pickItemImage(item),
               })),
             );
           }
@@ -1783,6 +1786,7 @@ export function useInvoiceEditor({
                 details: item.details || "",
                 vatExemptionText: item.vatExemptionText || "",
                 ...pickLinkFields(item),
+                ...pickItemImage(item),
               })),
             );
           }
@@ -3382,6 +3386,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
               ? parseFloat(item.progressPercentage)
               : 100,
           ...pickLinkFields(item),
+          ...pickItemImage(item),
         };
       }) || [],
     discount: parseFloat(formData.discount) || 0,

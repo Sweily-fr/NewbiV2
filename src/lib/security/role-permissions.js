@@ -161,7 +161,8 @@ export const ROLE_PERMISSIONS = {
     fileTransfers: ["view", "create", "download"],
     sharedDocuments: ["view", "create", "edit", "download"],
     kanban: ["view", "create", "edit", "assign"],
-    signatures: ["view", "create", "edit", "set-default"],
+    // Ses propres signatures seulement (l'API filtre sur l'auteur)
+    signatures: ["view", "create", "edit", "delete", "set-default"],
     calendar: ["view", "create", "edit"],
     reports: ["view", "export"],
     analytics: ["view", "export"],

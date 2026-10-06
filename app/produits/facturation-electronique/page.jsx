@@ -30,7 +30,7 @@ export const metadata = {
     absolute: "Facturation électronique 2026 : e-invoicing conforme | Newbi",
   },
   description:
-    "Préparez-vous à la réforme de la facturation électronique 2026 avec newbi. Solution e-invoicing et e-reporting conforme, formats Factur-X, UBL, CII. Archivage légal 10 ans.",
+    "Facturation électronique 2026-2027 : e-invoicing et e-reporting conformes, formats Factur-X, UBL et CII, archivage légal 10 ans.",
   keywords:
     "facturation électronique, e-invoicing, e-reporting, réforme 2026, Factur-X, facture électronique, PPF, portail public facturation, conformité fiscale, archivage factures",
   openGraph: {

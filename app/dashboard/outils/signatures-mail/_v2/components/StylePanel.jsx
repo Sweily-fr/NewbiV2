@@ -10,19 +10,26 @@ import {
 } from "@/src/components/ui/select";
 import { ChevronRight, MousePointerClick, RotateCcw } from "lucide-react";
 import {
+  BLOCK_OF,
+  ELEMENT_ITEMS,
   RULE_ITEMS,
+  SLOTS,
   addRule,
+  elementSlot,
   layoutCustomized,
   layoutReset,
   logoFit,
   shownItems,
+  slotLabel,
   slotOf,
 } from "../slots";
 import {
   AddChips,
   Choice,
   ColorRow,
+  FOCUS_RING,
   Group,
+  Hint,
   LengthRow,
   Nested,
   ResetLink,
@@ -43,6 +50,7 @@ import {
   SignatureWidthRow,
   layoutState,
 } from "./LayoutControls";
+import { ELEMENT_TITLE } from "./LevelPanels";
 
 export { Choice, ColorRow, ResetLink, Row, SliderRow };
 
@@ -100,9 +108,10 @@ function ResetLayout({ sig, template, setStyle }) {
       <button
         type="button"
         // Places, traits et bordures, blocs, colonnes, nom, réseaux et logo
-        // du modèle ; couleurs et typographie inchangées
-        onClick={() => setStyle(layoutReset(sig, template))}
-        className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+        // du modèle ; couleurs et typographie inchangées. Appliqué tel quel :
+        // les largeurs des blocs du modèle vont avec ses places
+        onClick={() => setStyle(layoutReset(sig, template), { asIs: true })}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline dark:text-[#8b7fff] cursor-pointer ${FOCUS_RING}`}
       >
         <RotateCcw size={12} />
         Revenir au modèle {template.name}
@@ -156,7 +165,8 @@ const FRAME_LABELS = {
   "accent-left": "Barre à gauche",
   "accent-top": "Barre en haut",
 };
-const PHOTO_LABELS = {
+// Aussi le début du résumé de « Disposition » du panneau Photo
+export const PHOTO_LABELS = {
   left: "Photo à gauche",
   top: "Photo au-dessus",
   right: "Photo à droite",
@@ -188,6 +198,77 @@ const ICON_COLOR_LABELS = {
 const capitalize = (text) =>
   text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 
+/** Textes de la signature, dans l'ordre, pour l'aide des couleurs de texte. */
+const TEXT_ROLES = [
+  ["name", ["prénom", "nom"]],
+  ["jobTitle", ["poste"]],
+  ["company", ["entreprise"]],
+  ["tagline", ["accroche"]],
+  ["contact", ["coordonnées"]],
+  ["disclaimer", ["mention"]],
+];
+const THE = {
+  prénom: "le prénom",
+  nom: "le nom",
+  poste: "le poste",
+  entreprise: "l'entreprise",
+};
+/** « a, b et c ». */
+const listing = (words) =>
+  words.length > 1
+    ? `${words.slice(0, -1).join(", ")} et ${words[words.length - 1]}`
+    : words[0] || "";
+
+/**
+ * Ce que colorent « Texte » et « Texte secondaire » : selon le modèle (nom
+ * ou entreprise dans la couleur principale, colorRoles du catalogue) et la
+ * disposition (identité sur une ligne, poste en capitales, texte blanc sur
+ * un bloc de couleur). Mêmes règles que le rendu de l'API.
+ */
+function textColorsHint(sig, template) {
+  const st = sig.style;
+  const roles = {
+    name: "text",
+    company: "text",
+    caption: "muted",
+    ...(template?.colorRoles || {}),
+  };
+  const inline = st.identityStyle === "inline";
+  const caps = !inline && st.titleStyle === "caps";
+  const source = {
+    name: inline ? "text" : roles.name,
+    jobTitle: caps ? roles.caption : "muted",
+    company: inline ? "text" : caps ? roles.caption : roles.company,
+    tagline: "muted",
+    contact: "muted",
+    disclaimer: "muted",
+  };
+  const shown = shownItems(sig);
+  const onBlock = (element) => {
+    const slot = elementSlot(st, shown, element);
+    return (
+      (slot === "header" && st.headerFill !== "tint") ||
+      (slot === "visual" && st.visualFill === "solid")
+    );
+  };
+  const words = { text: [], muted: [], primary: [] };
+  let white = false;
+  for (const [element, w] of TEXT_ROLES) {
+    if (onBlock(element)) white = true;
+    else words[source[element]]?.push(...w);
+  }
+  const primary = words.primary.map((w) => THE[w] || w);
+  return [
+    words.text.length > 0 && `Texte : ${listing(words.text)}.`,
+    words.muted.length > 0 && `Texte secondaire : ${listing(words.muted)}.`,
+    primary.length > 0 &&
+      `${capitalize(listing(primary))} ${primary.length > 1 ? "suivent" : "suit"} la couleur principale.`,
+    white && "Sur un bloc de couleur, le texte est blanc.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export default function StylePanel({
   sig,
   update,
@@ -198,7 +279,7 @@ export default function StylePanel({
   onSelect,
 }) {
   const st = sig.style;
-  const setStyle = (patch) => update({ style: patch });
+  const setStyle = (patch, options) => update({ style: patch }, options);
   // Éléments affichés : les réglages d'éléments absents sont masqués
   const shown = shownItems(sig);
   const L = layoutState(st, shown);
@@ -255,58 +336,98 @@ export default function StylePanel({
       ? `${ICON_LABELS[st.iconStyle]} · ${ICON_COLOR_LABELS[st.iconColorMode]} · ${Math.min(st.iconSize, iconMax)} px`
       : "Aucun réseau",
   };
+  // Tous les éléments affichés, dans l'ordre de l'aperçu (colonne par
+  // colonne, de gauche à droite) : sans souris, c'est le chemin vers le
+  // panneau de chacun, y compris pour ce qui ne se règle que là (marges du
+  // séparateur…)
+  const listed = [];
+  const list = (key) => {
+    if (key && !listed.includes(key)) listed.push(key);
+  };
+  const occupied = (slot) => (st.slots?.[slot] || []).some((k) => shown.has(k));
+  // Séparateur vertical réellement dessiné (mêmes règles que le rendu) : au
+  // bord de la colonne photo s'il a une colonne à côté ; sans elle, la barre
+  // ou le trait de couleur borde le texte à gauche, et le trait gris
+  // n'apparaît qu'entre le texte et une colonne de droite
+  const dividerDrawn =
+    shown.has("divider") &&
+    (L.hasVisual
+      ? occupied("text") || occupied("side")
+      : occupied("text") && (st.divider !== "line" || occupied("side")));
+  // Photo à droite : sa colonne passe après le texte. La colonne de droite
+  // la suit si la colonne photo a un fond de couleur ou si un trait sépare
+  // chaque colonne, sinon elle reste à côté du texte
+  const right = L.hasVisual && st.visualSide === "right";
+  const sideLast =
+    st.visualFill === "solid" ||
+    (st.visualFill !== "tint" && ["line", "accent"].includes(st.divider));
+  const order = !right
+    ? SLOTS
+    : sideLast
+      ? ["header", "text", "visual", "side", "footer", "outside"]
+      : ["header", "text", "side", "visual", "footer", "outside"];
+  // Le séparateur se range devant la colonne à sa droite
+  const dividerBefore = L.hasVisual
+    ? right
+      ? "visual"
+      : "text"
+    : st.divider === "line"
+      ? "side"
+      : "text";
+  for (const slot of order) {
+    if (dividerDrawn && slot === dividerBefore) list("divider");
+    for (const item of st.slots?.[slot] || []) {
+      if (shown.has(item)) list(BLOCK_OF[item]);
+    }
+  }
+  // Un élément affiché hors des colonnes reste proposé, à la fin (le
+  // séparateur n'est dans aucune colonne : sa place est réglée au-dessus)
+  for (const [key, items] of Object.entries(ELEMENT_ITEMS)) {
+    if (key !== "divider" && items.some((k) => shown.has(k))) list(key);
+  }
+  const ROW_DETAIL = {
+    name:
+      st.identityStyle === "inline"
+        ? "Sur une ligne avec le poste"
+        : st.nameLayout === "stacked"
+          ? "L'un sous l'autre"
+          : "Sur une ligne",
+    jobTitle: st.titleStyle === "caps" ? "En capitales" : "Normal",
+    contact: capitalize(CONTACT_LABELS[st.contactStyle] || ""),
+    photo: summaries.photo,
+    logo: summaries.logo,
+    social: summaries.icones,
+    divider: L.hasVisual
+      ? "Entre la photo et le texte"
+      : st.divider === "line"
+        ? "Entre le texte et la colonne de droite"
+        : "À gauche du texte",
+  };
   const elementRows = [
-    shown.has("firstName") || shown.has("lastName")
-      ? {
-          key: "name",
-          label: "Prénom et nom",
-          has: true,
-          detail:
-            st.identityStyle === "inline"
-              ? "Sur une ligne avec le poste"
-              : st.nameLayout === "stacked"
-                ? "L'un sous l'autre"
-                : "Sur une ligne",
-        }
-      : null,
-    shown.has("title")
-      ? {
-          key: "jobTitle",
-          label: "Poste",
-          has: true,
-          detail: st.titleStyle === "caps" ? "En capitales" : "Normal",
-        }
-      : null,
-    ["phone", "mobile", "email", "website", "address"].some((k) => shown.has(k))
-      ? {
-          key: "contact",
-          label: "Coordonnées",
-          has: true,
-          detail: capitalize(CONTACT_LABELS[st.contactStyle] || ""),
-        }
-      : null,
-    {
-      key: "photo",
-      label: "Photo",
-      has: hasPhoto,
-      detail: summaries.photo,
-      add: "Ajouter une photo",
-    },
-    {
-      key: "logo",
-      label: "Logo",
-      has: hasLogo,
-      detail: summaries.logo,
-      add: "Ajouter un logo",
-    },
-    {
-      key: "social",
-      label: "Réseaux sociaux",
-      has: hasNetworks,
-      detail: summaries.icones,
-      add: "Ajouter un réseau",
-    },
-  ].filter(Boolean);
+    ...listed.map((key) => {
+      const rule = RULE_ITEMS.includes(key);
+      return {
+        key,
+        // Traits libres numérotés comme dans la section Traits
+        label: rule ? `Trait ${freeRules.indexOf(key) + 1}` : ELEMENT_TITLE[key],
+        has: true,
+        // Sinon, sa place dans la signature
+        detail:
+          ROW_DETAIL[key] ||
+          (rule
+            ? `${st.rules[key].length} px`
+            : slotLabel(elementSlot(st, shown, key), st)),
+      };
+    }),
+    // Images et réseaux absents : de quoi les ajouter
+    ...[
+      { key: "photo", label: "Photo", add: "Ajouter une photo" },
+      { key: "logo", label: "Logo", add: "Ajouter un logo" },
+      { key: "social", label: "Réseaux sociaux", add: "Ajouter un réseau" },
+    ]
+      .filter((r) => !listed.includes(r.key))
+      .map((r) => ({ ...r, has: false })),
+  ];
   summaries.elements = elementRows
     .filter((r) => r.has)
     .map((r) => r.label)
@@ -318,8 +439,8 @@ export default function StylePanel({
           seul depuis l'aperçu */}
       <p className="flex items-start gap-2 pb-5 text-sm text-muted-foreground">
         <MousePointerClick size={16} className="mt-0.5 shrink-0" />
-        Réglages de toute la signature. Pour un seul élément, cliquez-le dans
-        l&apos;aperçu.
+        Réglages de toute la signature. Pour un seul élément, cliquez dessus
+        dans l&apos;aperçu.
       </p>
       <Section
         title="Texte et couleurs"
@@ -328,13 +449,14 @@ export default function StylePanel({
       >
         <Row
           label="Police"
-          hint="Seules ces polices s'affichent partout : Gmail, Outlook, Apple Mail."
+          htmlFor="sig-font"
+          hint="Polices courantes des messageries. Selon l'appareil du destinataire, une police proche peut s'afficher à la place : Arial au lieu de Calibri sur Mac et iPhone, ou au lieu d'Helvetica sur Windows."
         >
           <Select
             value={st.fontFamily}
             onValueChange={(v) => setStyle({ fontFamily: v })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="sig-font" className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -359,17 +481,22 @@ export default function StylePanel({
           onChange={(v) => setStyle({ primaryColor: v })}
           hint="Accents, icônes et bouton. Une couleur de ton moyen reste lisible en mode sombre."
         />
-        <div className="grid grid-cols-2 gap-4">
-          <ColorRow
-            label="Texte"
-            value={st.textColor}
-            onChange={(v) => setStyle({ textColor: v })}
-          />
-          <ColorRow
-            label="Texte secondaire"
-            value={st.mutedColor}
-            onChange={(v) => setStyle({ mutedColor: v })}
-          />
+        {/* Une seule aide sous les deux couleurs, pour ne pas désaligner
+            les champs */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4">
+            <ColorRow
+              label="Texte"
+              value={st.textColor}
+              onChange={(v) => setStyle({ textColor: v })}
+            />
+            <ColorRow
+              label="Texte secondaire"
+              value={st.mutedColor}
+              onChange={(v) => setStyle({ mutedColor: v })}
+            />
+          </div>
+          <Hint>{textColorsHint(sig, template)}</Hint>
         </div>
         {hasNetworks && (
           <IconColorControls
@@ -413,9 +540,10 @@ export default function StylePanel({
           />
           <Row
             label="Espace entre les éléments"
-            hint="Pour un seul élément, cliquez-le dans l'aperçu."
+            hint="Pour un seul élément, cliquez dessus dans l'aperçu."
           >
             <Choice
+              label="Espace entre les éléments"
               value={st.spacing}
               onChange={(v) => setStyle({ spacing: v })}
               options={[
@@ -443,7 +571,7 @@ export default function StylePanel({
         />
         <ColorRow
           label="Couleur des traits"
-          hint="Celle du séparateur « Couleur des traits » et du contour de l'encadré."
+          hint="Séparateur vertical et traits libres qui l'utilisent, contour de l'encadré. Le trait sous le nom suit la couleur principale."
           value={st.separatorColor}
           onChange={(v) => setStyle({ separatorColor: v })}
         />
@@ -457,7 +585,7 @@ export default function StylePanel({
                 key={key}
                 type="button"
                 onClick={() => onSelect?.({ level: "element", key })}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-accent cursor-pointer"
+                className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm hover:bg-accent cursor-pointer ${FOCUS_RING}`}
               >
                 <span>
                   Trait {i + 1}
@@ -490,12 +618,12 @@ export default function StylePanel({
         {...section("encadre")}
         summary={summaries.encadre}
       >
-        <Row label="Style">
+        <Row label="Style" htmlFor="sig-frame">
           <Select
             value={st.frame}
             onValueChange={(v) => setStyle({ frame: v })}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger id="sig-frame" className={`w-full ${FOCUS_RING}`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -573,16 +701,17 @@ export default function StylePanel({
         )}
       </Section>
 
-      {/* Un élément se règle dans son propre panneau (comme en le cliquant
-          dans l'aperçu) : un seul endroit par réglage, ici des raccourcis */}
+      {/* Un élément se règle dans son propre panneau (comme en cliquant
+          dessus dans l'aperçu) : un seul endroit par réglage, ici des
+          raccourcis */}
       <Section
         title="Un élément en particulier"
         {...section("elements")}
         summary={summaries.elements}
       >
         <p className="text-sm text-muted-foreground">
-          Présentation, place, forme et taille de chacun : dans son panneau,
-          ou en le cliquant dans l&apos;aperçu.
+          Présentation, place, forme et taille de chacun : dans son panneau, ou
+          en cliquant dessus dans l&apos;aperçu.
         </p>
         <ul className="divide-y rounded-lg border">
           {elementRows.map((row) => (
@@ -594,7 +723,7 @@ export default function StylePanel({
                     ? onSelect?.({ level: "element", key: row.key })
                     : onGoTo?.(row.key)
                 }
-                className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent cursor-pointer"
+                className={`flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent cursor-pointer ${FOCUS_RING}`}
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-medium">{row.label}</span>

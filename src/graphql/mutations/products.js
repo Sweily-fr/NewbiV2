@@ -12,6 +12,8 @@ export const CREATE_PRODUCT = gql`
       unit
       category
       reference
+      imageUrl
+      showImageOnDocuments
       linkedProducts {
         productId
         quantity
@@ -25,6 +27,8 @@ export const CREATE_PRODUCT = gql`
           vatRate
           unit
           reference
+          imageUrl
+          showImageOnDocuments
         }
       }
       createdAt
@@ -45,6 +49,8 @@ export const UPDATE_PRODUCT = gql`
       unit
       category
       reference
+      imageUrl
+      showImageOnDocuments
       linkedProducts {
         productId
         quantity
@@ -58,10 +64,24 @@ export const UPDATE_PRODUCT = gql`
           vatRate
           unit
           reference
+          imageUrl
+          showImageOnDocuments
         }
       }
       createdAt
       updatedAt
+    }
+  }
+`;
+
+// Envoi d'une image de produit (R2) : l'URL renvoyée est ensuite
+// enregistrée dans imageUrl à la création ou à la modification
+export const UPLOAD_PRODUCT_IMAGE = gql`
+  mutation UploadProductImage($workspaceId: ID!, $file: Upload!) {
+    uploadProductImage(workspaceId: $workspaceId, file: $file) {
+      success
+      url
+      message
     }
   }
 `;

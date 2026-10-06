@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/src/components/ui/button";
+import { FOCUS_RING } from "./controls";
 
 const STORAGE_KEY = "sig-editor-tour-v2";
 
 /**
  * Guide de première ouverture de l'éditeur : quelques bulles posées sur les
  * zones clés (repérées par `data-tour`), montrées une seule fois par
- * navigateur. Passer ou terminer le ferme définitivement.
+ * navigateur. Passer (ou Échap) ou terminer le ferme définitivement ;
+ * `replay` : relancée depuis l'aide « ? », elle repart du début.
  */
-export default function EditorTour({ steps }) {
+export default function EditorTour({ steps, replay = false }) {
   const [index, setIndex] = useState(() => {
+    if (replay) return 0;
     try {
       return localStorage.getItem(STORAGE_KEY) ? -1 : 0;
     } catch {
@@ -19,6 +22,7 @@ export default function EditorTour({ steps }) {
     }
   });
   const [rect, setRect] = useState(null);
+  const bodyId = useId();
   const step = index >= 0 ? steps[index] : null;
 
   useEffect(() => {
@@ -76,11 +80,21 @@ export default function EditorTour({ steps }) {
       <div
         role="dialog"
         aria-label={step.title}
+        aria-describedby={bodyId}
+        // Échap vaut « Passer », seulement quand le focus est dans la bulle :
+        // ailleurs, Échap garde son rôle (fermer une liste, désélectionner)
+        onKeyDown={(e) => {
+          if (e.key !== "Escape") return;
+          e.preventDefault();
+          finish();
+        }}
         className="fixed z-50 rounded-xl border bg-background p-4 shadow-lg"
         style={{ ...position, left, width }}
       >
         <p className="text-sm font-medium">{step.title}</p>
-        <p className="mt-1 text-sm text-muted-foreground">{step.body}</p>
+        <p id={bodyId} className="mt-1 text-sm text-muted-foreground">
+          {step.body}
+        </p>
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-xs text-muted-foreground">
             {index + 1} / {steps.length}
@@ -91,17 +105,19 @@ export default function EditorTour({ steps }) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="cursor-pointer"
+                className={`cursor-pointer ${FOCUS_RING}`}
                 onClick={finish}
               >
                 Passer
               </Button>
             )}
+            {/* Le focus arrive sur la bulle : au clavier, Entrée avance */}
             <Button
               type="button"
               variant="primary"
               size="sm"
-              className="cursor-pointer"
+              autoFocus
+              className={`cursor-pointer ${FOCUS_RING}`}
               onClick={() => (last ? finish() : setIndex(index + 1))}
             >
               {last ? "C'est parti" : "Suivant"}

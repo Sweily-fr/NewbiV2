@@ -181,6 +181,77 @@ export function hasBlockSettings(st) {
   );
 }
 
+/**
+ * Copie comparable d'un réglage : clés triées, sans champ GraphQL technique
+ * ni valeur vide (null, objet vide).
+ */
+function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (!value || typeof value !== "object") return value;
+  const out = {};
+  for (const key of Object.keys(value).sort()) {
+    if (key === "__typename") continue;
+    const v = canonical(value[key]);
+    if (v === null || v === undefined) continue;
+    if (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length) {
+      continue;
+    }
+    out[key] = v;
+  }
+  return out;
+}
+
+const sameObject = (a, b) =>
+  JSON.stringify(canonical(a || {})) === JSON.stringify(canonical(b || {}));
+
+/** Réglages par bloc effectifs : une valeur nulle (0) est automatique. */
+const blockSettings = (blocks) =>
+  Object.fromEntries(
+    Object.entries(canonical(blocks || {}))
+      .map(([key, b]) => [
+        key,
+        Object.fromEntries(Object.entries(b || {}).filter(([, v]) => v !== 0)),
+      ])
+      .filter(([, b]) => Object.keys(b).length > 0),
+  );
+
+/** Largeurs de colonne choisies (0 : ajustée au contenu, non comptée). */
+const columnWidths = (columns) =>
+  Object.fromEntries(
+    Object.entries(canonical(columns || {})).filter(([, w]) => w > 0),
+  );
+
+/** Blocs ou colonnes réglés autrement que dans `defaults` (un modèle) ? */
+function blocksDiffer(st, defaults) {
+  return (
+    !sameObject(blockSettings(st?.blocks), blockSettings(defaults?.blocks)) ||
+    !sameObject(columnWidths(st?.columns), columnWidths(defaults?.columns))
+  );
+}
+
+/**
+ * Modèle de référence d'une signature : le modèle d'équipe appliqué
+ * (savedTemplateId) tant qu'il existe, sinon son modèle intégré. C'est lui
+ * que la galerie coche, que l'en-tête nomme et auquel « Revenir au modèle »
+ * ramène. Un modèle d'équipe garde le reste de son modèle de base (capacités,
+ * caractère), dont le rendu dépend toujours. `saved` : modèles de l'équipe,
+ * null tant qu'ils se chargent (rien plutôt qu'un nom faux).
+ */
+export function templateReference(sig, templates, saved) {
+  const base =
+    (templates || []).find((t) => t.id === sig?.templateId) || null;
+  if (sig?.savedTemplateId) {
+    if (!saved) return null;
+    const team = saved.find((t) => t.id === sig.savedTemplateId);
+    if (team) {
+      // eslint-disable-next-line no-unused-vars
+      const { __typename, ...defaults } = team.style || {};
+      return { ...base, id: team.id, name: team.name, saved: true, defaults };
+    }
+  }
+  return base;
+}
+
 /** Traits libres différents (posés, longueur, épaisseur, couleur) ? */
 function rulesDiffer(a, b) {
   return RULE_ITEMS.some((k) => {
@@ -200,7 +271,8 @@ const spaceDiffers = (a, b) =>
 /**
  * La signature s'écarte-t-elle de son modèle : éléments déplacés, traits,
  * blocs ou colonnes sur mesure ? (Changer de modèle remplacerait ces
- * réglages.)
+ * réglages.) Les blocs, les colonnes et le choix « logo et réseaux côte à
+ * côte » se comparent à ceux du modèle : un modèle d'équipe peut en avoir.
  */
 export function layoutCustomized(sig, template) {
   const defaults = templateLayout(template?.defaults, sig);
@@ -209,8 +281,8 @@ export function layoutCustomized(sig, template) {
   return (
     layoutDiffers(st, defaults) ||
     LINE_KEYS.some((k) => (st[k] || 0) !== (defaults[k] || 0)) ||
-    hasBlockSettings(st) ||
-    st.footerPair === false ||
+    blocksDiffer(st, defaults) ||
+    (st.footerPair !== false) !== (defaults.footerPair !== false) ||
     (st.nameLayout || "inline") !== (defaults.nameLayout || "inline") ||
     JSON.stringify(st.socialRows || []) !==
       JSON.stringify(defaults.socialRows || []) ||
@@ -233,13 +305,165 @@ export function layoutReset(sig, template) {
     ...Object.fromEntries(LINE_KEYS.map((k) => [k, defaults[k] || 0])),
     nameLayout: defaults.nameLayout || "inline",
     socialRows: [...(defaults.socialRows || [])],
-    blocks: {},
-    columns: {},
-    footerPair: true,
+    // Blocs, colonnes, logo et réseaux côte à côte ou non : comme le modèle
+    blocks: blockSettings(defaults.blocks),
+    columns: columnWidths(defaults.columns),
+    footerPair: defaults.footerPair !== false,
     // Traits libres et marges du séparateur : ceux du modèle
     rules: { ...(defaults.rules || {}) },
     dividerSpace: { ...(defaults.dividerSpace || {}) },
   };
+}
+
+/**
+ * Familles des réglages qu'un modèle apporte, dans l'ordre où le retour au
+ * modèle les cite (« Cela remet les couleurs et l'encadré comme dans le
+ * modèle »).
+ */
+const CHANGE_FAMILIES = [
+  [
+    "les couleurs",
+    [
+      "primaryColor",
+      "textColor",
+      "mutedColor",
+      "iconColorMode",
+      "iconColor",
+      "contactIconMode",
+      "contactIconColor",
+    ],
+  ],
+  ["la typographie", ["fontFamily", "fontSize"]],
+  [
+    "la disposition",
+    [
+      ...LAYOUT_KEYS,
+      "identityZone",
+      "photoPosition",
+      "photoValign",
+      "photoColumn",
+      "socialPosition",
+      "logoPosition",
+      "textOrder",
+      "footerPair",
+      "spacing",
+      "align",
+      "columns",
+      "frameWidth",
+    ],
+  ],
+  [
+    "les traits",
+    [
+      "divider",
+      "accent",
+      "separatorColor",
+      "accentLength",
+      "accentThickness",
+      "dividerThickness",
+      "dividerLength",
+      "rules",
+      "dividerSpace",
+    ],
+  ],
+  [
+    "l'encadré",
+    [
+      "frame",
+      "frameColor",
+      "frameThickness",
+      "frameBarLength",
+      "footerStrip",
+      "outside",
+      "radius",
+    ],
+  ],
+  ["la photo", ["photoShape", "photoSize", "photoBorder", "photoBorderColor"]],
+  ["le logo", ["logoWidth"]],
+  ["les réseaux", ["iconStyle", "iconSize", "socialRows"]],
+  ["les coordonnées", ["contactStyle", "showContactIcons", "contactIconSize"]],
+  [
+    "les réglages élément par élément",
+    ["identityStyle", "titleStyle", "nameLayout", "elements", "blocks"],
+  ],
+];
+const OTHER_CHANGES = "d'autres réglages";
+const FAMILY_OF = Object.fromEntries(
+  CHANGE_FAMILIES.flatMap(([family, keys]) => keys.map((k) => [k, family])),
+);
+
+/** Couleurs : comparées sans tenir compte de la casse. */
+const COLOR_KEYS = new Set([
+  "primaryColor",
+  "textColor",
+  "mutedColor",
+  "iconColor",
+  "contactIconColor",
+  "separatorColor",
+  "frameColor",
+  "photoBorderColor",
+]);
+
+/**
+ * Réglages sans effet visible dans un état donné (`shown` : éléments
+ * affichés) : jamais signalés tant qu'ils le restent des deux côtés.
+ */
+const IDLE = {
+  iconColor: (st) => st?.iconColorMode !== "custom",
+  contactIconColor: (st) => st?.contactIconMode !== "custom",
+  frameColor: (st) => !st?.frame || st.frame === "none",
+  photoBorderColor: (st) => !st?.photoBorder,
+  // Centrer n'a d'effet que si rien n'est à côté du texte (comme le rendu)
+  align: (st, shown) => (st?.slots?.visual || []).some((k) => shown.has(k)),
+};
+
+/** Même réglage, à la normalisation près (0 = automatique, ordre, casse) ? */
+function sameSetting(key, a, b) {
+  if (key === "slots") {
+    return JSON.stringify(cleanSlots(a)) === JSON.stringify(cleanSlots(b));
+  }
+  if (key === "blocks") return sameObject(blockSettings(a), blockSettings(b));
+  if (key === "columns") return sameObject(columnWidths(a), columnWidths(b));
+  if (key === "rules") return !rulesDiffer(a, b);
+  if (key === "dividerSpace") return !spaceDiffers(a, b);
+  if (key === "footerPair") return (a !== false) === (b !== false);
+  if (key === "nameLayout") return (a || "inline") === (b || "inline");
+  if (LINE_KEYS.includes(key) || key === "contactIconSize") {
+    return (a || 0) === (b || 0);
+  }
+  if (COLOR_KEYS.has(key)) {
+    return String(a || "").toLowerCase() === String(b || "").toLowerCase();
+  }
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return JSON.stringify(a || []) === JSON.stringify(b || []);
+  }
+  if (typeof a === "boolean" || typeof b === "boolean") return !a === !b;
+  if (typeof a === "object" || typeof b === "object") return sameObject(a, b);
+  return a === b;
+}
+
+/**
+ * Ce que remettrait un retour au modèle `template` (la référence de la
+ * signature) : les familles de réglages qui s'en écartent, dans l'ordre
+ * de CHANGE_FAMILIES ; vide si la signature le suit déjà. Seuls les
+ * réglages que le modèle apporte comptent, comme à son application.
+ */
+export function templateChanges(sig, template) {
+  const defaults = templateLayout(template?.defaults, sig);
+  if (!defaults) return [];
+  const st = sig?.style || {};
+  const shown = shownItems(sig);
+  const found = new Set();
+  for (const [key, value] of Object.entries(defaults)) {
+    if (key === "__typename" || value === null || value === undefined) continue;
+    if (IDLE[key]?.(st, shown) && IDLE[key](defaults, shown)) continue;
+    if (!sameSetting(key, st[key], value)) {
+      found.add(FAMILY_OF[key] || OTHER_CHANGES);
+    }
+  }
+  return [...CHANGE_FAMILIES.map(([family]) => family), OTHER_CHANGES].filter(
+    (family) => found.has(family),
+  );
 }
 
 /**
@@ -412,20 +636,109 @@ export function moveElement(slots, element, slot) {
 }
 
 /**
- * Échange une partie avec sa voisine affichée (`dir` -1 : avant, 1 :
- * après) dans son emplacement. `shown` : parties affichées.
+ * Lignes du panneau d'une colonne, dans l'ordre : un élément fait de
+ * plusieurs parties (prénom et nom, coordonnées) n'en forme qu'une tant
+ * que ses parties se suivent, les autres éléments ont chacun la leur. Un
+ * morceau placé à part de son élément reste une ligne distincte (`main`
+ * faux). `line` : première ligne de la ligne du rendu qui la contient
+ * (identité en ligne, poste suivi de l'entreprise en capitales, réseaux et
+ * logo côte à côte en bas), que les flèches des autres sautent d'un bloc.
+ * `shown` : parties affichées.
  */
-export function shiftItem(slots, slot, item, dir, shown) {
-  const next = cleanSlots(slots);
-  const list = next[slot];
-  const visible = list.filter((k) => !shown || shown.has(k));
-  const other = visible[visible.indexOf(item) + dir];
-  if (!visible.includes(item) || !other) return next;
-  const a = list.indexOf(item);
-  const b = list.indexOf(other);
-  list[a] = other;
-  list[b] = item;
-  return next;
+export function slotRows(st, shown, slot) {
+  const list = (st?.slots?.[slot] || []).filter((k) => !shown || shown.has(k));
+  const rows = [];
+  for (const k of list) {
+    const element = BLOCK_OF[k] || k;
+    const last = rows[rows.length - 1];
+    if (last?.element === element && ELEMENT_ITEMS[element]?.length > 1) {
+      last.items.push(k);
+    } else {
+      rows.push({ element, items: [k] });
+    }
+  }
+  // Réseaux et logo qui se suivent en bas : côte à côte, une seule ligne du
+  // rendu, sauf mis l'un sous l'autre ou un alignement choisi pour l'un des
+  // deux (comme footerPaired)
+  const paired = (a, b) =>
+    slot === "footer" &&
+    st?.footerPair !== false &&
+    [a.element, b.element].sort().join() === "logo,social" &&
+    !st?.blocks?.social?.align &&
+    !st?.blocks?.logo?.align;
+  // Même regroupement que le rendu (mergedRow, paire du bas)
+  const joined = (a, b) =>
+    paired(a, b) ||
+    (st?.identityStyle === "inline"
+      ? [...a.items, ...b.items].every((k) => INLINE_IDENTITY.includes(k))
+      : st?.titleStyle === "caps" &&
+        a.element === "jobTitle" &&
+        b.element === "company");
+  rows.forEach((row, i) => {
+    const main = mainPiece(st, shown, row.element);
+    row.main = !main || row.items.some((k) => main.includes(k));
+    row.line = i > 0 && joined(rows[i - 1], row) ? rows[i - 1].line : i;
+  });
+  return rows;
+}
+
+/**
+ * Place voisine d'une ligne du panneau (`dir` -1 : au-dessus, 1 : en
+ * dessous) : avant la ligne précédente ou après la suivante ; au bord d'une
+ * ligne du rendu, toute la ligne voisine est sautée. null au bout de la
+ * colonne.
+ */
+function rowAnchor(rows, index, dir) {
+  let j = index + dir;
+  if (!rows[j]) return null;
+  if (rows[j].line !== rows[index].line) {
+    while (rows[j + dir] && rows[j + dir].line === rows[j].line) j += dir;
+  }
+  const items = rows[j].items;
+  return dir < 0 ? { before: items[0] } : { after: items[items.length - 1] };
+}
+
+/** Une ligne du panneau, ou l'une de ses parties, peut-elle bouger ? */
+export function canShiftRow(rows, index, dir, part = null) {
+  const items = rows[index]?.items || [];
+  if (part && items[items.indexOf(part) + dir]) return true;
+  return Boolean(rowAnchor(rows, index, dir));
+}
+
+/**
+ * Déplace d'un cran une ligne du panneau d'une colonne (`index` dans
+ * slotRows), sans jamais couper un élément ni une ligne du rendu : un
+ * déplacement, pas un échange, pour que les éléments vides (accroche,
+ * fixe, traits) gardent leur place. Les parties vides de l'élément placées
+ * dans la colonne le suivent, comme au glisser-déposer. Avec `part` : cette
+ * partie seule change de place dans sa ligne, ou en sort au bord.
+ */
+export function shiftRow(st, shown, slot, index, dir, part = null) {
+  const rows = slotRows(st, shown, slot);
+  const row = rows[index];
+  if (!row) return cleanSlots(st?.slots);
+  if (part) {
+    const mate = row.items[row.items.indexOf(part) + dir];
+    const at = mate
+      ? dir < 0
+        ? { before: mate }
+        : { after: mate }
+      : rowAnchor(rows, index, dir);
+    return at ? moveItem(st.slots, part, slot, at) : cleanSlots(st.slots);
+  }
+  const at = rowAnchor(rows, index, dir);
+  if (!at) return cleanSlots(st.slots);
+  const order = st.slots?.[slot] || [];
+  const hidden = row.main
+    ? (ELEMENT_ITEMS[row.element] || []).filter(
+        (k) => shown && !shown.has(k) && order.includes(k),
+      )
+    : [];
+  // Dans leur ordre d'origine (un prénom vide reste avant le nom)
+  const moving = [...row.items, ...hidden].sort(
+    (a, b) => order.indexOf(a) - order.indexOf(b),
+  );
+  return moveItems(st.slots, moving, slot, at);
 }
 
 /**
@@ -624,6 +937,22 @@ export function resetMovedBlocks(prevSig, patch) {
 }
 
 /**
+ * Réglages de bloc perdus entre deux états (`before`, `after` : blocs du
+ * style) : une largeur ou un alignement choisis qui n'existent plus après un
+ * déplacement (resetMovedBlocks, dépôt « À gauche » ou « À droite » qui
+ * retire un alignement), pour le dire à l'utilisateur.
+ */
+export function layoutLost(before, after) {
+  const lost = { width: false, align: false };
+  for (const [key, block] of Object.entries(before || {})) {
+    const next = after?.[key] || {};
+    if (block?.width && !next.width) lost.width = true;
+    if (block?.align && !next.align) lost.align = true;
+  }
+  return lost;
+}
+
+/**
  * Éléments réellement affichés, selon le contenu de la signature (mêmes
  * règles que le rendu de l'API).
  */
@@ -757,18 +1086,56 @@ export function photoPlacement(st) {
   return slot || "left";
 }
 
-export function setPhotoPlacement(st, placement) {
+/**
+ * Côté du séparateur vertical où se trouve la photo : à droite seulement si
+ * la colonne photo est affichée à droite. Sans elle, le trait borde le texte
+ * à gauche, comme avec une photo à gauche. `shown` : éléments affichés
+ * (tous si absent).
+ */
+function photoEdge(st, shown) {
+  const visible = (st?.slots?.visual || []).some((k) => !shown || shown.has(k));
+  return visible && st?.visualSide === "right" ? "right" : "left";
+}
+
+/**
+ * Les marges du séparateur vertical sont posées à gauche et à droite du
+ * trait : quand la photo passe de l'autre côté du texte, elles s'échangent,
+ * pour que l'air prévu entre la photo et le trait (« dividerSpace » du
+ * modèle Newbi) reste du côté de la photo. `patch` : nouveau placement
+ * (slots, visualSide), renvoyé complété au besoin.
+ */
+export function withDividerSpace(st, patch, shown = null) {
+  const ds = st?.dividerSpace || {};
+  if ((ds.left || 0) === (ds.right || 0)) return patch;
+  if (photoEdge(st, shown) === photoEdge({ ...st, ...patch }, shown)) {
+    return patch;
+  }
+  const swapped = {};
+  if (ds.right) swapped.left = ds.right;
+  if (ds.left) swapped.right = ds.left;
+  return { ...patch, dividerSpace: swapped };
+}
+
+export function setPhotoPlacement(st, placement, shown = null) {
   if (placement === "left" || placement === "right") {
     const slots =
       slotOf(st.slots, "photo") === "visual"
         ? cleanSlots(st.slots)
         : moveItem(st.slots, "photo", "visual", { first: true });
-    return { slots, visualSide: placement };
+    return withDividerSpace(st, { slots, visualSide: placement }, shown);
   }
   if (placement === "top") {
-    return { slots: moveItem(st.slots, "photo", "text", { first: true }) };
+    return withDividerSpace(
+      st,
+      { slots: moveItem(st.slots, "photo", "text", { first: true }) },
+      shown,
+    );
   }
-  return { slots: moveItem(st.slots, "photo", placement, { first: true }) };
+  return withDividerSpace(
+    st,
+    { slots: moveItem(st.slots, "photo", placement, { first: true }) },
+    shown,
+  );
 }
 
 // ── Bloc de couleur (identité sur un fond de la couleur principale) ─────

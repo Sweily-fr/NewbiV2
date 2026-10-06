@@ -8,6 +8,8 @@ import {
   resolveVatPaymentCondition,
 } from "@/src/utils/document-suggestions";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
+import { ItemCellWithImage } from "@/src/components/pdf/PdfItemImage";
+import { visibleItemImage } from "@/src/utils/item-image";
 import { DELIVERY_NOTE_STATUS_LABELS } from "@/src/graphql/deliveryNoteQueries";
 
 /**
@@ -571,14 +573,16 @@ const DeliveryNotePreview = ({
                             overflowWrap: "break-word",
                           }}
                         >
-                          <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
-                            {item.description || ""}
-                          </div>
-                          {item.details && (
-                            <div className="text-[10px] text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
-                              {stripHtml(item.details)}
+                          <ItemCellWithImage imageUrl={visibleItemImage(item)}>
+                            <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
+                              {item.description || ""}
                             </div>
-                          )}
+                            {item.details && (
+                              <div className="text-[10px] text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
+                                {stripHtml(item.details)}
+                              </div>
+                            )}
+                          </ItemCellWithImage>
                         </td>
                         {hasPartialQuantities && (
                           <td className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top">

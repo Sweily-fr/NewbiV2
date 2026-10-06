@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AlertTriangle, ChevronDown, Minus, Plus, RotateCcw } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -19,6 +19,71 @@ import ColorField from "./ColorField";
 /** Libellé de champ, identique à celui des éditeurs de documents. */
 export const FIELD_LABEL =
   "text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55";
+
+/**
+ * Anneau de focus au clavier (jamais au clic), net sur tous les fonds :
+ * boutons, listes, onglets et choix de l'éditeur, dont les composants
+ * partagés n'en montrent pas. outline-solid est indispensable : sous
+ * Tailwind 4, leur outline-none retire aussi le style du contour.
+ */
+export const FOCUS_RING =
+  "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5a50ff] dark:focus-visible:outline-[#8b7fff]";
+
+/** Même anneau sur la poignée d'un curseur (Slider partagé). */
+const THUMB_FOCUS_RING =
+  "[&_[role=slider]:focus-visible]:outline-solid [&_[role=slider]:focus-visible]:outline-2 [&_[role=slider]:focus-visible]:outline-offset-2 [&_[role=slider]:focus-visible]:outline-[#5a50ff] dark:[&_[role=slider]:focus-visible]:outline-[#8b7fff]";
+
+/**
+ * Choix exclusifs au clavier, comme des boutons radio natifs : une seule
+ * tabulation par groupe, sur l'option cochée (sinon la première), puis les
+ * flèches, Début et Fin passent à l'option voisine et la cochent.
+ */
+export const radioTabStop = (values, value) =>
+  values.includes(value) ? value : values[0];
+
+export function onRadioKeyDown(e) {
+  const radios = [
+    ...e.currentTarget.querySelectorAll('[role="radio"]'),
+  ].filter((r) => !r.disabled);
+  const at = radios.indexOf(e.target);
+  const to = {
+    ArrowRight: at + 1,
+    ArrowDown: at + 1,
+    ArrowLeft: at - 1,
+    ArrowUp: at - 1,
+    Home: 0,
+    End: radios.length - 1,
+  }[e.key];
+  if (at < 0 || to === undefined) return;
+  e.preventDefault();
+  const next = radios[(to + radios.length) % radios.length];
+  next.focus();
+  if (next.getAttribute("aria-checked") !== "true") next.click();
+}
+
+/** Valeur d'un curseur dite par les lecteurs d'écran : « 13 pixels ». */
+const spokenValue = (value, unit) => {
+  if (unit === "px") return `${value} ${Math.abs(value) >= 2 ? "pixels" : "pixel"}`;
+  return unit ? `${value} ${unit}` : String(value);
+};
+
+/**
+ * Nom et valeur dite de la poignée d'un curseur (role="slider") : le
+ * Slider partagé ne transmet pas les attributs aria à sa poignée, ils sont
+ * posés dessus après chaque rendu, comme ColorField le fait pour son
+ * déclencheur. Renvoie la référence de l'élément qui contient le curseur.
+ */
+function useThumbName({ labelledBy, label, valueText }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const thumb = ref.current?.querySelector('[role="slider"]');
+    if (!thumb) return;
+    if (labelledBy) thumb.setAttribute("aria-labelledby", labelledBy);
+    if (label) thumb.setAttribute("aria-label", label);
+    thumb.setAttribute("aria-valuetext", valueText);
+  });
+  return ref;
+}
 
 export function Hint({ children }) {
   return <p className="text-xs text-muted-foreground">{children}</p>;
@@ -70,7 +135,10 @@ export function EmptyHint({ text, action, onAction }) {
         <button
           type="button"
           onClick={onAction}
-          className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-[#5b4fff] hover:underline cursor-pointer"
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 rounded-sm text-xs font-medium text-[#5b4fff] hover:underline dark:text-[#8b7fff] cursor-pointer",
+            FOCUS_RING,
+          )}
         >
           <Plus size={12} />
           {action}
@@ -104,7 +172,10 @@ export function Section({
             type="button"
             aria-expanded={open}
             onClick={onToggle}
-            className="flex w-full items-center justify-between gap-3 text-left text-lg font-medium cursor-pointer"
+            className={cn(
+              "flex w-full items-center justify-between gap-3 rounded-md text-left text-lg font-medium cursor-pointer",
+              FOCUS_RING,
+            )}
           >
             {title}
             <ChevronDown
@@ -116,8 +187,9 @@ export function Section({
             />
           </button>
         </h3>
+        {/* Sur deux lignes au plus : la place, au début, n'est pas coupée */}
         {!open && summary && (
-          <p className="mt-0.5 truncate text-sm text-muted-foreground">
+          <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
             {summary}
           </p>
         )}
@@ -175,6 +247,7 @@ const SEGMENTS = "flex w-full gap-0.5 rounded-[9px] bg-[#F5F5F5] p-0.5 dark:bg-n
 const segment = (active) =>
   cn(
     "flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-[color,background-color,box-shadow] duration-150 cursor-pointer",
+    FOCUS_RING,
     active
       ? "bg-white text-[#242529] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_0_0_1px_rgba(0,0,0,0.04)] dark:bg-[#2a2a2a] dark:text-white"
       : "text-[#606164] hover:text-[#242529] dark:text-white/55 dark:hover:text-white",
@@ -182,8 +255,17 @@ const segment = (active) =>
 
 /** Choix exclusif en segments, sur toute la largeur. */
 export function Choice({ value, onChange, options, label }) {
+  const stop = radioTabStop(
+    options.map((o) => o.value),
+    value,
+  );
   return (
-    <div role="radiogroup" aria-label={label} className={SEGMENTS}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      onKeyDown={onRadioKeyDown}
+      className={SEGMENTS}
+    >
       {options.map((o) => (
         <button
           key={o.value}
@@ -191,6 +273,7 @@ export function Choice({ value, onChange, options, label }) {
           role="radio"
           aria-checked={o.value === value}
           aria-label={o.label ? undefined : o.ariaLabel}
+          tabIndex={o.value === stop ? 0 : -1}
           onClick={() => onChange(o.value)}
           className={segment(o.value === value)}
         >
@@ -243,15 +326,24 @@ export function SliderRow({
   hint,
   onChange,
 }) {
+  // « Taille, 13 pixels » au lieu de « curseur, 13 »
+  const labelId = useId();
+  const ref = useThumbName({
+    labelledBy: labelId,
+    valueText: spokenValue(value, unit),
+  });
   return (
-    <div className="space-y-3">
+    <div ref={ref} className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <Label className={FIELD_LABEL}>{label}</Label>
+        <Label id={labelId} className={FIELD_LABEL}>
+          {label}
+        </Label>
         <span className="text-xs font-medium tabular-nums text-[#242529] dark:text-white">
           {unit ? `${value} ${unit}` : value}
         </span>
       </div>
       <Slider
+        className={THUMB_FOCUS_RING}
         value={[value]}
         min={min}
         max={max}
@@ -266,7 +358,10 @@ export function SliderRow({
 /**
  * Longueur automatique (toute la hauteur, ajustée au contenu…) ou sur
  * mesure, en px. `value` 0 = automatique ; `initial` = valeur proposée au
- * passage en sur mesure.
+ * passage en sur mesure. `floor` : largeur sous laquelle le contenu ne
+ * descend pas (mesurée dans l'aperçu, 0 si inconnue) : le curseur ne va pas
+ * plus bas et affiche la largeur obtenue, jamais une valeur sans effet ;
+ * `note` : message sous le curseur (valeur enregistrée sous ce plancher…).
  */
 export function LengthRow({
   label,
@@ -278,34 +373,47 @@ export function LengthRow({
   max,
   step = 2,
   initial,
+  floor = 0,
+  note,
 }) {
   const custom = value > 0;
+  // Plancher arrondi au pas : le curseur tombe juste jusqu'à son maximum
+  const low =
+    floor > min ? Math.min(max - step, Math.ceil(floor / step) * step) : min;
+  const within = (v) => Math.max(low, Math.min(max, v));
+  // Largeur obtenue : affichée à côté du curseur et dite avec lui
+  const obtained = Math.max(value, Math.min(floor, max));
+  const ref = useThumbName({ label, valueText: spokenValue(obtained, "px") });
   return (
     <Row label={label} hint={hint}>
       <Choice
         label={label}
         value={custom ? "custom" : "auto"}
-        onChange={(v) => onChange(v === "custom" ? initial : 0)}
+        onChange={(v) => onChange(v === "custom" ? within(initial) : 0)}
         options={[
           { value: "auto", label: autoLabel },
           { value: "custom", label: "Sur mesure" },
         ]}
       />
       {custom && (
-        <div className="animate-in fade-in-0 slide-in-from-top-1 ml-1 flex items-center gap-3 border-l-2 border-[#5b4fff]/30 py-0.5 pl-4 duration-200">
+        <div
+          ref={ref}
+          className="animate-in fade-in-0 slide-in-from-top-1 ml-1 flex items-center gap-3 border-l-2 border-[#5b4fff]/30 py-0.5 pl-4 duration-200"
+        >
           <Slider
-            className="flex-1"
-            value={[value]}
-            min={min}
+            className={cn("flex-1", THUMB_FOCUS_RING)}
+            value={[within(value)]}
+            min={low}
             max={max}
             step={step}
             onValueChange={(v) => onChange(v[0])}
           />
           <span className="w-14 shrink-0 text-right text-xs font-medium tabular-nums text-[#242529] dark:text-white">
-            {value} px
+            {obtained} px
           </span>
         </div>
       )}
+      {custom && note}
     </Row>
   );
 }
@@ -316,7 +424,10 @@ export function ResetLink({ onClick, children }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+      className={cn(
+        "inline-flex items-center gap-1 rounded-sm text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer",
+        FOCUS_RING,
+      )}
     >
       <RotateCcw size={11} />
       {children}
@@ -333,8 +444,10 @@ export function SpaceRow({ label, value, onChange, min = -24, max = 64 }) {
   const shown =
     value === 0 ? "Normal" : `${value > 0 ? "+" : "−"}${Math.abs(value)} px`;
   const set = (v) => onChange(Math.max(min, Math.min(max, v)));
-  const button =
-    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#242529] transition-colors hover:bg-white disabled:pointer-events-none disabled:opacity-30 dark:text-white dark:hover:bg-neutral-800 cursor-pointer";
+  const button = cn(
+    "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[#242529] transition-colors hover:bg-white disabled:pointer-events-none disabled:opacity-30 dark:text-white dark:hover:bg-neutral-800 cursor-pointer",
+    FOCUS_RING,
+  );
   return (
     <Row label={label}>
       <div className={cn(SEGMENTS, "items-center")}>
@@ -347,7 +460,11 @@ export function SpaceRow({ label, value, onChange, min = -24, max = 64 }) {
         >
           <Minus size={14} />
         </button>
-        <span className="flex-1 text-center text-xs font-medium tabular-nums text-[#242529] dark:text-white">
+        {/* La nouvelle valeur est lue après chaque clic sur − ou + */}
+        <span
+          aria-live="polite"
+          className="flex-1 text-center text-xs font-medium tabular-nums text-[#242529] dark:text-white"
+        >
           {shown}
         </span>
         <button
@@ -401,7 +518,10 @@ export function AddChips({ items, onAdd }) {
           key={f.key}
           type="button"
           onClick={() => onAdd(f.key)}
-          className="inline-flex items-center gap-1 rounded-md border border-dashed border-[#D1D3D8] px-2 py-1 text-xs text-muted-foreground hover:border-[#9FA1A7] hover:text-foreground cursor-pointer dark:border-[#44444A]"
+          className={cn(
+            "inline-flex items-center gap-1 rounded-md border border-dashed border-[#D1D3D8] px-2 py-1 text-xs text-muted-foreground hover:border-[#9FA1A7] hover:text-foreground cursor-pointer dark:border-[#44444A]",
+            FOCUS_RING,
+          )}
         >
           <Plus size={12} />
           {f.label}
@@ -468,16 +588,30 @@ export function Nested({ children }) {
 
 /**
  * Carte de choix visuelle (vignette + libellé), comme « Position du client
- * dans le PDF » des paramètres de facture.
+ * dans le PDF » des paramètres de facture. Dans un groupe (role="radiogroup"
+ * avec onRadioKeyDown), `tabIndex` : 0 pour l'option qui reçoit la
+ * tabulation (radioTabStop), -1 pour les autres.
  */
-export function ChoiceCard({ selected, onClick, label, children, className }) {
+export function ChoiceCard({
+  selected,
+  onClick,
+  label,
+  children,
+  className,
+  tabIndex,
+}) {
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      tabIndex={tabIndex}
       onClick={onClick}
-      className={cn("group flex flex-col items-center cursor-pointer", className)}
+      className={cn(
+        "group flex flex-col items-center rounded-md cursor-pointer",
+        FOCUS_RING,
+        className,
+      )}
     >
       <span
         className={cn(
@@ -492,7 +626,7 @@ export function ChoiceCard({ selected, onClick, label, children, className }) {
       <span
         className={cn(
           "mt-1.5 flex h-4 items-center text-xs font-medium leading-4",
-          selected ? "text-foreground" : "text-muted-foreground/80",
+          selected ? "text-foreground" : "text-muted-foreground",
         )}
       >
         {label}

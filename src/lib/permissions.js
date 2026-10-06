@@ -262,7 +262,7 @@ export const admin = ac.newRole({
  * RÔLE: MEMBER (Collaborateur)
  * ========================================
  * Peut créer et gérer ses propres documents
- * Pas de suppression ni validation
+ * Pas de suppression ni validation (sauf ses signatures de mail)
  */
 export const member = ac.newRole({
   // Documents commerciaux - Création + envoi + export
@@ -285,7 +285,9 @@ export const member = ac.newRole({
   fileTransfers: ["view", "create", "download"],
   sharedDocuments: ["view", "create", "edit", "download"],
   kanban: ["view", "create", "edit", "assign"],
-  signatures: ["view", "create", "edit", "set-default"],
+  // Signatures de mail : documents personnels, chacun supprime les siennes
+  // (l'API filtre toutes les suppressions sur l'auteur)
+  signatures: ["view", "create", "edit", "delete", "set-default"],
   calendar: ["view", "create", "edit"],
 
   // Rapports - Lecture + export
