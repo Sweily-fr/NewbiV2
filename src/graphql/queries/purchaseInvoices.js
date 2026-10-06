@@ -47,6 +47,11 @@ export const GET_PURCHASE_INVOICES = gql`
         amountHT
         amountTVA
         vatRate
+        vatBreakdown {
+          rate
+          baseHT
+          amountTVA
+        }
         amountTTC
         currency
         status
@@ -124,6 +129,11 @@ export const GET_PURCHASE_INVOICE = gql`
       amountHT
       amountTVA
       vatRate
+      vatBreakdown {
+        rate
+        baseHT
+        amountTVA
+      }
       amountTTC
       currency
       status

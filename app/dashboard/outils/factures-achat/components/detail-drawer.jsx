@@ -116,6 +116,21 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
+import {
+  AddVatRateButton,
+  VatBreakdownEditor,
+  VatBreakdownView,
+} from "./vat-breakdown";
+import {
+  applyVatLinesToForm,
+  formatVatRate,
+  invoiceVatLines,
+  parseVatLines,
+  splitVatIntoLines,
+  summarizeVatLines,
+  toVatLinesForm,
+  vatInputFromForm,
+} from "@/src/utils/purchase-invoice-vat";
 import CategorySearchSelect from "@/src/components/category-search-select";
 import { getCategoryLabel } from "@/lib/category-icons-config";
 import {
@@ -261,6 +276,9 @@ export function PurchaseInvoiceDetailDrawer({
     amountHT: "",
     amountTVA: "",
     vatRate: "20",
+    // Détail par taux quand la facture en mêle plusieurs (≥ 2 lignes),
+    // sinon vide et la TVA tient dans amountHT / vatRate / amountTVA
+    vatLines: [],
     amountTTC: "",
     currency: "EUR",
     status: "TO_PROCESS",
@@ -483,16 +501,47 @@ export function PurchaseInvoiceDetailDrawer({
       // Formulaire : valeurs en chaînes, TVA/taux recalculés si besoin.
       const nextForm = { ...form };
       for (const [key, value] of Object.entries(patch)) {
+        if (key === "vatBreakdown") continue;
         nextForm[key] =
           value === null || value === undefined ? "" : String(value);
       }
+      const touchesVat = ["amountHT", "amountTVA", "vatRate"].some(
+        (k) => k in patch,
+      );
+      if ("vatBreakdown" in patch) {
+        // Détail par taux proposé : HT / TVA / taux en sont le résumé
+        const lines = invoiceVatLines(patch);
+        nextForm.vatLines = toVatLinesForm(lines);
+        const totals = summarizeVatLines(lines);
+        if (totals) {
+          nextForm.amountHT = String(totals.amountHT);
+          nextForm.amountTVA = String(totals.amountTVA);
+          nextForm.vatRate = String(totals.vatRate);
+        }
+      } else if (touchesVat) {
+        // TVA corrigée à un seul taux : l'ancien détail ne correspond plus
+        nextForm.vatLines = [];
+      }
+      const multiRate = nextForm.vatLines.length >= 2;
       const ht = parseFloat(nextForm.amountHT);
       const ttc = parseFloat(nextForm.amountTTC);
-      if (!("amountTVA" in patch) && !isNaN(ht) && !isNaN(ttc) && ttc >= ht) {
+      if (
+        !multiRate &&
+        !("amountTVA" in patch) &&
+        !isNaN(ht) &&
+        !isNaN(ttc) &&
+        ttc >= ht
+      ) {
         nextForm.amountTVA = (Math.round((ttc - ht) * 100) / 100).toString();
       }
       const tva = parseFloat(nextForm.amountTVA);
-      if (!("vatRate" in patch) && !isNaN(ht) && ht > 0 && !isNaN(tva)) {
+      if (
+        !multiRate &&
+        !("vatRate" in patch) &&
+        !isNaN(ht) &&
+        ht > 0 &&
+        !isNaN(tva)
+      ) {
         nextForm.vatRate = (Math.round((tva / ht) * 10000) / 100).toString();
       }
       // API : mêmes champs que handleSave, category = sous-catégorie.
@@ -510,6 +559,11 @@ export function PurchaseInvoiceDetailDrawer({
       for (const key of ["amountHT", "amountTVA", "vatRate", "amountTTC"]) {
         const v = parseFloat(nextForm[key]);
         if (!isNaN(v)) input[key] = v;
+      }
+      if (multiRate) {
+        input.vatBreakdown = parseVatLines(nextForm.vatLines);
+      } else if ("vatBreakdown" in patch || touchesVat) {
+        input.vatBreakdown = [];
       }
       const saved = await updateInvoice(invoice.id, input);
       if (!saved) return;
@@ -608,7 +662,8 @@ export function PurchaseInvoiceDetailDrawer({
         dueDate: parseDate(invoice.dueDate),
         amountHT: invoice.amountHT?.toString() || "",
         amountTVA: invoice.amountTVA?.toString() || "",
-        vatRate: invoice.vatRate?.toString() || "20",
+        vatRate: invoice.vatRate?.toString() ?? "20",
+        vatLines: toVatLinesForm(invoiceVatLines(invoice)),
         amountTTC: invoice.amountTTC?.toString() || "",
         currency: invoice.currency || "EUR",
         status: invoice.status || "TO_PROCESS",
@@ -629,6 +684,7 @@ export function PurchaseInvoiceDetailDrawer({
         amountHT: "",
         amountTVA: "",
         vatRate: "20",
+        vatLines: [],
         amountTTC: "",
         currency: "EUR",
         status: "TO_PROCESS",
@@ -675,6 +731,10 @@ export function PurchaseInvoiceDetailDrawer({
         next.paymentDate = formatLocalDate();
       }
 
+      // Plusieurs taux : HT et TVA viennent des lignes, le TTC saisi reste tel
+      // quel (pourboire, frais hors TVA)
+      if (next.vatLines?.length >= 2) return next;
+
       const rate = parseFloat(next.vatRate) || 0;
 
       if (field === "amountHT") {
@@ -704,6 +764,15 @@ export function PurchaseInvoiceDetailDrawer({
     });
   };
 
+  // Plusieurs taux de TVA : HT / TVA / taux sont le résumé des lignes, et le
+  // TTC les suit (sauf facture rapprochée : son TTC est le débit bancaire).
+  const handleVatLinesChange = (lines) => {
+    setForm((prev) =>
+      applyVatLinesToForm(prev, lines, { keepTTC: !!invoice?.isReconciled }),
+    );
+    setAmountSource("ht");
+  };
+
   const handleSave = async ({ skipDuplicateCheck = false } = {}) => {
     if (!form.supplierName || !form.amountTTC) return;
     const data = {
@@ -711,9 +780,7 @@ export function PurchaseInvoiceDetailDrawer({
       invoiceNumber: form.invoiceNumber || undefined,
       issueDate: form.issueDate || new Date().toLocaleDateString("sv-SE"),
       dueDate: form.dueDate || undefined,
-      amountHT: parseFloat(form.amountHT) || 0,
-      amountTVA: parseFloat(form.amountTVA) || 0,
-      vatRate: parseFloat(form.vatRate) || 20,
+      ...vatInputFromForm(form),
       amountTTC: parseFloat(form.amountTTC),
       currency: form.currency,
       status: form.status,
@@ -1349,39 +1416,55 @@ export function PurchaseInvoiceDetailDrawer({
                 <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                   Montants
                 </p>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      Montant HT
-                    </span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form.amountHT}
-                      onChange={(e) => handleChange("amountHT", e.target.value)}
-                      placeholder="0.00"
-                      className="w-40 h-8 text-sm text-right"
+                {form.vatLines.length >= 2 ? (
+                  <VatBreakdownEditor
+                    lines={form.vatLines}
+                    currency={form.currency}
+                    amountTTC={form.amountTTC}
+                    onChange={handleVatLinesChange}
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Montant HT
+                      </span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={form.amountHT}
+                        onChange={(e) =>
+                          handleChange("amountHT", e.target.value)
+                        }
+                        placeholder="0.00"
+                        className="w-40 h-8 text-sm text-right"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Taux TVA
+                      </span>
+                      <VatRateSelect
+                        value={form.vatRate}
+                        onChange={(v) => handleChange("vatRate", String(v))}
+                        className="w-40 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        TVA
+                      </span>
+                      <span className="text-sm font-normal">
+                        {formatAmount(form.amountTVA, form.currency)}
+                      </span>
+                    </div>
+                    <AddVatRateButton
+                      onClick={() =>
+                        handleVatLinesChange(splitVatIntoLines(form))
+                      }
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      Taux TVA
-                    </span>
-                    <VatRateSelect
-                      value={form.vatRate}
-                      onChange={(v) => handleChange("vatRate", String(v))}
-                      className="w-40 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      TVA
-                    </span>
-                    <span className="text-sm font-normal">
-                      {formatAmount(form.amountTVA, form.currency)}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
             </>
           )}
@@ -1402,14 +1485,31 @@ export function PurchaseInvoiceDetailDrawer({
                     {formatAmount(invoice?.amountHT, invoice?.currency)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-normal text-muted-foreground">
-                    TVA ({invoice?.vatRate || 20}%)
-                  </span>
-                  <span className="text-sm font-normal">
-                    {formatAmount(invoice?.amountTVA, invoice?.currency)}
-                  </span>
-                </div>
+                {invoiceVatLines(invoice).length >= 2 ? (
+                  <>
+                    <VatBreakdownView
+                      lines={invoiceVatLines(invoice)}
+                      currency={invoice?.currency}
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Total TVA
+                      </span>
+                      <span className="text-sm font-normal">
+                        {formatAmount(invoice?.amountTVA, invoice?.currency)}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
+                      TVA ({formatVatRate(invoice?.vatRate ?? 20)})
+                    </span>
+                    <span className="text-sm font-normal">
+                      {formatAmount(invoice?.amountTVA, invoice?.currency)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">TTC</span>
                   <span className="text-sm font-medium">

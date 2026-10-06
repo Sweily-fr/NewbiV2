@@ -134,6 +134,11 @@ export const GET_TRANSACTIONS = gql`
           amountHT
           amountTVA
           vatRate
+          vatBreakdown {
+            rate
+            baseHT
+            amountTVA
+          }
           amountTTC
           currency
           category
@@ -294,6 +299,11 @@ export const GET_TRANSACTIONS_PAGE = gql`
             amountHT
             amountTVA
             vatRate
+            vatBreakdown {
+              rate
+              baseHT
+              amountTVA
+            }
             amountTTC
             currency
             category
@@ -432,6 +442,11 @@ export const GET_TRANSACTION = gql`
           amountHT
           amountTVA
           vatRate
+          vatBreakdown {
+            rate
+            baseHT
+            amountTVA
+          }
           amountTTC
           currency
           category
@@ -627,6 +642,11 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
           amountHT
           amountTVA
           vatRate
+          vatBreakdown {
+            rate
+            baseHT
+            amountTVA
+          }
           amountTTC
           currency
           category
@@ -669,6 +689,11 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
             amountHT
             amountTVA
             vatRate
+            vatBreakdown {
+              rate
+              baseHT
+              amountTVA
+            }
             amountTTC
             currency
             category
@@ -756,6 +781,11 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
           amountHT
           amountTVA
           vatRate
+          vatBreakdown {
+            rate
+            baseHT
+            amountTVA
+          }
           amountTTC
           currency
           category
@@ -798,6 +828,11 @@ export const REMOVE_TRANSACTION_RECEIPT_FILE = gql`
             amountHT
             amountTVA
             vatRate
+            vatBreakdown {
+              rate
+              baseHT
+              amountTVA
+            }
             amountTTC
             currency
             category

@@ -12,6 +12,11 @@ export const CREATE_PURCHASE_INVOICE = gql`
       amountHT
       amountTVA
       vatRate
+      vatBreakdown {
+        rate
+        baseHT
+        amountTVA
+      }
       amountTTC
       currency
       status
@@ -38,6 +43,11 @@ export const UPDATE_PURCHASE_INVOICE = gql`
       amountHT
       amountTVA
       vatRate
+      vatBreakdown {
+        rate
+        baseHT
+        amountTVA
+      }
       amountTTC
       currency
       status
@@ -347,6 +357,11 @@ export const REANALYZE_PURCHASE_INVOICE = gql`
       amountHT
       amountTVA
       vatRate
+      vatBreakdown {
+        rate
+        baseHT
+        amountTVA
+      }
       amountTTC
       currency
       category
@@ -386,6 +401,11 @@ export const REANALYZE_PURCHASE_INVOICE_FILES = gql`
           amountHT
           amountTVA
           vatRate
+          vatBreakdown {
+            rate
+            baseHT
+            amountTVA
+          }
           amountTTC
           currency
           category
@@ -409,6 +429,11 @@ export const REANALYZE_PURCHASE_INVOICE_FILES = gql`
         amountHT
         amountTVA
         vatRate
+        vatBreakdown {
+          rate
+          baseHT
+          amountTVA
+        }
         amountTTC
         currency
         category

@@ -27,6 +27,12 @@ import {
   applyOcrDrafts,
   ocrDraftValue,
 } from "@/src/components/reconciliation/OcrValueInput";
+import {
+  formatVatRate,
+  invoiceVatLines,
+  parseVatLines,
+  sameVatLines,
+} from "@/src/utils/purchase-invoice-vat";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -148,8 +154,19 @@ export function PurchaseOcrComparisonDialog({
       converted &&
       f.proposal.currency &&
       f.proposal.currency !== (currency || "EUR");
+    const lines = invoiceVatLines(f.proposal);
     return {
       ...f.proposal,
+      // Détail par taux lu dans la devise du document : converti au même
+      // taux que les montants
+      vatBreakdown:
+        foreign && f.rate
+          ? lines.map((l) => ({
+              rate: l.rate,
+              baseHT: round2(l.baseHT * f.rate),
+              amountTVA: round2(l.amountTVA * f.rate),
+            }))
+          : lines,
       amountHT: converted ? f.convertedAmountHT : f.proposal.amountHT,
       amountTVA: converted ? f.convertedAmountTVA : f.proposal.amountTVA,
       amountTTC: converted ? f.convertedAmountTTC : f.proposal.amountTTC,
@@ -219,6 +236,14 @@ export function PurchaseOcrComparisonDialog({
       ? "—"
       : `${round2(value)} %`;
   const text = (value) => (value ? String(value) : "—");
+  const renderVat = (value) =>
+    Array.isArray(value)
+      ? value.map((l) => (
+          <span key={l.rate} className="block whitespace-nowrap">
+            {formatVatRate(l.rate)} : {formatAmount(l.amountTVA)}
+          </span>
+        ))
+      : formatRate(value);
 
   const rows = useMemo(() => {
     // Valeurs proposées = analyse OCR + corrections saisies
@@ -267,6 +292,37 @@ export function PurchaseOcrComparisonDialog({
       missing: !proposal[key],
       patch: { [key]: proposal[key] || null },
     });
+    // Plusieurs taux d'un côté ou de l'autre : la ligne « Taux de TVA »
+    // compare le détail par taux et l'applique d'un bloc.
+    const currentLines = parseVatLines(current.vatLines || []);
+    const proposedLines = invoiceVatLines(proposal);
+    const vatRow =
+      currentLines.length >= 2 || proposedLines.length >= 2
+        ? (() => {
+            const side = (lines, rate) =>
+              lines.length >= 2
+                ? lines
+                : rate === null || rate === undefined || rate === ""
+                  ? null
+                  : round2(rate);
+            const cur = side(currentLines, current.vatRate);
+            const next = side(proposedLines, proposal.vatRate);
+            return {
+              key: "vatBreakdown",
+              label: "Taux de TVA",
+              currentValue: cur,
+              proposedValue: next,
+              render: renderVat,
+              same: Array.isArray(cur)
+                ? Array.isArray(next) && sameVatLines(cur, next)
+                : !Array.isArray(next) && cur === next,
+              missing: next === null,
+              patch: Array.isArray(next)
+                ? { vatBreakdown: next }
+                : { vatBreakdown: [], vatRate: next },
+            };
+          })()
+        : amount("vatRate", "Taux de TVA", formatRate);
     const ttcRow = amount("amountTTC", "Montant TTC");
     if (reconciled && !ttcRow.same && !ttcRow.missing) {
       ttcRow.locked = true;
@@ -279,7 +335,7 @@ export function PurchaseOcrComparisonDialog({
       date("issueDate", "Date d'émission"),
       date("dueDate", "Échéance"),
       amount("amountHT", "Montant HT"),
-      amount("vatRate", "Taux de TVA", formatRate),
+      vatRow,
       amount("amountTVA", "Montant de TVA"),
       ttcRow,
       plain("category", "Catégorie", (v) =>
@@ -305,7 +361,15 @@ export function PurchaseOcrComparisonDialog({
   }, [open, rows, editing]);
   const setDraft = (key, value) => {
     setDrafts((prev) => ({ ...prev, [key]: value }));
-    setSelected((prev) => ({ ...prev, [key]: true }));
+    setSelected((prev) => ({
+      ...prev,
+      [key]: true,
+      // HT / TVA corrigés à la main : le détail par taux lu ne les
+      // écraserait plus (il prime à l'application)
+      ...(key === "amountHT" || key === "amountTVA"
+        ? { vatBreakdown: false }
+        : {}),
+    }));
   };
 
   const selectedCount = Object.values(selected).filter(Boolean).length;
