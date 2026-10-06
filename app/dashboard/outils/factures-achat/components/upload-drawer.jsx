@@ -820,7 +820,7 @@ export function PurchaseInvoiceUploadDrawer({
                         handleEditChange("supplierName", e.target.value)
                       }
                       placeholder="Nom du fournisseur"
-                      className="w-44 h-8 text-sm text-right"
+                      className="w-52 h-8 text-sm text-right"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -835,7 +835,7 @@ export function PurchaseInvoiceUploadDrawer({
                       onChange={(e) =>
                         handleEditChange("invoiceNumber", e.target.value)
                       }
-                      className="w-44 h-8 text-sm text-right"
+                      className="w-52 h-8 text-sm text-right"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -850,7 +850,7 @@ export function PurchaseInvoiceUploadDrawer({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-44 h-8 justify-start text-left font-normal text-sm",
+                            "w-52 h-8 justify-start text-left font-normal text-sm",
                             !editableData.issueDate && "text-muted-foreground",
                           )}
                           type="button"
@@ -908,7 +908,7 @@ export function PurchaseInvoiceUploadDrawer({
                         <Button
                           variant="outline"
                           className={cn(
-                            "w-44 h-8 justify-start text-left font-normal text-sm",
+                            "w-52 h-8 justify-start text-left font-normal text-sm",
                             !editableData.dueDate && "text-muted-foreground",
                           )}
                           type="button"
@@ -976,7 +976,7 @@ export function PurchaseInvoiceUploadDrawer({
                           <Button
                             variant="outline"
                             className={cn(
-                              "w-44 h-8 justify-start text-left font-normal text-sm",
+                              "w-52 h-8 justify-start text-left font-normal text-sm",
                               !editableData.paymentDate &&
                                 "text-muted-foreground",
                             )}
@@ -1065,7 +1065,7 @@ export function PurchaseInvoiceUploadDrawer({
                           onChange={(e) =>
                             handleEditChange("amountHT", e.target.value)
                           }
-                          className="w-32 h-8 text-sm text-right"
+                          className="w-52 h-8 text-sm text-right"
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -1077,7 +1077,7 @@ export function PurchaseInvoiceUploadDrawer({
                           onChange={(v) =>
                             handleEditChange("vatRate", String(v))
                           }
-                          className="w-56 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                          className="w-52 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -1106,7 +1106,7 @@ export function PurchaseInvoiceUploadDrawer({
                       onChange={(e) =>
                         handleEditChange("amountTTC", e.target.value)
                       }
-                      className="w-32 h-8 text-sm text-right"
+                      className="w-52 h-8 text-sm text-right"
                     />
                   </div>
                 </div>
@@ -1125,7 +1125,7 @@ export function PurchaseInvoiceUploadDrawer({
                   <CategorySearchSelect
                     value={editableData.category}
                     onValueChange={(v) => handleEditChange("category", v)}
-                    triggerClassName="w-44 h-8 text-sm"
+                    triggerClassName="w-52 h-8 text-sm"
                   />
                 </div>
                 <div className="flex items-center justify-between">
@@ -1139,7 +1139,7 @@ export function PurchaseInvoiceUploadDrawer({
                     value={editableData.status}
                     onValueChange={(v) => handleEditChange("status", v)}
                   >
-                    <SelectTrigger className="w-44 h-8 text-sm">
+                    <SelectTrigger className="w-52 h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1162,7 +1162,7 @@ export function PurchaseInvoiceUploadDrawer({
                     value={editableData.paymentMethod}
                     onValueChange={(v) => handleEditChange("paymentMethod", v)}
                   >
-                    <SelectTrigger className="w-44 h-8 text-sm">
+                    <SelectTrigger className="w-52 h-8 text-sm">
                       <SelectValue placeholder="Non défini" />
                     </SelectTrigger>
                     <SelectContent>
