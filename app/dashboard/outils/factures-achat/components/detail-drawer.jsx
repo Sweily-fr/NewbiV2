@@ -342,11 +342,19 @@ export function PurchaseInvoiceDetailDrawer({
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [unlinkingTransactionId, setUnlinkingTransactionId] = useState(null);
   // Justificatif affiché dans le volet de gauche (index dans invoice.files),
-  // null = volet fermé. Fermé à l'ouverture et au changement de facture.
+  // null = volet fermé. À l'ouverture d'une facture ayant des justificatifs, le
+  // premier s'affiche d'office (sauf écran étroit, où il recouvrirait la fiche) ;
+  // fermé en création et au changement de facture.
   const [previewIndex, setPreviewIndex] = useState(null);
+  const filesCount = invoice?.files?.length || 0;
   useEffect(() => {
-    setPreviewIndex(null);
-  }, [open, invoice?.id]);
+    const wide =
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches;
+    setPreviewIndex(open && !isCreate && wide && filesCount > 0 ? 0 : null);
+    // Les ajouts/suppressions de justificatifs ne rouvrent pas le volet
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, invoice?.id, filesCount > 0]);
   const previewItems = (invoice?.files || []).map((file) => ({
     url: file.url,
     // URL publique R2 interdite par la CSP : PDF via le proxy same-origin.
