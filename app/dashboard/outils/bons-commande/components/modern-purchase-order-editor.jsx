@@ -32,6 +32,7 @@ import { Button } from "@/src/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePurchaseOrderEditor } from "../hooks/use-purchase-order-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedQuoteForm from "@/app/dashboard/outils/devis/components/enhanced-quote-form";
 import QuoteSettingsView from "@/app/dashboard/outils/devis/components/quote-settings-view";
 import { toast } from "@/src/components/ui/sonner";
@@ -167,14 +168,21 @@ export default function ModernPurchaseOrderEditor({
     return () => clearTimeout(timer);
   }, [formData]);
 
+  // Champs personnalisés du client « Afficher sur mes documents » : suivent le
+  // client choisi tant que le bon de commande est un brouillon ou en création
+  const previewFormData = useWithClientDocumentFields(
+    debouncedFormData,
+    mode === "create" || loadedPurchaseOrder?.status === "DRAFT",
+  );
+
   // Aperçu PDF mémoïsé : ne se re-rend que lorsque les données debouncées
   // changent (pas à chaque frappe), pour éviter de recalculer tout le rendu.
   const previewElement = useMemo(
     () =>
-      debouncedFormData ? (
-        <UniversalPreviewPDF data={debouncedFormData} type="purchaseOrder" />
+      previewFormData ? (
+        <UniversalPreviewPDF data={previewFormData} type="purchaseOrder" />
       ) : null,
-    [debouncedFormData],
+    [previewFormData],
   );
 
   // Détecter les changements d'organisation

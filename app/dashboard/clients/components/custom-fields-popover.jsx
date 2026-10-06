@@ -92,6 +92,11 @@ function FieldRow({ field, onDelete, onToggle, onEdit }) {
               Requis
             </Badge>
           )}
+          {field.showOnDocuments && (
+            <Badge variant="secondary" className="text-[10px] px-1 py-0">
+              Sur les documents
+            </Badge>
+          )}
         </div>
         <p className="text-xs text-muted-foreground truncate">
           {fieldType?.label}
@@ -190,6 +195,7 @@ function FieldForm({ field, onSave, onCancel, isEditing = false }) {
     fieldType: field?.fieldType || "TEXT",
     options: field?.options || [],
     isRequired: field?.isRequired || false,
+    showOnDocuments: field?.showOnDocuments || false,
   });
 
   const needsOptions = ["SELECT", "MULTISELECT"].includes(formData.fieldType);
@@ -208,6 +214,7 @@ function FieldForm({ field, onSave, onCancel, isEditing = false }) {
       fieldType: formData.fieldType,
       options: needsOptions ? formData.options : [],
       isRequired: formData.isRequired,
+      showOnDocuments: formData.showOnDocuments,
       isActive: field?.isActive ?? true,
     });
   };
@@ -275,6 +282,23 @@ function FieldForm({ field, onSave, onCancel, isEditing = false }) {
           />
           <label htmlFor="isRequired" className="text-sm cursor-pointer">
             Champ obligatoire
+          </label>
+        </div>
+
+        <div className="flex items-start gap-2">
+          <Checkbox
+            id="showOnDocuments"
+            className="mt-0.5"
+            checked={formData.showOnDocuments}
+            onCheckedChange={(checked) =>
+              setFormData({ ...formData, showOnDocuments: checked === true })
+            }
+          />
+          <label htmlFor="showOnDocuments" className="text-sm cursor-pointer">
+            Afficher sur mes documents
+            <span className="block text-xs text-muted-foreground">
+              Devis, factures, avoirs, bons de commande et bons de livraison
+            </span>
           </label>
         </div>
       </div>

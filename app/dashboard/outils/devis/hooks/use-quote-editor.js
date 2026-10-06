@@ -2728,6 +2728,7 @@ function transformQuoteToFormData(quote) {
           hasDifferentShippingAddress:
             quote.client.hasDifferentShippingAddress || false,
           shippingAddress: quote.client.shippingAddress || null,
+          documentFields: quote.client.documentFields || null,
           ...(quote.client.type === "COMPANY"
             ? {
                 companyName: quote.client.companyName,

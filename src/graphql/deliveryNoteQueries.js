@@ -35,6 +35,10 @@ export const DELIVERY_NOTE_FRAGMENT = gql`
       siret
       vatNumber
       isInternational
+      documentFields {
+        label
+        value
+      }
       hasDifferentShippingAddress
       address {
         street

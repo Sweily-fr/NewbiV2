@@ -41,6 +41,10 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       siret
       vatNumber
       isInternational
+      documentFields {
+        label
+        value
+      }
       hasDifferentShippingAddress
       address {
         street
@@ -250,6 +254,10 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       siret
       vatNumber
       isInternational
+      documentFields {
+        label
+        value
+      }
       address {
         street
         city
