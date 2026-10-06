@@ -310,9 +310,16 @@ export function PurchaseInvoiceDetailDrawer({
     setRemovingFileId(fileId);
     try {
       const res = await removeFile(invoice.id, fileId);
+      // Le tiroir reste ouvert sur la facture (onSaved le fermerait) : la
+      // mutation renvoie les fichiers restants, le cache Apollo met à jour la
+      // facture affichée et le tableau. L'aperçu passe au justificatif suivant.
       if (res?.success) {
-        setPreviewIndex(null);
-        onSaved?.();
+        const remaining = Math.max((invoice.files?.length || 0) - 1, 0);
+        setPreviewIndex((index) =>
+          index === null || remaining === 0
+            ? null
+            : Math.min(index, remaining - 1),
+        );
       }
     } finally {
       setRemovingFileId(null);
@@ -635,7 +642,10 @@ export function PurchaseInvoiceDetailDrawer({
       setAmountSource("ht");
       setPendingFiles([]);
     }
-  }, [invoice, isCreate, open]);
+    // Clé = id : la facture affichée suit le cache Apollo (retrait d'un
+    // justificatif, refetch du tableau) sans écraser une saisie en cours.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invoice?.id, isCreate, open]);
 
   const handleChange = (field, value) => {
     if (field === "amountHT") setAmountSource("ht");
