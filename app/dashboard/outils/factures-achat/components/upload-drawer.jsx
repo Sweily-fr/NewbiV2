@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PreviewImage } from "@/src/components/ui/preview-image";
 import { useMutation } from "@apollo/client";
 import { PROCESS_DOCUMENT_OCR } from "@/src/graphql/mutations/ocr";
@@ -13,6 +13,10 @@ import {
 } from "@/src/hooks/usePurchaseInvoices";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
 import { ReconcileCandidateDialog } from "./reconcile-candidate-dialog";
+import {
+  DocumentPreviewPanel,
+  isDocumentPreviewTarget,
+} from "@/src/components/document-preview-panel";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -119,6 +123,9 @@ export function PurchaseInvoiceUploadDrawer({
   // When true, render only the content + footer (no Drawer shell / header),
   // so this can be embedded inside another drawer (e.g. the tabbed create drawer).
   embedded = false,
+  // Onglet OCR affiché dans le tiroir de création (les deux flux restent
+  // montés) : l'aperçu du justificatif ne s'ouvre que s'il est visible.
+  active = true,
 }) {
   const { workspaceId } = useRequiredWorkspace();
   const fileInputRef = useRef(null);
@@ -346,6 +353,44 @@ export function PurchaseInvoiceUploadDrawer({
   const successResults = ocrResults.filter((r) => !r.error);
   const totalToReview = successResults.length;
   const currentResult = ocrResults[currentReviewIndex];
+
+  // Justificatif en cours de vérification, affiché à gauche du tiroir pour
+  // comparer les valeurs lues à la pièce. Ouvert d'office à chaque fichier du
+  // lot (sauf écran étroit, où il recouvrirait le formulaire).
+  const reviewedFile =
+    currentStep === "review" && currentResult?.file ? currentResult.file : null;
+  const [reviewedFileUrl, setReviewedFileUrl] = useState(null);
+  useEffect(() => {
+    if (!reviewedFile) {
+      setReviewedFileUrl(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(reviewedFile);
+    setReviewedFileUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [reviewedFile]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  useEffect(() => {
+    setPreviewOpen(
+      Boolean(reviewedFile) &&
+        typeof window !== "undefined" &&
+        window.matchMedia("(min-width: 768px)").matches,
+    );
+  }, [reviewedFile]);
+  const previewItems =
+    open && active && previewOpen && reviewedFile && reviewedFileUrl
+      ? [
+          {
+            url: reviewedFileUrl,
+            pdfSrc: reviewedFileUrl,
+            filename: reviewedFile.name,
+            mimeType: reviewedFile.type,
+          },
+        ]
+      : [];
+  // Modale de validation (doublon, transaction trouvée) : elle se cale à
+  // droite et l'aperçu passe au-dessus de son voile pour rester lisible.
+  const validationModalOpen = !!duplicateWarning || !!reconcileCandidate;
 
   // Fichier OCR à rattacher à une facture d'achat (créée ou existante) :
   // déjà sur R2 (documentUrl) ou encore local.
@@ -1100,16 +1145,17 @@ export function PurchaseInvoiceUploadDrawer({
                         const r = currentResult;
                         const isImage = r.file.type.startsWith("image/");
                         const isPdf = r.file.type === "application/pdf";
-                        const blobUrl = URL.createObjectURL(r.file);
+                        const blobUrl = reviewedFileUrl;
+                        if (!blobUrl) return null;
                         return (
                           <div
                             className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
-                            onClick={() =>
-                              window.open(
-                                r.metadata.documentUrl || blobUrl,
-                                "_blank",
-                              )
+                            title={
+                              previewOpen
+                                ? "Masquer l'aperçu"
+                                : "Voir le justificatif à gauche"
                             }
+                            onClick={() => setPreviewOpen((v) => !v)}
                           >
                             <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
                               {isImage ? (
@@ -1248,9 +1294,20 @@ export function PurchaseInvoiceUploadDrawer({
     </>
   );
 
+  const previewPanel = (
+    <DocumentPreviewPanel
+      items={previewItems}
+      index={0}
+      onClose={() => setPreviewOpen(false)}
+      sidebarWidth={validationModalOpen ? 512 : 500}
+      zIndex={validationModalOpen ? 210 : 60}
+    />
+  );
+
   const duplicateDialog = (
     <DuplicateWarningDialog
       open={!!duplicateWarning}
+      besidePreview={previewItems.length > 0}
       duplicates={duplicateWarning?.duplicates || []}
       onCancel={() => setDuplicateWarning(null)}
       onConfirm={() => {
@@ -1264,6 +1321,7 @@ export function PurchaseInvoiceUploadDrawer({
   const reconcileCandidateDialog = (
     <ReconcileCandidateDialog
       open={!!reconcileCandidate}
+      besidePreview={previewItems.length > 0}
       transaction={reconcileCandidate?.transaction}
       invoiceLabel={reconcileCandidate?.label}
       loading={confirmingCandidate}
@@ -1294,6 +1352,7 @@ export function PurchaseInvoiceUploadDrawer({
     return (
       <div className="flex flex-col h-full">
         {body}
+        {previewPanel}
         {duplicateDialog}
         {reconcileCandidateDialog}
       </div>
@@ -1305,9 +1364,20 @@ export function PurchaseInvoiceUploadDrawer({
       <DrawerContent
         className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
         style={{ width: "100vw", height: "100vh" }}
+        // Un clic dans le volet d'aperçu (portail hors du tiroir) ne doit pas
+        // fermer le tiroir.
+        onPointerDownOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
       >
         {header}
         {body}
+        {previewPanel}
         {duplicateDialog}
         {reconcileCandidateDialog}
       </DrawerContent>
