@@ -40,8 +40,9 @@ import {
 // Largeur de la colonne de saisie, le document occupant le reste
 const FORM_PANE_WIDTH = 420;
 
-// Largeur commune à tous les champs, sélecteur de catégorie compris
-const FIELD_WIDTH = "w-44";
+// Largeur commune à tous les champs, sélecteur de catégorie compris : celle
+// des lignes de TVA (libellé de taux le plus long affiché en entier)
+const FIELD_WIDTH = "w-52";
 
 const PAYMENT_METHOD_OPTIONS = [
   { value: "BANK_TRANSFER", label: "Virement" },
