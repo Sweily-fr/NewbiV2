@@ -13,6 +13,7 @@ import { X } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { PurchaseInvoiceDetailDrawer } from "./detail-drawer";
 import { PurchaseInvoiceUploadDrawer } from "./upload-drawer";
+import { isDocumentPreviewTarget } from "@/src/components/document-preview-panel";
 
 /**
  * Drawer de création d'une facture d'achat.
@@ -40,6 +41,16 @@ export function PurchaseInvoiceCreateDrawer({
       <DrawerContent
         className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
         style={{ width: "100vw", height: "100vh" }}
+        // Un clic dans le volet d'aperçu du justificatif (portail hors du
+        // tiroir) ne doit pas fermer le tiroir.
+        onPointerDownOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (isDocumentPreviewTarget(e.detail?.originalEvent?.target))
+            e.preventDefault();
+        }}
       >
         {/* Header */}
         <DrawerHeader className="px-6 py-4 border-b">
@@ -73,6 +84,7 @@ export function PurchaseInvoiceCreateDrawer({
             <PurchaseInvoiceUploadDrawer
               embedded
               open={open}
+              active={tab === "ocr"}
               onOpenChange={onOpenChange}
               onUploaded={onCreated}
               onOpenExisting={onOpenExisting}
