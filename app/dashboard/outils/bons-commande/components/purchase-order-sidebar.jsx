@@ -67,6 +67,7 @@ const PdfPreview = dynamic(
   { ssr: false },
 );
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 export default function PurchaseOrderSidebar({
   isOpen,
@@ -336,30 +337,34 @@ export default function PurchaseOrderSidebar({
                   pas de loader intermédiaire */}
               <PdfPageSkeleton />
             </div>
-          ) : (
+          ) : purchaseOrderDocumentUrl &&
+            purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT ? (
             <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              {purchaseOrderDocumentUrl &&
-              purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT ? (
-                // Proxy same-origin : un chargement direct depuis api.newbi.fr
-                // partirait sans cookie de session (cookie host-only)
-                <PdfPreview
-                  src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}`}
-                  placeholder={<PdfPageSkeleton />}
-                  fallback={
-                    <UniversalPreviewPDF
-                      data={purchaseOrder}
-                      type="purchaseOrder"
-                      recalcDraftDates
-                    />
-                  }
-                />
-              ) : (
+              {/* Proxy same-origin : un chargement direct depuis api.newbi.fr
+                  partirait sans cookie de session (cookie host-only) */}
+              <PdfPreview
+                src={`/api/document-preview/purchaseOrder/${purchaseOrder.id}`}
+                placeholder={<PdfPageSkeleton />}
+                fallback={
+                  <UniversalPreviewPDF
+                    data={purchaseOrder}
+                    type="purchaseOrder"
+                    recalcDraftDates
+                  />
+                }
+              />
+            </div>
+          ) : (
+            <div className="w-[210mm] max-w-full pointer-events-auto">
+              <div className="min-h-[calc(100vh-6rem)] bg-white">
                 <UniversalPreviewPDF
                   data={purchaseOrder}
                   type="purchaseOrder"
                   recalcDraftDates
                 />
-              )}
+              </div>
+              {/* Brouillon : pas encore de PDF archivé, l'annexe est montrée à part */}
+              <DocumentAnnexPreview annex={purchaseOrder.annex} tone="dark" />
             </div>
           )}
         </div>

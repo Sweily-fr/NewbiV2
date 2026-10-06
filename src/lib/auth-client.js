@@ -106,6 +106,10 @@ export const authClient = createAuthClient({
             purchaseOrderHeaderNotes: { type: "string" },
             purchaseOrderFooterNotes: { type: "string" },
             purchaseOrderTermsAndConditions: { type: "string" },
+            // Annexes PDF par défaut (JSON { key, fileName, size, pageCount })
+            quoteAnnex: { type: "string" },
+            invoiceAnnex: { type: "string" },
+            purchaseOrderAnnex: { type: "string" },
             showBankDetails: { type: "boolean" },
             beneficiaryNameType: { type: "string" },
             // Client position in PDF

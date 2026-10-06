@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { launchBrowser } from "@/src/lib/puppeteer";
 import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
+import { appendDocumentAnnex } from "@/src/lib/document-annex-server";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
@@ -102,6 +103,13 @@ async function handler(request) {
 
     await browser.close();
     browser = null;
+
+    // Pages de l'annexe (ex : CGV) ajoutées à la fin du document
+    finalBuffer = await appendDocumentAnnex(finalBuffer, {
+      collection: "purchaseorders",
+      id: purchaseOrderId,
+      cookie: request.headers.get("cookie"),
+    });
 
     console.log(`✅ [PDF API] PDF généré (${finalBuffer.length} bytes)`);
 

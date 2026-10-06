@@ -18,6 +18,12 @@ export const QUOTE_FRAGMENT = gql`
     termsAndConditions
     termsAndConditionsLinkTitle
     termsAndConditionsLink
+    annex {
+      key
+      fileName
+      size
+      pageCount
+    }
     discount
     discountType
     retenueGarantie
