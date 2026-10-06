@@ -38,6 +38,15 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
+import { AddVatRateButton, VatBreakdownEditor } from "./vat-breakdown";
+import {
+  applyVatLinesToForm,
+  splitVatIntoLines,
+  summarizeVatLines,
+  toVatLinesForm,
+  vatInputFromForm,
+  vatLinesFromOcr,
+} from "@/src/utils/purchase-invoice-vat";
 import CategorySearchSelect from "@/src/components/category-search-select";
 import { Calendar } from "@/src/components/ui/calendar";
 import {
@@ -160,6 +169,8 @@ export function PurchaseInvoiceUploadDrawer({
     amountHT: "",
     amountTVA: "",
     vatRate: "20",
+    // Détail par taux quand le document en mêle plusieurs (≥ 2 lignes)
+    vatLines: [],
     amountTTC: "",
     category: "OTHER",
     status: "TO_PROCESS",
@@ -234,6 +245,12 @@ export function PurchaseInvoiceUploadDrawer({
     const td = f.transaction_data || {};
     const ef = f.extracted_fields || {};
     const totals = ef.totals || {};
+    // Plusieurs taux de TVA lus : HT / TVA / taux sont le résumé du détail
+    const vatLines = vatLinesFromOcr(
+      f,
+      td.tax_amount ?? totals.total_tax ?? null,
+    );
+    const vatTotals = summarizeVatLines(vatLines);
 
     setEditableData({
       supplierName:
@@ -270,6 +287,14 @@ export function PurchaseInvoiceUploadDrawer({
         f.total_vat?.toString() ||
         "",
       vatRate: td.tax_rate?.toString() || f.tax_rate?.toString() || "20",
+      ...(vatTotals
+        ? {
+            amountHT: vatTotals.amountHT.toString(),
+            amountTVA: vatTotals.amountTVA.toString(),
+            vatRate: vatTotals.vatRate.toString(),
+          }
+        : {}),
+      vatLines: toVatLinesForm(vatLines),
       amountTTC:
         td.amount?.toString() ||
         totals.total_ttc?.toString() ||
@@ -485,9 +510,7 @@ export function PurchaseInvoiceUploadDrawer({
             new Date().toLocaleDateString("sv-SE"),
           dueDate: normalizeDate(editableData.dueDate) || undefined,
           paymentDate: normalizeDate(editableData.paymentDate) || undefined,
-          amountHT: parseFloat(editableData.amountHT) || 0,
-          amountTVA: parseFloat(editableData.amountTVA) || 0,
-          vatRate: parseFloat(editableData.vatRate) || 20,
+          ...vatInputFromForm(editableData),
           amountTTC: parseFloat(editableData.amountTTC),
           // Sous-catégorie fine (référentiel Transactions) ou code large OCR ;
           // la catégorie large de la facture est dérivée côté API.
@@ -554,6 +577,10 @@ export function PurchaseInvoiceUploadDrawer({
         if (next.paymentDate && next.paymentDate < value) next.paymentDate = "";
       }
 
+      // Plusieurs taux : HT et TVA viennent des lignes, le TTC saisi reste tel
+      // quel (pourboire, frais hors TVA)
+      if (next.vatLines?.length >= 2) return next;
+
       const rate = parseFloat(next.vatRate) || 0;
 
       if (field === "amountHT") {
@@ -581,6 +608,12 @@ export function PurchaseInvoiceUploadDrawer({
       }
       return next;
     });
+  };
+
+  // Plusieurs taux de TVA : HT / TVA / taux = résumé des lignes, TTC suivi
+  const handleVatLinesChange = (lines) => {
+    setEditableData((prev) => applyVatLinesToForm(prev, lines));
+    setAmountSource("ht");
   };
 
   const handleOpenChange = (v) => {
@@ -1012,38 +1045,56 @@ export function PurchaseInvoiceUploadDrawer({
                   Montants
                 </p>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      Montant HT
-                    </span>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={editableData.amountHT}
-                      onChange={(e) =>
-                        handleEditChange("amountHT", e.target.value)
-                      }
-                      className="w-32 h-8 text-sm text-right"
+                  {editableData.vatLines.length >= 2 ? (
+                    <VatBreakdownEditor
+                      lines={editableData.vatLines}
+                      currency="EUR"
+                      amountTTC={editableData.amountTTC}
+                      onChange={handleVatLinesChange}
                     />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      Taux TVA
-                    </span>
-                    <VatRateSelect
-                      value={editableData.vatRate}
-                      onChange={(v) => handleEditChange("vatRate", String(v))}
-                      className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-normal text-muted-foreground">
-                      TVA
-                    </span>
-                    <span className="text-sm font-normal">
-                      {editableData.amountTVA || "0.00"} €
-                    </span>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-normal text-muted-foreground">
+                          Montant HT
+                        </span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={editableData.amountHT}
+                          onChange={(e) =>
+                            handleEditChange("amountHT", e.target.value)
+                          }
+                          className="w-32 h-8 text-sm text-right"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-normal text-muted-foreground">
+                          Taux TVA
+                        </span>
+                        <VatRateSelect
+                          value={editableData.vatRate}
+                          onChange={(v) =>
+                            handleEditChange("vatRate", String(v))
+                          }
+                          className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-normal text-muted-foreground">
+                          TVA
+                        </span>
+                        <span className="text-sm font-normal">
+                          {editableData.amountTVA || "0.00"} €
+                        </span>
+                      </div>
+                      <AddVatRateButton
+                        onClick={() =>
+                          handleVatLinesChange(splitVatIntoLines(editableData))
+                        }
+                      />
+                    </>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-normal text-muted-foreground">
                       Montant TTC *

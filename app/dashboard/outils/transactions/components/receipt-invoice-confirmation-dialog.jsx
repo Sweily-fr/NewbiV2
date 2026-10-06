@@ -24,6 +24,18 @@ import {
   applyOcrDrafts,
   ocrDraftValue,
 } from "@/src/components/reconciliation/OcrValueInput";
+import {
+  AddVatRateButton,
+  VatBreakdownEditor,
+} from "@/app/dashboard/outils/factures-achat/components/vat-breakdown";
+import {
+  applyVatLinesToForm,
+  invoiceVatLines,
+  parseVatLines,
+  splitVatIntoLines,
+  summarizeVatLines,
+  toVatLinesForm,
+} from "@/src/utils/purchase-invoice-vat";
 
 // Largeur de la colonne de saisie, le document occupant le reste
 const FORM_PANE_WIDTH = 420;
@@ -173,6 +185,8 @@ export function ReceiptInvoiceConfirmationDialog({
   const duplicate = proposal?.duplicate || null;
 
   const [drafts, setDrafts] = useState({});
+  // Lignes de TVA quand le justificatif mêle plusieurs taux (≥ 2 lignes)
+  const [vatLines, setVatLines] = useState([]);
   const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
   const [pending, setPending] = useState(null);
 
@@ -183,6 +197,12 @@ export function ReceiptInvoiceConfirmationDialog({
     setPending(null);
     setMobilePreviewOpen(false);
   }, [receiptFile?.id]);
+  // Détail par taux lu, repris quand l'analyse rend ses valeurs
+  const analyzed = Boolean(proposal);
+  useEffect(() => {
+    setVatLines(toVatLinesForm(invoiceVatLines(proposal)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receiptFile?.id, analyzed]);
 
   // La liste de catégories affiche la sous-catégorie fine (référentiel
   // Transactions), avec repli sur le code large des anciennes propositions.
@@ -233,13 +253,69 @@ export function ReceiptInvoiceConfirmationDialog({
   const incomplete =
     !analyzing && ["partial", "none"].includes(proposal.extractionQuality);
 
+  // Plusieurs taux : HT / TVA / taux affichés sont le résumé des lignes. Le
+  // TTC ne bouge pas, c'est la dépense bancaire.
+  const handleVatLinesChange = (lines) => {
+    const form = applyVatLinesToForm({ ...values, vatLines }, lines, {
+      keepTTC: true,
+    });
+    setVatLines(form.vatLines);
+    setDrafts((d) => ({
+      ...d,
+      amountHT: form.amountHT,
+      amountTVA: form.amountTVA,
+      vatRate: form.vatRate,
+    }));
+  };
+
+  const mutationValues = () => {
+    const out = toMutationValues(values);
+    const lines = parseVatLines(vatLines);
+    if (vatLines.length >= 2 && lines.length >= 2) {
+      return { ...out, ...summarizeVatLines(lines), vatBreakdown: lines };
+    }
+    // Détail lu ramené à un seul taux
+    if (invoiceVatLines(proposal).length) out.vatBreakdown = [];
+    return out;
+  };
+
   const submit = async (action, purchaseInvoiceId = null) => {
     setPending(action);
     try {
-      await onConfirm(action, toMutationValues(values), purchaseInvoiceId);
+      await onConfirm(action, mutationValues(), purchaseInvoiceId);
     } finally {
       setPending(null);
     }
+  };
+
+  // Montants : un seul taux = champs habituels ; plusieurs = lignes de TVA,
+  // puis le TTC.
+  const renderAmounts = (fields) => {
+    if (analyzing) return fields.map(renderField);
+    if (vatLines.length >= 2) {
+      return (
+        <>
+          <VatBreakdownEditor
+            lines={vatLines}
+            currency={values.currency}
+            amountTTC={toNumber(values.amountTTC)}
+            onChange={handleVatLinesChange}
+            compact
+          />
+          {fields.filter((f) => f.key === "amountTTC").map(renderField)}
+        </>
+      );
+    }
+    return (
+      <>
+        {fields.map(renderField)}
+        <AddVatRateButton
+          onClick={() =>
+            handleVatLinesChange(splitVatIntoLines({ ...values, vatLines }))
+          }
+        />
+      </>
+    );
   };
 
   const renderField = ({ key, label, kind }) => (
@@ -424,7 +500,9 @@ export function ReceiptInvoiceConfirmationDialog({
                   <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     {group.title}
                   </h3>
-                  {group.fields.map(renderField)}
+                  {group.title === "Montants"
+                    ? renderAmounts(group.fields)
+                    : group.fields.map(renderField)}
                 </section>
               ))}
             </div>
