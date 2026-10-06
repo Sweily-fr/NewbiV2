@@ -1447,7 +1447,7 @@ export function PurchaseInvoiceDetailDrawer({
                       <VatRateSelect
                         value={form.vatRate}
                         onChange={(v) => handleChange("vatRate", String(v))}
-                        className="w-40 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
+                        className="w-56 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                       />
                     </div>
                     <div className="flex items-center justify-between">
