@@ -36,7 +36,12 @@ import {
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import {
+  useClientCustomFields,
+  useUpdateClientCustomField,
+} from "@/src/hooks/useClientCustomFields";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { toast } from "@/src/components/ui/sonner";
 import { useClientListsByClient } from "@/src/hooks/useClientLists";
 
 function SidebarSection({ title, defaultOpen = true, children }) {
@@ -135,6 +140,8 @@ export default function ClientDetailSidebar({
 }) {
   const [showMore, setShowMore] = useState(false);
   const { fields: customFieldDefs } = useClientCustomFields(workspaceId);
+  const { updateField } = useUpdateClientCustomField();
+  const [savingFieldId, setSavingFieldId] = useState(null);
   const { lists: clientLists } = useClientListsByClient(
     workspaceId,
     client?.id,
@@ -153,6 +160,50 @@ export default function ClientDetailSidebar({
       .filter(Boolean)
       .sort((a, b) => (a.fieldDef.order ?? 0) - (b.fieldDef.order ?? 0));
   }, [client?.customFields, customFieldDefs]);
+
+  // Champs actifs du workspace, cochables « Sur les documents » sans passer
+  // par « Modifier » (le choix vaut pour tous les clients)
+  const documentFieldRows = useMemo(() => {
+    const values = new Map(
+      customFieldsDisplay.map(({ fieldDef, value }) => {
+        const text = Array.isArray(value)
+          ? value
+              .map(
+                (v) =>
+                  fieldDef.options?.find((o) => o.value === v)?.label || v,
+              )
+              .join(", ")
+          : String(value);
+        return [fieldDef.id, text];
+      }),
+    );
+    return (customFieldDefs || [])
+      .filter((def) => def.isActive)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((def) => ({ def, value: values.get(def.id) || null }));
+  }, [customFieldDefs, customFieldsDisplay]);
+
+  const toggleShowOnDocuments = async (def) => {
+    const showOnDocuments = !def.showOnDocuments;
+    setSavingFieldId(def.id);
+    try {
+      const updated = await updateField(workspaceId, def.id, {
+        name: def.name,
+        fieldType: def.fieldType,
+        options: (def.options || []).map(({ __typename, ...opt }) => opt),
+        showOnDocuments,
+      });
+      if (updated) {
+        toast.success(
+          showOnDocuments
+            ? `« ${def.name} » s'affichera sur vos documents`
+            : `« ${def.name} » ne s'affichera plus sur vos documents`,
+        );
+      }
+    } finally {
+      setSavingFieldId(null);
+    }
+  };
 
   const displayName =
     client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
@@ -349,6 +400,51 @@ export default function ClientDetailSidebar({
             {showMore ? "Voir moins" : "Voir plus"} {showMore ? "↑" : "↓"}
           </button>
         </SidebarSection>
+
+        {documentFieldRows.length > 0 && (
+          <>
+            <div className="border-t border-[#eeeff1] dark:border-[#232323]" />
+            <SidebarSection title="Sur les documents" defaultOpen>
+              <p className="text-xs text-muted-foreground mb-2">
+                Cochez les champs à afficher sous les coordonnées du client sur
+                les devis, factures, avoirs, bons de commande et bons de
+                livraison. Le choix vaut pour tous vos clients.
+              </p>
+              <div className="space-y-0">
+                {documentFieldRows.map(({ def, value }) => {
+                  const FieldIcon = CUSTOM_FIELD_ICONS[def.fieldType] || Type;
+                  return (
+                    <label
+                      key={def.id}
+                      className="flex items-center justify-between gap-3 py-[7px] cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Checkbox
+                          checked={!!def.showOnDocuments}
+                          disabled={savingFieldId === def.id}
+                          onCheckedChange={() => toggleShowOnDocuments(def)}
+                        />
+                        <FieldIcon className="h-3.5 w-3.5 flex-shrink-0 text-[#505154] dark:text-muted-foreground" />
+                        <span className="text-[13px] text-[#505154] dark:text-muted-foreground truncate">
+                          {def.name}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[13px] truncate max-w-[200px] ${
+                          value
+                            ? "text-[#242529] dark:text-foreground"
+                            : "text-muted-foreground italic"
+                        }`}
+                      >
+                        {value || "Non renseigné"}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </SidebarSection>
+          </>
+        )}
 
         {client.isBlocked && (
           <>

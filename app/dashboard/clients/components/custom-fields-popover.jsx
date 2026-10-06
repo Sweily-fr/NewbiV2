@@ -75,7 +75,7 @@ function FieldTypeIcon({ type, className }) {
   return <Icon className={className} />;
 }
 
-function FieldRow({ field, onDelete, onToggle, onEdit }) {
+function FieldRow({ field, onDelete, onToggle, onToggleDocuments, onEdit }) {
   const fieldType = FIELD_TYPES.find((t) => t.value === field.fieldType);
 
   return (
@@ -92,17 +92,35 @@ function FieldRow({ field, onDelete, onToggle, onEdit }) {
               Requis
             </Badge>
           )}
-          {field.showOnDocuments && (
-            <Badge variant="secondary" className="text-[10px] px-1 py-0">
-              Sur les documents
-            </Badge>
-          )}
         </div>
         <p className="text-xs text-muted-foreground truncate">
           {fieldType?.label}
           {field.options?.length > 0 && ` • ${field.options.length} option${field.options.length > 1 ? "s" : ""}`}
         </p>
       </div>
+
+      {/* Bascule directe, sans passer par « Modifier » */}
+      <label
+        className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs whitespace-nowrap flex-shrink-0 ${
+          field.isActive
+            ? "cursor-pointer hover:bg-accent"
+            : "cursor-not-allowed opacity-50"
+        } ${field.showOnDocuments ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : "text-muted-foreground"}`}
+        title={
+          field.isActive
+            ? "Afficher ce champ sous les coordonnées du client sur les devis, factures, avoirs, bons de commande et bons de livraison"
+            : "Activez le champ pour pouvoir l'afficher sur les documents"
+        }
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Checkbox
+          checked={!!field.showOnDocuments}
+          disabled={!field.isActive}
+          onCheckedChange={() => onToggleDocuments(field)}
+          className="h-3.5 w-3.5"
+        />
+        Sur les documents
+      </label>
 
       <Button
         variant="ghost"
@@ -195,7 +213,7 @@ function FieldForm({ field, onSave, onCancel, isEditing = false }) {
     fieldType: field?.fieldType || "TEXT",
     options: field?.options || [],
     isRequired: field?.isRequired || false,
-    showOnDocuments: field?.showOnDocuments || false,
+    showOnDocuments: field?.showOnDocuments ?? true,
   });
 
   const needsOptions = ["SELECT", "MULTISELECT"].includes(formData.fieldType);
@@ -383,6 +401,29 @@ export default function CustomFieldsPopover({ trigger }) {
     }
   };
 
+  const handleToggleDocuments = async (field) => {
+    const showOnDocuments = !field.showOnDocuments;
+    try {
+      // Nettoyer les options pour retirer __typename ajouté par Apollo
+      const cleanedOptions = field.options?.map(({ __typename, ...opt }) => opt) || [];
+      await updateField(workspaceId, field.id, {
+        name: field.name,
+        fieldType: field.fieldType,
+        options: cleanedOptions,
+        showOnDocuments,
+      });
+      refetch();
+      toast.success(
+        showOnDocuments
+          ? `« ${field.name} » s'affichera sur vos documents`
+          : `« ${field.name} » ne s'affichera plus sur vos documents`,
+      );
+    } catch (error) {
+      toast.error("Erreur lors de la modification");
+      refetch();
+    }
+  };
+
   const handleEdit = (field) => {
     setShowNewForm(false);
     setEditingField(field);
@@ -420,7 +461,8 @@ export default function CustomFieldsPopover({ trigger }) {
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Ajoutez des informations personnalisées à vos contacts
+              Ajoutez des informations personnalisées à vos contacts. Cochez
+              « Sur les documents » pour les voir sur vos devis et factures.
             </p>
           </div>
 
@@ -454,6 +496,7 @@ export default function CustomFieldsPopover({ trigger }) {
                     field={field}
                     onDelete={setDeletingField}
                     onToggle={handleToggle}
+                    onToggleDocuments={handleToggleDocuments}
                     onEdit={handleEdit}
                   />
                 ))}

@@ -7,6 +7,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import { Badge } from "@/src/components/ui/badge";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -158,7 +159,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
     description: "",
     placeholder: "",
     isRequired: false,
-    showOnDocuments: false,
+    showOnDocuments: true,
     options: [],
   });
 
@@ -170,7 +171,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
         description: field?.description || "",
         placeholder: field?.placeholder || "",
         isRequired: field?.isRequired ?? false,
-        showOnDocuments: field?.showOnDocuments ?? false,
+        showOnDocuments: field?.showOnDocuments ?? true,
         options:
           field?.options?.map((o) => ({
             label: o.label,
@@ -342,7 +343,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
   );
 }
 
-function FieldRow({ field, onEdit, onDelete, onToggle }) {
+function FieldRow({ field, onEdit, onDelete, onToggle, onToggleDocuments }) {
   const fieldType = FIELD_TYPES.find((t) => t.value === field.fieldType);
 
   return (
@@ -368,10 +369,33 @@ function FieldRow({ field, onEdit, onDelete, onToggle }) {
         </div>
       </div>
 
+      {/* Bascule directe, sans passer par « Modifier » */}
+      <label
+        className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs whitespace-nowrap flex-shrink-0 ${
+          field.isActive
+            ? "cursor-pointer hover:bg-accent"
+            : "cursor-not-allowed opacity-50"
+        } ${field.showOnDocuments ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : "text-muted-foreground"}`}
+        title={
+          field.isActive
+            ? "Afficher ce champ sous les coordonnées du client sur les devis, factures, avoirs, bons de commande et bons de livraison"
+            : "Activez le champ pour pouvoir l'afficher sur les documents"
+        }
+      >
+        <Checkbox
+          checked={!!field.showOnDocuments}
+          disabled={!field.isActive}
+          onCheckedChange={() => onToggleDocuments(field)}
+          className="h-3.5 w-3.5"
+        />
+        Sur les documents
+      </label>
+
       <Switch
         checked={field.isActive}
         onCheckedChange={() => onToggle(field)}
         className="data-[state=checked]:bg-[#5b50ff] scale-90"
+        title={field.isActive ? "Champ activé" : "Champ désactivé"}
       />
 
       <Button
@@ -466,6 +490,27 @@ export default function CustomFieldsPanel({
     }
   };
 
+  const handleToggleDocuments = async (field) => {
+    const showOnDocuments = !field.showOnDocuments;
+    try {
+      const cleanedOptions =
+        field.options?.map(({ __typename, ...opt }) => opt) || [];
+      await onUpdateField(field.id, {
+        name: field.name,
+        fieldType: field.fieldType,
+        options: cleanedOptions,
+        showOnDocuments,
+      });
+      toast.success(
+        showOnDocuments
+          ? `« ${field.name} » s'affichera sur vos documents`
+          : `« ${field.name} » ne s'affichera plus sur vos documents`,
+      );
+    } catch {
+      // Error handled by hook
+    }
+  };
+
   return (
     <div className="space-y-4">
       {fields.length === 0 ? (
@@ -513,6 +558,11 @@ export default function CustomFieldsPanel({
               Passez au plan {nextPlanName} pour plus de champs personnalisés.
             </p>
           )}
+          <p className="text-xs text-muted-foreground">
+            Cochez « Sur les documents » pour afficher un champ sous les
+            coordonnées du client sur vos devis, factures, bons de commande et
+            bons de livraison.
+          </p>
           <div className="space-y-2">
             {fields.map((field) => (
               <FieldRow
@@ -521,6 +571,7 @@ export default function CustomFieldsPanel({
                 onEdit={setEditingField}
                 onDelete={setDeletingField}
                 onToggle={handleToggle}
+                onToggleDocuments={handleToggleDocuments}
               />
             ))}
           </div>
