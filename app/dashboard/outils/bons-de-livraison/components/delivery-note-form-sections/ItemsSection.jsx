@@ -66,7 +66,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import { ItemImageControl } from "@/src/components/item-image-control";
-import { pickItemImage } from "@/src/utils/item-image";
+import { documentImageUrl, pickItemImage } from "@/src/utils/item-image";
 
 // Mêmes unités que les devis / factures / bons de commande (une valeur hors
 // liste, ex. produit du catalogue, est affichée via une option de secours).
@@ -133,6 +133,7 @@ function ProductSearchCombobox({
       unit: product.unit,
       reference: product.reference,
       imageUrl: product.imageUrl,
+      showImageOnDocuments: product.showImageOnDocuments,
     })) || [];
 
   // Une case image par ligne dès qu'un produit de la liste a une image
@@ -148,7 +149,9 @@ function ProductSearchCombobox({
         productId: product.value,
         quantity: 1,
         unit: product.unit || "unité",
-        ...(product.imageUrl && { imageUrl: product.imageUrl }),
+        ...(documentImageUrl(product) && {
+          imageUrl: documentImageUrl(product),
+        }),
       });
     }
     setSearchTerm("");

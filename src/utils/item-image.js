@@ -7,3 +7,14 @@
 export function pickItemImage(item) {
   return item?.imageUrl ? { imageUrl: item.imageUrl } : {};
 }
+
+/**
+ * Image à recopier sur une ligne quand on choisit un produit du catalogue :
+ * aucune si la fiche produit a désactivé « Afficher sur les documents ».
+ */
+export function documentImageUrl(product) {
+  if (!product?.imageUrl || product.showImageOnDocuments === false) {
+    return undefined;
+  }
+  return product.imageUrl;
+}

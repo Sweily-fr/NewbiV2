@@ -14,6 +14,7 @@ export const GET_PRODUCTS = gql`
         category
         reference
         imageUrl
+        showImageOnDocuments
         customFields {
           fieldId
           value
@@ -32,6 +33,7 @@ export const GET_PRODUCTS = gql`
             unit
             reference
             imageUrl
+            showImageOnDocuments
           }
         }
         createdAt
@@ -56,6 +58,7 @@ export const GET_PRODUCT = gql`
       category
       reference
       imageUrl
+      showImageOnDocuments
       linkedProducts {
         productId
         quantity
@@ -70,6 +73,7 @@ export const GET_PRODUCT = gql`
           unit
           reference
           imageUrl
+          showImageOnDocuments
         }
       }
       createdBy {

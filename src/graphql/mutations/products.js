@@ -13,6 +13,7 @@ export const CREATE_PRODUCT = gql`
       category
       reference
       imageUrl
+      showImageOnDocuments
       linkedProducts {
         productId
         quantity
@@ -27,6 +28,7 @@ export const CREATE_PRODUCT = gql`
           unit
           reference
           imageUrl
+          showImageOnDocuments
         }
       }
       createdAt
@@ -48,6 +50,7 @@ export const UPDATE_PRODUCT = gql`
       category
       reference
       imageUrl
+      showImageOnDocuments
       linkedProducts {
         productId
         quantity
@@ -62,6 +65,7 @@ export const UPDATE_PRODUCT = gql`
           unit
           reference
           imageUrl
+          showImageOnDocuments
         }
       }
       createdAt

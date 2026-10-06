@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, LoaderCircle, Trash2, RefreshCw } from "lucide-react";
 import { Label } from "@/src/components/ui/label";
+import { Switch } from "@/src/components/ui/switch";
 import { toast } from "@/src/components/ui/sonner";
 import { useUploadProductImage } from "@/src/hooks/useProducts";
 import { cn } from "@/src/lib/utils";
@@ -21,6 +22,8 @@ export default function ProductImageField({
   value,
   onChange,
   onUploadingChange,
+  showOnDocuments = true,
+  onShowOnDocumentsChange,
 }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -163,10 +166,28 @@ export default function ProductImageField({
         )}
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Affichée sur les lignes des devis, factures, bons de commande, avoirs et
-        bons de livraison.
-      </p>
+      {value ? (
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+          <Switch
+            checked={showOnDocuments}
+            onCheckedChange={onShowOnDocumentsChange}
+            className="mt-0.5"
+          />
+          <span className="space-y-0.5">
+            <span className="block text-sm">Afficher sur les documents</span>
+            <span className="block text-xs text-muted-foreground">
+              {showOnDocuments
+                ? "Imprimée sur les devis, factures, bons de commande, avoirs et bons de livraison."
+                : "Visible uniquement dans le catalogue."}
+            </span>
+          </span>
+        </label>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Affichée sur les lignes des devis, factures, bons de commande, avoirs
+          et bons de livraison.
+        </p>
+      )}
     </div>
   );
 }
