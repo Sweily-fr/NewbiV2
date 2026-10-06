@@ -1065,7 +1065,7 @@ export function PurchaseInvoiceUploadDrawer({
                           onChange={(e) =>
                             handleEditChange("amountHT", e.target.value)
                           }
-                          className="w-52 h-8 text-sm text-right"
+                          className="w-52 h-8 text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
                       <div className="flex items-center justify-between">
@@ -1106,7 +1106,7 @@ export function PurchaseInvoiceUploadDrawer({
                       onChange={(e) =>
                         handleEditChange("amountTTC", e.target.value)
                       }
-                      className="w-52 h-8 text-sm text-right"
+                      className="w-52 h-8 text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>
