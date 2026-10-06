@@ -105,6 +105,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
       linkedPer
       linkedRounding
       imageUrl
+      showImage
       progressPercentage
     }
     customFields {
@@ -232,6 +233,7 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       linkedPer
       linkedRounding
       imageUrl
+      showImage
       progressPercentage
     }
     customFields {
@@ -1004,6 +1006,7 @@ export const GET_PURCHASE_ORDER_TEMPLATES = gql`
         linkedPer
         linkedRounding
         imageUrl
+        showImage
         progressPercentage
       }
       headerNotes

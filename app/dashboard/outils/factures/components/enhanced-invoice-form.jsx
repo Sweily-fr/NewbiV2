@@ -91,6 +91,7 @@ import { fr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { ProductThumbnail } from "@/src/components/product-thumbnail";
+import { productItemImage } from "@/src/utils/item-image";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import CompanyImport, { QuickCompanyImport } from "./company-import";
 import { toast } from "@/src/components/ui/sonner";
@@ -145,6 +146,7 @@ function ProductSearchCombobox({
       reference: product.reference,
       linkedProducts: product.linkedProducts,
       imageUrl: product.imageUrl,
+      showImageOnDocuments: product.showImageOnDocuments,
     })) || [];
 
   // Une case image par ligne dès qu'un produit de la liste a une image
@@ -171,7 +173,7 @@ function ProductSearchCombobox({
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
         linkedProducts: selectedProduct.linkedProducts,
-        imageUrl: selectedProduct.imageUrl,
+        ...productItemImage(selectedProduct),
       });
     }
     setValue("");

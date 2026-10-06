@@ -66,7 +66,7 @@ import {
 import { cn } from "@/src/lib/utils";
 import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import { ItemImageControl } from "@/src/components/item-image-control";
-import { pickItemImage } from "@/src/utils/item-image";
+import { pickItemImage, productItemImage } from "@/src/utils/item-image";
 
 // Mêmes unités que les devis / factures / bons de commande (une valeur hors
 // liste, ex. produit du catalogue, est affichée via une option de secours).
@@ -133,6 +133,7 @@ function ProductSearchCombobox({
       unit: product.unit,
       reference: product.reference,
       imageUrl: product.imageUrl,
+      showImageOnDocuments: product.showImageOnDocuments,
     })) || [];
 
   // Une case image par ligne dès qu'un produit de la liste a une image
@@ -148,7 +149,7 @@ function ProductSearchCombobox({
         productId: product.value,
         quantity: 1,
         unit: product.unit || "unité",
-        ...(product.imageUrl && { imageUrl: product.imageUrl }),
+        ...productItemImage(product),
       });
     }
     setSearchTerm("");
@@ -498,7 +499,9 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
                                   {currentItem.imageUrl && (
                                     <ProductThumbnail
                                       src={currentItem.imageUrl}
-                                      className="size-9 rounded-lg"
+                                      className={`size-9 rounded-lg ${
+                                        currentItem.showImage === false ? "opacity-40 grayscale" : ""
+                                      }`}
                                     />
                                   )}
                                   <div className="font-normal break-all [overflow-wrap:anywhere]">
@@ -536,9 +539,10 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
                             <div className="space-y-4 pt-2">
                               <ItemImageControl
                                 imageUrl={currentItem.imageUrl}
+                                showImage={currentItem.showImage}
                                 disabled={!canEdit}
-                                onRemove={() =>
-                                  setValue(`items.${index}.imageUrl`, "", {
+                                onShowImageChange={(checked) =>
+                                  setValue(`items.${index}.showImage`, checked, {
                                     shouldDirty: true,
                                   })
                                 }

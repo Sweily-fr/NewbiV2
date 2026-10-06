@@ -11,6 +11,7 @@ import {
 import { stripHtml } from "@/src/utils/kanbanHelpers";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { ItemCellWithImage } from "@/src/components/pdf/PdfItemImage";
+import { visibleItemImage } from "@/src/utils/item-image";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (
@@ -1439,7 +1440,7 @@ const UniversalPreviewPDF = ({
                               overflowWrap: "break-word",
                             }}
                           >
-                            <ItemCellWithImage imageUrl={item.imageUrl}>
+                            <ItemCellWithImage imageUrl={visibleItemImage(item)}>
                               <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
                                 {item.description || ""}
                               </div>

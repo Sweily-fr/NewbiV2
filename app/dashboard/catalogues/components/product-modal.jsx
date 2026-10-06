@@ -105,6 +105,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
 
   // Image du produit (URL R2, envoyée dès qu'elle est choisie)
   const [imageUrl, setImageUrl] = useState(null);
+  const [showImageOnDocuments, setShowImageOnDocuments] = useState(true);
   const [imageUploading, setImageUploading] = useState(false);
 
   const {
@@ -167,6 +168,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
       }
       setCustomFieldValues(cfValues);
       setImageUrl(product.imageUrl || null);
+      setShowImageOnDocuments(product.showImageOnDocuments !== false);
       setLinkedProducts(
         (product.linkedProducts || [])
           .filter((link) => link?.product)
@@ -191,6 +193,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
       });
       setCustomFieldValues({});
       setImageUrl(null);
+      setShowImageOnDocuments(true);
       setLinkedProducts([]);
     }
   }, [product, open, reset]);
@@ -220,6 +223,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         ...(customFields.length > 0 && { customFields }),
         // null à la modification retire l'image de la fiche
         ...(imageUrl ? { imageUrl } : isEditing ? { imageUrl: null } : {}),
+        showImageOnDocuments,
         linkedProducts: linkedProducts.map((link) => ({
           productId: link.productId,
           quantity: parseFloat(link.quantity),
@@ -491,6 +495,8 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                   value={imageUrl}
                   onChange={setImageUrl}
                   onUploadingChange={setImageUploading}
+                  showOnDocuments={showImageOnDocuments}
+                  onShowOnDocumentsChange={setShowImageOnDocuments}
                 />
                 <div className="bg-muted/50 rounded-lg p-4 border">
                   <div className="text-sm font-medium text-muted-foreground mb-3">

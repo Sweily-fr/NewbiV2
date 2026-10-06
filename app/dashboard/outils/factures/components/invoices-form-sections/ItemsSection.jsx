@@ -699,7 +699,9 @@ export default function ItemsSection({
                                       {currentItem.imageUrl && (
                                         <ProductThumbnail
                                           src={currentItem.imageUrl}
-                                          className="size-9 rounded-lg"
+                                          className={`size-9 rounded-lg ${
+                                            currentItem.showImage === false ? "opacity-40 grayscale" : ""
+                                          }`}
                                         />
                                       )}
                                       <div className="font-normal break-all [overflow-wrap:anywhere]">
@@ -815,9 +817,10 @@ export default function ItemsSection({
                               <div className="space-y-4 pt-2">
                                 <ItemImageControl
                                   imageUrl={currentItem.imageUrl}
+                                  showImage={currentItem.showImage}
                                   disabled={!canEdit || isItemFieldLocked}
-                                  onRemove={() =>
-                                    setValue(`items.${index}.imageUrl`, "", {
+                                  onShowImageChange={(checked) =>
+                                    setValue(`items.${index}.showImage`, checked, {
                                       shouldDirty: true,
                                     })
                                   }
