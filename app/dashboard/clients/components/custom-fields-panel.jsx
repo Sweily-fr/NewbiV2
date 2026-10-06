@@ -158,6 +158,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
     description: "",
     placeholder: "",
     isRequired: false,
+    showOnDocuments: false,
     options: [],
   });
 
@@ -169,6 +170,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
         description: field?.description || "",
         placeholder: field?.placeholder || "",
         isRequired: field?.isRequired ?? false,
+        showOnDocuments: field?.showOnDocuments ?? false,
         options:
           field?.options?.map((o) => ({
             label: o.label,
@@ -294,6 +296,23 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
                 checked={formData.isRequired}
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, isRequired: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  Afficher sur mes documents
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Devis, factures, avoirs, bons de commande et bons de livraison
+                </p>
+              </div>
+              <Switch
+                checked={formData.showOnDocuments}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, showOnDocuments: checked })
                 }
               />
             </div>

@@ -15,6 +15,7 @@ export const CREATE_CLIENT_CUSTOM_FIELD = gql`
       placeholder
       isRequired
       order
+      showOnDocuments
       isActive
       createdAt
       updatedAt
@@ -37,6 +38,7 @@ export const UPDATE_CLIENT_CUSTOM_FIELD = gql`
       placeholder
       isRequired
       order
+      showOnDocuments
       isActive
       createdAt
       updatedAt

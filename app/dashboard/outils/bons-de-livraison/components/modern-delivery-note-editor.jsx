@@ -28,6 +28,7 @@ import EnhancedDeliveryNoteForm from "./enhanced-delivery-note-form";
 import DeliveryNoteSettingsView from "./delivery-note-settings-view";
 import { toast } from "@/src/components/ui/sonner";
 import DeliveryNotePreview from "./DeliveryNotePreview";
+import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 
 const LIST_URL = "/dashboard/outils/bons-de-livraison";
 
@@ -91,10 +92,16 @@ export default function ModernDeliveryNoteEditor({
     return () => clearTimeout(timer);
   }, [previewData]);
 
+  // Champs personnalisés du client « Afficher sur mes documents » : suivent le
+  // client choisi tant que le bon de livraison est un brouillon ou en création
+  const livePreview = useWithClientDocumentFields(
+    debouncedPreview,
+    mode === "create" || isDraft,
+  );
+
   const previewElement = useMemo(
-    () =>
-      debouncedPreview ? <DeliveryNotePreview data={debouncedPreview} /> : null,
-    [debouncedPreview],
+    () => (livePreview ? <DeliveryNotePreview data={livePreview} /> : null),
+    [livePreview],
   );
 
   useOrganizationChange({

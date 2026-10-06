@@ -2733,6 +2733,7 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
           hasDifferentShippingAddress:
             purchaseOrder.client.hasDifferentShippingAddress || false,
           shippingAddress: purchaseOrder.client.shippingAddress || null,
+          documentFields: purchaseOrder.client.documentFields || null,
           ...(purchaseOrder.client.type === "COMPANY"
             ? {
                 companyName: purchaseOrder.client.companyName,
