@@ -143,6 +143,11 @@ function PurchaseInvoicesContent() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isGmailDialogOpen, setIsGmailDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  // Version à jour de la facture ouverte (cache Apollo) : sans elle, le tiroir
+  // garde l'instantané pris au clic et ne voit pas un justificatif retiré.
+  const displayedInvoice = selectedInvoice
+    ? invoices.find((inv) => inv.id === selectedInvoice.id) || selectedInvoice
+    : null;
 
   // Handle OAuth callback query params
   useEffect(() => {
@@ -501,7 +506,7 @@ function PurchaseInvoicesContent() {
             setSelectedInvoice(null);
           }
         }}
-        invoice={selectedInvoice}
+        invoice={displayedInvoice}
         mode="view"
         onSaved={() => {
           setIsDetailDrawerOpen(false);
