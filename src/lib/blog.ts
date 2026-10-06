@@ -271,11 +271,23 @@ export function getRelatedPosts(slug: string, limit = 4): BlogPostMeta[] {
   const current = all.find((p) => p.slug === slug);
   if (!current) return all.filter((p) => p.slug !== slug).slice(0, limit);
 
+  // Proximité de sujet (mots du titre, du mot-clé et du slug, pondérés par
+  // leur rareté dans le corpus) : sans elle, les égalités se départageaient
+  // par date et le bloc renvoyait toujours vers les articles les plus récents,
+  // si bien que les plus anciens ne recevaient jamais ces liens.
+  const { terms, idf } = getTopicIndex(all);
+  const own = terms.get(current.slug) ?? new Set<string>();
   const score = (p: BlogPostMeta) => {
     let s = 0;
     if (current.sector && p.sector === current.sector) s += 2;
     if (p.category === current.category) s += 1;
-    return s;
+    let topic = 0;
+    for (const t of terms.get(p.slug) ?? []) {
+      if (own.has(t)) topic += idf.get(t) ?? 0;
+    }
+    // Un seul mot moyennement rare en commun (« taux », « crédit ») rapproche
+    // souvent des sujets sans rapport : en dessous du seuil, on l'ignore.
+    return topic >= TOPIC_MIN_SCORE ? s + topic : s;
   };
 
   return all
@@ -284,6 +296,51 @@ export function getRelatedPosts(slug: string, limit = 4): BlogPostMeta[] {
     .sort((a, b) => b.s - a.s || a.index - b.index)
     .slice(0, limit)
     .map(({ p }) => p);
+}
+
+const TOPIC_STOPWORDS = new Set(
+  [
+    "les des une pour avec sans par sur dans aux est son ses vos votre nos notre",
+    "que qui quoi quel quelle quels quelles quand elle comment faire tout tous",
+    "entre plus ce cela guide exemple modele conseils erreurs eviter definition",
+    "bonnes pratiques regles mentions obligatoire obligations change changer",
+    "role pro note compte taux conversion credit cout duree documents clients",
+    "calculer calcul statut statuts payant gratuit 2025 2026 2027 newbi",
+  ]
+    .join(" ")
+    .split(" "),
+);
+
+const TOPIC_MIN_SCORE = 4;
+
+function topicTerms(p: BlogPostMeta): Set<string> {
+  const text = `${p.title} ${p.keyword ?? ""} ${p.slug.replace(/-/g, " ")}`;
+  return new Set(
+    slugify(text)
+      .split("-")
+      .filter((w) => w.length > 2 && !TOPIC_STOPWORDS.has(w)),
+  );
+}
+
+let topicIndexCache: {
+  source: BlogPostMeta[];
+  terms: Map<string, Set<string>>;
+  idf: Map<string, number>;
+} | null = null;
+
+function getTopicIndex(all: BlogPostMeta[]) {
+  if (topicIndexCache?.source === all) return topicIndexCache;
+  const terms = new Map(all.map((p) => [p.slug, topicTerms(p)]));
+  const df = new Map<string, number>();
+  for (const set of terms.values()) {
+    for (const t of set) df.set(t, (df.get(t) ?? 0) + 1);
+  }
+  // Un mot présent partout (« facture ») ne dit rien du sujet : poids ~0.
+  const idf = new Map(
+    [...df].map(([t, n]) => [t, Math.log(all.length / n)] as [string, number]),
+  );
+  topicIndexCache = { source: all, terms, idf };
+  return topicIndexCache;
 }
 
 /** Retire le balisage Markdown/JSX léger pour obtenir du texte brut (schema.org). */
