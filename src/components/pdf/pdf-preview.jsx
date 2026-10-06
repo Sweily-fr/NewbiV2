@@ -111,12 +111,16 @@ export function PdfPageSkeleton() {
  * - fallback : nœud affiché si le chargement/rendu échoue
  * - placeholder : nœud affiché pendant le chargement (ex. rendu HTML du
  *   document pour un affichage instantané) ; spinner par défaut
+ * - pageClassName / pageGap : classe de chaque page (ex. ombre) et espace
+ *   entre les pages en pixels
  */
 export function PdfPreview({
   src,
   firstPageOnly = false,
   fallback = null,
   placeholder = null,
+  pageClassName = "",
+  pageGap = 8,
 }) {
   const containerRef = useRef(null);
   const [status, setStatus] = useState("loading"); // loading | ready | error
@@ -169,7 +173,8 @@ export function PdfPreview({
         canvas.style.width = "100%";
         canvas.style.height = "auto";
         canvas.style.display = "block";
-        if (!firstPageOnly && i > 1) canvas.style.marginTop = "8px";
+        if (pageClassName) canvas.className = pageClassName;
+        if (!firstPageOnly && i > 1) canvas.style.marginTop = `${pageGap}px`;
 
         await page.render({
           canvasContext: canvas.getContext("2d"),
@@ -236,7 +241,7 @@ export function PdfPreview({
       window.visualViewport?.removeEventListener("resize", scheduleRerender);
       pdfDoc?.destroy?.();
     };
-  }, [src, firstPageOnly]);
+  }, [src, firstPageOnly, pageClassName, pageGap]);
 
   if (status === "error") return fallback;
 

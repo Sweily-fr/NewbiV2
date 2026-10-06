@@ -22,6 +22,7 @@ import {
   getOrganizationAnnex,
   serializeOrganizationAnnex,
 } from "@/src/utils/document-annex";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 // Données de démonstration pour la preview
 const getDemoInvoiceData = (formData, organization, userName) => {
@@ -554,7 +555,10 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <UniversalPreviewPDF data={demoData} type="invoice" />
+              <>
+                <UniversalPreviewPDF data={demoData} type="invoice" />
+                <DocumentAnnexPreview annex={debouncedFormData?.annex} />
+              </>
             )}
           </div>
         </div>

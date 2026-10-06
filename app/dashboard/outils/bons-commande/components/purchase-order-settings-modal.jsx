@@ -19,6 +19,7 @@ import {
   getOrganizationAnnex,
   serializeOrganizationAnnex,
 } from "@/src/utils/document-annex";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 // Données de démonstration pour la preview des bons de commande
 const getDemoPurchaseOrderData = (formData, organization) => {
@@ -538,7 +539,10 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <UniversalPreviewPDF data={demoData} type="purchaseOrder" />
+              <>
+                <UniversalPreviewPDF data={demoData} type="purchaseOrder" />
+                <DocumentAnnexPreview annex={debouncedFormData?.annex} />
+              </>
             )}
           </div>
         </div>

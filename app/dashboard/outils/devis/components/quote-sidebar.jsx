@@ -77,6 +77,7 @@ import {
   useCancelSignature,
 } from "@/src/hooks/useESignature";
 import { buildLinkedInvoiceItems } from "@/src/utils/linked-invoice-items";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 export default function QuoteSidebar({
   isOpen,
@@ -439,8 +440,12 @@ export default function QuoteSidebar({
               />
             </div>
           ) : (
-            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
+            <div className="w-[210mm] max-w-full pointer-events-auto">
+              <div className="min-h-[calc(100vh-6rem)] bg-white">
+                <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
+              </div>
+              {/* Brouillon : pas encore de PDF archivé, l'annexe est montrée à part */}
+              <DocumentAnnexPreview annex={quote.annex} tone="dark" />
             </div>
           )}
         </div>

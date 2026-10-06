@@ -67,6 +67,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -719,7 +720,11 @@ export default function ModernPurchaseOrderEditor({
                 états de chargement transitoires (numéro, sauvegarde…) le
                 feraient disparaître puis réapparaître à chaque modification. */}
             {debouncedFormData ? (
-              <div ref={pdfRef}>{previewElement}</div>
+              <>
+                <div ref={pdfRef}>{previewElement}</div>
+                {/* Hors de pdfRef : les PDF navigateur ajoutent déjà l'annexe */}
+                <DocumentAnnexPreview annex={formData?.annex} />
+              </>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
