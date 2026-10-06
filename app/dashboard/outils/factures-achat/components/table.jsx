@@ -713,7 +713,11 @@ export default function PurchaseInvoiceTable({
         {activeTab !== "imported" && (
           <>
             <div className="hidden md:block min-w-0">
-              <div className="flex flex-col">
+              {/* min-w-fit : sur écran étroit le tableau déborde et défile
+                  horizontalement ; sans ça le bandeau d'en-tête garde la
+                  largeur de l'écran et les lignes passent sous sa partie
+                  sans fond (icônes Justificatif sur l'en-tête). */}
+              <div className="flex flex-col min-w-fit">
                 {/* Header sticky */}
                 <div className="sticky top-0 z-10 bg-background border-b border-[#eeeff1] dark:border-[#232323]">
                   <table className="w-full table-fixed">
