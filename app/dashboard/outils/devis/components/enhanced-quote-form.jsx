@@ -48,7 +48,7 @@ import {
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
 import { ProductThumbnail } from "@/src/components/product-thumbnail";
-import { documentImageUrl } from "@/src/utils/item-image";
+import { productItemImage } from "@/src/utils/item-image";
 import ClientSelector from "./quote-form-sections/client-selector";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -128,7 +128,7 @@ function ProductSearchCombobox({
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité(s)",
         linkedProducts: selectedProduct.linkedProducts,
-        imageUrl: documentImageUrl(selectedProduct),
+        ...productItemImage(selectedProduct),
       });
     }
     setValue("");

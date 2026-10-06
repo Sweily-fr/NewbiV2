@@ -91,6 +91,7 @@ export const DELIVERY_NOTE_FRAGMENT = gql`
       reference
       productId
       imageUrl
+      showImage
       quantity
       orderedQuantity
       deliveredQuantity
@@ -163,6 +164,7 @@ export const DELIVERY_NOTE_LIST_FRAGMENT = gql`
       reference
       productId
       imageUrl
+      showImage
       quantity
       orderedQuantity
       deliveredQuantity

@@ -90,7 +90,7 @@ import { fr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { ProductThumbnail } from "@/src/components/product-thumbnail";
-import { documentImageUrl } from "@/src/utils/item-image";
+import { productItemImage } from "@/src/utils/item-image";
 
 import ItemsSection from "./invoices-form-sections/ItemsSection";
 import DiscountsAndTotalsSection from "./invoices-form-sections/DiscountsAndTotalsSection";
@@ -191,7 +191,7 @@ function ProductSearchCombobox({
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
         linkedProducts: selectedProduct.linkedProducts,
-        imageUrl: documentImageUrl(selectedProduct),
+        ...productItemImage(selectedProduct),
       });
     }
     setValue("");

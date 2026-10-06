@@ -80,6 +80,7 @@ async function handler(request, { params }) {
       details: item.details,
       reference: item.reference,
       imageUrl: item.imageUrl,
+      showImage: item.showImage,
       quantity: item.quantity,
       orderedQuantity: item.orderedQuantity,
       deliveredQuantity: item.deliveredQuantity,

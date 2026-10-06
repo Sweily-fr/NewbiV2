@@ -15,8 +15,9 @@ const ACCEPTED_EXTENSIONS = /\.(jpe?g|png|webp|hei[cf])$/i;
 
 /**
  * Image facultative d'un produit : envoyée sur R2 dès qu'elle est choisie,
- * l'URL est enregistrée avec la fiche. Elle s'affiche ensuite sur les lignes
- * des devis, factures, bons de commande, avoirs et bons de livraison.
+ * l'URL est enregistrée avec la fiche. Elle suit ensuite les lignes des devis,
+ * factures, bons de commande, avoirs et bons de livraison, affichée ou masquée
+ * par défaut selon « Afficher sur les documents ».
  */
 export default function ProductImageField({
   value,
@@ -177,8 +178,9 @@ export default function ProductImageField({
             <span className="block text-sm">Afficher sur les documents</span>
             <span className="block text-xs text-muted-foreground">
               {showOnDocuments
-                ? "Imprimée sur les devis, factures, bons de commande, avoirs et bons de livraison."
-                : "Visible uniquement dans le catalogue."}
+                ? "Imprimée par défaut sur les devis, factures, bons de commande, avoirs et bons de livraison."
+                : "Masquée par défaut sur les documents."}{" "}
+              Modifiable ligne par ligne dans chaque document.
             </span>
           </span>
         </label>

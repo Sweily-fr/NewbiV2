@@ -1,4 +1,4 @@
-import { documentImageUrl } from "./item-image";
+import { productItemImage } from "./item-image";
 
 /**
  * Produits liés du catalogue.
@@ -148,7 +148,7 @@ export function buildLinkedItems(product, { mainQuantity = 1, parentKey } = {}) 
             : 20,
         unit: target.unit || "unité",
         productId: target.id,
-        ...(documentImageUrl(target) && { imageUrl: documentImageUrl(target) }),
+        ...productItemImage(target),
         linkKey: newLinkKey(),
         linkedFromKey: parentKey,
         ...rule,

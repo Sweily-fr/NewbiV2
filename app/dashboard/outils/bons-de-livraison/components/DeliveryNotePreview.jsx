@@ -9,6 +9,7 @@ import {
 } from "@/src/utils/document-suggestions";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { ItemCellWithImage } from "@/src/components/pdf/PdfItemImage";
+import { visibleItemImage } from "@/src/utils/item-image";
 import { DELIVERY_NOTE_STATUS_LABELS } from "@/src/graphql/deliveryNoteQueries";
 
 /**
@@ -563,7 +564,7 @@ const DeliveryNotePreview = ({
                             overflowWrap: "break-word",
                           }}
                         >
-                          <ItemCellWithImage imageUrl={item.imageUrl}>
+                          <ItemCellWithImage imageUrl={visibleItemImage(item)}>
                             <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
                               {item.description || ""}
                             </div>
