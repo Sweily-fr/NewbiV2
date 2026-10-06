@@ -1437,7 +1437,7 @@ export function PurchaseInvoiceDetailDrawer({
                           handleChange("amountHT", e.target.value)
                         }
                         placeholder="0.00"
-                        className="w-52 h-8 text-sm text-right"
+                        className="w-52 h-8 text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                     <div className="flex items-center justify-between">

@@ -28,6 +28,10 @@ export const VAT_FIELD_WIDTH = "w-52";
 // corbeille. Les totaux reprennent la même grille, sous leur colonne.
 const LINE_GRID =
   "grid grid-cols-[13rem_minmax(0,1fr)_minmax(0,1fr)_2rem] items-center gap-2";
+// Montants sans flèches d'incrément : Chrome leur réserve ~14 px à droite,
+// le chiffre ne s'alignait plus sur les en-têtes et les totaux.
+export const AMOUNT_INPUT =
+  "w-full h-8 text-sm text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 const RATE_TRIGGER =
   "w-full h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block";
 
@@ -82,7 +86,7 @@ export function VatBreakdownEditor({
       onChange={(e) => update(index, field, e.target.value)}
       placeholder="0.00"
       aria-label={`${label} à ${formatVatRate(line.rate)}`}
-      className="w-full h-8 text-sm text-right"
+      className={AMOUNT_INPUT}
     />
   );
   const removeButton = (index, size = "h-8 w-8") => (
