@@ -8,6 +8,10 @@ import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "./UniversalPreviewPDF";
 import { validateFacturXData } from "@/src/utils/facturx-validation";
+import {
+  appendAnnexInBrowser,
+  uint8ArrayToBase64,
+} from "@/src/utils/document-annex";
 
 // Échelle de capture du DOM : ×3 ≈ 288 DPI sur une page A4. À 2 le texte
 // rasterisé (~192 DPI) est visiblement flou sur écran Retina et à l'impression.
@@ -1367,6 +1371,15 @@ const UniversalPDFDownloaderWithFacturX = ({
 
       console.log(`\n💾 Fichier: ${fileName}`);
 
+      // Annexe PDF du document (ex : CGV) : ses pages vont à la fin, avant
+      // l'intégration Factur-X. null = pas d'annexe, jsPDF reste la source.
+      const annexedBytes = data?.annex
+        ? await appendAnnexInBrowser(
+            new Uint8Array(pdf.output("arraybuffer")),
+            data.annex,
+          )
+        : null;
+
       // Intégration Factur-X
       if (canUseFacturX) {
         console.log("\n🔧 Tentative intégration Factur-X...");
@@ -1374,7 +1387,9 @@ const UniversalPDFDownloaderWithFacturX = ({
 
         if (validation.isValid) {
           try {
-            const pdfBase64 = btoa(pdf.output());
+            const pdfBase64 = annexedBytes
+              ? uint8ArrayToBase64(annexedBytes)
+              : btoa(pdf.output());
             const { generateFacturXXML } =
               await import("@/src/utils/facturx-generator");
             const xmlString = generateFacturXXML(data, type, {
@@ -1436,7 +1451,14 @@ const UniversalPDFDownloaderWithFacturX = ({
       }
 
       // Téléchargement PDF standard
-      pdf.save(fileName);
+      if (annexedBytes) {
+        triggerBlobDownload(
+          new Blob([annexedBytes], { type: "application/pdf" }),
+          fileName,
+        );
+      } else {
+        pdf.save(fileName);
+      }
       console.log("✅ PDF standard téléchargé");
       toast.success("PDF téléchargé avec succès", {
         description: `${pages.length} page(s) générée(s)`,

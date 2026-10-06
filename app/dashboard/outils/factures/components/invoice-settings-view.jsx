@@ -39,6 +39,7 @@ import {
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 import LegalInfoSettingsSection from "@/src/components/settings/legal-info-settings-section";
+import DocumentAnnexField from "@/src/components/documents/document-annex-field";
 import { Switch } from "@/src/components/ui/switch";
 
 // Fonction de validation de l'IBAN
@@ -323,6 +324,7 @@ export default function InvoiceSettingsView({
         headerNotes: data.headerNotes,
         footerNotes: data.footerNotes,
         termsAndConditions: data.termsAndConditions,
+        annex: data.annex || null,
         showBankDetails: data.showBankDetails,
         clientPositionRight: data.clientPositionRight,
         // Les informations de l'entreprise ne sont pas suivies ici : elles
@@ -349,6 +351,8 @@ export default function InvoiceSettingsView({
       data.headerNotes !== initialValuesRef.current.headerNotes ||
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
+      (data.annex?.key || null) !==
+        (initialValuesRef.current.annex?.key || null) ||
       data.showBankDetails !== initialValuesRef.current.showBankDetails ||
       data.clientPositionRight !== initialValuesRef.current.clientPositionRight;
 
@@ -406,6 +410,7 @@ export default function InvoiceSettingsView({
         "termsAndConditions",
         initialValuesRef.current.termsAndConditions || "",
       );
+      setValue("annex", initialValuesRef.current.annex || null);
       setValue(
         "showBankDetails",
         initialValuesRef.current.showBankDetails || false,
@@ -434,6 +439,7 @@ export default function InvoiceSettingsView({
       headerNotes: data.headerNotes,
       footerNotes: data.footerNotes,
       termsAndConditions: data.termsAndConditions,
+      annex: data.annex || null,
       showBankDetails: data.showBankDetails,
       clientPositionRight: data.clientPositionRight,
     };
@@ -1049,6 +1055,14 @@ export default function InvoiceSettingsView({
                   )}
                 </div>
               </div>
+
+              {/* Annexe PDF ajoutée à la fin du document */}
+              <DocumentAnnexField
+                documentType="invoice"
+                ofDocumentLabel="de la facture"
+                canEdit={canEdit}
+              />
+
               {/* Notes de bas de page */}
               <div>
                 <div className="flex items-center justify-between mb-2">

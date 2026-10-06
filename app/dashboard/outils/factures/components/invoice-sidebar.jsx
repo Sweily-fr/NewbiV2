@@ -99,6 +99,7 @@ import {
 import { motion } from "framer-motion";
 import { ReceiptItemIcon } from "@/src/components/icons";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 export default function InvoiceSidebar({
   isOpen,
@@ -691,13 +692,17 @@ export default function InvoiceSidebar({
               />
             </div>
           ) : (
-            <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white pointer-events-auto">
-              <UniversalPreviewPDF
-                data={invoice}
-                type="invoice"
-                previousSituationInvoices={previousSituationInvoices}
-                recalcDraftDates
-              />
+            <div className="w-[210mm] max-w-full pointer-events-auto">
+              <div className="min-h-[calc(100vh-6rem)] bg-white">
+                <UniversalPreviewPDF
+                  data={invoice}
+                  type="invoice"
+                  previousSituationInvoices={previousSituationInvoices}
+                  recalcDraftDates
+                />
+              </div>
+              {/* Brouillon : pas encore de PDF archivé, l'annexe est montrée à part */}
+              <DocumentAnnexPreview annex={invoice.annex} tone="dark" />
             </div>
           )}
         </div>

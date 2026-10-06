@@ -44,6 +44,7 @@ import { Switch } from "@/src/components/ui/switch";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 import LegalInfoSettingsSection from "@/src/components/settings/legal-info-settings-section";
+import DocumentAnnexField from "@/src/components/documents/document-annex-field";
 
 export default function QuoteSettingsView({
   canEdit,
@@ -361,6 +362,7 @@ export default function QuoteSettingsView({
         headerNotes: data.headerNotes,
         footerNotes: data.footerNotes,
         termsAndConditions: data.termsAndConditions,
+        annex: data.annex || null,
         clientPositionRight: data.clientPositionRight,
         showBankDetails: data.showBankDetails,
         // Les informations de l'entreprise ne sont pas suivies ici : elles
@@ -387,6 +389,8 @@ export default function QuoteSettingsView({
       data.headerNotes !== initialValuesRef.current.headerNotes ||
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
+      (data.annex?.key || null) !==
+        (initialValuesRef.current.annex?.key || null) ||
       data.clientPositionRight !==
         initialValuesRef.current.clientPositionRight ||
       data.showBankDetails !== initialValuesRef.current.showBankDetails;
@@ -445,6 +449,7 @@ export default function QuoteSettingsView({
         "termsAndConditions",
         initialValuesRef.current.termsAndConditions || "",
       );
+      setValue("annex", initialValuesRef.current.annex || null);
       setValue(
         "clientPositionRight",
         initialValuesRef.current.clientPositionRight || false,
@@ -473,6 +478,7 @@ export default function QuoteSettingsView({
       headerNotes: data.headerNotes,
       footerNotes: data.footerNotes,
       termsAndConditions: data.termsAndConditions,
+      annex: data.annex || null,
       clientPositionRight: data.clientPositionRight,
       showBankDetails: data.showBankDetails,
     };
@@ -1018,6 +1024,13 @@ export default function QuoteSettingsView({
                   )}
                 </div>
               </div>
+
+              {/* Annexe PDF ajoutée à la fin du document */}
+              <DocumentAnnexField
+                documentType={isPurchaseOrder ? "purchaseOrder" : "quote"}
+                ofDocumentLabel={isPurchaseOrder ? "du bon de commande" : "du devis"}
+                canEdit={canEdit}
+              />
 
               {/* Notes de bas de page */}
               <div>

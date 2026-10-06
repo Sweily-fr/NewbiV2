@@ -72,6 +72,8 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import { getOrganizationAnnex } from "@/src/utils/document-annex";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -390,6 +392,7 @@ export default function ModernQuoteEditor({
       "",
     termsAndConditionsLink: "",
     termsAndConditionsLinkTitle: "",
+    annex: getOrganizationAnnex(organization, "quote"),
     customFields: [],
     discount: 0,
     discountType: "PERCENTAGE",
@@ -728,9 +731,13 @@ export default function ModernQuoteEditor({
                 sert qu'au tout premier chargement). Même schéma que l'éditeur
                 bons de commande. */}
             {debouncedFormData ? (
-              <div ref={pdfRef}>
-                <UniversalPreviewPDF data={previewFormData} type="quote" />
-              </div>
+              <>
+                <div ref={pdfRef}>
+                  <UniversalPreviewPDF data={previewFormData} type="quote" />
+                </div>
+                {/* Hors de pdfRef : les PDF navigateur ajoutent déjà l'annexe */}
+                <DocumentAnnexPreview annex={formData?.annex} />
+              </>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
@@ -816,6 +823,7 @@ export default function ModernQuoteEditor({
             )
           }
           pdfRef={pdfRef}
+          annex={formData?.annex}
         />
       )}
 

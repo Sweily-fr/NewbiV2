@@ -15,6 +15,11 @@ import { generatePurchaseOrderPrefix } from "@/src/utils/quoteUtils";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { usePurchaseOrderNumber } from "../hooks/use-purchase-order-number";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import {
+  getOrganizationAnnex,
+  serializeOrganizationAnnex,
+} from "@/src/utils/document-annex";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 // Données de démonstration pour la preview des bons de commande
 const getDemoPurchaseOrderData = (formData, organization) => {
@@ -251,6 +256,8 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
               org?.purchaseOrderTermsAndConditions ||
               org?.documentTermsAndConditions ||
               "",
+            // Annexe PDF par défaut (JSON dans l'organisation)
+            annex: getOrganizationAnnex(org, "purchaseOrder"),
             showBankDetails: org?.showBankDetails || false,
             primaryColor:
               org?.purchaseOrderHeaderBgColor ||
@@ -316,6 +323,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
       headerNotes: "",
       footerNotes: "",
       termsAndConditions: "",
+      annex: null,
       showBankDetails: false,
       primaryColor: "#5b4fff",
       appearance: {
@@ -412,6 +420,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         purchaseOrderHeaderNotes: formValues.headerNotes,
         purchaseOrderFooterNotes: formValues.footerNotes,
         purchaseOrderTermsAndConditions: formValues.termsAndConditions,
+        purchaseOrderAnnex: serializeOrganizationAnnex(formValues.annex),
 
         // Couleurs spécifiques aux bons de commande
         purchaseOrderHeaderBgColor:
@@ -530,7 +539,10 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <UniversalPreviewPDF data={demoData} type="purchaseOrder" />
+              <>
+                <UniversalPreviewPDF data={demoData} type="purchaseOrder" />
+                <DocumentAnnexPreview annex={debouncedFormData?.annex} />
+              </>
             )}
           </div>
         </div>

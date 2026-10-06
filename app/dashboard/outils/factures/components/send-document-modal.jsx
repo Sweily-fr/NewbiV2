@@ -37,6 +37,10 @@ import {
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { generatePDFFromElement } from "@/src/utils/generatePDF";
 import { toast } from "sonner";
+import {
+  appendAnnexInBrowser,
+  uint8ArrayToBase64,
+} from "@/src/utils/document-annex";
 
 const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la", title: "Envoyer la facture" },
@@ -143,6 +147,7 @@ export function SendDocumentModal({
   onSent,
   onClose, // Callback pour fermer l'éditeur de document
   pdfRef, // Référence au composant PDF pour génération côté client
+  annex, // Annexe PDF du document, ajoutée à la fin du PDF généré ici
 }) {
   const [isSending, setIsSending] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -211,12 +216,11 @@ export function SendDocumentModal({
       let pdfBase64 = null;
       if (pdfRef?.current) {
         try {
-          const pdfBuffer = await generatePDFFromElement(pdfRef.current);
-          // Convertir Uint8Array en base64
-          const binaryString = Array.from(pdfBuffer)
-            .map((byte) => String.fromCharCode(byte))
-            .join("");
-          pdfBase64 = btoa(binaryString);
+          const pdfBuffer = await appendAnnexInBrowser(
+            await generatePDFFromElement(pdfRef.current),
+            annex,
+          );
+          pdfBase64 = uint8ArrayToBase64(new Uint8Array(pdfBuffer));
         } catch (pdfError) {
           console.warn("Erreur génération PDF côté client:", pdfError);
           // Continuer sans PDF - le backend essaiera de le générer

@@ -84,6 +84,8 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import { getOrganizationAnnex } from "@/src/utils/document-annex";
+import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -452,6 +454,7 @@ export default function ModernInvoiceEditor({
       "",
     termsAndConditionsLink: "",
     termsAndConditionsLinkTitle: "",
+    annex: getOrganizationAnnex(organization, "invoice"),
     customFields: [],
     discount: 0,
     discountType: "PERCENTAGE",
@@ -809,13 +812,17 @@ export default function ModernInvoiceEditor({
                 par le loader au changement de préfixe (refetch du numéro).
                 Même schéma que l'éditeur bons de commande. */}
             {debouncedFormData ? (
-              <div ref={pdfRef}>
-                <UniversalPreviewPDF
-                  data={previewFormData}
-                  type="invoice"
-                  previousSituationInvoices={previousSituationInvoices}
-                />
-              </div>
+              <>
+                <div ref={pdfRef}>
+                  <UniversalPreviewPDF
+                    data={previewFormData}
+                    type="invoice"
+                    previousSituationInvoices={previousSituationInvoices}
+                  />
+                </div>
+                {/* Hors de pdfRef : les PDF navigateur ajoutent déjà l'annexe */}
+                <DocumentAnnexPreview annex={formData?.annex} />
+              </>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
@@ -969,6 +976,7 @@ export default function ModernInvoiceEditor({
             )
           }
           pdfRef={pdfRef}
+          annex={formData?.annex}
         />
       )}
     </div>

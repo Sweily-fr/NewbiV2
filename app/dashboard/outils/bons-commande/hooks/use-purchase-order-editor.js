@@ -24,6 +24,11 @@ import { usePurchaseOrderNumber } from "./use-purchase-order-number";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
+import {
+  getOrganizationAnnex,
+  normalizeAnnex,
+  toAnnexInput,
+} from "@/src/utils/document-annex";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1156,6 +1161,10 @@ export function usePurchaseOrderEditor({
           "",
         { shouldDirty: false },
       );
+      // Annexe PDF par défaut des bons de commande
+      setValue("annex", getOrganizationAnnex(organization, "purchaseOrder"), {
+        shouldDirty: false,
+      });
 
       // Charger showBankDetails depuis l'organisation
       setValue("showBankDetails", organization.showBankDetails || false, {
@@ -2533,6 +2542,9 @@ function getInitialFormData(mode, initialData, session, organization) {
       organization?.documentTermsAndConditions ||
       "",
 
+    // Annexe PDF ajoutée à la fin du document
+    annex: getOrganizationAnnex(organization, "purchaseOrder"),
+
     // Champs personnalisés
     customFields: [],
 
@@ -2849,6 +2861,7 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
     // L'API expose `termsAndConditions` (pas de champ `terms`) : lire `terms`
     // rechargeait des CGV vides, puis le réenregistrement les effaçait.
     termsAndConditions: purchaseOrder.termsAndConditions || "",
+    annex: normalizeAnnex(purchaseOrder.annex),
 
     customFields:
       purchaseOrder.customFields?.map((field) => ({
@@ -3160,6 +3173,7 @@ function transformFormDataToInput(
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
     termsAndConditions: formData.termsAndConditions || "",
+    annex: toAnnexInput(formData.annex),
     customFields:
       formData.customFields?.map((field) => ({
         key: field.name || "",

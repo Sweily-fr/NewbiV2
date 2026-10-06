@@ -27,6 +27,11 @@ import {
 } from "@/src/lib/organization-client";
 import { useArchiveInvoicePdf } from "@/src/hooks/useArchiveInvoicePdf";
 import posthog from "posthog-js";
+import {
+  getOrganizationAnnex,
+  normalizeAnnex,
+  toAnnexInput,
+} from "@/src/utils/document-annex";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1310,6 +1315,8 @@ export function useInvoiceEditor({
           organization.documentTermsAndConditions ||
           "",
       );
+      // Annexe PDF par défaut des factures
+      setValue("annex", getOrganizationAnnex(organization, "invoice"));
       setValue("showBankDetails", organization.showBankDetails || false);
       // Nom du bénéficiaire (pour auto-entrepreneurs)
       setValue(
@@ -2904,6 +2911,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     headerNotes: "",
     footerNotes: "",
     termsAndConditions: "",
+    annex: null,
     customFields: [],
     paymentMethod: null,
     isDepositInvoice: false,
@@ -2982,6 +2990,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     if (orgTermsAndConditions) {
       defaultData.termsAndConditions = orgTermsAndConditions;
     }
+    defaultData.annex = getOrganizationAnnex(organization, "invoice");
   }
 
   if (initialData) {
@@ -3133,6 +3142,7 @@ function transformInvoiceToFormData(invoice) {
     headerNotes: invoice.headerNotes || "",
     footerNotes: invoice.footerNotes || "",
     termsAndConditions: invoice.termsAndConditions || "",
+    annex: normalizeAnnex(invoice.annex),
     customFields:
       invoice.customFields?.map((field) => ({
         name: field.key,
@@ -3396,6 +3406,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
     headerNotes: formData.headerNotes || "",
     footerNotes: formData.footerNotes || "",
     termsAndConditions: formData.termsAndConditions || "",
+    annex: toAnnexInput(formData.annex),
     customFields:
       formData.customFields?.map((field) => ({
         key: field.name || field.key,
