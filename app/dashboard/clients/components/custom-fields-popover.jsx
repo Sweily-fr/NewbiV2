@@ -213,7 +213,7 @@ function FieldForm({ field, onSave, onCancel, isEditing = false }) {
     fieldType: field?.fieldType || "TEXT",
     options: field?.options || [],
     isRequired: field?.isRequired || false,
-    showOnDocuments: field?.showOnDocuments || false,
+    showOnDocuments: field?.showOnDocuments ?? true,
   });
 
   const needsOptions = ["SELECT", "MULTISELECT"].includes(formData.fieldType);

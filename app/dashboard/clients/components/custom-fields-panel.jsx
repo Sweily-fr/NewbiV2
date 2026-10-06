@@ -159,7 +159,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
     description: "",
     placeholder: "",
     isRequired: false,
-    showOnDocuments: false,
+    showOnDocuments: true,
     options: [],
   });
 
@@ -171,7 +171,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
         description: field?.description || "",
         placeholder: field?.placeholder || "",
         isRequired: field?.isRequired ?? false,
-        showOnDocuments: field?.showOnDocuments ?? false,
+        showOnDocuments: field?.showOnDocuments ?? true,
         options:
           field?.options?.map((o) => ({
             label: o.label,
