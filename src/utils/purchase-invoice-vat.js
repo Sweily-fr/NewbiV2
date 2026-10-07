@@ -201,3 +201,16 @@ export function vatInputFromForm(form) {
     vatBreakdown: [],
   };
 }
+
+/**
+ * TVA d'une facture par taux, pour l'affichage : son détail s'il en a un,
+ * sinon une ligne à son taux unique (vide si la TVA n'est pas renseignée).
+ */
+export function vatLinesOf(invoice) {
+  const lines = invoiceVatLines(invoice);
+  if (lines.length) return lines;
+  const rate = toNumber(invoice?.vatRate);
+  const tva = toNumber(invoice?.amountTVA);
+  if (rate === null || tva === null) return [];
+  return [{ rate, baseHT: toNumber(invoice.amountHT) ?? 0, amountTVA: tva }];
+}

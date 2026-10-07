@@ -2,6 +2,12 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { Input } from "@/src/components/ui/input";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
 import { formatCurrencyAmount } from "@/src/lib/format-currency";
@@ -224,4 +230,35 @@ export function VatBreakdownView({ lines, currency }) {
       </span>
     </div>
   ));
+}
+
+/**
+ * Taux d'une facture sous son montant de TVA (tableau) : « 20 % » ou
+ * « 20 % · 10 % » ; à plusieurs taux, l'infobulle détaille base HT et TVA.
+ */
+export function VatRatesSummary({ lines, currency }) {
+  if (!lines?.length) return null;
+  const rates = (
+    <span className="block truncate text-xs text-muted-foreground">
+      {lines.map((l) => formatVatRate(l.rate)).join(" · ")}
+    </span>
+  );
+  if (lines.length < 2) return rates;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{rates}</TooltipTrigger>
+        <TooltipContent>
+          <div className="font-medium">TVA par taux</div>
+          {lines.map((l) => (
+            <div key={l.rate} className="text-xs text-muted-foreground">
+              {formatVatRate(l.rate)} :{" "}
+              {formatCurrencyAmount(l.amountTVA, currency)} sur{" "}
+              {formatCurrencyAmount(l.baseHT, currency)} HT
+            </div>
+          ))}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
