@@ -281,6 +281,13 @@ export function getErrorMessage(error, context = "generic") {
         // Le backend renvoie déjà un message explicite
         // (ex: "Ce client ne peut pas être supprimé car il est utilisé dans des factures")
         return errorMessage || ERROR_MESSAGES.GENERIC.OPERATION_FAILED;
+      case "GRAPHQL_VALIDATION_FAILED":
+      case "GRAPHQL_PARSE_FAILED":
+        // Requête refusée par le schéma (front en avance sur l'API) : erreur
+        // technique, rien à corriger par l'utilisateur. Sans ce cas, le nom du
+        // champ tombait dans les motifs ci-dessous (« vatBreakdown » affichait
+        // « Le format du numéro de TVA n'est pas valide », 07/10/2026).
+        return ERROR_MESSAGES.GENERIC.SERVER_ERROR;
     }
   }
 
