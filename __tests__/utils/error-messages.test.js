@@ -61,6 +61,15 @@ describe("getErrorMessage", () => {
     );
   });
 
+  it("ne prend pas une requête refusée par le schéma pour une erreur de saisie", () => {
+    const error = {
+      message:
+        'Cannot query field "vatBreakdown" on type "ReceiptInvoiceProposal".',
+      code: "GRAPHQL_VALIDATION_FAILED",
+    };
+    expect(getErrorMessage(error)).toBe(ERROR_MESSAGES.GENERIC.SERVER_ERROR);
+  });
+
   it("relaie tel quel les messages de numérotation, numéro intercalé compris", () => {
     const messages = [
       'Le numéro de bon de commande "0007" est déjà utilisé',
