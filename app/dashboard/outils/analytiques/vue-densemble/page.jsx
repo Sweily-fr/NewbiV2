@@ -6,6 +6,7 @@ import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { usePurchaseInvoiceStats } from "@/src/hooks/usePurchaseInvoices";
+import { useFinancialAnalytics } from "@/src/hooks/useFinancialAnalytics";
 import {
   getIncomeChartConfig,
   getExpenseChartConfig,
@@ -36,21 +37,36 @@ const CA_PERIOD_OPTIONS = [
   { value: "year", label: "Annuel" },
 ];
 
+function formatDate(date) {
+  const y = String(date.getFullYear()).padStart(4, "0");
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+// Bornes au format de la page Analytiques (« Mois en cours », « Année en
+// cours »…) : même période = même CA sur les deux pages.
 function getCaPeriodRange(period) {
   const now = new Date();
   switch (period) {
     case "month":
       return {
-        start: new Date(now.getFullYear(), now.getMonth(), 1),
-        end: now,
+        startDate: formatDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+        endDate: formatDate(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
       };
     case "quarter": {
       const qm = Math.floor(now.getMonth() / 3) * 3;
-      return { start: new Date(now.getFullYear(), qm, 1), end: now };
+      return {
+        startDate: formatDate(new Date(now.getFullYear(), qm, 1)),
+        endDate: formatDate(new Date(now.getFullYear(), qm + 3, 0)),
+      };
     }
     case "year":
     default:
-      return { start: new Date(now.getFullYear(), 0, 1), end: now };
+      return {
+        startDate: formatDate(new Date(now.getFullYear(), 0, 1)),
+        endDate: formatDate(new Date(now.getFullYear(), 11, 31)),
+      };
   }
 }
 
@@ -136,18 +152,14 @@ export default function VueDensemblePage() {
   const expenseChartConfig = getExpenseChartConfig(remap);
   const cardsLoading = bankLoading;
 
-  // T1 — CA HT calculé sur les factures payées dont paymentDate est dans la période
-  const caForPeriod = useMemo(() => {
-    const { start, end } = getCaPeriodRange(caPeriod);
-    return (invoices || [])
-      .filter((i) => i.status === "COMPLETED")
-      .filter((i) => {
-        const d = i.paymentDate ? new Date(i.paymentDate) : null;
-        if (!d || isNaN(d.getTime())) return false;
-        return d >= start && d <= end;
-      })
-      .reduce((s, i) => s + (i.finalTotalHT || 0), 0);
-  }, [invoices, caPeriod]);
+  // T1 — CA HT encaissé sur la période, calculé côté API : c'est le « CA HT
+  // net » de la page Analytiques (factures Newbi payées + factures importées,
+  // moins les avoirs sur factures encaissées). Le calcul local ne voyait que
+  // les factures Newbi, et seulement les 50 dernières chargées par la liste.
+  const caPeriodRange = useMemo(() => getCaPeriodRange(caPeriod), [caPeriod]);
+  const { analyticsData: caAnalytics, loading: caLoading } =
+    useFinancialAnalytics(caPeriodRange.startDate, caPeriodRange.endDate);
+  const caForPeriod = caAnalytics?.kpi?.netRevenueHT ?? 0;
 
   // T1 — libellé concret de la période affichée (recalculé à chaque changement de filtre)
   const caPeriodLabel = useMemo(() => getCaPeriodLabel(caPeriod), [caPeriod]);
@@ -238,7 +250,9 @@ export default function VueDensemblePage() {
                   </Select>
                 </div>
                 <span className="text-xl font-medium">
-                  {formatCurrency(caForPeriod)}{" "}
+                  {caLoading && !caAnalytics
+                    ? "-"
+                    : formatCurrency(caForPeriod)}{" "}
                   <span className="text-xs font-normal text-muted-foreground">
                     HT
                   </span>
