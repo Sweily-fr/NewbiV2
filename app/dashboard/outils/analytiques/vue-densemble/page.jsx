@@ -156,9 +156,15 @@ export default function VueDensemblePage() {
   // net » de la page Analytiques (factures Newbi payées + factures importées,
   // moins les avoirs sur factures encaissées). Le calcul local ne voyait que
   // les factures Newbi, et seulement les 50 dernières chargées par la liste.
+  // cache-and-network : le cache Apollo (cache-first par défaut) gardait le
+  // montant du premier affichage pendant toute la session, donc une facture
+  // payée ou importée ensuite n'apparaissait qu'après un rechargement complet.
   const caPeriodRange = useMemo(() => getCaPeriodRange(caPeriod), [caPeriod]);
-  const { analyticsData: caAnalytics, loading: caLoading } =
-    useFinancialAnalytics(caPeriodRange.startDate, caPeriodRange.endDate);
+  const { analyticsData: caAnalytics } = useFinancialAnalytics(
+    caPeriodRange.startDate,
+    caPeriodRange.endDate,
+    { fetchPolicy: "cache-and-network" },
+  );
   const caForPeriod = caAnalytics?.kpi?.netRevenueHT ?? 0;
 
   // T1 — libellé concret de la période affichée (recalculé à chaque changement de filtre)
@@ -250,9 +256,8 @@ export default function VueDensemblePage() {
                   </Select>
                 </div>
                 <span className="text-xl font-medium">
-                  {caLoading && !caAnalytics
-                    ? "-"
-                    : formatCurrency(caForPeriod)}{" "}
+                  {/* Sans réponse (chargement ou erreur) : pas de faux 0 € */}
+                  {!caAnalytics ? "-" : formatCurrency(caForPeriod)}{" "}
                   <span className="text-xs font-normal text-muted-foreground">
                     HT
                   </span>
