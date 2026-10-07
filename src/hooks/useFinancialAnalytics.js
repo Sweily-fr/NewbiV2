@@ -96,6 +96,9 @@ export const useFinancialAnalytics = (startDate, endDate, options = {}) => {
       clientIds: options.clientIds?.length > 0 ? options.clientIds : undefined,
       status: options.status?.length > 0 ? options.status : undefined,
     },
+    // Défaut du client = cache-first ; un appelant peut demander un
+    // rafraîchissement à chaque montage (ex. carte CA de Vue d'ensemble).
+    fetchPolicy: options.fetchPolicy,
     skip: !workspaceId || !startDate || !endDate,
   });
 
