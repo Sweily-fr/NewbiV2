@@ -72,7 +72,7 @@ const TEXT = "text-[15px] leading-relaxed text-gray-700";
 
 export default function NewGovernanceSection() {
   return (
-    <section className="relative overflow-hidden px-0 py-14 md:py-20">
+    <section className="relative overflow-hidden px-5 py-14 md:py-20">
       <style>{`
         @keyframes growBar {
           0%, 5% { width: 0%; }
@@ -138,7 +138,7 @@ export default function NewGovernanceSection() {
           78%, 100% { transform: translateY(200px); }
         }
       `}</style>
-      <div className="max-w-7xl mx-auto px-5">
+      <div className="max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
           Garde le contrôle de ton activité
         </h2>

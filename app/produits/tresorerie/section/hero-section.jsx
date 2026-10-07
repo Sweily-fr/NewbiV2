@@ -4,49 +4,108 @@ import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
 
+// Portraits affichés sous les CTA : les mêmes clients que sur la LP home.
+// `position` recadre chaque photo sur le visage.
+const PROOF_AVATARS = [
+  {
+    src: "/lp/avis/maeva.jpg",
+    alt: "Maëva, graphiste, cliente Newbi",
+    position: "50% 18%",
+  },
+  {
+    src: "/lp/avis/pedro-avatar.jpg",
+    alt: "Pedro, commerçant, client Newbi",
+    position: "50% 35%",
+  },
+  {
+    src: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    alt: "Mustafa, artisan du bâtiment, client Newbi",
+    position: "50% 20%",
+  },
+  {
+    src: "/lp/about/about-11.jpeg",
+    alt: "Une cliente Newbi",
+    position: "50% 25%",
+  },
+];
+
 export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="lg:min-h-screen flex items-start lg:items-center bg-white pt-44 sm:pt-48 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
-          <div className="mx-auto max-w-6xl w-full">
+        <section className="lg:min-h-screen flex items-start lg:items-center bg-white pt-44 sm:pt-48 lg:pt-24 mb-6 lg:mb-20 px-5">
+          {/* Même gabarit que les sections du reste de la page : 7xl plein,
+              padding latéral porté par la section. */}
+          <div className="mx-auto max-w-7xl w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
-                <h1 className="text-balance font-medium text-4xl sm:text-5xl md:text-5xl lg:text-[3.5rem] leading-tight tracking-tight">
-                  Votre trésorerie, claire et maîtrisée
+                {/* Même typographie et même échelle que le H1 de la LP
+                    factures : semi-gras, interlignage serré, noir profond. */}
+                <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white">
+                  La gestion de trésorerie, enfin simple
                 </h1>
-                <h2 className="text-base sm:text-lg font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-md mx-auto lg:mx-0">
-                  Visualisez vos flux,{" "}
+                <p className="text-lg md:text-xl font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-xl mx-auto lg:mx-0">
+                  Synchronisez vos comptes bancaires, suivez vos encaissements
+                  et vos dépenses en temps réel, et{" "}
                   <strong className="font-medium text-gray-900">
-                    anticipez vos besoins
+                    anticipez vos besoins de trésorerie
                   </strong>{" "}
-                  et prenez les bonnes décisions financières.
-                </h2>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
-                  <Link href="/auth/signup" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal text-base rounded-lg px-6 w-full sm:w-auto"
-                    >
-                      Essayer 30 jours offerts
-                    </Button>
-                  </Link>
-                  <WhatsAppContactButton />
-                </div>
-                <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
-                  Plusieurs entreprises nous font déjà confiance ·
-                  Synchronisation bancaire incluse
+                  avant qu&apos;ils ne deviennent urgents.
                 </p>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
+                  {/* Même gabarit que le CTA du hero de la LP home */}
+                  <Button
+                    asChild
+                    size="md"
+                    variant="primary"
+                    className="h-auto w-full px-4 py-1.5 text-[17px] sm:w-auto"
+                  >
+                    <Link href="/auth/signup">
+                      <span>Essayer 30 jours offerts</span>
+                    </Link>
+                  </Button>
+                  <WhatsAppContactButton
+                    className="bg-transparent hover:bg-gray-100 active:bg-gray-200 text-gray-900 dark:bg-transparent dark:hover:bg-gray-100 dark:text-gray-900"
+                    iconClassName="text-[#25D366]"
+                  />
+                </div>
+                {/* Preuve sociale : mêmes portraits superposés que le hero
+                    de la LP home */}
+                <div className="flex items-center justify-center lg:justify-start gap-3 pt-3">
+                  <div className="flex -space-x-2.5">
+                    {PROOF_AVATARS.map((avatar) => (
+                      <img
+                        key={avatar.src}
+                        src={avatar.src}
+                        alt={avatar.alt}
+                        style={{ objectPosition: avatar.position }}
+                        className="size-7 sm:size-8 rounded-full border-2 border-white object-cover"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-600 text-left">
+                    <span className="text-gray-900 font-medium">
+                      +1 000 indépendants
+                    </span>{" "}
+                    nous font confiance
+                  </p>
+                </div>
               </div>
               <div className="hidden lg:flex relative items-end justify-end overflow-visible pt-4">
-                <div className="relative w-[1600px] xl:w-[1700px] -mr-96 xl:-mr-[28rem]">
+                <div className="relative w-[1800px] xl:w-[1900px] -mr-[30rem] xl:-mr-[34rem]">
                   <div className="relative">
                     <img
-                      src="/lp/tresorerie/tresorerie-hero.png"
+                      src="/lp/tresorerie/ipad-mockup.png"
                       alt="Dashboard trésorerie Newbi"
                       className="w-full h-auto"
                     />
-                    <div className="absolute inset-0 z-10 flex flex-col gap-3 p-6 pl-24 pt-7 pb-7">
+                    {/* Panneau de contenu du mockup, relevé sur le PNG
+                        (2400 x 1286) : il commence après la sidebar et sous la
+                        barre d'outils — x 471→2264, y 100→1245. En
+                        pourcentages, le contenu suit la mise à l'échelle de
+                        l'image quelle que soit la largeur. */}
+                    <div className="absolute z-10 flex flex-col gap-3 left-[19.62%] right-[5.67%] top-[7.78%] bottom-[3.19%] p-4">
                       <div
                         className="bg-white rounded-xl shadow-xs border border-neutral-200 p-4 flex flex-col"
                         style={{ flex: "3" }}

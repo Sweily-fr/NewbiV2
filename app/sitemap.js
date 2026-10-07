@@ -29,6 +29,26 @@ function listProductPages() {
     .sort();
 }
 
+/**
+ * Pages « Pour qui » (statuts juridiques). Elles sont lues depuis leurs
+ * fichiers de contenu plutôt qu'écrites en dur : ajouter un statut suffit à
+ * le faire entrer dans le sitemap, sans toucher à ce fichier.
+ */
+function listStatutPages() {
+  const dir = path.join(process.cwd(), "app", "(main)", "_statuts", "contenu");
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith(".jsx"))
+    .map((f) => `/${f.replace(/\.jsx$/, "")}`)
+    .filter((route) =>
+      fs.existsSync(
+        path.join(process.cwd(), "app", "(main)", route.slice(1), "page.jsx"),
+      ),
+    )
+    .sort();
+}
+
 export default function sitemap() {
   const baseUrl = SITE_URL;
   const posts = getAllPosts();
@@ -45,6 +65,32 @@ export default function sitemap() {
       changeFrequency: "weekly",
       priority: 0.9,
     })),
+    ...listStatutPages().map((p) => ({
+      url: `${baseUrl}${p}`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    })),
+    // Pages « Pour qui » par métier
+    {
+      url: `${baseUrl}/btp-artisans`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/professions-medicales`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/avocats`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/photographes-creatifs`,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
     {
       url: `${baseUrl}/guide-facturation-electronique`,
       changeFrequency: "monthly",

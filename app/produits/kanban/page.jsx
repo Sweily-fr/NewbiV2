@@ -12,7 +12,7 @@ import HowItWorksSection from "./section/HowItWorksSection";
 import WallOfFeatures from "./section/WallOfFeatures";
 import TeamsTabSection from "./section/TeamsTabSection";
 import CtaSection from "./section/CtaSection";
-import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import HomePricingSection from "@/app/(main)/new/lp-home/HomePricingSection";
 import { JsonLd } from "@/src/components/seo/json-ld";
 import { productJsonLd } from "@/src/lib/product-jsonld";
 
@@ -40,9 +40,12 @@ export default function KanbanPage() {
           {/* <KanbanGovernanceSection /> */}
           <HowItWorksSection />
           <CtaSection />
-          <div className="mt-10 md:mt-16">
-            <PricingSection variant="default" />
-          </div>
+          {/* Même bloc tarifs que les autres LP produits, sur la largeur et
+              le rythme vertical commun */}
+          <HomePricingSection
+            maxWidth="max-w-7xl"
+            className="pt-10 md:pt-20 lg:pt-22 pb-0"
+          />
           <FAQ />
           {/* <section className="min-h-screen py-20 flex flex-col justify-between">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">

@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import Image from "next/image";
 
@@ -54,7 +53,7 @@ export function TeamBentoGrid() {
         {images.map((image, index) => (
           <div
             key={index}
-            className={`relative overflow-hidden rounded-lg bg-gray-100 ${image.className}`}
+            className={`relative overflow-hidden rounded-2xl bg-[#F4F4F6] ${image.className}`}
             style={{
               height: image.height,
             }}
@@ -63,7 +62,7 @@ export function TeamBentoGrid() {
               src={image.src}
               alt={image.alt}
               fill
-              className="object-cover hover:scale-105 transition-transform duration-500"
+              className="object-cover transition-transform duration-500 hover:scale-105"
               sizes="(max-width: 768px) 50vw, 25vw"
               priority={index < 3}
             />

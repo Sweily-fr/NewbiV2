@@ -1,6 +1,10 @@
 import React from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
-import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import PricingPlansSection from "./section/PricingPlansSection";
+import PricingFeaturesSection from "./section/PricingFeaturesSection";
+import FinalCtaSection from "./section/FinalCtaSection";
+import FaqSection from "./section/FaqSection";
+import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
 import { generateNextMetadata } from "@/src/utils/seo-data";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 import { SITE_URL } from "@/src/lib/site";
@@ -64,6 +68,10 @@ export default function TarifsPage() {
             contraire aux consignes de Google et inutile aux visiteurs. */}
         <header className="mx-auto max-w-[1200px] px-5 pb-2 text-center">
           <h1 className="sr-only">Tarifs Newbi</h1>
+          {/* Récapitulatif des montants, commenté le temps de la refonte.
+              Il servait à faire figurer les prix annuels dans le HTML servi :
+              la bascule mensuel/annuel est un état client, sans lui aucun
+              montant annuel n'existe dans la page rendue.
           <p className="text-sm text-gray-500">
             {PLANS_DISPLAY.map(
               (p) =>
@@ -79,8 +87,21 @@ export default function TarifsPage() {
             Tous les abonnements démarrent par 30 jours gratuits, sans carte
             bancaire et sans engagement.
           </p>
+          */}
         </header>
-        <PricingSection variant="home" />
+        {/* Nouvelle grille tarifaire, en première position */}
+        <PricingPlansSection />
+        {/* Mêmes logos clients que sur les LP produits */}
+        <TrustedBySection variant="default" />
+        {/* Comparatif détaillé. Il remplace l'ancien bloc « Profitez de 30
+            jours offerts » (lp-home/PricingSection), qui reprenait les mêmes
+            plans et le même tableau : la page les affichait deux fois. Ce
+            composant n'est plus monté nulle part — les LP produits utilisent
+            HomePricingSection, qui est un autre composant. */}
+        <PricingFeaturesSection />
+        {/* Appel à l'action, puis la FAQ qui ferme la page */}
+        <FinalCtaSection />
+        <FaqSection />
       </div>
     </>
   );

@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { Button } from "@/src/components/ui/button";
 
 // Section centrée : trois rassurances alignées sous un grand titre, puis un
 // seul bouton. Elle ferme le bloc « est-ce que c'est pour moi ? » en répondant
@@ -25,8 +26,8 @@ const ITEMS = [
 
 export default function SupportSection() {
   return (
-    <section className="relative overflow-hidden px-0 py-14 md:py-20">
-      <div className="max-w-7xl mx-auto px-5 text-center">
+    <section className="relative overflow-hidden px-5 py-14 md:py-20">
+      <div className="max-w-7xl mx-auto text-center">
         <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-12 md:mb-16">
           À tes côtés, dès la première facture
         </h2>
@@ -48,12 +49,14 @@ export default function SupportSection() {
         </div>
 
         <div className="mt-12 md:mt-14">
-          <Link
-            href="/auth/register"
-            className="inline-block rounded-xl border border-gray-300 px-7 py-3.5 text-[15px] text-gray-900 hover:bg-gray-50 transition-colors"
-          >
-            Commencer gratuitement
-          </Link>
+          {/* Même bouton que le CTA d'inscription de la navbar : violet
+              Newbi, gabarit `md`. Le lien pointait vers /auth/register, qui
+              n'existe pas (404) — la route d'inscription est /auth/signup. */}
+          <Button asChild size="md" variant="primary" className="px-4">
+            <Link href="/auth/signup">
+              <span>Commencer gratuitement</span>
+            </Link>
+          </Button>
         </div>
       </div>
     </section>

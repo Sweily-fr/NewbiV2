@@ -23,8 +23,8 @@ const TOOLS = [
 
 export default function ToolsSection() {
   return (
-    <section className="relative overflow-hidden px-0 py-14 md:py-20">
-      <div className="max-w-7xl mx-auto px-5">
+    <section className="relative overflow-hidden px-5 py-14 md:py-20">
+      <div className="max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 max-w-3xl mb-10 md:mb-14">
           Des outils pour piloter et développer ton activité
         </h2>

@@ -4,6 +4,21 @@ const matter = require("gray-matter");
 const { execSync } = require("child_process");
 
 const BLOG_DIR = path.join(__dirname, "..", "content", "blog");
+
+// Signatures du blog. Doit rester aligné sur AUTHORS dans
+// src/lib/blog-authors.ts : un nom absent de ce fichier retomberait sur
+// l'auteur par défaut à l'affichage.
+const SIGNATURES = ["Holany", "Trévis", "Joaquim", "Dylan"];
+
+// Le frontmatter historique vaut « Newbi » : c'est un fourre-tout, pas une
+// signature. On le remplace au moment de publier.
+function signatureAuHasard() {
+  return SIGNATURES[Math.floor(Math.random() * SIGNATURES.length)];
+}
+function signatureAPlacer(auteur) {
+  const v = auteur ? String(auteur).trim() : "";
+  return v === "" || v.toLowerCase() === "newbi";
+}
 const QUEUE_PATH = path.join(BLOG_DIR, "_publication-queue.json");
 const LOG_PATH = path.join(BLOG_DIR, "_publication-log.json");
 const IMAGE_SCRIPT = path.join(__dirname, "generate-blog-images.py");
@@ -290,11 +305,16 @@ for (const slug of batch) {
   // cadence affichée sur le blog ; sinon la date du jour comme avant.
   const planned = plannedDate(data);
   data.publishDate = planned && planned <= today ? planned : today;
+  // Signature tirée au sort et figée dans le frontmatter : elle ne bougera
+  // plus aux builds suivants. Une signature déjà renseignée est respectée.
+  if (signatureAPlacer(data.author)) {
+    data.author = signatureAuHasard();
+  }
 
   fs.writeFileSync(filePath, matter.stringify(content, data), "utf-8");
   published.push(slug);
   publishedSlugs.add(slug);
-  console.log(`Published: ${slug}`);
+  console.log(`Published: ${slug} (signé ${data.author})`);
 }
 
 if (published.length === 0) {

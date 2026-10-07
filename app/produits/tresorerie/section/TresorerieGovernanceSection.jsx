@@ -38,38 +38,36 @@ function GridItem({ img, icon, small }) {
   );
 }
 
+// Mêmes jetons visuels que le bento « Garde le contrôle de ton activité » de
+// la LP home : cartes en dégradé gris, sans bordure, coins 3xl.
+const CARD =
+  "rounded-3xl bg-gradient-to-b from-[#F4F4F6] to-[#FAFAFB] p-7 md:p-8 flex flex-col overflow-hidden";
+const TITLE =
+  "text-xl md:text-2xl font-medium tracking-tight text-gray-950 mb-3";
+const TEXT = "text-[15px] leading-relaxed text-gray-700";
+
 export default function TresorerieGovernanceSection() {
   return (
-    <section className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden">
-      <div className="max-w-6xl px-4 mx-auto">
-        {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
-            TRÉSORERIE SIMPLIFIÉE
-          </span>
-          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
-            Gardez un œil sur chaque euro
-          </h2>
-          <p className="text-md font-normal tracking-tight text-gray-600 mx-auto mb-8 max-w-2xl">
-            Synchronisez vos comptes, suivez vos flux et anticipez vos besoins
-            de trésorerie depuis un seul tableau de bord.
-          </p>
-        </div>
+    <section className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden px-5">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
+          Gardez un œil sur chaque euro
+        </h2>
+        <p className="text-[17px] leading-relaxed text-gray-600 max-w-2xl mb-10 md:mb-14">
+          Synchronisez vos comptes, suivez vos flux et anticipez vos besoins de
+          trésorerie depuis un seul tableau de bord.
+        </p>
 
-        {/* Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 border-y border-neutral-200 divide-neutral-200">
-          {/* Card 1 */}
-          <div className="md:border-r border-b border-neutral-200">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Synchronisation bancaire automatique
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Connectez vos comptes bancaires et retrouvez toutes vos
-                transactions en temps réel, sans ressaisie manuelle.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant mask-radial-from-20%">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
+          <article
+            className={`${CARD} md:col-span-7 min-h-[420px] pb-0 md:pb-0`}
+          >
+            <h3 className={TITLE}>Synchronisation bancaire automatique</h3>
+            <p className={`${TEXT} max-w-lg`}>
+              Connectez vos comptes bancaires et retrouvez toutes vos
+              transactions en temps réel, sans ressaisie manuelle.
+            </p>
+            <div className="relative flex-1 min-h-[300px] mt-6 -mx-7 md:-mx-8 overflow-hidden perspective-distant mask-radial-from-20%">
               <div className="flex-1 rounded-t-3xl gap-4 space-y-4 w-full h-full px-8 flex-col items-center justify-center">
                 <div className="grid grid-cols-4 gap-2 justify-center max-w-md mx-auto">
                   <GridItem />
@@ -92,20 +90,17 @@ export default function TresorerieGovernanceSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </article>
 
-          {/* Card 2 */}
-          <div className="border-b border-neutral-200">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Rapprochez vos transactions
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Associez automatiquement vos factures à vos mouvements bancaires
-                pour un suivi comptable sans effort.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
+          <article
+            className={`${CARD} md:col-span-5 min-h-[420px] pb-0 md:pb-0`}
+          >
+            <h3 className={TITLE}>Rapprochez vos transactions</h3>
+            <p className={TEXT}>
+              Associez automatiquement vos factures à vos mouvements bancaires
+              pour un suivi comptable sans effort.
+            </p>
+            <div className="relative flex-1 min-h-[300px] mt-6 -mx-7 md:-mx-8 overflow-hidden perspective-distant">
               <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 border border-neutral-200 max-w-[20rem] lg:max-w-sm mx-auto w-full h-full absolute inset-x-0 inset-y-2 p-2 overflow-hidden">
                 <div className="p-5 shadow-black/10 border bg-white border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3">
                   <div className="size-10 shrink-0 rounded-lg flex items-center justify-center bg-white border border-neutral-200 overflow-hidden">
@@ -218,21 +213,16 @@ export default function TresorerieGovernanceSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </article>
 
-          {/* Card 3 */}
-          <div className="border-b md:border-b-0 md:border-r border-neutral-200">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Anticipez vos échéances
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Recevez des alertes sur vos prochaines échéances et ne laissez
-                plus aucun paiement vous surprendre.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 flex flex-col md:h-80 overflow-hidden perspective-distant">
-              <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 border border-neutral-200 mx-auto w-full h-full absolute inset-x-4 inset-y-2 p-2 overflow-hidden">
+          <article className={`${CARD} md:col-span-6 pb-0 md:pb-0`}>
+            <h3 className={TITLE}>Anticipez vos échéances</h3>
+            <p className={TEXT}>
+              Recevez des alertes sur vos prochaines échéances et ne laissez
+              plus aucun paiement vous surprendre.
+            </p>
+            <div className="relative flex-1 min-h-[280px] mt-6 -mx-7 md:-mx-8 overflow-hidden perspective-distant">
+              <div className="flex-1 rounded-t-3xl gap-2 flex flex-col bg-neutral-100 border border-neutral-200 absolute left-14 right-0 inset-y-2 p-2 overflow-hidden">
                 {/* Notification cards */}
                 {/* Notif 1 - TVA */}
                 <div className="p-5 shadow-black/10 border bg-white border-transparent ring-1 rounded-[20px] ring-black/10 flex items-center gap-3">
@@ -311,20 +301,15 @@ export default function TresorerieGovernanceSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </article>
 
-          {/* Card 4 */}
-          <div>
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Visualisez vos flux en un coup d&apos;œil
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Graphiques clairs et intuitifs pour comprendre instantanément
-                vos entrées, sorties et solde de trésorerie.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 md:h-80 overflow-hidden">
+          <article className={`${CARD} md:col-span-6 pb-0 md:pb-0`}>
+            <h3 className={TITLE}>Visualisez vos flux en un coup d&apos;œil</h3>
+            <p className={TEXT}>
+              Graphiques clairs et intuitifs pour comprendre instantanément vos
+              entrées, sorties et solde de trésorerie.
+            </p>
+            <div className="relative flex-1 min-h-[280px] mt-6 -mx-7 md:-mx-8 overflow-hidden">
               <div className="flex items-center justify-center h-full px-6 gap-8">
                 <div className="relative shrink-0">
                   <svg width="220" height="220" viewBox="-5 -5 210 210">
@@ -442,7 +427,7 @@ export default function TresorerieGovernanceSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </article>
         </div>
       </div>
     </section>

@@ -132,9 +132,9 @@ export default function TransfersComponentsSection() {
       badge: "TRANSFERT RAPIDE",
       title: "Envoyez des fichiers volumineux en quelques secondes",
       description:
-        "Partagez des fichiers jusqu'à 5 Go sans limite de transferts. Interface intuitive par glisser-déposer, envoi instantané et liens de partage personnalisables pour vos clients et collaborateurs.",
+        "Partagez jusqu'à 50 Go par transfert selon votre offre, sans limite sur le nombre d'envois. Interface intuitive par glisser-déposer, envoi instantané et liens de partage personnalisables pour vos clients et collaborateurs.",
       features: [
-        "Transferts illimités jusqu'à 5 Go par fichier",
+        "Transferts illimités, de 5 à 50 Go par envoi",
         "Interface glisser-déposer ultra-simple",
         "Envoi instantané sans compression",
         "Liens de partage personnalisables",

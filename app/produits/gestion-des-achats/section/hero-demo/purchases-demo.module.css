@@ -1,0 +1,759 @@
+/* ---------------------------------------------------------------------
+   Démo produit du hero de la LP achats.
+
+   Même principe que la démo de la LP home : la capture du mockup iPad sert
+   de cadre (image 2400 x 1286, panneau vide x 471→2264, y 101→1245), et le
+   panneau de droite est reconstruit en HTML/CSS par-dessus, soit dans le
+   repère de la scène (1200 x 643) : left 235.5  top 50.5  w 896.5  h 572.
+
+   Le scénario : un ticket monte par le bas, le scan le balaie, il s'efface
+   et la ligne apparaît dans « Factures d'achat ». Voir PurchasesDemo.jsx.
+   --------------------------------------------------------------------- */
+
+.wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.stage {
+  position: absolute;
+  top: 0;
+  /* Centrée : le conteneur du hero est plus large que la scène une fois
+     celle-ci à l'échelle, et calée à gauche elle paraissait décalée.
+     Le `translateX(-50%)` est appliqué avant la mise à l'échelle (voir
+     l'ordre des transformations dans PurchasesDemo.jsx). */
+  left: 50%;
+  width: 1200px;
+  height: 643px;
+  transform-origin: top left;
+
+  --violet: #5a50ff;
+  --ink: #17171a;
+  --muted: #6b7280;
+  --line: #ececee;
+
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.device {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.panel {
+  position: absolute;
+  left: 235.5px;
+  top: 50.5px;
+  width: 896.5px;
+  height: 572px;
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 18px 20px 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+/* Le mockup entier — cadre iPad et interface — n'entre qu'au deuxième temps
+   du scénario : il attend hors vue. Uniquement l'opacité ici, une translation
+   dans la classe servirait de base au `yPercent` de l'animation et doublerait
+   le décalage. Le glissement est posé par GSAP ; sans lui, on remet à plat. */
+.deviceGroup {
+  position: absolute;
+  inset: 0;
+}
+.uiIdle {
+  opacity: 0;
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e2e2e5;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #27272a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  white-space: nowrap;
+}
+.btnPrimary {
+  background: var(--violet);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 6px -2px rgba(90, 80, 255, 0.5);
+}
+.btnDashed {
+  border-style: dashed;
+  border-color: #d7d7db;
+  background: #fafafa;
+  box-shadow: none;
+}
+
+/* ---------- En-tête ---------- */
+.head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.title {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 auto 0 0;
+}
+
+/* ---------- Indicateurs ---------- */
+.kpis {
+  display: flex;
+  gap: 9px;
+  margin-top: 16px;
+}
+.kpiGroup {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.kpi {
+  padding: 9px 14px;
+  min-width: 132px;
+}
+.kpi + .kpi {
+  border-left: 1px solid var(--line);
+}
+.kpiLbl {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.kpiVal {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.kpiVal small {
+  margin-left: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.pillRed {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 9.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 5px;
+}
+
+/* ---------- Recherche + filtres ---------- */
+.toolbar {
+  display: flex;
+  gap: 9px;
+  margin-top: 21px;
+}
+.search {
+  width: 320px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #e2e2e5;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 11.5px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+/* ---------- Onglets ---------- */
+.tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 13px;
+}
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  font-size: 12px;
+  color: #52525b;
+  white-space: nowrap;
+}
+.count {
+  font-size: 11px;
+  color: #9ca3af;
+}
+.tabActive {
+  border: 1px solid #e7e7ea;
+  border-radius: 9px;
+  background: #fafafa;
+  color: var(--ink);
+  font-weight: 500;
+}
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -9px;
+  height: 1px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+
+/* ---------- Tableau ----------
+   Colonnes de l'écran « Factures d'achat » : case, fournisseur, montant,
+   émission, échéance, catégorie, statut, justificatif, actions. */
+.table {
+  flex: 1;
+  min-height: 0;
+  margin: 9px -20px 0;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.tr {
+  display: grid;
+  grid-template-columns: 26px 1.8fr 1fr 1.15fr 1.15fr 1.3fr 1fr 0.8fr 44px;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-bottom: 1px solid #f2f2f4;
+  font-size: 11.5px;
+}
+.tr > div {
+  min-width: 0;
+  overflow: hidden;
+}
+.thead {
+  height: 32px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.th {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.box {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1px solid #d4d4d8;
+  border-radius: 4px;
+  background: #fff;
+}
+
+/* Fournisseur : pastille d'initiales + nom, comme dans l'app */
+.supplier {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #f4f4f5;
+  color: #52525b;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+}
+/* Pastille portant un vrai logo : fond blanc et filet, l'image est contenue */
+.avatarLogo {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(16, 16, 32, 0.07);
+}
+.avatarLogo img,
+.popLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 2px;
+}
+.name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.late {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #dc2626;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dash {
+  color: #c4c4cb;
+}
+
+/* Catégorie : pastille ronde colorée + libellé */
+.cat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.catDot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 10px;
+}
+.catLbl {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.bPaid {
+  background: #dcfce7;
+  color: #166534;
+}
+.bDue {
+  background: #fef3c7;
+  color: #92400e;
+}
+.bTodo {
+  background: #f3f4f6;
+  color: #3f3f46;
+}
+
+/* Colonne justificatif : trombone + compteur */
+.proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 500;
+  background: #ebe6fd;
+  color: #5b46b8;
+  white-space: nowrap;
+}
+.proof svg {
+  display: block;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  color: #9ca3af;
+}
+.act {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e8e8ea;
+  border-radius: 6px;
+  background: #fff;
+}
+
+/* Ligne créée par l'animation : repliée tant que le ticket n'est pas lu */
+.newRow {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-bottom-color: transparent;
+}
+
+.tfoot {
+  flex: none;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: 0 20px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.tfootRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 3px 7px;
+  border: 1px solid #e2e2e5;
+  border-radius: 7px;
+  color: #27272a;
+}
+
+/* ---------------------------------------------------------------------
+   La facture fournisseur scannée. Mise en page reprise du PDF généré par
+   l'app (src/components/pdf/UniversalPreviewPDF.jsx) : format portrait,
+   titre et références alignés à droite, blocs émetteur / destinataire,
+   tableau à en-tête noir, totaux à droite et TTC sur un aplat à 10 %.
+   Les tailles sont celles du PDF ramenées à l'échelle du document.
+   --------------------------------------------------------------------- */
+.scanZone {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 8;
+}
+.doc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 430px;
+  min-height: 520px;
+  /* Remonte la feuille dans le cadre : centrée, elle tombait trop bas.
+     Une marge plutôt qu'une translation — le `transform` est piloté par
+     l'animation, qui prendrait celle-ci comme base. */
+  margin-bottom: 72px;
+  padding: 32px 30px 26px;
+  background: #fff;
+  color: #000;
+  font-size: 8px;
+  line-height: 1.5;
+  /* Filet très clair et ombre légère : la feuille se détache du fond sans
+     être encadrée lourdement. */
+  border: 1px solid #ececef;
+  box-shadow: 0 20px 44px -22px rgba(16, 16, 32, 0.2);
+  opacity: 0;
+}
+
+/* En-tête : logo à gauche, titre et références à droite */
+.docHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.docLogo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.docLogoSub {
+  margin-top: 3px;
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8b8b93;
+}
+.docTitleCol {
+  text-align: right;
+}
+.docTitle {
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.1;
+  margin-bottom: 7px;
+}
+.docMetaRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  font-size: 8px;
+}
+.docMetaLbl {
+  font-weight: 500;
+}
+
+/* Émetteur / destinataire */
+.docParties {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  margin-bottom: 20px;
+}
+.docPartyName {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+.docPartyLines {
+  font-weight: 400;
+  color: #2b2b2f;
+}
+
+/* Tableau des lignes : en-tête noir, filets gris clair */
+.docTable {
+  width: 100%;
+  border-bottom: 1px solid #ccc;
+}
+.docTh,
+.docRow {
+  display: grid;
+  grid-template-columns: 1fr 34px 62px 40px 64px;
+  align-items: center;
+  gap: 6px;
+}
+.docTh {
+  background: #000;
+  color: #fff;
+  font-weight: 500;
+  padding: 5px 7px;
+}
+.docRow {
+  padding: 6px 7px;
+  border-bottom: 1px solid #ccc;
+}
+.docRow:last-child {
+  border-bottom-width: 2px;
+}
+.docRight {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.docDesc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Totaux, alignés à droite comme sur le PDF */
+.docTotals {
+  margin-top: 14px;
+  margin-left: auto;
+  width: 200px;
+}
+.docTotal {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 10px;
+  font-size: 8px;
+}
+.docTotal span:first-child {
+  font-weight: 500;
+}
+.docTotal span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.docGrand {
+  margin-top: 6px;
+  padding: 6px 12px;
+  background: rgba(29, 29, 27, 0.1);
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  font-weight: 500;
+}
+.docGrand span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pied de page : mentions légales */
+/* Les mentions tombent en bas de page, comme sur le PDF A4 */
+.docFoot {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #e6e6e9;
+  font-size: 6.5px;
+  line-height: 1.7;
+  color: #6b6b73;
+}
+
+/* Bulles de lecture : ce que l'OCR relève au passage du faisceau. Elles se
+   posent de part et d'autre de la feuille, l'une après l'autre. */
+.pop {
+  position: absolute;
+  width: 218px;
+  padding: 13px 15px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(16, 16, 32, 0.06);
+  box-shadow: 0 12px 28px -10px rgba(16, 16, 32, 0.22);
+  opacity: 0;
+}
+.popLeft {
+  right: calc(100% + 20px);
+  top: 96px;
+}
+.popRight {
+  left: calc(100% + 20px);
+  top: 300px;
+}
+.popLbl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5b46b8;
+}
+.popDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--violet);
+}
+/* Le fournisseur avec sa pastille, comme dans la colonne du tableau */
+.popIdent {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.popLogo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(16, 16, 32, 0.07);
+  color: #52525b;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+}
+.popVal {
+  margin-top: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.popSub {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Faisceau de lecture */
+.beamClip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.beam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 110px;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(90, 80, 255, 0) 0%,
+    rgba(90, 80, 255, 0.12) 55%,
+    rgba(90, 80, 255, 0.4) 100%
+  );
+}
+.beamEdge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--violet);
+  box-shadow: 0 0 10px 1px rgba(90, 80, 255, 0.6);
+}
+
+/* ---------- Notification ---------- */
+.toast {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 248px;
+  opacity: 0;
+  z-index: 10;
+}
+.toastCard {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1px solid rgba(16, 16, 32, 0.06);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 4px 12px -4px rgba(16, 16, 32, 0.1);
+}
+.toastAv {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 50%;
+  background: #ebe6fd;
+  color: #5b46b8;
+}
+.toastAv svg {
+  display: block;
+}
+.toastTitle {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.toastText {
+  margin-top: 1px;
+  font-size: 10.5px;
+  color: var(--muted);
+}

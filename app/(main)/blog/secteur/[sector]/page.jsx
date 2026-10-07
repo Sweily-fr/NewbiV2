@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
-import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
-import { BlogRecentArticles } from "@/src/components/blog/blog-recent-articles";
-import { BlogHubNav } from "@/src/components/blog/blog-hub-nav";
+import { BlogNowHub } from "@/src/components/blog/now-hub";
 import { formatPostForList } from "@/src/lib/blog-format";
 import { getCategories, getSectors, getSectorBySlug } from "@/src/lib/blog";
 import { SITE_URL } from "@/src/lib/site";
@@ -49,35 +47,16 @@ export default async function SectorPage({ params }) {
   };
 
   return (
-    <div className="min-h-screen pt-32">
+    <BlogNowHub
+      categories={getCategories()}
+      sectors={getSectors()}
+      categorieActive={false}
+      posts={data.posts.map(formatPostForList)}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <NewHeroNavbar />
-      <header className="px-5 mt-10 md:mt-16">
-        <div className="mx-auto max-w-[1200px]">
-          <p className="text-xs uppercase tracking-wide text-[#5a50ff] mb-3">
-            Métier
-          </p>
-          <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-gray-900">
-            {data.label}
-          </h1>
-          <p className="mt-4 max-w-2xl text-gray-600">
-            {describe(data.label, data.posts.length)}
-          </p>
-        </div>
-      </header>
-      <BlogHubNav
-        categories={getCategories()}
-        sectors={getSectors()}
-        current={data.label}
-      />
-      <BlogRecentArticles
-        posts={data.posts.map(formatPostForList)}
-        title={`${data.posts.length} article${data.posts.length > 1 ? "s" : ""}`}
-        description={`Nos guides et conseils pour ${data.label.toLowerCase()}, du plus récent au plus ancien.`}
-      />
-    </div>
+    </BlogNowHub>
   );
 }

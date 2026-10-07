@@ -1,4 +1,5 @@
 import LpCtaButton from "./LpCtaButton";
+import { cn } from "@/src/lib/utils";
 
 // Dernier bloc avant le footer : rappel de la promesse + CTA.
 // Avec `image`, la carte devient une bannière photo pleine largeur (texte à
@@ -9,10 +10,13 @@ export default function LpFinalCta({
   image,
   imageAlt = "",
   maxWidth = "max-w-6xl",
+  // Rythme vertical : par défaut celui des LP. Les pages produits passent le
+  // leur pour que l'écart entre sections reste uniforme.
+  className,
 }) {
   if (image) {
     return (
-      <section className="px-5 pt-6 md:pt-10 pb-16 md:pb-24">
+      <section className={cn("px-5 pt-6 md:pt-10 pb-16 md:pb-24", className)}>
         <div
           className={`relative ${maxWidth} mx-auto rounded-3xl overflow-hidden min-h-[420px] md:min-h-[520px] flex items-center`}
         >

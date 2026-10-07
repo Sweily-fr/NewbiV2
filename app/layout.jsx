@@ -95,7 +95,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html
-      lang="en"
+      // Tout le site public est en français : l'attribut annonçait « en »,
+      // ce qui trompe les moteurs et les lecteurs d'écran.
+      lang="fr"
       className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
       translate="no"
@@ -189,7 +191,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased overflow-x-clip">
         <ForceDesktopViewport />
         <AttributionCapture />
         <ApolloWrapper>

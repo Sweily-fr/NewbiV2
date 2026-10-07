@@ -8,8 +8,9 @@ import FAQ from "./section/faq";
 import { TresorerieBanner } from "./section/TresorerieBanner";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
 import TresorerieGovernanceSection from "./section/TresorerieGovernanceSection";
-import EInvoicingSection from "@/app/(main)/new/lp-home/EInvoicingSection";
-import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import LpFinalCta from "@/app/lp/_components/LpFinalCta";
+import LpTestimonials from "@/app/lp/_components/LpTestimonials";
+import HomePricingSection from "@/app/(main)/new/lp-home/HomePricingSection";
 import BankSecuritySection from "./section/BankSecuritySection";
 import TresorerieComponentsSection from "./section/TresorerieComponentsSection";
 import TresorerieInfoBanner from "./section/TresorerieInfoBanner";
@@ -59,9 +60,31 @@ export default function TresoreriePage() {
           <HeroSection />
           <TrustedBySection variant="default" />
           <TresorerieGovernanceSection />
-          <EInvoicingSection maxWidth="max-w-6xl" />
+          {/* Même bannière que sur /lp/facturation-electronique */}
+          <LpFinalCta
+            title={
+              <>
+                Passe à la facturation
+                <br className="hidden md:block" /> électronique sans stress
+              </>
+            }
+            subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 30 jours pour tester, sans carte bancaire."
+            image="/lp/facturation-electronique/cta-laptop.jpg"
+            imageAlt="Un indépendant consulte ses factures clients dans Newbi sur son ordinateur portable"
+            maxWidth="max-w-7xl"
+            className="pt-10 md:pt-20 lg:pt-22 pb-0 md:pb-0"
+          />
           <BankSecuritySection />
-          <PricingSection variant="default" />
+          <HomePricingSection
+            maxWidth="max-w-7xl"
+            className="pt-10 md:pt-20 lg:pt-22 pb-0"
+          />
+          {/* Mêmes avis que la home, sur la largeur des autres sections ; la
+              marge haute reprend le rythme vertical du reste de la page */}
+          <LpTestimonials
+            maxWidth="max-w-7xl"
+            className="mt-10 md:mt-20 lg:mt-22"
+          />
           {/* <TresorerieComponentsSection /> */}
           {/* <TresorerieFeaturesBanner /> */}
           {/* <TestimonialsSplit /> */}

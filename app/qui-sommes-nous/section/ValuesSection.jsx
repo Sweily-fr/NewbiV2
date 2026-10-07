@@ -1,113 +1,79 @@
-"use client";
 import React from "react";
-import Image from "next/image";
 
-const values = [
-  {
-    title: "Proximité",
-    description:
-      "Nous plaçons l'humain au centre de tout. Chaque entrepreneur mérite une écoute attentive.",
-    image: "/lp/about/proximite.svg",
-  },
-  {
-    title: "Simplicité",
-    description:
-      "La gestion financière ne devrait jamais être un frein. Nous concevons des outils intuitifs.",
-    image: "/lp/about/simplicite.svg",
-  },
-  {
-    title: "Accessibilité",
-    description:
-      "Des tarifs justes pour que chaque entreprise puisse accéder à des outils professionnels.",
-    image: "/lp/about/accessibilite.svg",
-  },
-  {
-    title: "Fiabilité",
-    description:
-      "Vos données sont précieuses. Nous garantissons leur sécurité et la conformité française.",
-    image: "/lp/about/securite.svg",
-  },
-  {
-    title: "Transparence",
-    description:
-      "Pas de frais cachés, pas de mauvaises surprises. Nous communiquons clairement sur nos tarifs et nos engagements.",
-    image: "/lp/about/transparence.svg",
-  },
-];
+// Même bento que « Garde le contrôle de ton activité » sur la LP home, repris
+// sur les LP produits : une grande carte et une carte moyenne en haut, trois
+// cartes en dessous. Les illustrations génériques du carrousel sombre sont
+// retirées, le texte porte seul.
+const CARD =
+  "rounded-3xl bg-gradient-to-b from-[#F4F4F6] to-[#FAFAFB] p-7 md:p-8 flex flex-col overflow-hidden";
+const TITLE =
+  "text-xl md:text-2xl font-medium tracking-tight text-gray-950 mb-3";
+const TEXT = "text-[15px] leading-relaxed text-gray-700";
 
 export function ValuesSection() {
   return (
-    <section className="py-20 lg:py-28 w-full bg-[#050505] overflow-hidden">
-      {/* Header - avec padding gauche seulement */}
-      <div className="pl-4 md:pl-8 lg:pl-20 mb-12 lg:mb-16">
-        <div className="max-w-7xl">
-          <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.015em] text-white">
-            Nos valeurs
-          </h2>
-        </div>
-      </div>
+    <section className="pt-10 md:pt-20 lg:pt-22 relative overflow-hidden px-5">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
+          Ce à quoi nous tenons
+        </h2>
+        <p className="text-[17px] leading-relaxed text-gray-600 max-w-2xl mb-10 md:mb-14">
+          Cinq principes qui décident de ce que nous construisons, de ce que
+          nous facturons et de ce que nous refusons de faire.
+        </p>
 
-      {/* Cards Carousel - déborde des deux côtés */}
-      <div>
-        <div
-          className="flex gap-6 overflow-x-auto pb-6 pl-4 md:pl-8 lg:pl-20"
-          style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          {values.map((value, index) => {
-            const IconComponent = value.icon;
-            return (
-              <div key={index} className="flex-shrink-0 w-[320px] md:w-[380px]">
-                <div className="h-full overflow-hidden rounded-lg bg-[#1a1a1a] border border-[#3a3a3a]">
-                  {/* Image/Icon - visible sur desktop en haut */}
-                  <div className="hidden md:block md:order-1">
-                    <div className="relative w-full h-64 overflow-hidden bg-[#1A1A1A] flex items-center justify-center p-6">
-                      {value.image ? (
-                        <Image
-                          src={value.image}
-                          alt={value.title}
-                          width={200}
-                          height={160}
-                          className="object-contain"
-                        />
-                      ) : (
-                        <IconComponent className="w-16 h-16 text-gray-600" />
-                      )}
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
+          <article className={`${CARD} md:col-span-7 min-h-[449px]`}>
+            <h3 className={TITLE}>Un outil qu&apos;on comprend seul</h3>
+            <p className={`${TEXT} max-w-xl`}>
+              Vous ne devriez pas avoir besoin d&apos;une formation pour envoyer
+              une facture. Chaque écran est pensé pour qu&apos;on sache quoi
+              faire sans manuel : un vocabulaire clair, les options avancées
+              repliées, et jamais plus de champs que nécessaire. Quand une
+              fonctionnalité demande une explication, c&apos;est qu&apos;elle
+              est mal conçue.
+            </p>
+          </article>
 
-                  {/* Content */}
-                  <div className="flex flex-col order-1 md:order-2 p-6">
-                    <h3 className="mb-4 text-left text-xl font-medium text-white">
-                      {value.title}
-                    </h3>
-                    <p className="text-left text-sm text-gray-400 leading-relaxed grow">
-                      {value.description}
-                    </p>
-                  </div>
+          <article className={`${CARD} md:col-span-5 min-h-[449px]`}>
+            <h3 className={TITLE}>Des prix affichés en entier</h3>
+            <p className={TEXT}>
+              Un tarif, visible sur le site, sans palier caché ni frais de mise
+              en service. Vous testez 30 jours sans carte bancaire, vous
+              résiliez en deux clics, et votre abonnement n&apos;augmente pas
+              parce que vous avez envoyé plus de factures que le mois dernier.
+            </p>
+          </article>
 
-                  {/* Image/Icon - visible sur mobile en bas */}
-                  <div className="block md:hidden order-2">
-                    <div className="relative w-full h-52 overflow-hidden bg-[#1A1A1A] flex items-center justify-center p-4">
-                      {value.image ? (
-                        <Image
-                          src={value.image}
-                          alt={value.title}
-                          width={180}
-                          height={140}
-                          className="object-contain"
-                        />
-                      ) : (
-                        <IconComponent className="w-14 h-14 text-gray-600" />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
+            <h3 className={TITLE}>Vos données restent les vôtres</h3>
+            <p className={TEXT}>
+              Tout est hébergé en France et conforme au RGPD. Nous ne revendons
+              rien, nous n&apos;exploitons pas vos chiffres, et vous pouvez
+              exporter l&apos;intégralité de vos documents à tout moment — y
+              compris le jour où vous partez.
+            </p>
+          </article>
+
+          <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
+            <h3 className={TITLE}>Une équipe qu&apos;on joint vraiment</h3>
+            <p className={TEXT}>
+              Pas de centre d&apos;appel : vous écrivez, c&apos;est
+              quelqu&apos;un de l&apos;équipe qui répond, souvent la personne
+              qui a développé la fonctionnalité. Les demandes qui reviennent le
+              plus souvent passent devant dans la feuille de route.
+            </p>
+          </article>
+
+          <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
+            <h3 className={TITLE}>À jour avant les échéances</h3>
+            <p className={TEXT}>
+              Facturation électronique, mentions obligatoires, taux de TVA : les
+              règles changent, et c&apos;est notre travail de prendre
+              l&apos;avance pour que vous n&apos;ayez rien à faire le jour où
+              elles s&apos;appliquent.
+            </p>
+          </article>
         </div>
       </div>
     </section>

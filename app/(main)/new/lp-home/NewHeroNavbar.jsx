@@ -2,6 +2,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  DocumentTextIcon,
+  TrendUpIcon,
+  ShoppingCartIcon,
+  ReceiptItemIcon,
+  SmsIcon,
+  DocumentCloudIcon,
+  TaskIcon,
+  Book2Icon,
+  NoteTextIcon,
+} from "@/src/components/icons";
+import {
   Equal,
   X,
   FileText,
@@ -17,12 +28,25 @@ import {
   Info,
   Award,
   ArrowRight,
+  ArrowUpRight,
   ChevronDown,
   HelpCircle,
   Quote,
+  Briefcase,
+  Rocket,
+  HeartHandshake,
+  HardHat,
+  Stethoscope,
+  Camera,
+  Scale,
+  UserRound,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
+import {
+  WhatsAppContactButton,
+  WhatsAppIcon,
+  WHATSAPP_CONTACT_URL,
+} from "@/src/components/whatsapp-contact-button";
 import React from "react";
 import { cn } from "@/src/lib/utils";
 import { useSession } from "@/src/lib/auth-client";
@@ -48,61 +72,136 @@ const menuItems = [
           {
             name: "Facturation et devis",
             description: "Automatisez et suivez facilement votre facturation",
-            icon: <FileText size={18} />,
+            icon: <DocumentTextIcon width={18} height={18} />,
             href: "/produits/factures",
           },
           {
             name: "Suivi de trésorerie",
             description: "Gardez le contrôle de vos flux financiers",
-            icon: <TrendingUp size={18} />,
+            icon: <TrendUpIcon width={18} height={18} />,
             href: "/produits/tresorerie",
           },
           {
             name: "Gestion des achats",
             description: "Gérez vos achats simplement. Contrôlez vos dépenses.",
-            icon: <Landmark size={18} />,
+            icon: <ShoppingCartIcon width={18} height={18} />,
             href: "/produits/gestion-des-achats",
           },
           {
             name: "Facturation électronique",
             description: "Conformité 2026 garantie avec l'e-invoicing",
-            icon: <Receipt size={18} />,
+            icon: <ReceiptItemIcon width={18} height={18} />,
             href: "/produits/facturation-electronique",
+            // Incluse sans supplément : on l'annonce dès le menu
+            badge: "Gratuit",
           },
         ],
       },
       {
         title: "AUTRES OUTILS",
         items: [
+          {
+            name: "Gestion de projets",
+            description: "Organisez vos projets avec des tableaux Kanban",
+            icon: <TaskIcon width={18} height={18} />,
+            href: "/produits/kanban",
+          },
+          {
+            name: "Transfert de fichiers",
+            description: "Envoyez vos fichiers en toute sécurité",
+            icon: <DocumentCloudIcon width={18} height={18} />,
+            href: "/produits/transfers",
+          },
+          {
+            name: "Signature de mail",
+            description: "Créez des signatures professionnelles",
+            icon: <SmsIcon width={18} height={18} />,
+            href: "/produits/signatures",
+          },
           // {
           //   name: "Partage de documents",
           //   description: "Partagez vos documents en toute sécurité",
           //   icon: <Share2 size={18} />,
           //   href: "/produits/documents",
           // },
+        ],
+      },
+    ],
+  },
+  // Menu d'audience : à gauche les formes juridiques, au milieu les métiers.
+  // Les destinations sont les pages qui existent réellement aujourd'hui —
+  // la LP auto-entrepreneur et les hubs sectoriels du blog.
+  {
+    name: "Pour qui",
+    href: "#link",
+    hasDropdown: true,
+    dropdownColumns: [
+      {
+        title: "STATUT",
+        items: [
           {
-            name: "Signature de mail",
-            description: "Créez des signatures professionnelles",
-            icon: <Mail size={18} />,
-            href: "/produits/signatures",
+            name: "Auto-entrepreneur",
+            description: "Facturez sans TVA et sans vous tromper",
+            icon: <UserRound size={18} />,
+            href: "/auto-entrepreneur",
           },
           {
-            name: "Transfert de fichiers",
-            description: "Envoyez vos fichiers en toute sécurité",
+            name: "Micro-entreprise",
+            description: "Livre des recettes et justificatifs",
+            icon: <Briefcase size={18} />,
+            href: "/micro-entreprise",
+          },
+          {
+            name: "Entreprise individuelle",
+            description: "Vos obligations et vos documents en EI",
             icon: <Zap size={18} />,
-            href: "/produits/transfers",
+            href: "/entreprise-individuelle",
           },
           {
-            name: "Gestion de projets",
-            description: "Organisez vos projets avec des tableaux Kanban",
-            icon: <Kanban size={18} />,
-            href: "/produits/kanban",
+            name: "SASU et EURL",
+            description: "La gestion d'une société à associé unique",
+            icon: <Rocket size={18} />,
+            href: "/sasu-eurl",
+          },
+          {
+            name: "Association",
+            description: "Factures, dépenses et pièces justificatives",
+            icon: <HeartHandshake size={18} />,
+            href: "/association",
+          },
+        ],
+      },
+      {
+        title: "MÉTIER",
+        items: [
+          {
+            name: "BTP et artisans",
+            description: "Devis de chantier, acomptes et situations",
+            icon: <HardHat size={18} />,
+            href: "/btp-artisans",
+          },
+          {
+            name: "Professions médicales",
+            description: "Facturation et obligations de votre cabinet",
+            icon: <Stethoscope size={18} />,
+            href: "/professions-medicales",
+          },
+          {
+            name: "Avocats",
+            description: "Honoraires, provisions et débours",
+            icon: <Scale size={18} />,
+            href: "/avocats",
+          },
+          {
+            name: "Photographes et créatifs",
+            description: "Cessions de droits, acomptes et livrables",
+            icon: <Camera size={18} />,
+            href: "/photographes-creatifs",
           },
         ],
       },
     ],
   },
-  { name: "Tarifs", href: "/tarifs" },
   {
     name: "Ressources",
     href: "#link",
@@ -114,13 +213,13 @@ const menuItems = [
           {
             name: "Documentation",
             description: "Guides et tutoriels pour maîtriser newbi",
-            icon: <BookOpen size={18} />,
+            icon: <Book2Icon width={18} height={18} />,
             href: "https://docs.newbi.fr/",
           },
           {
             name: "Blog",
             description: "Actualités, conseils et bonnes pratiques",
-            icon: <FileText size={18} />,
+            icon: <NoteTextIcon width={18} height={18} />,
             href: "/blog",
           },
           {
@@ -153,6 +252,7 @@ const menuItems = [
       },
     ],
   },
+  { name: "Tarifs", href: "/tarifs" },
   { name: "Contact", href: "/contact" },
 ];
 
@@ -168,7 +268,34 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
 
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const [onDark, setOnDark] = React.useState(false);
   const [openDropdown, setOpenDropdown] = React.useState(null);
+  // Le menu qui se referme reste monté le temps de son animation de sortie.
+  const [closingDropdown, setClosingDropdown] = React.useState(null);
+  const closeTimer = React.useRef(null);
+
+  // L'index courant est suivi dans une ref : la fermeture a besoin de le lire
+  // sans passer par un updater de state (les effets de bord y sont proscrits).
+  const openRef = React.useRef(null);
+
+  const openMenu = (index) => {
+    clearTimeout(closeTimer.current);
+    openRef.current = index;
+    setClosingDropdown(null);
+    setOpenDropdown(index);
+  };
+
+  const closeMenu = () => {
+    const current = openRef.current;
+    if (current === null) return;
+    openRef.current = null;
+    setOpenDropdown(null);
+    setClosingDropdown(current);
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setClosingDropdown(null), 160);
+  };
+
+  React.useEffect(() => () => clearTimeout(closeTimer.current), []);
   const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(null);
   const [bannerVisible, setBannerVisible] = React.useState(hasBanner);
 
@@ -200,6 +327,45 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // La navbar s'inverse quand elle survole une section sombre. Les sections
+  // concernées se déclarent avec data-nav-theme="dark" : sur les pages qui
+  // n'en ont pas, l'observateur ne se monte même pas.
+  React.useEffect(() => {
+    const targets = document.querySelectorAll('[data-nav-theme="dark"]');
+    if (!targets.length) return;
+
+    let io;
+    const visible = new Set();
+    const NAV_HEIGHT = 68;
+
+    const observe = () => {
+      io?.disconnect();
+      visible.clear();
+      // La racine est réduite à une bande de la hauteur de la navbar, en haut
+      // de l'écran : une section n'« intersecte » donc que lorsqu'elle passe
+      // dessous.
+      io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) =>
+            e.isIntersecting ? visible.add(e.target) : visible.delete(e.target),
+          );
+          setOnDark(visible.size > 0);
+        },
+        {
+          rootMargin: `0px 0px -${Math.max(0, window.innerHeight - NAV_HEIGHT)}px 0px`,
+        },
+      );
+      targets.forEach((t) => io.observe(t));
+    };
+
+    observe();
+    window.addEventListener("resize", observe);
+    return () => {
+      io?.disconnect();
+      window.removeEventListener("resize", observe);
+    };
+  }, []);
+
   const toggleDropdown = (index) => {
     setOpenDropdown(openDropdown === index ? null : index);
   };
@@ -218,9 +384,12 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
       >
         <div
           className={cn(
-            "w-full px-6 lg:px-12 transition-all duration-300",
+            "w-full px-6 lg:px-12 transition-colors duration-300",
             (isScrolled || solidBackground) &&
+              !onDark &&
               "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800",
+            onDark &&
+              "bg-[#0B0B0C]/55 backdrop-blur-xl backdrop-saturate-150 border-b border-white/10",
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-7xl mx-auto">
@@ -235,15 +404,22 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                   alt="Logo newbi"
                   width="90"
                   height="36"
-                  className="object-contain"
+                  className={cn(
+                    "object-contain transition-[filter] duration-300",
+                    onDark && "brightness-0 invert",
+                  )}
                 />
               </Link>
 
               <div className="flex items-center gap-2 lg:hidden">
                 <Button
                   asChild
-                  variant={isLoggedIn ? "default" : "outline"}
+                  variant={isLoggedIn ? "default" : "ghost"}
                   size="sm"
+                  className={cn(
+                    "transition-colors duration-300",
+                    onDark && !isLoggedIn && "text-white hover:bg-white/10",
+                  )}
                 >
                   <Link
                     href={isLoggedIn ? "/mobile-non-disponible" : "/auth/login"}
@@ -259,7 +435,10 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                     if (menuState) setMobileDropdownOpen(null);
                   }}
                   aria-label={menuState == true ? "Close Menu" : "Open Menu"}
-                  className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5"
+                  className={cn(
+                    "relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 transition-colors duration-300",
+                    onDark && "text-white",
+                  )}
                 >
                   <Equal className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
                   <X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
@@ -268,13 +447,16 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
             </div>
 
             <div className="absolute inset-0 m-auto hidden size-fit lg:block">
-              <ul className="flex gap-8 text-sm">
+              <ul className="flex gap-8 text-sm font-medium leading-5 tracking-tight">
                 {menuItems.map((item, index) => (
                   <li key={index} className="relative group">
                     {item.hasDropdown ? (
                       <span
-                        className="flex items-center gap-1 text-[#202020] hover:opacity-70 cursor-pointer duration-150"
-                        onMouseEnter={() => setOpenDropdown(index)}
+                        className={cn(
+                          "flex items-center gap-1 cursor-pointer transition-colors duration-300 hover:opacity-70",
+                          onDark ? "text-white" : "text-[#242529]",
+                        )}
+                        onMouseEnter={() => openMenu(index)}
                       >
                         {item.name}
                         <ChevronDown
@@ -288,118 +470,225 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                     ) : (
                       <Link
                         href={item.href}
-                        className="text-[#202020] hover:opacity-70 block duration-150"
+                        className={cn(
+                          "block transition-colors duration-300 hover:opacity-70",
+                          onDark ? "text-white" : "text-[#242529]",
+                        )}
                       >
                         <span>{item.name}</span>
                       </Link>
                     )}
 
                     {/* Dropdown Menu */}
-                    {item.hasDropdown && openDropdown === index && (
-                      <div
-                        className={cn(
-                          "absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-50 dark:bg-background border rounded-xl shadow-sm p-6 z-50",
-                          item.dropdownColumns?.length === 1
-                            ? "w-[600px]"
-                            : "w-[850px]",
-                        )}
-                        onMouseEnter={() => setOpenDropdown(index)}
-                        onMouseLeave={() => setOpenDropdown(null)}
-                      >
+                    {item.hasDropdown &&
+                      (openDropdown === index || closingDropdown === index) && (
                         <div
                           className={cn(
-                            "grid gap-6",
+                            // Apparition et disparition : léger glissement
+                            // vertical et fondu, façon Notion.
+                            "absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-50 dark:bg-background border rounded-2xl shadow-sm p-6 z-50",
+                            openDropdown === index
+                              ? "animate-in fade-in-0 slide-in-from-top-2 duration-200 ease-out"
+                              : "animate-out fade-out-0 slide-out-to-top-2 duration-150 ease-in",
                             item.dropdownColumns?.length === 1
-                              ? "grid-cols-2"
-                              : "grid-cols-3",
+                              ? "w-[600px]"
+                              : "w-[850px]",
                           )}
+                          onMouseEnter={() => openMenu(index)}
+                          onMouseLeave={closeMenu}
                         >
-                          {/* Colonnes OUTILS FINANCIERS et AUTRES OUTILS */}
-                          {item.dropdownColumns?.map((column, colIdx) => (
-                            <div key={colIdx} className="space-y-4">
-                              <h3 className="text-xs font-normal text-gray-500 uppercase tracking-wider mb-4">
-                                {column.title}
-                              </h3>
-                              <div className="space-y-1">
-                                {column.items.map((dropdownItem, idx) => (
-                                  <Link
-                                    key={idx}
-                                    href={dropdownItem.href}
-                                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-muted transition-colors"
-                                    onClick={() => setOpenDropdown(null)}
-                                  >
-                                    <div className="text-gray-600 dark:text-gray-400 mt-0.5">
-                                      {dropdownItem.icon}
-                                    </div>
-                                    <div className="flex-1">
-                                      <p className="font-normal text-sm text-gray-900 dark:text-white">
-                                        {dropdownItem.name}
-                                      </p>
-                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                        {dropdownItem.description}
-                                      </p>
-                                    </div>
-                                  </Link>
-                                ))}
+                          <div
+                            className={cn(
+                              "grid gap-6",
+                              item.dropdownColumns?.length === 1
+                                ? "grid-cols-2"
+                                : "grid-cols-3",
+                            )}
+                          >
+                            {/* Colonnes OUTILS FINANCIERS et AUTRES OUTILS */}
+                            {item.dropdownColumns?.map((column, colIdx) => (
+                              <div key={colIdx} className="space-y-4">
+                                <h3 className="text-xs font-normal text-gray-500 uppercase tracking-wider mb-4">
+                                  {column.title}
+                                </h3>
+                                <div className="space-y-1">
+                                  {column.items.map((dropdownItem, idx) => (
+                                    <Link
+                                      key={idx}
+                                      href={dropdownItem.href}
+                                      className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-muted transition-colors"
+                                      onClick={closeMenu}
+                                    >
+                                      <div className="text-gray-600 dark:text-gray-400 mt-0.5">
+                                        {dropdownItem.icon}
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="flex items-center gap-2 font-normal text-sm text-gray-900 dark:text-white">
+                                          {dropdownItem.name}
+                                          {dropdownItem.badge && (
+                                            <span className="rounded-md bg-[#E4E2FF] px-1.5 py-0.5 text-[10px] font-medium text-[#5A50FF]">
+                                              {dropdownItem.badge}
+                                            </span>
+                                          )}
+                                        </p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                          {dropdownItem.description}
+                                        </p>
+                                      </div>
+                                    </Link>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
 
-                          {/* Colonne conditionnelle : FACTURATION ÉLECTRONIQUE ou ARTICLE POPULAIRE */}
-                          {item.name === "Produits" ? (
-                            <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 flex flex-col">
-                              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-                                FACTURATION ÉLECTRONIQUE
-                              </h3>
-                              <p className="text-xs text-gray-600 dark:text-gray-300 mb-4">
-                                Préparez-vous dès maintenant à l'obligation de
-                                facturation électronique
-                              </p>
-                              <div className="flex-1 flex items-center justify-center mb-6">
-                                <img
-                                  src="/logo_Compatible_Facturation_electronique-footer.png"
-                                  alt="Solution compatible Facturation électronique"
-                                  className="w-48 h-auto object-contain"
-                                />
-                              </div>
-
+                            {/* Colonne conditionnelle : FACTURATION ÉLECTRONIQUE ou ARTICLE POPULAIRE */}
+                            {item.name === "Produits" ? (
+                              /* Visuel de la carte « Gestion de projets » de
+                               la LP home, puis le titre et le texte en
+                               dessous. Le bloc entier est cliquable. */
                               <Link
                                 href="/produits/facturation-electronique"
-                                className="inline-block text-center px-4 py-2 bg-[#202020] text-white text-sm font-medium rounded-md hover:bg-[#202020] transition-colors"
-                                onClick={() => setOpenDropdown(null)}
+                                onClick={closeMenu}
+                                className="group flex flex-col"
                               >
-                                En savoir plus
-                              </Link>
-                            </div>
-                          ) : (
-                            <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 flex flex-col">
-                              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-                                FAITES-VOUS ACCOMPAGNER
-                              </h3>
-                              <p className="text-xs text-gray-600 dark:text-gray-300 mb-4">
-                                Une question, un doute ? Un conseiller newbi
-                                vous répond sur WhatsApp et vous aide à démarrer
-                                sereinement.
-                              </p>
-                              <div className="flex-1 flex items-center justify-center mb-6">
-                                <img
-                                  src="/undraw_questions.svg"
-                                  alt="Faites-vous accompagner par un conseiller newbi"
-                                  className="w-48 h-auto object-contain"
-                                />
-                              </div>
+                                <div className="relative flex-1 min-h-[180px] overflow-hidden rounded-xl">
+                                  <img
+                                    src="/images/lp-home/tools/projets.png"
+                                    alt=""
+                                    className="absolute inset-0 size-full object-cover"
+                                  />
+                                  {/* La flèche sort par le haut et une seconde
+                                    revient par le bas */}
+                                  <span className="absolute top-3 right-3 grid size-9 place-items-center rounded-full bg-white/25 ring-1 ring-white/40 backdrop-blur-sm text-white transition-colors group-hover:bg-white/40">
+                                    <span className="relative block size-4 overflow-hidden">
+                                      <ArrowUpRight
+                                        size={16}
+                                        className="absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-full"
+                                      />
+                                      <ArrowUpRight
+                                        size={16}
+                                        className="absolute inset-0 translate-y-full transition-transform duration-500 ease-out group-hover:translate-y-0"
+                                      />
+                                    </span>
+                                  </span>
 
-                              {/* Noir plutôt que le vert WhatsApp : le bouton
-                                  reste discret dans le menu déroulant */}
-                              <WhatsAppContactButton
-                                className="w-full rounded-md text-sm font-medium px-4 py-2 h-auto bg-[#202020] hover:bg-[#333] active:bg-[#111] dark:bg-[#202020] dark:hover:bg-[#333] dark:active:bg-[#111]"
-                                onClick={() => setOpenDropdown(null)}
-                              />
-                            </div>
-                          )}
+                                  {/* Badge de conformité, posé dans l'angle bas
+                                    droit de la photo */}
+                                  <span className="absolute bottom-3 right-3 rounded-md bg-white px-2 py-1.5 shadow-sm">
+                                    <img
+                                      src="/logo_Compatible_Facturation_electronique-footer.png"
+                                      alt="Solution compatible Facturation électronique"
+                                      className="h-7 w-auto object-contain"
+                                    />
+                                  </span>
+                                </div>
+
+                                <h3 className="mt-4 flex items-center gap-2 text-lg font-medium text-gray-900 dark:text-white">
+                                  FACTURATION ÉLECTRONIQUE
+                                  {/* Incluse sans supplément : autant le dire
+                                      dès le menu */}
+                                  <span className="rounded-md bg-[#E4E2FF] px-2 py-0.5 text-[11px] font-medium text-[#5A50FF]">
+                                    Gratuit
+                                  </span>
+                                </h3>
+                                <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
+                                  Préparez-vous dès maintenant à l'obligation de
+                                  facturation électronique
+                                </p>
+                              </Link>
+                            ) : item.name === "Pour qui" ? (
+                              /* Troisième colonne du menu « Pour qui » : la photo
+                                 en haut, le message dessous, et le lien vers un
+                                 conseiller. Le bloc entier est cliquable. */
+                              <Link
+                                href="/contact"
+                                onClick={closeMenu}
+                                className="group flex flex-col"
+                              >
+                                <div className="relative flex-1 min-h-[180px] overflow-hidden rounded-xl">
+                                  <img
+                                    src="/lp/facturation-electronique/cta-laptop.jpg"
+                                    alt=""
+                                    className="absolute inset-0 size-full object-cover"
+                                  />
+                                  {/* Même flèche roulante que les autres
+                                      colonnes de visuel */}
+                                  <span className="absolute top-3 right-3 grid size-9 place-items-center rounded-full bg-white/25 ring-1 ring-white/40 backdrop-blur-sm text-white transition-colors group-hover:bg-white/40">
+                                    <span className="relative block size-4 overflow-hidden">
+                                      <ArrowUpRight
+                                        size={16}
+                                        className="absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-full"
+                                      />
+                                      <ArrowUpRight
+                                        size={16}
+                                        className="absolute inset-0 translate-y-full transition-transform duration-500 ease-out group-hover:translate-y-0"
+                                      />
+                                    </span>
+                                  </span>
+                                </div>
+
+                                <h3 className="mt-4 text-lg font-medium leading-snug text-gray-900 dark:text-white">
+                                  Découvrez si newbi est adapté à votre activité
+                                </h3>
+                                <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[#5A50FF]">
+                                  Échanger avec un conseiller
+                                  <ArrowRight
+                                    size={14}
+                                    className="transition-transform duration-300 group-hover:translate-x-0.5"
+                                  />
+                                </span>
+                              </Link>
+                            ) : (
+                              /* Même traitement que le bloc « Facturation
+                                 électronique » du menu Produits : la photo en
+                                 haut, le texte dessous, le bloc cliquable. */
+                              <a
+                                href={WHATSAPP_CONTACT_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={closeMenu}
+                                className="group flex flex-col"
+                              >
+                                <div className="relative flex-1 min-h-[180px] overflow-hidden rounded-xl">
+                                  <img
+                                    src="/lp/home/menu/accompagnement.jpg"
+                                    alt=""
+                                    className="absolute inset-0 size-full object-cover"
+                                  />
+                                  {/* La flèche sort par le haut et une seconde
+                                      revient par le bas */}
+                                  <span className="absolute top-3 right-3 grid size-9 place-items-center rounded-full bg-white/25 ring-1 ring-white/40 backdrop-blur-sm text-white transition-colors group-hover:bg-white/40">
+                                    <span className="relative block size-4 overflow-hidden">
+                                      <ArrowUpRight
+                                        size={16}
+                                        className="absolute inset-0 transition-transform duration-500 ease-out group-hover:-translate-y-full"
+                                      />
+                                      <ArrowUpRight
+                                        size={16}
+                                        className="absolute inset-0 translate-y-full transition-transform duration-500 ease-out group-hover:translate-y-0"
+                                      />
+                                    </span>
+                                  </span>
+
+                                  {/* Pastille WhatsApp, dans l'angle bas droit */}
+                                  <span className="absolute bottom-3 right-3 grid size-9 place-items-center rounded-full bg-white shadow-sm">
+                                    <WhatsAppIcon className="size-5 text-[#25D366]" />
+                                  </span>
+                                </div>
+
+                                <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+                                  FAITES-VOUS ACCOMPAGNER
+                                </h3>
+                                <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
+                                  Une question, un doute ? Un conseiller newbi
+                                  vous répond sur WhatsApp et vous aide à
+                                  démarrer sereinement.
+                                </p>
+                              </a>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </li>
                 ))}
               </ul>
@@ -415,7 +704,15 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                 </Button>
               ) : (
                 <>
-                  <Button asChild variant="outline" size="md">
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="md"
+                    className={cn(
+                      "transition-colors duration-300",
+                      onDark && "text-white hover:bg-white/10",
+                    )}
+                  >
                     <Link href="/auth/login">
                       <span>Connexion</span>
                     </Link>
@@ -496,8 +793,13 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                                           </span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                          <h4 className="text-sm font-medium text-black">
+                                          <h4 className="flex items-center gap-2 text-sm font-medium text-black">
                                             {dropdownItem.name}
+                                            {dropdownItem.badge && (
+                                              <span className="rounded-md bg-[#E4E2FF] px-1.5 py-0.5 text-[10px] font-medium text-[#5A50FF]">
+                                                {dropdownItem.badge}
+                                              </span>
+                                            )}
                                           </h4>
                                           <p className="text-sm text-gray-500 mt-0.5">
                                             {dropdownItem.description}

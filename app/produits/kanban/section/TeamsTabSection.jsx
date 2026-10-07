@@ -147,13 +147,13 @@ export default function TeamsTabSection() {
 
   return (
     <section className="pt-10 md:pt-20 lg:pt-22 relative overflow-hidden">
-      <div className="max-w-6xl px-4 mx-auto">
+      <div className="max-w-7xl px-5 mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
           <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
-            Un Kanban adapté à votre métier
+            Un tableau adapté à votre métier
           </h2>
-          <p className="text-md font-normal tracking-tight text-gray-600 mx-auto max-w-2xl">
+          <p className="text-[17px] leading-relaxed text-gray-600 mx-auto max-w-2xl">
             Agences, freelances, startups ou cabinets — gérez vos projets avec
             un outil pensé pour votre réalité.
           </p>

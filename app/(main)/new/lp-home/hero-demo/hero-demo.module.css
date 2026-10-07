@@ -521,6 +521,26 @@
   margin: 0 auto 0 0;
   font-variant-numeric: tabular-nums;
 }
+/* =====================================================================
+   Vue « Factures d'achat » (LP facturation électronique)
+   ===================================================================== */
+/* Même ligne que `.tr`, avec les trois dates et la catégorie des factures
+   fournisseurs en plus : seules les pistes changent. */
+.pur {
+  display: grid;
+  grid-template-columns: 26px 1.5fr 0.95fr 1.05fr 1.05fr 1.05fr 1.45fr 1.05fr 0.8fr 34px;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-bottom: 1px solid #f2f2f4;
+  font-size: 11.5px;
+}
+.pur > div {
+  min-width: 0;
+  overflow: hidden;
+}
+
 .trx {
   display: grid;
   grid-template-columns: 26px 1.9fr 0.95fr 0.95fr 1.15fr 0.5fr 0.8fr 32px;

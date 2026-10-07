@@ -1,246 +1,216 @@
-"use client";
-
-import dynamic from "next/dynamic";
 import React from "react";
-import {
-  Eye,
-  CircleDollarSign,
-  Mail,
-  Printer,
-  Download,
-  Trash2,
-} from "lucide-react";
-// Animations gsap chargées dans leur propre chunk (hors chemin critique SEO)
-const InvoiceEditorAnimation = dynamic(
-  () => import("./InvoiceEditorAnimation"),
-  { ssr: false },
-);
-const InvoiceSpeedAnimation = dynamic(() => import("./InvoiceSpeedAnimation"), {
-  ssr: false,
-});
+import { Percent, FileDown } from "lucide-react";
+import { OMBRE, VISUEL } from "@/src/lib/lp-visuels";
+import CartePosee from "@/src/components/lp/carte-posee";
+
+// Mêmes jetons visuels que le bento « Garde le contrôle de ton activité »
+// de la LP home. Chaque carte de texte porte un visuel ancré en bas, qui sort
+// de son cadre — même matière que les sections de /produits/facturation-
+// electronique, mais trois formes différentes (jauge, pile de documents,
+// tuiles) pour que l'ensemble des LP ne se répète pas.
+const CARD =
+  "rounded-3xl bg-gradient-to-b from-[#F4F4F6] to-[#FAFAFB] p-7 md:p-8 flex flex-col overflow-hidden";
+// Variante des cartes qui portent un visuel : il doit atteindre le bord bas.
+const CARD_VISUEL = `${CARD} pb-0`;
+const TITLE =
+  "text-xl md:text-2xl font-medium tracking-tight text-gray-950 mb-3";
+const TEXT = "text-[15px] leading-relaxed text-gray-700";
 
 export default function FacturesGovernanceSection() {
   return (
-    <section className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden">
-      <div className="max-w-6xl px-4 mx-auto">
-        {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
-            FACTURATION SIMPLIFIÉE
-          </span>
-          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
-            Tout ce qu'il faut pour facturer sereinement
-          </h2>
-          <p className="text-md font-normal tracking-tight text-gray-600 mx-auto mb-8 max-w-2xl">
-            De la création à l'encaissement, Newbi vous accompagne à chaque
-            étape pour une facturation sans stress.
-          </p>
-        </div>
+    <section className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden px-5">
+      {/* Le padding latéral est porté par la section : le conteneur fait donc
+          bien 7xl pleins, comme la bannière et le bloc noir qui suivent. */}
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
+          Un logiciel de facturation complet
+        </h2>
+        <p className="text-[17px] leading-relaxed text-gray-600 max-w-2xl mb-10 md:mb-14">
+          Devis, factures, avoirs, relances et export comptable au même endroit
+          — conformes à la facturation électronique, sans ressaisie.
+        </p>
 
-        {/* Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 border-y border-neutral-200 divide-neutral-200">
-          {/* Card 1 */}
-          <div className="md:border-r border-b border-neutral-200 flex flex-col">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Soyez pro dès la première facture
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Même sans expérience en comptabilité, créez des factures
-                conformes et professionnelles en quelques clics. Newbi vous
-                guide à chaque étape.
-              </p>
-            </div>
-            <div className="relative flex-1 min-h-[320px] overflow-hidden perspective-distant">
-              <div className="rounded-t-2xl bg-neutral-100 border border-neutral-200 w-full h-full absolute inset-x-4 inset-y-2 p-2 overflow-hidden">
-                <div className="relative w-full h-full rounded-tl-[12px] rounded-tr-[12px] ring-1 ring-black/5 overflow-hidden">
-                  <img
-                    src="/lp/factures/newbi-editeur-facture.png"
-                    alt="Éditeur de facture Newbi"
-                    className="absolute inset-0 w-full h-full object-cover object-left-top"
-                  />
-                  <InvoiceEditorAnimation />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2 */}
-          <div className="border-b border-neutral-200 flex flex-col">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Zéro erreur sur vos documents
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Mentions légales, numérotation, calcul de TVA : tout est vérifié
-                automatiquement pour que vos factures et devis soient toujours
-                irréprochables.
-              </p>
-            </div>
-            <div className="relative flex-1 min-h-[280px] sm:min-h-[200px] md:min-h-0 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
+          {/* Colonne étroite : la carte photo, puis le suivi des paiements */}
+          <div className="md:col-span-4 flex flex-col gap-4 md:gap-5">
+            {/* Texte en haut : le voile est donc dégradé depuis le haut */}
+            <article className="relative flex-1 min-h-[520px] overflow-hidden rounded-3xl flex flex-col justify-start p-7 md:p-8 text-white">
               <img
-                src="/lp/factures/facture-preview.png"
-                alt="Facture professionnelle Newbi"
-                className="absolute left-[48%] -translate-x-1/2 top-2 w-[62%] shadow-md"
+                src="/lp/factures/carte-bureau.png"
+                alt=""
+                className="absolute inset-0 size-full object-cover object-[60%_center]"
               />
-            </div>
-          </div>
-
-          {/* Card 3 */}
-          <div className="border-b md:border-b-0 md:border-r border-neutral-200">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Protégez votre trésorerie
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Suivez le statut de chaque facture en temps réel et relancez
-                automatiquement les retards de paiement pour éviter les impayés.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 md:h-80 overflow-hidden perspective-distant">
-              <div className="flex-1 rounded-t-2xl flex flex-col bg-neutral-50 border border-neutral-200 mx-auto w-full h-full absolute inset-x-4 inset-y-2 pt-0 px-0 overflow-hidden">
-                {/* Tableau factures */}
-                <div className="flex-1 overflow-hidden relative flex flex-col gap-1.5 pt-1">
-                  {/* Lignes de factures */}
-                  {[
-                    {
-                      amount: "1 000 €",
-                      status: "En attente dans 20 jours",
-                      statusColor:
-                        "text-orange-500 bg-orange-50 border-orange-200",
-                      date: "23/02/2026",
-                      action: "Envoyer",
-                      actionColor: "text-[#5A50FF]",
-                    },
-                    {
-                      amount: "795 €",
-                      status: "En attente dans 2 jours",
-                      statusColor: "text-red-500 bg-red-50 border-red-200",
-                      date: "05/02/2026",
-                      action: "Enregistrer",
-                      actionColor: "text-[#5A50FF]",
-                    },
-                    {
-                      amount: "1 250 €",
-                      status: "Payée",
-                      statusColor:
-                        "text-green-600 bg-green-50 border-green-200",
-                      date: "28/12/2025",
-                      action: "Envoyer",
-                      actionColor: "text-neutral-400",
-                    },
-                    {
-                      amount: "580 €",
-                      status: "Payée",
-                      statusColor:
-                        "text-green-600 bg-green-50 border-green-200",
-                      date: "14/11/2025",
-                      action: "Envoyer",
-                      actionColor: "text-neutral-400",
-                    },
-                    {
-                      amount: "1 185 €",
-                      status: "Payée",
-                      statusColor:
-                        "text-green-600 bg-green-50 border-green-200",
-                      date: "03/11/2025",
-                      action: "Envoyer",
-                      actionColor: "text-neutral-400",
-                    },
-                    {
-                      amount: "990 €",
-                      status: "Payée",
-                      statusColor:
-                        "text-green-600 bg-green-50 border-green-200",
-                      date: "18/10/2025",
-                      action: "Envoyer",
-                      actionColor: "text-neutral-400",
-                    },
-                  ].map((row, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between px-4 py-3 bg-white rounded-xl ring-1 ring-black/5 text-xs mx-1"
-                    >
-                      <span className="w-16 font-medium text-neutral-800">
-                        {row.amount}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-md border text-[10px] font-medium ${row.statusColor}`}
-                      >
-                        {row.status === "Payée" && (
-                          <span className="mr-0.5">●</span>
-                        )}
-                        {row.status}
-                      </span>
-                      <span className="text-neutral-400 w-20 text-right">
-                        {row.date}
-                      </span>
-                      <span
-                        className={`w-20 text-right font-medium ${row.actionColor}`}
-                      >
-                        {row.action}
-                      </span>
-                      <span className="text-neutral-300 ml-2">⋮</span>
-                    </div>
-                  ))}
-
-                  {/* Menu contextuel flottant */}
-                  <div className="absolute top-[72px] right-6 bg-white rounded-xl shadow-lg border border-neutral-200 py-2 px-1 w-[200px] z-10">
-                    {[
-                      { icon: <Eye className="w-4 h-4" />, label: "Aperçu" },
-                      {
-                        icon: <CircleDollarSign className="w-4 h-4" />,
-                        label: "Créer un avoir",
-                        bold: true,
-                      },
-                      {
-                        icon: <Mail className="w-4 h-4" />,
-                        label: "Envoyer par e-mail",
-                      },
-                      {
-                        icon: <Printer className="w-4 h-4" />,
-                        label: "Imprimer",
-                      },
-                      {
-                        icon: <Download className="w-4 h-4" />,
-                        label: "Télécharger",
-                      },
-                      {
-                        icon: <Trash2 className="w-4 h-4" />,
-                        label: "Supprimer",
-                      },
-                    ].map((item, i) => (
-                      <div
-                        key={i}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-neutral-50 cursor-pointer ${item.bold ? "font-semibold text-neutral-900" : "text-neutral-600"}`}
-                      >
-                        {item.icon}
-                        <span className="text-xs">{item.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/10" />
+              <div className="relative">
+                <h3 className="text-xl md:text-2xl font-medium tracking-tight mb-3">
+                  Facturez depuis votre bureau ou votre téléphone
+                </h3>
+                <p className="text-[15px] leading-relaxed text-white/85">
+                  Votre logiciel de facturation vous suit partout. Vous créez un
+                  devis chez un client, vous l&apos;envoyez avant d&apos;être
+                  rentré.
+                </p>
               </div>
-            </div>
+            </article>
+
+            <article className={CARD}>
+              <h3 className={TITLE}>Ne courez plus après les paiements</h3>
+              <p className={TEXT}>
+                Suivez le statut de chaque facture en temps réel et déclenchez
+                les relances automatiques avant que le retard ne
+                s&apos;installe.
+              </p>
+            </article>
           </div>
 
-          {/* Card 4 */}
-          <div>
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Facturez en deux fois moins de temps
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Modèles réutilisables, duplication de documents, envoi
-                automatique : gagnez un temps précieux sur chaque facture.
+          {/* Colonne large : deux cartes texte + illustration côte à côte */}
+          <div className="md:col-span-8 flex flex-col gap-4 md:gap-5">
+            <article className={`${CARD_VISUEL} min-h-[440px]`}>
+              <h3 className={TITLE}>
+                Créez des devis et des factures illimités
+              </h3>
+              <p className={`${TEXT} max-w-xl`}>
+                Documents conformes à la réforme de la facturation électronique,
+                à votre logo et à vos conditions. Aucun plafond : émettez autant
+                de devis, factures et avoirs que nécessaire.
               </p>
-            </div>
-            <div className="relative h-80 sm:h-60 md:h-80 overflow-hidden">
-              <InvoiceSpeedAnimation />
-            </div>
+              <div className={VISUEL}>
+                <DocumentsVisual />
+              </div>
+            </article>
+
+            {/* Dernière carte : elle absorbe la hauteur restante pour que les
+                deux colonnes se referment à la même ligne */}
+            <article className={`${CARD_VISUEL} flex-1 min-h-[500px]`}>
+              <h3 className={TITLE}>Simplifiez votre pré-comptabilité</h3>
+              <p className={`${TEXT} max-w-xl`}>
+                Factures de vente, achats et justificatifs classés au fil de
+                l&apos;eau, TVA calculée à la ligne. Votre expert-comptable
+                récupère un export propre, au format FEC, Sage ou Cegid.
+              </p>
+              <div className={VISUEL}>
+                <PrecomptaVisual />
+              </div>
+            </article>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Visuels — ancrés en bas, ils sortent du cadre de leur carte         */
+/* ------------------------------------------------------------------ */
+
+/* Documents : un document au lieu d'une liste, et deux feuilles qui dépassent
+   derrière lui — c'est le « illimités » du titre, montré plutôt qu'écrit. */
+// Les trois documents cités par le texte de la carte.
+const TYPES = ["Devis", "Facture", "Avoir"];
+
+const POSTES = [
+  { large: "w-7/12", montant: "840,00 €", accent: true },
+  { large: "w-5/12", montant: "320,00 €" },
+  { large: "w-8/12", montant: "80,00 €" },
+  { large: "w-6/12", montant: "33,33 €" },
+];
+
+function DocumentsVisual() {
+  return (
+    <div className="absolute left-12 right-8 -bottom-6">
+      {/* Les deux feuilles de la pile : décalées vers le haut et rentrées, on
+          n'en voit que la tranche. */}
+      <div className="absolute inset-x-10 -top-6 h-10 rounded-t-2xl bg-white ring-1 ring-black/[0.04]" />
+      <div className="absolute inset-x-5 -top-3 h-10 rounded-t-2xl bg-white ring-1 ring-black/[0.06]" />
+
+      <div className="relative rounded-2xl bg-white overflow-hidden shadow-[0_1px_2px_rgba(16,16,32,0.04),0_8px_24px_-12px_rgba(16,16,32,0.18)] ring-1 ring-black/[0.06]">
+        {/* Les trois types de document que la carte annonce, l'actif en
+            violet de marque : c'est ce qui donne sa couleur au visuel. */}
+        <div className="flex items-center justify-between gap-3 px-4 pt-4">
+          {/* « à votre logo » : plutôt qu'un bloc de couleur, le logo d'un
+              vrai client, déjà servi par la démo du hero de la LP home. */}
+          <img
+            src="/lp/home/logos/sweily.png"
+            alt=""
+            width={2000}
+            height={660}
+            loading="lazy"
+            className="h-5 w-auto object-contain"
+          />
+          <span className="flex items-center gap-1">
+            {TYPES.map((t) => (
+              <span
+                key={t}
+                className={`rounded-md px-1.5 py-0.5 text-[10.5px] font-medium ${
+                  t === "Facture"
+                    ? "bg-[#EFEDFF] text-[#5A50FF]"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {t}
+              </span>
+            ))}
+          </span>
+        </div>
+
+        <div className="mt-4 space-y-2.5 px-4">
+          {POSTES.map((p) => (
+            <span key={p.montant} className="flex items-center gap-3">
+              <span
+                className={`h-1.5 rounded-full ${p.accent ? "bg-[#DCD9FF]" : "bg-gray-100"} ${p.large}`}
+              />
+              <span className="ml-auto text-[11.5px] tabular-nums text-gray-400">
+                {p.montant}
+              </span>
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-3.5 flex items-center justify-between border-t border-black/[0.06] px-4 py-3">
+          <span className="text-[11.5px] text-gray-500">Total TTC</span>
+          <span className="text-[13px] font-medium tabular-nums text-[#5A50FF]">
+            1 240,00 €
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Pré-comptabilité : une photographie plutôt qu'un encadré — trois visuels
+   construits d'affilée dans la même colonne finissaient par se ressembler.
+
+   Elle n'occupe que la droite de la carte, sort du cadre à droite et en bas,
+   qui la recadre, et porte deux cartes posées sur son bord gauche. Sa hauteur
+   vient du cadre (top-0 / -bottom-10) et non de sa largeur : à ratio fixe,
+   elle remonterait par-dessus le texte. */
+function PrecomptaVisual() {
+  return (
+    <div className="absolute -right-10 top-0 -bottom-10 w-[340px] lg:w-[560px]">
+      <div className={`h-full overflow-hidden rounded-2xl ${OMBRE}`}>
+        <img
+          src="/lp/factures/precomptabilite.jpg"
+          alt="Pièces comptables, calculatrice et carnet sur un bureau"
+          width={1400}
+          height={933}
+          loading="lazy"
+          className="size-full object-cover object-[55%_60%]"
+        />
+      </div>
+
+      {/* Les deux précisions que porte le texte de la carte, rien de plus. */}
+      <CartePosee
+        icon={Percent}
+        titre="TVA à la ligne"
+        texte="Chaque taux, calculé"
+        placement="-left-9 top-6"
+      />
+      <CartePosee
+        icon={FileDown}
+        titre="Export comptable"
+        texte="FEC, Sage ou Cegid"
+        placement="-left-5 bottom-16"
+      />
+    </div>
   );
 }

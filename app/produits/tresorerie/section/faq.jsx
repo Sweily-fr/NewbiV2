@@ -51,43 +51,45 @@ export default function FAQ() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            faqJsonLd(faqData.map((item) => ({
-              question: item.title ?? item.question,
-              answer: item.content ?? item.answer,
-            })))
+            faqJsonLd(
+              faqData.map((item) => ({
+                question: item.title ?? item.question,
+                answer: item.content ?? item.answer,
+              })),
+            ),
           ),
         }}
       />
-    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-16 pb-16">
-      <div className="space-y-2 text-center">
-        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
-          Questions fréquentes
-        </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Nous sommes là pour répondre à toutes vos questions. Si vous ne
-          trouvez pas l'information recherchée, n'hésitez pas à{" "}
-          <a href="/contact" className="underline underline-offset-4">
-            nous contacter
+      <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-10 md:pt-20 lg:pt-22 pb-0">
+        <div className="space-y-2 text-center">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
+            Questions fréquentes
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Nous sommes là pour répondre à toutes vos questions. Si vous ne
+            trouvez pas l'information recherchée, n'hésitez pas à{" "}
+            <a href="/contact" className="underline underline-offset-4">
+              nous contacter
+            </a>
+            .
+          </p>
+        </div>
+        <PublicFaq
+          items={faqData.map((item) => ({
+            question: item.title ?? item.question,
+            answer: item.content ?? item.answer,
+          }))}
+        />
+        <p className="text-muted-foreground">
+          Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
+          <a
+            href="/contact"
+            className="text-primary underline underline-offset-4"
+          >
+            équipe support
           </a>
-          .
         </p>
       </div>
-      <PublicFaq
-        items={faqData.map((item) => ({
-          question: item.title ?? item.question,
-          answer: item.content ?? item.answer,
-        }))}
-      />
-      <p className="text-muted-foreground">
-        Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
-        <a
-          href="/contact"
-          className="text-primary underline underline-offset-4"
-        >
-          équipe support
-        </a>
-      </p>
-    </div>
     </>
   );
 }

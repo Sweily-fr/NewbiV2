@@ -11,15 +11,19 @@ export default function LpSteps({
   steps,
   ctaLabel = "Essayer gratuitement",
   variant = "dark",
+  // Les LP restent en max-w-6xl ; les pages produits passent en max-w-7xl
+  maxWidth = "max-w-6xl",
+  // marges extérieures, pour caler la bande sur le rythme de la page
+  className = "",
 }) {
   const dark = variant === "dark";
   return (
     <section
       className={`px-5 py-14 md:py-20 ${
         dark ? "bg-[#202020] text-white" : "bg-[#F5F5F7] text-gray-950"
-      }`}
+      } ${className}`}
     >
-      <div className="max-w-6xl mx-auto">
+      <div className={`${maxWidth} mx-auto`}>
         <div className="max-w-2xl mx-auto text-center mb-12 md:mb-16">
           <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance mb-5">
             {title}

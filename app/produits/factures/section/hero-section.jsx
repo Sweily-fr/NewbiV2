@@ -3,76 +3,126 @@ import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { WhatsAppContactButton } from "@/src/components/whatsapp-contact-button";
-import { FacturesAnimation } from "./FacturesAnimation";
 
+// Portraits affichés sous les CTA : les mêmes clients que sur la LP home.
+// `position` recadre chaque photo sur le visage.
+const PROOF_AVATARS = [
+  {
+    src: "/lp/avis/maeva.jpg",
+    alt: "Maëva, graphiste, cliente Newbi",
+    position: "50% 18%",
+  },
+  {
+    src: "/lp/avis/pedro-avatar.jpg",
+    alt: "Pedro, commerçant, client Newbi",
+    position: "50% 35%",
+  },
+  {
+    src: "/lp/factures/41682668-4F07-4D9F-B672-DC469853793A.PNG",
+    alt: "Mustafa, artisan du bâtiment, client Newbi",
+    position: "50% 20%",
+  },
+  {
+    src: "/lp/about/about-11.jpeg",
+    alt: "Une cliente Newbi",
+    position: "50% 25%",
+  },
+];
+
+// Même disposition que le hero de la LP home : bloc de texte centré sur toute
+// la largeur, puis la maquette de l'interface en dessous, plein cadre.
 export function HeroSection() {
   return (
-    <>
-      <main className="overflow-hidden">
-        <section className="lg:min-h-screen flex items-start lg:items-center bg-white pt-44 sm:pt-48 lg:pt-24 mb-6 lg:mb-20 px-4 sm:px-6 lg:px-12">
-          <div className="mx-auto max-w-6xl w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              {/* Contenu texte à gauche */}
-              <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
-                <h1 className="text-balance font-medium text-4xl sm:text-5xl md:text-5xl lg:text-[3.5rem] leading-tight tracking-tight">
-                  Créez vos factures en quelques clics
-                </h1>
+    <div className="relative w-full overflow-x-clip bg-white px-5 pb-6 md:pb-10 lg:pb-16">
+      <div className="max-w-[1200px] mx-auto relative">
+        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-40 md:pt-36 lg:pt-44">
+          {/* Titre sur toute la largeur du conteneur */}
+          <div className="col-span-12 text-center">
+            <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
+              Votre logiciel de facturation, du devis au paiement
+            </h1>
+          </div>
 
-                <h2 className="text-base sm:text-lg font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-md mx-auto lg:mx-0">
-                  Créez et gérez vos factures en un clic.{" "}
-                  <strong className="font-medium text-gray-900">
-                    Suivez vos paiements et relancez vos clients
-                  </strong>{" "}
-                  depuis une seule interface.
-                </h2>
+          {/* Sous-titre, CTA et preuve sociale, centrés comme sur la home */}
+          <div className="col-span-12 lg:col-span-10 lg:col-start-2 text-center">
+            <p className="text-lg md:text-xl font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
+              Créez vos devis et vos factures en un clic, suivez vos paiements
+              et vos relances, et passez à la{" "}
+              <strong className="font-medium text-gray-900">
+                facturation électronique conforme
+              </strong>{" "}
+              sans changer d&apos;outil.
+            </p>
 
-                {/* Boutons CTA */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
-                  <Link href="/auth/signup" className="w-full sm:w-auto">
-                    <Button
-                      size="lg"
-                      className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal text-base rounded-lg px-6 w-full sm:w-auto"
-                    >
-                      Essayer 30 jours offerts
-                    </Button>
-                  </Link>
-                  <WhatsAppContactButton />
-                </div>
-                <p className="text-gray-400 text-xs pt-3 text-center lg:text-left">
-                  Plusieurs entreprises nous font déjà confiance · Conforme
-                  facturation électronique 2026
-                </p>
-              </div>
+            <div className="mb-8 flex flex-col items-center gap-3 sm:mx-auto sm:flex sm:w-fit sm:flex-row sm:justify-center">
+              {/* Même gabarit que le CTA du hero de la LP home */}
+              <Button
+                asChild
+                size="md"
+                variant="primary"
+                className="h-auto w-full px-4 py-1.5 text-[17px] sm:w-auto"
+              >
+                <Link href="/auth/signup">
+                  <span>Essayer 30 jours offerts</span>
+                </Link>
+              </Button>
+              <WhatsAppContactButton
+                className="bg-transparent hover:bg-gray-100 active:bg-gray-200 text-gray-900 dark:bg-transparent dark:hover:bg-gray-100 dark:text-gray-900"
+                iconClassName="text-[#25D366]"
+              />
+            </div>
 
-              {/* Animation SVG */}
-              <div className="relative flex items-center justify-center lg:items-end lg:justify-end pt-8 lg:pt-24 lg:overflow-visible">
-                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-64 xl:-mr-80 scale-[1.7] sm:scale-[1.5] lg:scale-100 origin-top translate-x-[45%] sm:translate-x-[25%] lg:translate-x-0">
-                  <FacturesAnimation />
-                  {/* Gradient flou en bas */}
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-48 lg:h-22 pointer-events-none"
-                    style={{
-                      background:
-                        "linear-gradient(to top, #ffffff 0%, #ffffff 55%, rgba(255,255,255,0.8) 75%, transparent 100%)",
-                    }}
+            {/* Preuve sociale : mêmes portraits que le hero de la LP home */}
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex -space-x-2.5">
+                {PROOF_AVATARS.map((avatar) => (
+                  <img
+                    key={avatar.src}
+                    src={avatar.src}
+                    alt={avatar.alt}
+                    style={{ objectPosition: avatar.position }}
+                    className="size-7 sm:size-8 rounded-full border-2 border-white object-cover"
+                    loading="lazy"
                   />
-                  {/* Card logo facturation électronique */}
-                  <Link
-                    href="/produits/facturation-electronique"
-                    className="absolute bottom-16 -left-14 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hidden lg:flex items-center px-2 py-1.5 gap-2 hover:shadow-md transition-shadow"
-                  >
-                    <img
-                      src="/logo_Compatible_Facturation_electronique-footer.png"
-                      alt="Conforme Facturation électronique 2026"
-                      className="h-20 w-auto object-contain"
-                    />
-                  </Link>
-                </div>
+                ))}
               </div>
+              <p className="text-xs sm:text-sm text-gray-600 text-left">
+                <span className="text-gray-900 font-medium">
+                  +1 000 indépendants
+                </span>{" "}
+                nous font confiance
+              </p>
             </div>
           </div>
-        </section>
-      </main>
-    </>
+
+          {/* Maquette de l'interface, sur toute la largeur du hero. Sur mobile
+              elle déborde des deux côtés pour rester lisible, comme sur la
+              home. */}
+          <div className="col-span-12">
+            <div className="relative mx-auto mt-10 md:mt-14 w-full">
+              <img
+                src="/lp/factures/ipad-mockup.png"
+                alt="Liste des factures clients dans Newbi : statuts, échéances et suivi"
+                className="w-[150%] max-w-none -ml-[25%] h-auto md:w-full md:ml-0"
+                loading="eager"
+                fetchPriority="high"
+              />
+              {/* Badge posé dans la maquette, juste au-dessus de l'encadré
+                  violet « Facturation électronique » de la sidebar. */}
+              <Link
+                href="/produits/facturation-electronique"
+                className="absolute left-[6.4%] top-[51.6%] z-50 hidden lg:flex w-[11.7%] items-center justify-center rounded-sm bg-white p-[0.9%] transition-colors hover:bg-gray-50"
+              >
+                <img
+                  src="/logo_Compatible_Facturation_electronique-footer.png"
+                  alt="Conforme Facturation électronique 2026"
+                  className="w-full h-auto object-contain"
+                />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
