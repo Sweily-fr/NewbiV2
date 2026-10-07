@@ -377,5 +377,12 @@
       "escompte-remise-rabais-ristourne-difference",
       "tva-non-applicable-article-293-b-mention"
     ]
+  },
+  {
+    "date": "2026-10-07",
+    "articles": [
+      "facture-traducteur-independant",
+      "alternatives-abby"
+    ]
   }
 ]
