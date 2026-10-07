@@ -36,6 +36,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/src/lib/utils";
 import { toast } from "@/src/components/ui/sonner";
 import { getCategoryLabel } from "@/lib/category-icons-config";
+import { vatLinesOf } from "@/src/utils/purchase-invoice-vat";
 
 const toYMD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -50,6 +51,17 @@ const STATUS_LABELS = {
   OVERDUE: "En retard",
   ARCHIVED: "Archivée",
 };
+
+// « 20 % : 35.36 HT / 7.07 TVA ; 10 % : 80.00 HT / 8.00 TVA » : une entrée
+// par taux (une seule pour une facture à taux unique), montants au même
+// format que les autres colonnes.
+const formatVatDetail = (inv) =>
+  vatLinesOf(inv)
+    .map(
+      (l) =>
+        `${l.rate} % : ${l.baseHT.toFixed(2)} HT / ${l.amountTVA.toFixed(2)} TVA`,
+    )
+    .join(" ; ");
 
 export function ExportDialog({
   open,
@@ -99,6 +111,7 @@ export function ExportDialog({
       "Date d'échéance",
       "Montant HT",
       "TVA",
+      "Détail TVA",
       "Montant TTC",
       "Catégorie",
       "Statut",
@@ -114,6 +127,7 @@ export function ExportDialog({
       inv.dueDate ? new Date(inv.dueDate).toLocaleDateString("fr-FR") : "",
       inv.amountHT?.toFixed(2) || "0.00",
       inv.amountTVA?.toFixed(2) || "0.00",
+      formatVatDetail(inv),
       inv.amountTTC?.toFixed(2) || "0.00",
       getCategoryLabel(inv.subcategory || inv.category) || "",
       STATUS_LABELS[inv.status] || inv.status || "",
