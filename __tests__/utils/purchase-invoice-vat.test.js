@@ -7,6 +7,7 @@ import {
   sameVatLines,
   splitVatIntoLines,
   vatInputFromForm,
+  vatLinesOf,
   vatLinesFromOcr,
 } from "@/src/utils/purchase-invoice-vat";
 
@@ -184,5 +185,23 @@ describe("formatVatRate / sameVatLines", () => {
         { rate: 10, baseHT: 80, amountTVA: 8.01 },
       ]),
     ).toBe(false);
+  });
+});
+
+describe("vatLinesOf (tableau, export)", () => {
+  it("facture à plusieurs taux : son détail", () => {
+    expect(vatLinesOf({ vatBreakdown: RESTAURANT, vatRate: 10 })).toEqual(
+      RESTAURANT,
+    );
+  });
+
+  it("taux unique : une ligne depuis les champs historiques, 0 % compris", () => {
+    expect(
+      vatLinesOf({ vatRate: 0, amountHT: 40, amountTVA: 0, vatBreakdown: [] }),
+    ).toEqual([{ rate: 0, baseHT: 40, amountTVA: 0 }]);
+  });
+
+  it("TVA non renseignée : rien", () => {
+    expect(vatLinesOf({ vatRate: 20, amountTVA: null })).toEqual([]);
   });
 });

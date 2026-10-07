@@ -54,6 +54,8 @@ import {
 } from "./einvoice-status-badge";
 import { formatCurrencyAmount } from "@/src/lib/format-currency";
 import { needsReview, OCR_REVIEW_TITLE } from "./ocr-review";
+import { VatRatesSummary } from "./vat-breakdown";
+import { vatLinesOf } from "@/src/utils/purchase-invoice-vat";
 
 const STATUS_CONFIG = {
   TO_PROCESS: {
@@ -334,7 +336,7 @@ export const getColumns = ({
   },
   {
     accessorKey: "amountTVA",
-    size: 100,
+    size: 120,
     meta: { label: "TVA" },
     header: ({ column }) => (
       <SortableHeader column={column}>TVA</SortableHeader>
@@ -343,9 +345,14 @@ export const getColumns = ({
       const amount = row.getValue("amountTVA");
       if (amount === undefined || amount === null)
         return <div className="font-normal text-muted-foreground">—</div>;
+      // Taux sous le montant (plusieurs taux : détail au survol)
       return (
-        <div className="font-normal">
+        <div className="font-normal min-w-0">
           {formatCurrencyAmount(amount, row.original.currency)}
+          <VatRatesSummary
+            lines={vatLinesOf(row.original)}
+            currency={row.original.currency}
+          />
         </div>
       );
     },
