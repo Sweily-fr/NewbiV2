@@ -1,297 +1,142 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import React from "react";
-// Animation gsap chargée dans son propre chunk (hors chemin critique SEO)
-const ExpenseDonutAnimation = dynamic(() => import("./ExpenseDonutAnimation"), {
-  ssr: false,
-});
+import Link from "next/link";
+import OcrScanAnimation from "./OcrScanAnimation";
+import ReconciliationAnimation from "./ReconciliationAnimation";
+import CategorySortAnimation from "./CategorySortAnimation";
+
+// Mêmes jetons visuels que le bento « Un logiciel de facturation complet »
+// de la LP factures et « Garde le contrôle de ton activité » de la home.
+const CARD =
+  "rounded-3xl bg-gradient-to-b from-[#F4F4F6] to-[#FAFAFB] p-7 md:p-8 flex flex-col overflow-hidden";
+const TITLE =
+  "text-xl md:text-2xl font-medium tracking-tight text-gray-950 mb-3";
+const TEXT = "text-[15px] leading-relaxed text-gray-700";
 
 export default function AchatsGovernanceSection() {
+  // Les illustrations ne se jouent qu'une fois : on les déclenche quand la
+  // section arrive à l'écran, sinon le scénario serait déjà terminé quand on
+  // y descend. `data-play` libère les animations (voir chaque illustration).
+  const ref = React.useRef(null);
+  const [play, setPlay] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        setPlay(true);
+        io.disconnect();
+      },
+      { threshold: 0.2 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <section className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden">
-      <div className="max-w-6xl px-4 mx-auto">
-        {/* Section Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
-            GESTION DES ACHATS
-          </span>
-          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
-            Maîtrisez chaque dépense de votre entreprise
-          </h2>
-          <p className="text-md font-normal tracking-tight text-gray-600 mx-auto mb-8 max-w-2xl">
-            Centralisez vos achats, suivez vos fournisseurs et gardez le
-            contrôle sur vos dépenses depuis un seul espace.
-          </p>
-        </div>
+    <section
+      ref={ref}
+      data-play={play ? "on" : undefined}
+      className="pt-10 md:pt-20 lg:pt-22 lg-pb-10 relative overflow-hidden px-5"
+    >
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
+          Tous vos achats au même endroit
+        </h2>
+        <p className="text-[17px] leading-relaxed text-gray-600 max-w-2xl mb-10 md:mb-14">
+          Factures fournisseurs, notes de frais et justificatifs : scannés,
+          catégorisés, rapprochés de vos transactions et prêts pour votre
+          expert-comptable. Côté ventes, Newbi gère aussi vos{" "}
+          <Link
+            href="/produits/factures"
+            className="text-gray-900 underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+          >
+            devis et factures
+          </Link>
+          , votre{" "}
+          <Link
+            href="/produits/tresorerie"
+            className="text-gray-900 underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+          >
+            trésorerie
+          </Link>{" "}
+          et votre passage à la{" "}
+          <Link
+            href="/produits/facturation-electronique"
+            className="text-gray-900 underline decoration-gray-300 underline-offset-2 hover:decoration-gray-900"
+          >
+            facturation électronique
+          </Link>
+          .
+        </p>
 
-        {/* Tools Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 border-y border-neutral-200 divide-neutral-200">
-          {/* Card 1 */}
-          <div className="md:border-r border-b border-neutral-200 flex flex-col">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Numérisez vos justificatifs en un clic
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Scannez ou importez vos tickets et factures d&apos;achat.
-                L&apos;OCR extrait automatiquement les informations clés.
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-5">
+          {/* Carte principale : l'OCR fait la saisie */}
+          <article className={`${CARD} md:col-span-7`}>
+            <h3 className={TITLE}>
+              Scannez un justificatif, l&apos;OCR fait la saisie
+            </h3>
+            <p className={`${TEXT} max-w-xl`}>
+              Photographiez un ticket ou importez une facture d&apos;achat :
+              fournisseur, date, montant et TVA sont lus automatiquement. Vous
+              n&apos;avez plus qu&apos;à valider.
+            </p>
+            <div className="relative mt-8 flex-1 min-h-[260px] -mb-7 md:-mb-8">
+              <OcrScanAnimation />
+            </div>
+          </article>
+
+          {/* Le rapprochement bancaire */}
+          <article className={`${CARD} md:col-span-5`}>
+            <h3 className={TITLE}>
+              Chaque dépense collée à sa transaction bancaire
+            </h3>
+            <p className={`${TEXT} max-w-md`}>
+              Newbi rapproche vos justificatifs de vos opérations bancaires et
+              vous montre, à tout moment, ce qu&apos;il reste à fournir.
+            </p>
+            <div className="relative mt-8 h-[225px] -mb-7 md:-mb-8">
+              <ReconciliationAnimation />
+            </div>
+          </article>
+
+          {/* La catégorisation */}
+          <article className={`${CARD} md:col-span-5`}>
+            <h3 className={TITLE}>
+              Vos postes de dépenses, classés tout seuls
+            </h3>
+            <p className={`${TEXT} max-w-md`}>
+              Chaque achat rejoint sa catégorie : vous voyez où part
+              l&apos;argent, mois après mois, sans tenir de tableur.
+            </p>
+            <div className="relative mt-8 flex-1 min-h-[200px] -mb-7 md:-mb-8">
+              <CategorySortAnimation />
+            </div>
+          </article>
+
+          {/* Point de repos du bento : une photo, pas d'animation. Texte en
+              haut, donc voile dégradé depuis le haut. */}
+          <article className="relative md:col-span-7 min-h-[420px] overflow-hidden rounded-3xl flex flex-col justify-start p-7 md:p-8 text-white">
+            <img
+              src="/lp/achats/carte-comptable.jpg"
+              alt=""
+              className="absolute inset-0 size-full object-cover object-[55%_center]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/10" />
+            <div className="relative">
+              <h3 className="text-xl md:text-2xl font-medium tracking-tight mb-3">
+                Un export propre pour votre comptable
+              </h3>
+              <p className="text-[15px] leading-relaxed text-white/85 max-w-xl">
+                Achats, notes de frais et TVA déductible classés au fil de
+                l&apos;eau. Votre expert-comptable récupère le mois complet au
+                format FEC, CSV, Sage ou Cegid.
               </p>
             </div>
-            <div className="relative flex-1 min-h-[320px] overflow-hidden perspective-distant">
-              <div className="rounded-t-2xl bg-neutral-100 border border-neutral-200 w-full h-full absolute inset-x-4 inset-y-2 p-2 overflow-hidden">
-                <div className="relative w-full h-full rounded-tl-[12px] rounded-tr-[12px] ring-1 ring-black/5 overflow-hidden">
-                  <img
-                    src="/images/gestion-achats-hero.png"
-                    alt="Interface gestion des achats Newbi"
-                    className="absolute inset-0 w-full h-full object-cover object-left-top"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2 */}
-          <div className="border-b border-neutral-200">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Catégorisez vos dépenses automatiquement
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Chaque achat est classé par catégorie pour une vision claire de
-                vos postes de dépenses.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 md:h-80 overflow-hidden">
-              <ExpenseDonutAnimation />
-            </div>
-          </div>
-
-          {/* Card 3 */}
-          <div className="border-b md:border-b-0 md:border-r border-neutral-200">
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Suivez vos fournisseurs
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Gérez votre carnet de fournisseurs, consultez l&apos;historique
-                d&apos;achats et comparez les montants facilement.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 md:h-80 overflow-hidden px-4 md:px-8 pb-4">
-              <div className="flex flex-col gap-2.5">
-                {[
-                  {
-                    name: "Amazon Business",
-                    logo: "https://cdn.brandfetch.io/idawOgYOsG/theme/dark/logo.svg?c=1bxid64Mup7aczewSAYMX&t=1747149760488",
-                    factures: "12",
-                    total: "4 820 €",
-                    last: "Il y a 3j",
-                  },
-                  {
-                    name: "OVHcloud",
-                    logo: "https://cdn.brandfetch.io/idrlAPpgYV/w/352/h/352/theme/dark/icon.jpeg?c=1bxid64Mup7aczewSAYMX&t=1668507128073",
-                    factures: "8",
-                    total: "3 180 €",
-                    last: "Il y a 12j",
-                    highlight: true,
-                  },
-                  {
-                    name: "Scaleway",
-                    logo: "https://cdn.brandfetch.io/id61Gz1Oce/w/1035/h/1035/theme/dark/icon.png?c=1bxid64Mup7aczewSAYMX&t=1768679366261",
-                    factures: "6",
-                    total: "2 460 €",
-                    last: "Il y a 18j",
-                  },
-                  {
-                    name: "Figma",
-                    logo: "https://cdn.brandfetch.io/idZHcZ_i7F/w/320/h/320/theme/dark/icon.png?c=1bxid64Mup7aczewSAYMX&t=1729268227605",
-                    factures: "4",
-                    total: "1 920 €",
-                    last: "Il y a 25j",
-                  },
-                ].map((supplier, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-4 py-3.5 px-4 rounded-xl border bg-white ${supplier.highlight ? "border-neutral-200 shadow-xl scale-[1.06] z-10 relative" : "border-neutral-100 shadow-sm"}`}
-                  >
-                    <div className="w-11 h-11 rounded-lg bg-white border border-neutral-100 flex items-center justify-center overflow-hidden shrink-0">
-                      <img
-                        src={supplier.logo}
-                        alt={supplier.name}
-                        className="w-7 h-7 object-contain"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-800 truncate">
-                        {supplier.name}
-                      </p>
-                      <p className="text-xs text-neutral-400">
-                        {supplier.factures} factures · {supplier.last}
-                      </p>
-                    </div>
-                    <span className="text-sm font-semibold text-neutral-900 shrink-0">
-                      {supplier.total}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4 */}
-          <div>
-            <div className="p-4 md:p-8">
-              <h2 className="text-lg font-medium text-neutral-800">
-                Exportez pour votre comptable
-              </h2>
-              <p className="text-neutral-600 mt-2 max-w-md text-balance">
-                Générez des exports propres et structurés de vos achats pour
-                simplifier le travail de votre expert-comptable.
-              </p>
-            </div>
-            <div className="relative h-80 sm:h-60 md:h-80 overflow-hidden flex items-center justify-center px-4 md:px-8">
-              <div className="w-full max-w-[320px] bg-white rounded-2xl border border-neutral-200 shadow-lg overflow-hidden">
-                {/* Email header */}
-                <div className="px-5 py-3 border-b border-neutral-100 flex items-center gap-2">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#5A50FF"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                    <polyline points="22,6 12,13 2,6" />
-                  </svg>
-                  <span className="text-[11px] font-semibold text-neutral-800">
-                    Nouveau message
-                  </span>
-                  <div className="ml-auto flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
-                    <span className="text-[8px] text-[#22C55E] font-medium">
-                      Prêt
-                    </span>
-                  </div>
-                </div>
-
-                {/* Email fields */}
-                <div className="px-5 py-3 space-y-2.5 border-b border-neutral-100">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-neutral-400 w-8 shrink-0">
-                      À
-                    </span>
-                    <span className="text-[11px] text-neutral-700 font-medium">
-                      cabinet@dupont-associes.fr
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-neutral-400 w-8 shrink-0">
-                      Objet
-                    </span>
-                    <span className="text-[11px] text-neutral-700 font-medium">
-                      Exports comptables — Mars 2026
-                    </span>
-                  </div>
-                </div>
-
-                {/* Email body */}
-                <div className="px-5 py-3 border-b border-neutral-100">
-                  <p className="text-[10px] text-neutral-500 leading-relaxed">
-                    Bonjour Maître Dupont,
-                    <br />
-                    <br />
-                    Veuillez trouver ci-joint les exports comptables du mois de
-                    mars 2026.
-                  </p>
-                </div>
-
-                {/* Attachments */}
-                <div className="px-5 py-3 space-y-2">
-                  <p className="text-[9px] text-neutral-400 uppercase tracking-wider font-medium">
-                    Pièces jointes
-                  </p>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-50 border border-neutral-100 flex-1">
-                      <svg
-                        width="14"
-                        height="17"
-                        viewBox="0 0 22 26"
-                        fill="none"
-                        className="shrink-0"
-                      >
-                        <path
-                          d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z"
-                          fill="#EEF2FF"
-                        />
-                        <path
-                          d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z"
-                          fill="#C7D2FE"
-                        />
-                        <text
-                          x="5"
-                          y="20"
-                          fontSize="7"
-                          fontWeight="700"
-                          fill="#5A50FF"
-                          fontFamily="system-ui"
-                        >
-                          FEC
-                        </text>
-                      </svg>
-                      <div>
-                        <p className="text-[9px] font-medium text-neutral-700">
-                          Export_FEC.txt
-                        </p>
-                        <p className="text-[7px] text-neutral-400">
-                          247 écritures · 14 Ko
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-50 border border-neutral-100 flex-1">
-                      <svg
-                        width="14"
-                        height="17"
-                        viewBox="0 0 22 26"
-                        fill="none"
-                        className="shrink-0"
-                      >
-                        <path
-                          d="M0 3C0 1.34 1.34 0 3 0h10l9 9v14c0 1.66-1.34 3-3 3H3c-1.66 0-3-1.34-3-3V3z"
-                          fill="#FEF2F2"
-                        />
-                        <path
-                          d="M13 0l9 9h-6c-1.66 0-3-1.34-3-3V0z"
-                          fill="#FECACA"
-                        />
-                        <text
-                          x="4"
-                          y="20"
-                          fontSize="7"
-                          fontWeight="700"
-                          fill="#EF4444"
-                          fontFamily="system-ui"
-                        >
-                          PDF
-                        </text>
-                      </svg>
-                      <div>
-                        <p className="text-[9px] font-medium text-neutral-700">
-                          Récap_Mars.pdf
-                        </p>
-                        <p className="text-[7px] text-neutral-400">
-                          Synthèse · 2 pages
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          </article>
         </div>
       </div>
     </section>

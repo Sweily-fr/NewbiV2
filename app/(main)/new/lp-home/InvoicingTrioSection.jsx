@@ -12,8 +12,8 @@ const TEXT = "text-[15px] leading-relaxed text-gray-700 mt-4";
 
 export default function InvoicingTrioSection() {
   return (
-    <section className="relative overflow-hidden px-0 py-14 md:py-20">
-      <div className="max-w-7xl mx-auto px-5">
+    <section className="relative overflow-hidden px-5 py-14 md:py-20">
+      <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10 md:mb-14">
           <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
             Tes factures, conformes et gérées sans effort

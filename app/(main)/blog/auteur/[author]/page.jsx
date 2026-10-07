@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
-import { BlogRecentArticles } from "@/src/components/blog/blog-recent-articles";
+import { BlogNowHub } from "@/src/components/blog/now-hub";
 import { formatPostForList } from "@/src/lib/blog-format";
-import { getAllPosts } from "@/src/lib/blog";
+import { getAllPosts, getCategories, getSectors } from "@/src/lib/blog";
 import { authorSlug, getAuthor } from "@/src/lib/blog-authors";
 import { SITE_URL } from "@/src/lib/site";
 
@@ -45,41 +43,16 @@ export default async function AuthorPage({ params }) {
   };
 
   return (
-    <div className="min-h-screen pt-32">
+    <BlogNowHub
+      categories={getCategories()}
+      sectors={getSectors()}
+      categorieActive={false}
+      posts={posts.map(formatPostForList)}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <NewHeroNavbar />
-      <header className="px-5 mt-10 md:mt-16">
-        <div className="mx-auto max-w-[1200px] flex items-center gap-5">
-          {profile.image && (
-            <div className="size-16 rounded-full overflow-hidden shrink-0">
-              <Image
-                src={profile.image}
-                alt={profile.name}
-                width={64}
-                height={64}
-                className="object-cover w-full h-full"
-              />
-            </div>
-          )}
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[#5a50ff] mb-1">
-              {profile.role}
-            </p>
-            <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-gray-900">
-              {profile.name}
-            </h1>
-            <p className="mt-2 max-w-2xl text-gray-600">{profile.bio}</p>
-          </div>
-        </div>
-      </header>
-      <BlogRecentArticles
-        posts={posts.map(formatPostForList)}
-        title={`${posts.length} article${posts.length > 1 ? "s" : ""}`}
-        description={`Tous les articles signés ${profile.name}, du plus récent au plus ancien.`}
-      />
-    </div>
+    </BlogNowHub>
   );
 }

@@ -14,9 +14,10 @@ const questions = [
       "Quelle est la taille maximale des fichiers que je peux transférer ?",
     content: (
       <>
-        Vous pouvez transférer des fichiers jusqu'à 5 Go par envoi avec newbi.
-        Il n'y a aucune limite sur le nombre de transferts que vous pouvez
-        effectuer. Pour des fichiers encore plus volumineux,{" "}
+        La taille d'un transfert dépend de votre offre : 5 Go en Freelance, 15
+        Go en TPE et 50 Go en Entreprise. Dans tous les cas, il n'y a aucune
+        limite sur le nombre de transferts que vous pouvez effectuer. Pour des
+        volumes supérieurs,{" "}
         <a href="/contact" className="underline underline-offset-4">
           contactez notre équipe
         </a>{" "}
@@ -49,6 +50,18 @@ const questions = [
       "Oui, vous avez accès à un tableau de bord complet qui vous permet de suivre tous vos transferts. Vous pouvez voir combien de fois chaque fichier a été téléchargé, par qui (si vous avez demandé l'email), et quand. Vous recevez également des notifications par email à chaque téléchargement.",
   },
   {
+    id: "item-8",
+    title: "Pourquoi mon fichier ne passe pas par e-mail ?",
+    content:
+      "Les messageries plafonnent le poids d'un message : 25 Mo sur Gmail, 20 Mo sur Outlook.com, souvent 25 à 35 Mo en entreprise selon la configuration de l'administrateur. S'ajoute le réencodage de la pièce jointe, qui alourdit le fichier d'environ un tiers : un fichier de 20 Mo en pèse près de 27 une fois attaché. Le serveur du destinataire applique en plus sa propre limite, parfois plus basse : l'envoi part, mais n'arrive jamais. Un lien de téléchargement contourne le problème, puisque seul le lien transite par l'e-mail.",
+  },
+  {
+    id: "item-9",
+    title: "Quelle différence avec WeTransfer ou un autre service gratuit ?",
+    content:
+      "Les services gratuits sont pensés pour l'envoi ponctuel : vous ne savez pas qui a téléchargé, le lien n'est pas protégé et rien n'est rattaché à votre activité. Avec Newbi, chaque transfert est horodaté, vous recevez une notification au téléchargement, vous pouvez protéger le lien par mot de passe et choisir sa durée de validité. Les fichiers sont hébergés en France et le transfert vit dans le même espace que vos devis, vos factures et vos clients.",
+  },
+  {
     id: "item-7",
     title: "Puis-je annuler un transfert après l'avoir envoyé ?",
     content:
@@ -63,43 +76,45 @@ export default function FAQ() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            faqJsonLd(questions.map((item) => ({
-              question: item.title ?? item.question,
-              answer: item.content ?? item.answer,
-            })))
+            faqJsonLd(
+              questions.map((item) => ({
+                question: item.title ?? item.question,
+                answer: item.content ?? item.answer,
+              })),
+            ),
           ),
         }}
       />
-    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-16 pb-16">
-      <div className="space-y-2 text-center">
-        <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
-          Questions fréquentes
-        </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Nous sommes là pour répondre à toutes vos questions. Si vous ne
-          trouvez pas l'information recherchée, n'hésitez pas à{" "}
-          <a href="/contact" className="underline underline-offset-4">
-            nous contacter
+      <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-16 pb-16">
+        <div className="space-y-2 text-center">
+          <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950">
+            Questions fréquentes
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Nous sommes là pour répondre à toutes vos questions. Si vous ne
+            trouvez pas l'information recherchée, n'hésitez pas à{" "}
+            <a href="/contact" className="underline underline-offset-4">
+              nous contacter
+            </a>
+            .
+          </p>
+        </div>
+        <PublicFaq
+          items={questions.map((item) => ({
+            question: item.title ?? item.question,
+            answer: item.content ?? item.answer,
+          }))}
+        />
+        <p className="text-muted-foreground">
+          Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
+          <a
+            href="/contact"
+            className="text-primary underline underline-offset-4"
+          >
+            équipe support
           </a>
-          .
         </p>
       </div>
-      <PublicFaq
-        items={questions.map((item) => ({
-          question: item.title ?? item.question,
-          answer: item.content ?? item.answer,
-        }))}
-      />
-      <p className="text-muted-foreground">
-        Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
-        <a
-          href="/contact"
-          className="text-primary underline underline-offset-4"
-        >
-          équipe support
-        </a>
-      </p>
-    </div>
     </>
   );
 }

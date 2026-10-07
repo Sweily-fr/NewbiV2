@@ -1,0 +1,588 @@
+/* ---------------------------------------------------------------------
+   Interface du hero de la LP transfert de fichiers.
+
+   Même dispositif que les démos des LP achats et signatures : la capture du
+   mockup iPad sert de cadre (image 2400 x 1286, panneau vide x 471→2264,
+   y 101→1245) et le panneau de droite est reconstruit en HTML par-dessus,
+   soit dans le repère de la scène (1200 x 643) :
+   left 235.5  top 50.5  w 896.5  h 572.
+
+   Le contenu reprend la modale « Nouveau transfert » du tableau de bord
+   (app/dashboard/outils/transferts-fichiers/components/file-upload-new.jsx).
+   --------------------------------------------------------------------- */
+
+.wrap {
+  position: relative;
+  width: 100%;
+  /* Pas de rognage : les visuels du final sortent derrière l'appareil.
+     Le débord latéral est repris par l'overflow-x-clip de la section. */
+}
+
+.stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1200px;
+  height: 643px;
+  transform-origin: top left;
+
+  --violet: #5a50ff;
+  --ink: #17171a;
+  --muted: #6b7280;
+  --line: #ececee;
+
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.device {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.panel {
+  position: absolute;
+  left: 235.5px;
+  top: 50.5px;
+  width: 896.5px;
+  height: 572px;
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 16px 22px 14px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* ---------- En-tête de la modale ---------- */
+.head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 14px;
+}
+.headTitle {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.close {
+  margin-left: auto;
+  color: #9ca3af;
+}
+
+/* ---------- Deux colonnes ---------- */
+.cols {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1.08fr;
+  gap: 26px;
+}
+.colLeft {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.colRight {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ---------- Zone de dépôt ---------- */
+.drop {
+  position: relative;
+  /* Hauteur fixe, comme dans la modale : la zone n'occupe pas toute la
+     colonne, les rassurances se glissent juste en dessous. */
+  flex: none;
+  height: 296px;
+  border: 1px dashed #e2e2e5;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.dropIdle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+}
+.dropIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 11px;
+  border: 1px solid #ececee;
+  border-radius: 50%;
+  color: #6b7280;
+  background: #fff;
+}
+.dropTitle {
+  position: relative;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+/* Libellé de survol, superposé au titre de repos pendant le dépôt */
+.dropTitleDrag {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  opacity: 0;
+}
+.dropSub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.dropMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #a1a1aa;
+}
+
+/* Rassurances sous la zone de dépôt */
+.secure {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+  color: var(--muted);
+}
+.secure span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.secure svg {
+  display: block;
+}
+
+/* ---------- Colonne des options ---------- */
+.optTitle {
+  flex: none;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  padding-bottom: 12px;
+}
+.options {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.block {
+  padding: 9px 0;
+}
+.block + .block {
+  border-top: 1px solid #f1f1f3;
+}
+.block:first-child {
+  padding-top: 0;
+}
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #27272a;
+  margin-bottom: 8px;
+}
+.legend svg {
+  display: block;
+  color: var(--muted);
+}
+
+/* Champs */
+.field {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #e2e2e5;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 11px;
+  color: #27272a;
+}
+.fieldPlaceholder {
+  color: #a1a1aa;
+}
+.field svg {
+  margin-left: auto;
+  color: #9ca3af;
+}
+.help {
+  margin-top: 6px;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Ligne « libellé + interrupteur » */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.toggleRow + .toggleRow {
+  margin-top: 10px;
+}
+.toggleText {
+  min-width: 0;
+}
+.toggleLabel {
+  font-size: 11px;
+  color: #27272a;
+}
+.toggleHelp {
+  margin-top: 2px;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+.switch {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  width: 26px;
+  height: 15px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #e4e4e7;
+}
+.switchOn {
+  background: var(--violet);
+  justify-content: flex-end;
+}
+.knob {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 16, 32, 0.25);
+}
+
+/* ---------- Pied : bouton d'envoi ---------- */
+.foot {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1.08fr;
+  gap: 26px;
+  margin-top: 12px;
+}
+.footAction {
+  grid-column: 2;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: var(--violet);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px -2px rgba(90, 80, 255, 0.5);
+}
+.kbd {
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.kbd svg {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------
+   Animation du hero. Même scénario que la démo d'origine de la LP :
+   trois visuels sont glissés dans la zone de dépôt, la liste se remplit,
+   le transfert part, l'anneau de progression tourne, le client télécharge,
+   puis les visuels jaillissent en tourbillon avant de revenir.
+
+   Tout est posé dans le repère de la scène (1200 x 643) : les positions
+   sont des pixels de design, jamais des pixels écran.
+   --------------------------------------------------------------------- */
+
+/* L'appareil et son interface : il masque les visuels du final */
+.group {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+/* ---------- Liste des fichiers déposés ---------- */
+.dropList {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  opacity: 0;
+}
+.listHead {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  font-size: 10.5px;
+  color: #27272a;
+}
+.listHead b {
+  font-weight: 500;
+}
+.listHead span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 9.5px;
+}
+.listRows {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+.fRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #f6f6f8;
+}
+.fThumb {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+.fMain {
+  flex: 1;
+  min-width: 0;
+}
+.fName {
+  font-size: 10.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fSize {
+  margin-top: 2px;
+  font-size: 9px;
+  color: #9ca3af;
+}
+.listFoot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+/* ---------- Anneau de progression ---------- */
+.dropProgress {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+.ring {
+  display: block;
+}
+.ringLabel {
+  margin-top: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #3f3f46;
+}
+.ringSub {
+  margin-top: 3px;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+/* ---------- Écran « fichiers prêts » ---------- */
+.dropDone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+}
+.doneMark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  background: #f4f4f6;
+  color: #71717a;
+}
+.doneTitle {
+  font-size: 12px;
+  font-weight: 500;
+}
+.doneSub {
+  margin-top: 4px;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+.doneBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-top: 14px;
+  padding: 0 14px;
+  border-radius: 9px;
+  background: var(--violet);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 500;
+  box-shadow: 0 2px 6px -2px rgba(90, 80, 255, 0.5);
+}
+.doneBtn svg {
+  display: block;
+}
+
+/* ---------- Pile de visuels glissée ---------- */
+.drag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.dragCard {
+  position: absolute;
+  /* Décalages = moitié de la taille : la pile reste centrée sur son ancre */
+  left: -78px;
+  top: -112px;
+  width: 156px;
+  height: 224px;
+  border: 4px solid #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #efeff2;
+  box-shadow:
+    0 2px 4px rgba(16, 16, 32, 0.08),
+    0 18px 34px -14px rgba(16, 16, 32, 0.35);
+}
+.dragCard img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------- Visuels du final ---------- */
+.reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.revealImg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  opacity: 0;
+  background: #efeff2;
+  box-shadow: 0 26px 54px -18px rgba(16, 16, 32, 0.4);
+  will-change: transform;
+}
+.revealImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ext {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 500;
+}
+
+/* ---------- Curseur ---------- */
+.cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 19px;
+  height: 19px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  filter: drop-shadow(0 3px 6px rgba(16, 16, 32, 0.28));
+}
+/* Onde au clic */
+.ping {
+  position: absolute;
+  left: -11px;
+  top: -11px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid var(--violet);
+  opacity: 0;
+}

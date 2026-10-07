@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { MDXRemote } from "next-mdx-remote/rsc";
-import { Badge } from "@/src/components/ui/badge";
 import { Calendar } from "lucide-react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import { BlogArticleLayout } from "@/src/components/blog/blog-article-layout";
@@ -24,6 +23,11 @@ export { getStaticParams as generateStaticParams };
 
 /** Visuel de partage utilisé quand l'article n'a pas (encore) d'illustration. */
 const DEFAULT_OG_IMAGE = "/images/op-newbi.png";
+
+/** Filet vertical entre deux informations de l'en-tête d'article. */
+function Separateur() {
+  return <span aria-hidden="true" className="h-4 w-px shrink-0 bg-gray-200" />;
+}
 
 export async function generateMetadata({
   params,
@@ -193,38 +197,43 @@ export default async function BlogPostPage({
                 <p className="text-xs text-gray-400">{author.role}</p>
               </div>
             </Link>
-            <span className="hidden sm:block w-px h-6 bg-gray-200" />
-            <Link href={categoryHref}>
-              <Badge
-                variant="secondary"
-                className="bg-[#5a50ff]/10 text-[#5a50ff] border-[#5a50ff]/20 hover:bg-[#5a50ff]/20 uppercase text-xs"
-              >
-                {categoryLabel(post.category)}
-              </Badge>
+            <Separateur />
+            {/* Thème et métier : du texte simple, au même gabarit que la date,
+                séparés par de fins filets verticaux. */}
+            <Link
+              href={categoryHref}
+              className="text-sm text-gray-500 transition-colors hover:text-[#5a50ff]"
+            >
+              {categoryLabel(post.category)}
             </Link>
             {sectorHref && (
-              <Link href={sectorHref}>
-                <Badge
-                  variant="outline"
-                  className="uppercase text-xs text-gray-600 hover:border-[#5a50ff] hover:text-[#5a50ff]"
+              <>
+                <Separateur />
+                <Link
+                  href={sectorHref}
+                  className="text-sm text-gray-500 transition-colors hover:text-[#5a50ff]"
                 >
                   {post.sector}
-                </Badge>
-              </Link>
+                </Link>
+              </>
             )}
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Calendar className="h-4 w-4" />
-              <time dateTime={published}>{publishedDate}</time>
-              {post.updated && (
-                <span className="text-gray-400">
-                  {" · mis à jour le "}
-                  <time dateTime={post.updated}>
-                    {formatDateFr(post.updated)}
-                  </time>
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            {/* Date et durée forment un groupe : il bascule d'un bloc à la
+                ligne suivante quand la rangée déborde. Pas de filet devant,
+                sinon il resterait orphelin en fin de première ligne. */}
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <time dateTime={published}>{publishedDate}</time>
+                {post.updated && (
+                  <span className="text-gray-400">
+                    {" · mis à jour le "}
+                    <time dateTime={post.updated}>
+                      {formatDateFr(post.updated)}
+                    </time>
+                  </span>
+                )}
+              </span>
+              <Separateur />
               <span>{post.readTime} min de lecture</span>
             </div>
           </div>

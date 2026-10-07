@@ -28,6 +28,9 @@ export function WhatsAppIcon({ className }) {
  */
 export function WhatsAppContactButton({
   className,
+  // Permet de colorer l'icône à part, pour une variante contour où le texte
+  // est sombre mais le logo doit rester vert.
+  iconClassName,
   label = "Contacter un conseiller",
   href = WHATSAPP_CONTACT_URL,
   ...props
@@ -44,7 +47,7 @@ export function WhatsAppContactButton({
       {...props}
     >
       <a href={href} target="_blank" rel="noopener noreferrer">
-        <WhatsAppIcon className="size-5" />
+        <WhatsAppIcon className={cn("size-5", iconClassName)} />
         {label}
       </a>
     </Button>

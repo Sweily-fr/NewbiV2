@@ -1,0 +1,500 @@
+/* ---------------------------------------------------------------------
+   Interface du hero de la LP signatures.
+
+   Même dispositif que la démo de la LP achats : la capture du mockup iPad
+   sert de cadre (image 2400 x 1286, panneau vide x 471→2264, y 101→1245) et
+   le panneau de droite est reconstruit en HTML par-dessus, soit dans le
+   repère de la scène (1200 x 643) : left 235.5  top 50.5  w 896.5  h 572.
+
+   Pas d'animation pour l'instant : on pose les éléments.
+   --------------------------------------------------------------------- */
+
+.wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1200px;
+  height: 643px;
+  transform-origin: top left;
+
+  --violet: #5a50ff;
+  --ink: #17171a;
+  --muted: #6b7280;
+  --line: #ececee;
+
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.device {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.panel {
+  position: absolute;
+  left: 235.5px;
+  top: 50.5px;
+  width: 896.5px;
+  height: 572px;
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 18px 20px 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e2e2e5;
+  border-radius: 9px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: #27272a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  white-space: nowrap;
+}
+.btnPrimary {
+  background: var(--violet);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 6px -2px rgba(90, 80, 255, 0.5);
+}
+.btnDashed {
+  border-style: dashed;
+  border-color: #d7d7db;
+  background: #fafafa;
+  box-shadow: none;
+}
+
+/* ---------- Recherche + filtres ---------- */
+.toolbar {
+  display: flex;
+  gap: 9px;
+}
+.search {
+  width: 320px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #e2e2e5;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 11.5px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+.toolbarRight {
+  margin-left: auto;
+  display: flex;
+  gap: 9px;
+}
+
+/* ---------- Tableau ----------
+   Colonnes : case, actif, nom, e-mail, groupe, signature principale. */
+.table {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 18px -20px 0;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+
+/* Surbrillance qui simule le survol : elle glisse d'une ligne à l'autre */
+.hover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 52px;
+  background: #f4f2ff;
+  opacity: 0;
+  pointer-events: none;
+}
+.tr {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px 56px 1.7fr 1.6fr 1fr 1.1fr;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 20px;
+  border-bottom: 1px solid #f2f2f4;
+  font-size: 11.5px;
+}
+.tr > div {
+  min-width: 0;
+  overflow: hidden;
+}
+.thead {
+  height: 32px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.th {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.box {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1px solid #d4d4d8;
+  border-radius: 4px;
+  background: #fff;
+}
+/* La case cochée est superposée à la case vide et révélée par l'animation */
+.boxWrap {
+  position: relative;
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+}
+.boxWrap .box {
+  position: absolute;
+  inset: 0;
+}
+.boxOn {
+  border-color: var(--violet);
+  background: var(--violet);
+  position: relative;
+}
+.boxOn::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.6px 1.6px 0;
+  transform: rotate(45deg);
+}
+
+/* Interrupteur de la colonne « Actif » */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  width: 28px;
+  height: 16px;
+  padding: 2px;
+  border-radius: 999px;
+  background: #e4e4e7;
+}
+.switchOn {
+  background: var(--violet);
+  justify-content: flex-end;
+}
+.knob {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(16, 16, 32, 0.25);
+}
+
+/* Colonne « Nom » : pastille violet pastel avec le portrait à l'intérieur */
+.person {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e4e2ff;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mail {
+  color: #52525b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Groupe : pastille de couleur + libellé */
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 500;
+  background: #f4f4f5;
+  color: #52525b;
+  white-space: nowrap;
+}
+.groupDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Signature principale */
+.primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 500;
+  background: #ebe6fd;
+  color: #5b46b8;
+  white-space: nowrap;
+}
+.primary svg {
+  display: block;
+}
+.dash {
+  color: #c4c4cb;
+}
+
+/* ---------- Pied de tableau ---------- */
+.tfoot {
+  flex: none;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: 0 20px;
+  border-top: 1px solid var(--line);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.tfootRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 3px 7px;
+  border: 1px solid #e2e2e5;
+  border-radius: 7px;
+  color: #27272a;
+}
+
+/* ---------------------------------------------------------------------
+   Aperçu de la signature : la fenêtre s'ouvre sur la ligne cochée.
+   --------------------------------------------------------------------- */
+.preview {
+  position: absolute;
+  left: 72px;
+  bottom: 54px;
+  width: 360px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 44px -16px rgba(16, 16, 32, 0.2);
+  overflow: hidden;
+  opacity: 0;
+  z-index: 20;
+}
+.pvField {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #f4f4f6;
+  font-size: 10.5px;
+  color: #9ca3af;
+}
+.pvBody {
+  padding: 16px 14px 14px;
+}
+.pvRegards {
+  font-size: 13px;
+  font-style: italic;
+  color: #3f3f46;
+}
+/* Portrait, fonction et coordonnées séparés par deux filets légers */
+.pvSign {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.pvIdent {
+  padding-left: 14px;
+  border-left: 1px solid #eeeef1;
+}
+.pvAvatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #e4e2ff;
+  overflow: hidden;
+}
+.pvAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pvName {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--violet);
+}
+.pvRole {
+  margin-top: 1px;
+  font-size: 10.5px;
+  color: #52525b;
+}
+.pvLogo {
+  margin-top: 7px;
+  height: 13px;
+  width: auto;
+  object-fit: contain;
+}
+.pvContact {
+  margin-left: auto;
+  padding-left: 14px;
+  border-left: 1px solid #eeeef1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 9.5px;
+  color: #52525b;
+  text-align: right;
+}
+.pvContact span {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  white-space: nowrap;
+}
+.pvContact svg {
+  display: block;
+  color: var(--violet);
+}
+/* Bannière de signature : l'encart promotionnel qu'on accroche sous une
+   signature e-mail (campagne, salon, portes ouvertes…). Fond sombre dégradé
+   avec une lueur d'accent, titre, ligne de détail et pastille d'action. */
+.pvBanner {
+  position: relative;
+  margin: 14px 14px 16px;
+  padding: 12px 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  /* fond pastel posé par l'animation, une teinte par sujet */
+  background: linear-gradient(115deg, #e9e6ff 0%, #dcd8ff 100%);
+  color: #2b2270;
+  border-radius: 14px;
+}
+/* Lueur d'accent : elle change de teinte selon le sujet de la bannière */
+.pvGlow {
+  position: absolute;
+  right: -30px;
+  top: -40px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  opacity: 0.8;
+  pointer-events: none;
+}
+.pvBannerEyebrow {
+  position: relative;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: currentColor;
+  opacity: 0.6;
+}
+.pvBannerTitle {
+  position: relative;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.pvBannerText {
+  position: relative;
+  margin-top: 2px;
+  font-size: 9px;
+  color: currentColor;
+  opacity: 0.7;
+}
+.pvBannerCta {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: inherit;
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pvBannerCta svg {
+  display: block;
+}

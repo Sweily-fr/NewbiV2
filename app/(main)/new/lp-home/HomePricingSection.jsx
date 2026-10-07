@@ -2,8 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
+import { Button } from "@/src/components/ui/button";
 import { ArrowUpRight } from "lucide-react";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { cn } from "@/src/lib/utils";
 
 // Version condensée des tarifs (home + LP) : essai gratuit, offre Freelance,
 // et renvoi vers /tarifs pour le comparatif complet. Disposition en 3
@@ -125,10 +127,17 @@ function ArrowLink({ href, children, sub }) {
 }
 
 // `maxWidth` : les LP gardent max-w-6xl, la home passe en max-w-7xl
-export default function HomePricingSection({ maxWidth = "max-w-6xl" }) {
+export default function HomePricingSection({
+  maxWidth = "max-w-6xl",
+  // marges verticales, pour caler la section sur le rythme de la page
+  className = "",
+}) {
   return (
-    <div id="pricing" className="w-full pt-16 lg:pt-20 pb-10">
-      <div className={`container ${maxWidth} mx-auto px-4`}>
+    <div
+      id="pricing"
+      className={cn("w-full px-5 pt-16 lg:pt-20 pb-10", className)}
+    >
+      <div className={`container ${maxWidth} mx-auto`}>
         {/* Titre centré */}
         <div className="text-center mb-12 md:mb-16">
           <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-gray-950 dark:text-gray-50 mb-4">
@@ -191,14 +200,19 @@ export default function HomePricingSection({ maxWidth = "max-w-6xl" }) {
           </Column>
         </div>
 
-        {/* CTA centré */}
+        {/* CTA centré : même gabarit que le bouton du hero de la home
+            (Button primary, taille md, px-4 py-1.5, 17px) */}
         <div className="flex justify-center mt-14">
-          <Link
-            href="/auth/signup"
-            className="inline-flex items-center justify-center rounded-xl bg-[#202020] hover:bg-[#333333] text-white text-base font-medium px-8 py-3 transition-colors"
+          <Button
+            asChild
+            size="md"
+            variant="primary"
+            className="h-auto w-auto px-4 py-1.5 text-[17px]"
           >
-            Commencer gratuitement
-          </Link>
+            <Link href="/auth/signup">
+              <span>Essayer Newbi gratuitement</span>
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

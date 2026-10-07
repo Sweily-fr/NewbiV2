@@ -15,6 +15,8 @@ export default function LpTestimonials({
   proofs,
   // les LP restent en max-w-6xl ; la home passe en max-w-7xl
   maxWidth = "max-w-6xl",
+  // marges extérieures, pour caler la bande grise sur le rythme de la page
+  className = "",
 }) {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -26,7 +28,7 @@ export default function LpTestimonials({
   };
 
   return (
-    <section className="px-5 py-14 md:py-20 bg-[#F4F4F5]">
+    <section className={`px-5 py-14 md:py-20 bg-[#F4F4F5] ${className}`}>
       <div
         className={`${maxWidth} mx-auto grid lg:grid-cols-12 gap-10 lg:gap-12`}
       >

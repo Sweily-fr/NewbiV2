@@ -143,13 +143,13 @@ function ParentTile({ icon: Icon, label, color = "#5A50FF" }) {
 export default function WallOfFeatures() {
   return (
     <section className="pt-10 md:pt-20 lg:pt-22 relative overflow-hidden">
-      <div className="text-center mb-12 md:mb-16 px-4">
+      <div className="text-center mb-12 md:mb-16 px-5 max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
           Tout ce dont vous avez besoin,
           <br className="hidden sm:block" />
           dans une seule plateforme
         </h2>
-        <p className="text-md font-normal tracking-tight text-gray-600 mx-auto max-w-2xl">
+        <p className="text-[17px] leading-relaxed text-gray-600 mx-auto max-w-2xl">
           +30 fonctionnalités pour gérer vos projets, votre facturation et votre
           activité au quotidien.
         </p>

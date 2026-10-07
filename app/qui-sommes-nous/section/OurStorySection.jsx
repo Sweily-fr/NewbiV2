@@ -1,73 +1,64 @@
-"use client";
 import React from "react";
 import Image from "next/image";
 
+// Quatre repères chiffrés, tous tirés de ce que le site affiche déjà.
+const REPERES = [
+  { chiffre: "5", label: "associés, une seule équipe" },
+  { chiffre: "7", label: "outils dans un même espace" },
+  { chiffre: "+1 000", label: "indépendants nous font confiance" },
+  { chiffre: "100 %", label: "des données hébergées en France" },
+];
+
 export function OurStorySection() {
   return (
-    <section className="py-24 lg:py-32 w-full bg-white">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-7 lg:gap-12 items-center">
-          {/* Image à gauche */}
-          <div className="col-span-1 lg:col-span-4 h-[400px] lg:h-[500px] rounded-lg overflow-hidden">
-            <Image
-              src="/lp/about/about-5.jpeg"
-              alt="L'équipe Newbi - Notre histoire"
-              fill
-              className="!relative h-full w-full object-cover"
-              sizes="(max-width: 768px) 100vw, 60vw"
-            />
-          </div>
-
-          {/* Contenu à droite */}
-          <div className="col-span-1 lg:col-span-3 space-y-6 lg:pl-8">
-            <span className="text-sm font-medium text-primary uppercase tracking-wider mb-4 block">
-              Notre histoire
-            </span>
-
-            <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 leading-relaxed mt-6">
-              Tout a commencé avec Sweily, notre agence web. Cinq passionnés,
-              cinq expertises différentes, une même vision : simplifier la vie
-              des entrepreneurs.
-            </h2>
-
-            <p className="text-sm text-gray-500 leading-relaxed">
-              En tant qu'entrepreneurs nous-mêmes, nous avons rapidement été
-              confrontés à une réalité frustrante : jongler entre la facturation,
-              les devis, la gestion de trésorerie, le suivi client, les outils
-              de productivité... Autant de tâches chronophages qui nous éloignaient
-              de notre cœur de métier.
-            </p>
-
-            <p className="text-sm text-gray-500 leading-relaxed">
-              C'est de ce constat qu'est née l'idée de Newbi. Notre mission ?
-              Créer une solution tout-en-un qui libère les entrepreneurs de la
-              complexité administrative, pour qu'ils puissent se concentrer
-              pleinement sur ce qu'ils font de mieux : développer leur activité.
-            </p>
-
-            <div className="flex flex-col justify-between gap-4 pt-2 lg:flex-row lg:items-center">
-              <p className="flex-1 text-xs text-gray-400 italic">
-                "Nous croyons qu'entreprendre devrait être une aventure passionnante,
-                pas une bataille administrative."
-              </p>
-              <div className="flex w-fit items-center gap-3">
-                <div className="size-10 rounded-full overflow-hidden">
-                  <Image
-                    src="/lp/about/about-11.jpeg"
-                    alt="L'équipe Sweily"
-                    width={40}
-                    height={40}
-                    className="object-cover w-full h-full"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium tracking-tight">L'équipe Sweily</h3>
-                  <p className="text-xs text-gray-400">Fondateurs de Newbi</p>
-                </div>
-              </div>
+    <section className="pt-10 md:pt-20 lg:pt-22 relative overflow-hidden px-5">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16 items-center">
+          <div className="lg:col-span-6">
+            <div className="relative h-[360px] lg:h-[480px] overflow-hidden rounded-3xl bg-[#F4F4F6]">
+              <Image
+                src="/lp/about/about-5.jpeg"
+                alt="L'équipe Newbi réunie autour d'un écran"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
             </div>
           </div>
+
+          <div className="lg:col-span-6">
+            <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-medium tracking-tight leading-tight text-balance text-gray-950 mb-4">
+              Nous avons d&apos;abord créé Newbi pour nous
+            </h2>
+            <p className="text-[17px] leading-relaxed text-gray-600 mb-4">
+              Tout commence chez Sweily, notre agence web : cinq associés, cinq
+              métiers, et le même constat chaque fin de mois. Un outil pour les
+              devis, un autre pour les factures, un tableur pour la trésorerie,
+              une boîte mail pour relancer. Des heures perdues à recopier les
+              mêmes informations d&apos;un endroit à l&apos;autre.
+            </p>
+            <p className="text-[17px] leading-relaxed text-gray-600">
+              Newbi rassemble tout ça dans un seul espace : un devis devient une
+              facture, la facture part en facturation électronique, le paiement
+              se rapproche de votre compte bancaire. Vous ne ressaisissez rien,
+              et vous passez votre temps sur votre métier plutôt que sur votre
+              administratif.
+            </p>
+          </div>
         </div>
+
+        <dl className="mt-14 md:mt-20 grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
+          {REPERES.map(({ chiffre, label }) => (
+            <div key={label} className="border-t border-gray-200 pt-6">
+              <dt className="text-4xl md:text-5xl font-medium tracking-tight text-gray-950">
+                {chiffre}
+              </dt>
+              <dd className="mt-3 text-[15px] leading-relaxed text-gray-600">
+                {label}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </div>
     </section>
   );

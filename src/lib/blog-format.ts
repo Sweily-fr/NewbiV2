@@ -22,5 +22,7 @@ export function formatPostForList(post: BlogPostMeta) {
     image: post.image,
     url: `/blog/${post.slug}`,
     publishDate: formatDateFr(post.publishDate || post.date),
+    /** Date brute, pour les formats courts des listes. */
+    dateIso: post.publishDate || post.date,
   };
 }

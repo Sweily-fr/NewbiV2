@@ -1,10 +1,18 @@
 // Bento de bénéfices : chaque carte montre un bout du produit (mini-interface)
 // plutôt qu'une icône. Items : { title, desc, visual: <Component/>, wide? }.
 // Les cartes `wide` prennent 2 colonnes sur desktop.
-export default function LpBenefits({ eyebrow, title, subtitle, items }) {
+export default function LpBenefits({
+  eyebrow,
+  title,
+  subtitle,
+  items,
+  // Les LP restent en max-w-6xl ; les pages « Pour qui » passent en max-w-7xl
+  // pour s'aligner sur la navbar.
+  maxWidth = "max-w-6xl",
+}) {
   return (
     <section className="px-5 py-14 md:py-20">
-      <div className="max-w-6xl mx-auto">
+      <div className={`${maxWidth} mx-auto`}>
         <div className="max-w-2xl mb-10 md:mb-14">
           {eyebrow && (
             <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">

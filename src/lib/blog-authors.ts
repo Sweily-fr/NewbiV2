@@ -20,7 +20,32 @@ export const AUTHORS: Record<string, AuthorProfile> = {
     bio: "Rédige les guides du blog Newbi sur la facturation, la gestion et les obligations des indépendants et des TPE, en lien avec l'équipe produit.",
     image: "/lp/about/about-11.jpeg",
   },
+  trevis: {
+    name: "Trévis",
+    role: "Rédaction Newbi",
+    bio: "Suit la réforme de la facturation électronique et les échéances fiscales, et les traduit en articles directement utilisables par les TPE.",
+    image: null,
+  },
+  joaquim: {
+    name: "Joaquim",
+    role: "Rédaction Newbi",
+    bio: "Écrit sur la trésorerie, les achats et le suivi des paiements, avec les cas concrets rencontrés par les indépendants et les petites équipes.",
+    image: null,
+  },
+  dylan: {
+    name: "Dylan",
+    role: "Rédaction Newbi",
+    bio: "Compare les outils de facturation et de gestion, et documente les modèles et les bonnes pratiques du quotidien des entrepreneurs.",
+    image: null,
+  },
 };
+
+/**
+ * Signatures utilisables à la publication. Le script
+ * `scripts/publish-articles.js` en tire une au hasard et l'écrit dans le
+ * frontmatter, pour que le blog ne soit pas signé d'un seul nom.
+ */
+export const SIGNATURES = ["Holany", "Trévis", "Joaquim", "Dylan"] as const;
 
 const DEFAULT_AUTHOR_KEY = "holany";
 

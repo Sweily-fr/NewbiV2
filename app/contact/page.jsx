@@ -72,127 +72,149 @@ export default function Contact() {
       <JsonLd jsonLd={seoData.jsonLd} />
       <div className="font-poppins">
         <NewHeroNavbar />
-        <div className="min-h-screen bg-[#FDFDFD] pt-42 pb-24">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-0">
+        {/* Mise en page reprise de la page contact de Linear, en thème
+            clair : à gauche le titre et les motifs de contact, à droite le
+            formulaire, séparés par un filet. Largeur alignée sur la navbar. */}
+        <div className="min-h-screen bg-[#FDFDFD] pt-40 pb-28 px-6 lg:px-12">
+          <div className="max-w-7xl mx-auto">
+            {/* La grille occupe la hauteur de l'écran : sans cela, le bloc
+                collant n'a que la hauteur du formulaire pour se déplacer. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-0 lg:min-h-[calc(100vh-17rem)]">
               {/* Colonne gauche — titre + raisons de contact */}
               <div className="lg:pr-16">
-                <h1 className="text-4xl sm:text-5xl font-semibold text-gray-900 tracking-tight mb-10">
-                  Contactez-nous
-                </h1>
+                <div className="lg:sticky lg:top-32">
+                  <h1 className="text-5xl sm:text-6xl lg:text-[4rem] font-semibold text-gray-900 tracking-tight leading-[1.05] mb-10">
+                    Contactez-nous
+                  </h1>
 
-                <ul className="space-y-5 mb-10">
-                  {REASONS.map((reason) => (
-                    <li key={reason} className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 shrink-0 text-gray-900" />
-                      <span className="text-base sm:text-lg text-gray-800">
-                        {reason}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                  <ul className="space-y-4 mb-9">
+                    {REASONS.map((reason) => (
+                      <li key={reason} className="flex items-center gap-3">
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-gray-900" />
+                        <span className="text-lg text-gray-800">{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-                <p className="text-sm text-gray-500">
-                  Une question sur nos offres ou nos tarifs ?{" "}
-                  <a
-                    href="mailto:contact@newbi.fr"
-                    className="text-gray-900 underline underline-offset-4 hover:text-gray-600"
-                  >
-                    Écrivez-nous directement
-                  </a>
-                </p>
+                  <p className="text-sm text-gray-500">
+                    Une question sur nos offres ou nos tarifs ?{" "}
+                    <a
+                      href="mailto:contact@newbi.fr"
+                      className="text-gray-900 underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900"
+                    >
+                      Écrivez-nous directement
+                    </a>
+                  </p>
+                </div>
               </div>
 
-              {/* Colonne droite — formulaire */}
+              {/* Colonne droite — formulaire, posé à même la page */}
               <div className="lg:pl-16 lg:border-l lg:border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900 mb-6">
+                <h2 className="text-xl font-medium text-gray-900 mb-2">
                   Dites-nous comment nous pouvons vous aider
                 </h2>
+                <p className="text-sm text-gray-500 mb-7">
+                  Donnez-nous les informations utiles pour vous répondre
+                  précisément : votre situation, ce que vous avez déjà essayé,
+                  le message d&apos;erreur éventuel.
+                </p>
 
-                <div className="bg-white border border-gray-200 rounded-xl p-6 sm:p-8">
-                  {sent ? (
-                    <div className="flex flex-col items-center justify-center text-center py-10">
-                      <CheckCircle2 className="h-10 w-10 text-[#5B4FFF] mb-4" />
-                      <p className="text-lg font-medium text-gray-900 mb-2">
-                        Message envoyé !
-                      </p>
-                      <p className="text-sm text-gray-500 mb-6">
-                        Merci de nous avoir contactés. Nous vous répondrons dans
-                        les plus brefs délais.
-                      </p>
-                      <Button variant="outline" onClick={() => setSent(false)}>
-                        Envoyer un autre message
-                      </Button>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                      {/* Honeypot invisible pour les humains */}
-                      <input
-                        type="text"
-                        name="website"
-                        value={form.website}
-                        onChange={handleChange("website")}
-                        className="hidden"
-                        tabIndex={-1}
-                        autoComplete="off"
-                        aria-hidden="true"
-                      />
+                {sent ? (
+                  <div className="flex flex-col items-start py-6">
+                    <CheckCircle2 className="h-9 w-9 text-[#5A50FF] mb-4" />
+                    <p className="text-lg font-medium text-gray-900 mb-2">
+                      Message envoyé
+                    </p>
+                    <p className="text-sm text-gray-500 mb-6">
+                      Merci de nous avoir contactés. Nous vous répondrons dans
+                      les plus brefs délais.
+                    </p>
+                    <Button variant="outline" onClick={() => setSent(false)}>
+                      Envoyer un autre message
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Honeypot invisible pour les humains */}
+                    <input
+                      type="text"
+                      name="website"
+                      value={form.website}
+                      onChange={handleChange("website")}
+                      className="hidden"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                    />
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label htmlFor="contact-name">Nom</Label>
-                          <Input
-                            id="contact-name"
-                            value={form.name}
-                            onChange={handleChange("name")}
-                            placeholder="Votre nom"
-                            maxLength={200}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="contact-email">Email</Label>
-                          <Input
-                            id="contact-email"
-                            type="email"
-                            value={form.email}
-                            onChange={handleChange("email")}
-                            placeholder="vous@entreprise.fr"
-                            maxLength={200}
-                            required
-                          />
-                        </div>
-                      </div>
-
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-2">
-                        <Label htmlFor="contact-subject">Sujet</Label>
+                        <Label htmlFor="contact-name">Nom</Label>
                         <Input
-                          id="contact-subject"
-                          value={form.subject}
-                          onChange={handleChange("subject")}
-                          placeholder="En quoi pouvons-nous vous aider ?"
+                          id="contact-name"
+                          value={form.name}
+                          onChange={handleChange("name")}
+                          placeholder="Votre nom"
                           maxLength={200}
                           required
                         />
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor="contact-message">Message</Label>
-                        <Textarea
-                          id="contact-message"
-                          value={form.message}
-                          onChange={handleChange("message")}
-                          placeholder="Décrivez votre demande…"
-                          rows={6}
-                          maxLength={5000}
+                        <Label htmlFor="contact-email">Email</Label>
+                        <Input
+                          id="contact-email"
+                          type="email"
+                          value={form.email}
+                          onChange={handleChange("email")}
+                          placeholder="vous@entreprise.fr"
+                          maxLength={200}
                           required
                         />
                       </div>
+                    </div>
 
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-subject">Sujet</Label>
+                      <Input
+                        id="contact-subject"
+                        value={form.subject}
+                        onChange={handleChange("subject")}
+                        placeholder="En quoi pouvons-nous vous aider ?"
+                        maxLength={200}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-message">Message</Label>
+                      <Textarea
+                        id="contact-message"
+                        value={form.message}
+                        onChange={handleChange("message")}
+                        placeholder="Décrivez votre demande…"
+                        rows={6}
+                        maxLength={5000}
+                        required
+                      />
+                    </div>
+
+                    {/* Pied de formulaire : l'adresse à gauche, l'envoi à
+                        droite, comme sur la référence */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-1">
+                      <p className="text-sm text-gray-500">
+                        Vous pouvez aussi nous écrire à{" "}
+                        <a
+                          href="mailto:contact@newbi.fr"
+                          className="text-gray-900 underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900"
+                        >
+                          contact@newbi.fr
+                        </a>
+                      </p>
                       <Button
                         type="submit"
-                        className="w-full"
+                        size="md"
                         disabled={sending}
+                        className="w-full sm:w-auto bg-[#17171A] px-6 text-white hover:bg-[#2A2A2E] active:bg-[#0D0D0F]"
                       >
                         {sending ? (
                           <>
@@ -203,19 +225,9 @@ export default function Contact() {
                           "Envoyer le message"
                         )}
                       </Button>
-                    </form>
-                  )}
-                </div>
-
-                <p className="text-sm text-gray-500 mt-6">
-                  Ou écrivez-nous à{" "}
-                  <a
-                    href="mailto:contact@newbi.fr"
-                    className="text-gray-900 underline underline-offset-4 hover:text-gray-600"
-                  >
-                    contact@newbi.fr
-                  </a>
-                </p>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           </div>

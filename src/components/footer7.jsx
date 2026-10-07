@@ -574,6 +574,8 @@ const Footer7 = ({
             <img
               src="/logo_Compatible_Facturation_electronique-footer.png"
               alt="Solution compatible Facturation électronique"
+              width={621}
+              height={289}
               className="h-16 w-auto object-contain rounded-lg"
             />
           </Link>
@@ -602,6 +604,8 @@ const Footer7 = ({
             <img
               src="/logo-france-num-activateur.png"
               alt="Activateur France Num"
+              width={400}
+              height={364}
               className="h-16 w-auto object-contain"
             />
           </a>

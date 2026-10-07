@@ -6,11 +6,11 @@ import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import { generateNextMetadata } from "@/src/utils/seo-data";
-import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
+import MessageriesSection from "./section/MessageriesSection";
 import SignaturesGovernanceSection from "./section/SignaturesGovernanceSection";
 import HowItWorksSection from "./section/HowItWorksSection";
-import MetiersSection from "@/app/(main)/new/lp-home/MetiersSection";
-import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import HomePricingSection from "@/app/(main)/new/lp-home/HomePricingSection";
+import LpFinalCta from "@/app/lp/_components/LpFinalCta";
 import SignaturesComponentsSection from "./section/SignaturesComponentsSection";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
 import { JsonLd } from "@/src/components/seo/json-ld";
@@ -34,45 +34,27 @@ export default function SignaturesPage() {
         <NewHeroNavbar hasBanner={false} />
         <main>
           <HeroSection />
-          <TrustedBySection variant="default" />
+          <MessageriesSection />
           <SignaturesGovernanceSection />
           <HowItWorksSection />
-          <MetiersSection
-            badge="Pour chaque profil"
-            title="Une signature adaptée à votre métier"
-            subtitle="Freelance, startup ou grande entreprise — créez des signatures qui reflètent votre identité professionnelle."
-            items={[
-              {
-                title: "Freelances",
-                desc: "Montrez votre expertise avec une signature qui inspire confiance dès le premier email.",
-                image:
-                  "https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80",
-              },
-              {
-                title: "Agences & Studios",
-                desc: "Uniformisez les signatures de toute votre équipe pour une image de marque cohérente.",
-                image:
-                  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&q=80",
-              },
-              {
-                title: "Startups",
-                desc: "Renforcez votre crédibilité avec des signatures professionnelles dès le lancement.",
-                image:
-                  "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80",
-              },
-              {
-                title: "TPE & PME",
-                desc: "Gérez les signatures de tous vos collaborateurs depuis un seul espace centralisé.",
-                image:
-                  "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=600&q=80",
-              },
-            ]}
-            bottomTitle=""
-            bottomText=""
-            ctaText=""
-            maxWidth="max-w-6xl"
+          {/* Même bannière que « Ferme ton Excel, ouvre Newbi » sur la home */}
+          <LpFinalCta
+            title={
+              <>
+                Une équipe, une image,
+                <br className="hidden md:block" /> une seule signature
+              </>
+            }
+            subtitle="Crée ton compte, choisis un modèle et déploie la signature de toute ton équipe aujourd'hui. 30 jours pour tester, sans carte bancaire."
+            image="/lp/signatures/cta-signature.png"
+            imageAlt="Une indépendante compose sa signature e-mail dans Newbi sur son ordinateur portable"
+            maxWidth="max-w-7xl"
+            className="pt-10 md:pt-20 lg:pt-22 pb-0 md:pb-0"
           />
-          <PricingSection variant="default" />
+          <HomePricingSection
+            maxWidth="max-w-7xl"
+            className="pt-10 md:pt-20 lg:pt-22 pb-0"
+          />
           {/* <SignaturesComponentsSection /> */}
           {/* <TestimonialsSplit /> */}
           <FAQ />

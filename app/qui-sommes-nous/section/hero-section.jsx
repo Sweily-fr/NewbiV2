@@ -1,36 +1,37 @@
-"use client";
 import React from "react";
 import { TeamBentoGrid } from "./TeamBentoGrid";
-import { OurStorySection } from "./OurStorySection";
 
+// Même disposition que le hero des LP produits : le texte centré sur toute la
+// largeur du conteneur, puis le visuel en dessous.
 export function HeroSection() {
   return (
-    <>
-      <main className="overflow-hidden">
-        <section className="min-h-[80vh] lg:min-h-screen flex flex-col items-center bg-white pt-32 sm:pt-28 lg:pt-38 pb-0 mb-10 lg:mb-20 px-4 sm:px-6 lg:px-12">
-          {/* Contenu texte centré */}
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <h1 className="text-balance font-normal text-4xl sm:text-5xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
-              Simplifier la gestion financière des entrepreneurs
+    <div className="relative w-full overflow-x-clip bg-white px-5 pb-6 md:pb-10 lg:pb-16">
+      <div className="max-w-7xl mx-auto relative">
+        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-40 md:pt-36 lg:pt-44">
+          <div className="col-span-12 text-center">
+            <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] mb-6">
+              L&apos;équipe qui simplifie la gestion des indépendants
             </h1>
-
-            <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
-              Nous sommes une équipe passionnée qui croit que la gestion
-              financière ne devrait pas être compliquée. Notre mission est de
-              simplifier le quotidien des entrepreneurs et PME avec des outils
-              intuitifs et performants.
-            </h2>
           </div>
 
-          {/* Bento Grid d'images en bas sans animation */}
-          <div className="relative w-full max-w-6xl mx-auto pt-8 lg:pt-12">
+          <div className="col-span-12 lg:col-span-10 lg:col-start-2 text-center">
+            <p className="text-lg md:text-xl font-normal tracking-tight text-gray-600 mx-auto mb-0 max-w-3xl">
+              Newbi est né d&apos;une agence web française qui en avait assez de
+              jongler entre dix outils pour facturer, relancer et suivre sa
+              trésorerie. Nous construisons aujourd&apos;hui{" "}
+              <strong className="font-medium text-gray-900">
+                le logiciel que nous voulions avoir
+              </strong>{" "}
+              — pour les indépendants et les TPE.
+            </p>
+          </div>
+
+          {/* Mosaïque de l'équipe, sous le texte */}
+          <div className="col-span-12 mt-10 md:mt-14">
             <TeamBentoGrid />
           </div>
-        </section>
-
-        {/* Section Notre Histoire */}
-        <OurStorySection />
-      </main>
-    </>
+        </div>
+      </div>
+    </div>
   );
 }

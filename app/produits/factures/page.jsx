@@ -8,12 +8,12 @@ import FAQ from "./section/faq";
 import { generateNextMetadata } from "@/src/utils/seo-data";
 import { FacturationBanner } from "./section/FacturationBanner";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
-import EInvoicingSection from "@/app/(main)/new/lp-home/EInvoicingSection";
-import MetiersSection from "@/app/(main)/new/lp-home/MetiersSection";
-import PricingSection from "@/app/(main)/new/lp-home/PricingSection";
+import LpFinalCta from "@/app/lp/_components/LpFinalCta";
+import LpTestimonials from "@/app/lp/_components/LpTestimonials";
+import HomePricingSection from "@/app/(main)/new/lp-home/HomePricingSection";
 import FacturesComponentsSection from "./section/FacturesComponentsSection";
 import FacturesGovernanceSection from "./section/FacturesGovernanceSection";
-import ComparisonSection from "./section/ComparisonSection";
+import ReadyToInvoiceSection from "./section/ReadyToInvoiceSection";
 import FacturationElectroniqueBanner from "./section/FacturationElectroniqueBanner";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
 import EncaissementBanner from "./section/EncaissementBanner";
@@ -44,44 +44,31 @@ export default function FacturesPage() {
           <HeroSection />
           <TrustedBySection variant="default" />
           <FacturesGovernanceSection />
-          <EInvoicingSection maxWidth="max-w-6xl" />
-          <MetiersSection
-            badge="Tout-en-un"
-            title="Un outil complet pour centraliser votre gestion"
-            subtitle="Bien plus qu'un logiciel de facturation : Newbi regroupe tous les outils dont vous avez besoin pour piloter votre activité efficacement."
-            items={[
-              {
-                title: "Factures & Devis",
-                desc: "Créez, envoyez et suivez vos factures et devis conformes en quelques clics.",
-                image:
-                  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&q=80",
-              },
-              {
-                title: "Suivi bancaire",
-                desc: "Connectez vos comptes et synchronisez vos transactions automatiquement.",
-                image:
-                  "https://images.unsplash.com/photo-1601597111158-2fceff292cdc?w=600&q=80",
-              },
-              {
-                title: "Gestion des dépenses",
-                desc: "Scannez vos justificatifs et catégorisez vos dépenses sans effort.",
-                image:
-                  "https://images.unsplash.com/photo-1554224155-1696413565d3?w=600&q=80",
-              },
-              {
-                title: "Projets & Clients",
-                desc: "Organisez vos projets, gérez votre fichier clients et collaborez efficacement.",
-                image:
-                  "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80",
-              },
-            ]}
-            bottomTitle=""
-            bottomText=""
-            ctaText=""
-            maxWidth="max-w-6xl"
+          {/* Même bannière que sur /produits/tresorerie */}
+          <LpFinalCta
+            title={
+              <>
+                Passe à la facturation
+                <br className="hidden md:block" /> électronique sans stress
+              </>
+            }
+            subtitle="Crée ton compte, envoie ta première facture électronique aujourd'hui. Tu as 30 jours pour tester, sans carte bancaire."
+            image="/lp/facturation-electronique/cta-laptop.jpg"
+            imageAlt="Un indépendant consulte ses factures clients dans Newbi sur son ordinateur portable"
+            maxWidth="max-w-7xl"
+            className="pt-10 md:pt-20 lg:pt-22 pb-0 md:pb-0"
           />
-          <PricingSection variant="default" />
-          <ComparisonSection />
+          <ReadyToInvoiceSection />
+          <HomePricingSection
+            maxWidth="max-w-7xl"
+            className="pt-10 md:pt-20 lg:pt-22 pb-0"
+          />
+          {/* Mêmes avis que la home, sur la largeur des autres sections ; la
+              marge haute reprend le rythme vertical du reste de la page */}
+          <LpTestimonials
+            maxWidth="max-w-7xl"
+            className="mt-10 md:mt-20 lg:mt-22"
+          />
           {/* <FacturesComponentsSection /> */}
           {/* <EncaissementBanner /> */}
           {/* <TestimonialsSplit /> */}
