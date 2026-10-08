@@ -1243,8 +1243,12 @@ export function KanbanGanttView({
           >
             <div
               // overflow-x-clip : les poignées de resize (right: -10px) des
-              // barres en bord de période ne doivent pas créer de scroll
-              className="relative cursor-pointer overflow-x-clip"
+              // barres en bord de période ne doivent pas créer de scroll.
+              // Pas de curseur « clic » en lecture seule (pas de création)
+              className={cn(
+                "relative overflow-x-clip",
+                !readOnly && "cursor-pointer",
+              )}
               style={{
                 minWidth: `${daysToDisplay.length * dayWidth}px`,
                 minHeight: `${Math.max(allTasks.length, 20) * 45}px`,

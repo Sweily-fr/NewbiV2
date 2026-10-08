@@ -48,6 +48,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import { MonthDetailsDrawer } from "./month-details-drawer";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // ─── Shared layout constants ───
 
@@ -442,6 +443,10 @@ const EXPENSE_CATEGORIES = [
 
 export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
   const { remap } = useChartColors();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
+  // lecture seule, le détail d'un mois ne propose pas de suppression
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canWrite("forecast");
   const incomeColor = remap("#5b50ff");
   const expenseColor = remap("#000000");
 
@@ -789,7 +794,9 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
       <MonthDetailsDrawer
         month={selectedMonth}
         open={!!selectedMonth}
-        readOnly={!!selectedMonth && selectedMonth < currentMonth}
+        readOnly={
+          !canEditForecast || (!!selectedMonth && selectedMonth < currentMonth)
+        }
         onOpenChange={(open) => {
           if (!open) setSelectedMonth(null);
         }}

@@ -416,10 +416,20 @@ export default function TransferTable({
     [session, formatFileSize, canDeleteFileTransfers],
   );
 
+  // Cases à cocher masquées sans droit de suppression : la sélection ne sert
+  // qu'à la suppression groupée
+  const visibleColumns = useMemo(
+    () =>
+      columns.filter(
+        (column) => canDeleteFileTransfers || column.id !== "select",
+      ),
+    [columns, canDeleteFileTransfers],
+  );
+
   // Create table instance
   const table = useReactTable({
     data,
-    columns,
+    columns: visibleColumns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -758,7 +768,11 @@ export default function TransferTable({
                     <TableEmptyState
                       icon={DocumentTextIcon}
                       title="Aucun transfert trouvé"
-                      description="Aucun transfert ne correspond à vos critères. Créez-en un nouveau pour commencer."
+                      description={
+                        canEditFileTransfers
+                          ? "Aucun transfert ne correspond à vos critères. Créez-en un nouveau pour commencer."
+                          : "Aucun transfert ne correspond à vos critères."
+                      }
                     />
                   </td>
                 </tr>

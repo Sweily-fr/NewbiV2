@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientCustomFields, FIELD_TYPES } from "@/src/hooks/useClientCustomFields";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -279,7 +280,10 @@ function CustomFieldInput({ field, value, onChange, error, onValidationError }) 
 
 export default function CustomFieldsForm({ values = {}, onChange, errors = {}, onValidationError }) {
   const { workspaceId } = useWorkspace();
-  const { fields, loading } = useClientCustomFields(workspaceId);
+  const { canRead, isReady } = useMyPermissions();
+  // Définitions du module « Champs personnalisés » (requête sautée sans lecture)
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const { fields, loading } = useClientCustomFields(canReadCustomFields ? workspaceId : null);
   const [localErrors, setLocalErrors] = useState({});
 
   // Filtrer uniquement les champs actifs

@@ -1,6 +1,7 @@
 "use client";
 
 import { useGmailConnection, useTriggerGmailSync } from "@/src/hooks/useGmailConnection";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import { Mail, RefreshCw, Loader2, AlertCircle } from "lucide-react";
@@ -23,6 +24,10 @@ function formatTimeAgo(dateStr) {
 export function GmailStatusBanner({ onOpenGmailDialog }) {
   const { connection, stats, loading } = useGmailConnection();
   const { triggerSync, loading: syncing } = useTriggerGmailSync();
+  const { canWrite, isReady } = useMyPermissions();
+  // Synchronisation réservée aux rôles qui peuvent écrire (tout autorisé tant
+  // que la grille n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
 
   if (loading || !connection || connection.status === "disconnected") {
     return null;
@@ -83,19 +88,21 @@ export function GmailStatusBanner({ onOpenGmailDialog }) {
           )}
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          onClick={handleSync}
-          disabled={syncing || connection.status === "syncing"}
-        >
-          {syncing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
-        </Button>
+        {canEditPurchaseInvoices && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0"
+            onClick={handleSync}
+            disabled={syncing || connection.status === "syncing"}
+          >
+            {syncing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

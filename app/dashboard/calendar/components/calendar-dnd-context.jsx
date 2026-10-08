@@ -34,6 +34,7 @@ const CalendarDndContext = createContext({
   isMultiDay: false,
   multiDayWidth: null,
   dragHandlePosition: null,
+  dragDisabled: false,
 });
 
 // Hook to use the context
@@ -43,9 +44,14 @@ export const useCalendarDnd = () => useContext(CalendarDndContext);
 /**
  * @param {React.ReactNode} children
  * @param {Function} onEventUpdate
+ * @param {boolean} disabled - aucun événement déplaçable (rôle en lecture)
  */
 
-export function CalendarDndProvider({ children, onEventUpdate }) {
+export function CalendarDndProvider({
+  children,
+  onEventUpdate,
+  disabled = false,
+}) {
   const [activeEvent, setActiveEvent] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [activeView, setActiveView] = useState(null);
@@ -289,6 +295,7 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
       isMultiDay,
       multiDayWidth,
       dragHandlePosition,
+      dragDisabled: disabled,
     }),
     [
       activeEvent,
@@ -298,6 +305,7 @@ export function CalendarDndProvider({ children, onEventUpdate }) {
       isMultiDay,
       multiDayWidth,
       dragHandlePosition,
+      disabled,
     ],
   );
 

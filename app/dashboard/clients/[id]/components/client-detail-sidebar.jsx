@@ -140,14 +140,22 @@ export default function ClientDetailSidebar({
   onEdit,
 }) {
   const [showMore, setShowMore] = useState(false);
-  const { fields: customFieldDefs } = useClientCustomFields(workspaceId);
-  const { updateField } = useUpdateClientCustomField();
-  const [savingFieldId, setSavingFieldId] = useState(null);
-  const { canWrite, isReady } = useMyPermissions();
+  const { canRead, canWrite, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canEditClients = !isReady || canWrite("clients");
+  // Champs personnalisés, listes et factures : modules à part (requêtes
+  // sautées et sections masquées sans lecture)
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const canEditCustomFields = !isReady || canWrite("clientCustomFields");
+  const canReadClientLists = !isReady || canRead("clientLists");
+  const canReadInvoices = !isReady || canRead("invoices");
+  const { fields: customFieldDefs } = useClientCustomFields(
+    canReadCustomFields ? workspaceId : null,
+  );
+  const { updateField } = useUpdateClientCustomField();
+  const [savingFieldId, setSavingFieldId] = useState(null);
   const { lists: clientLists } = useClientListsByClient(
-    workspaceId,
+    canReadClientLists ? workspaceId : null,
     client?.id,
   );
 
@@ -183,9 +191,11 @@ export default function ClientDetailSidebar({
     );
     return (customFieldDefs || [])
       .filter((def) => def.isActive)
+      // Lecture seule : seulement les champs déjà affichés sur les documents
+      .filter((def) => canEditCustomFields || def.showOnDocuments)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((def) => ({ def, value: values.get(def.id) || null }));
-  }, [customFieldDefs, customFieldsDisplay]);
+  }, [customFieldDefs, customFieldsDisplay, canEditCustomFields]);
 
   const toggleShowOnDocuments = async (def) => {
     const showOnDocuments = !def.showOnDocuments;
@@ -411,11 +421,13 @@ export default function ClientDetailSidebar({
           <>
             <div className="border-t border-[#eeeff1] dark:border-[#232323]" />
             <SidebarSection title="Sur les documents" defaultOpen>
-              <p className="text-xs text-muted-foreground mb-2">
-                Cochez les champs à afficher sous les coordonnées du client sur
-                les devis, factures, avoirs, bons de commande et bons de
-                livraison. Le choix vaut pour tous vos clients.
-              </p>
+              {canEditCustomFields && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  Cochez les champs à afficher sous les coordonnées du client sur
+                  les devis, factures, avoirs, bons de commande et bons de
+                  livraison. Le choix vaut pour tous vos clients.
+                </p>
+              )}
               <div className="space-y-0">
                 {documentFieldRows.map(({ def, value }) => {
                   const FieldIcon = CUSTOM_FIELD_ICONS[def.fieldType] || Type;
@@ -425,13 +437,15 @@ export default function ClientDetailSidebar({
                       className="flex items-center justify-between gap-3 py-[7px] cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <Checkbox
-                          checked={!!def.showOnDocuments}
-                          disabled={
-                            savingFieldId === def.id || !canEditClients
-                          }
-                          onCheckedChange={() => toggleShowOnDocuments(def)}
-                        />
+                        {/* Réglage du champ : écriture sur les champs
+                            personnalisés */}
+                        {canEditCustomFields && (
+                          <Checkbox
+                            checked={!!def.showOnDocuments}
+                            disabled={savingFieldId === def.id}
+                            onCheckedChange={() => toggleShowOnDocuments(def)}
+                          />
+                        )}
                         <FieldIcon className="h-3.5 w-3.5 flex-shrink-0 text-[#505154] dark:text-muted-foreground" />
                         <span className="text-[13px] text-[#505154] dark:text-muted-foreground truncate">
                           {def.name}
@@ -495,28 +509,32 @@ export default function ClientDetailSidebar({
           </>
         )}
 
-        <div className="border-t border-[#eeeff1] dark:border-[#232323]" />
+        {/* Facturation : masquée sans lecture des factures */}
+        {canReadInvoices && (
+          <>
+            <div className="border-t border-[#eeeff1] dark:border-[#232323]" />
 
-        {/* Facturation */}
-        <SidebarSection title="Facturation" defaultOpen>
-          <div className="space-y-0">
-            <InfoRow
-              icon={FileText}
-              label="Factures"
-              value={invoiceStats.count.toString()}
-            />
-            <InfoRow
-              icon={Banknote}
-              label="Total facturé"
-              value={formatCurrency(invoiceStats.total)}
-            />
-            <InfoRow
-              icon={Clock}
-              label="En attente"
-              value={formatCurrency(invoiceStats.pending)}
-            />
-          </div>
-        </SidebarSection>
+            <SidebarSection title="Facturation" defaultOpen>
+              <div className="space-y-0">
+                <InfoRow
+                  icon={FileText}
+                  label="Factures"
+                  value={invoiceStats.count.toString()}
+                />
+                <InfoRow
+                  icon={Banknote}
+                  label="Total facturé"
+                  value={formatCurrency(invoiceStats.total)}
+                />
+                <InfoRow
+                  icon={Clock}
+                  label="En attente"
+                  value={formatCurrency(invoiceStats.pending)}
+                />
+              </div>
+            </SidebarSection>
+          </>
+        )}
 
         <div className="border-t border-[#eeeff1] dark:border-[#232323]" />
 

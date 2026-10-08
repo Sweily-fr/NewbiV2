@@ -51,6 +51,7 @@ import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import { productItemImage } from "@/src/utils/item-image";
 import ClientSelector from "./quote-form-sections/client-selector";
 import { toast } from "@/src/components/ui/sonner";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({
@@ -312,6 +313,10 @@ export default function EnhancedQuoteForm({
   const setCurrentStep = onStepChange || setInternalCurrentStep;
 
   const canEdit = !readOnly;
+  // Recherche dans le catalogue : seulement si le rôle peut lire les produits
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, isReady } = useMyPermissions();
+  const canReadProducts = !isReady || canRead("products");
 
   // Gestion des champs du formulaire
   const updateField = (field, value) => {
@@ -550,7 +555,9 @@ export default function EnhancedQuoteForm({
               <ItemsSection
                 formatCurrency={formatCurrency}
                 canEdit={canEdit}
-                ProductSearchCombobox={ProductSearchCombobox}
+                ProductSearchCombobox={
+                  canReadProducts ? ProductSearchCombobox : null
+                }
                 validationErrors={validationErrors?.items?.details || []}
                 markFieldAsEditing={markFieldAsEditing}
                 unmarkFieldAsEditing={unmarkFieldAsEditing}

@@ -23,6 +23,7 @@ import {
   useUpsertForecastScenario,
   useDeleteForecastScenario,
 } from "@/src/hooks/useTreasuryForecast";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   ChevronDown,
   Check,
@@ -43,6 +44,11 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
   const { scenarios } = useForecastScenarios();
   const { upsertScenario, loading: saving } = useUpsertForecastScenario();
   const { deleteScenario, loading: deleting } = useDeleteForecastScenario();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
+  // lecture seule, on peut seulement changer de scénario affiché
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canWrite("forecast");
+  const canDeleteForecast = !isReady || canDelete("forecast");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -143,16 +149,18 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openEdit(s);
-                  }}
-                  className="text-[10px] text-muted-foreground/40 hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity px-1"
-                >
-                  Modifier
-                </button>
+                {canEditForecast && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(s);
+                    }}
+                    className="text-[10px] text-muted-foreground/40 hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity px-1"
+                  >
+                    Modifier
+                  </button>
+                )}
                 <Check
                   className={cn(
                     "h-4 w-4 text-[#5b4fff] shrink-0",
@@ -163,7 +171,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
             </DropdownMenuItem>
           ))}
 
-          {scenarios.length < 5 && (
+          {canEditForecast && scenarios.length < 5 && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={openCreate} className="cursor-pointer">
@@ -249,7 +257,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
               {/* Footer */}
               <div className="flex items-center justify-between border-t border-border/40 mt-4 px-5 py-3 -mx-5">
                 <div>
-                  {editing?.id && (
+                  {editing?.id && canDeleteForecast && (
                     <button
                       type="button"
                       onClick={() => {

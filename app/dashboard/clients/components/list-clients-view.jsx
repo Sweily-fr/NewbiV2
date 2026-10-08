@@ -67,12 +67,18 @@ export default function ListClientsView({
   const { addClients } = useAddClientsToList();
   const { removeClients } = useRemoveClientsFromList();
   const { deleteClient } = useDeleteClient();
-  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
+  // Champs personnalisés : module à part (requête sautée sans lecture)
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const { fields: customFieldDefinitions } = useClientCustomFields(
+    canReadCustomFields ? workspaceId : null,
+  );
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  // Ajouter / retirer des contacts : module « Listes et champs personnalisés »
+  // Ajouter / retirer des contacts : module « Listes »
   const canEditClients = !isReady || canWrite("clientLists");
   const canDeleteClients = !isReady || canDelete("clients");
+  // « Ajouter des contacts » liste les fiches du module Clients
+  const canAddContacts = canEditClients && (!isReady || canRead("clients"));
 
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -267,7 +273,7 @@ export default function ListClientsView({
             </p>
           </div>
 
-          {selectedCount === 0 && clients.length > 0 && canEditClients && (
+          {selectedCount === 0 && clients.length > 0 && canAddContacts && (
             <Button
               size="sm"
               variant="outline"
@@ -433,7 +439,7 @@ export default function ListClientsView({
               Ajoutez des contacts existants pour commencer à organiser cette
               liste.
             </p>
-            {canEditClients && (
+            {canAddContacts && (
               <Button
                 variant="primary"
                 onClick={() => setShowAddClientsDialog(true)}
@@ -463,16 +469,19 @@ export default function ListClientsView({
         )}
       </div>
 
-      <AddClientsToListDialog
-        open={showAddClientsDialog}
-        onOpenChange={setShowAddClientsDialog}
-        workspaceId={workspaceId}
-        list={list}
-        onClientsAdded={async () => {
-          await refetch?.();
-          onListUpdated?.();
-        }}
-      />
+      {/* Monté seulement avec le droit : il charge toutes les fiches clients */}
+      {canAddContacts && (
+        <AddClientsToListDialog
+          open={showAddClientsDialog}
+          onOpenChange={setShowAddClientsDialog}
+          workspaceId={workspaceId}
+          list={list}
+          onClientsAdded={async () => {
+            await refetch?.();
+            onListUpdated?.();
+          }}
+        />
+      )}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

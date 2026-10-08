@@ -336,9 +336,6 @@ export default function DocumentsPartagesPage() {
   const canCreateFileTransfers = !isReady || canWrite("fileTransfers");
   // Les automatisations de classement relèvent des documents partagés
   const canEditAutomations = !isReady || canWrite("sharedDocuments");
-  const roleTooltip = "Votre rôle ne permet pas cette action";
-  const editTooltip =
-    readOnlyTooltip || (!canEditSharedDocuments ? roleTooltip : undefined);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // États
@@ -778,7 +775,10 @@ export default function DocumentsPartagesPage() {
       // 1. workspaceId est disponible
       // 2. Les dossiers ont été chargés (pas en loading initial)
       // 3. On n'a pas déjà initié la création (ref synchrone)
+      // 4. Le rôle permet de créer des dossiers (grille chargée)
       if (
+        isReady &&
+        canEditSharedDocuments &&
         workspaceId &&
         !foldersInitialLoading &&
         !defaultFoldersInitiatedRef.current &&
@@ -797,6 +797,8 @@ export default function DocumentsPartagesPage() {
 
     initDefaultFolders();
   }, [
+    isReady,
+    canEditSharedDocuments,
     workspaceId,
     foldersInitialLoading,
     folders,
@@ -1860,101 +1862,100 @@ export default function DocumentsPartagesPage() {
                   Documents partagés
                 </h1>
               </div>
+              {/* Actions masquées si le rôle ne permet pas de modifier */}
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={
-                          activeAutomationsCount > 0 ? "default" : "secondary"
-                        }
-                        size="icon"
-                        className="relative"
-                        style={
-                          activeAutomationsCount > 0
-                            ? { backgroundColor: "#5b50ff" }
-                            : {}
-                        }
-                        disabled={isReadOnly || !canEditAutomations}
-                        title={
-                          readOnlyTooltip ||
-                          (!canEditAutomations ? roleTooltip : undefined)
-                        }
-                        onClick={() =>
-                          startTransition(() => setShowAutomationsModal(true))
-                        }
+                {canEditAutomations && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={
+                            activeAutomationsCount > 0 ? "default" : "secondary"
+                          }
+                          size="icon"
+                          className="relative"
+                          style={
+                            activeAutomationsCount > 0
+                              ? { backgroundColor: "#5b50ff" }
+                              : {}
+                          }
+                          disabled={isReadOnly}
+                          title={readOnlyTooltip}
+                          onClick={() =>
+                            startTransition(() => setShowAutomationsModal(true))
+                          }
+                        >
+                          <Zap className="h-4 w-4" strokeWidth={1.5} />
+                          {activeAutomationsCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-[#5b50ff] text-[10px] font-semibold shadow-sm border">
+                              {activeAutomationsCount}
+                            </span>
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
                       >
-                        <Zap className="h-4 w-4" strokeWidth={1.5} />
-                        {activeAutomationsCount > 0 && (
-                          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-[#5b50ff] text-[10px] font-semibold shadow-sm border">
-                            {activeAutomationsCount}
-                          </span>
+                        <p>Automatisations</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {canEditSharedDocuments && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          disabled={isReadOnly}
+                          title={readOnlyTooltip}
+                          onClick={() => setShowNewFolderModal(true)}
+                        >
+                          <FolderPlus className="h-4 w-4" strokeWidth={1.5} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>Nouveau dossier</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {canEditSharedDocuments && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        disabled={isReadOnly || isUploading || uploadLoading}
+                        title={readOnlyTooltip}
+                        className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-1.5 sm:gap-2"
+                      >
+                        {isUploading || uploadLoading ? (
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Plus size={16} aria-hidden="true" />
                         )}
+                        <span className="hidden sm:inline">Ajouter</span>
+                        <ChevronDown className="h-4 w-4 opacity-50 hidden sm:block" />
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="bg-[#202020] text-white border-0"
-                    >
-                      <p>Automatisations</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        disabled={isReadOnly || !canEditSharedDocuments}
-                        title={editTooltip}
-                        onClick={() => setShowNewFolderModal(true)}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={openFileDialog}>
+                        <File className="h-4 w-4 mr-2" />
+                        Importer des fichiers
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => folderInputRef.current?.click()}
                       >
-                        <FolderPlus className="h-4 w-4" strokeWidth={1.5} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="bg-[#202020] text-white border-0"
-                    >
-                      <p>Nouveau dossier</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      disabled={
-                        isReadOnly ||
-                        !canEditSharedDocuments ||
-                        isUploading ||
-                        uploadLoading
-                      }
-                      title={editTooltip}
-                      className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-1.5 sm:gap-2"
-                    >
-                      {isUploading || uploadLoading ? (
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Plus size={16} aria-hidden="true" />
-                      )}
-                      <span className="hidden sm:inline">Ajouter</span>
-                      <ChevronDown className="h-4 w-4 opacity-50 hidden sm:block" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={openFileDialog}>
-                      <File className="h-4 w-4 mr-2" />
-                      Importer des fichiers
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => folderInputRef.current?.click()}
-                    >
-                      <Folder className="h-4 w-4 mr-2" />
-                      Importer un dossier
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        <Folder className="h-4 w-4 mr-2" />
+                        Importer un dossier
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
 
@@ -3208,33 +3209,38 @@ export default function DocumentsPartagesPage() {
                     {/* Header */}
                     <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
                       <span className="w-6 hidden sm:block"></span>
-                      <Checkbox
-                        checked={
-                          selectedTrashFolders.length === trashFolders.length &&
-                          selectedTrashDocuments.length ===
-                            orphanTrashDocuments.length &&
-                          trashItemsCount > 0
-                        }
-                        onCheckedChange={() => {
-                          if (
+                      {/* Sélection inutile sans droit de restaurer
+                          (écriture) ni de supprimer */}
+                      {canEditSharedDocuments && (
+                        <Checkbox
+                          checked={
                             selectedTrashFolders.length ===
                               trashFolders.length &&
                             selectedTrashDocuments.length ===
-                              orphanTrashDocuments.length
-                          ) {
-                            setSelectedTrashFolders([]);
-                            setSelectedTrashDocuments([]);
-                          } else {
-                            setSelectedTrashFolders(
-                              trashFolders.map((f) => f.id),
-                            );
-                            setSelectedTrashDocuments(
-                              orphanTrashDocuments.map((d) => d.id),
-                            );
+                              orphanTrashDocuments.length &&
+                            trashItemsCount > 0
                           }
-                        }}
-                        className="h-4 w-4"
-                      />
+                          onCheckedChange={() => {
+                            if (
+                              selectedTrashFolders.length ===
+                                trashFolders.length &&
+                              selectedTrashDocuments.length ===
+                                orphanTrashDocuments.length
+                            ) {
+                              setSelectedTrashFolders([]);
+                              setSelectedTrashDocuments([]);
+                            } else {
+                              setSelectedTrashFolders(
+                                trashFolders.map((f) => f.id),
+                              );
+                              setSelectedTrashDocuments(
+                                orphanTrashDocuments.map((d) => d.id),
+                              );
+                            }
+                          }}
+                          className="h-4 w-4"
+                        />
+                      )}
                       <span className="flex-1">Nom</span>
                       <span className="w-24 text-right hidden sm:block">
                         Taille
@@ -3245,7 +3251,9 @@ export default function DocumentsPartagesPage() {
                       <span className="w-24 text-right hidden md:block">
                         Jours restants
                       </span>
-                      <span className="w-8 sm:w-10"></span>
+                      {canEditSharedDocuments && (
+                        <span className="w-8 sm:w-10"></span>
+                      )}
                     </div>
 
                     {/* Trashed folders with their contents */}
@@ -3284,13 +3292,17 @@ export default function DocumentsPartagesPage() {
                                 )}
                               />
                             </button>
-                            <Checkbox
-                              checked={selectedTrashFolders.includes(folder.id)}
-                              onCheckedChange={() =>
-                                toggleTrashFolderSelection(folder.id)
-                              }
-                              className="h-4 w-4"
-                            />
+                            {canEditSharedDocuments && (
+                              <Checkbox
+                                checked={selectedTrashFolders.includes(
+                                  folder.id,
+                                )}
+                                onCheckedChange={() =>
+                                  toggleTrashFolderSelection(folder.id)
+                                }
+                                className="h-4 w-4"
+                              />
+                            )}
                             <div
                               className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
                               onClick={() =>
@@ -3355,49 +3367,52 @@ export default function DocumentsPartagesPage() {
                                 {folder.daysUntilPermanentDeletion}j
                               </Badge>
                             </span>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
-                                  disabled={!canEditSharedDocuments}
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedTrashFolders([folder.id]);
-                                    setSelectedTrashDocuments([]);
-                                    handleRestoreItems({
-                                      folderIds: [folder.id],
-                                      documentIds: [],
-                                    });
-                                  }}
-                                >
-                                  <RotateCcw className="h-4 w-4 mr-2" />
-                                  Restaurer
-                                </DropdownMenuItem>
-                                {canDeleteSharedDocuments && (
-                                  <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setSelectedTrashFolders([folder.id]);
-                                        setSelectedTrashDocuments([]);
-                                        setShowPermanentDeleteModal(true);
-                                      }}
-                                      variant="destructive"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Supprimer définitivement
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            {/* Restaurer (écriture) / supprimer : menu absent
+                                en lecture seule */}
+                            {canEditSharedDocuments && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedTrashFolders([folder.id]);
+                                      setSelectedTrashDocuments([]);
+                                      handleRestoreItems({
+                                        folderIds: [folder.id],
+                                        documentIds: [],
+                                      });
+                                    }}
+                                  >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Restaurer
+                                  </DropdownMenuItem>
+                                  {canDeleteSharedDocuments && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setSelectedTrashFolders([folder.id]);
+                                          setSelectedTrashDocuments([]);
+                                          setShowPermanentDeleteModal(true);
+                                        }}
+                                        variant="destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Supprimer définitivement
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
 
                           {/* Documents inside folder (when expanded) */}
@@ -3413,15 +3428,17 @@ export default function DocumentsPartagesPage() {
                               >
                                 <span className="w-6 hidden sm:block"></span>
                                 <span className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-4 rounded-bl-sm hidden sm:block"></span>
-                                <Checkbox
-                                  checked={selectedTrashDocuments.includes(
-                                    doc.id,
-                                  )}
-                                  onCheckedChange={() =>
-                                    toggleTrashDocumentSelection(doc.id)
-                                  }
-                                  className="h-4 w-4"
-                                />
+                                {canEditSharedDocuments && (
+                                  <Checkbox
+                                    checked={selectedTrashDocuments.includes(
+                                      doc.id,
+                                    )}
+                                    onCheckedChange={() =>
+                                      toggleTrashDocumentSelection(doc.id)
+                                    }
+                                    className="h-4 w-4"
+                                  />
+                                )}
                                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                                   {getFileIcon(doc.mimeType, doc.fileExtension)}
                                   <div className="flex-1 min-w-0">
@@ -3442,49 +3459,52 @@ export default function DocumentsPartagesPage() {
                                 <span className="w-24 text-right hidden md:block">
                                   —
                                 </span>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
-                                      disabled={!canEditSharedDocuments}
-                                    >
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setSelectedTrashDocuments([doc.id]);
-                                        setSelectedTrashFolders([]);
-                                        handleRestoreItems({
-                                          documentIds: [doc.id],
-                                          folderIds: [],
-                                        });
-                                      }}
-                                    >
-                                      <RotateCcw className="h-4 w-4 mr-2" />
-                                      Restaurer
-                                    </DropdownMenuItem>
-                                    {canDeleteSharedDocuments && (
-                                      <>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                          onClick={() => {
-                                            setSelectedTrashDocuments([doc.id]);
-                                            setSelectedTrashFolders([]);
-                                            setShowPermanentDeleteModal(true);
-                                          }}
-                                          variant="destructive"
-                                        >
-                                          <Trash2 className="h-4 w-4 mr-2" />
-                                          Supprimer définitivement
-                                        </DropdownMenuItem>
-                                      </>
-                                    )}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                {canEditSharedDocuments && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
+                                      >
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setSelectedTrashDocuments([doc.id]);
+                                          setSelectedTrashFolders([]);
+                                          handleRestoreItems({
+                                            documentIds: [doc.id],
+                                            folderIds: [],
+                                          });
+                                        }}
+                                      >
+                                        <RotateCcw className="h-4 w-4 mr-2" />
+                                        Restaurer
+                                      </DropdownMenuItem>
+                                      {canDeleteSharedDocuments && (
+                                        <>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            onClick={() => {
+                                              setSelectedTrashDocuments([
+                                                doc.id,
+                                              ]);
+                                              setSelectedTrashFolders([]);
+                                              setShowPermanentDeleteModal(true);
+                                            }}
+                                            variant="destructive"
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Supprimer définitivement
+                                          </DropdownMenuItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
                               </div>
                             ))}
                         </div>
@@ -3502,13 +3522,15 @@ export default function DocumentsPartagesPage() {
                         )}
                       >
                         <span className="w-6 hidden sm:block"></span>
-                        <Checkbox
-                          checked={selectedTrashDocuments.includes(doc.id)}
-                          onCheckedChange={() =>
-                            toggleTrashDocumentSelection(doc.id)
-                          }
-                          className="h-4 w-4"
-                        />
+                        {canEditSharedDocuments && (
+                          <Checkbox
+                            checked={selectedTrashDocuments.includes(doc.id)}
+                            onCheckedChange={() =>
+                              toggleTrashDocumentSelection(doc.id)
+                            }
+                            className="h-4 w-4"
+                          />
+                        )}
                         <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                           {getFileIcon(doc.mimeType, doc.fileExtension)}
                           <div className="flex-1 min-w-0">
@@ -3545,49 +3567,50 @@ export default function DocumentsPartagesPage() {
                             {doc.daysUntilPermanentDeletion}j
                           </Badge>
                         </span>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
-                              disabled={!canEditSharedDocuments}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedTrashDocuments([doc.id]);
-                                setSelectedTrashFolders([]);
-                                handleRestoreItems({
-                                  documentIds: [doc.id],
-                                  folderIds: [],
-                                });
-                              }}
-                            >
-                              <RotateCcw className="h-4 w-4 mr-2" />
-                              Restaurer
-                            </DropdownMenuItem>
-                            {canDeleteSharedDocuments && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedTrashDocuments([doc.id]);
-                                    setSelectedTrashFolders([]);
-                                    setShowPermanentDeleteModal(true);
-                                  }}
-                                  variant="destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Supprimer définitivement
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {canEditSharedDocuments && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedTrashDocuments([doc.id]);
+                                  setSelectedTrashFolders([]);
+                                  handleRestoreItems({
+                                    documentIds: [doc.id],
+                                    folderIds: [],
+                                  });
+                                }}
+                              >
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Restaurer
+                              </DropdownMenuItem>
+                              {canDeleteSharedDocuments && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedTrashDocuments([doc.id]);
+                                      setSelectedTrashFolders([]);
+                                      setShowPermanentDeleteModal(true);
+                                    }}
+                                    variant="destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Supprimer définitivement
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     ))}
                   </div>

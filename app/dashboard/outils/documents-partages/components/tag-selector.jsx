@@ -40,6 +40,7 @@ import {
   useDocumentTags,
   useCreateDocumentTag,
 } from "@/src/hooks/useSharedDocuments";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Palette (alignée sur le backend)
 export const TAG_PALETTE = [
@@ -169,6 +170,10 @@ export function TagSelector({
 
   const { tags: registry } = useDocumentTags();
   const { createTag } = useCreateDocumentTag();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // en lecture seule, tags affichés sans retrait ni ajout
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditTags = !isReady || canWrite("sharedDocuments");
 
   const colorOf = React.useCallback(
     (name) => resolveTagColor(name, registry),
@@ -241,15 +246,17 @@ export function TagSelector({
                   style={{ backgroundColor: c }}
                 />
                 {tag}
-                <button
-                  type="button"
-                  onClick={() => onRemove?.(tag)}
-                  className="inline-flex items-center justify-center rounded-full h-4 w-4 hover:bg-black/10 transition-colors"
-                  disabled={disabled}
-                  aria-label={`Retirer le tag ${tag}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                {canEditTags && (
+                  <button
+                    type="button"
+                    onClick={() => onRemove?.(tag)}
+                    className="inline-flex items-center justify-center rounded-full h-4 w-4 hover:bg-black/10 transition-colors"
+                    disabled={disabled}
+                    aria-label={`Retirer le tag ${tag}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </span>
             );
           })
@@ -265,21 +272,24 @@ export function TagSelector({
           if (!o) reset();
         }}
       >
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size={size === "sm" ? "sm" : "default"}
-            className={cn(
-              "justify-start gap-1.5 border-dashed text-muted-foreground font-normal",
-              size === "sm" && "h-8 text-sm",
-            )}
-            disabled={disabled}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            {placeholder}
-          </Button>
-        </PopoverTrigger>
+        {/* Sans déclencheur, la popup d'ajout ne peut pas s'ouvrir */}
+        {canEditTags && (
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size={size === "sm" ? "sm" : "default"}
+              className={cn(
+                "justify-start gap-1.5 border-dashed text-muted-foreground font-normal",
+                size === "sm" && "h-8 text-sm",
+              )}
+              disabled={disabled}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {placeholder}
+            </Button>
+          </PopoverTrigger>
+        )}
         <PopoverContent
           className="w-72 p-0 overflow-hidden rounded-xl"
           align="start"

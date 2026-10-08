@@ -32,9 +32,6 @@ function CataloguesContent() {
   const { canWrite, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canEditProducts = !isReady || canWrite("products");
-  const roleTooltip = !canEditProducts
-    ? "Votre rôle ne permet pas cette action"
-    : undefined;
 
   // Récupérer les produits pour l'export
   const { products: allProducts, refetch } = useProducts(1, 100, "");
@@ -60,41 +57,46 @@ function CataloguesContent() {
             <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCustomFieldsOpen(true)}
-              disabled={!canEditProducts}
-              title={roleTooltip}
-              className="cursor-pointer"
-            >
-              <Settings2 className="w-3.5 h-3.5" />
-              Champs
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => !isReadOnly && setImportDialogOpen(true)}
-              disabled={isReadOnly || !canEditProducts}
-              title={readOnlyTooltip || roleTooltip}
-              className="cursor-pointer"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Importer
-            </Button>
+            {/* Actions d'écriture masquées si le rôle est en lecture seule */}
+            {canEditProducts && (
+              <Button
+                variant="outline"
+                onClick={() => setCustomFieldsOpen(true)}
+                className="cursor-pointer"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                Champs
+              </Button>
+            )}
+            {canEditProducts && (
+              <Button
+                variant="outline"
+                onClick={() => !isReadOnly && setImportDialogOpen(true)}
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+                className="cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Importer
+              </Button>
+            )}
             <ProductExportButton
               products={allProducts}
               selectedRows={selectedProducts}
               iconOnly={false}
             />
-            <Button
-              variant="primary"
-              onClick={() => !isReadOnly && handleOpenProductDialog()}
-              disabled={isReadOnly || !canEditProducts}
-              title={readOnlyTooltip || roleTooltip}
-              className="cursor-pointer"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Ajouter un produit
-            </Button>
+            {canEditProducts && (
+              <Button
+                variant="primary"
+                onClick={() => !isReadOnly && handleOpenProductDialog()}
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+                className="cursor-pointer"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Ajouter un produit
+              </Button>
+            )}
           </div>
         </div>
 

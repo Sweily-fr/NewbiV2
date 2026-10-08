@@ -5,8 +5,9 @@
  */
 const ROUTE_MODULES = [
   ["/dashboard/outils/transactions", "banking"],
+  ["/dashboard/outils/analytiques/vue-densemble", "overview"],
   ["/dashboard/outils/analytiques", "analytics"],
-  ["/dashboard/outils/prevision", "analytics"],
+  ["/dashboard/outils/prevision", "forecast"],
   ["/dashboard/analytics", "analytics"],
   ["/dashboard/outils/factures-achat", "purchaseInvoices"],
   ["/dashboard/outils/factures", "invoices"],
@@ -15,6 +16,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/bons-de-livraison", "deliveryNotes"],
   ["/dashboard/catalogues", "products"],
   ["/dashboard/clients/listes", "clientLists"],
+  ["/dashboard/clients/segments", "clientSegments"],
   ["/dashboard/clients", "clients"],
   ["/dashboard/automatisation", "automations"],
   ["/dashboard/calendar", "calendar"],
@@ -24,9 +26,13 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/signatures-mail", "signatures"],
 ];
 
+// Avoirs : pages sous une facture (/factures/<id>/avoir/…)
+const CREDIT_NOTE_PATH = /^\/dashboard\/outils\/factures\/[^/]+\/avoir(\/|$)/;
+
 export function moduleForPath(pathname) {
   if (!pathname) return null;
   const path = String(pathname).split(/[?#]/)[0];
+  if (CREDIT_NOTE_PATH.test(path)) return "creditNotes";
   for (const [prefix, moduleKey] of ROUTE_MODULES) {
     if (path === prefix || path.startsWith(`${prefix}/`)) return moduleKey;
   }

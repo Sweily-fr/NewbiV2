@@ -41,8 +41,11 @@ export default function QuoteMobileFullscreen({
 }) {
   const router = useRouter();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
+  const { canRead, canWrite, isReady } = useMyPermissions();
   const canEditQuotes = !isReady || canWrite("quotes");
+  // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
+  const canReadInvoices = !isReady || canRead("invoices");
+  const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
   // Conversions : création dans le module cible
   const canConvertToInvoice =
     canEditQuotes && (!isReady || canWrite("invoices"));
@@ -605,7 +608,8 @@ export default function QuoteMobileFullscreen({
                 </Button>
 
                 {/* Bons de commande liés (créés à partir de ce devis) */}
-                {quote.linkedPurchaseOrders &&
+                {canReadPurchaseOrders &&
+                  quote.linkedPurchaseOrders &&
                   quote.linkedPurchaseOrders.length > 0 && (
                     <div className="space-y-2.5">
                       <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -630,7 +634,7 @@ export default function QuoteMobileFullscreen({
                   )}
 
                 {/* Factures liées */}
-                {quote.status === QUOTE_STATUS.COMPLETED && (
+                {canReadInvoices && quote.status === QUOTE_STATUS.COMPLETED && (
                   <LinkedInvoicesList quote={quote} />
                 )}
               </div>

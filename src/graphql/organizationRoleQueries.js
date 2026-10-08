@@ -31,6 +31,7 @@ export const GET_ROLE_CATALOG = gql`
         key
         group
         kind
+        parent
         label
         description
         levels

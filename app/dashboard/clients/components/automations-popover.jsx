@@ -219,12 +219,18 @@ function AutomationRow({
         </SelectContent>
       </Select>
 
-      <Switch
-        checked={localData.isActive}
-        onCheckedChange={handleToggle}
-        disabled={!canEdit}
-        className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
-      />
+      {/* Lecture seule : statut affiché sans interrupteur */}
+      {canEdit ? (
+        <Switch
+          checked={localData.isActive}
+          onCheckedChange={handleToggle}
+          className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
+        />
+      ) : (
+        <span className="text-xs text-muted-foreground flex-shrink-0">
+          {localData.isActive ? "Active" : "Inactive"}
+        </span>
+      )}
 
       {canRemove && (
         <Button
@@ -399,12 +405,18 @@ function EmailAutomationRow({
         </p>
       </div>
 
-      <Switch
-        checked={isActive}
-        onCheckedChange={handleToggle}
-        disabled={!canEdit}
-        className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
-      />
+      {/* Lecture seule : statut affiché sans interrupteur */}
+      {canEdit ? (
+        <Switch
+          checked={isActive}
+          onCheckedChange={handleToggle}
+          className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
+        />
+      ) : (
+        <span className="text-xs text-muted-foreground flex-shrink-0">
+          {isActive ? "Active" : "Inactive"}
+        </span>
+      )}
 
       {canEdit && (
         <Button
@@ -648,20 +660,30 @@ export default function AutomationsPopover({ trigger }) {
   const planLimits = getPlanLimits(subscription?.plan);
   const canUseClientAutomations = planLimits.clientAutomations;
   const canUseEmailAutomations = planLimits.crmEmailAutomations;
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canReadAutomations = !isReady || canRead("automations");
   const canEditAutomations = !isReady || canWrite("automations");
   const canDeleteAutomations = !isReady || canDelete("automations");
+  // Listes et champs personnalisés : modules à part (requêtes sautées sans
+  // lecture)
+  const canReadClientLists = !isReady || canRead("clientLists");
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const automationsWorkspaceId = canReadAutomations ? workspaceId : null;
 
   const {
     automations,
     loading: automationsLoading,
     refetch,
-  } = useClientAutomations(workspaceId);
-  const { lists, loading: listsLoading } = useClientLists(workspaceId);
+  } = useClientAutomations(automationsWorkspaceId);
+  const { lists, loading: listsLoading } = useClientLists(
+    canReadAutomations && canReadClientLists ? workspaceId : null,
+  );
   const { automations: emailAutomations, refetch: refetchEmailAutomations } =
-    useCrmEmailAutomations(workspaceId);
-  const { fields: customFields } = useClientCustomFields(workspaceId);
+    useCrmEmailAutomations(automationsWorkspaceId);
+  const { fields: customFields } = useClientCustomFields(
+    canReadAutomations && canReadCustomFields ? workspaceId : null,
+  );
   const { createAutomation } = useCreateClientAutomation();
   const { updateAutomation } = useUpdateClientAutomation();
   const { deleteAutomation } = useDeleteClientAutomation();
@@ -770,6 +792,9 @@ export default function AutomationsPopover({ trigger }) {
   const activeListCount = automations.filter((a) => a.isActive).length;
   const activeEmailCount = emailAutomations.filter((a) => a.isActive).length;
   const activeCount = activeListCount + activeEmailCount;
+
+  // Sans lecture des automatisations, le bouton n'apparaît pas
+  if (!canReadAutomations) return null;
 
   return (
     <>

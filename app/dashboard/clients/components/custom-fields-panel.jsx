@@ -378,35 +378,45 @@ function FieldRow({
         </div>
       </div>
 
-      {/* Bascule directe, sans passer par « Modifier » */}
-      <label
-        className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs whitespace-nowrap flex-shrink-0 ${
-          field.isActive
-            ? "cursor-pointer hover:bg-accent"
-            : "cursor-not-allowed opacity-50"
-        } ${field.showOnDocuments ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : "text-muted-foreground"}`}
-        title={
-          field.isActive
-            ? "Afficher ce champ sous les coordonnées du client sur les devis, factures, avoirs, bons de commande et bons de livraison"
-            : "Activez le champ pour pouvoir l'afficher sur les documents"
-        }
-      >
-        <Checkbox
-          checked={!!field.showOnDocuments}
-          disabled={!field.isActive || !canEdit}
-          onCheckedChange={() => onToggleDocuments(field)}
-          className="h-3.5 w-3.5"
-        />
-        Sur les documents
-      </label>
+      {/* Bascule directe, sans passer par « Modifier » (lecture seule :
+          simple mention quand le champ est affiché sur les documents) */}
+      {(canEdit || field.showOnDocuments) && (
+        <label
+          className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs whitespace-nowrap flex-shrink-0 ${
+            field.isActive
+              ? "cursor-pointer hover:bg-accent"
+              : "cursor-not-allowed opacity-50"
+          } ${field.showOnDocuments ? "border-[#5b50ff]/40 bg-[#5b50ff]/5 text-[#5b50ff]" : "text-muted-foreground"}`}
+          title={
+            field.isActive
+              ? "Afficher ce champ sous les coordonnées du client sur les devis, factures, avoirs, bons de commande et bons de livraison"
+              : "Activez le champ pour pouvoir l'afficher sur les documents"
+          }
+        >
+          {canEdit && (
+            <Checkbox
+              checked={!!field.showOnDocuments}
+              disabled={!field.isActive}
+              onCheckedChange={() => onToggleDocuments(field)}
+              className="h-3.5 w-3.5"
+            />
+          )}
+          Sur les documents
+        </label>
+      )}
 
-      <Switch
-        checked={field.isActive}
-        disabled={!canEdit}
-        onCheckedChange={() => onToggle(field)}
-        className="data-[state=checked]:bg-[#5b50ff] scale-90"
-        title={field.isActive ? "Champ activé" : "Champ désactivé"}
-      />
+      {canEdit ? (
+        <Switch
+          checked={field.isActive}
+          onCheckedChange={() => onToggle(field)}
+          className="data-[state=checked]:bg-[#5b50ff] scale-90"
+          title={field.isActive ? "Champ activé" : "Champ désactivé"}
+        />
+      ) : (
+        <span className="text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
+          {field.isActive ? "Activé" : "Désactivé"}
+        </span>
+      )}
 
       {canEdit && (
         <Button
@@ -447,10 +457,10 @@ export default function CustomFieldsPanel({
   const [createLoading, setCreateLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle sur « Listes et champs personnalisés » (tout autorisé
+  // Droits du rôle sur « Champs personnalisés » (tout autorisé
   // tant que la grille n'est pas chargée)
-  const canEditFields = !isReady || canWrite("clientLists");
-  const canDeleteClients = !isReady || canDelete("clientLists");
+  const canEditFields = !isReady || canWrite("clientCustomFields");
+  const canDeleteClients = !isReady || canDelete("clientCustomFields");
 
   const customFieldsLimit = planLimits?.customFields ?? -1;
   const isLimitReached =
@@ -540,15 +550,17 @@ export default function CustomFieldsPanel({
             Créez des champs personnalisés pour enrichir vos fiches clients avec
             des informations spécifiques à votre activité.
           </p>
-          <Button
-            className="mt-4"
-            onClick={() => setIsFormOpen(true)}
-            disabled={isLimitReached || !canEditFields}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Créer un champ
-          </Button>
-          {isLimitReached && (
+          {canEditFields && (
+            <Button
+              className="mt-4"
+              onClick={() => setIsFormOpen(true)}
+              disabled={isLimitReached}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Créer un champ
+            </Button>
+          )}
+          {isLimitReached && canEditFields && (
             <p className="mt-2 text-sm text-amber-600">
               Limite atteinte ({fields.length}/{customFieldsLimit} champs).
               Passez au plan {nextPlanName} pour plus de champs personnalisés.
@@ -562,26 +574,30 @@ export default function CustomFieldsPanel({
               {fields.length} champ{fields.length > 1 ? "s" : ""}
               {customFieldsLimit !== -1 && ` / ${customFieldsLimit}`}
             </p>
-            <Button
-              size="sm"
-              onClick={() => setIsFormOpen(true)}
-              disabled={isLimitReached || !canEditFields}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nouveau champ
-            </Button>
+            {canEditFields && (
+              <Button
+                size="sm"
+                onClick={() => setIsFormOpen(true)}
+                disabled={isLimitReached}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nouveau champ
+              </Button>
+            )}
           </div>
-          {isLimitReached && (
+          {isLimitReached && canEditFields && (
             <p className="text-sm text-amber-600">
               Limite atteinte ({fields.length}/{customFieldsLimit} champs).
               Passez au plan {nextPlanName} pour plus de champs personnalisés.
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            Cochez « Sur les documents » pour afficher un champ sous les
-            coordonnées du client sur vos devis, factures, bons de commande et
-            bons de livraison.
-          </p>
+          {canEditFields && (
+            <p className="text-xs text-muted-foreground">
+              Cochez « Sur les documents » pour afficher un champ sous les
+              coordonnées du client sur vos devis, factures, bons de commande et
+              bons de livraison.
+            </p>
+          )}
           <div className="space-y-2">
             {fields.map((field) => (
               <FieldRow

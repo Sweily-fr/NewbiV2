@@ -33,6 +33,7 @@ import {
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import CustomFieldsPanel from "./custom-fields-panel";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { CREATE_CLIENT } from "@/src/graphql/mutations/clients";
 import {
   parseCSVRaw,
@@ -59,7 +60,14 @@ export default function ClientImportDialog({
   initialView = "import",
 }) {
   const { workspaceId } = useWorkspace();
-  const { fields: customFields } = useClientCustomFields(workspaceId);
+  const { canRead, canWrite, isReady } = useMyPermissions();
+  // Champs personnalisés : module à part (requête sautée sans lecture,
+  // création réservée à l'écriture)
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const canEditCustomFields = !isReady || canWrite("clientCustomFields");
+  const { fields: customFields } = useClientCustomFields(
+    canReadCustomFields ? workspaceId : null,
+  );
   const { createField } = useCreateClientCustomField();
 
   const apolloClient = useApolloClient();
@@ -406,7 +414,9 @@ export default function ClientImportDialog({
                       onMappingChange={setMapping}
                       customFieldMappings={customFieldMappings}
                       onCustomFieldMappingsChange={setCustomFieldMappings}
-                      onCreateCustomField={handleCreateCustomField}
+                      onCreateCustomField={
+                        canEditCustomFields ? handleCreateCustomField : null
+                      }
                       existingCustomFields={customFields}
                     />
                   )}

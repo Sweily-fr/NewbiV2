@@ -75,10 +75,12 @@ export default function ClientsModal({
   const [isMobile, setIsMobile] = useState(false);
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
-  const { canWrite, isReady } = useMyPermissions();
+  const { canRead, canWrite, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canEditClients = !isReady || canWrite("clients");
   const canCreateReminder = !isReady || canWrite("calendar");
+  const canReadCustomFields = !isReady || canRead("clientCustomFields");
+  const canEditClientLists = !isReady || canWrite("clientLists");
   const roleTooltip = !canEditClients
     ? "Votre rôle ne permet pas cette action"
     : undefined;
@@ -188,8 +190,9 @@ export default function ClientsModal({
   }, [fullClient]);
 
   // Définitions des champs personnalisés (pour valider les champs obligatoires)
-  const { fields: customFieldDefinitions } =
-    useClientCustomFields(finalWorkspaceId);
+  const { fields: customFieldDefinitions } = useClientCustomFields(
+    canReadCustomFields ? finalWorkspaceId : null,
+  );
 
   // Handler pour les changements de champs personnalisés
   const handleCustomFieldChange = (fieldId, value) => {
@@ -633,7 +636,7 @@ export default function ClientsModal({
         }
 
         // Si un defaultListId est fourni, ajouter le contact à cette liste
-        if (defaultListId && workspaceId && result?.id) {
+        if (defaultListId && workspaceId && result?.id && canEditClientLists) {
           try {
             await addToLists(workspaceId, result.id, [defaultListId]);
           } catch (error) {
@@ -1490,23 +1493,25 @@ export default function ClientsModal({
                   >
                     Annuler
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      loading ||
-                      !canEditClients ||
-                      Object.keys(errors).length > 0 ||
-                      Object.keys(customErrors).length > 0
-                    }
-                    title={roleTooltip}
-                    className="flex-1"
-                  >
-                    {loading
-                      ? "Enregistrement..."
-                      : client
-                        ? "Modifier"
-                        : "Créer un contact"}
-                  </Button>
+                  {canEditClients && (
+                    <Button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        !canEditClients ||
+                        Object.keys(errors).length > 0 ||
+                        Object.keys(customErrors).length > 0
+                      }
+                      title={roleTooltip}
+                      className="flex-1"
+                    >
+                      {loading
+                        ? "Enregistrement..."
+                        : client
+                          ? "Modifier"
+                          : "Créer un contact"}
+                    </Button>
+                  )}
                 </div>
               </form>
             </div>
@@ -2304,24 +2309,26 @@ export default function ClientsModal({
                   >
                     Annuler
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      loading ||
-                      !canEditClients ||
-                      Object.keys(errors).length > 0 ||
-                      Object.keys(customErrors).length > 0
-                    }
-                    title={roleTooltip}
-                    className="flex-1 font-normal"
-                    size="sm"
-                  >
-                    {loading
-                      ? "Enregistrement..."
-                      : client
-                        ? "Modifier"
-                        : "Créer un contact"}
-                  </Button>
+                  {canEditClients && (
+                    <Button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        !canEditClients ||
+                        Object.keys(errors).length > 0 ||
+                        Object.keys(customErrors).length > 0
+                      }
+                      title={roleTooltip}
+                      className="flex-1 font-normal"
+                      size="sm"
+                    >
+                      {loading
+                        ? "Enregistrement..."
+                        : client
+                          ? "Modifier"
+                          : "Créer un contact"}
+                    </Button>
+                  )}
                 </div>
               </form>
             </TabsContent>

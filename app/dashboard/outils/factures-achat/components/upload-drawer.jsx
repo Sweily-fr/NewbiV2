@@ -18,6 +18,7 @@ import {
   isDocumentPreviewTarget,
 } from "@/src/components/document-preview-panel";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -155,6 +156,10 @@ export function PurchaseInvoiceUploadDrawer({
   const { addFile } = useAddPurchaseInvoiceFile();
   const { reconcile } = useReconcilePurchaseInvoice();
   const { fetchReconcileCandidate } = usePurchaseInvoiceReconciliationPicker();
+  const { canWrite, isReady } = useMyPermissions();
+  // Proposition de rapprochement : droit d'écriture sur les transactions
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const canLinkTransactions = !isReady || canWrite("banking");
   // Facture créée alors que le paiement est déjà passé : transaction sûre
   // proposée avec confirmation ({ invoiceId, label, transaction } ou null).
   const [reconcileCandidate, setReconcileCandidate] = useState(null);
@@ -536,7 +541,9 @@ export function PurchaseInvoiceUploadDrawer({
 
       // Paiement déjà passé en banque : proposer la transaction trouvée,
       // rien n'est lié sans confirmation. Le lot reprend après la réponse.
-      const found = await fetchReconcileCandidate(invoice.id);
+      const found = canLinkTransactions
+        ? await fetchReconcileCandidate(invoice.id)
+        : null;
       if (found) {
         setReconcileCandidate({
           invoiceId: invoice.id,

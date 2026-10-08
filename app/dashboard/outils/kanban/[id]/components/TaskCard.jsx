@@ -614,115 +614,110 @@ const TaskCard = memo(
           {/* Contenu avec padding */}
           <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col flex-1">
             {/* Bloc d'actions flottant : top-right au hover, bottom-right pendant l'édition */}
-            <div
-              className={`absolute right-1.5 transition-all z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border bg-white dark:bg-card p-0.5 ${
-                isEditingTitle
-                  ? "bottom-1.5 opacity-100"
-                  : tagPopoverOpen
-                    ? "top-1.5 opacity-100"
-                    : "top-1.5 opacity-0 group-hover/card:opacity-100"
-              }`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                disabled={isLocked}
-                onMouseDown={(e) => {
-                  if (isLocked) return;
-                  // Empêcher le blur de l'input avant notre handler
-                  e.preventDefault();
-                }}
-                onClick={isLocked ? undefined : startEditingTitle}
-                title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
+            {/* Masqué si le rôle ne permet pas de modifier les tâches */}
+            {canEdit && (
+              <div
+                className={`absolute right-1.5 transition-all z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border bg-white dark:bg-card p-0.5 ${
+                  isEditingTitle
+                    ? "bottom-1.5 opacity-100"
+                    : tagPopoverOpen
+                      ? "top-1.5 opacity-100"
+                      : "top-1.5 opacity-0 group-hover/card:opacity-100"
+                }`}
+                onClick={(e) => e.stopPropagation()}
               >
-                {isEditingTitle ? (
-                  <X className="h-3.5 w-3.5" />
-                ) : (
-                  <Pencil className="h-3.5 w-3.5" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  disabled={isLocked}
+                  onMouseDown={(e) => {
+                    if (isLocked) return;
+                    // Empêcher le blur de l'input avant notre handler
+                    e.preventDefault();
+                  }}
+                  onClick={isLocked ? undefined : startEditingTitle}
+                  title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
+                >
+                  {isEditingTitle ? (
+                    <X className="h-3.5 w-3.5" />
+                  ) : (
+                    <Pencil className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+                {updateTask && !isLocked && (
+                  <CardTagPopover
+                    task={task}
+                    updateTask={updateTask}
+                    workspaceId={workspaceId}
+                    allBoardTags={allBoardTags}
+                    isOpen={tagPopoverOpen}
+                    onOpenChange={handleTagPopoverChange}
+                  />
                 )}
-              </Button>
-              {updateTask && !isLocked && (
-                <CardTagPopover
-                  task={task}
-                  updateTask={updateTask}
-                  workspaceId={workspaceId}
-                  allBoardTags={allBoardTags}
-                  isOpen={tagPopoverOpen}
-                  onOpenChange={handleTagPopoverChange}
-                />
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.stopPropagation();
-                      onEdit(task);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                    }}
-                    disabled={isLocked}
-                    className="cursor-pointer"
-                  >
-                    <Edit className="mr-2 h-3.5 w-3.5" />
-                    Modifier
-                  </DropdownMenuItem>
-                  {canDelete && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                    >
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem
                       onSelect={(e) => {
-                        e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteClick(e);
+                        onEdit(task);
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
                         e.nativeEvent.stopImmediatePropagation();
                       }}
-                      disabled={isReadOnly}
-                      variant="destructive"
-                      className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                      disabled={isLocked}
+                      className="cursor-pointer"
                     >
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      Supprimer
+                      <Edit className="mr-2 h-3.5 w-3.5" />
+                      Modifier
                     </DropdownMenuItem>
-                  )}
-                  {isReadOnly && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                        {isOwner
-                          ? "Mode lecture seule · Renouvelez votre abonnement"
-                          : "Mode lecture seule · Contactez l'administrateur"}
-                      </div>
-                    </>
-                  )}
-                  {!isReadOnly && !canEdit && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                        Votre rôle ne permet pas cette action
-                      </div>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                    {canDelete && (
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeleteClick(e);
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
+                        }}
+                        disabled={isReadOnly}
+                        variant="destructive"
+                        className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-3 w-3" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    )}
+                    {isReadOnly && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          {isOwner
+                            ? "Mode lecture seule · Renouvelez votre abonnement"
+                            : "Mode lecture seule · Contactez l'administrateur"}
+                        </div>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
             {/* Titre */}
             {isEditingTitle ? (

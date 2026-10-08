@@ -32,6 +32,7 @@ export const TaskDescriptionField = forwardRef(function TaskDescriptionField(
         onFocus={editorProps.onFocus}
         onBlur={editorProps.onBlur}
         placeholder={editorProps.placeholder}
+        readOnly={editorProps.readOnly}
         onUnavailable={onUnavailable}
       />
     );

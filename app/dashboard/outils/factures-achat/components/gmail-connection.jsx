@@ -7,6 +7,7 @@ import {
   useTriggerGmailSync,
 } from "@/src/hooks/useGmailConnection";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   Dialog,
   DialogContent,
@@ -75,6 +76,11 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
   const [scanPeriod, setScanPeriod] = useState("3");
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const { canWrite, isReady } = useMyPermissions();
+  // Connexion, synchronisation et déconnexion importent des factures d'achat :
+  // consultation seule sans droit d'écriture (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
 
   const handleConnect = async () => {
     try {
@@ -211,37 +217,41 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                   </div>
                 )}
 
-                {/* Footer */}
-                <div className="flex items-center justify-between border-t border-border/40 mt-4 -mx-5 px-5 py-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 gap-1.5"
-                    onClick={() => setShowDisconnectConfirm(true)}
-                  >
-                    <Unplug className="size-3.5" />
-                    Déconnecter
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleSync}
-                    disabled={syncing || connection.status === "syncing"}
-                    className="gap-1.5"
-                  >
-                    {syncing ? (
-                      <>
-                        <LoaderCircle className="size-3.5 animate-spin" />
-                        Synchronisation...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="size-3.5" />
-                        Synchroniser
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Footer (marge seule en consultation) */}
+                {canEditPurchaseInvoices ? (
+                  <div className="flex items-center justify-between border-t border-border/40 mt-4 -mx-5 px-5 py-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 gap-1.5"
+                      onClick={() => setShowDisconnectConfirm(true)}
+                    >
+                      <Unplug className="size-3.5" />
+                      Déconnecter
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSync}
+                      disabled={syncing || connection.status === "syncing"}
+                      className="gap-1.5"
+                    >
+                      {syncing ? (
+                        <>
+                          <LoaderCircle className="size-3.5 animate-spin" />
+                          Synchronisation...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="size-3.5" />
+                          Synchroniser
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="h-4" />
+                )}
               </div>
             ) : (
               /* ─── Not connected state ─── */
@@ -278,23 +288,25 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                 </div>
 
                 {/* Scan period */}
-                <div className="mt-4">
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                    Période du scan initial
-                  </label>
-                  <Select value={scanPeriod} onValueChange={setScanPeriod}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SCAN_PERIOD_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {canEditPurchaseInvoices && (
+                  <div className="mt-4">
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                      Période du scan initial
+                    </label>
+                    <Select value={scanPeriod} onValueChange={setScanPeriod}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SCAN_PERIOD_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* Security note */}
                 <div className="flex items-center gap-2.5 mt-3 px-3.5 py-2.5 rounded-lg border border-border/50 bg-muted/30">
@@ -304,30 +316,34 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                   </p>
                 </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-end border-t border-border/40 mt-4 -mx-5 px-5 py-3">
-                  <Button
-                    variant="primary"
-                    onClick={handleConnect}
-                    disabled={connecting}
-                    className="gap-2"
-                  >
-                    {connecting ? (
-                      <>
-                        <LoaderCircle className="size-4 animate-spin" />
-                        Connexion en cours...
-                      </>
-                    ) : (
-                      <>
-                        <GoogleIcon className="size-4" />
-                        Connecter Gmail
-                        <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
-                          <CornerDownLeft className="size-3" />
-                        </kbd>
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Footer (marge seule en consultation) */}
+                {canEditPurchaseInvoices ? (
+                  <div className="flex items-center justify-end border-t border-border/40 mt-4 -mx-5 px-5 py-3">
+                    <Button
+                      variant="primary"
+                      onClick={handleConnect}
+                      disabled={connecting}
+                      className="gap-2"
+                    >
+                      {connecting ? (
+                        <>
+                          <LoaderCircle className="size-4 animate-spin" />
+                          Connexion en cours...
+                        </>
+                      ) : (
+                        <>
+                          <GoogleIcon className="size-4" />
+                          Connecter Gmail
+                          <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                            <CornerDownLeft className="size-3" />
+                          </kbd>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="h-4" />
+                )}
               </div>
             )}
           </div>

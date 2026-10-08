@@ -141,6 +141,7 @@ function QuotesContent() {
               variant="primary"
               onClick={handleNewQuote}
               className="cursor-pointer"
+              hideIfNoAccess={true}
               tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />

@@ -53,10 +53,14 @@ export default function InvoiceMobileFullscreen({
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
+  const { canRead, canWrite, isReady } = useMyPermissions();
   const canEditInvoices = !isReady || canWrite("invoices");
   // Marquer payée : fonctionnalité « Encaissement des factures »
   const canMarkPaid = !isReady || canWrite("invoicePayments");
+  // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
+  const canReadCreditNotes = !isReady || canRead("creditNotes");
+  const canReadQuotes = !isReady || canRead("quotes");
+  const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
     [],
   );
@@ -74,7 +78,7 @@ export default function InvoiceMobileFullscreen({
   }, [canCreate]);
 
   const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(
-    initialInvoice?.id,
+    canReadCreditNotes ? initialInvoice?.id : null,
   );
 
   const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
@@ -838,42 +842,44 @@ export default function InvoiceMobileFullscreen({
                 </Button>
 
                 {/* Avoirs liés */}
-                {creditNotes && creditNotes.length > 0 && (
-                  <div className="space-y-2.5">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Avoirs créés ({creditNotes.length})
-                    </h3>
-                    <div className="space-y-2">
-                      {creditNotes.map((cn) => (
-                        <div
-                          key={cn.id}
-                          className="flex items-center justify-between p-3 border rounded-lg"
-                        >
-                          <div className="flex-1">
-                            <p className="font-normal">{cn.number}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {formatDate(cn.issueDate)}
-                            </p>
+                {canReadCreditNotes &&
+                  creditNotes &&
+                  creditNotes.length > 0 && (
+                    <div className="space-y-2.5">
+                      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Avoirs créés ({creditNotes.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {creditNotes.map((cn) => (
+                          <div
+                            key={cn.id}
+                            className="flex items-center justify-between p-3 border rounded-lg"
+                          >
+                            <div className="flex-1">
+                              <p className="font-normal">{cn.number}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {formatDate(cn.issueDate)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <UniversalPDFDownloaderWithFacturX
+                                data={cn}
+                                type="creditNote"
+                                enableFacturX={true}
+                                variant="ghost"
+                                size="sm"
+                              >
+                                Télécharger
+                              </UniversalPDFDownloaderWithFacturX>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <UniversalPDFDownloaderWithFacturX
-                              data={cn}
-                              type="creditNote"
-                              enableFacturX={true}
-                              variant="ghost"
-                              size="sm"
-                            >
-                              Télécharger
-                            </UniversalPDFDownloaderWithFacturX>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Devis lié (devis à l'origine de cette facture) */}
-                {invoice.sourceQuote && (
+                {canReadQuotes && invoice.sourceQuote && (
                   <div className="space-y-2.5">
                     <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Devis lié
@@ -894,7 +900,7 @@ export default function InvoiceMobileFullscreen({
                 )}
 
                 {/* Bon de commande lié (BC à l'origine de cette facture) */}
-                {invoice.sourcePurchaseOrder && (
+                {canReadPurchaseOrders && invoice.sourcePurchaseOrder && (
                   <div className="space-y-2.5">
                     <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Bon de commande lié

@@ -99,9 +99,6 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
   const { canWrite, canDelete, isReady } = useMyPermissions();
   const canEditKanban = !isReady || canWrite("kanban");
   const canDeleteKanban = !isReady || canDelete("kanban");
-  const createTooltip =
-    readOnlyTooltip ||
-    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -462,14 +459,14 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                 </div>
               )}
 
-              {/* Bouton pour créer un nouveau lien */}
-              {!showCreateForm && (
+              {/* Bouton pour créer un nouveau lien (masqué sans écriture) */}
+              {!showCreateForm && canEditKanban && (
                 <Button
                   onClick={() => setShowCreateForm(true)}
                   className="w-full gap-2"
                   variant="outline"
-                  disabled={isReadOnly || !canEditKanban}
-                  title={createTooltip}
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
                 >
                   <Plus className="h-4 w-4" />
                   Créer un nouveau lien de partage
@@ -507,8 +504,8 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                     </Button>
                     <Button
                       onClick={handleCreateShare}
-                      disabled={isReadOnly || !canEditKanban || creating}
-                      title={createTooltip}
+                      disabled={isReadOnly || creating}
+                      title={readOnlyTooltip}
                       className="flex-1"
                     >
                       {creating ? (
@@ -903,23 +900,20 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                           </span>
                                         )}
                                       </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
-                                        onClick={() =>
-                                          handleUnban(share.id, banned.email)
-                                        }
-                                        disabled={unbanning || !canEditKanban}
-                                        title={
-                                          !canEditKanban
-                                            ? "Votre rôle ne permet pas cette action"
-                                            : undefined
-                                        }
-                                      >
-                                        <UserCheck className="h-3 w-3 mr-1" />
-                                        Débannir
-                                      </Button>
+                                      {canEditKanban && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 text-xs text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                          onClick={() =>
+                                            handleUnban(share.id, banned.email)
+                                          }
+                                          disabled={unbanning}
+                                        >
+                                          <UserCheck className="h-3 w-3 mr-1" />
+                                          Débannir
+                                        </Button>
+                                      )}
                                     </div>
                                   ))}
                                 </div>

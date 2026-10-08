@@ -5,6 +5,7 @@ import { CalendarSync, TriangleAlert } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   formatRecurrenceDay,
   formatRecurrenceFrequency,
@@ -28,6 +29,9 @@ export default function InvoiceRecurrenceSection({
   const isMobile = variant === "mobile";
   const { recurrences } = useInvoiceRecurrences();
   const { isReadOnly } = useSubscriptionAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canWrite("invoices");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!invoice?.id) return null;
@@ -72,15 +76,17 @@ export default function InvoiceRecurrenceSection({
                   <span className="text-muted-foreground"> · suspendue</span>
                 )}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                disabled={isReadOnly}
-                onClick={() => setDialogOpen(true)}
-              >
-                Gérer
-              </Button>
+              {canEditInvoices && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={isReadOnly}
+                  onClick={() => setDialogOpen(true)}
+                >
+                  Gérer
+                </Button>
+              )}
             </div>
             {recurrence.status === "ACTIVE" && recurrence.nextRunDate && (
               <div className="flex justify-between">

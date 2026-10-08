@@ -25,6 +25,8 @@ import {
   Square,
   Euro,
   Lock,
+  Circle,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -146,6 +148,55 @@ function TaskTimeLabel({ timeTracking }) {
   );
 }
 
+// Checklist en lecture seule (rôle sans écriture) : ni ajout, ni coche, ni
+// suppression. Même rendu que le composant Checklist partagé.
+function ChecklistReadOnly({ items = [] }) {
+  if (!items?.length) return null;
+  const completedCount = items.filter((item) => item?.completed).length;
+  const progress = Math.round((completedCount / items.length) * 100);
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-base font-semibold">Checklist</h4>
+        <span className="text-xs text-muted-foreground">
+          {completedCount} sur {items.length} ({progress}%)
+        </span>
+      </div>
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full transition-all duration-300"
+          style={{ width: `${progress}%`, backgroundColor: "#5b50FF" }}
+        />
+      </div>
+      <div className="space-y-1">
+        {items.map((item, index) => (
+          <div key={item?.id || index} className="flex items-center gap-2 py-1">
+            {item?.completed ? (
+              <div
+                className="flex items-center justify-center rounded-full flex-shrink-0"
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  backgroundColor: "#5b50FF",
+                }}
+              >
+                <CheckCircle2 className="h-5 w-5 text-white" />
+              </div>
+            ) : (
+              <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+            )}
+            <span
+              className={`flex-1 text-sm ${item?.completed ? "line-through text-muted-foreground" : ""}`}
+            >
+              {item?.text}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TaskActivityFallback() {
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -216,8 +267,12 @@ export function TaskModal({
 }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
+  const { canWrite, canDelete, isReady } = useMyPermissions();
   const canEditKanban = !isReady || canWrite("kanban");
+  // Suppression d'une pièce jointe : niveau « suppression » côté API
+  const canDeleteKanban = !isReady || canDelete("kanban");
+  // Sélecteurs (status, dates, priorité, tags, membres) fermés en lecture seule
+  const pickerOpen = canEditKanban ? undefined : false;
   // Autres membres qui ont aussi cette tâche ouverte (présence temps réel)
   const viewers = useTaskViewers(isEditing ? taskForm?.id : null);
   // Identité affichée sur le curseur dans l'éditeur collaboratif
@@ -922,6 +977,7 @@ export function TaskModal({
                       ref={titleRef}
                       value={taskForm.title}
                       onChange={handleTitleChange}
+                      readOnly={!canEditKanban}
                       rows={1}
                       onFocus={(e) => {
                         e.target.setSelectionRange(0, 0);
@@ -966,7 +1022,7 @@ export function TaskModal({
                           Status
                         </Label>
                         <div className="flex-1">
-                          <DropdownMenu modal={false}>
+                          <DropdownMenu modal={false} open={pickerOpen}>
                             <DropdownMenuTrigger asChild>
                               <button
                                 className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
@@ -1036,7 +1092,7 @@ export function TaskModal({
                           Dates
                         </Label>
                         <div className="flex-1">
-                          <Popover modal={false}>
+                          <Popover modal={false} open={pickerOpen}>
                             <PopoverTrigger asChild>
                               <div
                                 className={cn(
@@ -1051,7 +1107,11 @@ export function TaskModal({
                                     {formatTimeDisplay(taskForm.startDate)}
                                   </span>
                                 ) : (
-                                  <span>Choisir une date</span>
+                                  <span>
+                                    {canEditKanban
+                                      ? "Choisir une date"
+                                      : "Aucune date"}
+                                  </span>
                                 )}
                               </div>
                             </PopoverTrigger>
@@ -1161,7 +1221,7 @@ export function TaskModal({
                           Priorité
                         </Label>
                         <div className="flex-1">
-                          <DropdownMenu modal={false}>
+                          <DropdownMenu modal={false} open={pickerOpen}>
                             <DropdownMenuTrigger asChild>
                               <button className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity">
                                 {taskForm.priority &&
@@ -1265,7 +1325,7 @@ export function TaskModal({
                           Date de fin
                         </Label>
                         <div className="flex-1">
-                          <Popover modal={false}>
+                          <Popover modal={false} open={pickerOpen}>
                             <PopoverTrigger asChild>
                               <div
                                 className={cn(
@@ -1279,7 +1339,11 @@ export function TaskModal({
                                     {formatTimeDisplay(taskForm.dueDate)}
                                   </span>
                                 ) : (
-                                  <span>Choisir une date</span>
+                                  <span>
+                                    {canEditKanban
+                                      ? "Choisir une date"
+                                      : "Aucune date"}
+                                  </span>
                                 )}
                               </div>
                             </PopoverTrigger>
@@ -1386,7 +1450,7 @@ export function TaskModal({
                         Tags
                       </Label>
                       <div className="flex-1">
-                        <Popover modal={false}>
+                        <Popover modal={false} open={pickerOpen}>
                           <PopoverTrigger asChild>
                             <div className="cursor-pointer">
                               {taskForm.tags?.length > 0 ? (
@@ -1529,7 +1593,7 @@ export function TaskModal({
                         Membres
                       </Label>
                       <div className="flex-1">
-                        <DropdownMenu modal={false}>
+                        <DropdownMenu modal={false} open={pickerOpen}>
                           <DropdownMenuTrigger asChild>
                             <div className="cursor-pointer">
                               {taskForm.assignedMembers?.length > 0 ? (
@@ -1697,13 +1761,15 @@ export function TaskModal({
                     // En collaboratif le document partagé fait foi : l'éditeur
                     // est toujours affiché (le cache peut être en retard)
                     !(isCollabDescriptionEnabled() && isEditing) ? (
-                      <button
-                        type="button"
-                        onClick={() => setShowDescription(true)}
-                        className="text-sm text-muted-foreground/50 hover:text-muted-foreground transition-colors bg-transparent border-0 p-0 cursor-pointer"
-                      >
-                        Ajouter une description...
-                      </button>
+                      canEditKanban && (
+                        <button
+                          type="button"
+                          onClick={() => setShowDescription(true)}
+                          className="text-sm text-muted-foreground/50 hover:text-muted-foreground transition-colors bg-transparent border-0 p-0 cursor-pointer"
+                        >
+                          Ajouter une description...
+                        </button>
+                      )
                     ) : (
                       <TaskDescriptionField
                         ref={descriptionEditorRef}
@@ -1719,16 +1785,21 @@ export function TaskModal({
                         onFocus={handleTextInputFocus}
                         onBlur={handleTextInputBlur}
                         placeholder="Ajouter une description..."
+                        readOnly={!canEditKanban}
                       />
                     )}
                   </div>
 
                   {/* Checklist */}
                   <div className="space-y-3 mt-6">
-                    <Checklist
-                      items={taskForm.checklist}
-                      onChange={handleChecklistChange}
-                    />
+                    {canEditKanban ? (
+                      <Checklist
+                        items={taskForm.checklist}
+                        onChange={handleChecklistChange}
+                      />
+                    ) : (
+                      <ChecklistReadOnly items={taskForm.checklist} />
+                    )}
                   </div>
 
                   {/* Pièces jointes */}
@@ -1741,7 +1812,9 @@ export function TaskModal({
                       <TaskImageUpload
                         images={taskForm.images || []}
                         onUpload={handleDescriptionImageUpload}
-                        onDelete={canEditKanban ? handleDeleteImage : undefined}
+                        onDelete={
+                          canDeleteKanban ? handleDeleteImage : undefined
+                        }
                         disabled={!canEditKanban}
                         isUploading={isUploadingImage}
                         uploadProgress={uploadProgress}
@@ -1910,6 +1983,7 @@ export function TaskModal({
                       id="task-title-mobile"
                       value={taskForm.title}
                       onChange={handleTitleChange}
+                      readOnly={!canEditKanban}
                       onFocus={(e) => {
                         e.target.setSelectionRange(0, 0);
                         handleTextInputFocus();
@@ -1924,14 +1998,16 @@ export function TaskModal({
                   <div className="space-y-2">
                     {!showDescription &&
                     !(isCollabDescriptionEnabled() && isEditing) ? (
-                      <button
-                        type="button"
-                        onClick={() => setShowDescription(true)}
-                        className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity bg-transparent border-0 p-0 cursor-pointer"
-                        style={{ color: "#5b50FF" }}
-                      >
-                        + Ajouter une description
-                      </button>
+                      canEditKanban && (
+                        <button
+                          type="button"
+                          onClick={() => setShowDescription(true)}
+                          className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity bg-transparent border-0 p-0 cursor-pointer"
+                          style={{ color: "#5b50FF" }}
+                        >
+                          + Ajouter une description
+                        </button>
+                      )
                     ) : (
                       <>
                         <Label className="text-sm font-normal">
@@ -1951,6 +2027,7 @@ export function TaskModal({
                           onFocus={handleTextInputFocus}
                           onBlur={handleTextInputBlur}
                           placeholder="Ajouter une description..."
+                          readOnly={!canEditKanban}
                         />
                       </>
                     )}
@@ -1968,7 +2045,7 @@ export function TaskModal({
                         Status
                       </Label>
                       <div className="flex-1">
-                        <DropdownMenu modal={false}>
+                        <DropdownMenu modal={false} open={pickerOpen}>
                           <DropdownMenuTrigger asChild>
                             <button
                               className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
@@ -2038,7 +2115,7 @@ export function TaskModal({
                         Priorité
                       </Label>
                       <div className="flex-1">
-                        <DropdownMenu modal={false}>
+                        <DropdownMenu modal={false} open={pickerOpen}>
                           <DropdownMenuTrigger asChild>
                             <button className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity">
                               {taskForm.priority &&
@@ -2136,7 +2213,7 @@ export function TaskModal({
                       Date de début
                     </Label>
                     <div className="flex-1">
-                      <Popover modal={false}>
+                      <Popover modal={false} open={pickerOpen}>
                         <PopoverTrigger asChild>
                           <div
                             className={cn(
@@ -2150,7 +2227,11 @@ export function TaskModal({
                                 {formatTimeDisplay(taskForm.startDate)}
                               </span>
                             ) : (
-                              <span>Choisir une date</span>
+                              <span>
+                                {canEditKanban
+                                  ? "Choisir une date"
+                                  : "Aucune date"}
+                              </span>
                             )}
                           </div>
                         </PopoverTrigger>
@@ -2249,7 +2330,7 @@ export function TaskModal({
                       Date de fin
                     </Label>
                     <div className="flex-1">
-                      <Popover modal={false}>
+                      <Popover modal={false} open={pickerOpen}>
                         <PopoverTrigger asChild>
                           <div
                             className={cn(
@@ -2263,7 +2344,11 @@ export function TaskModal({
                                 {formatTimeDisplay(taskForm.dueDate)}
                               </span>
                             ) : (
-                              <span>Choisir une date</span>
+                              <span>
+                                {canEditKanban
+                                  ? "Choisir une date"
+                                  : "Aucune date"}
+                              </span>
                             )}
                           </div>
                         </PopoverTrigger>
@@ -2360,7 +2445,7 @@ export function TaskModal({
                         Tags
                       </Label>
                       <div className="relative">
-                        {taskForm.tags.length > 0 && (
+                        {taskForm.tags.length > 0 && canEditKanban && (
                           <button
                             type="button"
                             onClick={() =>
@@ -2375,7 +2460,7 @@ export function TaskModal({
                         <div
                           className="min-h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
                           onClick={() => {
-                            if (!tagsInputFocused) {
+                            if (!tagsInputFocused && canEditKanban) {
                               setTagsInputFocused(true);
                             }
                           }}
@@ -2398,22 +2483,24 @@ export function TaskModal({
                                         {tag.name?.length > 25
                                           ? tag.name.slice(0, 25) + "…"
                                           : tag.name}
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const newTags =
-                                              taskForm.tags.filter(
-                                                (_, i) => i !== index,
-                                              );
-                                            setTaskForm({
-                                              ...taskForm,
-                                              tags: newTags,
-                                            });
-                                          }}
-                                          className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </button>
+                                        {canEditKanban && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const newTags =
+                                                taskForm.tags.filter(
+                                                  (_, i) => i !== index,
+                                                );
+                                              setTaskForm({
+                                                ...taskForm,
+                                                tags: newTags,
+                                              });
+                                            }}
+                                            className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </button>
+                                        )}
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent side="top">
@@ -2462,7 +2549,9 @@ export function TaskModal({
                             </div>
                           ) : (
                             <div className="text-sm text-muted-foreground">
-                              Ajouter des tags...
+                              {canEditKanban
+                                ? "Ajouter des tags..."
+                                : "Aucun tag"}
                             </div>
                           )}
                         </div>
@@ -2476,7 +2565,7 @@ export function TaskModal({
                         Membres
                       </Label>
                       <div>
-                        <DropdownMenu modal={false}>
+                        <DropdownMenu modal={false} open={pickerOpen}>
                           <DropdownMenuTrigger asChild>
                             {taskForm.assignedMembers &&
                             taskForm.assignedMembers.length > 0 ? (
@@ -2512,7 +2601,7 @@ export function TaskModal({
                                   </div>
                                 )}
                               </div>
-                            ) : (
+                            ) : canEditKanban ? (
                               <button
                                 type="button"
                                 className="w-7 h-7 rounded-full border border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/10 flex items-center justify-center cursor-pointer transition-colors bg-transparent p-0"
@@ -2520,6 +2609,10 @@ export function TaskModal({
                               >
                                 <UserPlus className="h-4 w-4 text-muted-foreground" />
                               </button>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                Aucun membre
+                              </span>
                             )}
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
@@ -2611,10 +2704,14 @@ export function TaskModal({
 
                   {/* Checklist */}
                   <div className="space-y-3 mt-6">
-                    <Checklist
-                      items={taskForm.checklist}
-                      onChange={handleChecklistChange}
-                    />
+                    {canEditKanban ? (
+                      <Checklist
+                        items={taskForm.checklist}
+                        onChange={handleChecklistChange}
+                      />
+                    ) : (
+                      <ChecklistReadOnly items={taskForm.checklist} />
+                    )}
                   </div>
 
                   {/* Pièces jointes */}
@@ -2627,7 +2724,9 @@ export function TaskModal({
                       <TaskImageUpload
                         images={taskForm.images || []}
                         onUpload={handleDescriptionImageUpload}
-                        onDelete={canEditKanban ? handleDeleteImage : undefined}
+                        onDelete={
+                          canDeleteKanban ? handleDeleteImage : undefined
+                        }
                         disabled={!canEditKanban}
                         isUploading={isUploadingImage}
                         uploadProgress={uploadProgress}

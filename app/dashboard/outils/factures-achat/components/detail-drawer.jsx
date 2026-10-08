@@ -268,10 +268,15 @@ export function PurchaseInvoiceDetailDrawer({
   embedded = false,
 }) {
   const isCreate = mode === "create";
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
   const canDeletePurchaseInvoices = !isReady || canDelete("purchaseInvoices");
+  // Rapprochement : transactions visibles avec la lecture des transactions,
+  // lier / délier avec l'écriture sur les deux modules
+  const canReadBanking = !isReady || canRead("banking");
+  const canLinkTransactions =
+    canEditPurchaseInvoices && (!isReady || canWrite("banking"));
   const [isEditMode, setIsEditMode] = useState(isCreate);
   const [form, setForm] = useState({
     supplierName: "",
@@ -650,8 +655,11 @@ export function PurchaseInvoiceDetailDrawer({
     const reason = window.prompt("Motif du litige (optionnel) :") || undefined;
     await submitEvent(invoice.id, "fr:207", reason);
   };
+  // Suggestions = transactions bancaires : pas de requête sans leur lecture
   const { suggestions } = useReconciliationSuggestions(
-    !isCreate && invoice?.id && invoice?.status !== "PAID" ? invoice.id : null,
+    !isCreate && canReadBanking && invoice?.id && invoice?.status !== "PAID"
+      ? invoice.id
+      : null,
   );
 
   useEffect(() => {
@@ -842,8 +850,8 @@ export function PurchaseInvoiceDetailDrawer({
         }
       }
       // Paiement déjà passé en banque : proposer la transaction trouvée,
-      // rien n'est lié sans confirmation.
-      if (isCreate && saved.id) {
+      // rien n'est lié sans confirmation (droit de rapprocher requis).
+      if (isCreate && saved.id && canLinkTransactions) {
         const found = await fetchReconcileCandidate(saved.id);
         if (found) {
           setReconcileCandidate({
@@ -1970,8 +1978,9 @@ export function PurchaseInvoiceDetailDrawer({
           {/* Rapprochement bancaire : transactions liées (déliaison unitaire),
               suggestions automatiques et recherche manuelle. N↔N : une
               facture d'achat peut couvrir plusieurs prélèvements (relevé
-              mensuel Qonto) et une transaction porter plusieurs factures. */}
-          {!isCreate && (
+              mensuel Qonto) et une transaction porter plusieurs factures.
+              Masqué sans lecture des transactions. */}
+          {!isCreate && canReadBanking && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -2004,7 +2013,7 @@ export function PurchaseInvoiceDetailDrawer({
                         transactionId={txId}
                         purchaseInvoiceId={invoice?.id}
                         action={
-                          canEditPurchaseInvoices ? (
+                          canLinkTransactions ? (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -2051,7 +2060,7 @@ export function PurchaseInvoiceDetailDrawer({
                               </span>
                             </div>
                           </div>
-                          {canEditPurchaseInvoices && (
+                          {canLinkTransactions && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -2072,7 +2081,7 @@ export function PurchaseInvoiceDetailDrawer({
                 )}
 
                 {!showTransactionPicker ? (
-                  canEditPurchaseInvoices && (
+                  canLinkTransactions && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -2494,8 +2503,11 @@ export function PurchaseInvoiceDetailDrawer({
           paymentMethodLabels={paymentMethodLabels}
           onApply={applyOcrPatch}
           reconciled={!!invoice?.isReconciled}
-          onUnlinkAndApply={(patch) =>
-            applyOcrPatch(patch, { unlinkFirst: true })
+          // Délier d'abord : droit de rapprocher requis
+          onUnlinkAndApply={
+            canLinkTransactions
+              ? (patch) => applyOcrPatch(patch, { unlinkFirst: true })
+              : null
           }
           applying={applyingOcr}
         />

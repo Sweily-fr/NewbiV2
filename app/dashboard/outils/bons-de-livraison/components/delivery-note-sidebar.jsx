@@ -80,8 +80,11 @@ export default function DeliveryNoteSidebar({
 }) {
   const router = useRouter();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
+  const { canRead, canWrite, isReady } = useMyPermissions();
   const canEditDeliveryNotes = !isReady || canWrite("deliveryNotes");
+  // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
+  const canReadQuotes = !isReady || canRead("quotes");
+  const canReadInvoices = !isReady || canRead("invoices");
   // Facturer : création dans le module « invoices »
   const canWriteInvoices = !isReady || canWrite("invoices");
   const { changeStatus, loading: changingStatus } =
@@ -518,7 +521,7 @@ export default function DeliveryNoteSidebar({
           )}
 
           {/* Documents liés */}
-          {deliveryNote.sourceQuote && (
+          {canReadQuotes && deliveryNote.sourceQuote && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -539,7 +542,7 @@ export default function DeliveryNoteSidebar({
             </>
           )}
 
-          {deliveryNote.sourceInvoice && (
+          {canReadInvoices && deliveryNote.sourceInvoice && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -560,7 +563,7 @@ export default function DeliveryNoteSidebar({
             </>
           )}
 
-          {hasLinkedInvoices && (
+          {canReadInvoices && hasLinkedInvoices && (
             <>
               <Separator />
               <div className="space-y-3">

@@ -262,11 +262,14 @@ export function ImportedInvoiceSidebar({
   const isLoading = updateLoading || deleteLoading || validateLoading;
 
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
   const canEditImported = !isReady || canWrite("importedInvoices");
   const canDeleteImported = !isReady || canDelete("importedInvoices");
   // Rapprochement bancaire : droits du module « banking »
+  const canReadBanking = !isReady || canRead("banking");
   const canLinkTransactions = !isReady || canWrite("banking");
+  // Création rapide d'un client : droits du module « clients »
+  const canCreateClients = !isReady || canWrite("clients");
 
   // Rapprochement bancaire (N↔N) : transactions liées, recherche manuelle.
   const {
@@ -336,15 +339,13 @@ export function ImportedInvoiceSidebar({
   const linkedTransactions = invoice?.linkedTransactions || [];
   const canReconcile = !["REJECTED", "ARCHIVED"].includes(invoice?.status);
 
-  if (!invoice) return null;
-
   const needsValidation =
-    invoice.status === "PENDING_REVIEW" || invoice.status === "UPLOADED";
+    invoice?.status === "PENDING_REVIEW" || invoice?.status === "UPLOADED";
   const isReviewMode = !!reviewInfo;
   const onClose = () => onOpenChange(false);
 
-  const isPDF = invoice.file?.mimeType === "application/pdf";
-  const isImage = invoice.file?.mimeType?.startsWith("image/");
+  const isPDF = invoice?.file?.mimeType === "application/pdf";
+  const isImage = invoice?.file?.mimeType?.startsWith("image/");
 
   // Nouvelle facture affichée → formulaire réinitialisé depuis ses valeurs.
   useEffect(() => {
@@ -421,6 +422,9 @@ export function ImportedInvoiceSidebar({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suggestedClient?.id, invoice?.id]);
+
+  // Après tous les hooks : leur ordre doit rester identique à chaque rendu
+  if (!invoice) return null;
 
   const handleConfirmDelete = async () => {
     try {
@@ -786,16 +790,18 @@ export function ImportedInvoiceSidebar({
                   Nom lu sur la facture : {editData.clientName}
                 </p>
               )}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 -ml-2 font-normal text-[#5A50FF] hover:text-[#5A50FF] hover:bg-[#5A50FF]/10"
-                onClick={() => setShowCreateClient(true)}
-              >
-                <Plus className="h-4 w-4 mr-1.5" />
-                Créer un client
-              </Button>
+              {canEditImported && canCreateClients && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 -ml-2 font-normal text-[#5A50FF] hover:text-[#5A50FF] hover:bg-[#5A50FF]/10"
+                  onClick={() => setShowCreateClient(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Créer un client
+                </Button>
+              )}
             </section>
 
             {/* Informations : champs enregistrés à la perte de focus */}
@@ -951,7 +957,7 @@ export function ImportedInvoiceSidebar({
 
           {/* Paiement bancaire : encaissements liés (N↔N), recherche
                   manuelle de transaction. */}
-          {canReconcile && (
+          {canReconcile && canReadBanking && (
             <section className="rounded-lg border p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

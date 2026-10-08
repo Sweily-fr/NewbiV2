@@ -2380,15 +2380,18 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
       {/* Nom avec drag handle et checkbox */}
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => {
-              if (checked === "indeterminate") return;
-              onToggleSelect(task.id, !!checked);
-            }}
-            className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${isSelected ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
-            onClick={(e) => e.stopPropagation()}
-          />
+          {/* Sélection pour les actions groupées (toutes en écriture) */}
+          {canEdit && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={(checked) => {
+                if (checked === "indeterminate") return;
+                onToggleSelect(task.id, !!checked);
+              }}
+              className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${isSelected ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
           {/* modal={false} : pas de scroll-lock body → pas d'écran figé si la
               ligne se démonte (move) pendant la fermeture du menu */}
           <DropdownMenu modal={false}>
@@ -2403,7 +2406,7 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
                   outlineOffset: "1.5px",
                 }}
                 onClick={(e) => e.stopPropagation()}
-                title="Changer le status"
+                title={canEdit ? "Changer le status" : undefined}
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-40">
@@ -2626,66 +2629,67 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             )}
           </div>
         ) : (
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                disabled={!canEdit}
-                className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors disabled:cursor-default disabled:hover:text-muted-foreground/70"
-                onClick={(e) => e.stopPropagation()}
-                title="Ajouter une date d'échéance"
-              >
-                <Calendar className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" side="top" align="start">
-              <div className="flex flex-col">
-                <div className="border-b p-2">
-                  <CalendarComponent
-                    mode="single"
-                    selected={undefined}
-                    onSelect={async (date) => {
-                      if (date) {
-                        try {
-                          date.setHours(18, 0, 0, 0);
-                          await updateTask({
-                            variables: {
-                              input: {
-                                id: task.id,
-                                dueDate: date.toISOString(),
+          canEdit && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Ajouter une date d'échéance"
+                >
+                  <Calendar className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" side="top" align="start">
+                <div className="flex flex-col">
+                  <div className="border-b p-2">
+                    <CalendarComponent
+                      mode="single"
+                      selected={undefined}
+                      onSelect={async (date) => {
+                        if (date) {
+                          try {
+                            date.setHours(18, 0, 0, 0);
+                            await updateTask({
+                              variables: {
+                                input: {
+                                  id: task.id,
+                                  dueDate: date.toISOString(),
+                                },
+                                workspaceId,
                               },
-                              workspaceId,
-                            },
-                          });
-                        } catch (error) {
-                          console.error(
-                            "Erreur lors de la mise à jour de la date:",
-                            error,
-                          );
+                            });
+                          } catch (error) {
+                            console.error(
+                              "Erreur lors de la mise à jour de la date:",
+                              error,
+                            );
+                          }
                         }
-                      }
-                    }}
-                    initialFocus
-                    locale={fr}
-                    fromDate={new Date()}
-                    className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-                  />
-                </div>
-                <div className="p-4 flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                    </div>
-                    <Input
-                      type="time"
-                      defaultValue="18:00"
-                      className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
-                      step="300"
+                      }}
+                      initialFocus
+                      locale={fr}
+                      fromDate={new Date()}
+                      className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
                     />
                   </div>
+                  <div className="p-4 flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <Input
+                        type="time"
+                        defaultValue="18:00"
+                        className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+                        step="300"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+          )
         )}
       </div>
 
@@ -3035,21 +3039,23 @@ export function KanbanListView({
                                 : "Replier le groupe"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const tasks = getFilteredTasksByColumn(
-                                  column.id,
-                                );
-                                const newSelected = new Set(selectedTaskIds);
-                                tasks.forEach((t) => newSelected.add(t.id));
-                                setSelectedTaskIds(newSelected);
-                              }}
-                              className="gap-2"
-                            >
-                              <CheckCheck className="h-3.5 w-3.5" />
-                              Tout sélectionner
-                            </DropdownMenuItem>
+                            {canEditKanban && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const tasks = getFilteredTasksByColumn(
+                                    column.id,
+                                  );
+                                  const newSelected = new Set(selectedTaskIds);
+                                  tasks.forEach((t) => newSelected.add(t.id));
+                                  setSelectedTaskIds(newSelected);
+                                }}
+                                className="gap-2"
+                              >
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                Tout sélectionner
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3215,21 +3221,23 @@ export function KanbanListView({
                                 : "Replier le groupe"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const tasks = getFilteredTasksByColumn(
-                                  column.id,
-                                );
-                                const newSelected = new Set(selectedTaskIds);
-                                tasks.forEach((t) => newSelected.add(t.id));
-                                setSelectedTaskIds(newSelected);
-                              }}
-                              className="gap-2"
-                            >
-                              <CheckCheck className="h-3.5 w-3.5" />
-                              Tout sélectionner
-                            </DropdownMenuItem>
+                            {canEditKanban && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const tasks = getFilteredTasksByColumn(
+                                    column.id,
+                                  );
+                                  const newSelected = new Set(selectedTaskIds);
+                                  tasks.forEach((t) => newSelected.add(t.id));
+                                  setSelectedTaskIds(newSelected);
+                                }}
+                                className="gap-2"
+                              >
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                Tout sélectionner
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();

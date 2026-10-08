@@ -31,9 +31,6 @@ export default function NewKanbanPage() {
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canWrite, isReady } = useMyPermissions();
   const canEditKanban = !isReady || canWrite("kanban");
-  const createTooltip =
-    readOnlyTooltip ||
-    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -63,6 +60,8 @@ export default function NewKanbanPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Rôle sans écriture : pas de création (Entrée dans le formulaire)
+    if (!canEditKanban) return;
 
     if (!formData.title.trim()) {
       toast.error("Le titre est requis");
@@ -167,26 +166,24 @@ export default function NewKanbanPage() {
               >
                 Annuler
               </Button>
-              <Button
-                type="submit"
-                disabled={
-                  isReadOnly ||
-                  !canEditKanban ||
-                  loading ||
-                  !formData.title.trim()
-                }
-                title={createTooltip}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                {loading ? (
-                  <>
-                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                    Création...
-                  </>
-                ) : (
-                  "Créer le tableau"
-                )}
-              </Button>
+              {/* Masqué si le rôle ne permet pas de créer */}
+              {canEditKanban && (
+                <Button
+                  type="submit"
+                  disabled={isReadOnly || loading || !formData.title.trim()}
+                  title={readOnlyTooltip}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? (
+                    <>
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      Création...
+                    </>
+                  ) : (
+                    "Créer le tableau"
+                  )}
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>
