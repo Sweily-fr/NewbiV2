@@ -135,9 +135,8 @@ export function ValuesSection() {
               plus souvent passent devant dans la feuille de route.
             </p>
             <Photo
-              src="/lp/about/echange-equipe.jpg"
-              alt="Deux membres de l'équipe Newbi en discussion"
-              position="50% 15%"
+              src="/lp/about/about-4.jpeg"
+              alt="Une collaboratrice au téléphone à son poste de travail"
               cote="centre"
             />
           </article>
@@ -150,11 +149,20 @@ export function ValuesSection() {
               l&apos;avance pour que vous n&apos;ayez rien à faire le jour où
               elles s&apos;appliquent.
             </p>
-            <Photo
-              src="/lp/about/session-du-soir.jpg"
-              alt="L'équipe Newbi au travail en fin de journée"
-              cote="gauche"
-            />
+            {/* Illustration plutôt qu'une photo : les trois sujets que le
+                texte énumère, et la promesse en pied. */}
+            <div className={VISUEL}>
+              <VisuelListe
+                className="absolute right-8 -bottom-6 w-[320px]"
+                titre="Ce qu'on suit pour vous"
+                lignes={[
+                  "Facturation électronique",
+                  "Mentions obligatoires",
+                  "Taux de TVA",
+                ]}
+                chip="À jour avant l'échéance"
+              />
+            </div>
           </article>
         </div>
       </div>
