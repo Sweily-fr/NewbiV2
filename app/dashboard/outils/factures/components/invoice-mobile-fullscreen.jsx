@@ -40,6 +40,7 @@ import {
   formatLocalDate,
   getDraftEffectiveDates,
 } from "@/src/utils/dateFormatter";
+import InvoiceRecurrenceSection from "./invoice-recurrence-section";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -613,6 +614,8 @@ export default function InvoiceMobileFullscreen({
                     )}
                   </div>
                 </div>
+
+                <InvoiceRecurrenceSection invoice={invoice} variant="mobile" />
 
                 {/* Articles */}
                 <div className="space-y-2.5">
