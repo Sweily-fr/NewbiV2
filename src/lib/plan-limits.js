@@ -30,9 +30,10 @@ export const PLAN_LIMITS = {
     availableRoles: ["member", "accountant"],
     // Exports comptables
     exports: ["csv", "excel"],
-    // E-signature (SES avec quota mensuel)
+    // E-signature (SES avec quota mensuel, appliqué par l'API :
+    // ESIGNATURE_MONTHLY_QUOTAS dans newbi-api/src/services/esignatureQuota.js)
     esignature: "ses",
-    esignatureMonthlyQuota: 3,
+    esignatureMonthlyQuota: 10,
     // Automatisations
     documentAutomations: 5,
     clientAutomations: true,
@@ -74,7 +75,7 @@ export const PLAN_LIMITS = {
     exports: ["csv", "excel", "fec"],
     // E-signature (SES avec quota mensuel)
     esignature: "ses",
-    esignatureMonthlyQuota: 20,
+    esignatureMonthlyQuota: 100,
     // Automatisations (illimité = -1)
     documentAutomations: -1,
     clientAutomations: true,

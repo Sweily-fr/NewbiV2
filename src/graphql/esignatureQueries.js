@@ -73,6 +73,19 @@ export const GET_DOCUMENT_SIGNATURE_STATUS = gql`
   }
 `;
 
+export const GET_ESIGNATURE_QUOTA = gql`
+  query EsignatureQuota {
+    esignatureQuota {
+      plan
+      unlimited
+      monthlyQuota
+      used
+      remaining
+      resetsAt
+    }
+  }
+`;
+
 // === MUTATIONS ===
 
 export const REQUEST_DOCUMENT_SIGNATURE = gql`
