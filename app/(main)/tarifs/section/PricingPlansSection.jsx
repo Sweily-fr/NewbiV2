@@ -3,7 +3,6 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
-import { ChevronDown } from "lucide-react";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
 /* Grille tarifaire reprise de linear.app/pricing, transposée en thème clair.
@@ -125,7 +124,7 @@ function Bascule({ actif, onChange, id }) {
       className="flex items-center gap-2 text-left"
     >
       <span
-        className={`hidden h-5 w-8 items-center rounded-full px-[3px] transition-colors lg:flex ${
+        className={`flex h-5 w-8 items-center rounded-full px-[3px] transition-colors ${
           actif ? "bg-[#5A50FF]" : "bg-gray-300"
         }`}
       >
@@ -135,13 +134,7 @@ function Bascule({ actif, onChange, id }) {
           }`}
         />
       </span>
-      <span className="text-sm text-gray-500">
-        {actif ? "Facturé à l'année" : "Facturé au mois"}
-      </span>
-      <ChevronDown
-        className="size-4 text-gray-400 lg:hidden"
-        strokeWidth={1.8}
-      />
+      <span className="text-sm text-gray-500">Facturé à l&apos;année</span>
     </button>
   );
 }
