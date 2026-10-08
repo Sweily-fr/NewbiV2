@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/src/components/ui/button";
+import { ChevronDown } from "lucide-react";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 
 /* Grille tarifaire reprise de linear.app/pricing, transposée en thème clair.
@@ -124,7 +125,7 @@ function Bascule({ actif, onChange, id }) {
       className="flex items-center gap-2 text-left"
     >
       <span
-        className={`flex h-5 w-8 items-center rounded-full px-[3px] transition-colors ${
+        className={`hidden h-5 w-8 items-center rounded-full px-[3px] transition-colors lg:flex ${
           actif ? "bg-[#5A50FF]" : "bg-gray-300"
         }`}
       >
@@ -134,7 +135,13 @@ function Bascule({ actif, onChange, id }) {
           }`}
         />
       </span>
-      <span className="text-sm text-gray-500">Facturé à l&apos;année</span>
+      <span className="text-sm text-gray-500">
+        {actif ? "Facturé à l'année" : "Facturé au mois"}
+      </span>
+      <ChevronDown
+        className="size-4 text-gray-400 lg:hidden"
+        strokeWidth={1.8}
+      />
     </button>
   );
 }
@@ -164,13 +171,11 @@ export default function PricingPlansSection() {
                 // sans cela, le contenu de la première et de la dernière
                 // colonne serait rentré de 32 px par rapport à la navbar.
                 className={`flex flex-col px-0 py-8 lg:py-0 ${
-                  i === 0 ? "lg:pl-0 lg:pr-8" : ""
+                  i === 0 ? "lg:pl-0 lg:pr-8" : "lg:border-l"
                 } ${
                   i === COLONNES.length - 1 ? "lg:pl-8 lg:pr-0" : ""
                 } ${i > 0 && i < COLONNES.length - 1 ? "lg:px-8" : ""}`}
-                style={{
-                  borderLeft: i === 0 ? undefined : `1px solid ${FILET}`,
-                }}
+                style={{ borderLeftColor: FILET }}
               >
                 <hgroup>
                   <h3 className="text-2xl font-semibold tracking-tight text-gray-950">
