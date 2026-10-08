@@ -216,8 +216,15 @@ export default function PurchasesDemo({ className = "" }) {
   React.useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    // Mouvement réduit : on montre l'interface d'emblée, sans scénario.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    // Mouvement réduit, ou petit écran : on montre l'interface d'emblée, sans
+    // scénario. Sous `md`, la maquette est réduite au point que l'animation
+    // n'est plus lisible — autant l'afficher telle quelle et ne pas charger
+    // GSAP pour rien.
+    const petitEcran = window.matchMedia("(max-width: 767px)").matches;
+    if (
+      petitEcran ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
       const ui = stage.querySelector('[data-anim="ui"]');
       if (ui) {
         ui.style.opacity = "1";

@@ -17,8 +17,8 @@ export function OurStorySection() {
           <div className="lg:col-span-6">
             <div className="relative h-[360px] lg:h-[480px] overflow-hidden rounded-3xl bg-[#F4F4F6]">
               <Image
-                src="/lp/about/about-5.jpeg"
-                alt="L'équipe Newbi réunie autour d'un écran"
+                src="/lp/about/fondateurs.jpg"
+                alt="Jonathan et Anthony, les fondateurs de Newbi"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"

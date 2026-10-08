@@ -93,8 +93,8 @@ export function HeroSection() {
           {/* Colonne visuel : la maquette sort du conteneur et se cale au
               bord droit de l'écran, comme sur /produits/tresorerie.
               L'interface sera reconstruite dans le panneau vide. */}
-          <div className="relative hidden lg:flex min-w-0 items-center justify-end overflow-visible">
-            <div className="shrink-0 w-[1100px] xl:w-[1200px] -mr-[37rem] xl:-mr-[39rem]">
+          <div className="relative flex min-w-0 items-center lg:justify-end lg:overflow-visible">
+            <div className="shrink-0 w-[150%] lg:w-[1100px] xl:w-[1200px] lg:-mr-[37rem] xl:-mr-[39rem]">
               <SignaturesDemo />
             </div>
           </div>
