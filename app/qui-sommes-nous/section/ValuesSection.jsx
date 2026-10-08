@@ -69,8 +69,8 @@ export function ValuesSection() {
               est mal conçue.
             </p>
             <Photo
-              src="/lp/about/mobile-lobby.jpg"
-              alt="Un membre de l'équipe Newbi consulte son activité depuis son téléphone"
+              src="/lp/about/portrait-equipe.jpg"
+              alt="Une membre de l'équipe Newbi"
               largeur="w-[320px]"
             />
           </article>
