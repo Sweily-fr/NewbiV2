@@ -34,13 +34,26 @@ const PROOF_AVATARS = [
 /* Dégagement sous la navbar. Sans bandeau, elle est collée en haut et mesure
    65 px. Avec le bandeau, elle descend de 80 px sur mobile et de 58 px à
    partir de `sm` : son bas tombe alors à 145 px et 123 px. Le padding du hero
-   doit suivre, sinon le titre vient se coller dessous. */
+   doit suivre, sinon le titre vient se coller dessous — et revenir à sa
+   valeur courte dès que le bandeau est fermé. */
 const PADDING_HAUT = {
   sans: "pt-40 md:pt-36 lg:pt-44",
   avec: "pt-[236px] sm:pt-[214px] md:pt-[204px] lg:pt-[236px]",
 };
 
 export function HeroSection({ hasBanner = false }) {
+  // Le bandeau se ferme : la navbar remonte, le hero doit remonter avec elle.
+  // `banner-closed` est l'événement que le bandeau émet déjà et que la navbar
+  // écoute — on s'y branche plutôt que de partager un état.
+  const [bandeauVisible, setBandeauVisible] = React.useState(hasBanner);
+
+  React.useEffect(() => {
+    if (!hasBanner) return;
+    const fermer = () => setBandeauVisible(false);
+    window.addEventListener("banner-closed", fermer);
+    return () => window.removeEventListener("banner-closed", fermer);
+  }, [hasBanner]);
+
   return (
     <div className="relative w-full overflow-x-clip bg-white px-5 pb-6 md:pb-10 lg:pb-16">
       <div className="max-w-[1200px] mx-auto relative">
@@ -49,7 +62,9 @@ export function HeroSection({ hasBanner = false }) {
             et faisaient déborder la piste hors d'un conteneur de 728 px — le
             titre et les boutons sortaient du cadre entre 768 et 1 023 px. */}
         <div
-          className={`grid grid-cols-12 ${hasBanner ? PADDING_HAUT.avec : PADDING_HAUT.sans}`}
+          className={`grid grid-cols-12 transition-[padding] duration-300 ${
+            bandeauVisible ? PADDING_HAUT.avec : PADDING_HAUT.sans
+          }`}
         >
           {/* Titre sur toute la largeur du conteneur */}
           <div className="col-span-12 text-center">
