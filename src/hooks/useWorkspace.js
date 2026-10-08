@@ -160,13 +160,26 @@ export const useWorkspace = () => {
     (orgId === sessionActiveOrgId || activeOrganization)
   );
 
+  // Dernière organisation vue par CETTE instance du hook : distingue un vrai
+  // changement d'espace du simple montage d'un composant.
+  const lastSeenOrgIdRef = useRef(null);
+
   // Stocker l'organizationId pour Apollo Client via module-level + localStorage
   useEffect(() => {
     if (isOrgValid && orgId) {
+      // `active_organization_id` est partagé entre les onglets et son
+      // changement fait recharger les autres (OrgChangeCrossTabDetector). On
+      // ne l'écrit donc qu'à l'initialisation ou sur un vrai changement
+      // d'espace vu par cette instance. L'écrire à chaque montage, comme
+      // avant, faisait qu'un onglet resté sur un autre espace l'écrasait à
+      // chaque navigation, et les deux onglets se renvoyaient la balle.
       const currentStored = localStorage.getItem("active_organization_id");
-      if (currentStored !== orgId) {
+      const switchedHere =
+        !!lastSeenOrgIdRef.current && lastSeenOrgIdRef.current !== orgId;
+      if (!currentStored || (switchedHere && currentStored !== orgId)) {
         localStorage.setItem("active_organization_id", orgId);
       }
+      lastSeenOrgIdRef.current = orgId;
       setOrganizationIdForApollo(orgId);
     } else if (!orgId) {
       localStorage.removeItem("active_organization_id");
