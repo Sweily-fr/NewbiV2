@@ -41,7 +41,7 @@ export default function FacturesPage() {
         <NewHeroNavbar hasBanner={true} />
         <main>
           {/* Hero Section */}
-          <HeroSection />
+          <HeroSection hasBanner />
           <TrustedBySection variant="default" />
           <FacturesGovernanceSection />
           {/* Même bannière que sur /produits/tresorerie */}
