@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { sortByDateDesc } from "@/src/lib/document-dates";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
@@ -99,7 +100,6 @@ import QuoteRowActions from "./quote-row-actions";
 import QuoteFilters from "./quote-filters";
 import QuoteSidebar from "./quote-sidebar";
 import { AnimatePresence } from "framer-motion";
-import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
 import { ImportQuoteModal } from "./import-quote-modal";
@@ -113,6 +113,15 @@ import { SignatureDialog } from "@/src/components/esignature/signature-dialog";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { getPlanLimits } from "@/src/lib/plan-limits";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const QuoteMobileFullscreen = dynamic(
+  () => import("./quote-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 export default function QuoteTable({
   handleNewQuote,

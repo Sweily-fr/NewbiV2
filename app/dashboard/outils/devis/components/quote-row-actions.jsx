@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -50,9 +51,17 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
-import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const QuoteMobileFullscreen = dynamic(
+  () => import("./quote-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {

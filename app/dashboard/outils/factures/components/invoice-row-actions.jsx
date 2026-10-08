@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -48,8 +49,16 @@ import { usePermissions } from "@/src/hooks/usePermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 // InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
-import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const InvoiceMobileFullscreen = dynamic(
+  () => import("./invoice-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 export default function InvoiceRowActions({
   row,

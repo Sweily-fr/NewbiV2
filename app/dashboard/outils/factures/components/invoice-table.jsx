@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { sortByDateDesc } from "@/src/lib/document-dates";
 
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
@@ -105,7 +106,6 @@ import { InvoiceTableSkeleton } from "./invoice-page-skeleton";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
 import { AnimatePresence } from "framer-motion";
-import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 import { SendDocumentModal } from "./send-document-modal";
 import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
@@ -121,6 +121,15 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { DocumentText2Icon } from "@/src/components/icons";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const InvoiceMobileFullscreen = dynamic(
+  () => import("./invoice-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 export default function InvoiceTable({
   handleNewInvoice,

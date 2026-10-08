@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { Package, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -35,8 +36,13 @@ function safeFormatDate(dateString) {
   }
 }
 
-export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId }) {
+export default function ClientPurchaseOrdersTab({
+  purchaseOrders = [],
+  clientId,
+}) {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
+  const newDocumentHref = `/dashboard/outils/bons-commande/new?clientId=${clientId}`;
   const { canWrite, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canCreatePurchaseOrders = !isReady || canWrite("purchaseOrders");
@@ -54,7 +60,7 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
           if (isNaN(dateB.getTime())) return -1;
           return dateB - dateA;
         }),
-    [purchaseOrders, clientId]
+    [purchaseOrders, clientId],
   );
 
   const formatCurrency = (amount) =>
@@ -70,7 +76,7 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
       <span
         className={cn(
           "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
-          colors
+          colors,
         )}
       >
         {label}
@@ -95,7 +101,8 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
             <Button
               variant="outline"
               className="mt-4"
-              onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
+              {...prefetchIntent(newDocumentHref)}
+              onClick={() => router.push(newDocumentHref)}
             >
               <Plus className="h-3.5 w-3.5" />
               Nouveau bon de commande
@@ -109,11 +116,14 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
-        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">Bons de commande</h3>
+        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
+          Bons de commande
+        </h3>
         {canCreatePurchaseOrders && (
           <Button
             variant="outline"
-            onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
+            {...prefetchIntent(newDocumentHref)}
+            onClick={() => router.push(newDocumentHref)}
           >
             <Plus className="h-3.5 w-3.5" />
             Nouveau bon de commande

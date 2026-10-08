@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import {
   Card,
   CardContent,
@@ -29,6 +30,7 @@ function getInitials(name) {
 
 export function TopClientsCard({ className, paidInvoices = [], isLoading }) {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
 
   const topClients = useMemo(() => {
     const map = new Map();
@@ -109,6 +111,9 @@ export function TopClientsCard({ className, paidInvoices = [], isLoading }) {
                   type="button"
                   key={client.clientId}
                   disabled={!isClickable}
+                  {...(isClickable
+                    ? prefetchIntent(`/dashboard/clients/${client.clientId}`)
+                    : {})}
                   onClick={() =>
                     isClickable &&
                     router.push(`/dashboard/clients/${client.clientId}`)
