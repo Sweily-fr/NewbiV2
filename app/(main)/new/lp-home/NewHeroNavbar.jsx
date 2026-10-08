@@ -146,6 +146,12 @@ const menuItems = [
             href: "/auto-entrepreneur",
           },
           {
+            name: "SASU et EURL",
+            description: "La gestion d'une société à associé unique",
+            icon: <Rocket size={18} />,
+            href: "/sasu-eurl",
+          },
+          {
             name: "SCI",
             description: "Loyers, charges et factures de travaux",
             icon: <Building2 size={18} />,
@@ -156,12 +162,6 @@ const menuItems = [
             description: "Vos obligations et vos documents en EI",
             icon: <Zap size={18} />,
             href: "/entreprise-individuelle",
-          },
-          {
-            name: "SASU et EURL",
-            description: "La gestion d'une société à associé unique",
-            icon: <Rocket size={18} />,
-            href: "/sasu-eurl",
           },
           {
             name: "Association",
