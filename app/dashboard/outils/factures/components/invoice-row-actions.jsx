@@ -77,6 +77,9 @@ export default function InvoiceRowActions({
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canWrite, canDelete, isReady } = useMyPermissions();
   const canEditInvoices = !isReady || canWrite("invoices");
+  // Marquer payée : fonctionnalité « Encaissement des factures » (le
+  // comptable l'a sans pouvoir modifier les factures)
+  const canMarkPaid = !isReady || canWrite("invoicePayments");
   const canDeleteInvoices = !isReady || canDelete("invoices");
   const canDeleteImportedInvoices = !isReady || canDelete("importedInvoices");
   const canWriteDeliveryNotes = !isReady || canWrite("deliveryNotes");
@@ -388,7 +391,7 @@ export default function InvoiceRowActions({
                 <>
                   <DropdownMenuItem
                     onClick={handleMarkAsPaid}
-                    disabled={isReadOnly || !canEditInvoices}
+                    disabled={isReadOnly || !canMarkPaid}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Marquer comme payée

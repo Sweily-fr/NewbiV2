@@ -351,6 +351,7 @@ function FieldRow({
   onToggle,
   onToggleDocuments,
   canRemove = true,
+  canEdit = true,
 }) {
   const fieldType = FIELD_TYPES.find((t) => t.value === field.fieldType);
 
@@ -392,7 +393,7 @@ function FieldRow({
       >
         <Checkbox
           checked={!!field.showOnDocuments}
-          disabled={!field.isActive}
+          disabled={!field.isActive || !canEdit}
           onCheckedChange={() => onToggleDocuments(field)}
           className="h-3.5 w-3.5"
         />
@@ -401,19 +402,22 @@ function FieldRow({
 
       <Switch
         checked={field.isActive}
+        disabled={!canEdit}
         onCheckedChange={() => onToggle(field)}
         className="data-[state=checked]:bg-[#5b50ff] scale-90"
         title={field.isActive ? "Champ activé" : "Champ désactivé"}
       />
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onEdit(field)}
-        className="h-6 w-6"
-      >
-        <Edit2 className="h-3 w-3" />
-      </Button>
+      {canEdit && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onEdit(field)}
+          className="h-6 w-6"
+        >
+          <Edit2 className="h-3 w-3" />
+        </Button>
+      )}
 
       {canRemove && (
         <Button
@@ -442,9 +446,11 @@ export default function CustomFieldsPanel({
   const [deletingField, setDeletingField] = useState(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const { canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canDeleteClients = !isReady || canDelete("clients");
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  // Droits du rôle sur « Listes et champs personnalisés » (tout autorisé
+  // tant que la grille n'est pas chargée)
+  const canEditFields = !isReady || canWrite("clientLists");
+  const canDeleteClients = !isReady || canDelete("clientLists");
 
   const customFieldsLimit = planLimits?.customFields ?? -1;
   const isLimitReached =
@@ -537,7 +543,7 @@ export default function CustomFieldsPanel({
           <Button
             className="mt-4"
             onClick={() => setIsFormOpen(true)}
-            disabled={isLimitReached}
+            disabled={isLimitReached || !canEditFields}
           >
             <Plus className="mr-2 h-4 w-4" />
             Créer un champ
@@ -559,7 +565,7 @@ export default function CustomFieldsPanel({
             <Button
               size="sm"
               onClick={() => setIsFormOpen(true)}
-              disabled={isLimitReached}
+              disabled={isLimitReached || !canEditFields}
             >
               <Plus className="mr-2 h-4 w-4" />
               Nouveau champ
@@ -586,6 +592,7 @@ export default function CustomFieldsPanel({
                 onToggle={handleToggle}
                 onToggleDocuments={handleToggleDocuments}
                 canRemove={canDeleteClients}
+                canEdit={canEditFields}
               />
             ))}
           </div>

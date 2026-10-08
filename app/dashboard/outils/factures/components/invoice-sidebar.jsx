@@ -128,6 +128,8 @@ export default function InvoiceSidebar({
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canRead, canWrite, isReady } = useMyPermissions();
   const canEditInvoices = !isReady || canWrite("invoices");
+  // Marquer payée : fonctionnalité « Encaissement des factures »
+  const canMarkPaid = !isReady || canWrite("invoicePayments");
   const canCreateCreditNotes = !isReady || canWrite("creditNotes");
   // Rapprochement bancaire : droits du module « banking »
   const canReadBanking = !isReady || canRead("banking");
@@ -1768,11 +1770,12 @@ export default function InvoiceSidebar({
           </div> */}
         </div>
 
-        {/* Action Buttons (masqués si le rôle ne permet pas de modifier) */}
-        {canEditInvoices && (
+        {/* Action Buttons (masqués si le rôle ne permet ni de modifier ni
+            d'encaisser) */}
+        {(canEditInvoices || canMarkPaid) && (
           <div className="border-t px-6 py-4 space-y-3">
             {/* Draft Actions */}
-            {invoice.status === INVOICE_STATUS.DRAFT && (
+            {canEditInvoices && invoice.status === INVOICE_STATUS.DRAFT && (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -1797,24 +1800,28 @@ export default function InvoiceSidebar({
             {/* Pending Actions */}
             {invoice.status === INVOICE_STATUS.PENDING && (
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Annuler la facture
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleMarkAsPaid}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Marquer comme payée
-                </Button>
+                {canEditInvoices && (
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Annuler la facture
+                  </Button>
+                )}
+                {canMarkPaid && (
+                  <Button
+                    variant="primary"
+                    onClick={handleMarkAsPaid}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Marquer comme payée
+                  </Button>
+                )}
               </div>
             )}
           </div>

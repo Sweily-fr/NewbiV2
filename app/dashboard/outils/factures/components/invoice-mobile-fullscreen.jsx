@@ -55,6 +55,8 @@ export default function InvoiceMobileFullscreen({
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canWrite, isReady } = useMyPermissions();
   const canEditInvoices = !isReady || canWrite("invoices");
+  // Marquer payée : fonctionnalité « Encaissement des factures »
+  const canMarkPaid = !isReady || canWrite("invoicePayments");
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
     [],
   );
@@ -970,31 +972,35 @@ export default function InvoiceMobileFullscreen({
 
             {invoice.status === INVOICE_STATUS.PENDING && (
               <>
-                {canEditInvoices && (
+                {(canEditInvoices || canMarkPaid) && (
                   <div className="grid grid-cols-2 gap-1.5">
-                    <Button
-                      onClick={handleMarkAsPaid}
-                      disabled={isLoading}
-                      size="sm"
-                      className="font-normal"
-                    >
-                      {markingAsPaid ? (
-                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                      )}
-                      Payée
-                    </Button>
-                    <Button
-                      onClick={handleCancel}
-                      variant="destructive"
-                      size="sm"
-                      className="font-normal"
-                      disabled={isLoading}
-                    >
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Annuler
-                    </Button>
+                    {canMarkPaid && (
+                      <Button
+                        onClick={handleMarkAsPaid}
+                        disabled={isLoading}
+                        size="sm"
+                        className="font-normal"
+                      >
+                        {markingAsPaid ? (
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Payée
+                      </Button>
+                    )}
+                    {canEditInvoices && (
+                      <Button
+                        onClick={handleCancel}
+                        variant="destructive"
+                        size="sm"
+                        className="font-normal"
+                        disabled={isLoading}
+                      >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Annuler
+                      </Button>
+                    )}
                   </div>
                 )}
                 {!creditNoteLimitReached && canCreateCreditNote && (

@@ -35,7 +35,7 @@ function QuotesContent() {
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
   // Paramètres des documents : paramètres de l'entreprise (« orgSettings »)
   const { canWrite, isReady } = useMyPermissions();
-  const canImportQuotes = !isReady || canWrite("quotes");
+  const canImportQuotes = !isReady || canWrite("importedQuotes");
   const canEditSettings = !isReady || canWrite("orgSettings");
 
   // Toast manager et modal d'envoi pour les nouveaux devis

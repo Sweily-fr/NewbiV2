@@ -78,8 +78,8 @@ export default function ClientListsView({
   const { deleteList } = useDeleteClientList();
   const { canWrite, canDelete, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canDeleteClients = !isReady || canDelete("clients");
+  const canEditClients = !isReady || canWrite("clientLists");
+  const canDeleteClients = !isReady || canDelete("clientLists");
 
   // Mettre à jour selectedList quand initialSelectedList change
   useEffect(() => {

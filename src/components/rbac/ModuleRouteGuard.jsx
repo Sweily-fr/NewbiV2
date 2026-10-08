@@ -5,7 +5,11 @@ import { usePathname } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { levelForPath, moduleForPath } from "@/src/lib/route-modules";
+import {
+  isHiddenForRole,
+  levelForPath,
+  moduleForPath,
+} from "@/src/lib/route-modules";
 
 /**
  * Garde des pages du tableau de bord selon le rôle (Paramètres > Membres >
@@ -15,15 +19,16 @@ import { levelForPath, moduleForPath } from "@/src/lib/route-modules";
  */
 export function ModuleRouteGuard({ children }) {
   const pathname = usePathname();
-  const { can, isReady } = useMyPermissions();
+  const { can, isReady, role, levels } = useMyPermissions();
   const moduleKey = moduleForPath(pathname);
 
   if (!moduleKey || !isReady) return children;
 
   const level = levelForPath(pathname);
-  if (can(moduleKey, level)) return children;
+  const hidden = isHiddenForRole(role, levels, moduleKey, { page: true });
+  if (can(moduleKey, level) && !hidden) return children;
 
-  const canRead = level === "write" && can(moduleKey, "read");
+  const canRead = !hidden && level === "write" && can(moduleKey, "read");
   return (
     <div className="flex flex-1 items-center justify-center px-6 py-24">
       <div className="flex max-w-sm flex-col items-center gap-4 text-center">

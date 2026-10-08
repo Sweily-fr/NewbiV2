@@ -16,12 +16,18 @@ const ACCOUNT_MODULES = new Set([
 
 // Anciens noms de ressources → module du catalogue
 const RESOURCE_ALIASES = {
-  importedQuotes: "quotes",
-  importedPurchaseOrders: "purchaseOrders",
   expenses: "purchaseInvoices",
   suppliers: "purchaseInvoices",
   payments: "banking",
   reports: "analytics",
+};
+
+// Fonctionnalités oui / non (none / write)
+const FEATURE_MODULES = new Set(["invoicePayments"]);
+
+// Actions portées par une fonctionnalité plutôt que par le niveau du module
+const ACTION_MODULES = {
+  invoices: { "mark-paid": "invoicePayments" },
 };
 
 const ACTION_LEVEL = {
@@ -58,6 +64,7 @@ export function resolveModule(resource) {
 }
 
 function clamp(moduleKey, level) {
+  if (FEATURE_MODULES.has(moduleKey)) return "write";
   if (ACCOUNT_MODULES.has(moduleKey) && level === "delete") return "write";
   return level;
 }
@@ -76,6 +83,8 @@ export function canLevel(levels, resource, level) {
 
 /** Action précise (`view`, `create`, `delete`, `mark-paid`…) sur une ressource. */
 export function canAction(levels, resource, action) {
+  const featureModule = ACTION_MODULES[resource]?.[action];
+  if (featureModule) return canLevel(levels, featureModule, "write");
   const moduleKey = resolveModule(resource);
   return canLevel(levels, moduleKey, ACTION_LEVEL[action] || "write");
 }

@@ -102,8 +102,8 @@ export function ImportedQuoteSidebar({
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
   // les devis importés relèvent du module « quotes »
   const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditQuotes = !isReady || canWrite("quotes");
-  const canDeleteQuotes = !isReady || canDelete("quotes");
+  const canEditQuotes = !isReady || canWrite("importedQuotes");
+  const canDeleteQuotes = !isReady || canDelete("importedQuotes");
 
   if (!quote) return null;
 

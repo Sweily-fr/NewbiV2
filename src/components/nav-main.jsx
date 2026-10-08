@@ -45,7 +45,7 @@ import Link from "next/link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { moduleForPath } from "@/src/lib/route-modules";
+import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 import {
   DiagramLineIcon as Landmark,
   UsersIcon as Users,
@@ -74,10 +74,19 @@ export function NavMain({
   const isCollapsed = state === "collapsed";
   // Pages masquées selon le rôle (Paramètres > Membres > Rôles). Tant que la
   // grille n'est pas chargée, rien n'est masqué pour éviter un clignotement.
-  const { can, isReady: permissionsReady } = useMyPermissions();
+  const {
+    can,
+    isReady: permissionsReady,
+    role: permissionsRole,
+    levels: permissionLevels,
+  } = useMyPermissions();
   const canSee = (url) => {
     const moduleKey = moduleForPath(url);
-    return !permissionsReady || !moduleKey || can(moduleKey, "read");
+    if (!permissionsReady || !moduleKey) return true;
+    return (
+      can(moduleKey, "read") &&
+      !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+    );
   };
   const canCreate = (moduleKey) => !permissionsReady || can(moduleKey, "write");
   const visibleItems = (list) => list.filter((item) => canSee(item.url));
