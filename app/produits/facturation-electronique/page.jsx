@@ -77,7 +77,7 @@ export default function FacturationElectroniquePage() {
         <NewHeroNavbar hasBanner={true} />
         <main>
           {/* Hero Section */}
-          <HeroSection />
+          <HeroSection hasBanner />
           <EssentielSection />
           <LpSteps
             title="Les trois dates à retenir"

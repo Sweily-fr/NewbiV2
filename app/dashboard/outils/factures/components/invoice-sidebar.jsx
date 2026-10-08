@@ -67,6 +67,7 @@ import {
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import dynamic from "next/dynamic";
+import InvoiceRecurrenceSection from "./invoice-recurrence-section";
 
 // Chargés à l'ouverture de la sidebar uniquement : sort jspdf/pdf-lib (~1 Mo)
 // du chunk de la page liste.
@@ -991,6 +992,8 @@ export default function InvoiceSidebar({
               )}
             </div>
           </div>
+
+          <InvoiceRecurrenceSection invoice={invoice} />
 
           <Separator />
 

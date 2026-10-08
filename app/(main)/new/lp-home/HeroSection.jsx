@@ -49,7 +49,11 @@ export default function HeroSection() {
       {/* Conteneur principal avec max-width comme Qonto */}
       <div className="max-w-[1200px] mx-auto relative lg:block flex flex-col md:flex-row">
         {/* Grille pour le contenu texte - Structure Qonto */}
-        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-40 md:pt-36 lg:pt-44 md:flex-1">
+        {/* Pas de gouttière horizontale : tous les enfants occupent les douze
+            colonnes, et `gap-x-24` donnait onze gouttières de 96 px — 1 056 px
+            dans un conteneur de 728 px — ce qui faisait sortir le titre du
+            cadre entre 768 et 1 023 px. */}
+        <div className="grid grid-cols-12 pt-40 md:pt-36 lg:pt-44 md:flex-1">
           {/* Titre sur toute la largeur : à 5rem, il tient en deux lignes
               seulement s'il dispose des 1200px du conteneur. */}
           <div className="col-span-12 text-center">
@@ -72,13 +76,19 @@ export default function HeroSection() {
 
             {/* Boutons CTA : même gabarit que celui de la navbar (variante
                 « primary », taille md, px-4). Le second reprend la forme du
-                premier en violet pastel, texte violet Newbi. */}
-            <div className="mb-8 flex flex-col items-center gap-3 sm:mx-auto sm:grid sm:w-fit sm:grid-cols-2">
+                premier en violet pastel, texte violet Newbi.
+
+                Grille plutôt que colonne flex : empilés sur mobile, les deux
+                boutons prenaient chacun la largeur de leur texte, et « Demander
+                une démo » se retrouvait plus étroit. En grille `w-fit`, la
+                piste fait la largeur du plus long libellé et les deux s'y
+                étirent. */}
+            <div className="mb-8 mx-auto grid w-fit grid-cols-1 gap-3 sm:grid-cols-2">
               <Button
                 asChild
                 size="md"
                 variant="primary"
-                className="h-auto w-auto px-4 py-1.5 text-[17px] sm:w-full"
+                className="h-auto w-full px-4 py-1.5 text-[17px]"
               >
                 <Link href="/auth/signup">
                   <span>Essayer Newbi gratuitement</span>
@@ -88,7 +98,7 @@ export default function HeroSection() {
                 asChild
                 size="md"
                 variant="primary"
-                className="h-auto w-auto px-4 py-1.5 text-[17px] sm:w-full bg-[#E4E2FF] text-[#5A50FF] hover:bg-[#D6D3FF] active:bg-[#C8C4FF] [box-shadow:none]"
+                className="h-auto w-full px-4 py-1.5 text-[17px] bg-[#E4E2FF] text-[#5A50FF] hover:bg-[#D6D3FF] active:bg-[#C8C4FF] [box-shadow:none]"
               >
                 <Link href="/contact">
                   <span>Demander une démo</span>

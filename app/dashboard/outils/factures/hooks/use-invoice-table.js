@@ -43,6 +43,7 @@ import {
   useDeleteImportedInvoice,
 } from "@/src/graphql/importedInvoiceQueries";
 import InvoiceRowActions from "../components/invoice-row-actions";
+import { InvoiceRecurrenceBadge } from "../components/invoice-recurrence-badge";
 import {
   EInvoiceStatusBadge,
   EReportingErrorBadge,
@@ -243,6 +244,8 @@ export function useInvoiceTable({
   onOpenImportedSidebar,
   onSendEmail,
   onSaveAsTemplate,
+  recurrencesBySource,
+  onManageRecurrence,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
@@ -860,6 +863,10 @@ export function useInvoiceTable({
                     paymentStatus={row.original.eReportingPaymentStatus}
                     error={row.original.eReportingError}
                   />
+                  <InvoiceRecurrenceBadge
+                    recurrence={recurrencesBySource?.get(row.original.id)}
+                    recurrenceOrigin={row.original.recurrenceOrigin}
+                  />
                 </>
               )}
             </div>
@@ -981,6 +988,8 @@ export function useInvoiceTable({
               onOpenImportedSidebar={onOpenImportedSidebar}
               onSendEmail={onSendEmail}
               onSaveAsTemplate={onSaveAsTemplate}
+              recurrence={recurrencesBySource?.get(row.original.id)}
+              onManageRecurrence={onManageRecurrence}
             />
           );
         },
@@ -999,6 +1008,8 @@ export function useInvoiceTable({
       onOpenImportedSidebar,
       onSendEmail,
       onSaveAsTemplate,
+      recurrencesBySource,
+      onManageRecurrence,
     ],
   );
 

@@ -164,13 +164,11 @@ export default function PricingPlansSection() {
                 // sans cela, le contenu de la première et de la dernière
                 // colonne serait rentré de 32 px par rapport à la navbar.
                 className={`flex flex-col px-0 py-8 lg:py-0 ${
-                  i === 0 ? "lg:pl-0 lg:pr-8" : ""
+                  i === 0 ? "lg:pl-0 lg:pr-8" : "lg:border-l"
                 } ${
                   i === COLONNES.length - 1 ? "lg:pl-8 lg:pr-0" : ""
                 } ${i > 0 && i < COLONNES.length - 1 ? "lg:px-8" : ""}`}
-                style={{
-                  borderLeft: i === 0 ? undefined : `1px solid ${FILET}`,
-                }}
+                style={{ borderLeftColor: FILET }}
               >
                 <hgroup>
                   <h3 className="text-2xl font-semibold tracking-tight text-gray-950">

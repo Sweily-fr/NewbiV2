@@ -62,6 +62,8 @@ export default function InvoiceRowActions({
   onOpenImportedSidebar, // Callback pour ouvrir la sidebar des factures importées
   onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
   onSaveAsTemplate, // Callback pour ouvrir le dialog de template au niveau du tableau
+  recurrence, // Récurrence dont cette facture est le modèle (ou null)
+  onManageRecurrence, // Callback pour ouvrir le dialog de récurrence au niveau du tableau
 }) {
   // OPTIMISÉ: Suppression de isSidebarOpen - géré au niveau du tableau pour éviter les re-renders
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
@@ -203,6 +205,18 @@ export default function InvoiceRowActions({
 
   const isLoading =
     markingAsPaid || changingStatus || isDeleting || creatingDeliveryNote;
+
+  // Facture émise (hors acompte/situation et hors facture déjà générée par
+  // une récurrence) : peut servir de modèle à une facture récurrente
+  const canBeRecurring =
+    !isImportedInvoice &&
+    [INVOICE_STATUS.PENDING, INVOICE_STATUS.COMPLETED, "OVERDUE"].includes(
+      invoice.status,
+    ) &&
+    !invoice.isDeposit &&
+    !["deposit", "situation"].includes(invoice.invoiceType) &&
+    !invoice.recurrenceOrigin?.recurrenceId;
+  const hasLiveRecurrence = ["ACTIVE", "PAUSED"].includes(recurrence?.status);
 
   // Menu d'actions pour les factures importées
   const { deleteImportedInvoice, loading: isDeletingImported } =
@@ -346,6 +360,20 @@ export default function InvoiceRowActions({
                 <BookTemplate className="mr-2 h-4 w-4" />
                 Sauv. modèle
               </DropdownMenuItem>
+              {(canBeRecurring || hasLiveRecurrence) && (
+                <DropdownMenuItem
+                  disabled={isReadOnly}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onManageRecurrence?.(invoice);
+                  }}
+                >
+                  <CalendarSync className="mr-2 h-4 w-4" />
+                  {hasLiveRecurrence
+                    ? "Gérer la récurrence"
+                    : "Rendre récurrente"}
+                </DropdownMenuItem>
+              )}
               {invoice.status === INVOICE_STATUS.DRAFT && (
                 <DropdownMenuItem
                   onClick={handleEdit}

@@ -43,7 +43,14 @@ export default function KanbanDemo({ className = "" }) {
   React.useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Mouvement réduit, ou petit écran : on laisse l'interface telle quelle.
+    // Sous `md`, la maquette est réduite au point que l'animation n'est plus
+    // lisible — autant ne pas charger GSAP pour rien.
+    if (
+      window.matchMedia("(max-width: 767px)").matches ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
 
     let cancelled = false;
     let ctx;

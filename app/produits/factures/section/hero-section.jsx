@@ -31,11 +31,41 @@ const PROOF_AVATARS = [
 
 // Même disposition que le hero de la LP home : bloc de texte centré sur toute
 // la largeur, puis la maquette de l'interface en dessous, plein cadre.
-export function HeroSection() {
+/* Dégagement sous la navbar. Sans bandeau, elle est collée en haut et mesure
+   65 px. Avec le bandeau, elle descend de 80 px sur mobile et de 58 px à
+   partir de `sm` : son bas tombe alors à 145 px et 123 px. Le padding du hero
+   doit suivre, sinon le titre vient se coller dessous — et revenir à sa
+   valeur courte dès que le bandeau est fermé. */
+const PADDING_HAUT = {
+  sans: "pt-40 md:pt-36 lg:pt-44",
+  avec: "pt-[236px] sm:pt-[214px] md:pt-[204px] lg:pt-[236px]",
+};
+
+export function HeroSection({ hasBanner = false }) {
+  // Le bandeau se ferme : la navbar remonte, le hero doit remonter avec elle.
+  // `banner-closed` est l'événement que le bandeau émet déjà et que la navbar
+  // écoute — on s'y branche plutôt que de partager un état.
+  const [bandeauVisible, setBandeauVisible] = React.useState(hasBanner);
+
+  React.useEffect(() => {
+    if (!hasBanner) return;
+    const fermer = () => setBandeauVisible(false);
+    window.addEventListener("banner-closed", fermer);
+    return () => window.removeEventListener("banner-closed", fermer);
+  }, [hasBanner]);
+
   return (
     <div className="relative w-full overflow-x-clip bg-white px-5 pb-6 md:pb-10 lg:pb-16">
       <div className="max-w-[1200px] mx-auto relative">
-        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-40 md:pt-36 lg:pt-44">
+        {/* Pas de gouttière horizontale : tous les enfants occupent les douze
+            colonnes. Avec `md:gap-x-24`, les onze gouttières pesaient 1 056 px
+            et faisaient déborder la piste hors d'un conteneur de 728 px — le
+            titre et les boutons sortaient du cadre entre 768 et 1 023 px. */}
+        <div
+          className={`grid grid-cols-12 transition-[padding] duration-300 ${
+            bandeauVisible ? PADDING_HAUT.avec : PADDING_HAUT.sans
+          }`}
+        >
           {/* Titre sur toute la largeur du conteneur */}
           <div className="col-span-12 text-center">
             <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
@@ -96,14 +126,15 @@ export function HeroSection() {
           </div>
 
           {/* Maquette de l'interface, sur toute la largeur du hero. Sur mobile
-              elle déborde des deux côtés pour rester lisible, comme sur la
-              home. */}
+              elle est agrandie pour rester lisible : plutôt que de la rogner
+              des deux côtés, elle part du bord de page et file vers la droite
+              — la tablette entre dans le cadre au lieu d'y être coupée. */}
           <div className="col-span-12">
             <div className="relative mx-auto mt-10 md:mt-14 w-full">
               <img
                 src="/lp/factures/ipad-mockup.png"
                 alt="Liste des factures clients dans Newbi : statuts, échéances et suivi"
-                className="w-[150%] max-w-none -ml-[25%] h-auto md:w-full md:ml-0"
+                className="w-[150%] max-w-none ml-0 h-auto md:w-full"
                 loading="eager"
                 fetchPriority="high"
               />

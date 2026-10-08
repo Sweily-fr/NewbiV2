@@ -36,10 +36,16 @@ export function HeroSection() {
   return (
     <div className="relative w-full overflow-x-clip bg-white px-5 pb-6 md:pb-10 lg:pb-16">
       <div className="max-w-7xl mx-auto relative">
-        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-40 md:pt-36 lg:pt-44">
-          {/* Titre sur toute la largeur du conteneur */}
+        {/* Pas de gouttière horizontale : tous les enfants occupent les douze
+            colonnes, et `gap-x-24` donnait onze gouttières de 96 px — 1 056 px
+            dans un conteneur de 728 px — ce qui faisait sortir le titre du
+            cadre entre 768 et 1 023 px. */}
+        <div className="grid grid-cols-12 pt-40 md:pt-36 lg:pt-44">
+          {/* Titre sur toute la largeur du conteneur. Pas de `text-balance`
+              ici : ce titre est long, et l'équilibrage le resserrait à 75 % de
+              la boîte — quatre lignes à 390 px au lieu de trois. */}
           <div className="col-span-12 text-center">
-            <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
+            <h1 className="font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
               La gestion des achats, du justificatif à la compta
             </h1>
           </div>
@@ -97,21 +103,14 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Démo animée de l'interface, sur toute la largeur du hero. Sur
-              mobile on garde la capture : la maquette animée y serait
-              illisible. */}
+          {/* Démo de l'interface, sur toute la largeur du hero. La même
+              partout : sous `md` elle s'affiche sans animation, et le cadre
+              est agrandi pour rester lisible, comme sur les autres LP. */}
           <div className="col-span-12">
             <div className="relative mx-auto mt-10 md:mt-14 w-full">
-              <div className="overflow-hidden rounded-lg border-4 border-[#2F2F2D] w-[150%] max-w-none -ml-[25%] md:hidden">
-                <img
-                  src="/images/gestion-achats-hero.png"
-                  alt="Factures d'achat et notes de frais dans Newbi : justificatifs scannés, montants et TVA reconnus par l'OCR"
-                  className="w-full h-auto"
-                  loading="eager"
-                  fetchPriority="high"
-                />
+              <div className="w-[150%] md:w-full">
+                <PurchasesDemo />
               </div>
-              <PurchasesDemo className="hidden md:block" />
             </div>
           </div>
         </div>
