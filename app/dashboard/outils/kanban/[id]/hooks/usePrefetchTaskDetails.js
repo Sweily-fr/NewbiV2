@@ -1,6 +1,23 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useApolloClient } from "@apollo/client";
 import { GET_TASK_DETAILS } from "@/src/graphql/kanbanQueries";
+import { preloadCollaborativeDescriptionEditor } from "../components/task-modal/TaskDescriptionField";
+
+// Le chunk de l'éditeur collaboratif (chargé à la demande) est téléchargé une
+// fois le tableau affiché, quand le navigateur est inactif, pour que la
+// première ouverture de tâche ne l'attende pas.
+let editorPreloadScheduled = false;
+function scheduleEditorPreload() {
+  if (editorPreloadScheduled || typeof window === "undefined") return;
+  editorPreloadScheduled = true;
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(preloadCollaborativeDescriptionEditor, {
+      timeout: 3000,
+    });
+  } else {
+    setTimeout(preloadCollaborativeDescriptionEditor, 1500);
+  }
+}
 
 /**
  * Précharge les détails d'une tâche (commentaires, activité, time tracking)
@@ -18,9 +35,12 @@ export function usePrefetchTaskDetails(workspaceId) {
   const client = useApolloClient();
   const inflightRef = useRef(new Set());
 
+  useEffect(scheduleEditorPreload, []);
+
   const prefetch = useCallback(
     (taskId) => {
       if (!taskId) return;
+      preloadCollaborativeDescriptionEditor();
       if (inflightRef.current.has(taskId)) return;
       inflightRef.current.add(taskId);
       client

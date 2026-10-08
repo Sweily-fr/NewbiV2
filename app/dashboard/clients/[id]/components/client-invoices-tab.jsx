@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { FileText, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -38,6 +39,8 @@ function safeFormatDate(dateString) {
 
 export default function ClientInvoicesTab({ invoices = [], clientId }) {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
+  const newDocumentHref = `/dashboard/outils/factures/new?clientId=${clientId}`;
   const { canWrite, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canCreateInvoices = !isReady || canWrite("invoices");
@@ -110,11 +113,8 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
             <Button
               variant="outline"
               className="mt-4"
-              onClick={() =>
-                router.push(
-                  `/dashboard/outils/factures/new?clientId=${clientId}`,
-                )
-              }
+              {...prefetchIntent(newDocumentHref)}
+              onClick={() => router.push(newDocumentHref)}
             >
               <Plus className="h-3.5 w-3.5" />
               Nouvelle facture
@@ -134,9 +134,8 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
         {canCreateInvoices && (
           <Button
             variant="outline"
-            onClick={() =>
-              router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)
-            }
+            {...prefetchIntent(newDocumentHref)}
+            onClick={() => router.push(newDocumentHref)}
           >
             <Plus className="h-3.5 w-3.5" />
             Nouvelle facture

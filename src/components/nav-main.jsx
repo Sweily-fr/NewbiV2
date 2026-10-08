@@ -41,7 +41,8 @@ import {
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
-import Link from "next/link";
+// Liens préchargés à l'intention de clic (voir nav-link.jsx).
+import Link from "@/src/components/nav-link";
 import { cn } from "@/src/lib/utils";
 import { usePathname } from "next/navigation";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";

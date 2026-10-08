@@ -2,6 +2,7 @@
 
 import { useState, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -54,6 +55,7 @@ import {
 
 function BlockedContent() {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const [search, setSearch] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -290,6 +292,7 @@ function BlockedContent() {
                   <tr
                     key={client.id}
                     className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
+                    {...prefetchIntent(`/dashboard/clients/${client.id}`)}
                     onClick={() =>
                       router.push(`/dashboard/clients/${client.id}`)
                     }
