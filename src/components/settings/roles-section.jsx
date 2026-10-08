@@ -522,7 +522,7 @@ export default function RolesSection() {
                       )}
                     </div>
                     {role.description && (
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground">
                         {role.description}
                       </p>
                     )}

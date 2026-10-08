@@ -698,7 +698,7 @@ export function SettingsModal({
             {/* Desktop Layout */}
             <div className="flex h-full overflow-hidden">
               {/* Sidebar Desktop */}
-              <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto max-h-[92vh]">
+              <div className="w-60 shrink-0 bg-gray-50 dark:bg-[#171717] overflow-y-auto max-h-[92vh]">
                 <div className="p-4">
                   <h2 className="text-sm font-medium text-gray-500 mb-4">
                     Paramètres
@@ -792,7 +792,7 @@ export function SettingsModal({
               </div>
 
               {/* Content Area Desktop */}
-              <div className="flex-1 bg-white dark:bg-[#0A0A0A] flex flex-col min-h-0">
+              <div className="flex-1 min-w-0 bg-white dark:bg-[#0A0A0A] flex flex-col min-h-0">
                 <div className="flex-1 overflow-y-auto min-h-0">
                   <div className="p-12 pb-6">{renderContent()}</div>
                 </div>
