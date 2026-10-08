@@ -47,11 +47,11 @@ export function TeamBentoGrid() {
       height: "450px",
     },
     {
-      src: "/lp/about/atelier-tableau.jpg",
-      alt: "Séance de travail de l'équipe autour d'un tableau blanc",
+      src: "/lp/about/conference.jpg",
+      alt: "Un membre de l'équipe Newbi assiste à une conférence d'entrepreneurs",
       className: "col-span-2 row-span-1",
       height: "450px",
-      position: "50% 42%",
+      position: "50% 75%",
     },
   ];
 
