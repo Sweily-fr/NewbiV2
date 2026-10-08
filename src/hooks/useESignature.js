@@ -6,6 +6,7 @@ import { toast } from "@/src/components/ui/sonner";
 import {
   GET_SIGNATURE_REQUESTS,
   GET_DOCUMENT_SIGNATURE_STATUS,
+  GET_ESIGNATURE_QUOTA,
   REQUEST_DOCUMENT_SIGNATURE,
   SEAL_QUOTE_DOCUMENT,
   CANCEL_SIGNATURE,
@@ -89,6 +90,22 @@ export function useSignatureRequests(filters = {}) {
 }
 
 /**
+ * Hook pour le quota mensuel de signatures de l'espace (null si indisponible)
+ */
+export function useEsignatureQuota({ skip = false } = {}) {
+  const { data, loading, refetch } = useQuery(GET_ESIGNATURE_QUOTA, {
+    skip,
+    fetchPolicy: "cache-and-network",
+  });
+
+  return {
+    quota: data?.esignatureQuota || null,
+    loading,
+    refetch,
+  };
+}
+
+/**
  * Hook pour demander une signature électronique
  */
 export function useRequestSignature() {
@@ -108,6 +125,7 @@ export function useRequestSignature() {
               documentId: input.documentId,
             },
           },
+          { query: GET_ESIGNATURE_QUOTA },
         ],
       });
 
