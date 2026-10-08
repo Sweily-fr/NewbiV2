@@ -76,7 +76,7 @@ export function ValuesSection() {
                 vide. */}
             <div className={VISUEL}>
               <VisuelListe
-                className="absolute right-8 -bottom-6 w-[340px]"
+                className="absolute right-8 -bottom-6 w-[340px] lg:w-[470px]"
                 titre="Nouvelle facture"
                 lignes={[
                   "Un vocabulaire clair",
@@ -103,18 +103,27 @@ export function ValuesSection() {
             />
           </article>
 
-          <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
-            <h3 className={TITLE}>Vos données restent les vôtres</h3>
-            <p className={TEXT}>
-              Tout est hébergé en France et conforme au RGPD. Nous ne revendons
-              rien, nous n&apos;exploitons pas vos chiffres, et vous pouvez
-              exporter l&apos;intégralité de vos documents à tout moment — y
-              compris le jour où vous partez.
-            </p>
-            <Photo
+          {/* Carte photo : l'image occupe le fond, le texte passe en blanc
+              par-dessus un voile remontant du bas — même traitement que les
+              cartes photo des bentos produit. */}
+          <article className="relative md:col-span-4 min-h-[433px] overflow-hidden rounded-3xl flex flex-col justify-end p-7 md:p-8 text-white">
+            <img
               src="/lp/about/evenement-equipe.jpg"
-              alt="L'équipe Newbi en t-shirt newbi.fr lors d'un événement"
+              alt=""
+              className="absolute inset-0 size-full object-cover"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
+            <div className="relative">
+              <h3 className="text-xl md:text-2xl font-medium tracking-tight mb-3">
+                Vos données restent les vôtres
+              </h3>
+              <p className="text-[15px] leading-relaxed text-white/85">
+                Tout est hébergé en France et conforme au RGPD. Nous ne
+                revendons rien, nous n&apos;exploitons pas vos chiffres, et vous
+                pouvez exporter l&apos;intégralité de vos documents à tout
+                moment — y compris le jour où vous partez.
+              </p>
+            </div>
           </article>
 
           <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
