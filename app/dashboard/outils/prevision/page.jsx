@@ -8,6 +8,7 @@ import {
   useForecastScenarios,
 } from "@/src/hooks/useTreasuryForecast";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { ForecastScenarioProvider } from "@/src/contexts/forecast-scenario-context";
 import { ForecastKpiTable } from "./components/forecast-kpi-table";
 import { ForecastPaymentsCard } from "./components/forecast-payments-card";
@@ -174,6 +175,10 @@ export default function PrevisionPage() {
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
   const forecastMonths = planLimits.forecastMonths;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
+  // lecture seule, aucune saisie de prévision n'est proposée
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canWrite("forecast");
 
   // Determine the max allowed period and default period based on plan
   const maxPeriod = forecastMonths;
@@ -288,17 +293,19 @@ export default function PrevisionPage() {
                 activeScenarioId={activeScenarioId}
                 onScenarioChange={setActiveScenarioId}
               />
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setManualEntryDefaults(null);
-                  setManualEntryOpen(true);
-                }}
-                className="cursor-pointer"
-              >
-                <Plus className="w-4 h-4" aria-hidden="true" />
-                Ajouter une prévision
-              </Button>
+              {canEditForecast && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setManualEntryDefaults(null);
+                    setManualEntryOpen(true);
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Plus className="w-4 h-4" aria-hidden="true" />
+                  Ajouter une prévision
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => setExportOpen(true)}
@@ -556,7 +563,7 @@ export default function PrevisionPage() {
             months={forecastData?.months}
             kpi={forecastData?.kpi}
             loading={loading}
-            onCellClick={handleCellClick}
+            onCellClick={canEditForecast ? handleCellClick : undefined}
           />
         </div>
 

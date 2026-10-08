@@ -62,7 +62,8 @@ function LazyTaskCard({ task, index, column, scrollRootRef, ...cardProps }) {
       data-dnd-column-id={column.id}
       data-dnd-index={index}
       style={isVisible ? undefined : { minHeight: BOARD_CARD_MIN_HEIGHT }}
-      className="cursor-grab active:cursor-grabbing mb-1.5 sm:mb-2 last:mb-0"
+      // Curseur de déplacement seulement si le rôle permet d'écrire
+      className={`${cardProps.canEdit ? "cursor-grab active:cursor-grabbing " : ""}mb-1.5 sm:mb-2 last:mb-0`}
     >
       {isVisible ? <TaskCard task={task} {...cardProps} /> : null}
     </div>

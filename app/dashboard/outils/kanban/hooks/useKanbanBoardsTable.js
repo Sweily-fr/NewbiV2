@@ -150,32 +150,37 @@ export function useKanbanBoardsTable({
   // Define columns
   const columns = useMemo(
     () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
-            aria-label="Sélectionner tout"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner la ligne"
-            onClick={(e) => e.stopPropagation()}
-          />
-        ),
-        size: 44,
-        enableSorting: false,
-        enableHiding: false,
-      },
+      // Sélection : ne sert qu'à la suppression groupée (masquée sans droit)
+      ...(onDelete
+        ? [
+            {
+              id: "select",
+              header: ({ table }) => (
+                <Checkbox
+                  checked={
+                    table.getIsAllPageRowsSelected() ||
+                    (table.getIsSomePageRowsSelected() && "indeterminate")
+                  }
+                  onCheckedChange={(value) =>
+                    table.toggleAllPageRowsSelected(!!value)
+                  }
+                  aria-label="Sélectionner tout"
+                />
+              ),
+              cell: ({ row }) => (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  aria-label="Sélectionner la ligne"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ),
+              size: 44,
+              enableSorting: false,
+              enableHiding: false,
+            },
+          ]
+        : []),
       {
         accessorKey: "title",
         header: () => <span className="font-normal">Nom de la liste</span>,

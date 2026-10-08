@@ -284,7 +284,11 @@ export function EventCalendar({
         "--week-cells-height": `${WeekCellsHeight}px`,
       }}
     >
-      <CalendarDndProvider onEventUpdate={handleEventUpdate}>
+      {/* Glisser-déposer désactivé sans droit d'écriture */}
+      <CalendarDndProvider
+        onEventUpdate={handleEventUpdate}
+        disabled={!canEditEvents}
+      >
         <div
           className={cn(
             "flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-4",
@@ -322,8 +326,9 @@ export function EventCalendar({
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            <CalendarSyncButton />
-            <CalendarConnectionsPanel />
+            {/* Synchronisation et connexions : rôles qui peuvent écrire */}
+            {canEditEvents && <CalendarSyncButton />}
+            <CalendarConnectionsPanel canManage={canEditEvents} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-1.5 font-normal">
@@ -365,7 +370,7 @@ export function EventCalendar({
           </div>
         </div>
 
-        <ColorLegend />
+        <ColorLegend canEdit={canEditEvents} />
 
         <div className="flex flex-1 flex-col">
           {view === "mois" && (

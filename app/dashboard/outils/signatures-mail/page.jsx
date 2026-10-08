@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client";
 import { CircleAlert, CopyPlus, Loader2, Monitor, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { PermissionButton } from "@/src/components/rbac/PermissionButton";
-import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import {
@@ -42,7 +42,16 @@ import { roleRefusal, VIEWER_CANNOT_CREATE, VIEWER_HINT, VIEWER_TITLE } from "./
 
 const EDITOR_URL = (id) => `/dashboard/outils/signatures-mail/${id}`;
 
-function SignatureCard({ sig, onOpen, onDuplicate, onSetDefault, onDelete, readOnly }) {
+function SignatureCard({
+  sig,
+  onOpen,
+  onDuplicate,
+  onSetDefault,
+  onDelete,
+  readOnly,
+  canEdit,
+  canRemove,
+}) {
   return (
     <Card className="group overflow-hidden">
       <button
@@ -83,67 +92,64 @@ function SignatureCard({ sig, onOpen, onDuplicate, onSetDefault, onDelete, readO
             {sig.identity?.jobTitle ? ` · ${sig.identity.jobTitle}` : ""}
           </div>
         </div>
+        {/* Actions selon le rôle : modifier (défaut, copie), supprimer ;
+            en consultation, l'aperçu ouvre la signature */}
         <div className="flex shrink-0 items-center gap-1">
-          <Button variant="outline" size="sm" className="h-8 text-xs cursor-pointer" onClick={onOpen}>
-            Modifier
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" aria-label="Actions">
-                <MoreHorizontal size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onSetDefault} disabled={sig.isDefault || readOnly}>
-                <Star size={14} />
-                Définir par défaut
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onDuplicate} disabled={readOnly}>
-                <CopyPlus size={14} />
-                Dupliquer
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onDelete}
-                disabled={readOnly}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 size={14} />
-                Supprimer
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {canEdit && (
+            <Button variant="outline" size="sm" className="h-8 text-xs cursor-pointer" onClick={onOpen}>
+              Modifier
+            </Button>
+          )}
+          {(canEdit || canRemove) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" aria-label="Actions">
+                  <MoreHorizontal size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canEdit && (
+                  <>
+                    <DropdownMenuItem onClick={onSetDefault} disabled={sig.isDefault || readOnly}>
+                      <Star size={14} />
+                      Définir par défaut
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onDuplicate} disabled={readOnly}>
+                      <CopyPlus size={14} />
+                      Dupliquer
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canEdit && canRemove && <DropdownMenuSeparator />}
+                {canRemove && (
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    disabled={readOnly}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 size={14} />
+                    Supprimer
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-/**
- * Droit de créer, et donc de modifier ou supprimer, une signature : faux
- * pour un lecteur, qui consulte seulement. Vrai tant que les droits se
- * chargent, pour ne pas montrer l'état d'un lecteur à tout le monde.
- */
-function useSignatureWriteAccess() {
-  const { hasPermission, isReady } = usePermissions();
-  const [canWrite, setCanWrite] = useState(true);
-  useEffect(() => {
-    if (!isReady) return undefined;
-    let active = true;
-    hasPermission("signatures", "create").then((allowed) => {
-      if (active) setCanWrite(allowed);
-    });
-    return () => {
-      active = false;
-    };
-  }, [isReady, hasPermission]);
-  return canWrite;
-}
-
 function SignaturesV2Content() {
   const router = useRouter();
   const { isReadOnly } = useSubscriptionAccess();
-  const canWrite = useSignatureWriteAccess();
+  // Droits du rôle : créer et modifier (write), supprimer (delete). Tout
+  // autorisé tant que la grille n'est pas chargée, pour ne pas montrer
+  // l'état d'un lecteur à tout le monde
+  const { canWrite: canWriteModule, canDelete: canDeleteModule, isReady } =
+    useMyPermissions();
+  const canWrite = !isReady || canWriteModule("signatures");
+  const canDeleteSignatures = !isReady || canDeleteModule("signatures");
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState(null);
 
@@ -248,20 +254,23 @@ function SignaturesV2Content() {
               Une signature propre dans Gmail, Outlook et Apple Mail, en clair comme en sombre.
             </p>
           </div>
-          {/* Désactivé et expliqué pour un lecteur ou un abonnement inactif */}
-          <PermissionButton
-            resource="signatures"
-            action="create"
-            requiresActiveSubscription
-            variant="primary"
-            onClick={handleCreate}
-            disabled={creating}
-            tooltipNoAccess={VIEWER_CANNOT_CREATE}
-            className="cursor-pointer"
-          >
-            {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-            Nouvelle signature
-          </PermissionButton>
+          {/* Masqué pour un rôle sans écriture, désactivé et expliqué pour un
+              abonnement inactif */}
+          {canWrite && (
+            <PermissionButton
+              resource="signatures"
+              action="create"
+              requiresActiveSubscription
+              variant="primary"
+              onClick={handleCreate}
+              disabled={creating}
+              tooltipNoAccess={VIEWER_CANNOT_CREATE}
+              className="cursor-pointer"
+            >
+              {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              Nouvelle signature
+            </PermissionButton>
+          )}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -304,19 +313,21 @@ function SignaturesV2Content() {
                   <p className="text-sm text-muted-foreground">{VIEWER_HINT}</p>
                 </div>
               )}
-              <PermissionButton
-                resource="signatures"
-                action="create"
-                requiresActiveSubscription
-                variant="primary"
-                onClick={handleCreate}
-                disabled={creating}
-                tooltipNoAccess={VIEWER_CANNOT_CREATE}
-                className="cursor-pointer"
-              >
-                <Plus size={14} />
-                Commencer
-              </PermissionButton>
+              {canWrite && (
+                <PermissionButton
+                  resource="signatures"
+                  action="create"
+                  requiresActiveSubscription
+                  variant="primary"
+                  onClick={handleCreate}
+                  disabled={creating}
+                  tooltipNoAccess={VIEWER_CANNOT_CREATE}
+                  className="cursor-pointer"
+                >
+                  <Plus size={14} />
+                  Commencer
+                </PermissionButton>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -324,8 +335,10 @@ function SignaturesV2Content() {
                 <SignatureCard
                   key={sig.id}
                   sig={sig}
-                  // Un lecteur ne peut ni dupliquer, ni changer, ni supprimer
-                  readOnly={isReadOnly || !canWrite}
+                  // Abonnement inactif : actions désactivées ; rôle : masquées
+                  readOnly={isReadOnly}
+                  canEdit={canWrite}
+                  canRemove={canDeleteSignatures}
                   onOpen={() => router.push(EDITOR_URL(sig.id))}
                   onDuplicate={() => handleDuplicate(sig.id)}
                   onSetDefault={() => handleSetDefault(sig.id)}

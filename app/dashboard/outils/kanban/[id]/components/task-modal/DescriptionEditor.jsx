@@ -50,6 +50,8 @@ export const DescriptionEditor = forwardRef(function DescriptionEditor(
     onFocus: onFocusProp,
     onBlur: onBlurProp,
     placeholder = "Ajouter une description...",
+    // Lecture seule (rôle sans écriture) : texte affiché, ni saisie ni outils
+    readOnly = false,
   },
   ref,
 ) {
@@ -204,66 +206,68 @@ export const DescriptionEditor = forwardRef(function DescriptionEditor(
       className="flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs cursor-text overflow-hidden min-w-0"
       onClick={() => editorRef.current?.focus()}
     >
-      <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
-        <div className="flex items-center gap-0.5">
-          {descriptionToolbarItems.map((item, index) => {
-            const isActive =
-              item.command === "createLink"
-                ? activeFormats["createLink"]
-                : item.command === "formatBlock"
-                  ? activeFormats[item.command + "-" + item.value]
-                  : activeFormats[item.command];
-            return (
-              <Tooltip key={index}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      applyFormat(item);
-                    }}
-                    className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
-                  >
-                    <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{item.tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
+      {!readOnly && (
+        <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
+          <div className="flex items-center gap-0.5">
+            {descriptionToolbarItems.map((item, index) => {
+              const isActive =
+                item.command === "createLink"
+                  ? activeFormats["createLink"]
+                  : item.command === "formatBlock"
+                    ? activeFormats[item.command + "-" + item.value]
+                    : activeFormats[item.command];
+              return (
+                <Tooltip key={index}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        applyFormat(item);
+                      }}
+                      className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
+                    >
+                      <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{item.tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] hover:bg-red-50 hover:text-red-500 transition-colors"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClear();
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Effacer</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] hover:bg-red-50 hover:text-red-500 transition-colors"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClear();
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Effacer</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+      )}
 
       <div className="relative px-4 py-3 min-h-[100px] max-h-[200px] overflow-y-auto overflow-x-hidden">
-        {isEmpty && (
+        {isEmpty && !readOnly && (
           <span className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none">
             {placeholder}
           </span>
         )}
         <div
           ref={editorRef}
-          contentEditable
+          contentEditable={!readOnly}
           onInput={handleInput}
           onFocus={handleFocus}
           onBlur={handleBlur}

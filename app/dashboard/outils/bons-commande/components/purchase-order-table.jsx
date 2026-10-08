@@ -114,8 +114,11 @@ export default function PurchaseOrderTable({
   const { canCreate } = usePermissions();
   const [canCreatePo, setCanCreatePo] = useState(false);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canDelete, isReady } = useMyPermissions();
+  const { canRead, canDelete, isReady } = useMyPermissions();
   const canDeletePurchaseOrders = !isReady || canDelete("purchaseOrders");
+  // BC importés (OCR) : module distinct, masqués sans lecture
+  const canReadImportedPurchaseOrders =
+    !isReady || canRead("importedPurchaseOrders");
   const [poToOpen, setPoToOpen] = useState(null);
   const [templatePurchaseOrder, setTemplatePurchaseOrder] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -128,7 +131,9 @@ export default function PurchaseOrderTable({
   const [sendEmailPO, setSendEmailPO] = useState(null);
 
   const { importedPurchaseOrders, refetch: refetchImported } =
-    useImportedPurchaseOrders(workspaceId);
+    useImportedPurchaseOrders(
+      canReadImportedPurchaseOrders ? workspaceId : null,
+    );
 
   // Fusionner les BC natifs et les BC importés (lignes "À vérifier" / "Terminé")
   const combinedPurchaseOrders = useMemo(() => {
@@ -136,7 +141,9 @@ export default function PurchaseOrderTable({
       ...po,
       _type: "normal",
     }));
-    const imported = (importedPurchaseOrders || []).map((po) => ({
+    const imported = (
+      canReadImportedPurchaseOrders ? importedPurchaseOrders || [] : []
+    ).map((po) => ({
       ...po,
       _type: "imported",
       client: {
@@ -151,7 +158,7 @@ export default function PurchaseOrderTable({
     // Tri par date d'émission (puis création) quel que soit le type : les
     // dates peuvent être des timestamps en chaîne, sortByDateDesc les gère.
     return sortByDateDesc([...normalPos, ...imported]);
-  }, [purchaseOrders, importedPurchaseOrders]);
+  }, [purchaseOrders, importedPurchaseOrders, canReadImportedPurchaseOrders]);
 
   const {
     table,

@@ -23,6 +23,7 @@ import {
   useHideManualEntryInScenario,
 } from "@/src/hooks/useManualCashflowEntries";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { ManualEntryDialog } from "./manual-entry-dialog";
 
 const FREQUENCY_LABELS = {
@@ -67,6 +68,10 @@ export function ManualEntriesList() {
   const { isScenario, scenarioName } = useForecastScenario();
   const { entries, loading } = useManualCashflowEntries();
   const { setHidden, loading: hiding } = useHideManualEntryInScenario();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
+  // lecture seule, ni modification ni masquage
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canWrite("forecast");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
@@ -182,7 +187,7 @@ export function ManualEntriesList() {
                   {isIncome ? "+" : "-"}
                   {formatCurrency(entry.amount)}
                 </span>
-                {isScenario && isBaseEntry ? (
+                {!canEditForecast ? null : isScenario && isBaseEntry ? (
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"

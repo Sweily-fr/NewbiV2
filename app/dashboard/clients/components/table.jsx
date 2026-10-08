@@ -441,9 +441,15 @@ export default function TableClients({
 }) {
   const id = useId();
   const router = useRouter();
-  const { canWrite, isReady } = useMyPermissions();
+  const { canRead, canWrite, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canEditClients = !isReady || canWrite("clients");
+  const canEditClientLists = !isReady || canWrite("clientLists");
+  // Colonne « Factures » : données du module Factures
+  const canReadInvoices = !isReady || canRead("invoices");
+  // Fiche client ouvrable seulement avec la lecture des clients (vue d'une
+  // liste)
+  const canOpenClients = !isReady || canRead("clients");
   const [columnFilters, setColumnFilters] = useState([]);
   const [internalColumnVisibility, setInternalColumnVisibility] = useState({});
   const columnVisibility = externalColumnVisibility || internalColumnVisibility;
@@ -496,6 +502,9 @@ export default function TableClients({
     pagination.pageIndex + 1,
     pagination.pageSize,
     debouncedGlobalFilter,
+    // Pas de requête si les clients sont fournis (vue d'une liste) ou si le
+    // rôle ne peut pas lire les clients
+    { skip: useProvidedClients || !canOpenClients },
   );
 
   const {
@@ -547,7 +556,7 @@ export default function TableClients({
   const { deleteClient } = useDeleteClient();
 
   // Récupérer les factures pour calculer le nombre par client
-  const { invoices } = useInvoices();
+  const { invoices } = useInvoices({ skip: !canReadInvoices });
 
   // Calculer le nombre de factures par client
   const invoiceCountByClient = useMemo(() => {
@@ -666,6 +675,12 @@ export default function TableClients({
       clients,
       invoiceCountByClient,
       customFieldDefinitions,
+    ).filter(
+      // Sélection retirée sans action groupée possible (lecture seule),
+      // colonne « Factures » retirée sans lecture des factures
+      (column) =>
+        (column.id !== "select" || canEditClients || canEditClientLists) &&
+        (column.id !== "invoiceCount" || canReadInvoices),
     ),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -701,7 +716,7 @@ export default function TableClients({
     const standard = [
       { id: "email", label: "Email" },
       { id: "type", label: "Type" },
-      { id: "invoiceCount", label: "Factures" },
+      ...(canReadInvoices ? [{ id: "invoiceCount", label: "Factures" }] : []),
       { id: "address", label: "Adresse" },
       { id: "phone", label: "Téléphone" },
       { id: "firstName", label: "Prénom" },
@@ -715,7 +730,7 @@ export default function TableClients({
       label: f.name,
     }));
     return [...standard, ...cfCols];
-  }, [customFieldDefinitions]);
+  }, [customFieldDefinitions, canReadInvoices]);
 
   const customFieldNamesMap = useMemo(
     () =>
@@ -945,7 +960,8 @@ export default function TableClients({
                         e.target.closest("button") ||
                         e.target.closest('[role="menuitem"]') ||
                         e.target.closest('[role="alertdialog"]') ||
-                        e.target.closest('[role="dialog"]')
+                        e.target.closest('[role="dialog"]') ||
+                        !canOpenClients
                       ) {
                         return;
                       }
@@ -1277,7 +1293,8 @@ export default function TableClients({
                         e.target.closest("button") ||
                         e.target.closest('[role="menuitem"]') ||
                         e.target.closest('[role="alertdialog"]') ||
-                        e.target.closest('[role="dialog"]')
+                        e.target.closest('[role="dialog"]') ||
+                        !canOpenClients
                       ) {
                         return;
                       }
@@ -1429,11 +1446,17 @@ function RowActions({
   const { unblockClient } = useUnblockClient();
   const { addToLists } = useAddClientToLists();
   const { removeClient: removeClientFromList } = useRemoveClientFromList();
-  const { lists } = useClientListsByClient(workspaceId || "", client.id);
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canEditClients = !isReady || canWrite("clients");
   const canDeleteClients = !isReady || canDelete("clients");
+  // Listes : module à part (ajouter / retirer un contact = écriture)
+  const canReadClientLists = !isReady || canRead("clientLists");
+  const canEditClientLists = !isReady || canWrite("clientLists");
+  const { lists } = useClientListsByClient(
+    canReadClientLists ? workspaceId || "" : "",
+    client.id,
+  );
 
   const handleAddToList = useCallback(
     async (listId) => {
@@ -1567,71 +1590,73 @@ function RowActions({
             </DropdownMenuItem>
           </DropdownMenuGroup>
 
-          {canEditClients && <DropdownMenuSeparator />}
-          {canEditClients && (
+          {(canEditClients || canEditClientLists) && <DropdownMenuSeparator />}
+          {(canEditClients || canEditClientLists) && (
             <DropdownMenuGroup>
               {/* Ajouter à une liste */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger
-                  disabled={addingToList}
-                  className="gap-2"
-                >
-                  <ListPlus className="w-3.5 h-3.5" />
-                  <span>Ajouter à une liste</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  {(() => {
-                    const currentListIds = new Set(
-                      (lists || []).map((l) => l.id),
-                    );
-                    const availableLists = (allLists || []).filter(
-                      (l) => !currentListIds.has(l.id),
-                    );
-                    return (
-                      <>
-                        {(allLists || []).length > 0 &&
-                          availableLists.length === 0 && (
-                            <DropdownMenuItem disabled>
-                              Aucune liste disponible
+              {canEditClientLists && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger
+                    disabled={addingToList}
+                    className="gap-2"
+                  >
+                    <ListPlus className="w-3.5 h-3.5" />
+                    <span>Ajouter à une liste</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {(() => {
+                      const currentListIds = new Set(
+                        (lists || []).map((l) => l.id),
+                      );
+                      const availableLists = (allLists || []).filter(
+                        (l) => !currentListIds.has(l.id),
+                      );
+                      return (
+                        <>
+                          {(allLists || []).length > 0 &&
+                            availableLists.length === 0 && (
+                              <DropdownMenuItem disabled>
+                                Aucune liste disponible
+                              </DropdownMenuItem>
+                            )}
+                          {availableLists.map((list) => (
+                            <DropdownMenuItem
+                              key={list.id}
+                              onClick={() => handleAddToList(list.id)}
+                              disabled={addingToList}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 w-full">
+                                <div
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: list.color }}
+                                />
+                                <span>{list.name}</span>
+                              </div>
                             </DropdownMenuItem>
+                          ))}
+                          {(allLists || []).length > 0 && (
+                            <DropdownMenuSeparator />
                           )}
-                        {availableLists.map((list) => (
                           <DropdownMenuItem
-                            key={list.id}
-                            onClick={() => handleAddToList(list.id)}
-                            disabled={addingToList}
-                            className="cursor-pointer"
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setCreateListDialogOpen(true);
+                            }}
+                            className="cursor-pointer gap-2"
                           >
-                            <div className="flex items-center gap-2 w-full">
-                              <div
-                                className="w-2 h-2 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: list.color }}
-                              />
-                              <span>{list.name}</span>
-                            </div>
+                            <PlusIcon className="w-3.5 h-3.5" />
+                            <span>Créer une liste</span>
                           </DropdownMenuItem>
-                        ))}
-                        {(allLists || []).length > 0 && (
-                          <DropdownMenuSeparator />
-                        )}
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            setCreateListDialogOpen(true);
-                          }}
-                          className="cursor-pointer gap-2"
-                        >
-                          <PlusIcon className="w-3.5 h-3.5" />
-                          <span>Créer une liste</span>
-                        </DropdownMenuItem>
-                      </>
-                    );
-                  })()}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+                        </>
+                      );
+                    })()}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
 
               {/* Retirer de la liste courante */}
-              {currentList?.id && (
+              {currentList?.id && canEditClientLists && (
                 <DropdownMenuItem
                   onClick={handleRemoveFromCurrentList}
                   disabled={removingFromList}
@@ -1643,25 +1668,29 @@ function RowActions({
               )}
 
               {/* Assigner */}
-              <DropdownMenuItem onSelect={handleAssign}>
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>Assigner</span>
-              </DropdownMenuItem>
+              {canEditClients && (
+                <DropdownMenuItem onSelect={handleAssign}>
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Assigner</span>
+                </DropdownMenuItem>
+              )}
 
               {/* Bloquer / Débloquer */}
-              <DropdownMenuItem
-                onSelect={(e) => {
-                  e.preventDefault();
-                  if (client.isBlocked) {
-                    handleUnblock();
-                  } else {
-                    setShowBlockDialog(true);
-                  }
-                }}
-              >
-                <ShieldOff className="w-3.5 h-3.5" />
-                <span>{client.isBlocked ? "Débloquer" : "Bloquer"}</span>
-              </DropdownMenuItem>
+              {canEditClients && (
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    if (client.isBlocked) {
+                      handleUnblock();
+                    } else {
+                      setShowBlockDialog(true);
+                    }
+                  }}
+                >
+                  <ShieldOff className="w-3.5 h-3.5" />
+                  <span>{client.isBlocked ? "Débloquer" : "Bloquer"}</span>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
           )}
 

@@ -122,12 +122,11 @@ function KanbanPageContent() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
   const canEditKanban = !isReady || canWrite("kanban");
   const canDeleteKanban = !isReady || canDelete("kanban");
-  const createTooltip =
-    readOnlyTooltip ||
-    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
+  // Sélecteur de client réservé aux rôles qui voient les clients
+  const canReadClients = !isReady || canRead("clients");
   const router = useRouter();
   const [boardPreview, setBoardPreview] = React.useState(null);
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
@@ -161,7 +160,8 @@ function KanbanPageContent() {
     }
   }, []);
 
-  const { clients } = useClients({ limit: 200 });
+  // Sans droit sur les clients : requête ignorée
+  const { clients } = useClients({ limit: 200, skip: !canReadClients });
   const { workspaceId } = useWorkspace();
   const [toggleFavoriteMutation] = useMutation(TOGGLE_BOARD_FAVORITE);
   const handleToggleFavorite = (boardId) => {
@@ -376,17 +376,20 @@ function KanbanPageContent() {
               }
             }}
           >
-            <DialogTrigger asChild>
-              <Button
-                variant="primary"
-                className="cursor-pointer"
-                disabled={isReadOnly || !canEditKanban}
-                title={createTooltip}
-              >
-                <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                Nouvelle liste
-              </Button>
-            </DialogTrigger>
+            {/* Masqué si le rôle ne permet pas de créer */}
+            {canEditKanban && (
+              <DialogTrigger asChild>
+                <Button
+                  variant="primary"
+                  className="cursor-pointer"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
+                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                  Nouvelle liste
+                </Button>
+              </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
               <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
                 <form onSubmit={handleCreateBoard}>
@@ -569,34 +572,36 @@ function KanbanPageContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">
-                          Client
-                        </Label>
-                        <Select
-                          value={formData.clientId || "none"}
-                          onValueChange={(value) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              clientId: value === "none" ? null : value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="w-full min-w-0">
-                            <SelectValue placeholder="Aucun" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Aucun client</SelectItem>
-                            {clients.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.type === "INDIVIDUAL"
-                                  ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                                  : c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {canReadClients && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">
+                            Client
+                          </Label>
+                          <Select
+                            value={formData.clientId || "none"}
+                            onValueChange={(value) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                clientId: value === "none" ? null : value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="w-full min-w-0">
+                              <SelectValue placeholder="Aucun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Aucun client</SelectItem>
+                              {clients.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.type === "INDIVIDUAL"
+                                    ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
+                                    : c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -872,15 +877,17 @@ function KanbanPageContent() {
                 Créez votre première liste pour organiser vos tâches et projets
               </p>
             </div>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              variant="default"
-              className="mx-auto flex items-center gap-2 font-normal"
-              disabled={isReadOnly || !canEditKanban}
-              title={createTooltip}
-            >
-              Créer votre première liste
-            </Button>
+            {canEditKanban && (
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                variant="default"
+                className="mx-auto flex items-center gap-2 font-normal"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                Créer votre première liste
+              </Button>
+            )}
           </div>
         </div>
       ) : viewMode === "grid" ? (
@@ -1352,35 +1359,37 @@ function KanbanPageContent() {
                   </div>
                 </div>
 
-                {/* Client */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Client
-                  </Label>
-                  <Select
-                    value={formData.clientId || "none"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        clientId: value === "none" ? null : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full min-w-0">
-                      <SelectValue placeholder="Aucun client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Aucun client</SelectItem>
-                      {clients.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.type === "INDIVIDUAL"
-                            ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                            : c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Client (masqué sans droit sur les clients) */}
+                {canReadClients && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      Client
+                    </Label>
+                    <Select
+                      value={formData.clientId || "none"}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          clientId: value === "none" ? null : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full min-w-0">
+                        <SelectValue placeholder="Aucun client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun client</SelectItem>
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.type === "INDIVIDUAL"
+                              ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
+                              : c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               {/* Footer */}

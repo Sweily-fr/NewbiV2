@@ -185,6 +185,7 @@ function PurchaseOrdersContent() {
               variant="primary"
               onClick={handleNewPurchaseOrder}
               className="cursor-pointer"
+              hideIfNoAccess={true}
               data-testid="new-purchase-order-button"
               tooltipNoAccess="Vous n'avez pas la permission de créer des bons de commande"
             >

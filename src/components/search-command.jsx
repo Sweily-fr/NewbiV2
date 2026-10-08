@@ -72,6 +72,8 @@ import {
 } from "@/src/graphql/deliveryNoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 
 // --- Helpers ---
 
@@ -275,6 +277,49 @@ export function SearchCommand() {
   const { workspaceId } = useWorkspace();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
 
+  // Droits du rôle (Paramètres > Membres > Rôles), tout autorisé tant que la
+  // grille n'est pas chargée : la recherche n'interroge que les documents
+  // lisibles (l'API refuserait les autres), les créations demandent
+  // l'écriture et les pages masquées au rôle n'apparaissent pas (comme dans
+  // le menu).
+  const {
+    can,
+    isReady: permissionsReady,
+    role: permissionsRole,
+    levels: permissionLevels,
+  } = useMyPermissions();
+  const canReadModule = (moduleKey) =>
+    !permissionsReady || can(moduleKey, "read");
+  const canCreate = (moduleKey) => !permissionsReady || can(moduleKey, "write");
+  const canSee = (url) => {
+    const moduleKey = moduleForPath(url);
+    if (!permissionsReady || !moduleKey) return true;
+    return (
+      can(moduleKey, "read") &&
+      !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+    );
+  };
+  const canSearchClients = canReadModule("clients");
+  const canSearchInvoices = canReadModule("invoices");
+  const canSearchQuotes = canReadModule("quotes");
+  const canSearchProducts = canReadModule("products");
+  const canSearchPurchaseOrders = canReadModule("purchaseOrders");
+  const canSearchCreditNotes = canReadModule("creditNotes");
+  const canSearchDeliveryNotes =
+    deliveryNotesAllowed && canReadModule("deliveryNotes");
+  const canCreateInvoices = canCreate("invoices");
+  const canCreateQuotes = canCreate("quotes");
+  const canCreatePurchaseOrders = canCreate("purchaseOrders");
+  const canCreateDeliveryNotes =
+    deliveryNotesAllowed && canCreate("deliveryNotes");
+  const canCreateClients = canCreate("clients");
+  const hasQuickActions =
+    canCreateInvoices ||
+    canCreateQuotes ||
+    canCreatePurchaseOrders ||
+    canCreateDeliveryNotes ||
+    canCreateClients;
+
   // Lazy queries
   const [searchClients, { data: clientsData, loading: clientsLoading }] =
     useLazyQuery(GET_CLIENTS, { fetchPolicy: "cache-and-network" });
@@ -323,13 +368,13 @@ export function SearchCommand() {
       const vars = {
         variables: { workspaceId, search: searchQuery, limit: 4 },
       };
-      searchClients(vars);
-      searchInvoices(vars);
-      searchQuotes(vars);
-      searchProducts(vars);
-      searchPurchaseOrders(vars);
-      searchCreditNotes(vars);
-      if (deliveryNotesAllowed) searchDeliveryNotes(vars);
+      if (canSearchClients) searchClients(vars);
+      if (canSearchInvoices) searchInvoices(vars);
+      if (canSearchQuotes) searchQuotes(vars);
+      if (canSearchProducts) searchProducts(vars);
+      if (canSearchPurchaseOrders) searchPurchaseOrders(vars);
+      if (canSearchCreditNotes) searchCreditNotes(vars);
+      if (canSearchDeliveryNotes) searchDeliveryNotes(vars);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -343,7 +388,13 @@ export function SearchCommand() {
     searchPurchaseOrders,
     searchCreditNotes,
     searchDeliveryNotes,
-    deliveryNotesAllowed,
+    canSearchClients,
+    canSearchInvoices,
+    canSearchQuotes,
+    canSearchProducts,
+    canSearchPurchaseOrders,
+    canSearchCreditNotes,
+    canSearchDeliveryNotes,
   ]);
 
   // Global events + keyboard shortcut
@@ -372,17 +423,27 @@ export function SearchCommand() {
     command();
   }, []);
 
-  // Extract results
-  const clients = clientsData?.clients?.items || [];
-  const invoices = invoicesData?.invoices?.invoices || [];
-  const quotes = quotesData?.quotes?.quotes || [];
-  const products = productsData?.products?.products || [];
-  const purchaseOrders =
-    purchaseOrdersData?.purchaseOrders?.purchaseOrders || [];
-  const creditNotes = creditNotesData?.creditNotes?.creditNotes || [];
-  const deliveryNotes = deliveryNotesAllowed
+  // Extract results (rien pour un type que le rôle ne peut pas lire, même
+  // s'il reste des résultats en cache d'avant un changement de rôle)
+  const clients = canSearchClients ? clientsData?.clients?.items || [] : [];
+  const invoices = canSearchInvoices
+    ? invoicesData?.invoices?.invoices || []
+    : [];
+  const quotes = canSearchQuotes ? quotesData?.quotes?.quotes || [] : [];
+  const products = canSearchProducts
+    ? productsData?.products?.products || []
+    : [];
+  const purchaseOrders = canSearchPurchaseOrders
+    ? purchaseOrdersData?.purchaseOrders?.purchaseOrders || []
+    : [];
+  const creditNotes = canSearchCreditNotes
+    ? creditNotesData?.creditNotes?.creditNotes || []
+    : [];
+  const deliveryNotes = canSearchDeliveryNotes
     ? deliveryNotesData?.deliveryNotes?.deliveryNotes || []
     : [];
+  // Récents : pas de lien vers une page devenue inaccessible au rôle
+  const visibleRecents = recents.filter((item) => canSee(item.url));
 
   const isLoading =
     clientsLoading ||
@@ -773,10 +834,10 @@ export function SearchCommand() {
                 )}
 
                 {/* --- Recents (when not searching) --- */}
-                {!isSearching && recents.length > 0 && (
+                {!isSearching && visibleRecents.length > 0 && (
                   <>
                     <CommandGroup heading="Récents">
-                      {recents.map((item) => (
+                      {visibleRecents.map((item) => (
                         <CommandItem
                           key={item.id}
                           onSelect={() =>
@@ -797,49 +858,58 @@ export function SearchCommand() {
                   </>
                 )}
 
-                {/* --- Quick actions (when not searching) --- */}
-                {!isSearching && (
+                {/* --- Quick actions (when not searching) : création
+                    réservée aux rôles qui ont l'écriture sur le module --- */}
+                {!isSearching && hasQuickActions && (
                   <>
                     <CommandGroup heading="Actions rapides">
-                      <CommandItem
-                        onSelect={() =>
-                          runCommand(() =>
-                            router.push("/dashboard/outils/factures?new=true"),
-                          )
-                        }
-                      >
-                        <IconWrapper>
-                          <Plus className="size-3.5 text-[#5b4eff]" />
-                        </IconWrapper>
-                        <span>Nouvelle facture</span>
-                      </CommandItem>
-                      <CommandItem
-                        onSelect={() =>
-                          runCommand(() =>
-                            router.push("/dashboard/outils/devis?new=true"),
-                          )
-                        }
-                      >
-                        <IconWrapper>
-                          <Plus className="size-3.5 text-[#5b4eff]" />
-                        </IconWrapper>
-                        <span>Nouveau devis</span>
-                      </CommandItem>
-                      <CommandItem
-                        onSelect={() =>
-                          runCommand(() =>
-                            router.push(
-                              "/dashboard/outils/bons-commande?new=true",
-                            ),
-                          )
-                        }
-                      >
-                        <IconWrapper>
-                          <Plus className="size-3.5 text-[#5b4eff]" />
-                        </IconWrapper>
-                        <span>Nouveau bon de commande</span>
-                      </CommandItem>
-                      {deliveryNotesAllowed && (
+                      {canCreateInvoices && (
+                        <CommandItem
+                          onSelect={() =>
+                            runCommand(() =>
+                              router.push(
+                                "/dashboard/outils/factures?new=true",
+                              ),
+                            )
+                          }
+                        >
+                          <IconWrapper>
+                            <Plus className="size-3.5 text-[#5b4eff]" />
+                          </IconWrapper>
+                          <span>Nouvelle facture</span>
+                        </CommandItem>
+                      )}
+                      {canCreateQuotes && (
+                        <CommandItem
+                          onSelect={() =>
+                            runCommand(() =>
+                              router.push("/dashboard/outils/devis?new=true"),
+                            )
+                          }
+                        >
+                          <IconWrapper>
+                            <Plus className="size-3.5 text-[#5b4eff]" />
+                          </IconWrapper>
+                          <span>Nouveau devis</span>
+                        </CommandItem>
+                      )}
+                      {canCreatePurchaseOrders && (
+                        <CommandItem
+                          onSelect={() =>
+                            runCommand(() =>
+                              router.push(
+                                "/dashboard/outils/bons-commande?new=true",
+                              ),
+                            )
+                          }
+                        >
+                          <IconWrapper>
+                            <Plus className="size-3.5 text-[#5b4eff]" />
+                          </IconWrapper>
+                          <span>Nouveau bon de commande</span>
+                        </CommandItem>
+                      )}
+                      {canCreateDeliveryNotes && (
                         <CommandItem
                           onSelect={() =>
                             runCommand(() =>
@@ -855,18 +925,20 @@ export function SearchCommand() {
                           <span>Nouveau bon de livraison</span>
                         </CommandItem>
                       )}
-                      <CommandItem
-                        onSelect={() =>
-                          runCommand(() =>
-                            router.push("/dashboard/clients?new=true"),
-                          )
-                        }
-                      >
-                        <IconWrapper>
-                          <Plus className="size-3.5 text-[#5b4eff]" />
-                        </IconWrapper>
-                        <span>Nouveau client</span>
-                      </CommandItem>
+                      {canCreateClients && (
+                        <CommandItem
+                          onSelect={() =>
+                            runCommand(() =>
+                              router.push("/dashboard/clients?new=true"),
+                            )
+                          }
+                        >
+                          <IconWrapper>
+                            <Plus className="size-3.5 text-[#5b4eff]" />
+                          </IconWrapper>
+                          <span>Nouveau client</span>
+                        </CommandItem>
+                      )}
                     </CommandGroup>
                     <CommandSeparator />
                   </>
@@ -882,26 +954,30 @@ export function SearchCommand() {
                     </IconWrapper>
                     <span>Tableau de bord</span>
                   </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => router.push("/dashboard/clients"))
-                    }
-                  >
-                    <IconWrapper>
-                      <Users className="size-3.5" />
-                    </IconWrapper>
-                    <span>Clients</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => router.push("/dashboard/catalogues"))
-                    }
-                  >
-                    <IconWrapper>
-                      <Package className="size-3.5" />
-                    </IconWrapper>
-                    <span>Catalogues</span>
-                  </CommandItem>
+                  {canSee("/dashboard/clients") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => router.push("/dashboard/clients"))
+                      }
+                    >
+                      <IconWrapper>
+                        <Users className="size-3.5" />
+                      </IconWrapper>
+                      <span>Clients</span>
+                    </CommandItem>
+                  )}
+                  {canSee("/dashboard/catalogues") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => router.push("/dashboard/catalogues"))
+                      }
+                    >
+                      <IconWrapper>
+                        <Package className="size-3.5" />
+                      </IconWrapper>
+                      <span>Catalogues</span>
+                    </CommandItem>
+                  )}
                   <CommandItem
                     onSelect={() => runCommand(() => openSettings("espaces"))}
                   >
@@ -910,28 +986,32 @@ export function SearchCommand() {
                     </IconWrapper>
                     <span>Collaborateurs</span>
                   </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => router.push("/dashboard/calendar"))
-                    }
-                  >
-                    <IconWrapper>
-                      <Calendar className="size-3.5" />
-                    </IconWrapper>
-                    <span>Calendrier</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/analytiques"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <BarChart3 className="size-3.5" />
-                    </IconWrapper>
-                    <span>Analytics</span>
-                  </CommandItem>
+                  {canSee("/dashboard/calendar") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => router.push("/dashboard/calendar"))
+                      }
+                    >
+                      <IconWrapper>
+                        <Calendar className="size-3.5" />
+                      </IconWrapper>
+                      <span>Calendrier</span>
+                    </CommandItem>
+                  )}
+                  {canSee("/dashboard/outils/analytiques") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/analytiques"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <BarChart3 className="size-3.5" />
+                      </IconWrapper>
+                      <span>Analytics</span>
+                    </CommandItem>
+                  )}
                   <CommandItem
                     onSelect={() =>
                       runCommand(() => openSettings("applications"))
@@ -953,112 +1033,131 @@ export function SearchCommand() {
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Outils">
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/factures"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <Receipt className="size-3.5" />
-                    </IconWrapper>
-                    <span>Factures</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => router.push("/dashboard/outils/devis"))
-                    }
-                  >
-                    <IconWrapper>
-                      <FileText className="size-3.5" />
-                    </IconWrapper>
-                    <span>Devis</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/bons-commande"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <ShoppingCart className="size-3.5" />
-                    </IconWrapper>
-                    <span>Bons de commande</span>
-                  </CommandItem>
-                  {deliveryNotesAllowed && (
+                  {canSee("/dashboard/outils/factures") && (
                     <CommandItem
                       onSelect={() =>
                         runCommand(() =>
-                          router.push("/dashboard/outils/bons-de-livraison"),
+                          router.push("/dashboard/outils/factures"),
                         )
                       }
                     >
                       <IconWrapper>
-                        <Truck className="size-3.5" />
+                        <Receipt className="size-3.5" />
                       </IconWrapper>
-                      <span>Bons de livraison</span>
+                      <span>Factures</span>
                     </CommandItem>
                   )}
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/transactions"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <CreditCard className="size-3.5" />
-                    </IconWrapper>
-                    <span>Transactions</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => router.push("/dashboard/outils/kanban"))
-                    }
-                  >
-                    <IconWrapper>
-                      <Kanban className="size-3.5" />
-                    </IconWrapper>
-                    <span>Kanban</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/signatures-mail"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <Mail className="size-3.5" />
-                    </IconWrapper>
-                    <span>Signatures de mail</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/documents-partages"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <Share2 className="size-3.5" />
-                    </IconWrapper>
-                    <span>Documents partagés</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() =>
-                        router.push("/dashboard/outils/transferts-fichiers"),
-                      )
-                    }
-                  >
-                    <IconWrapper>
-                      <Upload className="size-3.5" />
-                    </IconWrapper>
-                    <span>Transferts de fichiers</span>
-                  </CommandItem>
+                  {canSee("/dashboard/outils/devis") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => router.push("/dashboard/outils/devis"))
+                      }
+                    >
+                      <IconWrapper>
+                        <FileText className="size-3.5" />
+                      </IconWrapper>
+                      <span>Devis</span>
+                    </CommandItem>
+                  )}
+                  {canSee("/dashboard/outils/bons-commande") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/bons-commande"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <ShoppingCart className="size-3.5" />
+                      </IconWrapper>
+                      <span>Bons de commande</span>
+                    </CommandItem>
+                  )}
+                  {deliveryNotesAllowed &&
+                    canSee("/dashboard/outils/bons-de-livraison") && (
+                      <CommandItem
+                        onSelect={() =>
+                          runCommand(() =>
+                            router.push("/dashboard/outils/bons-de-livraison"),
+                          )
+                        }
+                      >
+                        <IconWrapper>
+                          <Truck className="size-3.5" />
+                        </IconWrapper>
+                        <span>Bons de livraison</span>
+                      </CommandItem>
+                    )}
+                  {canSee("/dashboard/outils/transactions") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/transactions"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <CreditCard className="size-3.5" />
+                      </IconWrapper>
+                      <span>Transactions</span>
+                    </CommandItem>
+                  )}
+                  {canSee("/dashboard/outils/kanban") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/kanban"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <Kanban className="size-3.5" />
+                      </IconWrapper>
+                      <span>Kanban</span>
+                    </CommandItem>
+                  )}
+                  {canSee("/dashboard/outils/signatures-mail") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/signatures-mail"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <Mail className="size-3.5" />
+                      </IconWrapper>
+                      <span>Signatures de mail</span>
+                    </CommandItem>
+                  )}
+                  {canSee("/dashboard/outils/documents-partages") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/documents-partages"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <Share2 className="size-3.5" />
+                      </IconWrapper>
+                      <span>Documents partagés</span>
+                    </CommandItem>
+                  )}
+                  {canSee("/dashboard/outils/transferts-fichiers") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() =>
+                          router.push("/dashboard/outils/transferts-fichiers"),
+                        )
+                      }
+                    >
+                      <IconWrapper>
+                        <Upload className="size-3.5" />
+                      </IconWrapper>
+                      <span>Transferts de fichiers</span>
+                    </CommandItem>
+                  )}
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Paramètres">

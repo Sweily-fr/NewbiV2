@@ -22,7 +22,9 @@ import { cn } from "@/src/lib/utils";
 import { useCalendarColorLabels } from "@/src/hooks/useCalendarColorLabels";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 
-export function ColorLegend() {
+// canEdit : ajout et modification des étiquettes (rôle avec écriture sur le
+// calendrier) ; sinon légende en consultation
+export function ColorLegend({ canEdit = true }) {
   const { labels, loading, updateLoading, updateLabels } = useCalendarColorLabels();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -133,7 +135,8 @@ export function ColorLegend() {
                   key={index}
                   type="button"
                   onClick={() => openEditDialog(index)}
-                  className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                  disabled={!canEdit}
+                  className="flex items-center gap-2 py-1 px-1.5 rounded-md hover:bg-muted transition-colors cursor-pointer disabled:cursor-default disabled:hover:bg-transparent"
                 >
                   <span
                     className="h-3 w-3 shrink-0 rounded-full"
@@ -142,12 +145,14 @@ export function ColorLegend() {
                   <span className="text-xs text-muted-foreground truncate flex-1 text-left">
                     {entry.label}
                   </span>
-                  <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                  {canEdit && (
+                    <Pencil className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                  )}
                 </button>
               ))}
             </div>
 
-            {labels.length < 20 && (
+            {canEdit && labels.length < 20 && (
               <Button
                 variant="ghost"
                 size="sm"

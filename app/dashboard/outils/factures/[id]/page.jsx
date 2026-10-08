@@ -95,27 +95,26 @@ function InvoiceDetailsContent() {
             </Button>
           )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled={!canEditInvoices}>
-                Dupliquer
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={!canEditInvoices}>
-                Convertir en devis
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {isDraft && canDeleteInvoices && (
-                <DropdownMenuItem className="text-destructive">
-                  Supprimer
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Menu d'actions : masqué en lecture seule (aucune action possible) */}
+          {canEditInvoices && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Dupliquer</DropdownMenuItem>
+                <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {isDraft && canDeleteInvoices && (
+                  <DropdownMenuItem className="text-destructive">
+                    Supprimer
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

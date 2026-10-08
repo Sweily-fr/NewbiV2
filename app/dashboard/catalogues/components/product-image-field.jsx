@@ -66,6 +66,9 @@ export default function ProductImageField({
     if (!loading && canEditProducts) inputRef.current?.click();
   };
 
+  // Lecture seule sans image : rien à afficher (pas de zone d'envoi)
+  if (!canEditProducts && !value) return null;
+
   return (
     <div className="space-y-2">
       <Label className="font-normal">Image</Label>
@@ -126,34 +129,36 @@ export default function ProductImageField({
                 alt="Image du produit"
                 className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               />
-              <div className="absolute right-2 top-2 flex gap-1.5">
-                <button
-                  type="button"
-                  title="Remplacer"
-                  aria-label="Remplacer l'image"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openPicker();
-                  }}
-                  disabled={loading}
-                  className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
-                >
-                  <RefreshCw className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  title="Retirer"
-                  aria-label="Retirer l'image"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onChange(null);
-                  }}
-                  disabled={loading}
-                  className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-destructive hover:text-white"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
+              {canEditProducts && (
+                <div className="absolute right-2 top-2 flex gap-1.5">
+                  <button
+                    type="button"
+                    title="Remplacer"
+                    aria-label="Remplacer l'image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPicker();
+                    }}
+                    disabled={loading}
+                    className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+                  >
+                    <RefreshCw className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Retirer"
+                    aria-label="Retirer l'image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChange(null);
+                    }}
+                    disabled={loading}
+                    className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-destructive hover:text-white"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <span className="flex flex-col items-center gap-2 px-6 text-center">
@@ -211,6 +216,7 @@ export default function ProductImageField({
             <Switch
               checked={showOnDocuments}
               onCheckedChange={onShowOnDocumentsChange}
+              disabled={!canEditProducts}
               aria-label="Afficher l'image sur les documents"
             />
           </label>

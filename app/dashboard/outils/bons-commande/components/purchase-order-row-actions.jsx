@@ -204,13 +204,16 @@ export default function PurchaseOrderRowActions({
     purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
 
+  // Actions de statut : réservées à l'écriture sur les bons de commande
   const hasStatusActions =
-    isDraft || isConfirmed || isValidated || isInProgress;
+    canEditPurchaseOrders &&
+    (isDraft || isConfirmed || isValidated || isInProgress);
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
     (isValidated || isInProgress || isDelivered) &&
     !hasLinkedInvoices &&
+    canEditPurchaseOrders &&
     canWriteInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
@@ -227,7 +230,7 @@ export default function PurchaseOrderRowActions({
         />
         <ButtonGroup>
           {/* Icône d'envoi par email */}
-          {!isDraft && (
+          {!isDraft && canEditPurchaseOrders && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -235,7 +238,7 @@ export default function PurchaseOrderRowActions({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 p-0 cursor-pointer"
-                    disabled={isReadOnly || !canEditPurchaseOrders}
+                    disabled={isReadOnly}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSendEmail?.(purchaseOrder);
@@ -267,23 +270,22 @@ export default function PurchaseOrderRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSaveAsTemplate?.(purchaseOrder);
-                }}
-                disabled={isReadOnly || !canEditPurchaseOrders}
-              >
-                <BookTemplate className="mr-2 h-4 w-4" />
-                Sauv. modèle
-              </DropdownMenuItem>
+              {canEditPurchaseOrders && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSaveAsTemplate?.(purchaseOrder);
+                  }}
+                  disabled={isReadOnly}
+                >
+                  <BookTemplate className="mr-2 h-4 w-4" />
+                  Sauv. modèle
+                </DropdownMenuItem>
+              )}
               {/* Comme les devis en attente : un BC confirmé reste modifiable
                   (l'API verrouille seulement préfixe/numéro et DELIVERED) */}
-              {(isDraft || isConfirmed) && (
-                <DropdownMenuItem
-                  onClick={handleEdit}
-                  disabled={isReadOnly || !canEditPurchaseOrders}
-                >
+              {canEditPurchaseOrders && (isDraft || isConfirmed) && (
+                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier
                 </DropdownMenuItem>
@@ -294,28 +296,28 @@ export default function PurchaseOrderRowActions({
                 <DropdownMenuSeparator />
               )}
 
-              {isDraft && (
+              {hasStatusActions && isDraft && (
                 <DropdownMenuItem
                   onClick={handleConfirm}
-                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
+                  disabled={isLoading || isReadOnly}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Confirmer
                 </DropdownMenuItem>
               )}
 
-              {isConfirmed && (
+              {hasStatusActions && isConfirmed && (
                 <>
                   <DropdownMenuItem
                     onClick={handleValidate}
-                    disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
+                    disabled={isLoading || isReadOnly}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Marquer comme validé
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleRevertToDraft}
-                    disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
+                    disabled={isLoading || isReadOnly}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Repasser en brouillon
@@ -323,9 +325,7 @@ export default function PurchaseOrderRowActions({
                   {canCancel && (
                     <DropdownMenuItem
                       onClick={handleCancel}
-                      disabled={
-                        isLoading || isReadOnly || !canEditPurchaseOrders
-                      }
+                      disabled={isLoading || isReadOnly}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
                       Annuler
@@ -334,20 +334,20 @@ export default function PurchaseOrderRowActions({
                 </>
               )}
 
-              {isValidated && (
+              {hasStatusActions && isValidated && (
                 <DropdownMenuItem
                   onClick={handleStartProgress}
-                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
+                  disabled={isLoading || isReadOnly}
                 >
                   <Play className="mr-2 h-4 w-4" />
                   Démarrer le traitement
                 </DropdownMenuItem>
               )}
 
-              {isInProgress && (
+              {hasStatusActions && isInProgress && (
                 <DropdownMenuItem
                   onClick={handleDeliver}
-                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
+                  disabled={isLoading || isReadOnly}
                 >
                   <Truck className="mr-2 h-4 w-4" />
                   Marquer comme livré
@@ -357,7 +357,7 @@ export default function PurchaseOrderRowActions({
               {canConvertToInvoice && (
                 <DropdownMenuItem
                   onClick={handleConvertToInvoice}
-                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
+                  disabled={isLoading || isReadOnly}
                 >
                   <FileCheck className="mr-2 h-4 w-4" />
                   Convertir en facture

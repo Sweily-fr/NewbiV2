@@ -34,6 +34,7 @@ import {
   useRunRecurrenceDetection,
 } from "@/src/hooks/useDetectedRecurrences";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { DetectedRecurrenceDialog } from "./detected-recurrence-dialog";
 import {
   FREQUENCY_LABELS,
@@ -119,6 +120,12 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
   const { setMuted, loading: muting } = useMuteDetectedRecurrence();
   const { deleteRecurrence, loading: deleting } = useDeleteDetectedRecurrence();
   const { runDetection, loading: detecting } = useRunRecurrenceDetection();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // analyser, modifier, ajouter et masquer demandent l'écriture, supprimer
+  // demande la suppression
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canWrite("forecast");
+  const canDeleteForecast = !isReady || canDelete("forecast");
   const [expanded, setExpanded] = useState(false);
   const [toDelete, setToDelete] = useState(null);
   const [toEdit, setToEdit] = useState(null);
@@ -166,23 +173,31 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={runDetection}
-          disabled={detecting}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw size={12} className={detecting ? "animate-spin" : ""} />
-          Analyser
-        </button>
+        {canEditForecast && (
+          <button
+            type="button"
+            onClick={runDetection}
+            disabled={detecting}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={detecting ? "animate-spin" : ""} />
+            Analyser
+          </button>
+        )}
       </div>
 
       {recurrences.length === 0 ? (
         <p className="text-xs text-muted-foreground py-6 text-center">
-          Aucune récurrence détectée. Cliquez sur «&nbsp;Analyser&nbsp;» pour
-          rechercher les abonnements et factures qui reviennent à intervalle
-          régulier (hebdomadaire, mensuel, trimestriel, annuel…) dans vos
-          transactions bancaires et vos factures.
+          {canEditForecast ? (
+            <>
+              Aucune récurrence détectée. Cliquez sur «&nbsp;Analyser&nbsp;»
+              pour rechercher les abonnements et factures qui reviennent à
+              intervalle régulier (hebdomadaire, mensuel, trimestriel, annuel…)
+              dans vos transactions bancaires et vos factures.
+            </>
+          ) : (
+            "Aucune récurrence détectée."
+          )}
         </p>
       ) : (
         <>
@@ -267,7 +282,7 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                     {/* « Modifier » : les valeurs sont communes à tous les
                         scénarios, donc modifiables depuis Base seulement
                         (comme le crayon des saisies de Base). */}
-                    {isScenario ? (
+                    {!canEditForecast ? null : isScenario ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span className="inline-flex">
@@ -292,7 +307,7 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                         title="Modifier le libellé, le montant, la périodicité ou la catégorie de cette récurrence"
                       />
                     )}
-                    {onCreateForecast && !rec.isMuted && (
+                    {canEditForecast && onCreateForecast && !rec.isMuted && (
                       <RowAction
                         icon={Plus}
                         label="Ajouter"
@@ -313,19 +328,21 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                         title="Ajouter une prévision manuelle à partir de cette détection (la détection sera masquée)"
                       />
                     )}
-                    <button
-                      type="button"
-                      onClick={() => setMuted(rec.id, !rec.isMuted)}
-                      disabled={muting}
-                      className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                      title={muteTitle}
-                    >
-                      {rec.isMuted ? <Eye size={13} /> : <EyeOff size={13} />}
-                    </button>
+                    {canEditForecast && (
+                      <button
+                        type="button"
+                        onClick={() => setMuted(rec.id, !rec.isMuted)}
+                        disabled={muting}
+                        className="p-1 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                        title={muteTitle}
+                      >
+                        {rec.isMuted ? <Eye size={13} /> : <EyeOff size={13} />}
+                      </button>
+                    )}
                     {/* La suppression est définitive et commune à tous les
                         scénarios : dans un scénario, on ne propose que le
                         masquage local. */}
-                    {!isScenario && (
+                    {!isScenario && canDeleteForecast && (
                       <button
                         type="button"
                         onClick={() => setToDelete(rec)}

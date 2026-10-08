@@ -50,6 +50,31 @@ import InvoiceMobileFullscreen from "@/app/dashboard/outils/factures/components/
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
 import QuoteMobileFullscreen from "@/app/dashboard/outils/devis/components/quote-mobile-fullscreen";
 
+// Module dont dépend une entrée d'activité (documents, rappels, listes) :
+// masquée sans lecture du module
+const DOCUMENT_TYPE_MODULES = {
+  invoice: "invoices",
+  quote: "quotes",
+  creditNote: "creditNotes",
+  purchaseOrder: "purchaseOrders",
+  deliveryNote: "deliveryNotes",
+};
+
+function activityModule(activity) {
+  const type = activity.type || "";
+  if (type === "credit_note_created") return "creditNotes";
+  if (type.startsWith("invoice")) return "invoices";
+  if (type.startsWith("quote")) return "quotes";
+  if (type === "document_email_sent") {
+    return DOCUMENT_TYPE_MODULES[activity.metadata?.documentType] || null;
+  }
+  if (type === "reminder_created") return "calendar";
+  if (type === "added_to_list" || type === "removed_from_list") {
+    return "clientLists";
+  }
+  return null;
+}
+
 const ClientActivity = ({
   client,
   workspaceId,
@@ -114,7 +139,7 @@ const ClientActivity = ({
     useDeleteClientNote(workspaceId);
   const { createEvent } = useCreateEvent();
   const { addActivity } = useAddClientActivity(workspaceId);
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
   // Les notes en attente (création du contact) restent modifiables localement.
   const canEditClients = !isReady || canWrite("clients");
@@ -351,8 +376,12 @@ const ClientActivity = ({
       .filter(
         (a) => a.type !== "note_added" && a.type !== "automation_executed",
       )
+      .filter((a) => {
+        const moduleKey = activityModule(a);
+        return !moduleKey || !isReady || canRead(moduleKey);
+      })
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  }, [client?.activity]);
+  }, [client?.activity, isReady, canRead]);
 
   const allActivity = useMemo(() => {
     return [
@@ -985,38 +1014,36 @@ const ClientActivity = ({
           </TabsTrigger>
         </TabsList>
 
-        {/* Zone de saisie de note - Sticky en bas */}
-        <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
-          <Textarea
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            placeholder="Ajouter une note..."
-            className="min-h-[80px] text-sm bg-background border-border"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                handleAddNote();
-              }
-            }}
-          />
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-muted-foreground">
-              Cmd/Ctrl + Entrée pour envoyer
-            </span>
-            <Button
-              size="sm"
-              onClick={handleAddNote}
-              disabled={
-                !newNote.trim() ||
-                addingNote ||
-                (!isCreating && !canEditClients)
-              }
-            >
-              <Send className="h-3 w-3 mr-2" />
-              Envoyer
-            </Button>
+        {/* Zone de saisie de note - Sticky en bas (masquée sans écriture) */}
+        {(isCreating || canEditClients) && (
+          <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
+            <Textarea
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Ajouter une note..."
+              className="min-h-[80px] text-sm bg-background border-border"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleAddNote();
+                }
+              }}
+            />
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">
+                Cmd/Ctrl + Entrée pour envoyer
+              </span>
+              <Button
+                size="sm"
+                onClick={handleAddNote}
+                disabled={!newNote.trim() || addingNote}
+              >
+                <Send className="h-3 w-3 mr-2" />
+                Envoyer
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </Tabs>
 
       {/* Sidebar pour desktop - Facture */}
@@ -1072,7 +1099,8 @@ const ClientActivity = ({
         onDelete={() => {}}
       />
 
-      {/* Dialog de visualisation d'un rappel existant */}
+      {/* Dialog de visualisation d'un rappel existant (consultation seule :
+          ni enregistrement ni suppression depuis la fiche) */}
       <EventDialog
         event={selectedReminderEvent}
         isOpen={isViewReminderOpen}
@@ -1082,6 +1110,8 @@ const ClientActivity = ({
         }}
         onSave={() => {}}
         onDelete={() => {}}
+        canEdit={false}
+        canDelete={false}
       />
     </div>
   );

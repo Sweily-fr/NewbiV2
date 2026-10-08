@@ -458,6 +458,9 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 // ==================== Segment Detail View ====================
 function SegmentDetailView({ segment, onBack }) {
   const router = useRouter();
+  const { canRead, isReady } = useMyPermissions();
+  // Fiche client ouvrable seulement avec la lecture des clients
+  const canOpenClients = !isReady || canRead("clients");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -616,10 +619,12 @@ function SegmentDetailView({ segment, onBack }) {
                 {clients.map((client) => (
                   <tr
                     key={client.id}
-                    onClick={() =>
-                      router.push(`/dashboard/clients/${client.id}`)
-                    }
-                    className="border-b hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => {
+                      if (canOpenClients) {
+                        router.push(`/dashboard/clients/${client.id}`);
+                      }
+                    }}
+                    className={`border-b hover:bg-muted/50 transition-colors ${canOpenClients ? "cursor-pointer" : ""}`}
                   >
                     <td className="p-2 pl-4 sm:pl-6 align-middle w-[35%]">
                       <div className="flex items-center gap-2">
@@ -718,8 +723,8 @@ function SegmentsContent() {
   const canUseSegments = planLimits.clientSegments;
   const { canWrite, canDelete, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canDeleteClients = !isReady || canDelete("clients");
+  const canEditClients = !isReady || canWrite("clientSegments");
+  const canDeleteClients = !isReady || canDelete("clientSegments");
 
   const { segments, loading, refetch } = useClientSegments();
   const { createSegment, loading: creating } = useCreateClientSegment();

@@ -133,7 +133,7 @@ export default function DeliveryNoteRowActions({
           aria-hidden="true"
         />
         <ButtonGroup>
-          {!isDraft && (
+          {!isDraft && canEditDeliveryNotes && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -141,7 +141,7 @@ export default function DeliveryNoteRowActions({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 p-0 cursor-pointer"
-                    disabled={isReadOnly || !canEditDeliveryNotes}
+                    disabled={isReadOnly}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSendEmail?.(deliveryNote);
@@ -174,31 +174,27 @@ export default function DeliveryNoteRowActions({
                 Voir
               </DropdownMenuItem>
               {/* Un BL émis reste modifiable tant qu'il n'est pas livré */}
-              {(isDraft || isPending || isShipped) && (
-                <DropdownMenuItem
-                  onClick={handleEdit}
-                  disabled={isReadOnly || !canEditDeliveryNotes}
-                >
+              {canEditDeliveryNotes && (isDraft || isPending || isShipped) && (
+                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier
                 </DropdownMenuItem>
               )}
 
-              {(isDraft || isPending || isShipped || canInvoice) && (
-                <DropdownMenuSeparator />
-              )}
+              {((canEditDeliveryNotes && (isDraft || isPending || isShipped)) ||
+                canInvoice) && <DropdownMenuSeparator />}
 
-              {isDraft && (
+              {canEditDeliveryNotes && isDraft && (
                 <DropdownMenuItem
                   onClick={handleView}
-                  disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
+                  disabled={isLoading || isReadOnly}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Émettre le bon de livraison
                 </DropdownMenuItem>
               )}
 
-              {isPending && (
+              {canEditDeliveryNotes && isPending && (
                 <>
                   <DropdownMenuItem
                     onClick={() =>
@@ -207,14 +203,14 @@ export default function DeliveryNoteRowActions({
                         "Bon de livraison marqué comme expédié",
                       )
                     }
-                    disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
+                    disabled={isLoading || isReadOnly}
                   >
                     <Truck className="mr-2 h-4 w-4" />
                     Marquer comme expédié
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setShowReception(true)}
-                    disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
+                    disabled={isLoading || isReadOnly}
                   >
                     <PackageCheck className="mr-2 h-4 w-4" />
                     Marquer comme livré
@@ -226,7 +222,7 @@ export default function DeliveryNoteRowActions({
                         "Bon de livraison repassé en brouillon",
                       )
                     }
-                    disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
+                    disabled={isLoading || isReadOnly}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Repasser en brouillon
@@ -234,10 +230,10 @@ export default function DeliveryNoteRowActions({
                 </>
               )}
 
-              {isShipped && (
+              {canEditDeliveryNotes && isShipped && (
                 <DropdownMenuItem
                   onClick={() => setShowReception(true)}
-                  disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
+                  disabled={isLoading || isReadOnly}
                 >
                   <PackageCheck className="mr-2 h-4 w-4" />
                   Marquer comme livré
@@ -254,7 +250,7 @@ export default function DeliveryNoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {canCancel && !isDraft && (
+              {canEditDeliveryNotes && canCancel && !isDraft && (
                 <DropdownMenuItem
                   onClick={() =>
                     changeTo(
@@ -262,7 +258,7 @@ export default function DeliveryNoteRowActions({
                       "Bon de livraison annulé",
                     )
                   }
-                  disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
+                  disabled={isLoading || isReadOnly}
                 >
                   <XCircle className="mr-2 h-4 w-4" />
                   Annuler

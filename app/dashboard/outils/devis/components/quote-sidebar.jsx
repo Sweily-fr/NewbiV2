@@ -91,8 +91,12 @@ export default function QuoteSidebar({
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { workspaceId } = useRequiredWorkspace();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
+  const { canRead, canWrite, isReady } = useMyPermissions();
   const canEditQuotes = !isReady || canWrite("quotes");
+  // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
+  const canReadInvoices = !isReady || canRead("invoices");
+  const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
+  const canReadDeliveryNotes = !isReady || canRead("deliveryNotes");
   // Conversions : création dans le module cible
   const canConvertToInvoice =
     canEditQuotes && (!isReady || canWrite("invoices"));
@@ -813,7 +817,8 @@ export default function QuoteSidebar({
           </div>
 
           {/* Bons de livraison liés (créés à partir de ce devis) */}
-          {quote.linkedDeliveryNotes &&
+          {canReadDeliveryNotes &&
+            quote.linkedDeliveryNotes &&
             quote.linkedDeliveryNotes.length > 0 && (
               <>
                 <Separator />
@@ -841,7 +846,8 @@ export default function QuoteSidebar({
             )}
 
           {/* Bons de commande liés (créés à partir de ce devis) */}
-          {quote.linkedPurchaseOrders &&
+          {canReadPurchaseOrders &&
+            quote.linkedPurchaseOrders &&
             quote.linkedPurchaseOrders.length > 0 && (
               <>
                 <Separator />
@@ -869,7 +875,7 @@ export default function QuoteSidebar({
             )}
 
           {/* Liste des factures liées */}
-          {quote.status === QUOTE_STATUS.COMPLETED && (
+          {canReadInvoices && quote.status === QUOTE_STATUS.COMPLETED && (
             <>
               <Separator />
               <LinkedInvoicesList quote={quote} />

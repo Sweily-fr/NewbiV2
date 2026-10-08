@@ -85,6 +85,7 @@ function DeliveryNotesContent() {
               variant="primary"
               onClick={handleNewDeliveryNote}
               className="cursor-pointer"
+              hideIfNoAccess={true}
               data-testid="new-delivery-note-button"
               tooltipNoAccess="Vous n'avez pas la permission de créer des bons de livraison"
             >

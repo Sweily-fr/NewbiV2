@@ -205,11 +205,11 @@ export function TransactionDetailDrawer({
     : undefined;
   const { canWrite, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
-  // Rattacher ou détacher une facture d'achat relève du module des factures
-  // d'achat côté API.
+  // En lecture seule, aucune action n'est affichée. Rattacher ou détacher une
+  // facture d'achat relève aussi du module des factures d'achat côté API.
   const canEditBanking = !isReady || canWrite("banking");
   const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
-  const roleTooltip = "Votre rôle ne permet pas cette action";
+  const canLinkPurchaseInvoices = canEditBanking && canEditPurchaseInvoices;
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -526,9 +526,11 @@ export function TransactionDetailDrawer({
   const canPickInvoice =
     transaction?.amount > 0 &&
     (!isManualTransaction || transaction?.type === "INCOME");
-  // Rattachement d'une facture d'achat existante : dépenses uniquement.
+  // Rattachement d'une facture d'achat existante : dépenses uniquement, et
+  // seulement si le rôle peut rattacher (transactions et factures d'achat).
   const canPickPurchaseInvoice =
     !isCreateMode &&
+    canLinkPurchaseInvoices &&
     (transaction?.amount < 0 ||
       (isManualTransaction && transaction?.type === "EXPENSE"));
   // Transaction exclue du rapprochement par une action "ignorer" : proposer
@@ -1558,27 +1560,36 @@ export function TransactionDetailDrawer({
             </div>
 
             {/* Description : seul champ texte modifiable d'une transaction
-                bancaire (enregistrée au blur) */}
-            {!isCreateMode && isBankTransaction && !isEditingForm && (
-              <div className="space-y-3">
-                <p className="text-sm font-normal text-muted-foreground">
-                  Description
-                </p>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => handleChange("description")(e.target.value)}
-                  onBlur={handleDescriptionSave}
-                  placeholder="Description de la transaction"
-                  rows={3}
-                  className="rounded-xl"
-                  disabled={isReadOnly || !canEditBanking}
-                  title={
-                    readOnlyTooltip ||
-                    (canEditBanking ? undefined : roleTooltip)
-                  }
-                />
-              </div>
-            )}
+                bancaire (enregistrée au blur). Rôle en lecture seule : texte
+                simple, sans champ. */}
+            {!isCreateMode &&
+              isBankTransaction &&
+              !isEditingForm &&
+              (canEditBanking || formData.description) && (
+                <div className="space-y-3">
+                  <p className="text-sm font-normal text-muted-foreground">
+                    Description
+                  </p>
+                  {canEditBanking ? (
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        handleChange("description")(e.target.value)
+                      }
+                      onBlur={handleDescriptionSave}
+                      placeholder="Description de la transaction"
+                      rows={3}
+                      className="rounded-xl"
+                      disabled={isReadOnly}
+                      title={readOnlyTooltip}
+                    />
+                  ) : (
+                    <p className="text-sm text-foreground whitespace-pre-wrap break-words">
+                      {formData.description}
+                    </p>
+                  )}
+                </div>
+              )}
 
             {/* Référence bancaire brute (Bridge provider_description) :
                 conserve les références de virement (ex. numéros de facture)
@@ -1853,34 +1864,33 @@ export function TransactionDetailDrawer({
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              const result = await unlinkTransaction(
-                                transaction.id,
-                                inv.id,
-                              );
-                              if (result.success) {
-                                toast.success("Facture détachée");
-                                onRefresh?.();
-                              } else {
-                                toast.error(result.error || "Erreur");
+                        {canEditBanking && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const result = await unlinkTransaction(
+                                  transaction.id,
+                                  inv.id,
+                                );
+                                if (result.success) {
+                                  toast.success("Facture détachée");
+                                  onRefresh?.();
+                                } else {
+                                  toast.error(result.error || "Erreur");
+                                }
+                              } catch (err) {
+                                toast.error("Erreur lors du détachement");
                               }
-                            } catch (err) {
-                              toast.error("Erreur lors du détachement");
-                            }
-                          }}
-                          disabled={!canEditBanking}
-                          title={
-                            canEditBanking ? "Détacher la facture" : roleTooltip
-                          }
-                        >
-                          <Unlink className="h-4 w-4" />
-                        </Button>
+                            }}
+                            title="Détacher la facture"
+                          >
+                            <Unlink className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                     {transaction.reconciliationDate && (
@@ -1951,27 +1961,24 @@ export function TransactionDetailDrawer({
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          const result = await unlinkImportedInvoice(
-                            transaction.id,
-                            inv.id,
-                          );
-                          if (result?.success) onRefresh?.();
-                        }}
-                        disabled={!canEditBanking}
-                        title={
-                          canEditBanking
-                            ? "Détacher la facture importée"
-                            : roleTooltip
-                        }
-                      >
-                        <Unlink className="h-4 w-4" />
-                      </Button>
+                      {canEditBanking && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const result = await unlinkImportedInvoice(
+                              transaction.id,
+                              inv.id,
+                            );
+                            if (result?.success) onRefresh?.();
+                          }}
+                          title="Détacher la facture importée"
+                        >
+                          <Unlink className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -2093,32 +2100,30 @@ export function TransactionDetailDrawer({
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUnlinkPurchaseInvoice(pi);
-                            }}
-                            disabled={
-                              isReadOnly ||
-                              !canEditPurchaseInvoices ||
-                              unlinkingPurchaseInvoiceId !== null
-                            }
-                            title={
-                              readOnlyTooltip ||
-                              (canEditPurchaseInvoices
-                                ? "Détacher la facture d'achat"
-                                : roleTooltip)
-                            }
-                          >
-                            {unlinkingPurchaseInvoiceId === pi.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Unlink className="h-4 w-4" />
-                            )}
-                          </Button>
+                          {canLinkPurchaseInvoices && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnlinkPurchaseInvoice(pi);
+                              }}
+                              disabled={
+                                isReadOnly ||
+                                unlinkingPurchaseInvoiceId !== null
+                              }
+                              title={
+                                readOnlyTooltip || "Détacher la facture d'achat"
+                              }
+                            >
+                              {unlinkingPurchaseInvoiceId === pi.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Unlink className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2146,12 +2151,9 @@ export function TransactionDetailDrawer({
                       size="sm"
                       className="h-7 px-2 text-xs"
                       onClick={() => setShowPurchaseInvoicePicker(true)}
-                      disabled={isReadOnly || !canEditPurchaseInvoices}
+                      disabled={isReadOnly}
                       title={
-                        readOnlyTooltip ||
-                        (canEditPurchaseInvoices
-                          ? "Rechercher une facture d'achat"
-                          : roleTooltip)
+                        readOnlyTooltip || "Rechercher une facture d'achat"
                       }
                     >
                       <Link2 className="h-3 w-3 mr-1" />
@@ -2263,23 +2265,22 @@ export function TransactionDetailDrawer({
                     Rapprochement ignoré pour cette transaction
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2 text-xs shrink-0"
-                  onClick={handleUnignoreReconciliation}
-                  disabled={isReadOnly || !canEditBanking || isUnignoring}
-                  title={
-                    readOnlyTooltip ||
-                    (canEditBanking ? undefined : roleTooltip)
-                  }
-                >
-                  {isUnignoring ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    "Réactiver"
-                  )}
-                </Button>
+                {canEditBanking && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs shrink-0"
+                    onClick={handleUnignoreReconciliation}
+                    disabled={isReadOnly || isUnignoring}
+                    title={readOnlyTooltip}
+                  >
+                    {isUnignoring ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      "Réactiver"
+                    )}
+                  </Button>
+                )}
               </div>
             )}
 
@@ -2289,6 +2290,7 @@ export function TransactionDetailDrawer({
                 d'argent sans suggestion, un sélecteur avec recherche permet le
                 rattachement manuel. */}
             {!isCreateMode &&
+              canEditBanking &&
               !isIgnoredReconciliation &&
               (matchingInvoices.length > 0 || canPickInvoice) && (
                 <div className="space-y-3">
@@ -2309,13 +2311,8 @@ export function TransactionDetailDrawer({
                         size="sm"
                         className="h-7 px-2 text-xs"
                         onClick={() => setShowInvoicePicker(true)}
-                        disabled={isReadOnly || !canEditBanking}
-                        title={
-                          readOnlyTooltip ||
-                          (canEditBanking
-                            ? "Rechercher une facture"
-                            : roleTooltip)
-                        }
+                        disabled={isReadOnly}
+                        title={readOnlyTooltip || "Rechercher une facture"}
                       >
                         <Link2 className="h-3 w-3 mr-1" />
                         Rattacher
@@ -2371,17 +2368,9 @@ export function TransactionDetailDrawer({
                                 )
                           }
                           disabled={
-                            isReadOnly ||
-                            !canEditBanking ||
-                            isLinking ||
-                            isLinkingImported
+                            isReadOnly || isLinking || isLinkingImported
                           }
-                          title={
-                            readOnlyTooltip ||
-                            (canEditBanking
-                              ? "Rapprocher cette facture"
-                              : roleTooltip)
-                          }
+                          title={readOnlyTooltip || "Rapprocher cette facture"}
                         >
                           {isLinking ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -2545,16 +2534,13 @@ export function TransactionDetailDrawer({
                 >
                   Annuler
                 </Button>
-                {(isCreateMode || isEditMode) && (
+                {(isCreateMode || isEditMode) && canEditBanking && (
                   <Button
                     variant="primary"
                     className="flex-1 font-normal gap-1.5"
                     onClick={handleSubmit}
-                    disabled={isReadOnly || !canEditBanking}
-                    title={
-                      readOnlyTooltip ||
-                      (canEditBanking ? undefined : roleTooltip)
-                    }
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip}
                   >
                     {isCreateMode ? (
                       <Plus className="h-4 w-4" />

@@ -294,16 +294,17 @@ function FolderTreeSelect({ folders, value, onValueChange, placeholder }) {
   );
 }
 
-// Combobox client avec recherche intégrée dans le dropdown
+// Combobox client avec recherche intégrée dans le dropdown. Charge elle-même
+// les clients : montée seulement si le rôle peut lire le module Clients.
 function ClientCombobox({
   value,
   valueName,
   onSelect,
-  clients,
   search,
   onSearchChange,
 }) {
   const [open, setOpen] = useState(false);
+  const { clients } = useClients(1, 50, search);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -387,7 +388,10 @@ function SettingsPopover({ config, onSave }) {
     config?.filterClientName || "",
   );
   const [clientSearch, setClientSearch] = useState("");
-  const { clients } = useClients(1, 50, clientSearch);
+  // Sous-dossier « par client » : lit le module Clients
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, isReady } = useMyPermissions();
+  const canReadClients = !isReady || canRead("clients");
 
   // Re-sync state from config when popover opens
   useEffect(() => {
@@ -471,19 +475,21 @@ function SettingsPopover({ config, onSave }) {
                     <CalendarDays className="h-3 w-3" />
                     Par année
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setSubfolderType("client")}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors border-l border-input",
-                      subfolderType === "client"
-                        ? "bg-[#5b50ff] text-white"
-                        : "hover:bg-accent/50 text-muted-foreground",
-                    )}
-                  >
-                    <User className="h-3 w-3" />
-                    Par client
-                  </button>
+                  {canReadClients && (
+                    <button
+                      type="button"
+                      onClick={() => setSubfolderType("client")}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors border-l border-input",
+                        subfolderType === "client"
+                          ? "bg-[#5b50ff] text-white"
+                          : "hover:bg-accent/50 text-muted-foreground",
+                      )}
+                    >
+                      <User className="h-3 w-3" />
+                      Par client
+                    </button>
+                  )}
                 </div>
 
                 {/* Year selector */}
@@ -510,11 +516,10 @@ function SettingsPopover({ config, onSave }) {
                 )}
 
                 {/* Client combobox with integrated search */}
-                {subfolderType === "client" && (
+                {subfolderType === "client" && canReadClients && (
                   <ClientCombobox
                     value={filterClientId}
                     valueName={filterClientName}
-                    clients={clients}
                     search={clientSearch}
                     onSearchChange={setClientSearch}
                     onSelect={(id, name) => {

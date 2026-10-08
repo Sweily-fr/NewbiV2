@@ -42,6 +42,7 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Switch } from "@/src/components/ui/switch";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 import LegalInfoSettingsSection from "@/src/components/settings/legal-info-settings-section";
 import DocumentAnnexField from "@/src/components/documents/document-annex-field";
@@ -67,6 +68,10 @@ export default function QuoteSettingsView({
     formState: { errors, dirtyFields },
   } = useFormContext();
   const data = watch();
+  // Coordonnées bancaires communes : paramètres de l'entreprise (tout
+  // autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditOrgSettings = !isReady || canWrite("orgSettings");
 
   // Hooks pour la numérotation séquentielle (filtrés par préfixe courant)
   const autoNumbering = data.autoNumbering || false;
@@ -541,17 +546,19 @@ export default function QuoteSettingsView({
                     ? "Votre IBAN, votre BIC et le nom de votre banque sont communs à tous vos documents."
                     : "Aucune coordonnée bancaire n'est configurée pour votre entreprise."}
                 </p>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 h-auto font-medium flex items-center gap-1 underline"
-                  onClick={() => setShowBankDetailsDialog(true)}
-                >
-                  <Settings className="h-4 w-4" />
-                  {hasBankDetails
-                    ? "Modifier vos coordonnées bancaires"
-                    : "Configurer les coordonnées bancaires"}
-                </Button>
+                {canEditOrgSettings && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto font-medium flex items-center gap-1 underline"
+                    onClick={() => setShowBankDetailsDialog(true)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    {hasBankDetails
+                      ? "Modifier vos coordonnées bancaires"
+                      : "Configurer les coordonnées bancaires"}
+                  </Button>
+                )}
               </div>
 
               {hasBankDetails && (

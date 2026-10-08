@@ -81,7 +81,9 @@ const providers = [
   },
 ];
 
-export function CalendarConnectionsPanel() {
+// canManage : connecter, synchroniser, déconnecter (rôle avec écriture sur
+// le calendrier) ; sinon consultation des calendriers déjà connectés
+export function CalendarConnectionsPanel({ canManage = true }) {
   const { connections, loading, refetch } = useCalendarConnections();
   const [showAppleDialog, setShowAppleDialog] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -160,6 +162,9 @@ export function CalendarConnectionsPanel() {
     [isReady],
   );
 
+  // Rien à consulter ni à connecter : pas de bouton
+  if (!canManage && connections.length === 0) return null;
+
   return (
     <>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -200,6 +205,7 @@ export function CalendarConnectionsPanel() {
                       key={connection.id}
                       connection={connection}
                       onRefresh={refetch}
+                      canManage={canManage}
                     />
                   ))}
                 </div>
@@ -207,7 +213,7 @@ export function CalendarConnectionsPanel() {
             )}
 
             {/* Available providers */}
-            {availableProviders.length > 0 && (
+            {canManage && availableProviders.length > 0 && (
               <>
                 {connections.length > 0 && <Separator />}
                 <div className="space-y-2">

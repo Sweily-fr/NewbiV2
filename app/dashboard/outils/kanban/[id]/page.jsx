@@ -555,6 +555,9 @@ function EmojiPicker({ boardEmoji, onSelect, onClear, disabled = false }) {
     return filtered;
   }, [search]);
 
+  // Lecture seule sans emoji : pas de bouton « choisir un emoji »
+  if (disabled && !boardEmoji) return null;
+
   return (
     <Popover
       open={isOpen}
@@ -719,9 +722,8 @@ function KanbanBoardPageContent({ params }) {
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canWrite, isReady: isPermissionsReady } = useMyPermissions();
   const canEditKanban = !isPermissionsReady || canWrite("kanban");
-  const createTooltip =
-    readOnlyTooltip ||
-    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
+  // « Convertir en facture » crée une facture : droit d'écriture sur les factures
+  const canCreateInvoice = !isPermissionsReady || canWrite("invoices");
 
   // Hook viewMode en premier pour avoir le bon skeleton dès le début
   const {
@@ -1573,111 +1575,116 @@ function KanbanBoardPageContent({ params }) {
 
             {/* Priorité / Date / Membres */}
             <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5 shrink-0">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center disabled:cursor-default disabled:hover:bg-transparent"
-                    title="Priorité du projet"
-                    disabled={!canEditKanban}
+              {/* En lecture seule, seules les valeurs renseignées restent visibles */}
+              {(canEditKanban || boardPriority) && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center disabled:cursor-default disabled:hover:bg-transparent"
+                      title="Priorité du projet"
+                      disabled={!canEditKanban}
+                    >
+                      <Flag
+                        className={`h-3.5 w-3.5 transition-colors ${
+                          boardPriority === "high"
+                            ? "text-red-500 fill-red-500"
+                            : boardPriority === "medium"
+                              ? "text-yellow-500 fill-yellow-500"
+                              : boardPriority === "low"
+                                ? "text-green-500 fill-green-500"
+                                : "text-muted-foreground/40 hover:text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-44 p-0"
+                    side="bottom"
+                    align="start"
                   >
-                    <Flag
-                      className={`h-3.5 w-3.5 transition-colors ${
-                        boardPriority === "high"
-                          ? "text-red-500 fill-red-500"
-                          : boardPriority === "medium"
-                            ? "text-yellow-500 fill-yellow-500"
-                            : boardPriority === "low"
-                              ? "text-green-500 fill-green-500"
-                              : "text-muted-foreground/40 hover:text-muted-foreground"
-                      }`}
-                    />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-44 p-0"
-                  side="bottom"
-                  align="start"
-                >
-                  <div className="p-1.5 space-y-0.5">
-                    {[
-                      {
-                        value: "high",
-                        label: "Urgent",
-                        color: "text-red-500 fill-red-500",
-                      },
-                      {
-                        value: "medium",
-                        label: "Moyen",
-                        color: "text-yellow-500 fill-yellow-500",
-                      },
-                      {
-                        value: "low",
-                        label: "Faible",
-                        color: "text-green-500 fill-green-500",
-                      },
-                      { value: "", label: "Aucune", color: "text-gray-400" },
-                    ].map((p) => (
-                      <button
-                        key={p.value || "none"}
-                        onClick={() => updateBoardField("priority", p.value)}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer ${boardPriority === p.value || (!boardPriority && !p.value) ? "bg-muted/60" : ""}`}
-                      >
-                        <Flag className={`h-3.5 w-3.5 ${p.color}`} />
-                        <span className="text-xs">{p.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    <div className="p-1.5 space-y-0.5">
+                      {[
+                        {
+                          value: "high",
+                          label: "Urgent",
+                          color: "text-red-500 fill-red-500",
+                        },
+                        {
+                          value: "medium",
+                          label: "Moyen",
+                          color: "text-yellow-500 fill-yellow-500",
+                        },
+                        {
+                          value: "low",
+                          label: "Faible",
+                          color: "text-green-500 fill-green-500",
+                        },
+                        { value: "", label: "Aucune", color: "text-gray-400" },
+                      ].map((p) => (
+                        <button
+                          key={p.value || "none"}
+                          onClick={() => updateBoardField("priority", p.value)}
+                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer ${boardPriority === p.value || (!boardPriority && !p.value) ? "bg-muted/60" : ""}`}
+                        >
+                          <Flag className={`h-3.5 w-3.5 ${p.color}`} />
+                          <span className="text-xs">{p.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
 
               {/* Date d'échéance */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-default disabled:hover:bg-transparent"
-                    title="Échéance du projet"
-                    disabled={!canEditKanban}
+              {(canEditKanban || boardDueDate) && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+                      title="Échéance du projet"
+                      disabled={!canEditKanban}
+                    >
+                      <Calendar
+                        className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? "text-foreground/70" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
+                      />
+                      {boardDueDate && (
+                        <span className="text-[11px] text-foreground/60 font-medium">
+                          {format(boardDueDate, "dd MMM", { locale: fr })}
+                        </span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-0"
+                    side="bottom"
+                    align="start"
                   >
-                    <Calendar
-                      className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? "text-foreground/70" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
+                    <CalendarComponent
+                      mode="single"
+                      selected={boardDueDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          date.setHours(18, 0, 0, 0);
+                          updateBoardField("dueDate", date.toISOString());
+                        }
+                      }}
+                      locale={fr}
+                      fromDate={new Date()}
+                      className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
                     />
                     {boardDueDate && (
-                      <span className="text-[11px] text-foreground/60 font-medium">
-                        {format(boardDueDate, "dd MMM", { locale: fr })}
-                      </span>
+                      <div className="px-2 pb-2">
+                        <button
+                          onClick={() => updateBoardField("dueDate", null)}
+                          className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                        >
+                          Supprimer la date
+                        </button>
+                      </div>
                     )}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-auto p-0"
-                  side="bottom"
-                  align="start"
-                >
-                  <CalendarComponent
-                    mode="single"
-                    selected={boardDueDate}
-                    onSelect={(date) => {
-                      if (date) {
-                        date.setHours(18, 0, 0, 0);
-                        updateBoardField("dueDate", date.toISOString());
-                      }
-                    }}
-                    locale={fr}
-                    fromDate={new Date()}
-                    className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-                  />
-                  {boardDueDate && (
-                    <div className="px-2 pb-2">
-                      <button
-                        onClick={() => updateBoardField("dueDate", null)}
-                        className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                      >
-                        Supprimer la date
-                      </button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
+                  </PopoverContent>
+                </Popover>
+              )}
 
               {/* Accès au tableau (membres autorisés) */}
               <BoardAccessPopover
@@ -1709,11 +1716,13 @@ function KanbanBoardPageContent({ params }) {
               {canEditKanban && (
                 <SaveTemplateDialog boardId={id} boardTitle={board.title} />
               )}
-              <ShareBoardDialog
-                boardId={id}
-                boardTitle={board.title}
-                workspaceId={workspaceId}
-              />
+              {canEditKanban && (
+                <ShareBoardDialog
+                  boardId={id}
+                  boardTitle={board.title}
+                  workspaceId={workspaceId}
+                />
+              )}
             </div>
           </div>
 
@@ -1857,16 +1866,18 @@ function KanbanBoardPageContent({ params }) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button
-                variant="primary"
-                className="cursor-pointer"
-                onClick={openAddModal}
-                disabled={isReadOnly || !canEditKanban}
-                title={createTooltip}
-              >
-                <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                {isBoard ? "Ajouter une colonne" : "Nouveau status"}
-              </Button>
+              {canEditKanban && (
+                <Button
+                  variant="primary"
+                  className="cursor-pointer"
+                  onClick={openAddModal}
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
+                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                  {isBoard ? "Ajouter une colonne" : "Nouveau status"}
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1875,8 +1886,8 @@ function KanbanBoardPageContent({ params }) {
         {isBoard && (
           <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
             <div className="flex items-center gap-2">
-              {/* Bouton Convertir en facture */}
-              {billableTasks.length > 0 && (
+              {/* Bouton Convertir en facture (droit d'écriture sur les factures) */}
+              {billableTasks.length > 0 && canCreateInvoice && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1906,15 +1917,19 @@ function KanbanBoardPageContent({ params }) {
           <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
             {billableTasks.length > 0 && (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => setShowConvertModal(true)}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden lg:inline">Convertir en facture</span>
-                </Button>
+                {canCreateInvoice && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setShowConvertModal(true)}
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="hidden lg:inline">
+                      Convertir en facture
+                    </span>
+                  </Button>
+                )}
                 <span className="text-sm font-medium whitespace-nowrap">
                   Dossier à{" "}
                   <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
@@ -2001,15 +2016,17 @@ function KanbanBoardPageContent({ params }) {
                     <div className="text-muted-foreground mb-4">
                       Ce tableau ne contient aucune colonne
                     </div>
-                    <Button
-                      variant="default"
-                      onClick={openAddModal}
-                      disabled={isReadOnly || !canEditKanban}
-                      title={createTooltip}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Créer votre première colonne
-                    </Button>
+                    {canEditKanban && (
+                      <Button
+                        variant="default"
+                        onClick={openAddModal}
+                        disabled={isReadOnly}
+                        title={readOnlyTooltip}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Créer votre première colonne
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -2121,7 +2138,7 @@ function KanbanBoardPageContent({ params }) {
         </AlertDialog>
 
         <ConvertToInvoiceModal
-          open={showConvertModal}
+          open={showConvertModal && canCreateInvoice}
           onOpenChange={setShowConvertModal}
           tasks={billableTasks}
           onConvert={handleConvertToInvoice}

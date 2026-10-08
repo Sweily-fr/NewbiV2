@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { toast } from "@/src/components/ui/sonner";
-import { cn } from "@/src/lib/utils";
+import { RolePermissionsTable } from "@/src/components/settings/role-permissions-table";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useOrganizationRoles } from "@/src/hooks/useOrganizationRoles";
 import {
@@ -45,58 +45,6 @@ import {
   RESET_ORGANIZATION_ROLE,
   UPDATE_ORGANIZATION_ROLE,
 } from "@/src/graphql/organizationRoleQueries";
-
-// Libellés courts du sélecteur de niveau (la légende détaille chaque niveau)
-const LEVEL_SHORT_LABELS = {
-  none: "Aucun",
-  read: "Lecture",
-  write: "Écriture",
-  delete: "Suppression",
-};
-const ACCOUNT_SHORT_LABELS = { none: "Aucun", read: "Lecture", write: "Gérer" };
-const FEATURE_SHORT_LABELS = { none: "Non", write: "Oui" };
-
-function LevelPicker({ module, value, onChange, disabled }) {
-  const labels =
-    module.kind === "feature"
-      ? FEATURE_SHORT_LABELS
-      : module.group === "account"
-        ? ACCOUNT_SHORT_LABELS
-        : LEVEL_SHORT_LABELS;
-  return (
-    <div
-      role="radiogroup"
-      aria-label={`Accès : ${module.label}`}
-      className="inline-flex shrink-0 rounded-lg bg-muted/60 p-0.5"
-    >
-      {module.levels.map((level) => {
-        const selected = value === level;
-        return (
-          <button
-            key={level}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            disabled={disabled}
-            onClick={() => !selected && onChange(level)}
-            className={cn(
-              "px-2.5 py-1 text-xs rounded-md transition-colors whitespace-nowrap",
-              selected
-                ? level === "none"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "bg-[#5b4fff] text-white shadow-sm"
-                : "text-muted-foreground",
-              !disabled && !selected && "hover:text-foreground cursor-pointer",
-              disabled && !selected && "opacity-60",
-            )}
-          >
-            {labels[level]}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 function emptyLevels(catalog) {
   return Object.fromEntries(catalog.modules.map((m) => [m.key, "none"]));
@@ -218,7 +166,7 @@ function RoleEditorDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[640px] p-0 gap-0 max-h-[85vh] flex flex-col overflow-hidden">
+        <DialogContent className="sm:max-w-[760px] p-0 gap-0 max-h-[88vh] flex flex-col overflow-hidden">
           <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/60">
             <DialogTitle className="text-sm font-medium flex items-center gap-2">
               <KeyRound className="size-4" />
@@ -229,9 +177,10 @@ function RoleEditorDialog({
                   : `Modifier « ${role.name} »`}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Lecture : voir et exporter. Écriture : créer et modifier.
-              Suppression : écriture et suppression. Gérer : tous les droits sur
-              une partie du compte.
+              Sans case cochée, la page n'apparaît pas du tout. Voir : consulter
+              et exporter, sans aucun bouton d'action. Modifier : créer et
+              modifier (gérer, pour le compte). Supprimer : modifier et
+              supprimer.
             </DialogDescription>
           </DialogHeader>
 
@@ -308,47 +257,12 @@ function RoleEditorDialog({
               </p>
             )}
 
-            {catalog.groups.map((group) => {
-              const modules = catalog.modules.filter(
-                (m) => m.group === group.key,
-              );
-              if (!modules.length) return null;
-              return (
-                <section key={group.key} className="space-y-1">
-                  <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {group.label}
-                  </h4>
-                  <div className="divide-y divide-border/60 rounded-lg border border-border/60">
-                    {modules.map((module) => (
-                      <div
-                        key={module.key}
-                        className="flex flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm">{module.label}</p>
-                          {module.description && (
-                            <p className="text-xs text-muted-foreground">
-                              {module.description}
-                            </p>
-                          )}
-                        </div>
-                        <LevelPicker
-                          module={module}
-                          value={levels[module.key] || "none"}
-                          disabled={readOnly || busy}
-                          onChange={(level) =>
-                            setLevels((prev) => ({
-                              ...prev,
-                              [module.key]: level,
-                            }))
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
+            <RolePermissionsTable
+              catalog={catalog}
+              levels={levels}
+              disabled={readOnly || busy}
+              onChange={setLevels}
+            />
           </div>
 
           <div className="flex flex-col-reverse gap-2 border-t border-border/60 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
