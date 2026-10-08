@@ -35,9 +35,35 @@ const PROOF_AVATARS = [
 // celui des factures d'achat : c'est par là que transitent les factures
 // fournisseurs reçues au format électronique, la première échéance de la
 // réforme.
-export function HeroSection() {
+/* Dégagement sous la navbar. Sans bandeau, elle est collée en haut et mesure
+   65 px. Avec le bandeau, elle descend de 80 px sur mobile et de 58 px à
+   partir de `sm` : son bas tombe alors à 145 px et 123 px. Le padding du hero
+   doit suivre, sinon le titre vient se coller dessous — et revenir à sa valeur
+   courte dès que le bandeau est fermé. */
+const PADDING_HAUT = {
+  sans: "pt-44 sm:pt-48 lg:pt-24",
+  avec: "pt-[237px] sm:pt-[215px] lg:pt-[180px]",
+};
+
+export function HeroSection({ hasBanner = false }) {
+  // Le bandeau se ferme : la navbar remonte, le hero doit remonter avec elle.
+  // `banner-closed` est l'événement que le bandeau émet déjà et que la navbar
+  // écoute — on s'y branche plutôt que de partager un état.
+  const [bandeauVisible, setBandeauVisible] = React.useState(hasBanner);
+
+  React.useEffect(() => {
+    if (!hasBanner) return;
+    const fermer = () => setBandeauVisible(false);
+    window.addEventListener("banner-closed", fermer);
+    return () => window.removeEventListener("banner-closed", fermer);
+  }, [hasBanner]);
+
   return (
-    <section className="lg:min-h-screen flex items-start lg:items-center overflow-hidden bg-white pt-44 sm:pt-48 lg:pt-24 mb-6 lg:mb-20 px-5">
+    <section
+      className={`lg:min-h-screen flex items-start lg:items-center overflow-hidden bg-white mb-6 lg:mb-20 px-5 transition-[padding] duration-300 ${
+        bandeauVisible ? PADDING_HAUT.avec : PADDING_HAUT.sans
+      }`}
+    >
       {/* Même gabarit que les sections du reste de la page : 7xl plein,
           padding latéral porté par la section. */}
       <div className="mx-auto max-w-7xl w-full">

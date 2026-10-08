@@ -41,9 +41,11 @@ export function HeroSection() {
             dans un conteneur de 728 px — ce qui faisait sortir le titre du
             cadre entre 768 et 1 023 px. */}
         <div className="grid grid-cols-12 pt-40 md:pt-36 lg:pt-44">
-          {/* Titre sur toute la largeur du conteneur */}
+          {/* Titre sur toute la largeur du conteneur. Pas de `text-balance`
+              ici : ce titre est long, et l'équilibrage le resserrait à 75 % de
+              la boîte — quatre lignes à 390 px au lieu de trois. */}
           <div className="col-span-12 text-center">
-            <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
+            <h1 className="font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
               La gestion des achats, du justificatif à la compta
             </h1>
           </div>

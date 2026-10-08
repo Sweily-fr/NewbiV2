@@ -49,7 +49,11 @@ export default function HeroSection() {
       {/* Conteneur principal avec max-width comme Qonto */}
       <div className="max-w-[1200px] mx-auto relative lg:block flex flex-col md:flex-row">
         {/* Grille pour le contenu texte - Structure Qonto */}
-        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-40 md:pt-36 lg:pt-44 md:flex-1">
+        {/* Pas de gouttière horizontale : tous les enfants occupent les douze
+            colonnes, et `gap-x-24` donnait onze gouttières de 96 px — 1 056 px
+            dans un conteneur de 728 px — ce qui faisait sortir le titre du
+            cadre entre 768 et 1 023 px. */}
+        <div className="grid grid-cols-12 pt-40 md:pt-36 lg:pt-44 md:flex-1">
           {/* Titre sur toute la largeur : à 5rem, il tient en deux lignes
               seulement s'il dispose des 1200px du conteneur. */}
           <div className="col-span-12 text-center">
