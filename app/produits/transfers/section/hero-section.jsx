@@ -105,7 +105,7 @@ export function HeroSection() {
           {/* Maquette de l'interface, sous le texte : la modale « Nouveau
               transfert » du tableau de bord, reconstruite dans le panneau. */}
           <div className="col-span-12">
-            <div className="relative mx-auto mt-10 md:mt-14 w-[150%] max-w-none -ml-[25%] md:w-[84%] md:ml-auto md:mr-auto">
+            <div className="relative mx-auto mt-10 md:mt-14 w-[150%] max-w-none ml-0 md:w-[84%] md:ml-auto md:mr-auto">
               <TransfersDemo />
             </div>
           </div>
