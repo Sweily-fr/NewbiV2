@@ -103,8 +103,9 @@ export function ImportedPurchaseOrderSidebar({
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
   // les bons de commande importés relèvent du module « purchaseOrders »
   const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditPurchaseOrders = !isReady || canWrite("purchaseOrders");
-  const canDeletePurchaseOrders = !isReady || canDelete("purchaseOrders");
+  const canEditPurchaseOrders = !isReady || canWrite("importedPurchaseOrders");
+  const canDeletePurchaseOrders =
+    !isReady || canDelete("importedPurchaseOrders");
 
   if (!purchaseOrder) return null;
 

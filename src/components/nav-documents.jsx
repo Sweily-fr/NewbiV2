@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { moduleForPath } from "@/src/lib/route-modules";
+import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 
 import {
   DropdownMenu,
@@ -44,13 +44,22 @@ export function NavDocuments({ items }) {
   const { isActive } = useSubscription();
   const pathname = usePathname();
   // Outils sans accès pour le rôle masqués (grille chargée seulement)
-  const { can, isReady: permissionsReady } = useMyPermissions();
+  const {
+    can,
+    isReady: permissionsReady,
+    role: permissionsRole,
+    levels: permissionLevels,
+  } = useMyPermissions();
   const canSee = useCallback(
     (url) => {
       const moduleKey = moduleForPath(url);
-      return !permissionsReady || !moduleKey || can(moduleKey, "read");
+      if (!permissionsReady || !moduleKey) return true;
+      return (
+        can(moduleKey, "read") &&
+        !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+      );
     },
-    [permissionsReady, can],
+    [permissionsReady, can, permissionsRole, permissionLevels],
   );
 
   // Fonction pour fermer la sidebar sur mobile lors du clic

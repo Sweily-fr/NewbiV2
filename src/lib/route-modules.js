@@ -14,6 +14,7 @@ const ROUTE_MODULES = [
   ["/dashboard/outils/bons-commande", "purchaseOrders"],
   ["/dashboard/outils/bons-de-livraison", "deliveryNotes"],
   ["/dashboard/catalogues", "products"],
+  ["/dashboard/clients/listes", "clientLists"],
   ["/dashboard/clients", "clients"],
   ["/dashboard/automatisation", "automations"],
   ["/dashboard/calendar", "calendar"],
@@ -36,4 +37,35 @@ export function moduleForPath(pathname) {
 export function levelForPath(pathname) {
   const path = String(pathname || "").split(/[?#]/)[0];
   return /\/(new|nouveau|editer)(\/|$)/.test(path) ? "write" : "read";
+}
+
+/**
+ * Comptable : pages absentes de son menu avant les rôles personnalisés, alors
+ * que leurs données restaient accessibles ailleurs (recherche, documents
+ * liés, transfert depuis les documents partagés). Elles restent masquées tant
+ * que le Comptable garde ce niveau par défaut ; un niveau plus haut donné par
+ * le super admin les fait apparaître. `page: false` : la page elle-même
+ * restait fermée (transferts de fichiers).
+ */
+const ACCOUNTANT_HIDDEN_BY_DEFAULT = {
+  purchaseOrders: { level: "read", page: true },
+  deliveryNotes: { level: "read", page: true },
+  products: { level: "read", page: true },
+  fileTransfers: { level: "write", page: false },
+};
+
+/**
+ * Le module est-il masqué pour ce rôle (menu, ou page si `page`) alors que
+ * sa grille le permet ?
+ */
+export function isHiddenForRole(
+  role,
+  levels,
+  moduleKey,
+  { page = false } = {},
+) {
+  if (role !== "accountant" || !levels) return false;
+  const rule = ACCOUNTANT_HIDDEN_BY_DEFAULT[moduleKey];
+  if (!rule || levels[moduleKey] !== rule.level) return false;
+  return page ? !rule.page : true;
 }

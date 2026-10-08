@@ -552,7 +552,7 @@ export default function DocumentAutomationsModal({
   // Suppression d'une automatisation : droit de suppression du module
   // (tout autorisé tant que la grille n'est pas chargée)
   const { canDelete, isReady } = useMyPermissions();
-  const canDeleteAutomations = !isReady || canDelete("automations");
+  const canDeleteAutomations = !isReady || canDelete("sharedDocuments");
   const { subscription } = useDashboardLayoutContext();
   const planLimits = getPlanLimits(subscription?.plan);
   const automationLimit = planLimits.documentAutomations; // 0 = no access, -1 = unlimited, N = max

@@ -54,10 +54,15 @@ const LEVEL_SHORT_LABELS = {
   delete: "Suppression",
 };
 const ACCOUNT_SHORT_LABELS = { none: "Aucun", read: "Lecture", write: "Gérer" };
+const FEATURE_SHORT_LABELS = { none: "Non", write: "Oui" };
 
 function LevelPicker({ module, value, onChange, disabled }) {
   const labels =
-    module.group === "account" ? ACCOUNT_SHORT_LABELS : LEVEL_SHORT_LABELS;
+    module.kind === "feature"
+      ? FEATURE_SHORT_LABELS
+      : module.group === "account"
+        ? ACCOUNT_SHORT_LABELS
+        : LEVEL_SHORT_LABELS;
   return (
     <div
       role="radiogroup"

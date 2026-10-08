@@ -334,8 +334,8 @@ export default function DocumentsPartagesPage() {
   const canDeleteSharedDocuments = !isReady || canDelete("sharedDocuments");
   // « Transférer » crée un transfert de fichiers (module fileTransfers)
   const canCreateFileTransfers = !isReady || canWrite("fileTransfers");
-  // Les automatisations de classement relèvent du module automations
-  const canEditAutomations = !isReady || canWrite("automations");
+  // Les automatisations de classement relèvent des documents partagés
+  const canEditAutomations = !isReady || canWrite("sharedDocuments");
   const roleTooltip = "Votre rôle ne permet pas cette action";
   const editTooltip =
     readOnlyTooltip || (!canEditSharedDocuments ? roleTooltip : undefined);

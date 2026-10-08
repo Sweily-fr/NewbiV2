@@ -30,6 +30,7 @@ export const GET_ROLE_CATALOG = gql`
       modules {
         key
         group
+        kind
         label
         description
         levels

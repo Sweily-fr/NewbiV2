@@ -70,7 +70,8 @@ export default function ListClientsView({
   const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
   const { canWrite, canDelete, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
+  // Ajouter / retirer des contacts : module « Listes et champs personnalisés »
+  const canEditClients = !isReady || canWrite("clientLists");
   const canDeleteClients = !isReady || canDelete("clients");
 
   const [selectedClients, setSelectedClients] = useState(new Set());

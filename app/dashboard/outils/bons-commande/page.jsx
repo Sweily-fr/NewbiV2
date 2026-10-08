@@ -38,7 +38,8 @@ function PurchaseOrdersContent() {
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
   // Paramètres des documents : paramètres de l'entreprise (« orgSettings »)
   const { canWrite, isReady } = useMyPermissions();
-  const canImportPurchaseOrders = !isReady || canWrite("purchaseOrders");
+  const canImportPurchaseOrders =
+    !isReady || canWrite("importedPurchaseOrders");
   const canEditSettings = !isReady || canWrite("orgSettings");
 
   // Toast manager et modal d'envoi
