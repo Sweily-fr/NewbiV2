@@ -94,6 +94,7 @@ import {
 } from "@/src/components/ui/dialog";
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import dynamic from "next/dynamic";
 import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
 
@@ -583,6 +584,8 @@ function SortableOrganizationItem({
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const buttonRef = React.useRef(null);
   const colorButtonRef = React.useRef(null);
+  const { can } = useMyPermissions();
+  const canManageTeam = can("team", "write");
 
   // Récupérer la couleur et l'icône personnalisées
   const customColor = org.customColor || "#5b4fff";
@@ -727,18 +730,21 @@ function SortableOrganizationItem({
             {/* Séparateur */}
             <div className="h-px bg-border my-1" />
 
-            {/* Ajouter des membres */}
-            <div
-              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActionsMenu(false);
-                setInviteDialogOpen(true);
-              }}
-            >
-              <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-normal flex-1">Ajouter des membres</span>
-            </div>
+            {/* Ajouter des membres : la fenêtre invite dans l'espace actif,
+                réservée aux rôles qui gèrent les membres */}
+            {isActive && canManageTeam && (
+              <div
+                className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowActionsMenu(false);
+                  setInviteDialogOpen(true);
+                }}
+              >
+                <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-normal flex-1">Ajouter des membres</span>
+              </div>
+            )}
 
             {/* Quitter l'organisation - Seulement si pas owner */}
             {org.role !== "owner" && (

@@ -39,6 +39,7 @@ import {
   useUpdateDocumentTag,
   useDeleteDocumentTag,
 } from "@/src/hooks/useSharedDocuments";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TAG_PALETTE as PALETTE } from "./tag-selector";
 
 function TagRow({ tag, onRename, onRecolor, onDelete }) {
@@ -164,14 +165,17 @@ function TagRow({ tag, onRename, onRecolor, onDelete }) {
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-destructive hover:text-destructive"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+          {/* Absent quand le rôle ne permet pas de supprimer */}
+          {onDelete && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-destructive hover:text-destructive"
+              onClick={onDelete}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </>
       )}
     </div>
@@ -182,6 +186,10 @@ export function TagManager({ trigger }) {
   const { tags } = useDocumentTags();
   const { updateTag } = useUpdateDocumentTag();
   const { deleteTag } = useDeleteDocumentTag();
+  // Suppression d'un tag : droit de suppression des documents partagés
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const { canDelete, isReady } = useMyPermissions();
+  const canDeleteTags = !isReady || canDelete("sharedDocuments");
 
   return (
     <Dialog>
@@ -213,7 +221,7 @@ export function TagManager({ trigger }) {
                 tag={tag}
                 onRename={(name) => updateTag(tag.id, { name })}
                 onRecolor={(color) => updateTag(tag.id, { color })}
-                onDelete={() => deleteTag(tag.id)}
+                onDelete={canDeleteTags ? () => deleteTag(tag.id) : undefined}
               />
             ))
           )}

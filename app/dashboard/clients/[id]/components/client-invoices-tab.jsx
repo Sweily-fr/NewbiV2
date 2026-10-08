@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
 import { FileText, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
 import {
   INVOICE_STATUS,
@@ -37,6 +38,9 @@ function safeFormatDate(dateString) {
 
 export default function ClientInvoicesTab({ invoices = [], clientId }) {
   const router = useRouter();
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canCreateInvoices = !isReady || canWrite("invoices");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -102,16 +106,20 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
               Ce client n'a pas encore de facture.
             </EmptyDescription>
           </EmptyHeader>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() =>
-              router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)
-            }
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouvelle facture
-          </Button>
+          {canCreateInvoices && (
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() =>
+                router.push(
+                  `/dashboard/outils/factures/new?clientId=${clientId}`,
+                )
+              }
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nouvelle facture
+            </Button>
+          )}
         </Empty>
       </div>
     );
@@ -123,15 +131,17 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
         <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
           Factures
         </h3>
-        <Button
-          variant="outline"
-          onClick={() =>
-            router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)
-          }
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nouvelle facture
-        </Button>
+        {canCreateInvoices && (
+          <Button
+            variant="outline"
+            onClick={() =>
+              router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)
+            }
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nouvelle facture
+          </Button>
+        )}
       </div>
 
       <div className="overflow-auto">

@@ -18,6 +18,7 @@ import { LOOKUP_USERS_BY_EMAILS } from "@/src/graphql/queries/user";
 import { PLANS } from "@/src/components/create-workspace/plan-form";
 import { getPlanPricingStrings } from "@/src/lib/plans-display";
 import posthog from "posthog-js";
+import { PREDEFINED_ROLE_LABELS } from "@/src/lib/role-labels";
 
 const formatPrice = (amount) => amount.toFixed(2).replace(".", ",");
 
@@ -61,11 +62,7 @@ export function ConfirmationForm({
     return map;
   }, [lookupData]);
 
-  const ROLE_LABELS = {
-    admin: "Administrateur",
-    member: "Membre",
-    accountant: "Comptable",
-  };
+  const ROLE_LABELS = PREDEFINED_ROLE_LABELS;
 
   const handleCreate = async () => {
     if (!session?.user?.id) {

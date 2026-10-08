@@ -887,6 +887,8 @@ export function DraggableTree({
   onContextMenu,
   selectedFolders = [],
   onToggleFolderSelection,
+  // false : glisser-déposer désactivé (rôle sans droit de modification)
+  dragEnabled = true,
 }) {
   const [expandedFolders, setExpandedFolders] = useState(
     new Set(["inbox", "my-folders"]),
@@ -988,6 +990,7 @@ export function DraggableTree({
     onMoveFolderRef,
     getSiblingsRef,
     setDragId: (id) => setDragIdRef.current(id),
+    enabled: dragEnabled,
   });
 
   const renderItem = useCallback(

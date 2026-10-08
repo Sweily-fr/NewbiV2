@@ -58,6 +58,7 @@ import { cn } from "@/src/lib/utils";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   useSharedFolders,
   GET_SHARED_DOCUMENTS,
@@ -548,6 +549,10 @@ export default function DocumentAutomationsModal({
   onDocumentsChanged,
 }) {
   const { workspaceId } = useWorkspace();
+  // Suppression d'une automatisation : droit de suppression du module
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const { canDelete, isReady } = useMyPermissions();
+  const canDeleteAutomations = !isReady || canDelete("automations");
   const { subscription } = useDashboardLayoutContext();
   const planLimits = getPlanLimits(subscription?.plan);
   const automationLimit = planLimits.documentAutomations; // 0 = no access, -1 = unlimited, N = max
@@ -886,14 +891,16 @@ export default function DocumentAutomationsModal({
                       className="data-[state=checked]:bg-[#5b50ff]"
                     />
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(automation.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canDeleteAutomations && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(automation.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

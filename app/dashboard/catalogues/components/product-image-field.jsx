@@ -13,6 +13,7 @@ import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import { toast } from "@/src/components/ui/sonner";
 import { useUploadProductImage } from "@/src/hooks/useProducts";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { cn } from "@/src/lib/utils";
 
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -36,13 +37,16 @@ export default function ProductImageField({
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const { uploadProductImage, loading } = useUploadProductImage();
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditProducts = !isReady || canWrite("products");
 
   useEffect(() => {
     onUploadingChange?.(loading);
   }, [loading, onUploadingChange]);
 
   const handleFile = async (file) => {
-    if (!file) return;
+    if (!file || !canEditProducts) return;
     if (
       !file.type.startsWith("image/") &&
       !ACCEPTED_EXTENSIONS.test(file.name)
@@ -59,7 +63,7 @@ export default function ProductImageField({
   };
 
   const openPicker = () => {
-    if (!loading) inputRef.current?.click();
+    if (!loading && canEditProducts) inputRef.current?.click();
   };
 
   return (

@@ -1,4 +1,5 @@
 import { auth } from "@/src/lib/auth";
+import { predefinedRoleLabel } from "@/src/lib/role-labels";
 import { headers } from "next/headers";
 import { emailTemplates } from "@/src/lib/email-templates";
 import { sendEmail } from "@/src/lib/auth-utils";
@@ -38,6 +39,22 @@ export async function GET(request, { params }) {
       }
     }
 
+    // Nom affiché du rôle : libellé prédéfini ou nom du rôle personnalisé
+    let roleName = predefinedRoleLabel(invitation.role, null);
+    if (!roleName && invitation.organizationId) {
+      try {
+        const customRole = await mongoDb
+          .collection("organizationRole")
+          .findOne({
+            organizationId: invitation.organizationId,
+            role: invitation.role,
+          });
+        roleName = customRole?.name || null;
+      } catch (roleError) {
+        console.warn("⚠️ Erreur récupération rôle:", roleError?.message);
+      }
+    }
+
     // Principle 15: minimum data returned for pre-login page.
     // email, organizationId, inviterId all removed — not needed for UI display.
     const enrichedInvitation = {
@@ -45,6 +62,7 @@ export async function GET(request, { params }) {
       status: invitation.status,
       organizationName,
       role: invitation.role,
+      roleName: roleName || "Rôle personnalisé",
       expiresAt: invitation.expiresAt,
     };
 

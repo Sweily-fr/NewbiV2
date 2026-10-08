@@ -59,6 +59,7 @@ import { useQuery } from "@apollo/client";
 import { GET_CLIENT } from "@/src/graphql/queries/clients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
@@ -74,6 +75,13 @@ export default function ClientsModal({
   const [isMobile, setIsMobile] = useState(false);
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditClients = !isReady || canWrite("clients");
+  const canCreateReminder = !isReady || canWrite("calendar");
+  const roleTooltip = !canEditClients
+    ? "Votre rôle ne permet pas cette action"
+    : undefined;
 
   useEffect(() => {
     const checkMobile = () => {
@@ -1486,9 +1494,11 @@ export default function ClientsModal({
                     type="submit"
                     disabled={
                       loading ||
+                      !canEditClients ||
                       Object.keys(errors).length > 0 ||
                       Object.keys(customErrors).length > 0
                     }
+                    title={roleTooltip}
                     className="flex-1"
                   >
                     {loading
@@ -2298,9 +2308,11 @@ export default function ClientsModal({
                     type="submit"
                     disabled={
                       loading ||
+                      !canEditClients ||
                       Object.keys(errors).length > 0 ||
                       Object.keys(customErrors).length > 0
                     }
+                    title={roleTooltip}
                     className="flex-1 font-normal"
                     size="sm"
                   >
@@ -2318,7 +2330,7 @@ export default function ClientsModal({
               value="activity"
               className="flex-1 overflow-hidden m-0 flex flex-col"
             >
-              {isEditing && (
+              {isEditing && canCreateReminder && (
                 <div className="flex-shrink-0 px-4 py-2 border-b flex justify-end">
                   <Button
                     type="button"

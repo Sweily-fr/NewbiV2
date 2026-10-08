@@ -91,6 +91,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { useFileTransfer } from "../hooks/useFileTransfer";
 import { useUser } from "@/src/lib/auth/hooks";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TransferDetailDrawer } from "./transfer-detail-drawer";
 import { TransferTableSkeleton } from "./transfer-page-skeleton";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
@@ -137,6 +138,10 @@ export default function TransferTable({
   const inputRef = useRef(null);
   const { deleteTransfer, renameTransfer, formatFileSize } = useFileTransfer();
   const { session } = useUser();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditFileTransfers = !isReady || canWrite("fileTransfers");
+  const canDeleteFileTransfers = !isReady || canDelete("fileTransfers");
 
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
@@ -387,14 +392,18 @@ export default function TransferTable({
                     <Copy className="mr-2 h-4 w-4" />
                     Copier le lien
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => handleDeleteTransfer(transfer.id)}
-                    className="text-destructive cursor-pointer"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                    <span className="text-red-500">Supprimer</span>
-                  </DropdownMenuItem>
+                  {canDeleteFileTransfers && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteTransfer(transfer.id)}
+                        className="text-destructive cursor-pointer"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                        <span className="text-red-500">Supprimer</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -404,7 +413,7 @@ export default function TransferTable({
         enableHiding: false,
       },
     ],
-    [session, formatFileSize],
+    [session, formatFileSize, canDeleteFileTransfers],
   );
 
   // Create table instance
@@ -620,7 +629,7 @@ export default function TransferTable({
         {/* Actions à droite */}
         <div className="flex items-center gap-2">
           {/* Bulk delete - visible quand des rows sont sélectionnées */}
-          {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && canDeleteFileTransfers && (
             <Button
               variant="destructive"
               onClick={onShowDeleteDialog}
@@ -818,7 +827,7 @@ export default function TransferTable({
           </Popover>
 
           {/* Delete button for mobile */}
-          {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && canDeleteFileTransfers && (
             <Button
               variant="destructive"
               size="sm"
@@ -1011,18 +1020,26 @@ export default function TransferTable({
         </div>
       </div>
 
-      {/* Drawer de détail du transfert */}
+      {/* Drawer de détail du transfert (actions masquées si le rôle ne les permet pas) */}
       <TransferDetailDrawer
         transfer={selectedTransfer}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
-        onDelete={(transferId) => {
-          setDrawerOpen(false);
-          handleDeleteTransfer(transferId);
-        }}
-        onRename={(transfer) => {
-          handleRenameTransfer(transfer);
-        }}
+        onDelete={
+          canDeleteFileTransfers
+            ? (transferId) => {
+                setDrawerOpen(false);
+                handleDeleteTransfer(transferId);
+              }
+            : undefined
+        }
+        onRename={
+          canEditFileTransfers
+            ? (transfer) => {
+                handleRenameTransfer(transfer);
+              }
+            : undefined
+        }
         onRefresh={onRefresh}
       />
 

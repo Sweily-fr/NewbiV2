@@ -24,6 +24,7 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 function PurchaseOrdersContent() {
   const router = useRouter();
@@ -33,6 +34,12 @@ function PurchaseOrdersContent() {
   // Ref pour déclencher l'import depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
+  // Paramètres des documents : paramètres de l'entreprise (« orgSettings »)
+  const { canWrite, isReady } = useMyPermissions();
+  const canImportPurchaseOrders = !isReady || canWrite("purchaseOrders");
+  const canEditSettings = !isReady || canWrite("orgSettings");
 
   // Toast manager et modal d'envoi
   const toastManager = useToastManager();
@@ -151,17 +158,21 @@ function PurchaseOrdersContent() {
             <h1 className="text-2xl font-medium mb-2">Bons de commande</h1>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-            </Button>
-            <Button variant="outline" onClick={() => setTriggerImport(true)}>
-              <Download className="w-3.5 h-3.5" aria-hidden="true" />
-              Importer
-            </Button>
+            {canEditSettings && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
+              </Button>
+            )}
+            {canImportPurchaseOrders && (
+              <Button variant="outline" onClick={() => setTriggerImport(true)}>
+                <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                Importer
+              </Button>
+            )}
             <PurchaseOrderExportButton
               purchaseOrders={purchaseOrders}
               iconOnly={false}
@@ -272,14 +283,16 @@ function PurchaseOrdersContent() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsSettingsOpen(true)}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
+              {canEditSettings && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -24,6 +24,7 @@ import {
   viewer,
   accountant,
 } from "./permissions";
+import { organizationAc, organizationRoles } from "./organization-roles";
 
 // ✅ Fonction de déduplication atomique avec MongoDB
 async function isEventAlreadyProcessed(eventId, eventType) {
@@ -1463,6 +1464,16 @@ export const organizationPlugin = organization({
   // Better Auth a des problèmes avec les limites dynamiques async
   membershipLimit: 200,
   creatorRole: "owner",
+  // Rôles prédéfinis (Super admin, Administrateur, Éditeur, Membre,
+  // Comptable) + rôles personnalisés de chaque espace (collection
+  // organizationRole, écrite par l'API). Sans `roles`, Better Auth refusait
+  // « viewer » et « accountant » (ROLE_NOT_FOUND). Les routes de création de
+  // rôle de Better Auth sont fermées dans auth-hooks.js.
+  ac: organizationAc,
+  roles: organizationRoles,
+  dynamicAccessControl: {
+    enabled: true,
+  },
   schema: {
     organization: {
       additionalFields: {

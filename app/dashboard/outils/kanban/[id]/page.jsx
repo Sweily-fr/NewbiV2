@@ -202,6 +202,7 @@ import { useListDnD } from "./hooks/useListDnD";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { BoardMembersLookupProvider } from "@/src/hooks/useAssignedMembersInfo";
 
 // Components
@@ -252,11 +253,18 @@ import { Lock } from "lucide-react";
  *   retomber sur "tout le workspace".
  * - Seul le créateur peut modifier (les autres voient en lecture seule).
  */
-function BoardAccessPopover({ board, workspaceId, onChange }) {
+function BoardAccessPopover({
+  board,
+  workspaceId,
+  onChange,
+  roleCanEdit = true,
+}) {
   const ownerId = board?.userId ? String(board.userId) : null;
   const { data: session } = useSession();
   const currentUserId = session?.user?.id ? String(session.user.id) : null;
-  const canEdit = !!ownerId && !!currentUserId && ownerId === currentUserId;
+  // Seul le créateur peut modifier, si son rôle l'y autorise
+  const canEdit =
+    roleCanEdit && !!ownerId && !!currentUserId && ownerId === currentUserId;
 
   const rawAssigned = (board?.boardMembers || [])
     .map((id) => (id ? String(id) : null))
@@ -348,10 +356,16 @@ function BoardAccessPopover({ board, workspaceId, onChange }) {
               ? "Seuls les membres cochés voient ce tableau."
               : "Tous les membres du workspace voient ce tableau."}
           </p>
-          {!canEdit && (
+          {!canEdit && roleCanEdit && (
             <div className="mt-1.5 flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
               <Lock className="h-3 w-3" />
               Lecture seule — seul le créateur peut modifier
+            </div>
+          )}
+          {!roleCanEdit && (
+            <div className="mt-1.5 flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              Lecture seule · Votre rôle ne permet pas cette action
             </div>
           )}
           {hasRestriction && canEdit && (
@@ -397,9 +411,11 @@ function BoardAccessPopover({ board, workspaceId, onChange }) {
                   onClick={() => toggleMember(memberId)}
                   disabled={!canEdit}
                   title={
-                    !canEdit
-                      ? "Seul le créateur du tableau peut modifier l'accès"
-                      : undefined
+                    !roleCanEdit
+                      ? "Votre rôle ne permet pas cette action"
+                      : !canEdit
+                        ? "Seul le créateur du tableau peut modifier l'accès"
+                        : undefined
                   }
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left ${
                     canEdit
@@ -434,7 +450,7 @@ function BoardAccessPopover({ board, workspaceId, onChange }) {
   );
 }
 
-function InlineBoardTitle({ title, onSave }) {
+function InlineBoardTitle({ title, onSave, disabled = false }) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [value, setValue] = React.useState(title);
   const inputRef = React.useRef(null);
@@ -493,7 +509,7 @@ function InlineBoardTitle({ title, onSave }) {
           />
         )}
       </div>
-      {!isEditing && (
+      {!isEditing && !disabled && (
         <button
           onClick={() => {
             setIsEditing(true);
@@ -519,7 +535,7 @@ const EMOJI_CATEGORIES = {
   Divers: ["📦", "🎁", "🧰", "🔑", "🛡️", "🎮", "🎵", "📷", "🗺️", "🧭"],
 };
 
-function EmojiPicker({ boardEmoji, onSelect, onClear }) {
+function EmojiPicker({ boardEmoji, onSelect, onClear, disabled = false }) {
   const [search, setSearch] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -548,7 +564,10 @@ function EmojiPicker({ boardEmoji, onSelect, onClear }) {
       }}
     >
       <PopoverTrigger asChild>
-        <button className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted/50 transition-colors cursor-pointer text-base">
+        <button
+          disabled={disabled}
+          className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted/50 transition-colors cursor-pointer text-base disabled:cursor-default disabled:hover:bg-transparent"
+        >
           {boardEmoji || <Smile className="h-4 w-4 text-muted-foreground/40" />}
         </button>
       </PopoverTrigger>
@@ -697,6 +716,12 @@ function KanbanBoardPageContent({ params }) {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady: isPermissionsReady } = useMyPermissions();
+  const canEditKanban = !isPermissionsReady || canWrite("kanban");
+  const createTooltip =
+    readOnlyTooltip ||
+    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
 
   // Hook viewMode en premier pour avoir le bon skeleton dès le début
   const {
@@ -1356,21 +1381,23 @@ function KanbanBoardPageContent({ params }) {
           );
         })}
 
-        {/* Add Column Button */}
-        <Card className="w-[230px] sm:w-[272px] h-fit border border-dashed border-foreground/25 hover:border-foreground/50 transition-colors shadow-none cursor-pointer flex-shrink-0">
-          <CardContent className="p-3">
-            <Button
-              variant="ghost"
-              className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
-              onClick={openAddModal}
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-            >
-              <Plus className="h-5 w-5" />
-              <span className="text-sm font-medium">Ajouter une colonne</span>
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Add Column Button (masqué si le rôle ne permet pas d'écrire) */}
+        {canEditKanban && (
+          <Card className="w-[230px] sm:w-[272px] h-fit border border-dashed border-foreground/25 hover:border-foreground/50 transition-colors shadow-none cursor-pointer flex-shrink-0">
+            <CardContent className="p-3">
+              <Button
+                variant="ghost"
+                className="w-full h-16 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:bg-transparent cursor-pointer"
+                onClick={openAddModal}
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Plus className="h-5 w-5" />
+                <span className="text-sm font-medium">Ajouter une colonne</span>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </>
     );
   }, [
@@ -1392,6 +1419,7 @@ function KanbanBoardPageContent({ params }) {
     id,
     workspaceId,
     allBoardTags,
+    canEditKanban,
   ]);
 
   // Hook pour le drag-to-scroll horizontal (espace vide, hors DnD)
@@ -1413,7 +1441,8 @@ function KanbanBoardPageContent({ params }) {
     onDragStart: handleDragStart,
     onDragEnd: handleDragEnd,
     scrollElementRef,
-    enabled: isBoard,
+    // Déplacement désactivé si le rôle ne permet pas d'écrire
+    enabled: isBoard && canEditKanban,
   });
 
   // Custom DnD pour la vue liste (même comportement visuel que le board)
@@ -1422,7 +1451,7 @@ function KanbanBoardPageContent({ params }) {
     onDragStart: handleDragStart,
     onDragEnd: handleDragEnd,
     scrollElementRef: listScrollRef,
-    enabled: isList,
+    enabled: isList && canEditKanban,
   });
 
   // Détecter les changements d'organisation
@@ -1499,10 +1528,12 @@ function KanbanBoardPageContent({ params }) {
                 boardEmoji={boardEmoji}
                 onSelect={handleEmojiSelect}
                 onClear={clearEmoji}
+                disabled={!canEditKanban}
               />
               <InlineBoardTitle
                 title={board.title}
                 onSave={(title) => updateBoardField("title", title)}
+                disabled={!canEditKanban}
               />
             </div>
 
@@ -1545,8 +1576,9 @@ function KanbanBoardPageContent({ params }) {
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center"
+                    className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center disabled:cursor-default disabled:hover:bg-transparent"
                     title="Priorité du projet"
+                    disabled={!canEditKanban}
                   >
                     <Flag
                       className={`h-3.5 w-3.5 transition-colors ${
@@ -1602,8 +1634,9 @@ function KanbanBoardPageContent({ params }) {
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors"
+                    className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-default disabled:hover:bg-transparent"
                     title="Échéance du projet"
+                    disabled={!canEditKanban}
                   >
                     <Calendar
                       className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? "text-foreground/70" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
@@ -1653,6 +1686,7 @@ function KanbanBoardPageContent({ params }) {
                 onChange={(nextMembers) =>
                   updateBoardField("boardMembers", nextMembers)
                 }
+                roleCanEdit={canEditKanban}
               />
             </div>
 
@@ -1672,7 +1706,9 @@ function KanbanBoardPageContent({ params }) {
 
             {/* Sauv. modèle & Partager */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <SaveTemplateDialog boardId={id} boardTitle={board.title} />
+              {canEditKanban && (
+                <SaveTemplateDialog boardId={id} boardTitle={board.title} />
+              )}
               <ShareBoardDialog
                 boardId={id}
                 boardTitle={board.title}
@@ -1825,8 +1861,8 @@ function KanbanBoardPageContent({ params }) {
                 variant="primary"
                 className="cursor-pointer"
                 onClick={openAddModal}
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
+                disabled={isReadOnly || !canEditKanban}
+                title={createTooltip}
               >
                 <Plus size={14} strokeWidth={2} aria-hidden="true" />
                 {isBoard ? "Ajouter une colonne" : "Nouveau status"}
@@ -1906,6 +1942,7 @@ function KanbanBoardPageContent({ params }) {
               updateTask={updateTask}
               workspaceId={workspaceId}
               boardTitle={board?.title}
+              readOnly={!canEditKanban}
             />
           </div>
         )}
@@ -1964,7 +2001,12 @@ function KanbanBoardPageContent({ params }) {
                     <div className="text-muted-foreground mb-4">
                       Ce tableau ne contient aucune colonne
                     </div>
-                    <Button variant="default" onClick={openAddModal}>
+                    <Button
+                      variant="default"
+                      onClick={openAddModal}
+                      disabled={isReadOnly || !canEditKanban}
+                      title={createTooltip}
+                    >
                       <Plus className="mr-2 h-4 w-4" />
                       Créer votre première colonne
                     </Button>

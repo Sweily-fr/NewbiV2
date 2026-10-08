@@ -12,6 +12,7 @@ import {
 import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
 import { useSession } from "@/src/lib/auth-client";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   GET_BOARDS,
   GET_ORGANIZATION_MEMBERS,
@@ -38,6 +39,9 @@ export function BoardMembersPopover({
   const [search, setSearch] = useState("");
   const { data: session } = useSession();
   const currentUserId = session?.user?.id ? String(session.user.id) : null;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const roleCanEdit = !isReady || canWrite("kanban");
 
   // Pré-charger la liste des membres workspace dès que possible — pas seulement
   // à l'ouverture du popover — pour que les checkboxes soient correctes
@@ -58,8 +62,9 @@ export function BoardMembersPopover({
 
   const orgMembers = data?.organizationMembers || [];
   const ownerId = board?.userId ? String(board.userId) : null;
-  // Seul le créateur peut modifier la liste d'accès
-  const canEdit = !!ownerId && !!currentUserId && ownerId === currentUserId;
+  // Seul le créateur peut modifier la liste d'accès, si son rôle l'y autorise
+  const canEdit =
+    roleCanEdit && !!ownerId && !!currentUserId && ownerId === currentUserId;
 
   // Liste explicite enregistrée côté serveur. Filtrer les valeurs falsy pour
   // éviter qu'un null isolé fasse passer la board en "mode restreint".
@@ -268,10 +273,16 @@ export function BoardMembersPopover({
               ? "Seuls les membres cochés voient ce tableau."
               : "Tous les membres du workspace voient ce tableau par défaut."}
           </p>
-          {!canEdit && (
+          {!canEdit && roleCanEdit && (
             <div className="mb-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
               <Lock className="h-3 w-3" />
               Lecture seule — seul le créateur peut modifier
+            </div>
+          )}
+          {!roleCanEdit && (
+            <div className="mb-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              Lecture seule · Votre rôle ne permet pas cette action
             </div>
           )}
           <Input
@@ -338,11 +349,13 @@ export function BoardMembersPopover({
                         : "cursor-pointer hover:bg-accent/50"
                   }`}
                   title={
-                    !canEdit
-                      ? "Seul le créateur du tableau peut modifier l'accès"
-                      : isOwner
-                        ? "Créateur du tableau (toujours inclus)"
-                        : undefined
+                    !roleCanEdit
+                      ? "Votre rôle ne permet pas cette action"
+                      : !canEdit
+                        ? "Seul le créateur du tableau peut modifier l'accès"
+                        : isOwner
+                          ? "Créateur du tableau (toujours inclus)"
+                          : undefined
                   }
                 >
                   <UserAvatar

@@ -93,6 +93,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { useProducts, useDeleteProduct } from "@/src/hooks/useProducts";
 import { useProductCustomFields } from "@/src/hooks/useProductCustomFields";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import ProductModal from "./product-modal";
 import ProductExportButton from "./product-export-button";
 import ProductImportDialog from "./product-import-dialog";
@@ -265,11 +266,15 @@ const actionsColumn = {
   cell: ({ row, table }) => {
     const handleEditProduct = table.options.meta?.handleEditProduct;
     const handleDeleteProduct = table.options.meta?.handleDeleteProduct;
+    const { canEditProducts = true, canDeleteProducts = true } =
+      table.options.meta || {};
     return (
       <RowActions
         row={row}
         onEdit={handleEditProduct}
         onDelete={(id) => handleDeleteProduct(id)}
+        canEdit={canEditProducts}
+        canRemove={canDeleteProducts}
       />
     );
   },
@@ -312,6 +317,10 @@ export default function TableProduct({
   const id = useId();
   const { workspaceId } = useWorkspace();
   const { fields: customFields } = useProductCustomFields(workspaceId);
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditProducts = !isReady || canWrite("products");
+  const canDeleteProducts = !isReady || canDelete("products");
 
   // Stable key for active custom fields to prevent infinite re-renders
   const activeCustomFields = useMemo(
@@ -474,6 +483,8 @@ export default function TableProduct({
         await deleteProductSingle(id);
         await refetch();
       },
+      canEditProducts,
+      canDeleteProducts,
     },
   });
 
@@ -587,49 +598,51 @@ export default function TableProduct({
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
             {/* Delete button - shown when rows are selected */}
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    data-mobile-delete-trigger-product
-                    className="cursor-pointer font-normal"
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Supprimer ({table.getSelectedRowModel().rows.length})
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                    <div
-                      className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                      aria-hidden="true"
+            {table.getSelectedRowModel().rows.length > 0 &&
+              canDeleteProducts && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      data-mobile-delete-trigger-product
+                      className="cursor-pointer font-normal"
                     >
-                      <CircleAlertIcon className="opacity-80" size={16} />
+                      <TrashIcon className="mr-2 h-4 w-4" />
+                      Supprimer ({table.getSelectedRowModel().rows.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                      <div
+                        className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                        aria-hidden="true"
+                      >
+                        <CircleAlertIcon className="opacity-80" size={16} />
+                      </div>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Êtes-vous absolument sûr ?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Cette action ne peut pas être annulée. Cela supprimera
+                          définitivement{" "}
+                          {table.getSelectedRowModel().rows.length} produit(s)
+                          sélectionné(s).
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
                     </div>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Êtes-vous absolument sûr ?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action ne peut pas être annulée. Cela supprimera
-                        définitivement {table.getSelectedRowModel().rows.length}{" "}
-                        produit(s) sélectionné(s).
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                  </div>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteRows}
-                      className="text-white"
-                    >
-                      Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteRows}
+                        className="text-white"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
           </div>
         </div>
 
@@ -839,26 +852,27 @@ export default function TableProduct({
             </div>
 
             {/* Delete button for mobile - shown when rows are selected */}
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-9 px-2 sm:px-3 text-xs flex-shrink-0"
-                title={`Supprimer ${table.getSelectedRowModel().rows.length} produit(s)`}
-                onClick={() => {
-                  // Trigger the delete dialog
-                  const deleteButton = document.querySelector(
-                    "[data-mobile-delete-trigger-product]",
-                  );
-                  if (deleteButton) deleteButton.click();
-                }}
-              >
-                <TrashIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">
-                  ({table.getSelectedRowModel().rows.length})
-                </span>
-              </Button>
-            )}
+            {table.getSelectedRowModel().rows.length > 0 &&
+              canDeleteProducts && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="h-9 px-2 sm:px-3 text-xs flex-shrink-0"
+                  title={`Supprimer ${table.getSelectedRowModel().rows.length} produit(s)`}
+                  onClick={() => {
+                    // Trigger the delete dialog
+                    const deleteButton = document.querySelector(
+                      "[data-mobile-delete-trigger-product]",
+                    );
+                    if (deleteButton) deleteButton.click();
+                  }}
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">
+                    ({table.getSelectedRowModel().rows.length})
+                  </span>
+                </Button>
+              )}
           </div>
 
           {/* Second Row: Filter, Import, Export */}
@@ -1013,7 +1027,13 @@ export default function TableProduct({
   );
 }
 
-function RowActions({ row, onEdit, onDelete }) {
+function RowActions({
+  row,
+  onEdit,
+  onDelete,
+  canEdit = true,
+  canRemove = true,
+}) {
   const product = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -1050,9 +1070,11 @@ function RowActions({ row, onEdit, onDelete }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={handleEdit}>
-            <span>Modifier</span>
-          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onClick={handleEdit}>
+              <span>Modifier</span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={() =>
               navigator.clipboard.writeText(product.reference || product.name)
@@ -1061,14 +1083,18 @@ function RowActions({ row, onEdit, onDelete }) {
             <span>Copier référence</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => setShowDeleteDialog(true)}
-          variant="destructive"
-        >
-          <span>Supprimer</span>
-        </DropdownMenuItem>
+        {canRemove && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => setShowDeleteDialog(true)}
+              variant="destructive"
+            >
+              <span>Supprimer</span>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
 
       {/* Dialog de confirmation de suppression */}

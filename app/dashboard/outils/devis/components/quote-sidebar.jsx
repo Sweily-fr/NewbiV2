@@ -44,6 +44,7 @@ import {
 import { GET_CLIENT } from "@/src/graphql/clientQueries";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { toast } from "@/src/components/ui/sonner";
 import dynamic from "next/dynamic";
 
@@ -89,6 +90,14 @@ export default function QuoteSidebar({
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { workspaceId } = useRequiredWorkspace();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canWrite("quotes");
+  // Conversions : création dans le module cible
+  const canConvertToInvoice =
+    canEditQuotes && (!isReady || canWrite("invoices"));
+  const canConvertToPurchaseOrder =
+    canEditQuotes && (!isReady || canWrite("purchaseOrders"));
 
   const [fetchClient] = useLazyQuery(GET_CLIENT, {
     fetchPolicy: "network-only",
@@ -868,8 +877,13 @@ export default function QuoteSidebar({
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="border-t px-6 py-4 space-y-3">
+        {/* Action Buttons (pied masqué si le rôle ne permet pas de modifier,
+            sauf pour la preuve de signature) */}
+        <div
+          className={`border-t px-6 py-4 space-y-3 ${
+            canEditQuotes || quote.signatureStatus === "DONE" ? "" : "hidden"
+          }`}
+        >
           {/* Annuler une demande de signature CLIENT en cours.
               On se base sur quote.signatureStatus (signature client) et pas sur le
               hook « dernière demande » : une fois le devis signé, ce dernier pointe
@@ -877,7 +891,8 @@ export default function QuoteSidebar({
           {["PENDING", "WAIT_VALIDATION", "WAIT_SIGN", "WAIT_SIGNER"].includes(
             quote.signatureStatus,
           ) &&
-            signatureStatus?.id && (
+            signatureStatus?.id &&
+            canEditQuotes && (
               <Button
                 variant="outline"
                 onClick={handleCancelSignatureRequest}
@@ -894,7 +909,7 @@ export default function QuoteSidebar({
             )}
 
           {/* Draft Actions */}
-          {quote.status === QUOTE_STATUS.DRAFT && (
+          {quote.status === QUOTE_STATUS.DRAFT && canEditQuotes && (
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -918,32 +933,33 @@ export default function QuoteSidebar({
 
           {/* Pending / Imported Actions */}
           {(quote.status === QUOTE_STATUS.PENDING ||
-            quote.status === QUOTE_STATUS.IMPORTED) && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                {quote.status === QUOTE_STATUS.IMPORTED
-                  ? "Refuser le devis"
-                  : "Annuler le devis"}
-              </Button>
-              {/* Accepter : acceptation manuelle possible, la signature
+            quote.status === QUOTE_STATUS.IMPORTED) &&
+            canEditQuotes && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  {quote.status === QUOTE_STATUS.IMPORTED
+                    ? "Refuser le devis"
+                    : "Annuler le devis"}
+                </Button>
+                {/* Accepter : acceptation manuelle possible, la signature
                   électronique accepte aussi le devis automatiquement. */}
-              <Button
-                variant="primary"
-                onClick={handleAccept}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Accepter le devis
-              </Button>
-            </div>
-          )}
+                <Button
+                  variant="primary"
+                  onClick={handleAccept}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Accepter le devis
+                </Button>
+              </div>
+            )}
 
           {/* Completed Actions */}
           {quote.status === QUOTE_STATUS.COMPLETED && (
@@ -960,7 +976,7 @@ export default function QuoteSidebar({
                   Aucune limite de nombre : le popover s'affiche tant qu'il
                   reste du montant à facturer (il se masque tout seul à 0). */}
               <div className="space-y-2">
-                {!quote.hasPurchaseOrderInvoices && (
+                {!quote.hasPurchaseOrderInvoices && canConvertToInvoice && (
                   <CreateLinkedInvoicePopover
                     quote={quote}
                     onCreateLinkedInvoice={handleCreateLinkedInvoice}
@@ -972,6 +988,7 @@ export default function QuoteSidebar({
               <div className="flex flex-col gap-2">
                 {/* Bouton de conversion complète */}
                 {!quote.hasPurchaseOrderInvoices &&
+                  canConvertToInvoice &&
                   (!quote.linkedInvoices ||
                     quote.linkedInvoices.length === 0) && (
                     <Button
@@ -986,15 +1003,17 @@ export default function QuoteSidebar({
                   )}
 
                 {/* Bouton de conversion en bon de commande */}
-                <Button
-                  variant="outline"
-                  onClick={handleConvertToPurchaseOrder}
-                  disabled={isLoading}
-                  className="w-full font-normal"
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Convertir en bon de commande
-                </Button>
+                {canConvertToPurchaseOrder && (
+                  <Button
+                    variant="outline"
+                    onClick={handleConvertToPurchaseOrder}
+                    disabled={isLoading}
+                    className="w-full font-normal"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Convertir en bon de commande
+                  </Button>
+                )}
               </div>
 
               {/* Preuve de signature — traçabilité + document signé + certificat

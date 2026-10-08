@@ -8,6 +8,7 @@ import {
   KanbanTableSkeleton,
 } from "./components/kanban-list-skeleton";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   Plus,
   Trash2,
@@ -120,6 +121,13 @@ function KanbanPageContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditKanban = !isReady || canWrite("kanban");
+  const canDeleteKanban = !isReady || canDelete("kanban");
+  const createTooltip =
+    readOnlyTooltip ||
+    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
   const router = useRouter();
   const [boardPreview, setBoardPreview] = React.useState(null);
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
@@ -216,8 +224,8 @@ function KanbanPageContent() {
     uniqueCategories,
   } = useKanbanBoardsTable({
     data: boards,
-    onEdit: handleEditClick,
-    onDelete: (board) => setBoardToDelete(board),
+    onEdit: canEditKanban ? handleEditClick : undefined,
+    onDelete: canDeleteKanban ? (board) => setBoardToDelete(board) : undefined,
     onPreview: (board) => setBoardPreview(board),
     formatDate,
     clientFilter,
@@ -372,8 +380,8 @@ function KanbanPageContent() {
               <Button
                 variant="primary"
                 className="cursor-pointer"
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
+                disabled={isReadOnly || !canEditKanban}
+                title={createTooltip}
               >
                 <Plus size={14} strokeWidth={2} aria-hidden="true" />
                 Nouvelle liste
@@ -480,7 +488,7 @@ function KanbanPageContent() {
                           <Label className="text-xs text-muted-foreground">
                             Template
                           </Label>
-                          {templates.length > 0 && (
+                          {templates.length > 0 && canDeleteKanban && (
                             <Popover>
                               <PopoverTrigger asChild>
                                 <Button
@@ -774,7 +782,7 @@ function KanbanPageContent() {
 
         <div className="flex items-center gap-2">
           {/* Bulk delete */}
-          {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && canDeleteKanban && (
             <AlertDialog
               open={isDeleteMultipleOpen}
               onOpenChange={setIsDeleteMultipleOpen}
@@ -868,6 +876,8 @@ function KanbanPageContent() {
               onClick={() => setIsCreateDialogOpen(true)}
               variant="default"
               className="mx-auto flex items-center gap-2 font-normal"
+              disabled={isReadOnly || !canEditKanban}
+              title={createTooltip}
             >
               Créer votre première liste
             </Button>
@@ -914,46 +924,54 @@ function KanbanPageContent() {
                           className={`h-3.5 w-3.5 ${isFav ? "text-yellow-400 fill-yellow-400" : ""}`}
                         />
                       </button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      {(canEditKanban || canDeleteKanban) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-44"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-44"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditClick(board, e);
-                            }}
-                            className="gap-2 cursor-pointer"
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                            Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setBoardToDelete(board);
-                            }}
-                            variant="destructive"
-                            className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            {canEditKanban && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditClick(board, e);
+                                }}
+                                className="gap-2 cursor-pointer"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                                Modifier
+                              </DropdownMenuItem>
+                            )}
+                            {canEditKanban && canDeleteKanban && (
+                              <DropdownMenuSeparator />
+                            )}
+                            {canDeleteKanban && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setBoardToDelete(board);
+                                }}
+                                variant="destructive"
+                                className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </div>
 

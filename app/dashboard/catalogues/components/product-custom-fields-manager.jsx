@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import {
@@ -322,7 +323,7 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
   );
 }
 
-function FieldRow({ field, onEdit, onDelete, onToggle }) {
+function FieldRow({ field, onEdit, onDelete, onToggle, canRemove = true }) {
   const fieldType = FIELD_TYPES.find((t) => t.value === field.fieldType);
 
   return (
@@ -363,14 +364,16 @@ function FieldRow({ field, onEdit, onDelete, onToggle }) {
         <Edit2 className="h-3 w-3" />
       </Button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onDelete(field)}
-        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 className="h-3 w-3" />
-      </Button>
+      {canRemove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(field)}
+          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -383,6 +386,9 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
   const { createField, loading: createLoading } = useCreateProductCustomField();
   const { updateField, loading: updateLoading } = useUpdateProductCustomField();
   const { deleteField, loading: deleteLoading } = useDeleteProductCustomField();
+  const { canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canDeleteProducts = !isReady || canDelete("products");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingField, setEditingField] = useState(null);
@@ -508,6 +514,7 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
                     onEdit={setEditingField}
                     onDelete={setDeletingField}
                     onToggle={handleToggle}
+                    canRemove={canDeleteProducts}
                   />
                 ))}
               </div>

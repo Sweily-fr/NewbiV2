@@ -153,6 +153,8 @@ const TaskActivityComponent = ({
   boardMembers = [],
   columns = [],
   onTaskUpdate,
+  // Droit d'écriture du rôle (commenter, modifier/supprimer ses commentaires)
+  canComment = true,
 }) => {
   const [task, setTask] = useState(initialTask);
   const [editingCommentId, setEditingCommentId] = useState(null);
@@ -1008,27 +1010,30 @@ const TaskActivityComponent = ({
                                       </span>
                                     </div>
                                     <div className="flex gap-1">
-                                      {item.userId === session?.user?.id && (
-                                        <Button
-                                          size="xs"
-                                          variant="ghost"
-                                          className="h-7 w-7 p-0 text-muted-foreground"
-                                          style={{ "--hover-color": "#5b50FF" }}
-                                          onMouseEnter={(e) =>
-                                            (e.currentTarget.style.color =
-                                              "#5b50FF")
-                                          }
-                                          onMouseLeave={(e) =>
-                                            (e.currentTarget.style.color = "")
-                                          }
-                                          onClick={() => {
-                                            setEditingCommentId(item.id);
-                                            setEditingContent(item.content);
-                                          }}
-                                        >
-                                          <Edit2 className="h-3.5 w-3.5" />
-                                        </Button>
-                                      )}
+                                      {canComment &&
+                                        item.userId === session?.user?.id && (
+                                          <Button
+                                            size="xs"
+                                            variant="ghost"
+                                            className="h-7 w-7 p-0 text-muted-foreground"
+                                            style={{
+                                              "--hover-color": "#5b50FF",
+                                            }}
+                                            onMouseEnter={(e) =>
+                                              (e.currentTarget.style.color =
+                                                "#5b50FF")
+                                            }
+                                            onMouseLeave={(e) =>
+                                              (e.currentTarget.style.color = "")
+                                            }
+                                            onClick={() => {
+                                              setEditingCommentId(item.id);
+                                              setEditingContent(item.content);
+                                            }}
+                                          >
+                                            <Edit2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        )}
                                       <AlertDialog
                                         open={commentToDelete === item.id}
                                         onOpenChange={(open) =>
@@ -1354,26 +1359,27 @@ const TaskActivityComponent = ({
                               </span>
                             </div>
                             <div className="flex gap-1">
-                              {comment.userId === session?.user?.id && (
-                                <Button
-                                  size="xs"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 text-muted-foreground"
-                                  style={{ "--hover-color": "#5b50FF" }}
-                                  onMouseEnter={(e) =>
-                                    (e.currentTarget.style.color = "#5b50FF")
-                                  }
-                                  onMouseLeave={(e) =>
-                                    (e.currentTarget.style.color = "")
-                                  }
-                                  onClick={() => {
-                                    setEditingCommentId(comment.id);
-                                    setEditingContent(comment.content);
-                                  }}
-                                >
-                                  <Edit2 className="h-3.5 w-3.5" />
-                                </Button>
-                              )}
+                              {canComment &&
+                                comment.userId === session?.user?.id && (
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-muted-foreground"
+                                    style={{ "--hover-color": "#5b50FF" }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.color = "#5b50FF")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.color = "")
+                                    }
+                                    onClick={() => {
+                                      setEditingCommentId(comment.id);
+                                      setEditingContent(comment.content);
+                                    }}
+                                  >
+                                    <Edit2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                               <AlertDialog
                                 open={commentToDelete === comment.id}
                                 onOpenChange={(open) =>
@@ -1668,96 +1674,99 @@ const TaskActivityComponent = ({
           </TabsTrigger>
         </TabsList>
 
-        {/* Zone de saisie de commentaire - Sticky en bas */}
-        <div className="pb-3 pl-3 pr-3 pt-1 flex-shrink-0">
-          <MentionCommentInput
-            members={membersData?.organizationMembers || []}
-            onSubmit={handleAddComment}
-            placeholder="Ajouter un commentaire..."
-            disabled={isUploadingImage || addingComment}
-            loading={addingComment || isUploadingImage}
-            allowEmpty={pendingImages.length > 0}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onPaste={handlePaste}
-            isDragOver={isDragOver}
-            toolbarSlot={
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingImage}
-                className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-30"
-                style={{ color: "#8D8D8D" }}
-              >
-                {isUploadingImage ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Paperclip className="h-3.5 w-3.5" />
-                )}
-              </button>
-            }
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska"
-              multiple
-              onChange={(e) => {
-                const files = Array.from(e.target.files || []);
-                const newImages = files.map((file) => ({
-                  file,
-                  preview: URL.createObjectURL(file),
-                }));
-                setPendingImages((prev) => [...prev, ...newImages]);
-                e.target.value = "";
-              }}
-              className="hidden"
-            />
-            {/* Images en attente */}
-            {pendingImages.length > 0 && (
-              <div className="flex flex-wrap gap-2 pb-2">
-                {pendingImages.map((img, index) => (
-                  <div key={index} className="relative group">
-                    {img.file.type?.startsWith("video/") ? (
-                      <div className="relative w-12 h-12 rounded-md border border-border overflow-hidden bg-black">
-                        <video
-                          src={img.preview}
-                          className={`w-full h-full object-cover ${isUploadingImage ? "opacity-50" : ""}`}
-                          muted
-                          playsInline
-                          preload="metadata"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Play className="h-4 w-4 text-white fill-white drop-shadow" />
+        {/* Zone de saisie de commentaire - Sticky en bas (masquée si le rôle
+            ne permet pas d'écrire) */}
+        {canComment && (
+          <div className="pb-3 pl-3 pr-3 pt-1 flex-shrink-0">
+            <MentionCommentInput
+              members={membersData?.organizationMembers || []}
+              onSubmit={handleAddComment}
+              placeholder="Ajouter un commentaire..."
+              disabled={isUploadingImage || addingComment}
+              loading={addingComment || isUploadingImage}
+              allowEmpty={pendingImages.length > 0}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onPaste={handlePaste}
+              isDragOver={isDragOver}
+              toolbarSlot={
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingImage}
+                  className="h-7 w-7 rounded-md flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-30"
+                  style={{ color: "#8D8D8D" }}
+                >
+                  {isUploadingImage ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Paperclip className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              }
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  const newImages = files.map((file) => ({
+                    file,
+                    preview: URL.createObjectURL(file),
+                  }));
+                  setPendingImages((prev) => [...prev, ...newImages]);
+                  e.target.value = "";
+                }}
+                className="hidden"
+              />
+              {/* Images en attente */}
+              {pendingImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 pb-2">
+                  {pendingImages.map((img, index) => (
+                    <div key={index} className="relative group">
+                      {img.file.type?.startsWith("video/") ? (
+                        <div className="relative w-12 h-12 rounded-md border border-border overflow-hidden bg-black">
+                          <video
+                            src={img.preview}
+                            className={`w-full h-full object-cover ${isUploadingImage ? "opacity-50" : ""}`}
+                            muted
+                            playsInline
+                            preload="metadata"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Play className="h-4 w-4 text-white fill-white drop-shadow" />
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <img
-                        src={img.preview}
-                        alt={img.file.name}
-                        className={`w-12 h-12 object-cover rounded-md border border-border ${isUploadingImage ? "opacity-50" : ""}`}
-                      />
-                    )}
-                    {!isUploadingImage && (
-                      <button
-                        onClick={() => {
-                          setPendingImages((prev) =>
-                            prev.filter((_, i) => i !== index),
-                          );
-                          URL.revokeObjectURL(img.preview);
-                        }}
-                        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-                      >
-                        <X className="h-2.5 w-2.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </MentionCommentInput>
-        </div>
+                      ) : (
+                        <img
+                          src={img.preview}
+                          alt={img.file.name}
+                          className={`w-12 h-12 object-cover rounded-md border border-border ${isUploadingImage ? "opacity-50" : ""}`}
+                        />
+                      )}
+                      {!isUploadingImage && (
+                        <button
+                          onClick={() => {
+                            setPendingImages((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            );
+                            URL.revokeObjectURL(img.preview);
+                          }}
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </MentionCommentInput>
+          </div>
+        )}
       </Tabs>
     </div>
   );
@@ -1774,7 +1783,8 @@ export const TaskActivity = React.memo(
         nextProps.task?.claudeWorkingSince &&
       prevProps.task?.claudeCodingSince === nextProps.task?.claudeCodingSince &&
       prevProps.boardMembers === nextProps.boardMembers &&
-      prevProps.columns === nextProps.columns
+      prevProps.columns === nextProps.columns &&
+      prevProps.canComment === nextProps.canComment
     );
   },
 );

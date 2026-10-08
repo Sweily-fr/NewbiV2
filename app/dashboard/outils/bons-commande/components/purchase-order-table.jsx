@@ -4,6 +4,7 @@ import { sortByDateDesc } from "@/src/lib/document-dates";
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -112,6 +113,9 @@ export default function PurchaseOrderTable({
 
   const { canCreate } = usePermissions();
   const [canCreatePo, setCanCreatePo] = useState(false);
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDelete, isReady } = useMyPermissions();
+  const canDeletePurchaseOrders = !isReady || canDelete("purchaseOrders");
   const [poToOpen, setPoToOpen] = useState(null);
   const [templatePurchaseOrder, setTemplatePurchaseOrder] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -306,7 +310,7 @@ export default function PurchaseOrderTable({
 
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
-            {selectedRows.length > 0 && (
+            {selectedRows.length > 0 && canDeletePurchaseOrders && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -505,7 +509,7 @@ export default function PurchaseOrderTable({
             </PopoverContent>
           </Popover>
 
-          {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && canDeletePurchaseOrders && (
             <Button
               variant="destructive"
               size="sm"

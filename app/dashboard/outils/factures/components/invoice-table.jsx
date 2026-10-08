@@ -5,6 +5,7 @@ import { sortByDateDesc } from "@/src/lib/document-dates";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -136,6 +137,11 @@ export default function InvoiceTable({
   const { invoices, loading, error, refetch } = useInvoices();
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : la
+  // suppression groupée porte sur les brouillons et les factures importées
+  const { canDelete, isReady } = useMyPermissions();
+  const canBulkDelete =
+    !isReady || canDelete("invoices") || canDelete("importedInvoices");
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
   // Vrai si la sidebar a été ouverte automatiquement via ?id= (ex: depuis Transactions)
   const sidebarAutoOpenedRef = useRef(false);
@@ -612,7 +618,7 @@ export default function InvoiceTable({
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
             {/* Bulk delete - visible quand des rows sont sélectionnées */}
-            {selectedRows.length > 0 && (
+            {selectedRows.length > 0 && canBulkDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button

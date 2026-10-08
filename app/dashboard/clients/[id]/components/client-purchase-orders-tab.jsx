@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
 import { Package, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import PurchaseOrderSidebar from "@/app/dashboard/outils/bons-commande/components/purchase-order-sidebar";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
@@ -36,6 +37,9 @@ function safeFormatDate(dateString) {
 
 export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId }) {
   const router = useRouter();
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canCreatePurchaseOrders = !isReady || canWrite("purchaseOrders");
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -87,14 +91,16 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
               Ce client n&apos;a pas encore de bon de commande.
             </EmptyDescription>
           </EmptyHeader>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouveau bon de commande
-          </Button>
+          {canCreatePurchaseOrders && (
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nouveau bon de commande
+            </Button>
+          )}
         </Empty>
       </div>
     );
@@ -104,13 +110,15 @@ export default function ClientPurchaseOrdersTab({ purchaseOrders = [], clientId 
     <>
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
         <h3 className="text-base font-medium text-[#242529] dark:text-foreground">Bons de commande</h3>
-        <Button
-          variant="outline"
-          onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nouveau bon de commande
-        </Button>
+        {canCreatePurchaseOrders && (
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/outils/bons-commande/new?clientId=${clientId}`)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nouveau bon de commande
+          </Button>
+        )}
       </div>
 
       <div className="overflow-auto">

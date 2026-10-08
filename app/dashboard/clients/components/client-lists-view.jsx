@@ -30,6 +30,7 @@ import DeleteListDialog from "./delete-list-dialog";
 import ListClientsView from "./list-clients-view";
 import AddClientsToListDialog from "./add-clients-to-list-dialog";
 import { useDeleteClientList } from "@/src/hooks/useClientLists";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,6 +76,10 @@ export default function ClientListsView({
   const [deletingList, setDeletingList] = useState(null);
   const [addingClientsToList, setAddingClientsToList] = useState(null);
   const { deleteList } = useDeleteClientList();
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditClients = !isReady || canWrite("clients");
+  const canDeleteClients = !isReady || canDelete("clients");
 
   // Mettre à jour selectedList quand initialSelectedList change
   useEffect(() => {
@@ -207,6 +212,7 @@ export default function ClientListsView({
         cell: (info) => {
           const list = info.row.original;
           if (list.isDefault) return null;
+          if (!canEditClients && !canDeleteClients) return null;
           return (
             <div onClick={(e) => e.stopPropagation()}>
               <DropdownMenu>
@@ -216,28 +222,34 @@ export default function ClientListsView({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setAddingClientsToList(list)}
-                    className="cursor-pointer"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Ajouter des contacts
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setEditingList(list)}
-                    className="cursor-pointer"
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Modifier
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setDeletingList(list)}
-                    className="cursor-pointer text-destructive focus:text-destructive"
-                    variant="destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2 text-destructive" />
-                    Supprimer
-                  </DropdownMenuItem>
+                  {canEditClients && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => setAddingClientsToList(list)}
+                        className="cursor-pointer"
+                      >
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Ajouter des contacts
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setEditingList(list)}
+                        className="cursor-pointer"
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Modifier
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {canDeleteClients && (
+                    <DropdownMenuItem
+                      onClick={() => setDeletingList(list)}
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                      variant="destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2 text-destructive" />
+                      Supprimer
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -245,7 +257,7 @@ export default function ClientListsView({
         },
       },
     ],
-    [],
+    [canEditClients, canDeleteClients],
   );
 
   // Créer la table avec React Table
@@ -293,13 +305,15 @@ export default function ClientListsView({
           description="Créez votre première liste pour organiser vos contacts par catégories ou segments."
           className="flex-1"
           action={
-            <Button
-              onClick={onCreateList}
-              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
-            >
-              <Plus size={14} className="mr-2" />
-              Créer une liste
-            </Button>
+            canEditClients ? (
+              <Button
+                onClick={onCreateList}
+                className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+              >
+                <Plus size={14} className="mr-2" />
+                Créer une liste
+              </Button>
+            ) : undefined
           }
         />
       ) : (

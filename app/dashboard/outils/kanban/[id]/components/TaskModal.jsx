@@ -24,6 +24,7 @@ import {
   Play,
   Square,
   Euro,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -82,6 +83,7 @@ import { useDebouncedMemberFlush } from "../hooks/useMemberToggle";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { cn } from "@/src/lib/utils";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useTaskViewers } from "../hooks/useTaskPresence";
 import { TaskViewersBanner, PRESENCE_RING_CLASS } from "./TaskViewers";
 import { perfMark } from "@/src/utils/kanbanPerf";
@@ -213,6 +215,9 @@ export function TaskModal({
   localMutationRef,
 }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditKanban = !isReady || canWrite("kanban");
   // Autres membres qui ont aussi cette tâche ouverte (présence temps réel)
   const viewers = useTaskViewers(isEditing ? taskForm?.id : null);
   // Identité affichée sur le curseur dans l'éditeur collaboratif
@@ -229,6 +234,9 @@ export function TaskModal({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  const createTooltip =
+    readOnlyTooltip ||
+    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
 
   // Navigation prev/next entre tâches — calculée par le parent pour éviter
   // que TaskModal dépende de board.tasks (qui change à chaque subscription).
@@ -554,6 +562,8 @@ export function TaskModal({
   // Fonction de sauvegarde réutilisable
   const triggerAutoSave = useCallback(() => {
     if (!isOpen || !isEditing || !taskForm?.title?.trim()) return;
+    // Rôle sans écriture : l'API refuserait, on n'envoie rien
+    if (!canEditKanban) return;
     const current = computeAutoSaveSignature(taskForm);
     if (current === initialFormRef.current) return;
     // Marquer que c'est une mutation locale pour éviter que le hook
@@ -565,7 +575,7 @@ export function TaskModal({
     };
     onSubmit(formData);
     initialFormRef.current = current;
-  }, [isOpen, isEditing, taskForm, onSubmit, localMutationRef]);
+  }, [isOpen, isEditing, taskForm, onSubmit, localMutationRef, canEditKanban]);
 
   // Ref qui pointe toujours vers la dernière version de triggerAutoSave.
   // Assigné pendant le render (pas dans un effect) pour garantir que le flush
@@ -725,11 +735,18 @@ export function TaskModal({
       setTaskForm((prev) => ({ ...prev, assignedMembers: newMembers }));
 
       // En mode édition, planifier l'envoi (debouncé) au serveur.
-      if (isEditing && updateTask && taskForm.id) {
+      if (isEditing && updateTask && taskForm.id && canEditKanban) {
         flushMembers(taskForm.id, newMembers);
       }
     },
-    [setTaskForm, isEditing, updateTask, taskForm.id, flushMembers],
+    [
+      setTaskForm,
+      isEditing,
+      updateTask,
+      taskForm.id,
+      flushMembers,
+      canEditKanban,
+    ],
   );
 
   // Gestion de la date d'échéance
@@ -892,6 +909,13 @@ export function TaskModal({
                 )}
 
                 <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 h-0 min-h-0">
+                  {isEditing && !canEditKanban && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 text-xs text-muted-foreground w-fit">
+                      <Lock className="h-3 w-3" />
+                      Lecture seule · Votre rôle ne permet pas de modifier cette
+                      tâche
+                    </div>
+                  )}
                   {/* Titre — gros, hover gris, focus border + montant à droite */}
                   <div className="flex items-start gap-3">
                     <textarea
@@ -1602,7 +1626,12 @@ export function TaskModal({
                         Temps
                       </Label>
                       <div className="flex-1">
-                        <Popover modal={false}>
+                        {/* Chronomètre fermé (lecture seule) si le rôle ne
+                            permet pas d'écrire */}
+                        <Popover
+                          modal={false}
+                          open={canEditKanban ? undefined : false}
+                        >
                           <PopoverTrigger asChild>
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md hover:bg-muted/60 transition-colors cursor-pointer">
                               <TaskTimeLabel
@@ -1657,7 +1686,7 @@ export function TaskModal({
                       onChange={handleLinkedTasksChange}
                       onOpenTask={handleOpenLinkedTask}
                       isEditing={isEditing}
-                      disabled={isReadOnly}
+                      disabled={isReadOnly || !canEditKanban}
                     />
                   </div>
 
@@ -1712,7 +1741,8 @@ export function TaskModal({
                       <TaskImageUpload
                         images={taskForm.images || []}
                         onUpload={handleDescriptionImageUpload}
-                        onDelete={handleDeleteImage}
+                        onDelete={canEditKanban ? handleDeleteImage : undefined}
+                        disabled={!canEditKanban}
                         isUploading={isUploadingImage}
                         uploadProgress={uploadProgress}
                         maxImages={10}
@@ -1746,9 +1776,12 @@ export function TaskModal({
                       <Button
                         onClick={handleSubmit}
                         disabled={
-                          isReadOnly || isLoading || !taskForm.title.trim()
+                          isReadOnly ||
+                          !canEditKanban ||
+                          isLoading ||
+                          !taskForm.title.trim()
                         }
-                        title={readOnlyTooltip}
+                        title={createTooltip}
                         className="px-6 text-white hover:opacity-90"
                         style={{ backgroundColor: "#5b50FF" }}
                       >
@@ -1783,6 +1816,7 @@ export function TaskModal({
                         boardMembers={board?.members || []}
                         columns={board?.columns || []}
                         onTaskUpdate={setTaskForm}
+                        canComment={canEditKanban}
                       />
                     </Suspense>
                   ) : (
@@ -1839,6 +1873,13 @@ export function TaskModal({
                 className="flex-1 flex flex-col overflow-hidden m-0 data-[state=active]:flex"
               >
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                  {isEditing && !canEditKanban && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 text-xs text-muted-foreground w-fit">
+                      <Lock className="h-3 w-3" />
+                      Lecture seule · Votre rôle ne permet pas de modifier cette
+                      tâche
+                    </div>
+                  )}
                   {/* Contenu du formulaire (même que desktop) */}
                   {/* Titre */}
                   <div className="space-y-2">
@@ -2518,8 +2559,11 @@ export function TaskModal({
                     </div>
                   </div>
 
-                  {/* Timer et facturation */}
-                  {isEditing && (taskForm.id || taskForm._id) ? (
+                  {/* Timer et facturation (masqué en édition si le rôle ne
+                      permet pas d'écrire) */}
+                  {isEditing &&
+                  (taskForm.id || taskForm._id) &&
+                  canEditKanban ? (
                     <div className="mt-6">
                       <TimerControls
                         taskId={taskForm.id || taskForm._id}
@@ -2561,7 +2605,7 @@ export function TaskModal({
                       onChange={handleLinkedTasksChange}
                       onOpenTask={handleOpenLinkedTask}
                       isEditing={isEditing}
-                      disabled={isReadOnly}
+                      disabled={isReadOnly || !canEditKanban}
                     />
                   </div>
 
@@ -2583,7 +2627,8 @@ export function TaskModal({
                       <TaskImageUpload
                         images={taskForm.images || []}
                         onUpload={handleDescriptionImageUpload}
-                        onDelete={handleDeleteImage}
+                        onDelete={canEditKanban ? handleDeleteImage : undefined}
+                        disabled={!canEditKanban}
                         isUploading={isUploadingImage}
                         uploadProgress={uploadProgress}
                         maxImages={10}
@@ -2617,9 +2662,12 @@ export function TaskModal({
                       <Button
                         onClick={handleSubmit}
                         disabled={
-                          isReadOnly || isLoading || !taskForm.title.trim()
+                          isReadOnly ||
+                          !canEditKanban ||
+                          isLoading ||
+                          !taskForm.title.trim()
                         }
-                        title={readOnlyTooltip}
+                        title={createTooltip}
                         className="flex-1 text-white hover:opacity-90"
                         style={{ backgroundColor: "#5b50FF" }}
                       >
@@ -2654,6 +2702,7 @@ export function TaskModal({
                         boardMembers={board?.members || []}
                         columns={board?.columns || []}
                         onTaskUpdate={setTaskForm}
+                        canComment={canEditKanban}
                       />
                     </Suspense>
                   ) : (
