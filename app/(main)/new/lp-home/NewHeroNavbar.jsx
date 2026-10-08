@@ -436,6 +436,17 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                     </span>
                   </Link>
                 </Button>
+                {/* CTA d'inscription, à côté de Connexion. Libellé court : le
+                    « Essayer Newbi gratuitement » du bureau ne tient pas dans
+                    la barre à 390 px. Masqué une fois connecté, où le bouton
+                    voisin devient « Continuer sur l'app ». */}
+                {!isLoggedIn && (
+                  <Button asChild variant="primary" size="sm" className="px-3">
+                    <Link href={signupHref}>
+                      <span>Commencer</span>
+                    </Link>
+                  </Button>
+                )}
                 <button
                   onClick={() => {
                     setMenuState(!menuState);

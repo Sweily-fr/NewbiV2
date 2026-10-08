@@ -72,13 +72,19 @@ export default function HeroSection() {
 
             {/* Boutons CTA : même gabarit que celui de la navbar (variante
                 « primary », taille md, px-4). Le second reprend la forme du
-                premier en violet pastel, texte violet Newbi. */}
-            <div className="mb-8 flex flex-col items-center gap-3 sm:mx-auto sm:grid sm:w-fit sm:grid-cols-2">
+                premier en violet pastel, texte violet Newbi.
+
+                Grille plutôt que colonne flex : empilés sur mobile, les deux
+                boutons prenaient chacun la largeur de leur texte, et « Demander
+                une démo » se retrouvait plus étroit. En grille `w-fit`, la
+                piste fait la largeur du plus long libellé et les deux s'y
+                étirent. */}
+            <div className="mb-8 mx-auto grid w-fit grid-cols-1 gap-3 sm:grid-cols-2">
               <Button
                 asChild
                 size="md"
                 variant="primary"
-                className="h-auto w-auto px-4 py-1.5 text-[17px] sm:w-full"
+                className="h-auto w-full px-4 py-1.5 text-[17px]"
               >
                 <Link href="/auth/signup">
                   <span>Essayer Newbi gratuitement</span>
@@ -88,7 +94,7 @@ export default function HeroSection() {
                 asChild
                 size="md"
                 variant="primary"
-                className="h-auto w-auto px-4 py-1.5 text-[17px] sm:w-full bg-[#E4E2FF] text-[#5A50FF] hover:bg-[#D6D3FF] active:bg-[#C8C4FF] [box-shadow:none]"
+                className="h-auto w-full px-4 py-1.5 text-[17px] bg-[#E4E2FF] text-[#5A50FF] hover:bg-[#D6D3FF] active:bg-[#C8C4FF] [box-shadow:none]"
               >
                 <Link href="/contact">
                   <span>Demander une démo</span>
