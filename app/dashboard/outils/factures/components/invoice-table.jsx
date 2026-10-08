@@ -110,6 +110,9 @@ import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
 import CreditNotesTable from "./credit-notes-table";
+import RecurringInvoicesTable from "./recurring-invoices-table";
+import InvoiceRecurrenceDialog from "./invoice-recurrence-dialog";
+import { useInvoiceRecurrences } from "@/src/graphql/invoiceRecurrenceQueries";
 import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { useCreditNotes } from "@/src/graphql/creditNoteQueries";
@@ -143,6 +146,8 @@ export default function InvoiceTable({
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailInvoice, setSendEmailInvoice] = useState(null);
   const [templateInvoice, setTemplateInvoice] = useState(null);
+  // Dialog de récurrence : { invoice (si chargée), sourceInvoiceId }
+  const [recurrenceTarget, setRecurrenceTarget] = useState(null);
   // État pour le fullscreen mobile - géré au niveau du tableau
   const [mobileFullscreenInvoice, setMobileFullscreenInvoice] = useState(null);
 
@@ -177,6 +182,26 @@ export default function InvoiceTable({
     page: 1,
     limit: 1,
   });
+
+  // Factures récurrentes : badge dans la liste, onglet dédié, dialog
+  const {
+    recurrences,
+    loading: recurrencesLoading,
+    error: recurrencesError,
+    refetch: refetchRecurrences,
+  } = useInvoiceRecurrences();
+  const recurrencesBySource = useMemo(
+    () => new Map(recurrences.map((r) => [r.sourceInvoiceId, r])),
+    [recurrences],
+  );
+  const liveRecurrencesCount = useMemo(
+    () =>
+      recurrences.filter((r) => ["ACTIVE", "PAUSED"].includes(r.status)).length,
+    [recurrences],
+  );
+  const openRecurrenceForInvoice = useCallback((invoice) => {
+    setRecurrenceTarget({ invoice, sourceInvoiceId: invoice.id });
+  }, []);
 
   // Récupérer les paramètres de relance automatique
   const { data: reminderSettingsData } = useInvoiceReminderSettings();
@@ -287,6 +312,8 @@ export default function InvoiceTable({
     onOpenImportedSidebar: setSelectedImportedInvoice,
     onSendEmail: setSendEmailInvoice,
     onSaveAsTemplate: setTemplateInvoice,
+    recurrencesBySource,
+    onManageRecurrence: openRecurrenceForInvoice,
   });
 
   // Notifier le parent des données filtrées pour les KPIs
@@ -338,12 +365,15 @@ export default function InvoiceTable({
       setStatusFilter([]);
     } else if (value === "completed") {
       setStatusFilter(["COMPLETED"]);
-    } else if (value === "credit-notes") {
+    } else if (value === "credit-notes" || value === "recurring") {
       setStatusFilter([]);
     }
   };
 
   const isCreditNotesView = activeTab === "credit-notes";
+  const isRecurringView = activeTab === "recurring";
+  // Onglets qui remplacent le tableau des factures par leur propre vue
+  const isSideView = isCreditNotesView || isRecurringView;
 
   // Pré-filtrage depuis l'URL (ex: ?status=overdue depuis le dashboard)
   const searchParams = useSearchParams();
@@ -360,6 +390,7 @@ export default function InvoiceTable({
         "overdue",
         "completed",
         "credit-notes",
+        "recurring",
       ].includes(status)
     ) {
       handleTabChange(status);
@@ -376,6 +407,7 @@ export default function InvoiceTable({
       overdue: 0,
       completed: 0,
       "credit-notes": creditNotesCount,
+      recurring: liveRecurrencesCount,
     };
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -401,7 +433,7 @@ export default function InvoiceTable({
     });
     counts["credit-notes"] = creditNotesCount;
     return counts;
-  }, [combinedInvoices, creditNotesCount]);
+  }, [combinedInvoices, creditNotesCount, liveRecurrencesCount]);
 
   // --- Mobile responsive state ---
   const [isMobileScrolled, setIsMobileScrolled] = useState(false);
@@ -419,6 +451,7 @@ export default function InvoiceTable({
     { id: "overdue", label: "En retard" },
     { id: "completed", label: "Terminées" },
     { id: "credit-notes", label: "Avoirs" },
+    { id: "recurring", label: "Récurrentes" },
   ];
 
   // All rows for mobile infinite scroll (bypasses pagination)
@@ -681,17 +714,21 @@ export default function InvoiceTable({
                   {invoiceCounts["credit-notes"]}
                 </span>
               </TabsTrigger>
+              <TabsTrigger
+                value="recurring"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              >
+                <span>Récurrentes</span>
+                <span className="text-xs text-muted-foreground">
+                  {invoiceCounts.recurring}
+                </span>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
         {/* Table header - sticky */}
-        <div
-          className={cn(
-            "border-b border-border",
-            isCreditNotesView && "hidden",
-          )}
-        >
+        <div className={cn("border-b border-border", isSideView && "hidden")}>
           <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -724,7 +761,7 @@ export default function InvoiceTable({
       <div
         className={cn(
           "hidden md:flex md:flex-col flex-1",
-          isCreditNotesView && "md:hidden",
+          isSideView && "md:hidden",
         )}
       >
         <table className="w-full table-fixed">
@@ -975,7 +1012,7 @@ export default function InvoiceTable({
         onScroll={handleMobileScroll}
         className={cn(
           "md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20",
-          isCreditNotesView && "hidden",
+          isSideView && "hidden",
         )}
       >
         <div
@@ -1142,11 +1179,30 @@ export default function InvoiceTable({
         />
       )}
 
+      {isRecurringView && (
+        <RecurringInvoicesTable
+          recurrences={recurrences}
+          loading={recurrencesLoading}
+          error={recurrencesError}
+          onRetry={refetchRecurrences}
+          globalFilter={globalFilter}
+          onManage={(recurrence) =>
+            setRecurrenceTarget({
+              invoice:
+                (invoices || []).find(
+                  (inv) => inv.id === recurrence.sourceInvoiceId,
+                ) || null,
+              sourceInvoiceId: recurrence.sourceInvoiceId,
+            })
+          }
+        />
+      )}
+
       {/* Pagination - Fixe en bas sur desktop */}
       <div
         className={cn(
           "hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background sticky bottom-0 z-10",
-          isCreditNotesView && "md:hidden",
+          isSideView && "md:hidden",
         )}
       >
         <div className="flex-1 text-xs font-normal text-muted-foreground">
@@ -1280,6 +1336,20 @@ export default function InvoiceTable({
           onOpenChange={(open) => {
             if (!open) setTemplateInvoice(null);
           }}
+        />
+      )}
+
+      {/* Dialog de récurrence - state au niveau du tableau */}
+      {recurrenceTarget && (
+        <InvoiceRecurrenceDialog
+          open={!!recurrenceTarget}
+          onOpenChange={(open) => {
+            if (!open) setRecurrenceTarget(null);
+          }}
+          invoice={recurrenceTarget.invoice}
+          recurrence={
+            recurrencesBySource.get(recurrenceTarget.sourceInvoiceId) || null
+          }
         />
       )}
 

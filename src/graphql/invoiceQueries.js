@@ -183,6 +183,11 @@ export const INVOICE_FRAGMENT = gql`
       emailClickedAt
       emailClickCount
     }
+    recurrenceOrigin {
+      recurrenceId
+      sourceInvoiceId
+      occurrenceDate
+    }
     superPdpInvoiceId
     eInvoiceStatus
     eInvoiceLastCode
@@ -301,6 +306,11 @@ export const INVOICE_LIST_FRAGMENT = gql`
       emailOpenCount
       emailClickedAt
       emailClickCount
+    }
+    recurrenceOrigin {
+      recurrenceId
+      sourceInvoiceId
+      occurrenceDate
     }
     createdAt
     updatedAt
