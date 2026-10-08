@@ -1,14 +1,42 @@
 import React from "react";
+import { OMBRE, VISUEL } from "@/src/lib/lp-visuels";
 
 // Même bento que « Garde le contrôle de ton activité » sur la LP home, repris
 // sur les LP produits : une grande carte et une carte moyenne en haut, trois
-// cartes en dessous. Les illustrations génériques du carrousel sombre sont
-// retirées, le texte porte seul.
+// cartes en dessous. Chaque carte porte une photo de l'équipe, ancrée en bas
+// et sortant du cadre à droite, comme sur les bentos des LP produit.
 const CARD =
-  "rounded-3xl bg-gradient-to-b from-[#F4F4F6] to-[#FAFAFB] p-7 md:p-8 flex flex-col overflow-hidden";
+  "rounded-3xl bg-gradient-to-b from-[#F4F4F6] to-[#FAFAFB] p-7 md:p-8 pb-0 flex flex-col overflow-hidden";
 const TITLE =
   "text-xl md:text-2xl font-medium tracking-tight text-gray-950 mb-3";
 const TEXT = "text-[15px] leading-relaxed text-gray-700";
+// Cadre des photographies : calé à droite, il remplit la hauteur disponible et
+// sort du cadre en bas et à droite, qui le recadre. Les clichés sont verticaux,
+// la fenêtre est donc étroite — étalée sur toute la largeur de la carte, elle
+// ne garderait qu'une bande du sujet. `largeur` l'ajuste à la carte.
+const PHOTO = "-right-10 top-0 -bottom-10";
+
+// `position` recadre la fenêtre sur le sujet : centrée par défaut, elle coupe
+// les têtes des clichés dont les visages sont hauts dans le cadre.
+function Photo({ src, alt, largeur = "w-[240px]", position }) {
+  return (
+    <div className={VISUEL}>
+      <div className={`absolute ${PHOTO} ${largeur}`}>
+        <div className={`h-full overflow-hidden rounded-2xl ${OMBRE}`}>
+          <img
+            src={src}
+            alt={alt}
+            width={1050}
+            height={1400}
+            loading="lazy"
+            className="size-full object-cover"
+            style={position ? { objectPosition: position } : undefined}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ValuesSection() {
   return (
@@ -33,6 +61,11 @@ export function ValuesSection() {
               fonctionnalité demande une explication, c&apos;est qu&apos;elle
               est mal conçue.
             </p>
+            <Photo
+              src="/lp/about/mobile-lobby.jpg"
+              alt="Un membre de l'équipe Newbi consulte son activité depuis son téléphone"
+              largeur="w-[320px]"
+            />
           </article>
 
           <article className={`${CARD} md:col-span-5 min-h-[449px]`}>
@@ -43,6 +76,11 @@ export function ValuesSection() {
               résiliez en deux clics, et votre abonnement n&apos;augmente pas
               parce que vous avez envoyé plus de factures que le mois dernier.
             </p>
+            <Photo
+              src="/lp/about/cafe-equipe.jpg"
+              alt="Un membre de l'équipe Newbi en pause café"
+              largeur="w-[280px]"
+            />
           </article>
 
           <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
@@ -53,6 +91,10 @@ export function ValuesSection() {
               exporter l&apos;intégralité de vos documents à tout moment — y
               compris le jour où vous partez.
             </p>
+            <Photo
+              src="/lp/about/evenement-equipe.jpg"
+              alt="L'équipe Newbi en t-shirt newbi.fr lors d'un événement"
+            />
           </article>
 
           <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
@@ -63,6 +105,11 @@ export function ValuesSection() {
               qui a développé la fonctionnalité. Les demandes qui reviennent le
               plus souvent passent devant dans la feuille de route.
             </p>
+            <Photo
+              src="/lp/about/echange-equipe.jpg"
+              alt="Deux membres de l'équipe Newbi en discussion"
+              position="50% 15%"
+            />
           </article>
 
           <article className={`${CARD} md:col-span-4 min-h-[433px]`}>
@@ -73,6 +120,10 @@ export function ValuesSection() {
               l&apos;avance pour que vous n&apos;ayez rien à faire le jour où
               elles s&apos;appliquent.
             </p>
+            <Photo
+              src="/lp/about/session-du-soir.jpg"
+              alt="L'équipe Newbi au travail en fin de journée"
+            />
           </article>
         </div>
       </div>
