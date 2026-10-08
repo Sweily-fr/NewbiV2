@@ -14,14 +14,21 @@ const TEXT = "text-[15px] leading-relaxed text-gray-700";
 // sort du cadre en bas et à droite, qui le recadre. Les clichés sont verticaux,
 // la fenêtre est donc étroite — étalée sur toute la largeur de la carte, elle
 // ne garderait qu'une bande du sujet. `largeur` l'ajuste à la carte.
-const PHOTO = "-right-10 top-0 -bottom-10";
+// Place de la fenêtre dans la carte : contre un bord, dont elle sort, ou au
+// milieu. On alterne d'une carte à l'autre pour que la rangée ne se lise pas
+// comme une suite d'images toutes calées du même côté.
+const PHOTO = {
+  droite: "-right-10 top-0 -bottom-10",
+  centre: "left-1/2 -translate-x-1/2 top-0 -bottom-10",
+  gauche: "-left-10 top-0 -bottom-10",
+};
 
 // `position` recadre la fenêtre sur le sujet : centrée par défaut, elle coupe
 // les têtes des clichés dont les visages sont hauts dans le cadre.
-function Photo({ src, alt, largeur = "w-[240px]", position }) {
+function Photo({ src, alt, largeur = "w-[240px]", position, cote = "droite" }) {
   return (
     <div className={VISUEL}>
-      <div className={`absolute ${PHOTO} ${largeur}`}>
+      <div className={`absolute ${PHOTO[cote]} ${largeur}`}>
         <div className={`h-full overflow-hidden rounded-2xl ${OMBRE}`}>
           <img
             src={src}
@@ -109,6 +116,7 @@ export function ValuesSection() {
               src="/lp/about/echange-equipe.jpg"
               alt="Deux membres de l'équipe Newbi en discussion"
               position="50% 15%"
+              cote="centre"
             />
           </article>
 
@@ -123,6 +131,7 @@ export function ValuesSection() {
             <Photo
               src="/lp/about/session-du-soir.jpg"
               alt="L'équipe Newbi au travail en fin de journée"
+              cote="gauche"
             />
           </article>
         </div>
