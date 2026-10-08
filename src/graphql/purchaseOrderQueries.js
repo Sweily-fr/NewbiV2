@@ -603,6 +603,8 @@ export const usePurchaseOrder = (id) => {
     skip: !id || !workspaceId,
     errorPolicy: "all",
     fetchPolicy: "network-only",
+    // Introuvable = page redirigée vers la liste (ResourceNotFound), sans toast
+    context: { skipNotFoundToast: true },
   });
 
   return {

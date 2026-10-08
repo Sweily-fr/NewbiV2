@@ -54,15 +54,12 @@ import {
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
-import { stripIdFromPathname } from "@/src/utils/orgRedirect";
+import { reloadIntoWorkspace } from "@/src/utils/orgRedirect";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
-import {
-  apolloClient,
-  setOrganizationIdForApollo,
-} from "@/src/lib/apolloClient";
+import { setOrganizationIdForApollo } from "@/src/lib/apolloClient";
 import { CreateWorkspaceModal } from "./create-workspace-modal";
 import dynamic from "next/dynamic";
 import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
@@ -233,8 +230,7 @@ export function OrganizationSwitcherHeader() {
       //    relance ses queries avec l'ancien id de ressource et la nouvelle
       //    organisation — le serveur répond "ressource introuvable" et
       //    l'erreur part dans l'alerting. Prévenues, elles gèlent leur rendu
-      //    et leurs requêtes ; la sortie vers la liste se fait plus bas, une
-      //    fois le cache vidé.
+      //    et leurs requêtes jusqu'au rechargement de l'étape 5.
       window.dispatchEvent(
         new CustomEvent("organizationChanged", {
           detail: { previousOrgId: oldWorkspaceId, newOrgId: organizationId },
@@ -249,7 +245,9 @@ export function OrganizationSwitcherHeader() {
       // Si l'org n'a pas d'abonnement actif, on laisse l'utilisateur y accéder
       // Le banner "Renouveler l'abonnement" dans le site-header s'affichera automatiquement
 
-      // 3. Mettre à jour l'org ID immédiatement pour Apollo (sans attendre useWorkspace)
+      // 3. Aligner immédiatement l'en-tête x-organization-id d'Apollo pour
+      //    les requêtes qui partiraient avant le rechargement, et prévenir
+      //    les autres onglets (OrgChangeCrossTabDetector).
       setOrganizationIdForApollo(organizationId);
       localStorage.setItem("active_organization_id", organizationId);
 
@@ -259,35 +257,28 @@ export function OrganizationSwitcherHeader() {
       }
       localStorage.removeItem(`subscription-${organizationId}`);
 
-      // 5. Vider TOUT le cache Apollo — évite les données stale de l'ancienne org
-      await apolloClient.clearStore();
-
+      // 5. Recharger la page (la liste si on était sur une page de détail) :
+      //    cache Apollo, store Better Auth et en-tête repartent tous sur la
+      //    nouvelle organisation, et layout.jsx re-vérifie la session. Le
+      //    toast s'affiche après le rechargement.
       const newOrg = sortedOrganizations.find(
         (org) => org.id === organizationId,
       );
-      toast.success(
-        `Vous êtes sur l'espace ${newOrg?.name || "l'organisation"}`,
-      );
       setIsOpen(false);
-
-      // 6. Si on est sur une page de détail (URL avec un ID de ressource),
-      //    rediriger vers la page liste : l'ID n'existe pas dans la nouvelle org.
-      //    Sinon, forcer le refresh SSR pour que layout.jsx re-vérifie la session.
-      const safePath = stripIdFromPathname(pathname);
-      if (safePath !== pathname) {
-        router.replace(safePath);
-      } else {
-        router.refresh();
-      }
+      reloadIntoWorkspace(pathname, {
+        type: "success",
+        message: `Vous êtes sur l'espace ${newOrg?.name || "l'organisation"}`,
+      });
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
       // Le changement a échoué : dégeler les pages de détail prévenues à
       // l'étape 1, sinon elles resteraient bloquées sur un écran vide.
       window.dispatchEvent(new CustomEvent("organizationChangeAborted"));
-    } finally {
       setIsChangingOrg(false);
     }
+    // Pas de setIsChangingOrg(false) en cas de succès : le sélecteur reste
+    // verrouillé jusqu'au rechargement, pour empêcher un second changement.
   };
 
   // Loading state

@@ -45,6 +45,11 @@ export function resetOrganizationIdForApollo() {
   _confirmedOrgId = null;
 }
 
+// Espace envoyé par CET onglet dans l'en-tête x-organization-id
+export function getOrganizationIdForApollo() {
+  return _confirmedOrgId;
+}
+
 // ==================== JWT ON-DEMAND (mémoire uniquement) ====================
 // Le cookie session est scopé au domaine frontend (Vercel).
 // Pour les requêtes cross-origin vers le backend, on génère un JWT
@@ -330,7 +335,14 @@ const errorLink = onError(
           if (processedMessages.has(message)) return;
           processedMessages.add(message);
 
-          const skipErrorToast = operation.getContext().skipErrorToast;
+          // Document absent de l'espace courant, sur une page qui redirige
+          // déjà vers la liste (ResourceNotFound) : typiquement un retour
+          // arrière vers une page de l'ancien espace. Le toast « Ressource
+          // introuvable » n'apporte rien, les autres erreurs restent affichées.
+          const skipErrorToast =
+            operation.getContext().skipErrorToast ||
+            (errorCode === "NOT_FOUND" &&
+              operation.getContext().skipNotFoundToast);
           const isBoardNotFound =
             message?.includes("Board not found") ||
             message?.includes("board not found");
