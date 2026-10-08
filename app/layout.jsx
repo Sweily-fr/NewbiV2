@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/src/components/theme-provider";
 import AttributionCapture from "@/src/components/AttributionCapture";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
-import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
 import { ForceDesktopViewport } from "@/src/components/force-desktop-viewport";
 import CookieWrapper from "@/src/components/cookies/CookieWrapper";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
@@ -201,7 +200,9 @@ export default function RootLayout({ children }) {
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />
-        {/* <DevAnimationTrigger /> */}
+        {/* <DevAnimationTrigger /> : réimporter depuis
+            @/src/components/dev-animation-trigger pour le réactiver. Même
+            inutilisé, son import chargeait framer-motion sur toutes les pages. */}
       </body>
     </html>
   );

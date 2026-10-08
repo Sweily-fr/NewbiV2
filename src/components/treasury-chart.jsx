@@ -123,7 +123,11 @@ export function TreasuryChart({
     ? data.dashboardTreasuryChart.endBalance -
       data.dashboardTreasuryChart.startBalance
     : 0;
-  const combinedLoading = isLoading || queryLoading;
+  // Squelette au premier chargement seulement : en cache-and-network, loading
+  // reste à true pendant la revalidation même quand le cache a les données, et
+  // le squelette remplaçait le graphique à chaque visite de la page.
+  const combinedLoading =
+    (isLoading || queryLoading) && !data?.dashboardTreasuryChart;
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("fr-FR", {
