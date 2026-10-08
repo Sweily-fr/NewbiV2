@@ -230,20 +230,25 @@ export default function PricingFeaturesSection() {
             {/* Sélecteur de plan, visible seulement en dessous de lg. Sans
                 cadre ni fond : le libellé et le chevron suffisent, et la
                 barre reste légère en face de « Fonctionnalités ». */}
-            <div className="relative pb-3 lg:hidden">
-              <select
-                aria-label="Choisir un plan à comparer"
-                value={planMobile}
-                onChange={(e) => setPlanMobile(e.target.value)}
-                className="h-8 cursor-pointer appearance-none bg-transparent pl-0 pr-5 text-right text-[15px] text-gray-900"
-              >
-                {COLONNES.map((col) => (
-                  <option key={col.id} value={col.cle}>
-                    {col.nom}
-                  </option>
-                ))}
-              </select>
-              <Chevrons />
+            <div className="pb-3 lg:hidden">
+              {/* Le repère du chevron est le select lui-même, pas le bloc qui
+                  porte le `pb-3` : sinon il se centre sur la hauteur padding
+                  comprise et retombe sous la ligne de texte. */}
+              <div className="relative">
+                <select
+                  aria-label="Choisir un plan à comparer"
+                  value={planMobile}
+                  onChange={(e) => setPlanMobile(e.target.value)}
+                  className="h-8 cursor-pointer appearance-none bg-transparent pl-0 pr-5 text-right text-[15px] text-gray-900"
+                >
+                  {COLONNES.map((col) => (
+                    <option key={col.id} value={col.cle}>
+                      {col.nom}
+                    </option>
+                  ))}
+                </select>
+                <Chevrons />
+              </div>
             </div>
 
             {COLONNES.map((col, i) => (
