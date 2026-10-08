@@ -749,31 +749,32 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
           >
             <div className="flex flex-col h-full">
               {/* Menu, d'un seul tenant et déroulant : pas d'accordéon.
-                  Chaque entrée à sous-menu devient un groupe — son nom en
-                  petite étiquette grise, ses liens en dessous, à plat. Les
-                  colonnes du menu de bureau sont fusionnées : sur mobile, les
-                  intitulés des liens se suffisent. */}
+                  Un groupe par colonne du menu de bureau — outils financiers,
+                  autres outils, statut, métier, à propos — avec son intitulé
+                  en petite étiquette grise et ses liens en dessous, à plat.
+                  Les colonnes sans lien, comme le visuel du menu « Pour qui »,
+                  sont ignorées. */}
               <div className="flex-1 overflow-y-auto px-6 pt-8 pb-16">
                 {menuItems
                   .filter((item) => item.hasDropdown)
-                  .map((item) => (
-                    <div key={item.name} className="mb-9">
-                      <p className="mb-3 text-[13px] text-gray-400">
-                        {item.name}
+                  .flatMap((item) => item.dropdownColumns ?? [])
+                  .filter((colonne) => colonne.items?.length)
+                  .map((colonne) => (
+                    <div key={colonne.title} className="mb-9">
+                      <p className="mb-3 text-[12px] uppercase tracking-wider text-gray-400">
+                        {colonne.title}
                       </p>
                       <div className="flex flex-col">
-                        {item.dropdownColumns
-                          ?.flatMap((colonne) => colonne.items ?? [])
-                          .map((lien) => (
-                            <Link
-                              key={lien.href}
-                              href={lien.href}
-                              onClick={() => setMenuState(false)}
-                              className="py-1.5 text-[26px] font-medium leading-[1.25] tracking-tight text-[#0d0d0d]"
-                            >
-                              {lien.name}
-                            </Link>
-                          ))}
+                        {colonne.items.map((lien) => (
+                          <Link
+                            key={lien.href}
+                            href={lien.href}
+                            onClick={() => setMenuState(false)}
+                            className="py-1.5 text-[26px] font-medium leading-[1.25] tracking-tight text-[#0d0d0d]"
+                          >
+                            {lien.name}
+                          </Link>
+                        ))}
                       </div>
                     </div>
                   ))}
