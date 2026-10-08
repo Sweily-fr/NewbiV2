@@ -303,7 +303,6 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
   };
 
   React.useEffect(() => () => clearTimeout(closeTimer.current), []);
-  const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(null);
   const [bannerVisible, setBannerVisible] = React.useState(hasBanner);
 
   // Listen for banner close event
@@ -448,10 +447,7 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                   </Button>
                 )}
                 <button
-                  onClick={() => {
-                    setMenuState(!menuState);
-                    if (menuState) setMobileDropdownOpen(null);
-                  }}
+                  onClick={() => setMenuState(!menuState)}
                   aria-label={menuState == true ? "Close Menu" : "Open Menu"}
                   className={cn(
                     "relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 transition-colors duration-300",
@@ -752,152 +748,55 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
             className={`lg:hidden fixed inset-0 bg-[#FDFDFD] z-50 overflow-hidden transition-all duration-300 ${bannerVisible && !isScrolled ? "top-[148px] sm:top-[126px]" : "top-[65px]"}`}
           >
             <div className="flex flex-col h-full">
-              {/* Menu content - Scrollable */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="divide-y divide-gray-200/60">
-                  {menuItems.map((item, index) => (
-                    <div key={index}>
-                      {item.hasDropdown ? (
-                        <div>
-                          {/* Accordion Header */}
-                          <button
-                            onClick={() =>
-                              setMobileDropdownOpen(
-                                mobileDropdownOpen === index ? null : index,
-                              )
-                            }
-                            className="flex items-center justify-between w-full px-6 py-3.5 text-left"
-                          >
-                            <span className="text-base font-normal text-[#202020]">
-                              {item.name}
-                            </span>
-                            <svg
-                              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${mobileDropdownOpen === index ? "rotate-180" : ""}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+              {/* Menu, d'un seul tenant et déroulant : pas d'accordéon.
+                  Chaque entrée à sous-menu devient un groupe — son nom en
+                  petite étiquette grise, ses liens en dessous, à plat. Les
+                  colonnes du menu de bureau sont fusionnées : sur mobile, les
+                  intitulés des liens se suffisent. */}
+              <div className="flex-1 overflow-y-auto px-6 pt-8 pb-16">
+                {menuItems
+                  .filter((item) => item.hasDropdown)
+                  .map((item) => (
+                    <div key={item.name} className="mb-9">
+                      <p className="mb-3 text-[13px] text-gray-400">
+                        {item.name}
+                      </p>
+                      <div className="flex flex-col">
+                        {item.dropdownColumns
+                          ?.flatMap((colonne) => colonne.items ?? [])
+                          .map((lien) => (
+                            <Link
+                              key={lien.href}
+                              href={lien.href}
+                              onClick={() => setMenuState(false)}
+                              className="py-1.5 text-[26px] font-medium leading-[1.25] tracking-tight text-[#0d0d0d]"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                              />
-                            </svg>
-                          </button>
-
-                          {/* Accordion Content */}
-                          {mobileDropdownOpen === index && (
-                            <div className="">
-                              {item.dropdownColumns?.map((column, colIdx) => (
-                                <div key={colIdx} className="px-6 py-4">
-                                  <h3 className="text-xs font-normal text-gray-400 uppercase tracking-wider mb-4">
-                                    {column.title}
-                                  </h3>
-                                  <div className="space-y-1">
-                                    {column.items.map((dropdownItem, idx) => (
-                                      <Link
-                                        key={idx}
-                                        href={dropdownItem.href}
-                                        className="flex items-center gap-4 py-3 hover:bg-gray-100 rounded-lg px-2 -mx-2 transition-colors duration-200"
-                                        onClick={() => {
-                                          setMenuState(false);
-                                          setMobileDropdownOpen(null);
-                                        }}
-                                      >
-                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
-                                          <span className="text-gray-600">
-                                            {dropdownItem.icon}
-                                          </span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <h4 className="flex items-center gap-2 text-sm font-medium text-black">
-                                            {dropdownItem.name}
-                                            {dropdownItem.badge && (
-                                              <span className="rounded-md bg-[#E4E2FF] px-1.5 py-0.5 text-[10px] font-medium text-[#5A50FF]">
-                                                {dropdownItem.badge}
-                                              </span>
-                                            )}
-                                          </h4>
-                                          <p className="text-sm text-gray-500 mt-0.5">
-                                            {dropdownItem.description}
-                                          </p>
-                                        </div>
-                                      </Link>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          className="flex items-center w-full px-6 py-3.5"
-                          onClick={() => setMenuState(false)}
-                        >
-                          <span className="text-base font-normal text-[#202020]">
-                            {item.name}
-                          </span>
-                        </Link>
-                      )}
+                              {lien.name}
+                            </Link>
+                          ))}
+                      </div>
                     </div>
                   ))}
+
+                {/* Les entrées sans sous-menu ferment la liste, sans étiquette */}
+                <div className="flex flex-col">
+                  {menuItems
+                    .filter((item) => !item.hasDropdown)
+                    .map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMenuState(false)}
+                        className="py-1.5 text-[26px] font-medium leading-[1.25] tracking-tight text-[#0d0d0d]"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
                 </div>
               </div>
 
-              {/* Buttons at bottom - Fixed */}
-              <div className="px-6 pb-8 pt-6 border-t border-gray-100">
-                <div className="flex flex-col space-y-3">
-                  {isLoggedIn ? (
-                    <Button
-                      asChild
-                      size="lg"
-                      className="w-full rounded-xl py-6 text-base bg-[#202020]"
-                    >
-                      <Link
-                        href="/mobile-non-disponible"
-                        className="flex items-center justify-center"
-                        onClick={() => setMenuState(false)}
-                      >
-                        <span>Continuer sur l'app</span>
-                      </Link>
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        asChild
-                        size="lg"
-                        variant="primary"
-                        className="w-full rounded-lg py-2 text-sm"
-                      >
-                        <Link
-                          href={signupHref}
-                          className="flex items-center justify-center"
-                          onClick={() => setMenuState(false)}
-                        >
-                          <span>{signupLabel}</span>
-                        </Link>
-                      </Button>
-                      <Button
-                        asChild
-                        variant="outline"
-                        size="default"
-                        className="w-full rounded-lg py-2 text-sm border-gray-300"
-                      >
-                        <Link
-                          href="/auth/login"
-                          className="flex items-center justify-center"
-                          onClick={() => setMenuState(false)}
-                        >
-                          <span>Se connecter</span>
-                        </Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              {/* Pas de boutons en pied de panneau : Connexion et Commencer
+                  sont déjà dans la barre, juste au-dessus du menu ouvert. */}
             </div>
           </div>
         )}
