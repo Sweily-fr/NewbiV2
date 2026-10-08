@@ -51,6 +51,13 @@ const FURTHER_READING = {
     "comment-partager-documents-expert-comptable",
     "comment-gerer-tresorerie-entreprise",
   ],
+  // La SCI n'a pas d'article dédié : on reprend trois guides qui s'y
+  // appliquent réellement — justificatifs, partage au comptable, trésorerie.
+  sci: [
+    "ocr-justificatifs-comptables",
+    "comment-partager-documents-expert-comptable",
+    "comment-gerer-tresorerie-entreprise",
+  ],
   association: [
     "facturation-association-loi-1901",
     "facture-electronique-association-concernee",
