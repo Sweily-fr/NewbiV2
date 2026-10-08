@@ -38,6 +38,7 @@ import {
   Stethoscope,
   TrendingUp,
   UserRound,
+  Users,
   X,
   Zap,
 } from "lucide-react";
@@ -150,6 +151,12 @@ const menuItems = [
             description: "La gestion d'une société à associé unique",
             icon: <Rocket size={18} />,
             href: "/sasu-eurl",
+          },
+          {
+            name: "SAS et SARL",
+            description: "La société à plusieurs associés",
+            icon: <Users size={18} />,
+            href: "/sas-sarl",
           },
           {
             name: "SCI",

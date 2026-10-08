@@ -51,6 +51,13 @@ const FURTHER_READING = {
     "comment-partager-documents-expert-comptable",
     "comment-gerer-tresorerie-entreprise",
   ],
+  // Pas d'article dédié aux sociétés à plusieurs associés : on reprend les
+  // guides qui leur parlent — choix du statut, partage au comptable, trésorerie.
+  "sas-sarl": [
+    "micro-entreprise-eurl-sasu-choisir",
+    "comment-partager-documents-expert-comptable",
+    "comment-gerer-tresorerie-entreprise",
+  ],
   // La SCI n'a pas d'article dédié : on reprend trois guides qui s'y
   // appliquent réellement — justificatifs, partage au comptable, trésorerie.
   sci: [
