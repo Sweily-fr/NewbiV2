@@ -391,7 +391,9 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
         <div
           className={cn(
             "w-full px-6 lg:px-12 transition-colors duration-300",
-            (isScrolled || solidBackground) &&
+            // Le menu mobile ouvert vaut fond plein et filet bas : sans eux,
+            // la barre se confond avec le panneau, qui a la même couleur.
+            (isScrolled || solidBackground || menuState) &&
               !onDark &&
               "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800",
             onDark &&
