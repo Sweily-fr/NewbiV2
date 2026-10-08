@@ -103,21 +103,14 @@ export function HeroSection() {
             </div>
           </div>
 
-          {/* Démo animée de l'interface, sur toute la largeur du hero. Sur
-              mobile on garde la capture : la maquette animée y serait
-              illisible. */}
+          {/* Démo de l'interface, sur toute la largeur du hero. La même
+              partout : sous `md` elle s'affiche sans animation, et le cadre
+              est agrandi pour rester lisible, comme sur les autres LP. */}
           <div className="col-span-12">
             <div className="relative mx-auto mt-10 md:mt-14 w-full">
-              <div className="overflow-hidden rounded-lg border-4 border-[#2F2F2D] w-[150%] max-w-none ml-0 md:hidden">
-                <img
-                  src="/images/gestion-achats-hero.png"
-                  alt="Factures d'achat et notes de frais dans Newbi : justificatifs scannés, montants et TVA reconnus par l'OCR"
-                  className="w-full h-auto"
-                  loading="eager"
-                  fetchPriority="high"
-                />
+              <div className="w-[150%] md:w-full">
+                <PurchasesDemo />
               </div>
-              <PurchasesDemo className="hidden md:block" />
             </div>
           </div>
         </div>

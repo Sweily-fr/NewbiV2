@@ -41,8 +41,8 @@ const PROOF_AVATARS = [
    doit suivre, sinon le titre vient se coller dessous — et revenir à sa valeur
    courte dès que le bandeau est fermé. */
 const PADDING_HAUT = {
-  sans: "pt-44 sm:pt-48 lg:pt-24",
-  avec: "pt-[237px] sm:pt-[215px] lg:pt-[180px]",
+  sans: "pt-44 sm:pt-48 xl:pt-24",
+  avec: "pt-[237px] sm:pt-[215px] xl:pt-[180px]",
 };
 
 export function HeroSection({ hasBanner = false }) {
@@ -60,22 +60,22 @@ export function HeroSection({ hasBanner = false }) {
 
   return (
     <section
-      className={`lg:min-h-screen flex items-start lg:items-center overflow-hidden bg-white mb-6 lg:mb-20 px-5 transition-[padding] duration-300 ${
+      className={`xl:min-h-screen flex items-start xl:items-center overflow-hidden bg-white mb-6 xl:mb-20 px-5 transition-[padding] duration-300 ${
         bandeauVisible ? PADDING_HAUT.avec : PADDING_HAUT.sans
       }`}
     >
       {/* Même gabarit que les sections du reste de la page : 7xl plein,
           padding latéral porté par la section. */}
       <div className="mx-auto max-w-7xl w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-          <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-12 items-center">
+          <div className="space-y-4 xl:space-y-6 text-center xl:text-left">
             {/* Même recette typographique que les autres LP produits :
                 semi-gras, interlignage serré, noir profond. */}
             <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
               Adoptez la facturation électronique dès maintenant
             </h1>
 
-            <p className="text-lg md:text-xl font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-xl mx-auto lg:mx-0">
+            <p className="text-lg md:text-xl font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 xl:mb-8 max-w-xl mx-auto xl:mx-0">
               Émettez et recevez vos factures au format Factur-X via une
               plateforme agréée, prêt pour la réforme 2026 et{" "}
               <strong className="font-medium text-gray-900">
@@ -84,7 +84,7 @@ export function HeroSection({ hasBanner = false }) {
               , sans supplément.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 xl:pt-4 justify-center xl:justify-start">
               {/* Même gabarit que le CTA du hero de la LP home */}
               <Button
                 asChild
@@ -103,7 +103,7 @@ export function HeroSection({ hasBanner = false }) {
             </div>
 
             {/* Preuve sociale : mêmes portraits que les autres LP produits */}
-            <div className="flex items-center justify-center lg:justify-start gap-3 pt-3">
+            <div className="flex items-center justify-center xl:justify-start gap-3 pt-3">
               <div className="flex -space-x-2.5">
                 {PROOF_AVATARS.map((avatar) => (
                   <img
@@ -125,11 +125,18 @@ export function HeroSection({ hasBanner = false }) {
             </div>
           </div>
 
-          {/* Maquette, calée au bord droit et débordante comme sur
-              /produits/tresorerie. Masquée sous lg : à cette largeur elle
-              serait illisible. */}
-          <div className="hidden lg:flex relative items-end justify-end overflow-visible pt-4">
-            <div className="relative w-[1800px] xl:w-[1900px] -mr-[30rem] xl:-mr-[34rem]">
+          {/* Maquette. Jusqu'à xl elle passe sous le texte, agrandie pour
+              rester lisible et recadrée à droite, comme sur la LP factures ;
+              à partir de xl elle se cale au bord droit et déborde, comme sur
+              /produits/tresorerie. La bascule est à xl et non à lg : la
+              maquette fait 1 900 px, et à 1 024 px la colonne visuelle n'en
+              fait que 470 — elle recouvrait tout le texte. Elle est statique,
+              sans animation. `shrink-0` ne vaut qu'en dessous de xl : il
+              fait tenir le cadre à 150 % quand la maquette est empilée. En
+              deux colonnes, c'est au contraire la rétraction de l'élément qui
+              la garde calée à droite. */}
+          <div className="relative flex items-end pt-4 xl:justify-end xl:overflow-visible">
+            <div className="relative w-[150%] shrink-0 xl:w-[1900px] xl:shrink xl:-mr-[34rem]">
               <PurchaseInvoicesDemo />
             </div>
           </div>
