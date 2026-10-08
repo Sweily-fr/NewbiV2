@@ -109,13 +109,10 @@ import {
 } from "@/src/components/icons";
 
 import { RenameOrganizationModal } from "./rename-organization-modal";
-import {
-  apolloClient,
-  setOrganizationIdForApollo,
-} from "@/src/lib/apolloClient";
+import { setOrganizationIdForApollo } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
-import { stripIdFromPathname } from "@/src/utils/orgRedirect";
+import { reloadIntoWorkspace } from "@/src/utils/orgRedirect";
 // app/dashboard/collaborateurs/components/invite-members
 import {
   DropdownMenu,
@@ -280,8 +277,7 @@ export function TeamSwitcher() {
       //    relance ses queries avec l'ancien id de ressource et la nouvelle
       //    organisation — le serveur répond "ressource introuvable" et
       //    l'erreur part dans l'alerting. Prévenues, elles gèlent leur rendu
-      //    et leurs requêtes ; la sortie vers la liste se fait plus bas, une
-      //    fois le cache vidé.
+      //    et leurs requêtes jusqu'au rechargement de l'étape 4.
       window.dispatchEvent(
         new CustomEvent("organizationChanged", {
           detail: { previousOrgId, newOrgId: organizationId },
@@ -293,42 +289,33 @@ export function TeamSwitcher() {
         organizationId,
       });
 
-      // 3. Aligner immédiatement l'en-tête x-organization-id d'Apollo, sans
-      //    attendre l'effet de useWorkspace : les requêtes qui ne passent pas
-      //    de workspaceId explicite retomberaient sinon sur l'ancienne org.
+      // 3. Aligner immédiatement l'en-tête x-organization-id d'Apollo pour
+      //    les requêtes qui partiraient avant le rechargement, et prévenir
+      //    les autres onglets (OrgChangeCrossTabDetector).
       setOrganizationIdForApollo(organizationId);
       localStorage.setItem("active_organization_id", organizationId);
 
-      // 4. Vider TOUT le cache Apollo (toutes les données sont liées à l'ancienne org)
-      await apolloClient.clearStore();
-
-      // 5. Refetch l'organisation active pour mettre à jour l'UI
-      if (refetchActiveOrg) {
-        await refetchActiveOrg();
-      }
-
-      // 6. Notification de succès
+      // 4. Recharger la page (la liste si on était sur une page de détail) :
+      //    cache Apollo, store Better Auth et en-tête repartent tous sur la
+      //    nouvelle organisation. Le toast s'affiche après le rechargement.
       const newOrg = sortedOrganizations.find(
         (org) => org.id === organizationId,
       );
       const orgName = newOrg?.name || "l'organisation";
-      toast.success(`Vous êtes sur l'espace ${orgName}`);
-
-      // 7. Si on est sur une page de détail (URL avec un ID de ressource),
-      //    rediriger vers la page liste : l'ID n'existe pas dans la nouvelle org.
-      const safePath = stripIdFromPathname(pathname);
-      if (safePath !== pathname) {
-        router.replace(safePath);
-      }
+      reloadIntoWorkspace(pathname, {
+        type: "success",
+        message: `Vous êtes sur l'espace ${orgName}`,
+      });
     } catch (error) {
       console.error("Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
       // Le changement a échoué : dégeler les pages de détail prévenues à
       // l'étape 1, sinon elles resteraient bloquées sur un écran vide.
       window.dispatchEvent(new CustomEvent("organizationChangeAborted"));
-    } finally {
       setIsChangingOrg(false);
     }
+    // Pas de setIsChangingOrg(false) en cas de succès : le sélecteur reste
+    // verrouillé jusqu'au rechargement, pour empêcher un second changement.
   };
 
   // Afficher un loader pendant le chargement

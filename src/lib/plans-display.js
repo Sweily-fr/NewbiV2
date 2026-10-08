@@ -127,8 +127,8 @@ export const PLAN_FEATURES_SECTIONS = [
       {
         name: "E-signature devis",
         tooltip: "Faites signer vos devis électroniquement",
-        freelance: "3/mois",
-        pme: "20/mois",
+        freelance: "10/mois",
+        pme: "100/mois",
         entreprise: "Illimité",
       },
       {

@@ -10,6 +10,7 @@ import {
   FileText,
   Crown,
   ScanLine,
+  Signature,
   AlertTriangle,
   LoaderCircle,
   Info,
@@ -48,6 +49,7 @@ import { useSession } from "@/src/lib/auth-client";
 import { authClient } from "@/src/lib/auth-client";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useUserOcrQuota } from "@/src/graphql/importedInvoiceQueries";
+import { useEsignatureQuota } from "@/src/hooks/useESignature";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import { PLAN_LIMITS } from "@/src/lib/plan-limits";
@@ -90,6 +92,9 @@ export default function FacturationSection({
     useStripeCustomer();
   const { workspaceId } = useWorkspace();
   const { quota: ocrQuota, loading: ocrLoading } = useUserOcrQuota(workspaceId);
+  const { quota: esignQuota, loading: esignLoading } = useEsignatureQuota({
+    skip: !workspaceId,
+  });
 
   const orgId = session?.user?.organization?.id || organization?.id;
 
@@ -634,6 +639,61 @@ export default function FacturationSection({
                   {new Date(ocrQuota.resetDate).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",
+                  })}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* E-signature Card */}
+          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c] p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#5b50fe]/10 dark:bg-[#5b50fe]/20">
+                  <Signature className="h-3.5 w-3.5 text-[#5b50fe] dark:text-[#8b7fff]" />
+                </div>
+                <span className="text-sm font-medium">
+                  Signatures électroniques
+                </span>
+              </div>
+              <span className="text-sm text-muted-foreground">
+                {esignQuota
+                  ? esignQuota.unlimited
+                    ? `${esignQuota.used} ce mois-ci`
+                    : `${esignQuota.used}/${esignQuota.monthlyQuota}`
+                  : esignLoading
+                    ? "..."
+                    : "–"}
+              </span>
+            </div>
+            <Progress
+              value={
+                esignQuota && !esignQuota.unlimited
+                  ? Math.min(
+                      100,
+                      (esignQuota.used / esignQuota.monthlyQuota) * 100,
+                    )
+                  : 0
+              }
+              className="h-1 bg-[#5b50fe]/10 dark:bg-[#5b50fe]/20 [&>[data-slot=progress-indicator]]:bg-[#5b50fe]"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {esignQuota
+                  ? esignQuota.unlimited
+                    ? "Illimitées avec votre plan"
+                    : `${esignQuota.remaining} signature${esignQuota.remaining > 1 ? "s" : ""} restante${esignQuota.remaining > 1 ? "s" : ""}`
+                  : esignLoading
+                    ? "Chargement..."
+                    : "Indisponible"}
+              </span>
+              {esignQuota?.resetsAt && !esignQuota.unlimited && (
+                <span className="text-xs text-muted-foreground">
+                  Réinitialisation le{" "}
+                  {new Date(esignQuota.resetsAt).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "short",
+                    timeZone: "Europe/Paris",
                   })}
                 </span>
               )}

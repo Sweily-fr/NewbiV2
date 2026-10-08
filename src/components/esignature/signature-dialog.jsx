@@ -10,7 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { useRequestSignature } from "@/src/hooks/useESignature";
+import {
+  useRequestSignature,
+  useEsignatureQuota,
+} from "@/src/hooks/useESignature";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { useQuery } from "@apollo/client";
@@ -240,6 +243,34 @@ async function generatePdfBase64FromRef(componentRef, annex) {
   return uint8ArrayToBase64(new Uint8Array(bytes));
 }
 
+/**
+ * Reste du quota mensuel de signatures, affiché à gauche du bouton d'envoi.
+ * Rien pour les plans illimités ni tant que le quota n'est pas chargé.
+ */
+function QuotaHint({ quota }) {
+  if (!quota || quota.unlimited) return null;
+
+  if (quota.remaining <= 0) {
+    const nextMonth = new Date(quota.resetsAt).toLocaleDateString("fr-FR", {
+      month: "long",
+      timeZone: "Europe/Paris",
+    });
+    return (
+      <p className="text-xs text-destructive">
+        Vos {quota.monthlyQuota} signatures du mois sont utilisées. Prochain
+        envoi possible le 1er {nextMonth}.
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-xs text-muted-foreground">
+      Il vous reste {quota.remaining} signature{quota.remaining > 1 ? "s" : ""}{" "}
+      sur {quota.monthlyQuota} ce mois-ci
+    </p>
+  );
+}
+
 export function SignatureDialog({
   open,
   onOpenChange,
@@ -249,6 +280,10 @@ export function SignatureDialog({
   onSuccess,
 }) {
   const { requestSignature, loading } = useRequestSignature();
+  const { quota } = useEsignatureQuota({ skip: !open });
+  const quotaReached = Boolean(
+    quota && !quota.unlimited && quota.remaining <= 0,
+  );
   const { workspaceId } = useRequiredWorkspace();
 
   // Le devis passé en prop vient de la liste (fragment partiel) : il lui manque
@@ -529,12 +564,13 @@ export function SignatureDialog({
             </div>
 
             {/* Footer avec bouton */}
-            <div className="flex justify-end border-t border-border/40 mt-4 px-5 py-3 -mx-5">
+            <div className="flex items-center justify-between gap-3 border-t border-border/40 mt-4 px-5 py-3 -mx-5">
+              <QuotaHint quota={quota} />
               <Button
                 variant="primary"
                 onClick={handleSubmit}
-                disabled={!isValid || isBusy}
-                className="gap-2"
+                disabled={!isValid || isBusy || quotaReached}
+                className="gap-2 ml-auto shrink-0"
               >
                 {isBusy ? (
                   <>

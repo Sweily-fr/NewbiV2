@@ -672,6 +672,8 @@ export const useQuote = (id) => {
     skip: !id || !workspaceId,
     errorPolicy: "all",
     fetchPolicy: "network-only",
+    // Introuvable = page redirigée vers la liste (ResourceNotFound), sans toast
+    context: { skipNotFoundToast: true },
   });
 
   return {

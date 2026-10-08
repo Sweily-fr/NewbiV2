@@ -53,3 +53,45 @@ export function stripIdFromPathname(pathname) {
   const base = segments.slice(0, idx).join("/");
   return base || "/";
 }
+
+// Toast à afficher après le rechargement qui termine un changement d'espace
+// (sessionStorage : propre à l'onglet, survit au rechargement).
+const SWITCH_TOAST_KEY = "workspace_switch_toast";
+
+/**
+ * Termine un changement d'espace par un rechargement complet, sur la page
+ * liste si l'on était sur une page de détail.
+ *
+ * Vider le cache Apollo à chaud ne suffit pas : clearStore() rejette les
+ * requêtes encore en vol (« Store reset while query was in flight », affiché
+ * « Erreur de chargement » par les tableaux), et l'espace suivi par l'onglet
+ * (store Better Auth, en-tête x-organization-id, variables des requêtes) se
+ * met à jour en plusieurs temps, pendant lesquels l'API reçoit un espace
+ * différent dans l'en-tête et dans les variables. Le rechargement repart d'un
+ * état cohérent. `replace` retire aussi la page de détail de l'historique.
+ */
+export function reloadIntoWorkspace(pathname, toastData) {
+  try {
+    if (toastData) {
+      sessionStorage.setItem(SWITCH_TOAST_KEY, JSON.stringify(toastData));
+    }
+  } catch {
+    // sessionStorage indisponible : le changement se fait sans toast
+  }
+  window.location.replace(stripIdFromPathname(pathname) || "/dashboard");
+}
+
+/**
+ * Lit (et efface) le toast laissé par reloadIntoWorkspace avant le
+ * rechargement. Retourne { type, message } ou null.
+ */
+export function consumeWorkspaceSwitchToast() {
+  try {
+    const raw = sessionStorage.getItem(SWITCH_TOAST_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(SWITCH_TOAST_KEY);
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
