@@ -8,6 +8,8 @@ import {
   peekFullOrganization,
 } from "@/src/lib/full-organization-cache";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { canAction } from "@/src/lib/role-levels";
 
 /**
  * Hook pour gérer les permissions utilisateur avec Better Auth
@@ -46,8 +48,18 @@ export function usePermissions() {
   const hasLoadedRef = useRef(false);
   const permissionCacheRef = useRef(new Map()); // Cache des permissions
 
+  const {
+    levels: permissionLevels,
+    loading: isPermissionsLoading,
+    error: permissionsError,
+  } = useMyPermissions();
+
   // ✅ FIX: État de chargement global pour éviter les faux "permission denied"
-  const isLoading = isSessionLoading || isOrgLoading || isLoadingMembers;
+  const isLoading =
+    isSessionLoading ||
+    isOrgLoading ||
+    isLoadingMembers ||
+    (isPermissionsLoading && !permissionsError);
 
   // Réinitialiser le flag quand l'organisation change
   useEffect(() => {
@@ -136,92 +148,18 @@ export function usePermissions() {
         return false;
       }
 
-      // Normaliser le rôle en minuscules pour éviter les problèmes de casse
-      const normalizedRole = member.role?.toLowerCase();
-
-      // Owner et Admin ont tous les droits
-      if (normalizedRole === "owner" || normalizedRole === "admin") {
-        return true;
-      }
-
-      // Vérifier les permissions côté client selon le rôle
-      const actionsArray = Array.isArray(actions) ? actions : [actions];
-
-      // Définition des permissions par rôle (synchronisé avec /src/lib/permissions.js)
-      const rolePermissions = {
-        member: {
-          quotes: ["view", "create", "send", "export"],
-          purchaseOrders: ["view", "create", "send", "export"],
-          deliveryNotes: ["view", "create", "send", "export"],
-          invoices: ["view", "create", "send", "export", "import"],
-          creditNotes: ["view", "create", "export"],
-          expenses: ["view", "create", "ocr", "export"],
-          payments: ["view", "create", "export"],
-          clients: ["view", "create", "export"],
-          products: ["view", "create", "export"],
-          suppliers: ["view", "create"],
-          fileTransfers: ["view", "create", "download"],
-          sharedDocuments: ["view", "create", "edit", "download"],
-          kanban: ["view", "create", "edit", "assign"],
-          // Ses propres signatures seulement (l'API filtre sur l'auteur)
-          signatures: ["view", "create", "edit", "delete", "set-default"],
-          calendar: ["view", "create", "edit"],
-          reports: ["view", "export"],
-          analytics: ["view", "export"],
-          team: ["view"],
-        },
-        accountant: {
-          quotes: ["view", "export"],
-          purchaseOrders: ["view", "export"],
-          deliveryNotes: ["view", "export"],
-          invoices: ["view", "export", "mark-paid", "import"],
-          creditNotes: ["view", "export"],
-          expenses: ["view", "approve", "export"],
-          payments: ["view", "export"],
-          clients: ["view", "export"],
-          products: ["view", "export"],
-          suppliers: ["view"],
-          sharedDocuments: ["view", "create", "edit", "delete", "download"],
-          reports: ["view", "export"],
-          analytics: ["view", "export"],
-          team: ["view"],
-          auditLog: ["view"],
-        },
-        viewer: {
-          quotes: ["view"],
-          purchaseOrders: ["view"],
-          deliveryNotes: ["view"],
-          invoices: ["view"],
-          creditNotes: ["view"],
-          expenses: ["view"],
-          payments: ["view"],
-          clients: ["view"],
-          products: ["view"],
-          suppliers: ["view"],
-          fileTransfers: ["view", "download"],
-          kanban: ["view"],
-          signatures: ["view"],
-          calendar: ["view"],
-          reports: ["view"],
-          analytics: ["view"],
-          team: ["view"],
-        },
-      };
-
-      // Vérifier si le rôle a les permissions pour cette ressource
-      const rolePerms = rolePermissions[normalizedRole];
-      if (!rolePerms || !rolePerms[resource]) {
+      // Grille calculée par l'API (rôle prédéfini, ajusté ou personnalisé)
+      if (!permissionLevels) {
         return false;
       }
-
-      // Vérifier si toutes les actions demandées sont autorisées
+      const actionsArray = Array.isArray(actions) ? actions : [actions];
       const hasAllActions = actionsArray.every((action) =>
-        rolePerms[resource].includes(action),
+        canAction(permissionLevels, resource, action),
       );
 
       return hasAllActions;
     },
-    [session?.user, orgWithMembers],
+    [session?.user, orgWithMembers, permissionLevels],
   );
 
   /**
@@ -349,60 +287,30 @@ export function usePermissions() {
 
   /**
    * Vérifier si l'utilisateur peut éditer une ressource spécifique
-   * Prend en compte la propriété (own vs any)
    *
    * @param {string} resource - Nom de la ressource
-   * @param {boolean} isOwn - Si c'est la propre ressource de l'utilisateur
    * @returns {Promise<boolean>}
    */
-  const canEditResource = async (resource, isOwn = false) => {
-    const role = getUserRole();
-
-    // Owner et Admin peuvent tout éditer
-    if (role === "owner" || role === "admin") {
-      return true;
-    }
-
-    // Member peut éditer ses propres ressources
-    if (role === "member" && isOwn) {
-      return await canEdit(resource);
-    }
-
-    // Viewer et Accountant ne peuvent rien éditer
-    return false;
-  };
+  const canEditResource = async (resource) => await canEdit(resource);
 
   /**
-   * Vérifier si l'utilisateur peut supprimer une ressource spécifique
-   * Prend en compte la propriété (own vs any)
+   * Vérifier si l'utilisateur peut supprimer une ressource spécifique.
+   * Les suppressions limitées à l'auteur (signatures de mail) sont filtrées
+   * par l'API.
    *
    * @param {string} resource - Nom de la ressource
-   * @param {boolean} isOwn - Si c'est la propre ressource de l'utilisateur
    * @returns {Promise<boolean>}
    */
-  const canDeleteResource = async (resource, isOwn = false) => {
-    const role = getUserRole();
-
-    // Owner et Admin peuvent tout supprimer
-    if (role === "owner" || role === "admin") {
-      return await canDelete(resource);
-    }
-
-    // Member supprime ses propres ressources quand son rôle le permet
-    // (signatures de mail), comme pour l'édition
-    if (role === "member" && isOwn) {
-      return await canDelete(resource);
-    }
-
-    // Viewer et Accountant ne peuvent pas supprimer
-    return false;
-  };
+  const canDeleteResource = async (resource) => await canDelete(resource);
 
   return {
     // ✅ FIX: État de chargement pour éviter les faux "permission denied"
     isLoading,
     isReady: !isLoading && !!orgWithMembers,
-    membersLoadFailed,
+    // Grille de droits de l'API indisponible : à traiter comme un échec de
+    // chargement (retry), pas comme un refus
+    membersLoadFailed: membersLoadFailed || Boolean(permissionsError),
+    permissionLevels,
     retryLoadMembers,
 
     // Vérifications de permissions

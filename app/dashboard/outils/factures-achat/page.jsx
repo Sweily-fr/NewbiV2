@@ -10,6 +10,7 @@ import { GmailConnectionDialog } from "./components/gmail-connection";
 // GmailStatusBanner remplacé par un bouton inline dans la toolbar
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   usePurchaseInvoices,
   usePurchaseInvoiceStats,
@@ -117,6 +118,9 @@ function PurchaseInvoicesContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
   const { workspaceId } = useWorkspace();
   const {
     importedInvoices,
@@ -268,42 +272,45 @@ function PurchaseInvoicesContent() {
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Exporter
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="primary"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                  Nouvelle facture
-                  <ChevronDown size={12} aria-hidden="true" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                    Ajouter une facture
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem onClick={handleAddManual}>
-                    <Edit3 size={16} />
-                    Saisie manuelle
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleAddOcr}>
-                    <Upload size={16} />
-                    Importer (scan/OCR)
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                    Automatisation
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem onClick={handleOpenGmailDialog}>
-                    <Mail size={16} />
-                    Automatiser (Gmail)
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Création réservée aux rôles qui peuvent écrire */}
+            {canEditPurchaseInvoices && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="primary"
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip}
+                  >
+                    <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                    Nouvelle facture
+                    <ChevronDown size={12} aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      Ajouter une facture
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleAddManual}>
+                      <Edit3 size={16} />
+                      Saisie manuelle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleAddOcr}>
+                      <Upload size={16} />
+                      Importer (scan/OCR)
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      Automatisation
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleOpenGmailDialog}>
+                      <Mail size={16} />
+                      Automatiser (Gmail)
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -425,36 +432,38 @@ function PurchaseInvoicesContent() {
               </h1>
             </div>
             <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="icon" className="rounded-full">
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="[--radius:1rem]">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                      Ajouter une facture
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem onClick={handleAddManual}>
-                      <Edit3 size={16} />
-                      Saisie manuelle
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleAddOcr}>
-                      <Upload size={16} />
-                      Importer (scan/OCR)
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                      Automatisation
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem onClick={handleOpenGmailDialog}>
-                      <Mail size={16} />
-                      Automatiser (Gmail)
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canEditPurchaseInvoices && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" className="rounded-full">
+                      <Plus className="h-5 w-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="[--radius:1rem]">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                        Ajouter une facture
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem onClick={handleAddManual}>
+                        <Edit3 size={16} />
+                        Saisie manuelle
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleAddOcr}>
+                        <Upload size={16} />
+                        Importer (scan/OCR)
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                        Automatisation
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem onClick={handleOpenGmailDialog}>
+                        <Mail size={16} />
+                        Automatiser (Gmail)
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
@@ -522,7 +531,8 @@ function PurchaseInvoicesContent() {
       />
       {/* Création — drawer unifié (onglets Saisie manuelle / Import OCR) */}
       <PurchaseInvoiceCreateDrawer
-        open={isCreateDrawerOpen}
+        // Lien direct ?action=create : jamais ouvert sans droit d'écriture
+        open={isCreateDrawerOpen && canEditPurchaseInvoices}
         initialTab={createInitialTab}
         onOpenChange={(open) => {
           setIsCreateDrawerOpen(open);

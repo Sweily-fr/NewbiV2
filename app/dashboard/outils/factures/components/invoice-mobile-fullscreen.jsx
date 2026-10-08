@@ -29,6 +29,7 @@ import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
@@ -50,6 +51,9 @@ export default function InvoiceMobileFullscreen({
   const router = useRouter();
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canWrite("invoices");
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
     [],
   );
@@ -917,35 +921,37 @@ export default function InvoiceMobileFullscreen({
           >
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      router.push(
-                        `/dashboard/outils/factures/${invoice.id}/editer`,
-                      );
-                      onClose();
-                    }}
-                    size="sm"
-                    className="font-normal"
-                  >
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Éditer
-                  </Button>
-                  <Button
-                    onClick={handleCreateInvoice}
-                    disabled={isLoading}
-                    size="sm"
-                    className="font-normal"
-                  >
-                    {changingStatus ? (
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <FileText className="mr-2 h-4 w-4" />
-                    )}
-                    Créer la facture
-                  </Button>
-                </div>
+                {canEditInvoices && (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        router.push(
+                          `/dashboard/outils/factures/${invoice.id}/editer`,
+                        );
+                        onClose();
+                      }}
+                      size="sm"
+                      className="font-normal"
+                    >
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Éditer
+                    </Button>
+                    <Button
+                      onClick={handleCreateInvoice}
+                      disabled={isLoading}
+                      size="sm"
+                      className="font-normal"
+                    >
+                      {changingStatus ? (
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4" />
+                      )}
+                      Créer la facture
+                    </Button>
+                  </div>
+                )}
                 <UniversalPDFDownloaderWithFacturX
                   data={invoice}
                   type="invoice"
@@ -961,31 +967,33 @@ export default function InvoiceMobileFullscreen({
 
             {invoice.status === INVOICE_STATUS.PENDING && (
               <>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button
-                    onClick={handleMarkAsPaid}
-                    disabled={isLoading}
-                    size="sm"
-                    className="font-normal"
-                  >
-                    {markingAsPaid ? (
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                    )}
-                    Payée
-                  </Button>
-                  <Button
-                    onClick={handleCancel}
-                    variant="destructive"
-                    size="sm"
-                    className="font-normal"
-                    disabled={isLoading}
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Annuler
-                  </Button>
-                </div>
+                {canEditInvoices && (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Button
+                      onClick={handleMarkAsPaid}
+                      disabled={isLoading}
+                      size="sm"
+                      className="font-normal"
+                    >
+                      {markingAsPaid ? (
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                      )}
+                      Payée
+                    </Button>
+                    <Button
+                      onClick={handleCancel}
+                      variant="destructive"
+                      size="sm"
+                      className="font-normal"
+                      disabled={isLoading}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Annuler
+                    </Button>
+                  </div>
+                )}
                 {!creditNoteLimitReached && canCreateCreditNote && (
                   <Button
                     onClick={handleCreateCreditNote}

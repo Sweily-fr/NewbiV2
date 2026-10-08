@@ -61,6 +61,7 @@ import {
   PAYMENT_METHOD_LABELS,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export function ImportedPurchaseOrderSidebar({
   purchaseOrder,
@@ -98,6 +99,12 @@ export function ImportedPurchaseOrderSidebar({
     useValidateImportedPurchaseOrder();
 
   const isLoading = updateLoading || deleteLoading || validateLoading;
+
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // les bons de commande importés relèvent du module « purchaseOrders »
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditPurchaseOrders = !isReady || canWrite("purchaseOrders");
+  const canDeletePurchaseOrders = !isReady || canDelete("purchaseOrders");
 
   if (!purchaseOrder) return null;
 
@@ -585,105 +592,115 @@ export function ImportedPurchaseOrderSidebar({
           </div>
         </ScrollArea>
 
-        <div className="border-t p-4 mt-auto shrink-0 bg-background">
-          {isEditing ? (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setIsEditing(false)}
-                disabled={isLoading}
-              >
-                Annuler
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={isReviewMode ? handleValidate : handleSave}
-                disabled={isLoading}
-              >
-                {updateLoading || validateLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : isReviewMode ? (
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                {isReviewMode ? "Enregistrer et valider" : "Enregistrer"}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {needsValidation && (
-                <Button
-                  className="w-full"
-                  onClick={handleValidate}
-                  disabled={isLoading}
-                >
-                  {validateLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  Valider
-                </Button>
-              )}
+        {/* Masqué si le rôle ne permet aucune action */}
+        {(isEditing ||
+          canEditPurchaseOrders ||
+          canDeletePurchaseOrders ||
+          isReviewMode) && (
+          <div className="border-t p-4 mt-auto shrink-0 bg-background">
+            {isEditing ? (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={handleEdit}
+                  onClick={() => setIsEditing(false)}
                   disabled={isLoading}
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
+                  Annuler
                 </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+                <Button
+                  className="flex-1"
+                  onClick={isReviewMode ? handleValidate : handleSave}
+                  disabled={isLoading}
+                >
+                  {updateLoading || validateLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : isReviewMode ? (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  {isReviewMode ? "Enregistrer et valider" : "Enregistrer"}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {needsValidation && canEditPurchaseOrders && (
+                  <Button
+                    className="w-full"
+                    onClick={handleValidate}
+                    disabled={isLoading}
+                  >
+                    {validateLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    Valider
+                  </Button>
+                )}
+                <div className="flex gap-2">
+                  {canEditPurchaseOrders && (
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       className="flex-1"
+                      onClick={handleEdit}
                       disabled={isLoading}
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Supprimer
+                      <Edit className="h-4 w-4 mr-2" />
+                      Modifier
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Supprimer ce bon de commande ?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action est irréversible. Le bon de commande sera
-                        définitivement supprimé.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  )}
+                  {canDeletePurchaseOrders && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          className="flex-1"
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Supprimer ce bon de commande ?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action est irréversible. Le bon de commande
+                            sera définitivement supprimé.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+                {isReviewMode && (
+                  <Button
+                    variant="ghost"
+                    className="w-full text-muted-foreground"
+                    onClick={handleSkip}
+                    disabled={isLoading}
+                  >
+                    Passer
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                )}
               </div>
-              {isReviewMode && (
-                <Button
-                  variant="ghost"
-                  className="w-full text-muted-foreground"
-                  onClick={handleSkip}
-                  disabled={isLoading}
-                >
-                  Passer
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

@@ -1,0 +1,39 @@
+/**
+ * Page du tableau de bord → module de la grille des rôles (newbi-api,
+ * src/config/rolePermissions.js). Une page absente de la liste (accueil,
+ * favoris, paramètres…) n'est pas filtrée par rôle.
+ */
+const ROUTE_MODULES = [
+  ["/dashboard/outils/transactions", "banking"],
+  ["/dashboard/outils/analytiques", "analytics"],
+  ["/dashboard/outils/prevision", "analytics"],
+  ["/dashboard/analytics", "analytics"],
+  ["/dashboard/outils/factures-achat", "purchaseInvoices"],
+  ["/dashboard/outils/factures", "invoices"],
+  ["/dashboard/outils/devis", "quotes"],
+  ["/dashboard/outils/bons-commande", "purchaseOrders"],
+  ["/dashboard/outils/bons-de-livraison", "deliveryNotes"],
+  ["/dashboard/catalogues", "products"],
+  ["/dashboard/clients", "clients"],
+  ["/dashboard/automatisation", "automations"],
+  ["/dashboard/calendar", "calendar"],
+  ["/dashboard/outils/kanban", "kanban"],
+  ["/dashboard/outils/transferts-fichiers", "fileTransfers"],
+  ["/dashboard/outils/documents-partages", "sharedDocuments"],
+  ["/dashboard/outils/signatures-mail", "signatures"],
+];
+
+export function moduleForPath(pathname) {
+  if (!pathname) return null;
+  const path = String(pathname).split(/[?#]/)[0];
+  for (const [prefix, moduleKey] of ROUTE_MODULES) {
+    if (path === prefix || path.startsWith(`${prefix}/`)) return moduleKey;
+  }
+  return null;
+}
+
+/** Page de création ou d'édition : demande l'écriture sur le module. */
+export function levelForPath(pathname) {
+  const path = String(pathname || "").split(/[?#]/)[0];
+  return /\/(new|nouveau|editer)(\/|$)/.test(path) ? "write" : "read";
+}

@@ -5,6 +5,7 @@ import { sortByDateDesc } from "@/src/lib/document-dates";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -143,6 +144,9 @@ export default function QuoteTable({
   const { importedQuotes, refetch: refetchImported } =
     useImportedQuotes(workspaceId);
   const { canCreate, canExport } = usePermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDelete, isReady } = useMyPermissions();
+  const canDeleteQuotes = !isReady || canDelete("quotes");
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
   const esignatureLevel = planLimits.esignature; // false | "ses" | "qes"
@@ -423,7 +427,7 @@ export default function QuoteTable({
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
             {/* Bulk delete - visible quand des rows sont sélectionnées */}
-            {selectedRows.length > 0 && (
+            {selectedRows.length > 0 && canDeleteQuotes && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button

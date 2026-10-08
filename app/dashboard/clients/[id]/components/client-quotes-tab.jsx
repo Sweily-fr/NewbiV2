@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
 import { ClipboardList, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
 import {
   QUOTE_STATUS_LABELS,
@@ -36,6 +37,9 @@ function safeFormatDate(dateString) {
 
 export default function ClientQuotesTab({ quotes = [], clientId }) {
   const router = useRouter();
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canCreateQuotes = !isReady || canWrite("quotes");
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -87,14 +91,16 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
               Ce client n'a pas encore de devis.
             </EmptyDescription>
           </EmptyHeader>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => router.push(`/dashboard/outils/devis/new?clientId=${clientId}`)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouveau devis
-          </Button>
+          {canCreateQuotes && (
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => router.push(`/dashboard/outils/devis/new?clientId=${clientId}`)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nouveau devis
+            </Button>
+          )}
         </Empty>
       </div>
     );
@@ -104,13 +110,15 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
     <>
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
         <h3 className="text-base font-medium text-[#242529] dark:text-foreground">Devis</h3>
-        <Button
-          variant="outline"
-          onClick={() => router.push(`/dashboard/outils/devis/new?clientId=${clientId}`)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nouveau devis
-        </Button>
+        {canCreateQuotes && (
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/outils/devis/new?clientId=${clientId}`)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nouveau devis
+          </Button>
+        )}
       </div>
 
       <div className="overflow-auto">

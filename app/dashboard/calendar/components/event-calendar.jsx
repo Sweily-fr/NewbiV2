@@ -39,6 +39,7 @@ import { CalendarSyncButton } from "./calendar-sync-button";
 import { ColorLegend } from "./color-legend";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -137,32 +138,42 @@ export function EventCalendar({
     setIsEventDialogOpen(true);
   }, []);
 
-  const handleEventCreate = useCallback((startTime) => {
-    // Snap to 15-minute intervals
-    const minutes = startTime.getMinutes();
-    const remainder = minutes % 15;
-    if (remainder !== 0) {
-      if (remainder < 7.5) {
-        // Round down to nearest 15 min
-        startTime.setMinutes(minutes - remainder);
-      } else {
-        // Round up to nearest 15 min
-        startTime.setMinutes(minutes + (15 - remainder));
-      }
-      startTime.setSeconds(0);
-      startTime.setMilliseconds(0);
-    }
+  // Droits du rôle sur le calendrier (tout autorisé tant que la grille
+  // n'est pas chargée, l'API refuse de toute façon)
+  const { canWrite, canDelete, isReady: permissionsReady } = useMyPermissions();
+  const canEditEvents = !permissionsReady || canWrite("calendar");
+  const canDeleteEvents = !permissionsReady || canDelete("calendar");
 
-    const newEvent = {
-      id: "",
-      title: "",
-      start: startTime,
-      end: addHoursToDate(startTime, 1),
-      allDay: false,
-    };
-    setSelectedEvent(newEvent);
-    setIsEventDialogOpen(true);
-  }, []);
+  const handleEventCreate = useCallback(
+    (startTime) => {
+      if (!canEditEvents) return;
+      // Snap to 15-minute intervals
+      const minutes = startTime.getMinutes();
+      const remainder = minutes % 15;
+      if (remainder !== 0) {
+        if (remainder < 7.5) {
+          // Round down to nearest 15 min
+          startTime.setMinutes(minutes - remainder);
+        } else {
+          // Round up to nearest 15 min
+          startTime.setMinutes(minutes + (15 - remainder));
+        }
+        startTime.setSeconds(0);
+        startTime.setMilliseconds(0);
+      }
+
+      const newEvent = {
+        id: "",
+        title: "",
+        start: startTime,
+        end: addHoursToDate(startTime, 1),
+        allDay: false,
+      };
+      setSelectedEvent(newEvent);
+      setIsEventDialogOpen(true);
+    },
+    [canEditEvents],
+  );
 
   const handleEventSave = useCallback(
     (event) => {
@@ -209,6 +220,10 @@ export function EventCalendar({
         toast.info("Les événements externes ne peuvent pas être déplacés");
         return;
       }
+      if (!canEditEvents) {
+        toast.info("Votre rôle ne permet pas de modifier les événements");
+        return;
+      }
 
       onEventUpdate?.(updatedEvent);
 
@@ -217,7 +232,7 @@ export function EventCalendar({
         `Événement "${updatedEvent.title}" déplacé — ${format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr })}`,
       );
     },
-    [onEventUpdate],
+    [onEventUpdate, canEditEvents],
   );
 
   const viewTitle = useMemo(() => {
@@ -335,16 +350,18 @@ export function EventCalendar({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              className="font-normal"
-              onClick={() => {
-                setSelectedEvent(null); // Ensure we're creating a new event
-                setIsEventDialogOpen(true);
-              }}
-            >
-              <PlusIcon className="h-4 w-4 md:mr-2" />
-              <span className="hidden md:inline">Nouvel événement</span>
-            </Button>
+            {canEditEvents && (
+              <Button
+                className="font-normal"
+                onClick={() => {
+                  setSelectedEvent(null); // Ensure we're creating a new event
+                  setIsEventDialogOpen(true);
+                }}
+              >
+                <PlusIcon className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Nouvel événement</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -393,6 +410,8 @@ export function EventCalendar({
           }}
           onSave={handleEventSave}
           onDelete={handleEventDelete}
+          canEdit={canEditEvents}
+          canDelete={canDeleteEvents}
         />
       </CalendarDndProvider>
     </div>

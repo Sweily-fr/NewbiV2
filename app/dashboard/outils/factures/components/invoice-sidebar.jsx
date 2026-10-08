@@ -54,6 +54,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useLazyQuery, useQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { INVOICE_DOCUMENT_URL } from "@/src/graphql/eInvoicingQueries";
 import {
   EInvoiceStatusBadge,
@@ -123,6 +124,13 @@ export default function InvoiceSidebar({
 
   const router = useRouter();
   const { workspaceId } = useRequiredWorkspace();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, canWrite, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canWrite("invoices");
+  const canCreateCreditNotes = !isReady || canWrite("creditNotes");
+  // Rapprochement bancaire : droits du module « banking »
+  const canReadBanking = !isReady || canRead("banking");
+  const canLinkTransactions = !isReady || canWrite("banking");
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
 
@@ -289,6 +297,7 @@ export default function InvoiceSidebar({
   useEffect(() => {
     if (
       isOpen &&
+      canReadBanking &&
       initialInvoice?.id &&
       initialInvoice?.status === INVOICE_STATUS.PENDING &&
       (initialInvoice?.linkedTransactionIds?.length || 0) === 0
@@ -841,7 +850,7 @@ export default function InvoiceSidebar({
                           onClick={() =>
                             handleLinkTransaction(tx.id, "DOCUMENT")
                           }
-                          disabled={linkingTransaction}
+                          disabled={linkingTransaction || !canLinkTransactions}
                         >
                           {linkingTransaction ? (
                             <LoaderCircle className="h-3 w-3 animate-spin" />
@@ -1236,7 +1245,8 @@ export default function InvoiceSidebar({
               {(invoice.status === INVOICE_STATUS.PENDING ||
                 invoice.status === INVOICE_STATUS.COMPLETED ||
                 invoice.status === INVOICE_STATUS.CANCELED) &&
-                !creditNoteLimitReached && (
+                !creditNoteLimitReached &&
+                canCreateCreditNotes && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1344,16 +1354,18 @@ export default function InvoiceSidebar({
                       Paiement bancaire
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowTransactionPicker(true)}
-                    disabled={linkingTransaction}
-                    className="h-7 px-2 text-xs"
-                  >
-                    <Link2 className="h-3 w-3 mr-1" />
-                    Ajouter
-                  </Button>
+                  {canLinkTransactions && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowTransactionPicker(true)}
+                      disabled={linkingTransaction}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Link2 className="h-3 w-3 mr-1" />
+                      Ajouter
+                    </Button>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1392,19 +1404,21 @@ export default function InvoiceSidebar({
                           </span>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleUnlinkTransaction(tx.id)}
-                        disabled={linkingTransaction}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                      >
-                        {linkingTransaction ? (
-                          <LoaderCircle className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Unlink className="h-3 w-3" />
-                        )}
-                      </Button>
+                      {canLinkTransactions && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleUnlinkTransaction(tx.id)}
+                          disabled={linkingTransaction}
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        >
+                          {linkingTransaction ? (
+                            <LoaderCircle className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Unlink className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1507,16 +1521,18 @@ export default function InvoiceSidebar({
                         Paiement bancaire
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowTransactionPicker(true)}
-                      disabled={linkingTransaction}
-                      className="h-7 px-2 text-xs"
-                    >
-                      <Link2 className="h-3 w-3 mr-1" />
-                      Rattacher
-                    </Button>
+                    {canLinkTransactions && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowTransactionPicker(true)}
+                        disabled={linkingTransaction}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <Link2 className="h-3 w-3 mr-1" />
+                        Rattacher
+                      </Button>
+                    )}
                   </div>
 
                   {loadingTransactions ? (
@@ -1749,55 +1765,57 @@ export default function InvoiceSidebar({
           </div> */}
         </div>
 
-        {/* Action Buttons */}
-        <div className="border-t px-6 py-4 space-y-3">
-          {/* Draft Actions */}
-          {invoice.status === INVOICE_STATUS.DRAFT && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Éditer
-              </Button>
-              <Button
-                onClick={handleCreateInvoice}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Créer la facture
-              </Button>
-            </div>
-          )}
+        {/* Action Buttons (masqués si le rôle ne permet pas de modifier) */}
+        {canEditInvoices && (
+          <div className="border-t px-6 py-4 space-y-3">
+            {/* Draft Actions */}
+            {invoice.status === INVOICE_STATUS.DRAFT && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleEdit}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Éditer
+                </Button>
+                <Button
+                  onClick={handleCreateInvoice}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Créer la facture
+                </Button>
+              </div>
+            )}
 
-          {/* Pending Actions */}
-          {invoice.status === INVOICE_STATUS.PENDING && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Annuler la facture
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleMarkAsPaid}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Marquer comme payée
-              </Button>
-            </div>
-          )}
-        </div>
+            {/* Pending Actions */}
+            {invoice.status === INVOICE_STATUS.PENDING && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Annuler la facture
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleMarkAsPaid}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Marquer comme payée
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* Modal de confirmation avant l'annulation de la facture */}

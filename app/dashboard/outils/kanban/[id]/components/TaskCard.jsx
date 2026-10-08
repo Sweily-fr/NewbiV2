@@ -401,8 +401,13 @@ const TaskCard = memo(
     workspaceId,
     allBoardTags = [],
     members = [],
+    // Droits du rôle, fournis par la colonne / la liste (un seul appel au hook)
+    canEdit = true,
+    canDelete = true,
   }) {
     const { isReadOnly, isOwner } = useSubscriptionAccess();
+    // Édition bloquée : abonnement en lecture seule ou rôle sans écriture
+    const isLocked = isReadOnly || !canEdit;
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showImagePreview, setShowImagePreview] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -623,13 +628,13 @@ const TaskCard = memo(
                 variant="ghost"
                 size="sm"
                 className="h-6 w-6 p-0"
-                disabled={isReadOnly}
+                disabled={isLocked}
                 onMouseDown={(e) => {
-                  if (isReadOnly) return;
+                  if (isLocked) return;
                   // Empêcher le blur de l'input avant notre handler
                   e.preventDefault();
                 }}
-                onClick={isReadOnly ? undefined : startEditingTitle}
+                onClick={isLocked ? undefined : startEditingTitle}
                 title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
               >
                 {isEditingTitle ? (
@@ -638,7 +643,7 @@ const TaskCard = memo(
                   <Pencil className="h-3.5 w-3.5" />
                 )}
               </Button>
-              {updateTask && !isReadOnly && (
+              {updateTask && !isLocked && (
                 <CardTagPopover
                   task={task}
                   updateTask={updateTask}
@@ -672,29 +677,31 @@ const TaskCard = memo(
                       e.stopPropagation();
                       e.nativeEvent.stopImmediatePropagation();
                     }}
-                    disabled={isReadOnly}
+                    disabled={isLocked}
                     className="cursor-pointer"
                   >
                     <Edit className="mr-2 h-3.5 w-3.5" />
                     Modifier
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDeleteClick(e);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                    }}
-                    disabled={isReadOnly}
-                    variant="destructive"
-                    className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-3 w-3" />
-                    Supprimer
-                  </DropdownMenuItem>
+                  {canDelete && (
+                    <DropdownMenuItem
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteClick(e);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.nativeEvent.stopImmediatePropagation();
+                      }}
+                      disabled={isReadOnly}
+                      variant="destructive"
+                      className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-3 w-3" />
+                      Supprimer
+                    </DropdownMenuItem>
+                  )}
                   {isReadOnly && (
                     <>
                       <DropdownMenuSeparator />
@@ -702,6 +709,14 @@ const TaskCard = memo(
                         {isOwner
                           ? "Mode lecture seule · Renouvelez votre abonnement"
                           : "Mode lecture seule · Contactez l'administrateur"}
+                      </div>
+                    </>
+                  )}
+                  {!isReadOnly && !canEdit && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                        Votre rôle ne permet pas cette action
                       </div>
                     </>
                   )}
@@ -841,7 +856,7 @@ const TaskCard = memo(
                 <TimerDisplay timeTracking={task.timeTracking} />
 
                 {/* Avatars avec popover assignation */}
-                {updateTask && !isReadOnly ? (
+                {updateTask && !isLocked ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -938,7 +953,7 @@ const TaskCard = memo(
                 )}
 
                 {/* Date avec popover calendrier */}
-                {updateTask && !isReadOnly ? (
+                {updateTask && !isLocked ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -1036,7 +1051,7 @@ const TaskCard = memo(
                 )}
 
                 {/* Priorité avec popover */}
-                {updateTask && !isReadOnly ? (
+                {updateTask && !isLocked ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -1222,6 +1237,8 @@ const TaskCard = memo(
       pt.claudeWorkingSince === nt.claudeWorkingSince &&
       pt.claudeCodingSince === nt.claudeCodingSince &&
       prevProps.isDragging === nextProps.isDragging &&
+      prevProps.canEdit === nextProps.canEdit &&
+      prevProps.canDelete === nextProps.canDelete &&
       (pt.tags === nt.tags ||
         (pt.tags?.length ?? 0) === (nt.tags?.length ?? 0)) &&
       (pt.checklist === nt.checklist ||

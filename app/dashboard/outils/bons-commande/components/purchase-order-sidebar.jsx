@@ -68,6 +68,7 @@ const PdfPreview = dynamic(
 );
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export default function PurchaseOrderSidebar({
   isOpen,
@@ -77,6 +78,11 @@ export default function PurchaseOrderSidebar({
   isViewMode = false,
 }) {
   const router = useRouter();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditPurchaseOrders = !isReady || canWrite("purchaseOrders");
+  // Conversion : création dans le module « invoices »
+  const canWriteInvoices = !isReady || canWrite("invoices");
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
@@ -293,7 +299,9 @@ export default function PurchaseOrderSidebar({
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+    (isValidated || isInProgress || isDelivered) &&
+    !hasLinkedInvoices &&
+    canWriteInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
@@ -790,107 +798,109 @@ export default function PurchaseOrderSidebar({
             )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="border-t px-6 py-4 space-y-3">
-          {/* DRAFT: Éditer + Créer le bon de commande (paire) */}
-          {isDraft && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Éditer
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Créer le bon de commande
-              </Button>
-            </div>
-          )}
-
-          {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full) */}
-          {isConfirmed && (
-            <>
+        {/* Action Buttons (masqués si le rôle ne permet pas de modifier) */}
+        {canEditPurchaseOrders && (
+          <div className="border-t px-6 py-4 space-y-3">
+            {/* DRAFT: Éditer + Créer le bon de commande (paire) */}
+            {isDraft && (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={handleRevertToDraft}
+                  onClick={handleEdit}
                   disabled={isLoading}
                   className="flex-1 font-normal"
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Repasser brouillon
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Éditer
                 </Button>
                 <Button
-                  variant="primary"
-                  onClick={handleValidate}
+                  onClick={handleConfirm}
                   disabled={isLoading}
                   className="flex-1 font-normal"
                 >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Valider
+                  <FileText className="h-4 w-4 mr-2" />
+                  Créer le bon de commande
                 </Button>
               </div>
-              {canCancel && (
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="w-full font-normal"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Annuler le bon de commande
-                </Button>
-              )}
-            </>
-          )}
+            )}
 
-          {/* VALIDATED: Démarrer le traitement (single) */}
-          {isValidated && (
-            <Button
-              variant="primary"
-              onClick={handleStartProgress}
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Démarrer le traitement
-            </Button>
-          )}
+            {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full) */}
+            {isConfirmed && (
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleRevertToDraft}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Repasser brouillon
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleValidate}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Valider
+                  </Button>
+                </div>
+                {canCancel && (
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                    className="w-full font-normal"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Annuler le bon de commande
+                  </Button>
+                )}
+              </>
+            )}
 
-          {/* IN_PROGRESS: Marquer comme livré (single) */}
-          {isInProgress && (
-            <Button
-              variant="primary"
-              onClick={handleDeliver}
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <Truck className="h-4 w-4 mr-2" />
-              Marquer comme livré
-            </Button>
-          )}
+            {/* VALIDATED: Démarrer le traitement (single) */}
+            {isValidated && (
+              <Button
+                variant="primary"
+                onClick={handleStartProgress}
+                disabled={isLoading}
+                className="w-full font-normal"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Démarrer le traitement
+              </Button>
+            )}
 
-          {/* Convertir en facture - disponible pour VALIDATED, IN_PROGRESS, DELIVERED sans facture liée */}
-          {canConvertToInvoice && (
-            <Button
-              variant="outline"
-              onClick={handleConvertToInvoice}
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <FileCheck className="h-4 w-4 mr-2" />
-              Convertir en facture
-            </Button>
-          )}
-        </div>
+            {/* IN_PROGRESS: Marquer comme livré (single) */}
+            {isInProgress && (
+              <Button
+                variant="primary"
+                onClick={handleDeliver}
+                disabled={isLoading}
+                className="w-full font-normal"
+              >
+                <Truck className="h-4 w-4 mr-2" />
+                Marquer comme livré
+              </Button>
+            )}
+
+            {/* Convertir en facture - disponible pour VALIDATED, IN_PROGRESS, DELIVERED sans facture liée */}
+            {canConvertToInvoice && (
+              <Button
+                variant="outline"
+                onClick={handleConvertToInvoice}
+                disabled={isLoading}
+                className="w-full font-normal"
+              >
+                <FileCheck className="h-4 w-4 mr-2" />
+                Convertir en facture
+              </Button>
+            )}
+          </div>
+        )}
       </motion.div>
     </>
   );

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Plus } from "lucide-react";
 import {
   ImportIcon as Upload,
@@ -27,6 +28,12 @@ function CataloguesContent() {
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditProducts = !isReady || canWrite("products");
+  const roleTooltip = !canEditProducts
+    ? "Votre rôle ne permet pas cette action"
     : undefined;
 
   // Récupérer les produits pour l'export
@@ -56,6 +63,8 @@ function CataloguesContent() {
             <Button
               variant="outline"
               onClick={() => setCustomFieldsOpen(true)}
+              disabled={!canEditProducts}
+              title={roleTooltip}
               className="cursor-pointer"
             >
               <Settings2 className="w-3.5 h-3.5" />
@@ -64,8 +73,8 @@ function CataloguesContent() {
             <Button
               variant="outline"
               onClick={() => !isReadOnly && setImportDialogOpen(true)}
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
+              disabled={isReadOnly || !canEditProducts}
+              title={readOnlyTooltip || roleTooltip}
               className="cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5" />
@@ -79,8 +88,8 @@ function CataloguesContent() {
             <Button
               variant="primary"
               onClick={() => !isReadOnly && handleOpenProductDialog()}
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
+              disabled={isReadOnly || !canEditProducts}
+              title={readOnlyTooltip || roleTooltip}
               className="cursor-pointer"
             >
               <Plus size={14} strokeWidth={2} aria-hidden="true" />
@@ -124,13 +133,15 @@ function CataloguesContent() {
         </div>
 
         {/* Bouton flottant mobile */}
-        <Button
-          onClick={handleOpenProductDialog}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        {canEditProducts && (
+          <Button
+            onClick={handleOpenProductDialog}
+            className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+            size="icon"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        )}
       </div>
 
       {/* Modal unique pour desktop et mobile */}

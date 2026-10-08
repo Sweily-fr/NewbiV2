@@ -18,6 +18,7 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "@/src/components/ui/sonner";
 import { CREATE_BOARD } from "@/src/graphql/kanbanQueries";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export default function NewKanbanPage() {
   const router = useRouter();
@@ -27,6 +28,12 @@ export default function NewKanbanPage() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditKanban = !isReady || canWrite("kanban");
+  const createTooltip =
+    readOnlyTooltip ||
+    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -162,8 +169,13 @@ export default function NewKanbanPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={isReadOnly || loading || !formData.title.trim()}
-                title={readOnlyTooltip}
+                disabled={
+                  isReadOnly ||
+                  !canEditKanban ||
+                  loading ||
+                  !formData.title.trim()
+                }
+                title={createTooltip}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 {loading ? (

@@ -21,6 +21,7 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 function InvoiceDetailsContent() {
   const router = useRouter();
@@ -28,6 +29,10 @@ function InvoiceDetailsContent() {
   const invoiceId = params.id;
 
   const { invoice, loading, error } = useInvoice(invoiceId);
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canWrite("invoices");
+  const canDeleteInvoices = !isReady || canDelete("invoices");
 
   const handleBack = () => {
     router.push("/dashboard/outils/factures");
@@ -57,7 +62,7 @@ function InvoiceDetailsContent() {
   }
 
   const isDraft = invoice.status === "DRAFT";
-  const canEdit = isDraft;
+  const canEdit = isDraft && canEditInvoices;
 
   return (
     <div className="space-y-6">
@@ -83,7 +88,7 @@ function InvoiceDetailsContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          {!isDraft && (
+          {!isDraft && canEditInvoices && (
             <Button variant="outline" className="gap-2">
               <Send className="h-4 w-4" />
               Envoyer
@@ -97,10 +102,14 @@ function InvoiceDetailsContent() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Dupliquer</DropdownMenuItem>
-              <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
+              <DropdownMenuItem disabled={!canEditInvoices}>
+                Dupliquer
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={!canEditInvoices}>
+                Convertir en devis
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {isDraft && (
+              {isDraft && canDeleteInvoices && (
                 <DropdownMenuItem className="text-destructive">
                   Supprimer
                 </DropdownMenuItem>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FIELD_TYPES } from "@/src/hooks/useClientCustomFields";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -343,7 +344,14 @@ function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
   );
 }
 
-function FieldRow({ field, onEdit, onDelete, onToggle, onToggleDocuments }) {
+function FieldRow({
+  field,
+  onEdit,
+  onDelete,
+  onToggle,
+  onToggleDocuments,
+  canRemove = true,
+}) {
   const fieldType = FIELD_TYPES.find((t) => t.value === field.fieldType);
 
   return (
@@ -407,14 +415,16 @@ function FieldRow({ field, onEdit, onDelete, onToggle, onToggleDocuments }) {
         <Edit2 className="h-3 w-3" />
       </Button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onDelete(field)}
-        className="h-6 w-6 text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 className="h-3 w-3" />
-      </Button>
+      {canRemove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(field)}
+          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -432,6 +442,9 @@ export default function CustomFieldsPanel({
   const [deletingField, setDeletingField] = useState(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const { canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canDeleteClients = !isReady || canDelete("clients");
 
   const customFieldsLimit = planLimits?.customFields ?? -1;
   const isLimitReached =
@@ -572,6 +585,7 @@ export default function CustomFieldsPanel({
                 onDelete={setDeletingField}
                 onToggle={handleToggle}
                 onToggleDocuments={handleToggleDocuments}
+                canRemove={canDeleteClients}
               />
             ))}
           </div>

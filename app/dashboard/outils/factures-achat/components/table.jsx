@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   useDeletePurchaseInvoice,
   useBulkDelete,
@@ -168,6 +169,11 @@ export default function PurchaseInvoiceTable({
       setActiveTab(status);
     }
   }, [searchParams]);
+
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
+  const canDeletePurchaseInvoices = !isReady || canDelete("purchaseInvoices");
 
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { bulkDelete } = useBulkDelete();
@@ -579,80 +585,89 @@ export default function PurchaseInvoiceTable({
 
           <div className="flex items-center gap-2">
             {/* Bulk actions — toujours visibles, désactivées sans sélection */}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="danger" disabled={!hasSelection}>
-                  <TrashIcon size={14} />
-                  Supprimer{hasSelection ? ` (${selectedRows.length})` : ""}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
-                    {selectedRows.length > 1 ? "s" : ""} ? Cette action ne peut
-                    pas être annulée.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleBulkDelete}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            {/* Masquées si le rôle ne les permet pas */}
+            {canDeletePurchaseInvoices && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="danger" disabled={!hasSelection}>
+                    <TrashIcon size={14} />
+                    Supprimer{hasSelection ? ` (${selectedRows.length})` : ""}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Confirmer la suppression
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                      facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
+                      {selectedRows.length > 1 ? "s" : ""} ? Cette action ne
+                      peut pas être annulée.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleBulkDelete}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             {/* Autres actions groupées regroupées dans un menu "⋮" */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  disabled={!hasSelection}
-                  aria-label="Actions groupées"
-                >
-                  <EllipsisVertical size={14} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleBulkStatus("PAID")}>
-                  <CheckCircle2 size={14} />
-                  Marquer payées
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkStatus("ARCHIVED")}>
-                  <Archive size={14} />
-                  Archiver
-                </DropdownMenuItem>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="gap-2">
-                    <Tag size={14} />
-                    Catégoriser
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                    {EXPENSE_CATEGORY_GROUPS.map((group) => (
-                      <div key={group.heading}>
-                        <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
-                          {group.heading}
-                        </DropdownMenuLabel>
-                        {group.options.map((opt) => (
-                          <DropdownMenuItem
-                            key={opt.value}
-                            onClick={() => handleBulkCategorize(opt.value)}
-                          >
-                            {opt.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </div>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {canEditPurchaseInvoices && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    disabled={!hasSelection}
+                    aria-label="Actions groupées"
+                  >
+                    <EllipsisVertical size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleBulkStatus("PAID")}>
+                    <CheckCircle2 size={14} />
+                    Marquer payées
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleBulkStatus("ARCHIVED")}
+                  >
+                    <Archive size={14} />
+                    Archiver
+                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="gap-2">
+                      <Tag size={14} />
+                      Catégoriser
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                      {EXPENSE_CATEGORY_GROUPS.map((group) => (
+                        <div key={group.heading}>
+                          <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
+                            {group.heading}
+                          </DropdownMenuLabel>
+                          {group.options.map((opt) => (
+                            <DropdownMenuItem
+                              key={opt.value}
+                              onClick={() => handleBulkCategorize(opt.value)}
+                            >
+                              {opt.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -1108,6 +1123,11 @@ function ImportedInvoicesPanel({
   onImportedConverted,
   onOpenExisting,
 }) {
+  const { canWrite, isReady } = useMyPermissions();
+  // Valider ou rejeter crée une facture d'achat ; l'API contrôle le module
+  // des factures importées (tout autorisé tant que la grille n'est pas chargée)
+  const canProcessImported =
+    !isReady || (canWrite("purchaseInvoices") && canWrite("importedInvoices"));
   const { checkDuplicates } = useCheckPurchaseInvoiceDuplicates();
   // Doublon probable avant conversion : { id (facture importée), duplicates }
   const [duplicateWarning, setDuplicateWarning] = useState(null);
@@ -1274,7 +1294,7 @@ function ImportedInvoicesPanel({
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Bulk action bar */}
-      {importedSelection.size > 0 && (
+      {canProcessImported && importedSelection.size > 0 && (
         <div className="flex items-center gap-2 px-4 sm:px-6 py-2 border-b bg-amber-50 dark:bg-amber-900/10 flex-shrink-0">
           <span className="text-xs text-amber-700 dark:text-amber-400">
             {importedSelection.size} sélectionnée
@@ -1354,26 +1374,30 @@ function ImportedInvoicesPanel({
                 {formatDate(inv.invoiceDate)}
               </div>
               <div className="flex items-center justify-end gap-1">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                  onClick={() => handleConvertOne(inv.id)}
-                  disabled={convertingOne || rejecting}
-                  title="Valider"
-                >
-                  <CheckCircle2 size={15} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  onClick={() => handleRejectOne(inv.id)}
-                  disabled={convertingOne || rejecting}
-                  title="Rejeter"
-                >
-                  <XCircle size={15} />
-                </Button>
+                {canProcessImported && (
+                  <>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      onClick={() => handleConvertOne(inv.id)}
+                      disabled={convertingOne || rejecting}
+                      title="Valider"
+                    >
+                      <CheckCircle2 size={15} />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      onClick={() => handleRejectOne(inv.id)}
+                      disabled={convertingOne || rejecting}
+                      title="Rejeter"
+                    >
+                      <XCircle size={15} />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1401,22 +1425,24 @@ function ImportedInvoicesPanel({
                   <div className="text-sm font-medium">
                     {formatAmount(inv.totalTTC)} €
                   </div>
-                  <div className="flex gap-1 mt-1 justify-end">
-                    <button
-                      className="p-1 text-green-600 hover:bg-green-50 rounded"
-                      onClick={() => handleConvertOne(inv.id)}
-                      disabled={convertingOne || rejecting}
-                    >
-                      <CheckCircle2 size={16} />
-                    </button>
-                    <button
-                      className="p-1 text-red-500 hover:bg-red-50 rounded"
-                      onClick={() => handleRejectOne(inv.id)}
-                      disabled={convertingOne || rejecting}
-                    >
-                      <XCircle size={16} />
-                    </button>
-                  </div>
+                  {canProcessImported && (
+                    <div className="flex gap-1 mt-1 justify-end">
+                      <button
+                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                        onClick={() => handleConvertOne(inv.id)}
+                        disabled={convertingOne || rejecting}
+                      >
+                        <CheckCircle2 size={16} />
+                      </button>
+                      <button
+                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                        onClick={() => handleRejectOne(inv.id)}
+                        disabled={convertingOne || rejecting}
+                      >
+                        <XCircle size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

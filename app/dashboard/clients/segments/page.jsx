@@ -48,6 +48,7 @@ import {
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   useClientSegments,
   useCreateClientSegment,
@@ -715,6 +716,10 @@ function SegmentsContent() {
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
   const canUseSegments = planLimits.clientSegments;
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditClients = !isReady || canWrite("clients");
+  const canDeleteClients = !isReady || canDelete("clients");
 
   const { segments, loading, refetch } = useClientSegments();
   const { createSegment, loading: creating } = useCreateClientSegment();
@@ -786,14 +791,16 @@ function SegmentsContent() {
             Créez des segments dynamiques pour cibler vos contacts.
           </p>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => setDialogOpen(true)}
-          className="self-start"
-        >
-          <Plus size={14} strokeWidth={2} aria-hidden="true" />
-          Nouveau segment
-        </Button>
+        {canEditClients && (
+          <Button
+            variant="primary"
+            onClick={() => setDialogOpen(true)}
+            className="self-start"
+          >
+            <Plus size={14} strokeWidth={2} aria-hidden="true" />
+            Nouveau segment
+          </Button>
+        )}
       </div>
 
       {/* Content */}
@@ -807,13 +814,15 @@ function SegmentsContent() {
             title="Aucun segment"
             description="Les segments filtrent automatiquement vos contacts selon des critères dynamiques. Créez votre premier segment pour commencer."
             action={
-              <Button
-                onClick={() => setDialogOpen(true)}
-                className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
-              >
-                <Plus size={14} className="mr-2" />
-                Créer un segment
-              </Button>
+              canEditClients ? (
+                <Button
+                  onClick={() => setDialogOpen(true)}
+                  className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+                >
+                  <Plus size={14} className="mr-2" />
+                  Créer un segment
+                </Button>
+              ) : undefined
             }
           />
         ) : (
@@ -834,41 +843,49 @@ function SegmentsContent() {
                       {segment.name}
                     </h3>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreHorizontal size={14} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingSegment(segment);
-                        }}
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Modifier
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteTarget(segment);
-                        }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                        Supprimer
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {(canEditClients || canDeleteClients) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal size={14} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        {canEditClients && (
+                          <DropdownMenuItem
+                            className="cursor-pointer gap-2 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingSegment(segment);
+                            }}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            Modifier
+                          </DropdownMenuItem>
+                        )}
+                        {canEditClients && canDeleteClients && (
+                          <DropdownMenuSeparator />
+                        )}
+                        {canDeleteClients && (
+                          <DropdownMenuItem
+                            className="cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget(segment);
+                            }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
 
                 {segment.description && (

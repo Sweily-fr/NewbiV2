@@ -546,35 +546,43 @@ export function TransferDetailDrawer({
                 <h1 className="text-[28px] font-normal text-gray-900 leading-tight pr-4">
                   {fileName}
                 </h1>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-1 text-gray-400 hover:text-gray-600 flex-shrink-0 cursor-pointer">
-                      <MoreVertical className="h-5 w-5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => onRename?.(transfer)}
-                      className="cursor-pointer text-xs"
-                    >
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Renommer le transfert
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        onDelete?.(transfer.id);
-                        onOpenChange?.(false);
-                      }}
-                      className="text-destructive cursor-pointer text-xs"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                      <span className="text-red-500">
-                        Supprimer le transfert
-                      </span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Actions absentes quand le rôle ne les permet pas
+                    (onRename / onDelete non fournis) */}
+                {(onRename || onDelete) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1 text-gray-400 hover:text-gray-600 flex-shrink-0 cursor-pointer">
+                        <MoreVertical className="h-5 w-5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      {onRename && (
+                        <DropdownMenuItem
+                          onClick={() => onRename(transfer)}
+                          className="cursor-pointer text-xs"
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Renommer le transfert
+                        </DropdownMenuItem>
+                      )}
+                      {onRename && onDelete && <DropdownMenuSeparator />}
+                      {onDelete && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            onDelete(transfer.id);
+                            onOpenChange?.(false);
+                          }}
+                          className="text-destructive cursor-pointer text-xs"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                          <span className="text-red-500">
+                            Supprimer le transfert
+                          </span>
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
 
               {/* Sous-titre */}

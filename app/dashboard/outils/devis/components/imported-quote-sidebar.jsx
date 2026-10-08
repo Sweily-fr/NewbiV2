@@ -60,6 +60,7 @@ import {
   useConvertImportedQuoteToQuote,
 } from "@/src/graphql/importedQuoteQueries";
 import { toast } from "sonner";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export function ImportedQuoteSidebar({
   quote,
@@ -97,6 +98,12 @@ export function ImportedQuoteSidebar({
     useConvertImportedQuoteToQuote();
 
   const isLoading = updateLoading || deleteLoading || validateLoading;
+
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // les devis importés relèvent du module « quotes »
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canWrite("quotes");
+  const canDeleteQuotes = !isReady || canDelete("quotes");
 
   if (!quote) return null;
 
@@ -563,7 +570,8 @@ export function ImportedQuoteSidebar({
           </div>
         </ScrollArea>
 
-        {/* Actions - Footer fixe en bas */}
+        {/* Actions - Footer fixe en bas (masqué si le rôle ne permet aucune action) */}
+        {(isEditing || canEditQuotes || canDeleteQuotes || isReviewMode) && (
         <div className="border-t p-4 mt-auto shrink-0 bg-background">
           {isEditing ? (
             <div className="flex gap-2">
@@ -592,7 +600,7 @@ export function ImportedQuoteSidebar({
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {needsValidation && (
+              {needsValidation && canEditQuotes && (
                 <Button
                   className="w-full"
                   onClick={handleValidate}
@@ -607,6 +615,7 @@ export function ImportedQuoteSidebar({
                 </Button>
               )}
               <div className="flex gap-2">
+                {canEditQuotes && (
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -616,6 +625,8 @@ export function ImportedQuoteSidebar({
                   <Edit className="h-4 w-4 mr-2" />
                   Modifier
                 </Button>
+                )}
+                {canDeleteQuotes && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
@@ -646,6 +657,7 @@ export function ImportedQuoteSidebar({
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                )}
               </div>
               {isReviewMode && (
                 <Button
@@ -661,6 +673,7 @@ export function ImportedQuoteSidebar({
             </div>
           )}
         </div>
+        )}
       </SheetContent>
     </Sheet>
   );

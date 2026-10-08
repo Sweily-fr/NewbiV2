@@ -52,6 +52,7 @@ import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
@@ -113,6 +114,14 @@ export default function QuoteRowActions({
   const esignatureAccess = planLimits.esignature; // false | "ses" | "qes"
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canWrite("quotes");
+  const canDeleteQuotes = !isReady || canDelete("quotes");
+  // Conversions : création dans le module cible
+  const canWriteInvoices = !isReady || canWrite("invoices");
+  const canWritePurchaseOrders = !isReady || canWrite("purchaseOrders");
+  const canWriteDeliveryNotes = !isReady || canWrite("deliveryNotes");
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const handleView = () => {
@@ -289,15 +298,18 @@ export default function QuoteRowActions({
   const isLoading = changingStatus || isDeleting || creatingDeliveryNote;
 
   // Logique pour déterminer quelles actions sont disponibles
-  const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
+  const canConvertToPO =
+    quote.status === QUOTE_STATUS.COMPLETED && canWritePurchaseOrders;
   // Un bon de livraison se prépare dès que le devis est envoyé ou accepté
   const canCreateDeliveryNote =
     deliveryNotesAllowed &&
+    canWriteDeliveryNotes &&
     (quote.status === QUOTE_STATUS.PENDING ||
       quote.status === QUOTE_STATUS.COMPLETED);
   // Un devis déjà facturé via un bon de commande ne peut plus être converti
   // directement en facture (même message que dans la sidebar).
   const canConvertToInvoice =
+    canWriteInvoices &&
     quote.status === QUOTE_STATUS.COMPLETED &&
     (!quote.linkedInvoices || quote.linkedInvoices.length === 0) &&
     !quote.hasPurchaseOrderInvoices;
@@ -313,9 +325,10 @@ export default function QuoteRowActions({
   // importé reste supprimable quel que soit son statut, comme l'indique le logo.
   const isImportedOrigin = !quote.prefix && Boolean(quote.number);
   const hasDeleteAction =
-    quote.status === QUOTE_STATUS.DRAFT ||
-    quote.status === QUOTE_STATUS.IMPORTED ||
-    isImportedOrigin;
+    canDeleteQuotes &&
+    (quote.status === QUOTE_STATUS.DRAFT ||
+      quote.status === QUOTE_STATUS.IMPORTED ||
+      isImportedOrigin);
 
   return (
     <>
@@ -338,7 +351,7 @@ export default function QuoteRowActions({
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 p-0 cursor-pointer"
-                      disabled={isReadOnly}
+                      disabled={isReadOnly || !canEditQuotes}
                       onClick={(e) => {
                         e.stopPropagation();
                         onSendEmail?.(quote);
@@ -375,14 +388,17 @@ export default function QuoteRowActions({
                   e.stopPropagation();
                   onSaveAsTemplate?.(quote);
                 }}
-                disabled={isReadOnly}
+                disabled={isReadOnly || !canEditQuotes}
               >
                 <BookTemplate className="mr-2 h-4 w-4" />
                 Sauv. modèle
               </DropdownMenuItem>
               {(quote.status === QUOTE_STATUS.DRAFT ||
                 quote.status === QUOTE_STATUS.PENDING) && (
-                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
+                <DropdownMenuItem
+                  onClick={handleEdit}
+                  disabled={isReadOnly || !canEditQuotes}
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Éditer
                 </DropdownMenuItem>
@@ -394,7 +410,7 @@ export default function QuoteRowActions({
               {quote.status === QUOTE_STATUS.DRAFT && (
                 <DropdownMenuItem
                   onClick={handleSendQuote}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditQuotes}
                 >
                   <FileText className="mr-2 h-4 w-4" />
                   Envoyer le devis
@@ -408,7 +424,7 @@ export default function QuoteRowActions({
                 <>
                   <DropdownMenuItem
                     onClick={handleAccept}
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditQuotes}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Accepter le devis
@@ -419,7 +435,7 @@ export default function QuoteRowActions({
               {canConvertToInvoice && (
                 <DropdownMenuItem
                   onClick={handleConvertToInvoice}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditQuotes}
                 >
                   <FileCheck className="mr-2 h-4 w-4" />
                   Convertir en facture
@@ -429,7 +445,7 @@ export default function QuoteRowActions({
               {canConvertToPO && (
                 <DropdownMenuItem
                   onClick={handleConvertToPurchaseOrder}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditQuotes}
                 >
                   <ShoppingCart className="mr-2 h-4 w-4" />
                   Convertir en bon de commande
@@ -459,7 +475,7 @@ export default function QuoteRowActions({
                           e.stopPropagation();
                           onRequestSignature?.(quote);
                         }}
-                        disabled={isReadOnly}
+                        disabled={isReadOnly || !canEditQuotes}
                       >
                         <PenLine className="mr-2 h-4 w-4" />
                         Faire signer
@@ -497,7 +513,9 @@ export default function QuoteRowActions({
                     e.stopPropagation();
                     handleCancelSignature();
                   }}
-                  disabled={isCancellingSignature || isReadOnly}
+                  disabled={
+                    isCancellingSignature || isReadOnly || !canEditQuotes
+                  }
                   className="text-red-600 focus:text-red-600"
                 >
                   <Ban className="mr-2 h-4 w-4 text-red-600" />
@@ -512,7 +530,7 @@ export default function QuoteRowActions({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleReject}
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditQuotes}
                     className="text-red-600 focus:text-red-600"
                   >
                     <XCircle className="mr-2 h-4 w-4 text-red-600" />

@@ -40,6 +40,7 @@ import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 import { columns } from "./columns/transactionColumns";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
@@ -471,6 +472,9 @@ export default function TransactionTable({
   const { getAllCollaborators } = useOrganizationInvitations();
   const { organization: activeOrg } = useActiveOrganization();
   const { workspaceId } = useRequiredWorkspace();
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditBanking = !isReady || canWrite("banking");
   const { data: session } = useSession();
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -1213,6 +1217,7 @@ export default function TransactionTable({
         ]);
         setConfirmationIndex(0);
       },
+      canEditBanking,
       bankAccounts,
     },
   });

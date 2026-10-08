@@ -11,6 +11,7 @@ import { CALENDAR_EVENTS_CHANGED_SUBSCRIPTION } from "@/src/graphql/subscription
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSession } from "@/src/lib/auth-client";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 /**
  * Hook pour récupérer la liste des événements
@@ -31,6 +32,8 @@ export const useEvents = (options = {}) => {
   const { data: sessionData } = useSession();
   const userId = sessionData?.user?.id;
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
+  const { can, isReady: permissionsReady } = useMyPermissions();
+  const noCalendarAccess = permissionsReady && !can("calendar", "read");
 
   const queryVariables = {
     startDate,
@@ -49,7 +52,8 @@ export const useEvents = (options = {}) => {
     refetch,
   } = useQuery(GET_EVENTS, {
     variables: queryVariables,
-    skip: skip || !finalWorkspaceId,
+    // Rôle sans accès au calendrier : pas de requête (accueil, activité client)
+    skip: skip || !finalWorkspaceId || noCalendarAccess,
     errorPolicy: "all",
     // cache-first : on sert le cache immédiatement et on laisse la subscription
     // calendarEventsChanged déclencher un refetch quand les données changent.

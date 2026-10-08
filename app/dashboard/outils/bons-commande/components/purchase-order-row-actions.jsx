@@ -41,6 +41,7 @@ import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
 import { AnimatePresence } from "framer-motion";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
@@ -80,6 +81,12 @@ export default function PurchaseOrderRowActions({
   const purchaseOrder = row.original;
 
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditPurchaseOrders = !isReady || canWrite("purchaseOrders");
+  const canDeletePurchaseOrders = !isReady || canDelete("purchaseOrders");
+  // Conversion : création dans le module « invoices »
+  const canWriteInvoices = !isReady || canWrite("invoices");
   const { workspaceId } = useRequiredWorkspace();
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
@@ -202,7 +209,9 @@ export default function PurchaseOrderRowActions({
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+    (isValidated || isInProgress || isDelivered) &&
+    !hasLinkedInvoices &&
+    canWriteInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
@@ -226,7 +235,7 @@ export default function PurchaseOrderRowActions({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 p-0 cursor-pointer"
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || !canEditPurchaseOrders}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSendEmail?.(purchaseOrder);
@@ -263,7 +272,7 @@ export default function PurchaseOrderRowActions({
                   e.stopPropagation();
                   onSaveAsTemplate?.(purchaseOrder);
                 }}
-                disabled={isReadOnly}
+                disabled={isReadOnly || !canEditPurchaseOrders}
               >
                 <BookTemplate className="mr-2 h-4 w-4" />
                 Sauv. modèle
@@ -271,7 +280,10 @@ export default function PurchaseOrderRowActions({
               {/* Comme les devis en attente : un BC confirmé reste modifiable
                   (l'API verrouille seulement préfixe/numéro et DELIVERED) */}
               {(isDraft || isConfirmed) && (
-                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
+                <DropdownMenuItem
+                  onClick={handleEdit}
+                  disabled={isReadOnly || !canEditPurchaseOrders}
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier
                 </DropdownMenuItem>
@@ -285,7 +297,7 @@ export default function PurchaseOrderRowActions({
               {isDraft && (
                 <DropdownMenuItem
                   onClick={handleConfirm}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Confirmer
@@ -296,14 +308,14 @@ export default function PurchaseOrderRowActions({
                 <>
                   <DropdownMenuItem
                     onClick={handleValidate}
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Marquer comme validé
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleRevertToDraft}
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Repasser en brouillon
@@ -311,7 +323,9 @@ export default function PurchaseOrderRowActions({
                   {canCancel && (
                     <DropdownMenuItem
                       onClick={handleCancel}
-                      disabled={isLoading || isReadOnly}
+                      disabled={
+                        isLoading || isReadOnly || !canEditPurchaseOrders
+                      }
                     >
                       <XCircle className="mr-2 h-4 w-4" />
                       Annuler
@@ -323,7 +337,7 @@ export default function PurchaseOrderRowActions({
               {isValidated && (
                 <DropdownMenuItem
                   onClick={handleStartProgress}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
                 >
                   <Play className="mr-2 h-4 w-4" />
                   Démarrer le traitement
@@ -333,7 +347,7 @@ export default function PurchaseOrderRowActions({
               {isInProgress && (
                 <DropdownMenuItem
                   onClick={handleDeliver}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
                 >
                   <Truck className="mr-2 h-4 w-4" />
                   Marquer comme livré
@@ -343,7 +357,7 @@ export default function PurchaseOrderRowActions({
               {canConvertToInvoice && (
                 <DropdownMenuItem
                   onClick={handleConvertToInvoice}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditPurchaseOrders}
                 >
                   <FileCheck className="mr-2 h-4 w-4" />
                   Convertir en facture
@@ -351,7 +365,7 @@ export default function PurchaseOrderRowActions({
               )}
 
               {/* Suppression */}
-              {isDraft && (
+              {isDraft && canDeletePurchaseOrders && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

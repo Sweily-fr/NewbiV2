@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Button } from "@/src/components/ui/button";
 import {
   Plus,
@@ -66,12 +67,18 @@ function TransfertsContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditFileTransfers = !isReady || canWrite("fileTransfers");
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectionState, setSelectionState] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  // Modale de création (aussi ouverte par ?new=1) : fermée si le rôle
+  // ne permet pas de créer un transfert
+  const isUploadModalOpen = showUploadModal && canEditFileTransfers;
 
   // Calculer les statistiques des transferts
   const transferStats = useMemo(() => {
@@ -209,16 +216,18 @@ function TransfertsContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider> */}
-            <Button
-              variant="primary"
-              onClick={() => setShowUploadModal(true)}
-              className="cursor-pointer"
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouveau transfert
-            </Button>
+            {canEditFileTransfers && (
+              <Button
+                variant="primary"
+                onClick={() => setShowUploadModal(true)}
+                className="cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouveau transfert
+              </Button>
+            )}
           </div>
         </div>
 
@@ -351,13 +360,15 @@ function TransfertsContent() {
               <h1 className="text-2xl font-medium mb-1">Transferts</h1>
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={() => setShowUploadModal(true)}
-                size="icon"
-                className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
+              {canEditFileTransfers && (
+                <Button
+                  onClick={() => setShowUploadModal(true)}
+                  size="icon"
+                  className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -408,7 +419,7 @@ function TransfertsContent() {
 
       {/* Upload Modal - Desktop (style invite member dialog) */}
       <Dialog
-        open={showUploadModal}
+        open={isUploadModalOpen}
         onOpenChange={(open) => !isUploading && setShowUploadModal(open)}
       >
         <DialogContent className="hidden md:flex flex-col sm:max-w-[980px] h-[85vh] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
@@ -432,7 +443,7 @@ function TransfertsContent() {
       </Dialog>
 
       {/* Upload Modal - Mobile fullscreen */}
-      {showUploadModal && (
+      {isUploadModalOpen && (
         <div className="md:hidden fixed inset-0 z-[100] bg-background flex flex-col">
           {/* Header */}
           <div className="flex-shrink-0 border-b">

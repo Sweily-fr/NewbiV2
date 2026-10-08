@@ -34,6 +34,7 @@ import { SessionGateProvider } from "@/src/contexts/session-gate-context";
 import { InactivityDetector } from "@/src/components/inactivity-detector";
 import { SessionValidityDetector } from "@/src/components/session-validity-detector";
 import { OrgChangeCrossTabDetector } from "@/src/components/org-change-cross-tab-detector";
+import { ModuleRouteGuard } from "@/src/components/rbac/ModuleRouteGuard";
 
 // Composants lourds ou rarement affichés : chargés dans leur propre chunk pour
 // alléger le bundle commun du dashboard (payé sur chaque page).
@@ -266,7 +267,9 @@ function DashboardContent({ children }) {
           />
           <div className="flex flex-1 flex-col overflow-y-auto">
             <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
-              <SessionGateProvider>{children}</SessionGateProvider>
+              <SessionGateProvider>
+                <ModuleRouteGuard>{children}</ModuleRouteGuard>
+              </SessionGateProvider>
               <InactivityDetector />
               <SessionValidityDetector />
               <OrgChangeCrossTabDetector />

@@ -38,6 +38,7 @@ import {
 } from "./components/blocked-page-skeleton";
 import { useClients, useUnblockClient } from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   ShieldOff,
   ShieldCheck,
@@ -60,6 +61,9 @@ function BlockedContent() {
   const { workspaceId } = useWorkspace();
   const { clients, loading } = useClients(1, 500, "");
   const { unblockClient, loading: unblocking } = useUnblockClient();
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditClients = !isReady || canWrite("clients");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkUnblocking, setBulkUnblocking] = useState(false);
 
@@ -175,7 +179,7 @@ function BlockedContent() {
             )}
           </div>
         </div>
-        {selectedIds.size > 0 && (
+        {selectedIds.size > 0 && canEditClients && (
           <div className="flex items-center gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -349,7 +353,12 @@ function BlockedContent() {
                             size="sm"
                             className="text-xs font-normal hover:opacity-80"
                             style={{ color: "#5b50FF" }}
-                            disabled={unblocking}
+                            disabled={unblocking || !canEditClients}
+                            title={
+                              !canEditClients
+                                ? "Votre rôle ne permet pas cette action"
+                                : undefined
+                            }
                           >
                             Débloquer
                           </Button>

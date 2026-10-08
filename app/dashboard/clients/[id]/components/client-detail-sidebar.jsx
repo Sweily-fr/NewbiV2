@@ -43,6 +43,7 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { toast } from "@/src/components/ui/sonner";
 import { useClientListsByClient } from "@/src/hooks/useClientLists";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 function SidebarSection({ title, defaultOpen = true, children }) {
   return (
@@ -142,6 +143,9 @@ export default function ClientDetailSidebar({
   const { fields: customFieldDefs } = useClientCustomFields(workspaceId);
   const { updateField } = useUpdateClientCustomField();
   const [savingFieldId, setSavingFieldId] = useState(null);
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditClients = !isReady || canWrite("clients");
   const { lists: clientLists } = useClientListsByClient(
     workspaceId,
     client?.id,
@@ -273,10 +277,12 @@ export default function ClientDetailSidebar({
           <span className="text-sm font-medium text-[#242529] dark:text-foreground">
             Détails
           </span>
-          <Button variant="outline" onClick={onEdit}>
-            <Pencil className="h-3 w-3" />
-            Modifier
-          </Button>
+          {canEditClients && (
+            <Button variant="outline" onClick={onEdit}>
+              <Pencil className="h-3 w-3" />
+              Modifier
+            </Button>
+          )}
         </div>
         <SidebarSection title="Informations de contact" defaultOpen>
           <div className="space-y-0">
@@ -421,7 +427,9 @@ export default function ClientDetailSidebar({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Checkbox
                           checked={!!def.showOnDocuments}
-                          disabled={savingFieldId === def.id}
+                          disabled={
+                            savingFieldId === def.id || !canEditClients
+                          }
                           onCheckedChange={() => toggleShowOnDocuments(def)}
                         />
                         <FieldIcon className="h-3.5 w-3.5 flex-shrink-0 text-[#505154] dark:text-muted-foreground" />

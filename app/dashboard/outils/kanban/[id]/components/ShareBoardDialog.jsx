@@ -86,6 +86,7 @@ import {
   AvatarImage,
 } from "@/src/components/ui/avatar";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -94,6 +95,13 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditKanban = !isReady || canWrite("kanban");
+  const canDeleteKanban = !isReady || canDelete("kanban");
+  const createTooltip =
+    readOnlyTooltip ||
+    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -460,8 +468,8 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                   onClick={() => setShowCreateForm(true)}
                   className="w-full gap-2"
                   variant="outline"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
+                  disabled={isReadOnly || !canEditKanban}
+                  title={createTooltip}
                 >
                   <Plus className="h-4 w-4" />
                   Créer un nouveau lien de partage
@@ -499,8 +507,8 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                     </Button>
                     <Button
                       onClick={handleCreateShare}
-                      disabled={isReadOnly || creating}
-                      title={readOnlyTooltip}
+                      disabled={isReadOnly || !canEditKanban || creating}
+                      title={createTooltip}
                       className="flex-1"
                     >
                       {creating ? (
@@ -572,49 +580,61 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                               <ExternalLink className="h-4 w-4" />
                             </Button>
 
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-48 p-2" align="end">
-                                {share.isActive ? (
+                            {(canEditKanban || canDeleteKanban) && (
+                              <Popover>
+                                <PopoverTrigger asChild>
                                   <Button
                                     variant="ghost"
-                                    size="sm"
-                                    className="w-full justify-start gap-2"
-                                    onClick={() => handleToggleActive(share)}
+                                    size="icon"
+                                    className="h-8 w-8"
                                   >
-                                    <EyeOff className="h-4 w-4" />
-                                    Désactiver
+                                    <MoreHorizontal className="h-4 w-4" />
                                   </Button>
-                                ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full justify-start gap-2"
-                                    onClick={() => handleToggleActive(share)}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                    Réactiver
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-                                  onClick={() => setDeleteShareId(share.id)}
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-48 p-2"
+                                  align="end"
                                 >
-                                  <Trash2 className="h-4 w-4" />
-                                  Supprimer
-                                </Button>
-                              </PopoverContent>
-                            </Popover>
+                                  {canEditKanban &&
+                                    (share.isActive ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full justify-start gap-2"
+                                        onClick={() =>
+                                          handleToggleActive(share)
+                                        }
+                                      >
+                                        <EyeOff className="h-4 w-4" />
+                                        Désactiver
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full justify-start gap-2"
+                                        onClick={() =>
+                                          handleToggleActive(share)
+                                        }
+                                      >
+                                        <Eye className="h-4 w-4" />
+                                        Réactiver
+                                      </Button>
+                                    ))}
+                                  {canDeleteKanban && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+                                      onClick={() => setDeleteShareId(share.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Supprimer
+                                    </Button>
+                                  )}
+                                </PopoverContent>
+                              </Popover>
+                            )}
                           </div>
                         </div>
 
@@ -704,20 +724,23 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                           {formatDate(visitor.lastVisitAt)}
                                         </div>
                                       </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                        onClick={() =>
-                                          setRevokeVisitorInfo({
-                                            shareId: share.id,
-                                            email: visitor.email,
-                                            name: visitor.name || visitor.email,
-                                          })
-                                        }
-                                      >
-                                        <UserX className="h-4 w-4" />
-                                      </Button>
+                                      {canDeleteKanban && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          onClick={() =>
+                                            setRevokeVisitorInfo({
+                                              shareId: share.id,
+                                              email: visitor.email,
+                                              name:
+                                                visitor.name || visitor.email,
+                                            })
+                                          }
+                                        >
+                                          <UserX className="h-4 w-4" />
+                                        </Button>
+                                      )}
                                     </div>
                                   </div>
                                 ))}
@@ -797,36 +820,38 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                             {formatDate(request.requestedAt)}
                                           </span>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
-                                            onClick={() =>
-                                              handleApproveRequest(
-                                                share.id,
-                                                request.id,
-                                              )
-                                            }
-                                            disabled={approving}
-                                          >
-                                            <CheckCircle className="h-4 w-4" />
-                                          </Button>
-                                          <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            onClick={() =>
-                                              handleRejectRequest(
-                                                share.id,
-                                                request.id,
-                                              )
-                                            }
-                                            disabled={rejecting}
-                                          >
-                                            <XCircle className="h-4 w-4" />
-                                          </Button>
-                                        </div>
+                                        {canEditKanban && (
+                                          <div className="flex items-center gap-1">
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
+                                              onClick={() =>
+                                                handleApproveRequest(
+                                                  share.id,
+                                                  request.id,
+                                                )
+                                              }
+                                              disabled={approving}
+                                            >
+                                              <CheckCircle className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                              onClick={() =>
+                                                handleRejectRequest(
+                                                  share.id,
+                                                  request.id,
+                                                )
+                                              }
+                                              disabled={rejecting}
+                                            >
+                                              <XCircle className="h-4 w-4" />
+                                            </Button>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   ))}
@@ -885,7 +910,12 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                         onClick={() =>
                                           handleUnban(share.id, banned.email)
                                         }
-                                        disabled={unbanning}
+                                        disabled={unbanning || !canEditKanban}
+                                        title={
+                                          !canEditKanban
+                                            ? "Votre rôle ne permet pas cette action"
+                                            : undefined
+                                        }
                                       >
                                         <UserCheck className="h-3 w-3 mr-1" />
                                         Débannir

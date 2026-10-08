@@ -39,6 +39,7 @@ import { DeliveryNoteStatusBadge } from "../hooks/use-delivery-note-table";
 import DeliveryNotePreview from "./DeliveryNotePreview";
 import DeliveryNotePdfButton from "./delivery-note-pdf-button";
 import DeliveryReceptionDialog from "./delivery-reception-dialog";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Rendu canvas (pdfjs) du PDF archivé, chargé à l'ouverture seulement
 const PdfPreview = dynamic(
@@ -78,6 +79,11 @@ export default function DeliveryNoteSidebar({
   onSendEmail,
 }) {
   const router = useRouter();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canEditDeliveryNotes = !isReady || canWrite("deliveryNotes");
+  // Facturer : création dans le module « invoices »
+  const canWriteInvoices = !isReady || canWrite("invoices");
   const { changeStatus, loading: changingStatus } =
     useChangeDeliveryNoteStatus();
   const { createInvoice, loading: creatingInvoice } =
@@ -172,8 +178,10 @@ export default function DeliveryNoteSidebar({
   const canInvoice =
     (isPending || isShipped || isDelivered) &&
     !hasLinkedInvoices &&
-    !deliveryNote.sourceInvoice;
-  const canCancel = (isPending || isShipped) && !hasLinkedInvoices;
+    !deliveryNote.sourceInvoice &&
+    canWriteInvoices;
+  const canCancel =
+    (isPending || isShipped) && !hasLinkedInvoices && canEditDeliveryNotes;
 
   const deliveryAddress =
     deliveryNote.deliveryAddress?.street || deliveryNote.deliveryAddress?.city
@@ -579,69 +587,85 @@ export default function DeliveryNoteSidebar({
           )}
         </div>
 
-        {/* Actions */}
-        <div className="border-t px-6 py-4 space-y-3">
-          {isDraft && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Éditer
-              </Button>
-              <Button
-                onClick={() =>
-                  changeTo(
-                    DELIVERY_NOTE_STATUS.PENDING,
-                    "Bon de livraison émis, à expédier",
-                  )
-                }
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Émettre le bon de livraison
-              </Button>
-            </div>
-          )}
-
-          {isPending && (
-            <>
+        {/* Actions (masquées si le rôle ne permet aucune action) */}
+        {(canEditDeliveryNotes ||
+          canInvoice ||
+          (isDelivered && hasLinkedInvoices)) && (
+          <div className="border-t px-6 py-4 space-y-3">
+            {isDraft && canEditDeliveryNotes && (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  onClick={() =>
-                    changeTo(
-                      DELIVERY_NOTE_STATUS.DRAFT,
-                      "Bon de livraison repassé en brouillon",
-                    )
-                  }
+                  onClick={handleEdit}
                   disabled={isLoading}
                   className="flex-1 font-normal"
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Repasser brouillon
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Éditer
                 </Button>
                 <Button
-                  variant="primary"
                   onClick={() =>
                     changeTo(
-                      DELIVERY_NOTE_STATUS.SHIPPED,
-                      "Bon de livraison marqué comme expédié",
+                      DELIVERY_NOTE_STATUS.PENDING,
+                      "Bon de livraison émis, à expédier",
                     )
                   }
                   disabled={isLoading}
                   className="flex-1 font-normal"
                 >
-                  <Truck className="h-4 w-4 mr-2" />
-                  Marquer expédié
+                  <FileText className="h-4 w-4 mr-2" />
+                  Émettre le bon de livraison
                 </Button>
               </div>
+            )}
+
+            {isPending && canEditDeliveryNotes && (
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      changeTo(
+                        DELIVERY_NOTE_STATUS.DRAFT,
+                        "Bon de livraison repassé en brouillon",
+                      )
+                    }
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Repasser brouillon
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() =>
+                      changeTo(
+                        DELIVERY_NOTE_STATUS.SHIPPED,
+                        "Bon de livraison marqué comme expédié",
+                      )
+                    }
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <Truck className="h-4 w-4 mr-2" />
+                    Marquer expédié
+                  </Button>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReception(true)}
+                  disabled={isLoading}
+                  className="w-full font-normal"
+                >
+                  <PackageCheck className="h-4 w-4 mr-2" />
+                  Marquer comme livré
+                </Button>
+              </>
+            )}
+
+            {isShipped && canEditDeliveryNotes && (
               <Button
-                variant="outline"
+                variant="primary"
                 onClick={() => setShowReception(true)}
                 disabled={isLoading}
                 className="w-full font-normal"
@@ -649,72 +673,60 @@ export default function DeliveryNoteSidebar({
                 <PackageCheck className="h-4 w-4 mr-2" />
                 Marquer comme livré
               </Button>
-            </>
-          )}
+            )}
 
-          {isShipped && (
-            <Button
-              variant="primary"
-              onClick={() => setShowReception(true)}
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <PackageCheck className="h-4 w-4 mr-2" />
-              Marquer comme livré
-            </Button>
-          )}
+            {(isPending || isShipped || isDelivered) && (
+              <div className="flex gap-2">
+                {onSendEmail && canEditDeliveryNotes && (
+                  <Button
+                    variant="outline"
+                    onClick={() => onSendEmail(deliveryNote)}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    Envoyer
+                  </Button>
+                )}
+                {canInvoice && (
+                  <Button
+                    variant="outline"
+                    onClick={handleInvoice}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <FileCheck className="h-4 w-4 mr-2" />
+                    Facturer
+                  </Button>
+                )}
+              </div>
+            )}
 
-          {(isPending || isShipped || isDelivered) && (
-            <div className="flex gap-2">
-              {onSendEmail && (
-                <Button
-                  variant="outline"
-                  onClick={() => onSendEmail(deliveryNote)}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Envoyer
-                </Button>
-              )}
-              {canInvoice && (
-                <Button
-                  variant="outline"
-                  onClick={handleInvoice}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <FileCheck className="h-4 w-4 mr-2" />
-                  Facturer
-                </Button>
-              )}
-            </div>
-          )}
+            {canCancel && (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  changeTo(
+                    DELIVERY_NOTE_STATUS.CANCELED,
+                    "Bon de livraison annulé",
+                  )
+                }
+                disabled={isLoading}
+                className="w-full font-normal"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Annuler le bon de livraison
+              </Button>
+            )}
 
-          {canCancel && (
-            <Button
-              variant="outline"
-              onClick={() =>
-                changeTo(
-                  DELIVERY_NOTE_STATUS.CANCELED,
-                  "Bon de livraison annulé",
-                )
-              }
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              Annuler le bon de livraison
-            </Button>
-          )}
-
-          {isDelivered && !canInvoice && hasLinkedInvoices && (
-            <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
-              <CheckCircle className="h-3.5 w-3.5" />
-              Livré et facturé
-            </p>
-          )}
-        </div>
+            {isDelivered && !canInvoice && hasLinkedInvoices && (
+              <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1.5">
+                <CheckCircle className="h-3.5 w-3.5" />
+                Livré et facturé
+              </p>
+            )}
+          </div>
+        )}
       </motion.div>
 
       <DeliveryReceptionDialog

@@ -14,7 +14,7 @@ import { useAbby } from "@/src/hooks/useAbby";
 import { useInstalledApps } from "@/src/hooks/useInstalledApps";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useActiveOrganization } from "@/src/lib/organization-client";
-import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useSession } from "@/src/lib/auth-client";
 import { StripeConnectOnboardingModal } from "@/src/components/stripe-connect-onboarding-modal";
@@ -2472,15 +2472,16 @@ export function ApplicationsSection() {
   const { organization } = useActiveOrganization();
   const { activeOrganization, workspaceId } = useWorkspace();
   const organizationId = organization?.id;
-  const { isOwner, isAdmin } = usePermissions();
+  const { can } = useMyPermissions();
   const { isReadOnly, isOwner: isSubOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isSubOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const canManageStripeConnect = isOwner() || isAdmin();
-  const canManageApps = isOwner() || isAdmin();
+  // Module « Applications et banques » du rôle (Paramètres > Membres > Rôles)
+  const canManageStripeConnect = can("integrations", "write");
+  const canManageApps = can("integrations", "write");
 
   // Apps installées depuis la BDD
   const {

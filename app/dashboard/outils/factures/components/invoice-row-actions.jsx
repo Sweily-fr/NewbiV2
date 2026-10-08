@@ -46,6 +46,7 @@ import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 // InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
@@ -71,6 +72,12 @@ export default function InvoiceRowActions({
   const { canCreate } = usePermissions();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canWrite("invoices");
+  const canDeleteInvoices = !isReady || canDelete("invoices");
+  const canDeleteImportedInvoices = !isReady || canDelete("importedInvoices");
+  const canWriteDeliveryNotes = !isReady || canWrite("deliveryNotes");
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -188,6 +195,7 @@ export default function InvoiceRowActions({
   // Un bon de livraison se prépare pour toute facture émise (hors annulée)
   const canCreateDeliveryNote =
     deliveryNotesAllowed &&
+    canWriteDeliveryNotes &&
     !isImportedInvoice &&
     (invoice.status === INVOICE_STATUS.PENDING ||
       invoice.status === INVOICE_STATUS.COMPLETED ||
@@ -243,15 +251,19 @@ export default function InvoiceRowActions({
               <Eye className="mr-2 h-4 w-4" />
               Voir
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleDeleteImported}
-              className="text-red-600 focus:text-red-600"
-              disabled={isDeletingImported || isReadOnly}
-            >
-              <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-              Supprimer
-            </DropdownMenuItem>
+            {canDeleteImportedInvoices && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDeleteImported}
+                  className="text-red-600 focus:text-red-600"
+                  disabled={isDeletingImported || isReadOnly}
+                >
+                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                  Supprimer
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <div className="px-2 py-1.5 text-sm text-muted-foreground">
               Facture importée
@@ -292,7 +304,7 @@ export default function InvoiceRowActions({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 p-0 cursor-pointer"
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || !canEditInvoices}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSendEmail?.(invoice);
@@ -325,7 +337,7 @@ export default function InvoiceRowActions({
                 Voir
               </DropdownMenuItem>
               <DropdownMenuItem
-                disabled={isReadOnly}
+                disabled={isReadOnly || !canEditInvoices}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSaveAsTemplate?.(invoice);
@@ -335,7 +347,10 @@ export default function InvoiceRowActions({
                 Sauv. modèle
               </DropdownMenuItem>
               {invoice.status === INVOICE_STATUS.DRAFT && (
-                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
+                <DropdownMenuItem
+                  onClick={handleEdit}
+                  disabled={isReadOnly || !canEditInvoices}
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Éditer
                 </DropdownMenuItem>
@@ -345,7 +360,7 @@ export default function InvoiceRowActions({
                 <>
                   <DropdownMenuItem
                     onClick={handleMarkAsPaid}
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || !canEditInvoices}
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
                     Marquer comme payée
@@ -407,7 +422,7 @@ export default function InvoiceRowActions({
                   <DropdownMenuItem
                     onClick={handleCancel}
                     className="text-red-600 focus:text-red-600"
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || !canEditInvoices}
                   >
                     <XCircle className="mr-2 h-4 w-4 text-red-600" />
                     Annuler
@@ -421,20 +436,24 @@ export default function InvoiceRowActions({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleCreateInvoice}
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditInvoices}
                   >
                     <FileText className="mr-2 h-4 w-4" />
                     Créer la facture
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-red-600 focus:text-red-600"
-                    disabled={isReadOnly}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                    Supprimer
-                  </DropdownMenuItem>
+                  {canDeleteInvoices && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleDelete}
+                        className="text-red-600 focus:text-red-600"
+                        disabled={isReadOnly}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </>
               )}
               {isReadOnly && (

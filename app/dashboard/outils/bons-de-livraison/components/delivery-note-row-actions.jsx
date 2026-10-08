@@ -38,6 +38,7 @@ import {
 } from "@/src/graphql/deliveryNoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import DeliveryReceptionDialog from "./delivery-reception-dialog";
 
 export default function DeliveryNoteRowActions({
@@ -51,6 +52,12 @@ export default function DeliveryNoteRowActions({
   const [showReception, setShowReception] = useState(false);
 
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const canEditDeliveryNotes = !isReady || canWrite("deliveryNotes");
+  const canDeleteDeliveryNotes = !isReady || canDelete("deliveryNotes");
+  // Facturer : création dans le module « invoices »
+  const canWriteInvoices = !isReady || canWrite("invoices");
   const { changeStatus, loading: changingStatus } =
     useChangeDeliveryNoteStatus();
   const { deleteDeliveryNote, loading: isDeleting } = useDeleteDeliveryNote();
@@ -111,7 +118,8 @@ export default function DeliveryNoteRowActions({
   const canInvoice =
     (isPending || isShipped || isDelivered) &&
     !hasLinkedInvoices &&
-    !deliveryNote.sourceInvoice;
+    !deliveryNote.sourceInvoice &&
+    canWriteInvoices;
   const canCancel = (isDraft || isPending || isShipped) && !hasLinkedInvoices;
 
   return (
@@ -133,7 +141,7 @@ export default function DeliveryNoteRowActions({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8 p-0 cursor-pointer"
-                    disabled={isReadOnly}
+                    disabled={isReadOnly || !canEditDeliveryNotes}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSendEmail?.(deliveryNote);
@@ -167,7 +175,10 @@ export default function DeliveryNoteRowActions({
               </DropdownMenuItem>
               {/* Un BL émis reste modifiable tant qu'il n'est pas livré */}
               {(isDraft || isPending || isShipped) && (
-                <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
+                <DropdownMenuItem
+                  onClick={handleEdit}
+                  disabled={isReadOnly || !canEditDeliveryNotes}
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier
                 </DropdownMenuItem>
@@ -180,7 +191,7 @@ export default function DeliveryNoteRowActions({
               {isDraft && (
                 <DropdownMenuItem
                   onClick={handleView}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Émettre le bon de livraison
@@ -196,14 +207,14 @@ export default function DeliveryNoteRowActions({
                         "Bon de livraison marqué comme expédié",
                       )
                     }
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
                   >
                     <Truck className="mr-2 h-4 w-4" />
                     Marquer comme expédié
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setShowReception(true)}
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
                   >
                     <PackageCheck className="mr-2 h-4 w-4" />
                     Marquer comme livré
@@ -215,7 +226,7 @@ export default function DeliveryNoteRowActions({
                         "Bon de livraison repassé en brouillon",
                       )
                     }
-                    disabled={isLoading || isReadOnly}
+                    disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Repasser en brouillon
@@ -226,7 +237,7 @@ export default function DeliveryNoteRowActions({
               {isShipped && (
                 <DropdownMenuItem
                   onClick={() => setShowReception(true)}
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
                 >
                   <PackageCheck className="mr-2 h-4 w-4" />
                   Marquer comme livré
@@ -251,14 +262,14 @@ export default function DeliveryNoteRowActions({
                       "Bon de livraison annulé",
                     )
                   }
-                  disabled={isLoading || isReadOnly}
+                  disabled={isLoading || isReadOnly || !canEditDeliveryNotes}
                 >
                   <XCircle className="mr-2 h-4 w-4" />
                   Annuler
                 </DropdownMenuItem>
               )}
 
-              {isDraft && (
+              {isDraft && canDeleteDeliveryNotes && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

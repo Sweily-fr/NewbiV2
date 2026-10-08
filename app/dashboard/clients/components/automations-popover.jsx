@@ -56,6 +56,7 @@ import {
 } from "@/src/hooks/useClientAutomations";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   useCrmEmailAutomations,
   useCreateCrmEmailAutomation,
@@ -117,7 +118,15 @@ const EMAIL_TIMING_TYPES = [
   { value: "AFTER_DATE", label: "Après" },
 ];
 
-function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
+function AutomationRow({
+  automation,
+  lists,
+  onUpdate,
+  onDelete,
+  onToggle,
+  canEdit = true,
+  canRemove = true,
+}) {
   const [localData, setLocalData] = useState({
     triggerType: automation.triggerType,
     actionType: automation.actionType,
@@ -154,6 +163,7 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
       <Select
         value={localData.triggerType}
         onValueChange={(value) => handleFieldChange("triggerType", value)}
+        disabled={!canEdit}
       >
         <SelectTrigger className="w-[200px]">
           <SelectValue />
@@ -172,6 +182,7 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
       <Select
         value={localData.actionType}
         onValueChange={(value) => handleFieldChange("actionType", value)}
+        disabled={!canEdit}
       >
         <SelectTrigger className="w-[150px]">
           <SelectValue />
@@ -188,6 +199,7 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
       <Select
         value={localData.targetListId}
         onValueChange={(value) => handleFieldChange("targetListId", value)}
+        disabled={!canEdit}
       >
         <SelectTrigger className="flex-1 min-w-[120px]">
           <SelectValue placeholder="Liste..." />
@@ -210,20 +222,23 @@ function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
       <Switch
         checked={localData.isActive}
         onCheckedChange={handleToggle}
+        disabled={!canEdit}
         className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
       />
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(automation);
-        }}
-        className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      {canRemove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(automation);
+          }}
+          className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -347,7 +362,14 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
   );
 }
 
-function EmailAutomationRow({ automation, onEdit, onDelete, onToggle }) {
+function EmailAutomationRow({
+  automation,
+  onEdit,
+  onDelete,
+  onToggle,
+  canEdit = true,
+  canRemove = true,
+}) {
   const [isActive, setIsActive] = useState(automation.isActive);
 
   const handleToggle = () => {
@@ -380,32 +402,37 @@ function EmailAutomationRow({ automation, onEdit, onDelete, onToggle }) {
       <Switch
         checked={isActive}
         onCheckedChange={handleToggle}
+        disabled={!canEdit}
         className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
       />
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onEdit(automation);
-        }}
-        className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff] flex-shrink-0"
-      >
-        <Pencil className="h-4 w-4" />
-      </Button>
+      {canEdit && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(automation);
+          }}
+          className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff] flex-shrink-0"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      )}
 
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(automation);
-        }}
-        className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      {canRemove && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(automation);
+          }}
+          className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -621,6 +648,10 @@ export default function AutomationsPopover({ trigger }) {
   const planLimits = getPlanLimits(subscription?.plan);
   const canUseClientAutomations = planLimits.clientAutomations;
   const canUseEmailAutomations = planLimits.crmEmailAutomations;
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditAutomations = !isReady || canWrite("automations");
+  const canDeleteAutomations = !isReady || canDelete("automations");
 
   const {
     automations,
@@ -844,6 +875,8 @@ export default function AutomationsPopover({ trigger }) {
                           onUpdate={handleUpdate}
                           onDelete={setDeletingAutomation}
                           onToggle={handleToggle}
+                          canEdit={canEditAutomations}
+                          canRemove={canDeleteAutomations}
                         />
                       ))}
                     </>
@@ -858,27 +891,29 @@ export default function AutomationsPopover({ trigger }) {
                   )}
                 </div>
 
-                <div className="p-4 border-t">
-                  {!showNewForm && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowNewForm(true)}
-                      className="w-full justify-start text-muted-foreground"
-                      disabled={lists.length === 0}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Ajouter une automatisation
-                    </Button>
-                  )}
+                {canEditAutomations && (
+                  <div className="p-4 border-t">
+                    {!showNewForm && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowNewForm(true)}
+                        className="w-full justify-start text-muted-foreground"
+                        disabled={lists.length === 0}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter une automatisation
+                      </Button>
+                    )}
 
-                  {lists.length === 0 && (
-                    <p className="text-xs text-amber-600 mt-2">
-                      Créez d'abord des listes pour configurer des
-                      automatisations.
-                    </p>
-                  )}
-                </div>
+                    {lists.length === 0 && (
+                      <p className="text-xs text-amber-600 mt-2">
+                        Créez d'abord des listes pour configurer des
+                        automatisations.
+                      </p>
+                    )}
+                  </div>
+                )}
               </TabsContent>
 
               {/* Onglet Automatisations Email */}
@@ -928,6 +963,8 @@ export default function AutomationsPopover({ trigger }) {
                                 }}
                                 onDelete={setDeletingEmailAutomation}
                                 onToggle={handleToggleEmail}
+                                canEdit={canEditAutomations}
+                                canRemove={canDeleteAutomations}
                               />
                             ),
                           )}
@@ -944,30 +981,32 @@ export default function AutomationsPopover({ trigger }) {
                       )}
                     </div>
 
-                    <div className="p-4 border-t">
-                      {!showNewEmailForm && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingEmailAutomation(null);
-                            setShowNewEmailForm(true);
-                          }}
-                          className="w-full justify-start text-muted-foreground"
-                          disabled={dateFields.length === 0}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Ajouter une automatisation email
-                        </Button>
-                      )}
+                    {canEditAutomations && (
+                      <div className="p-4 border-t">
+                        {!showNewEmailForm && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingEmailAutomation(null);
+                              setShowNewEmailForm(true);
+                            }}
+                            className="w-full justify-start text-muted-foreground"
+                            disabled={dateFields.length === 0}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Ajouter une automatisation email
+                          </Button>
+                        )}
 
-                      {dateFields.length === 0 && (
-                        <p className="text-xs text-amber-600 mt-2">
-                          Créez d'abord un champ personnalisé de type "Date"
-                          pour configurer des automatisations email.
-                        </p>
-                      )}
-                    </div>
+                        {dateFields.length === 0 && (
+                          <p className="text-xs text-amber-600 mt-2">
+                            Créez d'abord un champ personnalisé de type "Date"
+                            pour configurer des automatisations email.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </TabsContent>

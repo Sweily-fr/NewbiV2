@@ -23,6 +23,7 @@ import {
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
 import { useCreateProduct, useUpdateProduct } from "@/src/hooks/useProducts";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { toast } from "@/src/components/ui/sonner";
 import { PackagePlusIcon } from "lucide-react";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
@@ -92,6 +93,9 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   const { updateProduct, loading: updateLoading } = useUpdateProduct();
   const isEditing = !!product;
   const loading = createLoading || updateLoading;
+  const { canWrite, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditProducts = !isReady || canWrite("products");
 
   // Custom fields state
   const [customFieldValues, setCustomFieldValues] = useState({});
@@ -199,6 +203,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   }, [product, open, reset]);
 
   const onSubmit = async (formData) => {
+    if (!canEditProducts) return;
     try {
       // Convertir les champs personnalisés en format GraphQL
       const customFields = Object.entries(customFieldValues)
@@ -551,7 +556,12 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
             </Button>
             <Button
               onClick={handleSubmit(onSubmit)}
-              disabled={loading || imageUploading}
+              disabled={loading || imageUploading || !canEditProducts}
+              title={
+                !canEditProducts
+                  ? "Votre rôle ne permet pas cette action"
+                  : undefined
+              }
               className="flex-1"
             >
               {loading

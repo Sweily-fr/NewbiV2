@@ -123,6 +123,8 @@ export function KanbanGanttView({
   updateTask,
   workspaceId,
   boardTitle,
+  // Rôle sans écriture : pas de création au clic ni de redimensionnement
+  readOnly = false,
 }) {
   // Date de référence de la période affichée. Volontairement NON alignée sur
   // le lundi : un jeudi 2 juillet doit afficher Q3/juillet, pas Q2/juin (le
@@ -764,6 +766,7 @@ export function KanbanGanttView({
     };
 
     const handleClick = (e) => {
+      if (readOnly) return;
       // Ne pas créer de tâche si on vient de redimensionner
       if (justResizedRef.current) {
         return;
@@ -820,7 +823,7 @@ export function KanbanGanttView({
       timeline.removeEventListener("mouseleave", handleMouseLeave);
       timeline.removeEventListener("click", handleClick);
     };
-  }, [daysToDisplay, dayWidth, columns, onEditTask]);
+  }, [daysToDisplay, dayWidth, columns, onEditTask, readOnly]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-10rem)] bg-background">
@@ -1289,7 +1292,7 @@ export function KanbanGanttView({
               </div>
 
               {/* Cercle qui suit le curseur - masqué sur mobile/tablette */}
-              {cursorPosition.visible && !isOverTask && (
+              {!readOnly && cursorPosition.visible && !isOverTask && (
                 <div
                   className="fixed pointer-events-none hidden md:block"
                   style={{
@@ -1401,7 +1404,7 @@ export function KanbanGanttView({
                                 >
                                   <TaskPresenceOverlay taskId={task.id} />
                                   {/* Poignée de redimensionnement gauche */}
-                                  {task.startDate && !isSliver && (
+                                  {!readOnly && task.startDate && !isSliver && (
                                     <div
                                       className="absolute top-1 bottom-1 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-full"
                                       style={{
@@ -1415,7 +1418,7 @@ export function KanbanGanttView({
                                   )}
 
                                   {/* Poignée de redimensionnement droite */}
-                                  {task.dueDate && !isSliver && (
+                                  {!readOnly && task.dueDate && !isSliver && (
                                     <div
                                       className="absolute top-1 bottom-1 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-full"
                                       style={{

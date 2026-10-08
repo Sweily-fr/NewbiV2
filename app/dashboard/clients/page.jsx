@@ -61,6 +61,7 @@ import ClientExportButton from "./components/client-export-button";
 import CreateListDialog from "./components/create-list-dialog";
 import AssignMembersDialog from "./components/assign-members-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 const STANDARD_COLUMNS = [
   { id: "email", label: "Email" },
@@ -109,6 +110,13 @@ function ClientsContent() {
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
+    : undefined;
+  const { canWrite, canDelete, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditClients = !isReady || canWrite("clients");
+  const canDeleteClients = !isReady || canDelete("clients");
+  const roleTooltip = !canEditClients
+    ? "Votre rôle ne permet pas cette action"
     : undefined;
   const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
 
@@ -286,8 +294,8 @@ function ClientsContent() {
                 setImportDialogOpen(true);
               }}
               className="self-start gap-1.5 cursor-pointer"
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
+              disabled={isReadOnly || !canEditClients}
+              title={readOnlyTooltip || roleTooltip}
             >
               <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
               Champs
@@ -299,8 +307,8 @@ function ClientsContent() {
                 setImportDialogOpen(true);
               }}
               className="self-start gap-1.5 cursor-pointer"
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
+              disabled={isReadOnly || !canEditClients}
+              title={readOnlyTooltip || roleTooltip}
             >
               <Upload size={14} strokeWidth={2} aria-hidden="true" />
               Importer
@@ -367,7 +375,8 @@ function ClientsContent() {
               )}
             />
           </div>
-          {selectedClients.size > 0 && (
+          {/* Actions groupées : toutes demandent au moins l'écriture */}
+          {selectedClients.size > 0 && canEditClients && (
             <div className="flex items-center gap-2">
               {/* Ajouter à une liste */}
               <DropdownMenu>
@@ -463,62 +472,64 @@ function ClientsContent() {
                     <UserCheck className="w-3.5 h-3.5" />
                     Assigner
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2 text-sm text-red-600 focus:text-red-600"
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                        Supprimer définitivement
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                        <div
-                          className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                          aria-hidden="true"
+                  {canDeleteClients && <DropdownMenuSeparator />}
+                  {canDeleteClients && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem
+                          className="cursor-pointer gap-2 text-sm text-red-600 focus:text-red-600"
+                          onSelect={(e) => e.preventDefault()}
                         >
-                          <CircleAlertIcon className="opacity-80" size={16} />
+                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                          Supprimer définitivement
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                          <div
+                            className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                            aria-hidden="true"
+                          >
+                            <CircleAlertIcon className="opacity-80" size={16} />
+                          </div>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Supprimer définitivement ?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action est irréversible.{" "}
+                              {selectedClients.size} contact
+                              {selectedClients.size > 1 ? "s" : ""} sera
+                              {selectedClients.size > 1 ? "ont" : ""} supprimé
+                              {selectedClients.size > 1 ? "s" : ""}{" "}
+                              définitivement.
+                              {selectedBlockedCount > 0 && (
+                                <>
+                                  {" "}
+                                  {selectedBlockedCount} contact
+                                  {selectedBlockedCount > 1 ? "s" : ""} lié
+                                  {selectedBlockedCount > 1 ? "s" : ""} à des
+                                  factures, devis ou bons de commande ne pourr
+                                  {selectedBlockedCount > 1 ? "ont" : "a"} pas
+                                  être supprimé
+                                  {selectedBlockedCount > 1 ? "s" : ""}.
+                                </>
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
                         </div>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Supprimer définitivement ?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Cette action est irréversible.{" "}
-                            {selectedClients.size} contact
-                            {selectedClients.size > 1 ? "s" : ""} sera
-                            {selectedClients.size > 1 ? "ont" : ""} supprimé
-                            {selectedClients.size > 1 ? "s" : ""}{" "}
-                            définitivement.
-                            {selectedBlockedCount > 0 && (
-                              <>
-                                {" "}
-                                {selectedBlockedCount} contact
-                                {selectedBlockedCount > 1 ? "s" : ""} lié
-                                {selectedBlockedCount > 1 ? "s" : ""} à des
-                                factures, devis ou bons de commande ne pourr
-                                {selectedBlockedCount > 1 ? "ont" : "a"} pas
-                                être supprimé
-                                {selectedBlockedCount > 1 ? "s" : ""}.
-                              </>
-                            )}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                      </div>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDeleteSelected}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Supprimer
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleDeleteSelected}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -558,8 +569,8 @@ function ClientsContent() {
                   setImportDialogOpen(true);
                 }}
                 className="cursor-pointer"
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
+                disabled={isReadOnly || !canEditClients}
+                title={readOnlyTooltip || roleTooltip}
               >
                 <Settings2 className="h-4 w-4" />
               </Button>
@@ -571,8 +582,8 @@ function ClientsContent() {
                   setImportDialogOpen(true);
                 }}
                 className="cursor-pointer"
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
+                disabled={isReadOnly || !canEditClients}
+                title={readOnlyTooltip || roleTooltip}
               >
                 <Upload className="h-4 w-4" />
               </Button>

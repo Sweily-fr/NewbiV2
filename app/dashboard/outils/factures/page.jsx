@@ -30,6 +30,7 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 function InvoicesContent() {
   const router = useRouter();
@@ -42,6 +43,14 @@ function InvoicesContent() {
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
+
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canWrite, isReady } = useMyPermissions();
+  const canImportInvoices = !isReady || canWrite("importedInvoices");
+  // Relances automatiques : module « invoices » ; paramètres des documents :
+  // paramètres de l'entreprise (« orgSettings »)
+  const canEditReminders = !isReady || canWrite("invoices");
+  const canEditSettings = !isReady || canWrite("orgSettings");
 
   // Toast manager et modal d'envoi pour les nouvelles factures/avoirs
   const toastManager = useToastManager();
@@ -218,24 +227,30 @@ function InvoicesContent() {
             </p> */}
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsAutoReminderOpen(true)}
-            >
-              <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-            </Button>
-            <Button variant="outline" onClick={() => setTriggerImport(true)}>
-              <Download className="w-3.5 h-3.5" aria-hidden="true" />
-              Importer
-            </Button>
+            {canEditReminders && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsAutoReminderOpen(true)}
+              >
+                <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
+              </Button>
+            )}
+            {canEditSettings && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
+              </Button>
+            )}
+            {canImportInvoices && (
+              <Button variant="outline" onClick={() => setTriggerImport(true)}>
+                <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                Importer
+              </Button>
+            )}
             <InvoiceExportButton invoices={filteredData} iconOnly={false} />
             <PermissionButton
               requiresActiveSubscription
@@ -386,22 +401,26 @@ function InvoicesContent() {
               <h1 className="text-2xl font-medium mb-1">Factures</h1>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAutoReminderOpen(true)}
-                className="gap-2"
-              >
-                <Bell className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsSettingsOpen(true)}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
+              {canEditReminders && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsAutoReminderOpen(true)}
+                  className="gap-2"
+                >
+                  <Bell className="h-4 w-4" />
+                </Button>
+              )}
+              {canEditSettings && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              )}
               <PermissionButton
                 requiresActiveSubscription
                 resource="invoices"
