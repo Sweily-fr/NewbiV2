@@ -1,5 +1,6 @@
 import React from "react";
 import { OMBRE, VISUEL } from "@/src/lib/lp-visuels";
+import { VisuelListe } from "@/src/components/lp/visuels";
 
 // Même bento que « Garde le contrôle de ton activité » sur la LP home, repris
 // sur les LP produits : une grande carte et une carte moyenne en haut, trois
@@ -68,11 +69,23 @@ export function ValuesSection() {
               fonctionnalité demande une explication, c&apos;est qu&apos;elle
               est mal conçue.
             </p>
-            <Photo
-              src="/lp/about/portrait-equipe.jpg"
-              alt="Une membre de l'équipe Newbi"
-              largeur="w-[320px]"
-            />
+            {/* Une illustration plutôt qu'une photo sur cette carte : elle
+                reprend mot pour mot les trois promesses du texte. L'encadré
+                est calé à droite comme les photos voisines — étalé sur les
+                sept colonnes, trois lignes courtes laisseraient un grand
+                vide. */}
+            <div className={VISUEL}>
+              <VisuelListe
+                className="absolute right-8 -bottom-6 w-[340px]"
+                titre="Nouvelle facture"
+                lignes={[
+                  "Un vocabulaire clair",
+                  "Les options avancées repliées",
+                  "Jamais plus de champs que nécessaire",
+                ]}
+                chip="Sans manuel"
+              />
+            </div>
           </article>
 
           <article className={`${CARD} md:col-span-5 min-h-[449px]`}>
