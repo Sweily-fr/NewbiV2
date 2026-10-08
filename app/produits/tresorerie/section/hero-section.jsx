@@ -368,7 +368,7 @@ function MaquetteTresorerie() {
 export function HeroSection() {
   return (
     <div className="relative w-full overflow-x-clip bg-white px-5 pb-6 md:pb-10 lg:pb-16">
-      <div className="max-w-[1200px] mx-auto relative">
+      <div className="max-w-7xl mx-auto relative">
         {/* Pas de gouttière horizontale : tous les enfants occupent les douze
             colonnes, et `gap-x-24` ferait déborder la piste hors du conteneur
             entre 768 et 1 023 px. */}
@@ -377,7 +377,7 @@ export function HeroSection() {
           <div className="col-span-12 text-center">
             {/* Même typographie et même échelle que le H1 de la LP
                 factures : semi-gras, interlignage serré, noir profond. */}
-            <h1 className="text-balance font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
+            <h1 className="font-semibold text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[4.5rem] leading-[1.1] tracking-tight text-[#0d0d0d] dark:text-white mb-6">
               La gestion de trésorerie, enfin simple
             </h1>
           </div>
