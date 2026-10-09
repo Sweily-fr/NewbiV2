@@ -31,10 +31,33 @@ export function middleware(request) {
   return NextResponse.next();
 }
 
+// Les préchargements (survol des liens, depuis le lot perf du 09/10/2026)
+// ne passent pas par le middleware : une redirection mobile n'y a pas de
+// sens, et c'est la navigation elle-même (requête RSC, jamais exclue) qui
+// redirige un téléphone, y compris après un router.push vers le dashboard.
+// Valeurs écrites en dur : Next analyse ce matcher au build.
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/onboarding/:path*",
-    "/create-workspace/:path*",
+    {
+      source: "/dashboard/:path*",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+    {
+      source: "/onboarding/:path*",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+    {
+      source: "/create-workspace/:path*",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
   ],
 };
