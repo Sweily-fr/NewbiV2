@@ -1,24 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 /**
  * Fonction pour lire le viewMode depuis localStorage
+ * (partagée avec KanbanPageSkeleton, qui affiche le skeleton de cette vue)
  */
-function getViewModeFromStorage(boardId) {
-  if (typeof window === 'undefined' || !boardId) {
+export function getViewModeFromStorage(boardId) {
+  if (typeof window === "undefined" || !boardId) {
     return null;
   }
-  
+
   // Sur mobile, forcer la vue "List"
   if (window.innerWidth < 768) {
-    return 'list';
+    return "list";
   }
-  
+
   const savedMode = localStorage.getItem(`kanban-view-mode-${boardId}`);
-  if (savedMode && ['board', 'list', 'gantt'].includes(savedMode)) {
+  if (savedMode && ["board", "list", "gantt"].includes(savedMode)) {
     return savedMode;
   }
-  
-  return 'board';
+
+  return "board";
 }
 
 /**
@@ -43,23 +44,23 @@ export function useViewMode(boardId) {
   // Détecter les changements de taille d'écran
   useEffect(() => {
     if (!isReady) return;
-    
+
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       if (mobile) {
-        setViewModeState('list');
+        setViewModeState("list");
       }
     };
-    
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, [isReady]);
 
   // Fonction pour changer le mode et sauvegarder dans localStorage
   const setViewMode = (mode) => {
-    if (['board', 'list', 'gantt'].includes(mode)) {
+    if (["board", "list", "gantt"].includes(mode)) {
       setViewModeState(mode);
-      if (typeof window !== 'undefined' && boardId) {
+      if (typeof window !== "undefined" && boardId) {
         localStorage.setItem(`kanban-view-mode-${boardId}`, mode);
       }
     }
@@ -68,9 +69,9 @@ export function useViewMode(boardId) {
   return {
     viewMode: viewMode, // null avant hydratation, vraie valeur après
     setViewMode,
-    isBoard: viewMode === 'board',
-    isList: viewMode === 'list',
-    isGantt: viewMode === 'gantt',
+    isBoard: viewMode === "board",
+    isList: viewMode === "list",
+    isGantt: viewMode === "gantt",
     isReady,
   };
 }
