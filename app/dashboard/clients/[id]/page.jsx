@@ -6,7 +6,6 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { ClientDetailSkeleton } from "./components/client-detail-skeleton";
 import {
   useClient,
-  useClients,
   useDeleteClient,
   useBlockClient,
   useUnblockClient,
@@ -15,6 +14,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useQuery } from "@apollo/client";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { GET_QUOTES } from "@/src/graphql/quoteQueries";
+import { GET_CLIENT_NAVIGATION_IDS } from "@/src/graphql/clientQueries";
 import { GET_PURCHASE_ORDERS } from "@/src/graphql/purchaseOrderQueries";
 import { useCreateEvent } from "@/src/hooks/useEvents";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -54,7 +54,11 @@ function ClientDetailContent() {
     error: clientError,
     refetch: refetchClient,
   } = useClient(isValid ? id : null);
-  const { clients: allClients } = useClients(1, 1000);
+  const { data: navigationData } = useQuery(GET_CLIENT_NAVIGATION_IDS, {
+    variables: { workspaceId, page: 1, limit: 1000, search: "" },
+    skip: !workspaceId,
+  });
+  const allClients = navigationData?.clients?.items;
   const { canRead, isReady } = useMyPermissions();
   // Documents du client : requêtes sautées sans lecture du module (onglets
   // et encarts masqués en conséquence). Mêmes variables que useQuotes /
