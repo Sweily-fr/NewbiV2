@@ -268,15 +268,22 @@ export function PurchaseInvoiceDetailDrawer({
   embedded = false,
 }) {
   const isCreate = mode === "create";
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
-  const canDeletePurchaseInvoices = !isReady || canDelete("purchaseInvoices");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canDo("purchaseInvoices", "edit");
+  const canDeletePurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "delete");
+  const canMarkPaidPurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "markPaid");
+  // Ajout d'un justificatif = action « create » (comme côté API)
+  const canAddReceipts = !isReady || canDo("purchaseInvoices", "create");
   // Rapprochement : transactions visibles avec la lecture des transactions,
-  // lier / délier avec l'écriture sur les deux modules
+  // lier / délier avec l'action « reconcile » des deux modules
   const canReadBanking = !isReady || canRead("banking");
   const canLinkTransactions =
-    canEditPurchaseInvoices && (!isReady || canWrite("banking"));
+    !isReady ||
+    (canDo("purchaseInvoices", "reconcile") && canDo("banking", "reconcile"));
   const [isEditMode, setIsEditMode] = useState(isCreate);
   const [form, setForm] = useState({
     supplierName: "",
@@ -1756,39 +1763,44 @@ export function PurchaseInvoiceDetailDrawer({
                       ? ` (${invoice.files.length})`
                       : ""}
                   </p>
-                  {/* Ajout et relance OCR : rôles qui peuvent écrire */}
-                  {canEditPurchaseInvoices && (
+                  {/* Ajout (« create ») et relance OCR (« edit ») */}
+                  {(canAddReceipts || canEditPurchaseInvoices) && (
                     <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 font-normal gap-1.5 text-xs"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingFiles}
-                        title="Ajouter un ou plusieurs justificatifs"
-                      >
-                        {uploadingFiles ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Plus className="h-3.5 w-3.5" />
-                        )}
-                        Ajouter
-                      </Button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="application/pdf,image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => {
-                          handleAddFiles(e.target.files);
-                          e.target.value = "";
-                        }}
-                      />
+                      {canAddReceipts && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 font-normal gap-1.5 text-xs"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingFiles}
+                            title="Ajouter un ou plusieurs justificatifs"
+                          >
+                            {uploadingFiles ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Plus className="h-3.5 w-3.5" />
+                            )}
+                            Ajouter
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="application/pdf,image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              handleAddFiles(e.target.files);
+                              e.target.value = "";
+                            }}
+                          />
+                        </>
+                      )}
                       {/* Relance OCR : les valeurs relues sont comparées avant
                         application, rien n'est écrasé sans choix. */}
-                      {invoice?.files?.length > 0 &&
+                      {canEditPurchaseInvoices &&
+                        invoice?.files?.length > 0 &&
                         renderReanalyzeTrigger(
                           <Button
                             type="button"
@@ -1811,12 +1823,12 @@ export function PurchaseInvoiceDetailDrawer({
                     </div>
                   )}
                 </div>
-                {!invoice?.files?.length && !canEditPurchaseInvoices && (
+                {!invoice?.files?.length && !canAddReceipts && (
                   <p className="text-sm text-muted-foreground">
                     Aucun justificatif
                   </p>
                 )}
-                {!invoice?.files?.length && canEditPurchaseInvoices && (
+                {!invoice?.files?.length && canAddReceipts && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -2348,7 +2360,7 @@ export function PurchaseInvoiceDetailDrawer({
                 Modifier
               </Button>
             )}
-            {canEditPurchaseInvoices && invoice?.status !== "PAID" && (
+            {canMarkPaidPurchaseInvoices && invoice?.status !== "PAID" && (
               <Button
                 variant="primary"
                 className="flex-1 font-normal"

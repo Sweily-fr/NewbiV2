@@ -472,9 +472,11 @@ export default function TransactionTable({
   const { getAllCollaborators } = useOrganizationInvitations();
   const { organization: activeOrg } = useActiveOrganization();
   const { workspaceId } = useRequiredWorkspace();
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditBanking = !isReady || canWrite("banking");
+  const { canDo, isReady } = useMyPermissions();
+  // Action « receipts » du rôle : confirmer la facture d'achat proposée par
+  // l'analyse d'un justificatif (tout autorisé tant que la grille n'est pas
+  // chargée)
+  const canManageReceipts = !isReady || canDo("banking", "receipts");
   const { data: session } = useSession();
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
@@ -1217,7 +1219,7 @@ export default function TransactionTable({
         ]);
         setConfirmationIndex(0);
       },
-      canEditBanking,
+      canManageReceipts,
       bankAccounts,
     },
   });

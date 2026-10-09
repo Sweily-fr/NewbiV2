@@ -422,9 +422,10 @@ function KanbanColumnSimpleInner({
   const [showInlineAdd, setShowInlineAdd] = useState(false);
 
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditKanban = !isReady || canWrite("kanban");
-  const canDeleteKanban = !isReady || canDelete("kanban");
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateKanban = !isReady || canDo("kanban", "create");
+  const canEditKanban = !isReady || canDo("kanban", "edit");
+  const canDeleteKanban = !isReady || canDo("kanban", "delete");
 
   // Ref pour le conteneur scrollable de la colonne
   const scrollContainerRef = useRef(null);
@@ -625,7 +626,7 @@ function KanbanColumnSimpleInner({
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
-              {canEditKanban && (
+              {canCreateKanban && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -655,7 +656,7 @@ function KanbanColumnSimpleInner({
             className="kanban-column-scroll p-1 pb-2 rounded-lg transition-colors overflow-y-auto"
             style={{ minHeight: "50px" }}
           >
-            {showInlineAdd && canEditKanban && (
+            {showInlineAdd && canCreateKanban && (
               <InlineNewTask
                 columnId={column.id}
                 boardId={boardId}
@@ -693,7 +694,7 @@ function KanbanColumnSimpleInner({
               ))
             )}
 
-            {!showInlineAdd && canEditKanban && (
+            {!showInlineAdd && canCreateKanban && (
               <Button
                 variant="ghost"
                 size="sm"

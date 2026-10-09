@@ -41,9 +41,10 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const newDocumentHref = `/dashboard/outils/factures/new?clientId=${clientId}`;
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canCreateInvoices = !isReady || canWrite("invoices");
+  const { canDo, isReady } = useMyPermissions();
+  // Bouton « Nouveau » = action « create » (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

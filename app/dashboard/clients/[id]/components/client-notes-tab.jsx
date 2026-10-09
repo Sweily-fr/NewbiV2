@@ -504,10 +504,10 @@ export default function ClientNotesTab({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canDeleteClients = !isReady || canDelete("clients");
+  const { canDo, isReady } = useMyPermissions();
+  // Ajout, modification et suppression des notes = action « notes » des
+  // clients (tout autorisé tant que la grille n'est pas chargée)
+  const canManageNotes = !isReady || canDo("clients", "notes");
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteToDelete, setNoteToDelete] = useState(null);
   const { data: session } = useSession();
@@ -566,8 +566,8 @@ export default function ClientNotesTab({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Note composer (masqué si le rôle ne permet pas d'écrire) */}
-      {canEditClients && (
+      {/* Note composer (masqué si le rôle ne permet pas les notes) */}
+      {canManageNotes && (
         <div className="px-4 sm:px-6 py-4 border-b border-[#eeeff1] dark:border-[#232323] flex-shrink-0">
           <NoteComposer
             onSubmit={handleAddNote}
@@ -631,9 +631,9 @@ export default function ClientNotesTab({
                             </span>
                           </div>
                           {note.userId === session?.user?.id &&
-                            (canEditClients || canDeleteClients) && (
+                            canManageNotes && (
                               <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity">
-                                {canEditClients && (
+                                {canManageNotes && (
                                   <Button
                                     size="icon"
                                     variant="ghost"
@@ -645,7 +645,7 @@ export default function ClientNotesTab({
                                     <Edit2 className="h-3.5 w-3.5" />
                                   </Button>
                                 )}
-                                {canDeleteClients && (
+                                {canManageNotes && (
                                   <AlertDialog
                                     open={noteToDelete === note.id}
                                     onOpenChange={(open) =>

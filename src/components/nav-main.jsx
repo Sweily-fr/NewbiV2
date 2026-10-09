@@ -77,6 +77,7 @@ export function NavMain({
   // grille n'est pas chargée, rien n'est masqué pour éviter un clignotement.
   const {
     can,
+    canDo,
     isReady: permissionsReady,
     role: permissionsRole,
     levels: permissionLevels,
@@ -89,7 +90,9 @@ export function NavMain({
       !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
     );
   };
-  const canCreate = (moduleKey) => !permissionsReady || can(moduleKey, "write");
+  // Raccourcis « Nouveau … » : action « create » du module
+  const canCreate = (moduleKey) =>
+    !permissionsReady || canDo(moduleKey, "create");
   const visibleItems = (list) => list.filter((item) => canSee(item.url));
   const { workspaceId } = useWorkspace();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();

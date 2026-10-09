@@ -82,11 +82,23 @@ export default function PurchaseOrderRowActions({
 
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditPurchaseOrders = !isReady || canWrite("purchaseOrders");
-  const canDeletePurchaseOrders = !isReady || canDelete("purchaseOrders");
-  // Conversion : création dans le module « invoices »
-  const canWriteInvoices = !isReady || canWrite("invoices");
+  const { canDo, isReady } = useMyPermissions();
+  const canEditPurchaseOrders = !isReady || canDo("purchaseOrders", "edit");
+  const canCreatePurchaseOrders = !isReady || canDo("purchaseOrders", "create");
+  const canDeletePurchaseOrders = !isReady || canDo("purchaseOrders", "delete");
+  const canSendPurchaseOrders = !isReady || canDo("purchaseOrders", "send");
+  const canChangePurchaseOrderStatus =
+    !isReady || canDo("purchaseOrders", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizePurchaseOrders =
+    !isReady ||
+    canDo("purchaseOrders", "create") ||
+    canDo("purchaseOrders", "edit");
+  // Conversion : action « convert » du BC et création de la facture
+  const canConvertPurchaseOrders =
+    !isReady || canDo("purchaseOrders", "convert");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
   const { workspaceId } = useRequiredWorkspace();
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
@@ -204,17 +216,18 @@ export default function PurchaseOrderRowActions({
     purchaseOrder.status === PURCHASE_ORDER_STATUS.IN_PROGRESS;
   const isDelivered = purchaseOrder.status === PURCHASE_ORDER_STATUS.DELIVERED;
 
-  // Actions de statut : réservées à l'écriture sur les bons de commande
+  // Actions de statut : action « status » des bons de commande
   const hasStatusActions =
-    canEditPurchaseOrders &&
-    (isDraft || isConfirmed || isValidated || isInProgress);
+    (canFinalizePurchaseOrders && isDraft) ||
+    (canChangePurchaseOrderStatus &&
+      (isConfirmed || isValidated || isInProgress));
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
     (isValidated || isInProgress || isDelivered) &&
     !hasLinkedInvoices &&
-    canEditPurchaseOrders &&
-    canWriteInvoices;
+    canConvertPurchaseOrders &&
+    canCreateInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
@@ -230,7 +243,7 @@ export default function PurchaseOrderRowActions({
         />
         <ButtonGroup>
           {/* Icône d'envoi par email */}
-          {!isDraft && canEditPurchaseOrders && (
+          {!isDraft && canSendPurchaseOrders && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -270,7 +283,7 @@ export default function PurchaseOrderRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
-              {canEditPurchaseOrders && (
+              {canCreatePurchaseOrders && (
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
@@ -296,7 +309,7 @@ export default function PurchaseOrderRowActions({
                 <DropdownMenuSeparator />
               )}
 
-              {hasStatusActions && isDraft && (
+              {canFinalizePurchaseOrders && isDraft && (
                 <DropdownMenuItem
                   onClick={handleConfirm}
                   disabled={isLoading || isReadOnly}
@@ -306,7 +319,7 @@ export default function PurchaseOrderRowActions({
                 </DropdownMenuItem>
               )}
 
-              {hasStatusActions && isConfirmed && (
+              {canChangePurchaseOrderStatus && isConfirmed && (
                 <>
                   <DropdownMenuItem
                     onClick={handleValidate}
@@ -334,7 +347,7 @@ export default function PurchaseOrderRowActions({
                 </>
               )}
 
-              {hasStatusActions && isValidated && (
+              {canChangePurchaseOrderStatus && isValidated && (
                 <DropdownMenuItem
                   onClick={handleStartProgress}
                   disabled={isLoading || isReadOnly}
@@ -344,7 +357,7 @@ export default function PurchaseOrderRowActions({
                 </DropdownMenuItem>
               )}
 
-              {hasStatusActions && isInProgress && (
+              {canChangePurchaseOrderStatus && isInProgress && (
                 <DropdownMenuItem
                   onClick={handleDeliver}
                   disabled={isLoading || isReadOnly}

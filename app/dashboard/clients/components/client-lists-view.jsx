@@ -76,10 +76,12 @@ export default function ClientListsView({
   const [deletingList, setDeletingList] = useState(null);
   const [addingClientsToList, setAddingClientsToList] = useState(null);
   const { deleteList } = useDeleteClientList();
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clientLists");
-  const canDeleteClients = !isReady || canDelete("clientLists");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle sur les listes, action par action (tout autorisé tant
+  // que la grille n'est pas chargée)
+  const canCreateLists = !isReady || canDo("clientLists", "create");
+  const canEditLists = !isReady || canDo("clientLists", "edit");
+  const canDeleteLists = !isReady || canDo("clientLists", "delete");
   // « Ajouter des contacts » liste les fiches du module Clients
   const canReadClients = !isReady || canRead("clients");
 
@@ -215,7 +217,7 @@ export default function ClientListsView({
           cell: (info) => {
             const list = info.row.original;
             if (list.isDefault) return null;
-            if (!canEditClients && !canDeleteClients) return null;
+            if (!canEditLists && !canDeleteLists) return null;
             return (
               <div onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
@@ -225,7 +227,7 @@ export default function ClientListsView({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {canEditClients && (
+                    {canEditLists && (
                       <>
                         {canReadClients && (
                           <DropdownMenuItem
@@ -245,7 +247,7 @@ export default function ClientListsView({
                         </DropdownMenuItem>
                       </>
                     )}
-                    {canDeleteClients && (
+                    {canDeleteLists && (
                       <DropdownMenuItem
                         onClick={() => setDeletingList(list)}
                         className="cursor-pointer text-destructive focus:text-destructive"
@@ -262,8 +264,8 @@ export default function ClientListsView({
           },
         },
         // Sélection réservée à la suppression groupée
-      ].filter((column) => column.id !== "select" || canDeleteClients),
-    [canEditClients, canDeleteClients, canReadClients],
+      ].filter((column) => column.id !== "select" || canDeleteLists),
+    [canEditLists, canDeleteLists, canReadClients],
   );
 
   // Créer la table avec React Table
@@ -311,7 +313,7 @@ export default function ClientListsView({
           description="Créez votre première liste pour organiser vos contacts par catégories ou segments."
           className="flex-1"
           action={
-            canEditClients ? (
+            canCreateLists ? (
               <Button
                 onClick={onCreateList}
                 className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"

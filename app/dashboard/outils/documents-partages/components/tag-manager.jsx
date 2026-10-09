@@ -186,10 +186,10 @@ export function TagManager({ trigger }) {
   const { tags } = useDocumentTags();
   const { updateTag } = useUpdateDocumentTag();
   const { deleteTag } = useDeleteDocumentTag();
-  // Suppression d'un tag : droit de suppression des documents partagés
-  // (tout autorisé tant que la grille n'est pas chargée)
-  const { canDelete, isReady } = useMyPermissions();
-  const canDeleteTags = !isReady || canDelete("sharedDocuments");
+  // Suppression d'un tag : action « delete » des documents partagés, comme
+  // côté API (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canDeleteTags = !isReady || canDo("sharedDocuments", "delete");
 
   return (
     <Dialog>

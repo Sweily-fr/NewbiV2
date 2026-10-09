@@ -726,10 +726,12 @@ function SegmentsContent() {
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
   const canUseSegments = planLimits.clientSegments;
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clientSegments");
-  const canDeleteClients = !isReady || canDelete("clientSegments");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle sur les segments, action par action (tout autorisé tant
+  // que la grille n'est pas chargée)
+  const canCreateSegments = !isReady || canDo("clientSegments", "create");
+  const canEditSegments = !isReady || canDo("clientSegments", "edit");
+  const canDeleteSegments = !isReady || canDo("clientSegments", "delete");
 
   const { segments, loading, refetch } = useClientSegments();
   const { createSegment, loading: creating } = useCreateClientSegment();
@@ -801,7 +803,7 @@ function SegmentsContent() {
             Créez des segments dynamiques pour cibler vos contacts.
           </p>
         </div>
-        {canEditClients && (
+        {canCreateSegments && (
           <Button
             variant="primary"
             onClick={() => setDialogOpen(true)}
@@ -824,7 +826,7 @@ function SegmentsContent() {
             title="Aucun segment"
             description="Les segments filtrent automatiquement vos contacts selon des critères dynamiques. Créez votre premier segment pour commencer."
             action={
-              canEditClients ? (
+              canCreateSegments ? (
                 <Button
                   onClick={() => setDialogOpen(true)}
                   className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
@@ -853,7 +855,7 @@ function SegmentsContent() {
                       {segment.name}
                     </h3>
                   </div>
-                  {(canEditClients || canDeleteClients) && (
+                  {(canEditSegments || canDeleteSegments) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -866,7 +868,7 @@ function SegmentsContent() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        {canEditClients && (
+                        {canEditSegments && (
                           <DropdownMenuItem
                             className="cursor-pointer gap-2 text-xs"
                             onClick={(e) => {
@@ -878,10 +880,10 @@ function SegmentsContent() {
                             Modifier
                           </DropdownMenuItem>
                         )}
-                        {canEditClients && canDeleteClients && (
+                        {canEditSegments && canDeleteSegments && (
                           <DropdownMenuSeparator />
                         )}
-                        {canDeleteClients && (
+                        {canDeleteSegments && (
                           <DropdownMenuItem
                             className="cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
                             onClick={(e) => {

@@ -139,9 +139,11 @@ export default function TransferTable({
   const { deleteTransfer, renameTransfer, formatFileSize } = useFileTransfer();
   const { session } = useUser();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditFileTransfers = !isReady || canWrite("fileTransfers");
-  const canDeleteFileTransfers = !isReady || canDelete("fileTransfers");
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
+  // Renommer = action « edit »
+  const canEditFileTransfers = !isReady || canDo("fileTransfers", "edit");
+  const canDeleteFileTransfers = !isReady || canDo("fileTransfers", "delete");
 
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
@@ -769,7 +771,7 @@ export default function TransferTable({
                       icon={DocumentTextIcon}
                       title="Aucun transfert trouvé"
                       description={
-                        canEditFileTransfers
+                        canCreateFileTransfers
                           ? "Aucun transfert ne correspond à vos critères. Créez-en un nouveau pour commencer."
                           : "Aucun transfert ne correspond à vos critères."
                       }

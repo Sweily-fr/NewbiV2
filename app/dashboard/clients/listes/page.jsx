@@ -36,10 +36,11 @@ function ListesContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clientLists");
-  const canDeleteClients = !isReady || canDelete("clientLists");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle sur les listes (tout autorisé tant que la grille n'est
+  // pas chargée)
+  const canCreateLists = !isReady || canDo("clientLists", "create");
+  const canDeleteLists = !isReady || canDo("clientLists", "delete");
   const { workspaceId } = useWorkspace();
   const searchParams = useSearchParams();
   const listIdFromUrl = searchParams.get("listId");
@@ -96,7 +97,7 @@ function ListesContent() {
                 Organisez vos contacts par catégories ou segments.
               </p>
             </div>
-            {canEditClients && (
+            {canCreateLists && (
               <Button
                 variant="primary"
                 onClick={() => setCreateListDialogOpen(true)}
@@ -143,7 +144,7 @@ function ListesContent() {
               )}
             </div>
 
-            {selectedListIds.length > 0 && canDeleteClients && (
+            {selectedListIds.length > 0 && canDeleteLists && (
               <AlertDialog
                 open={isDeleteMultipleOpen}
                 onOpenChange={setIsDeleteMultipleOpen}

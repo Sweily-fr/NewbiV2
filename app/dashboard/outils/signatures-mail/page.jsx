@@ -50,6 +50,7 @@ function SignatureCard({
   onDelete,
   readOnly,
   canEdit,
+  canCreate,
   canRemove,
 }) {
   return (
@@ -92,15 +93,16 @@ function SignatureCard({
             {sig.identity?.jobTitle ? ` · ${sig.identity.jobTitle}` : ""}
           </div>
         </div>
-        {/* Actions selon le rôle : modifier (défaut, copie), supprimer ;
-            en consultation, l'aperçu ouvre la signature */}
+        {/* Actions selon le rôle : modifier (« edit », défaut), dupliquer
+            (« create »), supprimer (« delete ») ; en consultation, l'aperçu
+            ouvre la signature */}
         <div className="flex shrink-0 items-center gap-1">
           {canEdit && (
             <Button variant="outline" size="sm" className="h-8 text-xs cursor-pointer" onClick={onOpen}>
               Modifier
             </Button>
           )}
-          {(canEdit || canRemove) && (
+          {(canEdit || canCreate || canRemove) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 cursor-pointer" aria-label="Actions">
@@ -109,18 +111,18 @@ function SignatureCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {canEdit && (
-                  <>
-                    <DropdownMenuItem onClick={onSetDefault} disabled={sig.isDefault || readOnly}>
-                      <Star size={14} />
-                      Définir par défaut
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onDuplicate} disabled={readOnly}>
-                      <CopyPlus size={14} />
-                      Dupliquer
-                    </DropdownMenuItem>
-                  </>
+                  <DropdownMenuItem onClick={onSetDefault} disabled={sig.isDefault || readOnly}>
+                    <Star size={14} />
+                    Définir par défaut
+                  </DropdownMenuItem>
                 )}
-                {canEdit && canRemove && <DropdownMenuSeparator />}
+                {canCreate && (
+                  <DropdownMenuItem onClick={onDuplicate} disabled={readOnly}>
+                    <CopyPlus size={14} />
+                    Dupliquer
+                  </DropdownMenuItem>
+                )}
+                {(canEdit || canCreate) && canRemove && <DropdownMenuSeparator />}
                 {canRemove && (
                   <DropdownMenuItem
                     onClick={onDelete}
@@ -143,13 +145,14 @@ function SignatureCard({
 function SignaturesV2Content() {
   const router = useRouter();
   const { isReadOnly } = useSubscriptionAccess();
-  // Droits du rôle : créer et modifier (write), supprimer (delete). Tout
+  // Droits du rôle, action par action : créer et dupliquer (« create »),
+  // modifier et définir par défaut (« edit »), supprimer (« delete »). Tout
   // autorisé tant que la grille n'est pas chargée, pour ne pas montrer
   // l'état d'un lecteur à tout le monde
-  const { canWrite: canWriteModule, canDelete: canDeleteModule, isReady } =
-    useMyPermissions();
-  const canWrite = !isReady || canWriteModule("signatures");
-  const canDeleteSignatures = !isReady || canDeleteModule("signatures");
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateSignatures = !isReady || canDo("signatures", "create");
+  const canEditSignatures = !isReady || canDo("signatures", "edit");
+  const canDeleteSignatures = !isReady || canDo("signatures", "delete");
   const [creating, setCreating] = useState(false);
   const [toDelete, setToDelete] = useState(null);
 
@@ -254,9 +257,9 @@ function SignaturesV2Content() {
               Une signature propre dans Gmail, Outlook et Apple Mail, en clair comme en sombre.
             </p>
           </div>
-          {/* Masqué pour un rôle sans écriture, désactivé et expliqué pour un
+          {/* Masqué pour un rôle sans création, désactivé et expliqué pour un
               abonnement inactif */}
-          {canWrite && (
+          {canCreateSignatures && (
             <PermissionButton
               resource="signatures"
               action="create"
@@ -298,7 +301,7 @@ function SignaturesV2Content() {
             </div>
           ) : signatures.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-              {canWrite ? (
+              {canCreateSignatures ? (
                 <div className="max-w-md space-y-2">
                   <h2 className="text-lg font-medium">Créez votre première signature</h2>
                   <p className="text-sm text-muted-foreground">
@@ -313,7 +316,7 @@ function SignaturesV2Content() {
                   <p className="text-sm text-muted-foreground">{VIEWER_HINT}</p>
                 </div>
               )}
-              {canWrite && (
+              {canCreateSignatures && (
                 <PermissionButton
                   resource="signatures"
                   action="create"
@@ -337,7 +340,8 @@ function SignaturesV2Content() {
                   sig={sig}
                   // Abonnement inactif : actions désactivées ; rôle : masquées
                   readOnly={isReadOnly}
-                  canEdit={canWrite}
+                  canEdit={canEditSignatures}
+                  canCreate={canCreateSignatures}
                   canRemove={canDeleteSignatures}
                   onOpen={() => router.push(EDITOR_URL(sig.id))}
                   onDuplicate={() => handleDuplicate(sig.id)}

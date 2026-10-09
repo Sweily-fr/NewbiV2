@@ -30,8 +30,8 @@ export default function InvoiceRecurrenceSection({
   const { recurrences } = useInvoiceRecurrences();
   const { isReadOnly } = useSubscriptionAccess();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditInvoices = !isReady || canWrite("invoices");
+  const { canDo, isReady } = useMyPermissions();
+  const canManageRecurring = !isReady || canDo("invoices", "recurring");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!invoice?.id) return null;
@@ -76,7 +76,7 @@ export default function InvoiceRecurrenceSection({
                   <span className="text-muted-foreground"> · suspendue</span>
                 )}
               </span>
-              {canEditInvoices && (
+              {canManageRecurring && (
                 <Button
                   variant="outline"
                   size="sm"

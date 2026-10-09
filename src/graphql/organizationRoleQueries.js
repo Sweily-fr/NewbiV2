@@ -12,6 +12,7 @@ const ORGANIZATION_ROLE_FIELDS = gql`
     predefined
     editable
     customized
+    actions
     levels
     memberCount
     invitationCount
@@ -30,11 +31,14 @@ export const GET_ROLE_CATALOG = gql`
       modules {
         key
         group
-        kind
         parent
         label
         description
-        levels
+        actions {
+          key
+          label
+          description
+        }
       }
     }
   }
@@ -56,6 +60,7 @@ export const GET_MY_PERMISSIONS = gql`
       role
       roleName
       isOwner
+      actions
       levels
     }
   }

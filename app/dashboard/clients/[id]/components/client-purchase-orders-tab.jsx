@@ -43,9 +43,10 @@ export default function ClientPurchaseOrdersTab({
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const newDocumentHref = `/dashboard/outils/bons-commande/new?clientId=${clientId}`;
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canCreatePurchaseOrders = !isReady || canWrite("purchaseOrders");
+  const { canDo, isReady } = useMyPermissions();
+  // Bouton « Nouveau » = action « create » (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canCreatePurchaseOrders = !isReady || canDo("purchaseOrders", "create");
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

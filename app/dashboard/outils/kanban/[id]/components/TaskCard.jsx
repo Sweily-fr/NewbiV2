@@ -614,8 +614,8 @@ const TaskCard = memo(
           {/* Contenu avec padding */}
           <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col flex-1">
             {/* Bloc d'actions flottant : top-right au hover, bottom-right pendant l'édition */}
-            {/* Masqué si le rôle ne permet pas de modifier les tâches */}
-            {canEdit && (
+            {/* Masqué si le rôle ne permet ni de modifier ni de supprimer */}
+            {(canEdit || canDelete) && (
               <div
                 className={`absolute right-1.5 transition-all z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border bg-white dark:bg-card p-0.5 ${
                   isEditingTitle
@@ -626,25 +626,27 @@ const TaskCard = memo(
                 }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  disabled={isLocked}
-                  onMouseDown={(e) => {
-                    if (isLocked) return;
-                    // Empêcher le blur de l'input avant notre handler
-                    e.preventDefault();
-                  }}
-                  onClick={isLocked ? undefined : startEditingTitle}
-                  title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
-                >
-                  {isEditingTitle ? (
-                    <X className="h-3.5 w-3.5" />
-                  ) : (
-                    <Pencil className="h-3.5 w-3.5" />
-                  )}
-                </Button>
+                {canEdit && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    disabled={isLocked}
+                    onMouseDown={(e) => {
+                      if (isLocked) return;
+                      // Empêcher le blur de l'input avant notre handler
+                      e.preventDefault();
+                    }}
+                    onClick={isLocked ? undefined : startEditingTitle}
+                    title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
+                  >
+                    {isEditingTitle ? (
+                      <X className="h-3.5 w-3.5" />
+                    ) : (
+                      <Pencil className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                )}
                 {updateTask && !isLocked && (
                   <CardTagPopover
                     task={task}
@@ -670,21 +672,23 @@ const TaskCard = memo(
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem
-                      onSelect={(e) => {
-                        e.stopPropagation();
-                        onEdit(task);
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.nativeEvent.stopImmediatePropagation();
-                      }}
-                      disabled={isLocked}
-                      className="cursor-pointer"
-                    >
-                      <Edit className="mr-2 h-3.5 w-3.5" />
-                      Modifier
-                    </DropdownMenuItem>
+                    {canEdit && (
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.stopPropagation();
+                          onEdit(task);
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
+                        }}
+                        disabled={isLocked}
+                        className="cursor-pointer"
+                      >
+                        <Edit className="mr-2 h-3.5 w-3.5" />
+                        Modifier
+                      </DropdownMenuItem>
+                    )}
                     {canDelete && (
                       <DropdownMenuItem
                         onSelect={(e) => {

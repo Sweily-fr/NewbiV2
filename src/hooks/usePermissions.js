@@ -49,7 +49,7 @@ export function usePermissions() {
   const permissionCacheRef = useRef(new Map()); // Cache des permissions
 
   const {
-    levels: permissionLevels,
+    actions: permissionLevels,
     loading: isPermissionsLoading,
     error: permissionsError,
   } = useMyPermissions();

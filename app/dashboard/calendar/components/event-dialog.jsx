@@ -104,12 +104,16 @@ export function EventDialog({
   onClose,
   onSave,
   onDelete,
+  // canEdit : enregistrer cet événement (action « create » pour un nouvel
+  // événement, « edit » sinon, résolue par l'appelant)
   canEdit = true,
   canDelete = true,
+  // Ajout et modification des étiquettes de couleur (action « edit »)
+  canEditLabels = true,
 }) {
   const { labels, getLabelForColor, updateLabels, updateLoading } =
     useCalendarColorLabels();
-  // Événement externe, ou rôle sans droit d'écriture sur le calendrier
+  // Événement externe, ou rôle sans droit d'enregistrer cet événement
   const isReadOnly = event?.isReadOnly || !canEdit;
 
   // State pour la modal d'édition/ajout d'étiquette
@@ -677,22 +681,24 @@ export function EventDialog({
                           {entry.label}
                         </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLabelEditIndex(index);
-                          setLabelDialogColor(entry.color);
-                          setLabelDialogText(entry.label);
-                          setLabelDialogOpen(true);
-                        }}
-                        className="p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-colors"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
+                      {canEditLabels && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLabelEditIndex(index);
+                            setLabelDialogColor(entry.color);
+                            setLabelDialogText(entry.label);
+                            setLabelDialogOpen(true);
+                          }}
+                          className="p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
                   {/* Bouton ajouter */}
-                  {labels.length < 20 && (
+                  {canEditLabels && labels.length < 20 && (
                     <button
                       type="button"
                       onClick={() => {

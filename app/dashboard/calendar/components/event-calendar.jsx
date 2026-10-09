@@ -140,13 +140,15 @@ export function EventCalendar({
 
   // Droits du rôle sur le calendrier (tout autorisé tant que la grille
   // n'est pas chargée, l'API refuse de toute façon)
-  const { canWrite, canDelete, isReady: permissionsReady } = useMyPermissions();
-  const canEditEvents = !permissionsReady || canWrite("calendar");
-  const canDeleteEvents = !permissionsReady || canDelete("calendar");
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canCreateEvents = !permissionsReady || canDo("calendar", "create");
+  // Modifier, glisser-déposer, étiquettes et synchronisation = « edit »
+  const canEditEvents = !permissionsReady || canDo("calendar", "edit");
+  const canDeleteEvents = !permissionsReady || canDo("calendar", "delete");
 
   const handleEventCreate = useCallback(
     (startTime) => {
-      if (!canEditEvents) return;
+      if (!canCreateEvents) return;
       // Snap to 15-minute intervals
       const minutes = startTime.getMinutes();
       const remainder = minutes % 15;
@@ -172,7 +174,7 @@ export function EventCalendar({
       setSelectedEvent(newEvent);
       setIsEventDialogOpen(true);
     },
-    [canEditEvents],
+    [canCreateEvents],
   );
 
   const handleEventSave = useCallback(
@@ -284,7 +286,7 @@ export function EventCalendar({
         "--week-cells-height": `${WeekCellsHeight}px`,
       }}
     >
-      {/* Glisser-déposer désactivé sans droit d'écriture */}
+      {/* Glisser-déposer désactivé sans l'action « edit » */}
       <CalendarDndProvider
         onEventUpdate={handleEventUpdate}
         disabled={!canEditEvents}
@@ -326,7 +328,7 @@ export function EventCalendar({
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            {/* Synchronisation et connexions : rôles qui peuvent écrire */}
+            {/* Synchronisation et connexions : action « edit » */}
             {canEditEvents && <CalendarSyncButton />}
             <CalendarConnectionsPanel canManage={canEditEvents} />
             <DropdownMenu>
@@ -355,7 +357,7 @@ export function EventCalendar({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {canEditEvents && (
+            {canCreateEvents && (
               <Button
                 className="font-normal"
                 onClick={() => {
@@ -415,8 +417,9 @@ export function EventCalendar({
           }}
           onSave={handleEventSave}
           onDelete={handleEventDelete}
-          canEdit={canEditEvents}
+          canEdit={selectedEvent?.id ? canEditEvents : canCreateEvents}
           canDelete={canDeleteEvents}
+          canEditLabels={canEditEvents}
         />
       </CalendarDndProvider>
     </div>

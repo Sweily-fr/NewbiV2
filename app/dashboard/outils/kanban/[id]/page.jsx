@@ -720,10 +720,15 @@ function KanbanBoardPageContent({ params }) {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady: isPermissionsReady } = useMyPermissions();
-  const canEditKanban = !isPermissionsReady || canWrite("kanban");
-  // « Convertir en facture » crée une facture : droit d'écriture sur les factures
-  const canCreateInvoice = !isPermissionsReady || canWrite("invoices");
+  const { canDo, isReady: isPermissionsReady } = useMyPermissions();
+  // Colonnes, tâches et « Sauv. modèle » = « create » ; titre, emoji,
+  // accès, glisser-déposer = « edit » ; lien public = « share »
+  const canCreateKanban = !isPermissionsReady || canDo("kanban", "create");
+  const canEditKanban = !isPermissionsReady || canDo("kanban", "edit");
+  const canShareKanban = !isPermissionsReady || canDo("kanban", "share");
+  // « Convertir en facture » crée une facture : action « create » des factures
+  const canCreateInvoice =
+    !isPermissionsReady || canDo("invoices", "create");
 
   // Hook viewMode en premier pour avoir le bon skeleton dès le début
   const {
@@ -1383,8 +1388,8 @@ function KanbanBoardPageContent({ params }) {
           );
         })}
 
-        {/* Add Column Button (masqué si le rôle ne permet pas d'écrire) */}
-        {canEditKanban && (
+        {/* Add Column Button (masqué si le rôle ne permet pas de créer) */}
+        {canCreateKanban && (
           <Card className="w-[230px] sm:w-[272px] h-fit border border-dashed border-foreground/25 hover:border-foreground/50 transition-colors shadow-none cursor-pointer flex-shrink-0">
             <CardContent className="p-3">
               <Button
@@ -1421,7 +1426,7 @@ function KanbanBoardPageContent({ params }) {
     id,
     workspaceId,
     allBoardTags,
-    canEditKanban,
+    canCreateKanban,
   ]);
 
   // Hook pour le drag-to-scroll horizontal (espace vide, hors DnD)
@@ -1713,10 +1718,10 @@ function KanbanBoardPageContent({ params }) {
 
             {/* Sauv. modèle & Partager */}
             <div className="flex items-center gap-1.5 shrink-0">
-              {canEditKanban && (
+              {canCreateKanban && (
                 <SaveTemplateDialog boardId={id} boardTitle={board.title} />
               )}
-              {canEditKanban && (
+              {canShareKanban && (
                 <ShareBoardDialog
                   boardId={id}
                   boardTitle={board.title}
@@ -1866,7 +1871,7 @@ function KanbanBoardPageContent({ params }) {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {canEditKanban && (
+              {canCreateKanban && (
                 <Button
                   variant="primary"
                   className="cursor-pointer"
@@ -1886,7 +1891,7 @@ function KanbanBoardPageContent({ params }) {
         {isBoard && (
           <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
             <div className="flex items-center gap-2">
-              {/* Bouton Convertir en facture (droit d'écriture sur les factures) */}
+              {/* Bouton Convertir en facture (création de factures) */}
               {billableTasks.length > 0 && canCreateInvoice && (
                 <Button
                   variant="outline"
@@ -1958,6 +1963,7 @@ function KanbanBoardPageContent({ params }) {
               workspaceId={workspaceId}
               boardTitle={board?.title}
               readOnly={!canEditKanban}
+              canCreate={canCreateKanban}
             />
           </div>
         )}
@@ -2016,7 +2022,7 @@ function KanbanBoardPageContent({ params }) {
                     <div className="text-muted-foreground mb-4">
                       Ce tableau ne contient aucune colonne
                     </div>
-                    {canEditKanban && (
+                    {canCreateKanban && (
                       <Button
                         variant="default"
                         onClick={openAddModal}
