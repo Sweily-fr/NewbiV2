@@ -62,6 +62,12 @@ let _jwtFetchPromise = null;
 const getJWTToken = async () => {
   // Si on a un JWT valide en cache (avec 60s de marge), le réutiliser
   if (_cachedJWT && Date.now() < _jwtExpiresAt - 60000) {
+    // Dans ses 2 dernières minutes de validité : renouvellement en tâche de
+    // fond, sans faire attendre la requête en cours (avant, une requête
+    // GraphQL attendait /api/auth/token toutes les ~4 minutes).
+    if (Date.now() > _jwtExpiresAt - 120000 && !_jwtFetchPromise) {
+      fetchJWT().catch(() => {});
+    }
     return _cachedJWT;
   }
 
@@ -70,6 +76,12 @@ const getJWTToken = async () => {
     return _jwtFetchPromise;
   }
 
+  return fetchJWT();
+};
+
+// Appel à /api/auth/token, une seule requête en vol à la fois.
+const fetchJWT = () => {
+  if (_jwtFetchPromise) return _jwtFetchPromise;
   _jwtFetchPromise = (async () => {
     try {
       const response = await fetch("/api/auth/token", {
@@ -119,7 +131,6 @@ const getJWTToken = async () => {
       _jwtFetchPromise = null;
     }
   })();
-
   return _jwtFetchPromise;
 };
 

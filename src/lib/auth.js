@@ -336,7 +336,10 @@ export const auth = betterAuth({
   },
 
   plugins: [
-    jwt(),
+    // disableSettingJwtHeader : sans lui, chaque /get-session signait un JWT
+    // renvoyé dans l'en-tête set-auth-jwt, que ni le web ni l'app mobile ne
+    // lisent (les deux passent par /api/auth/token).
+    jwt({ disableSettingJwtHeader: true }),
     oneTimeToken({
       expiresIn: 3, // 3 minutes
       storeToken: "hashed", // Ne pas stocker le token en clair en DB
