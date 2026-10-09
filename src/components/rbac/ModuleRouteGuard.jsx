@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Lock } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
+import { AccessDeniedPage } from "@/src/components/rbac/AccessDeniedPage";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   isHiddenForRole,
@@ -29,28 +27,8 @@ export function ModuleRouteGuard({ children }) {
   const hidden = isHiddenForRole(role, levels, moduleKey, { page: true });
   if (canDo(moduleKey, action) && !hidden) return children;
 
-  const canRead = !hidden && action !== "view" && canDo(moduleKey, "view");
+  const canView = !hidden && canDo(moduleKey, "view");
   return (
-    <div className="flex flex-1 items-center justify-center px-6 py-24">
-      <div className="flex max-w-sm flex-col items-center gap-4 text-center">
-        <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
-          <Lock className="size-5 text-muted-foreground" />
-        </div>
-        <div className="space-y-1">
-          <h1 className="text-base font-medium">Accès non autorisé</h1>
-          <p className="text-sm text-muted-foreground">
-            {canRead
-              ? action === "create"
-                ? "Votre rôle permet de consulter cette page, mais pas de créer."
-                : "Votre rôle permet de consulter cette page, mais pas de modifier."
-              : "Votre rôle ne donne pas accès à cette page."}{" "}
-            Le super admin de l'espace peut modifier vos droits.
-          </p>
-        </div>
-        <Button asChild variant="outline" className="cursor-pointer">
-          <Link href="/dashboard">Retour à l'accueil</Link>
-        </Button>
-      </div>
-    </div>
+    <AccessDeniedPage moduleKey={moduleKey} action={action} canView={canView} />
   );
 }
