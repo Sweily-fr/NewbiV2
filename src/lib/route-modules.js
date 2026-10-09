@@ -29,6 +29,12 @@ const ROUTE_MODULES = [
 // Avoirs : pages sous une facture (/factures/<id>/avoir/…)
 const CREDIT_NOTE_PATH = /^\/dashboard\/outils\/factures\/[^/]+\/avoir(\/|$)/;
 
+/** Page d'accueil d'un module (lien « Voir les … » de la page refusée). */
+export function pathForModule(moduleKey) {
+  if (moduleKey === "creditNotes") return "/dashboard/outils/factures";
+  return ROUTE_MODULES.find(([, key]) => key === moduleKey)?.[0] || null;
+}
+
 export function moduleForPath(pathname) {
   if (!pathname) return null;
   const path = String(pathname).split(/[?#]/)[0];
