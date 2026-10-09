@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useQuery } from "@apollo/client";
-import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
+import { GET_BOARDS_NAV } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import {
@@ -103,7 +103,7 @@ export function NavMain({
   const debouncedKanbanSearch = useDebouncedValue(kanbanSearchTerm, 300);
 
   // Récupérer les tableaux Kanban
-  const { data: kanbanData } = useQuery(GET_BOARDS, {
+  const { data: kanbanData } = useQuery(GET_BOARDS_NAV, {
     variables: { workspaceId },
     skip: !workspaceId,
     fetchPolicy: "cache-and-network",
