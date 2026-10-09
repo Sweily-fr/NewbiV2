@@ -6,6 +6,7 @@ import { X, LoaderCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import InvoiceSettingsView from "./invoice-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { toast } from "@/src/components/ui/sonner";
 import {
   updateOrganization,
@@ -556,8 +557,13 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               </div>
             ) : (
               <>
-                <UniversalPreviewPDF data={demoData} type="invoice" />
-                <DocumentAnnexPreview annex={debouncedFormData?.annex} />
+                <A4PreviewFrame>
+                  <UniversalPreviewPDF data={demoData} type="invoice" />
+                </A4PreviewFrame>
+                <DocumentAnnexPreview
+                  annex={debouncedFormData?.annex}
+                  className="mx-auto max-w-[794px]"
+                />
               </>
             )}
           </div>

@@ -34,6 +34,7 @@ import { Button } from "@/src/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePurchaseOrderEditor } from "../hooks/use-purchase-order-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedQuoteForm from "@/app/dashboard/outils/devis/components/enhanced-quote-form";
 import { toast } from "@/src/components/ui/sonner";
@@ -770,9 +771,14 @@ export default function ModernPurchaseOrderEditor({
                 feraient disparaître puis réapparaître à chaque modification. */}
             {debouncedFormData ? (
               <>
-                <div ref={pdfRef}>{previewElement}</div>
+                <A4PreviewFrame>
+                  <div ref={pdfRef}>{previewElement}</div>
+                </A4PreviewFrame>
                 {/* Hors de pdfRef : les PDF navigateur ajoutent déjà l'annexe */}
-                <DocumentAnnexPreview annex={formData?.annex} />
+                <DocumentAnnexPreview
+                  annex={formData?.annex}
+                  className="mx-auto max-w-[794px]"
+                />
               </>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
