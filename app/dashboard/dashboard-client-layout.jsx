@@ -29,7 +29,7 @@ import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 import { TutorialProvider } from "@/src/contexts/tutorial-context";
-import { BottomNavBar } from "@/src/components/bottom-nav-bar";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 import { SessionGateProvider } from "@/src/contexts/session-gate-context";
 import { InactivityDetector } from "@/src/components/inactivity-detector";
 import { SessionValidityDetector } from "@/src/components/session-validity-detector";
@@ -67,6 +67,12 @@ const TutorialOverlay = dynamic(
     ),
   { ssr: false },
 );
+// Barre de navigation et bannière d'installation : téléphone et petite
+// tablette seulement (la barre est masquée en CSS au-delà de 768 px).
+const BottomNavBar = dynamic(
+  () => import("@/src/components/bottom-nav-bar").then((m) => m.BottomNavBar),
+  { ssr: false },
+);
 const PwaInstallBanner = dynamic(
   () =>
     import("@/src/components/pwa-install-banner").then(
@@ -80,6 +86,7 @@ function DashboardContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
+  const isMobile = useIsMobile();
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
@@ -354,10 +361,10 @@ function DashboardContent({ children }) {
         <TutorialOverlay />
 
         {/* PWA install banner — mobile uniquement */}
-        <PwaInstallBanner />
+        {isMobile && <PwaInstallBanner />}
 
         {/* Bottom Navigation Bar — mobile uniquement */}
-        {!settingsModalOpen && (
+        {isMobile && !settingsModalOpen && (
           <BottomNavBar
             onOpenSettings={() => {
               setSettingsInitialTab("preferences");

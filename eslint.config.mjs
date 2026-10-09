@@ -23,6 +23,26 @@ const eslintConfig = [
     },
   },
   {
+    // posthog-js (~73 kB gz) n'est chargé qu'à l'idle par
+    // instrumentation-client.js : un import statique le remet dans le JS
+    // initial de toutes les pages. Passer par src/lib/analytics.
+    ignores: ["instrumentation-client.js"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "posthog-js",
+              message:
+                "Utiliser capture / identify / resetAnalytics de @/src/lib/analytics (posthog est chargé à l'idle).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["scripts/**/*.js"],
     rules: {
       "@typescript-eslint/no-require-imports": "off",

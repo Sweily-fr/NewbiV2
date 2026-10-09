@@ -65,17 +65,65 @@ function setupPostHog(posthog) {
   window.addEventListener("storage", (e) => {
     if (e.key === "cookie_consent") applyConsent();
   });
+
+  // Événements émis avant le chargement (src/lib/analytics.js) : rejoués
+  // maintenant, après register({ environment }) et le consentement.
+  const queued = window.__phQueue || [];
+  window.__phQueue = [];
+  queued.forEach((fn) => {
+    try {
+      fn(posthog);
+    } catch {
+      // Analytique au mieux.
+    }
+  });
 }
 
 // Sans token (env local sans NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN), ne rien
 // charger du tout : ça évite le warning "initialized without a token" et
 // 430 KB de JS inutiles.
+//
+// Même chose sans consentement analytics (ou hors production) : posthog
+// resterait en opt-out et n'enverrait rien, inutile de le télécharger. Il est
+// chargé dès que le consentement est donné (événement cookieConsentUpdated ou
+// autre onglet) ; les événements émis entre-temps attendent dans la file de
+// src/lib/analytics.
+function hasAnalyticsConsent() {
+  if (!isProduction && !forceEnable) return false;
+  try {
+    return (
+      JSON.parse(localStorage.getItem("cookie_consent") || "null")
+        ?.analytics === true
+    );
+  } catch {
+    return false;
+  }
+}
+
 if (typeof window !== "undefined" && posthogToken) {
-  const load = () =>
+  let started = false;
+  const load = () => {
+    if (started) return;
+    started = true;
     import("posthog-js").then((m) => setupPostHog(m.default)).catch(() => {});
-  if ("requestIdleCallback" in window) {
-    requestIdleCallback(() => load(), { timeout: 1500 });
+  };
+  const loadWhenIdle = () => {
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => load(), { timeout: 1500 });
+    } else {
+      setTimeout(load, 1000);
+    }
+  };
+
+  if (hasAnalyticsConsent()) {
+    loadWhenIdle();
   } else {
-    setTimeout(load, 1000);
+    const onConsentChange = () => {
+      if (hasAnalyticsConsent()) loadWhenIdle();
+    };
+    window.addEventListener("cookieConsentUpdated", onConsentChange);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "cookie_consent") onConsentChange();
+    });
   }
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 
 function getConsent() {
   try {
@@ -35,6 +36,14 @@ function syncGoogleConsent() {
 }
 
 export default function MarketingPixels() {
+  // Dashboard connecté : les pixels n'y servent qu'au reciblage (les
+  // conversions partent de /auth/signup). Chargés une fois la page chargée
+  // (lazyOnload) plutôt que juste après l'hydratation, pour ne pas concurrencer
+  // le JavaScript et les requêtes de l'application.
+  const pathname = usePathname();
+  const strategy = pathname?.startsWith("/dashboard")
+    ? "lazyOnload"
+    : "afterInteractive";
   const [hasConsent, setHasConsent] = useState(false);
 
   useEffect(() => {
@@ -72,7 +81,7 @@ export default function MarketingPixels() {
       {/* Google Tag Manager */}
       <Script
         id="gtm-script"
-        strategy="afterInteractive"
+        strategy={strategy}
         dangerouslySetInnerHTML={{
           __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -97,7 +106,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       {/* Meta Pixel Code */}
       <Script
         id="meta-pixel"
-        strategy="afterInteractive"
+        strategy={strategy}
         dangerouslySetInnerHTML={{
           __html: `
             !function(f,b,e,v,n,t,s)
@@ -127,7 +136,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
       {/* TikTok Pixel Code */}
       <Script
         id="tiktok-pixel"
-        strategy="afterInteractive"
+        strategy={strategy}
         dangerouslySetInnerHTML={{
           __html: `
             !function (w, d, t) {

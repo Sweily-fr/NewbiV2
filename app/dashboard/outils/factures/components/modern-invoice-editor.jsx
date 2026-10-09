@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { pickItemImage } from "@/src/utils/item-image";
 import { FormProvider } from "react-hook-form";
@@ -41,18 +43,13 @@ import { useClient } from "@/src/graphql/clientQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
-import InvoiceSettingsView from "./invoice-settings-view";
 import { toast } from "@/src/components/ui/sonner";
 import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
-import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
-import { QuickEditCompanyModal } from "@/src/components/invoice/quick-edit-company-modal";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
-import { SendDocumentModal } from "./send-document-modal";
-import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import {
   useInvoiceTemplates,
   GET_INVOICE_TEMPLATES,
@@ -88,6 +85,35 @@ import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSy
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const InvoiceSettingsView = dynamic(() => import("./invoice-settings-view"), {
+  ssr: false,
+});
+const ClientsModal = dynamic(
+  () => import("@/app/dashboard/clients/components/clients-modal"),
+  { ssr: false },
+);
+const QuickEditCompanyModal = dynamic(
+  () =>
+    import("@/src/components/invoice/quick-edit-company-modal").then(
+      (m) => m.QuickEditCompanyModal,
+    ),
+  { ssr: false },
+);
+const SendDocumentModal = dynamic(
+  () => import("./send-document-modal").then((m) => m.SendDocumentModal),
+  { ssr: false },
+);
+const SaveInvoiceTemplateDialog = dynamic(
+  () =>
+    import("./SaveInvoiceTemplateDialog").then(
+      (m) => m.SaveInvoiceTemplateDialog,
+    ),
+  { ssr: false },
+);
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -846,7 +872,7 @@ export default function ModernInvoiceEditor({
       </div>
 
       {/* Modal d'édition du client */}
-      {formData.client && (
+      {formData.client && showEditClient && (
         <ClientsModal
           open={showEditClient}
           onOpenChange={setShowEditClient}
@@ -855,14 +881,16 @@ export default function ModernInvoiceEditor({
         />
       )}
 
-      <QuickEditCompanyModal
-        open={showEditCompany}
-        onOpenChange={setShowEditCompany}
-        onCompanyUpdated={handleCompanyUpdated}
-      />
+      {showEditCompany && (
+        <QuickEditCompanyModal
+          open={showEditCompany}
+          onOpenChange={setShowEditCompany}
+          onCompanyUpdated={handleCompanyUpdated}
+        />
+      )}
 
       {/* Dialog de sauvegarde comme modèle */}
-      {invoiceId && (
+      {invoiceId && showSaveTemplateDialog && (
         <SaveInvoiceTemplateDialog
           invoiceId={invoiceId}
           invoiceNumber={`${formData?.prefix || "F"}-${formData?.number || ""}`}
@@ -969,7 +997,7 @@ export default function ModernInvoiceEditor({
       </AlertDialog>
 
       {/* Modal d'envoi par email */}
-      {createdInvoiceData && (
+      {createdInvoiceData && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}

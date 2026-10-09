@@ -17,7 +17,7 @@ import { useQuery } from "@apollo/client";
 import { LOOKUP_USERS_BY_EMAILS } from "@/src/graphql/queries/user";
 import { PLANS } from "@/src/components/create-workspace/plan-form";
 import { getPlanPricingStrings } from "@/src/lib/plans-display";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 import { PREDEFINED_ROLE_LABELS } from "@/src/lib/role-labels";
 
 const formatPrice = (amount) => amount.toFixed(2).replace(".", ",");
@@ -110,7 +110,7 @@ export function ConfirmationForm({
 
       // Workspace créé (ou trial démarré en flag ON). On capture ici l'intent
       // confirmé par l'user, indépendamment du paiement Stripe qui peut suivre.
-      posthog.capture("workspace_created", {
+      capture("workspace_created", {
         plan: selectedPlan,
         is_annual: isAnnual,
         members_count: filledMembers.length,
@@ -121,7 +121,7 @@ export function ConfirmationForm({
 
       if (url) {
         // Redirection imminente vers Stripe Checkout
-        posthog.capture("checkout_started", {
+        capture("checkout_started", {
           plan: selectedPlan,
           is_annual: isAnnual,
           members_count: filledMembers.length,

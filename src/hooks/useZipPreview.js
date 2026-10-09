@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import JSZip from "jszip";
 
 // Mapping extension → mime type pour les entrées extraites d'un ZIP
 // (les entrées JSZip n'exposent pas le mime original, seulement le nom)
@@ -148,6 +147,10 @@ export function useZipPreview({
         console.debug("[useZipPreview] bytes received", arrayBuffer.byteLength);
         if (cancelled) return;
 
+        // jszip (~28 kB gz) chargé à l'ouverture d'une archive seulement : il
+        // était dans le JS de la liste des transferts et de la page publique
+        // de réception.
+        const { default: JSZip } = await import("jszip");
         const zip = await JSZip.loadAsync(arrayBuffer);
         if (cancelled) return;
         zipInstanceRef.current = zip;
