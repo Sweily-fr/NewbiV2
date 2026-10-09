@@ -27,6 +27,7 @@ import { useDeliveryNoteEditor } from "../hooks/use-delivery-note-editor";
 import EnhancedDeliveryNoteForm from "./enhanced-delivery-note-form";
 import { toast } from "@/src/components/ui/sonner";
 import DeliveryNotePreview from "./DeliveryNotePreview";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import { chunkLoadFallback } from "@/src/lib/chunk-load-fallback";
 import { usePreloadOnIdle } from "@/src/hooks/usePreloadOnIdle";
@@ -353,7 +354,7 @@ export default function ModernDeliveryNoteEditor({
         <div className="border-l flex-col h-full overflow-hidden hidden lg:flex">
           <div className="flex-1 overflow-y-auto pl-18 pr-18 pt-22 pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a] h-full relative">
             {debouncedPreview ? (
-              <div>{previewElement}</div>
+              <A4PreviewFrame>{previewElement}</A4PreviewFrame>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
