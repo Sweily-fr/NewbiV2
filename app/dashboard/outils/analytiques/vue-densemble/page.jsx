@@ -323,7 +323,7 @@ export default function VueDensemblePage() {
               config={incomeChartConfig}
               data={incomeChartData}
               hideMobileCurve={true}
-              isLoading={incomeFlowLoading}
+              isLoading={incomeFlowLoading && !incomeFlowData}
               onPeriodChange={setIncomePeriod}
               serverFiltered
             />
@@ -339,7 +339,7 @@ export default function VueDensemblePage() {
               config={expenseChartConfig}
               data={expenseChartData}
               hideMobileCurve={true}
-              isLoading={expenseFlowLoading}
+              isLoading={expenseFlowLoading && !expenseFlowData}
               onPeriodChange={setExpensePeriod}
               serverFiltered
             />

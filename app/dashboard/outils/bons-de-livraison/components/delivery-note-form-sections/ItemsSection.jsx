@@ -68,6 +68,7 @@ import { cn } from "@/src/lib/utils";
 import { ProductThumbnail } from "@/src/components/product-thumbnail";
 import { ItemImageControl } from "@/src/components/item-image-control";
 import { pickItemImage, productItemImage } from "@/src/utils/item-image";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Mêmes unités que les devis / factures / bons de commande (une valeur hors
 // liste, ex. produit du catalogue, est affichée via une option de secours).
@@ -87,7 +88,7 @@ const UNIT_OPTIONS = [
 ];
 
 const formatQuantity = (value) =>
-  new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(
+  getNumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(
     parseFloat(value) || 0,
   );
 
@@ -507,7 +508,9 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
                                     <ProductThumbnail
                                       src={currentItem.imageUrl}
                                       className={`size-9 rounded-lg ${
-                                        currentItem.showImage === false ? "opacity-40 grayscale" : ""
+                                        currentItem.showImage === false
+                                          ? "opacity-40 grayscale"
+                                          : ""
                                       }`}
                                     />
                                   )}
@@ -549,9 +552,13 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
                                 showImage={currentItem.showImage}
                                 disabled={!canEdit}
                                 onShowImageChange={(checked) =>
-                                  setValue(`items.${index}.showImage`, checked, {
-                                    shouldDirty: true,
-                                  })
+                                  setValue(
+                                    `items.${index}.showImage`,
+                                    checked,
+                                    {
+                                      shouldDirty: true,
+                                    },
+                                  )
                                 }
                               />
                               {/* Nom */}

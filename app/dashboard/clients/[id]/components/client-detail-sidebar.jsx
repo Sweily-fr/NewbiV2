@@ -44,6 +44,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import { toast } from "@/src/components/ui/sonner";
 import { useClientListsByClient } from "@/src/hooks/useClientLists";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function SidebarSection({ title, defaultOpen = true, children }) {
   return (
@@ -182,20 +183,21 @@ export default function ClientDetailSidebar({
         const text = Array.isArray(value)
           ? value
               .map(
-                (v) =>
-                  fieldDef.options?.find((o) => o.value === v)?.label || v,
+                (v) => fieldDef.options?.find((o) => o.value === v)?.label || v,
               )
               .join(", ")
           : String(value);
         return [fieldDef.id, text];
       }),
     );
-    return (customFieldDefs || [])
-      .filter((def) => def.isActive)
-      // Lecture seule : seulement les champs déjà affichés sur les documents
-      .filter((def) => canEditCustomFields || def.showOnDocuments)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .map((def) => ({ def, value: values.get(def.id) || null }));
+    return (
+      (customFieldDefs || [])
+        .filter((def) => def.isActive)
+        // Lecture seule : seulement les champs déjà affichés sur les documents
+        .filter((def) => canEditCustomFields || def.showOnDocuments)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((def) => ({ def, value: values.get(def.id) || null }))
+    );
   }, [customFieldDefs, customFieldsDisplay, canEditCustomFields]);
 
   const toggleShowOnDocuments = async (def) => {
@@ -253,7 +255,7 @@ export default function ClientDetailSidebar({
   }, [clientInvoices]);
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat("fr-FR", {
+    getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount);
@@ -424,8 +426,8 @@ export default function ClientDetailSidebar({
             <SidebarSection title="Sur les documents" defaultOpen>
               {canEditCustomFields && (
                 <p className="text-xs text-muted-foreground mb-2">
-                  Cochez les champs à afficher sous les coordonnées du client sur
-                  les devis, factures, avoirs, bons de commande et bons de
+                  Cochez les champs à afficher sous les coordonnées du client
+                  sur les devis, factures, avoirs, bons de commande et bons de
                   livraison. Le choix vaut pour tous vos clients.
                 </p>
               )}

@@ -16,8 +16,13 @@ import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 import { DeliveryNotesAccessGuard } from "./components/delivery-notes-access-guard";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 function DeliveryNotesContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [dnIdToOpen, setDnIdToOpen] = useState(null);
@@ -62,7 +67,12 @@ function DeliveryNotesContent() {
     const id = searchParams.get("id");
     if (id) {
       setDnIdToOpen(id);
-      router.replace("/dashboard/outils/bons-de-livraison", { scroll: false });
+      // Nettoyage de l'URL sans aller-retour serveur (history intégré au routeur).
+      window.history.replaceState(
+        null,
+        "",
+        "/dashboard/outils/bons-de-livraison",
+      );
     }
   }, [searchParams, router]);
 
@@ -78,112 +88,118 @@ function DeliveryNotesContent() {
   return (
     <>
       {/* Desktop */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Bons de livraison</h1>
-          </div>
-          <div className="flex gap-2">
-            <PermissionButton
-              requiresActiveSubscription
-              resource="deliveryNotes"
-              action="create"
-              variant="primary"
-              onClick={handleNewDeliveryNote}
-              className="cursor-pointer"
-              hideIfNoAccess={true}
-              data-testid="new-delivery-note-button"
-              tooltipNoAccess="Vous n'avez pas la permission de créer des bons de livraison"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouveau bon de livraison
-            </PermissionButton>
-          </div>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-auto">
-          <div className="flex flex-col min-h-full">
-            {/* Cartes de stats : volumes logistiques, jamais de montant */}
-            <div className="flex gap-3 px-4 sm:px-6 py-3">
-              <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-                <div className="pr-4">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      À expédier
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {statsLoading ? "..." : pendingCount}
-                    </span>
-                  </div>
-                </div>
-                <div className="w-px h-10 bg-border mx-4" />
-                <div className="pr-4">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Truck className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      En cours de livraison
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {statsLoading ? "..." : shippedCount}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-background border rounded-lg px-4 py-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <PackageCheck className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Livrés</span>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-medium tracking-tight">
-                    {statsLoading ? "..." : deliveredCount}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <Suspense fallback={<DeliveryNoteTableSkeleton />}>
-              <DeliveryNoteTable dnIdToOpen={dnIdToOpen} />
-            </Suspense>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile */}
-      <div className="md:hidden">
-        <div className="px-4 py-6">
-          <div className="flex items-start justify-between">
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
             <div>
               <h1 className="text-2xl font-medium mb-2">Bons de livraison</h1>
-              <p className="text-muted-foreground text-sm">
-                Attestez la remise de vos marchandises
-              </p>
+            </div>
+            <div className="flex gap-2">
+              <PermissionButton
+                requiresActiveSubscription
+                resource="deliveryNotes"
+                action="create"
+                variant="primary"
+                onClick={handleNewDeliveryNote}
+                className="cursor-pointer"
+                hideIfNoAccess={true}
+                data-testid="new-delivery-note-button"
+                tooltipNoAccess="Vous n'avez pas la permission de créer des bons de livraison"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouveau bon de livraison
+              </PermissionButton>
+            </div>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-auto">
+            <div className="flex flex-col min-h-full">
+              {/* Cartes de stats : volumes logistiques, jamais de montant */}
+              <div className="flex gap-3 px-4 sm:px-6 py-3">
+                <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+                  <div className="pr-4">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        À expédier
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {statsLoading ? "..." : pendingCount}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-px h-10 bg-border mx-4" />
+                  <div className="pr-4">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        En cours de livraison
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {statsLoading ? "..." : shippedCount}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-background border rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <PackageCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      Livrés
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-medium tracking-tight">
+                      {statsLoading ? "..." : deliveredCount}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <Suspense fallback={<DeliveryNoteTableSkeleton />}>
+                <DeliveryNoteTable dnIdToOpen={dnIdToOpen} />
+              </Suspense>
             </div>
           </div>
         </div>
+      )}
 
-        <Suspense fallback={<DeliveryNoteTableSkeleton />}>
-          <DeliveryNoteTable dnIdToOpen={dnIdToOpen} />
-        </Suspense>
+      {/* Mobile */}
+      {isMobile && (
+        <div className="md:hidden">
+          <div className="px-4 py-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-2">Bons de livraison</h1>
+                <p className="text-muted-foreground text-sm">
+                  Attestez la remise de vos marchandises
+                </p>
+              </div>
+            </div>
+          </div>
 
-        <PermissionButton
-          requiresActiveSubscription
-          resource="deliveryNotes"
-          action="create"
-          onClick={handleNewDeliveryNote}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-          hideIfNoAccess={true}
-          tooltipNoAccess="Vous n'avez pas la permission de créer des bons de livraison"
-        >
-          <Plus className="h-6 w-6" />
-        </PermissionButton>
-      </div>
+          <Suspense fallback={<DeliveryNoteTableSkeleton />}>
+            <DeliveryNoteTable dnIdToOpen={dnIdToOpen} />
+          </Suspense>
+
+          <PermissionButton
+            requiresActiveSubscription
+            resource="deliveryNotes"
+            action="create"
+            onClick={handleNewDeliveryNote}
+            className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+            size="icon"
+            hideIfNoAccess={true}
+            tooltipNoAccess="Vous n'avez pas la permission de créer des bons de livraison"
+          >
+            <Plus className="h-6 w-6" />
+          </PermissionButton>
+        </div>
+      )}
 
       {newDnData && (
         <SendDocumentModal

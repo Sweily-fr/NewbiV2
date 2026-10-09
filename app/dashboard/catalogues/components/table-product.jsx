@@ -101,6 +101,7 @@ import ProductFilters from "./product-filters";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { MenuBoardIcon } from "@/src/components/icons";
 import { CataloguesTableSkeleton } from "./catalogues-page-skeleton";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -311,6 +312,9 @@ export default function TableProduct({
   rowSelection: externalRowSelection,
   onRowSelectionChange,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const [internalRowSelection, setInternalRowSelection] = useState({});
   const rowSelection = externalRowSelection ?? internalRowSelection;
   const setRowSelection = onRowSelectionChange ?? setInternalRowSelection;
@@ -548,415 +552,118 @@ export default function TableProduct({
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col h-full overflow-hidden">
-        {/* Filters - Structure comme page factures */}
-        <div className="flex items-center justify-between gap-3 flex-shrink-0 px-4 sm:px-6 py-4">
-          {/* Search + Filtres à gauche */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search
-                size={16}
-                className="text-muted-foreground/80 shrink-0"
-                aria-hidden="true"
-              />
-              <Input
-                variant="ghost"
-                id={`${id}-input`}
-                ref={inputRef}
-                value={globalFilter}
-                onChange={(e) => {
-                  setGlobalFilter(e.target.value);
-                  table.getColumn("name")?.setFilterValue(e.target.value);
-                }}
-                placeholder="Recherchez par nom ou par référence..."
-              />
-              {Boolean(globalFilter) && (
-                <button
-                  onClick={() => {
-                    setGlobalFilter("");
-                    table.getColumn("name")?.setFilterValue("");
-                    inputRef.current?.focus();
-                  }}
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
-                  aria-label="Effacer la recherche"
-                >
-                  <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {/* Filters Button - move to left side */}
-            <ProductFilters
-              selectedCategories={selectedCategories}
-              setSelectedCategories={setSelectedCategories}
-              uniqueCategories={uniqueCategoryValues}
-              table={table}
-              customFieldNames={Object.fromEntries(
-                activeCustomFields.map((f) => [`cf_${f.id}`, f.name]),
-              )}
-            />
-          </div>
-
-          {/* Actions à droite */}
-          <div className="flex items-center gap-2">
-            {/* Delete button - shown when rows are selected */}
-            {table.getSelectedRowModel().rows.length > 0 &&
-              canDeleteProducts && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      data-mobile-delete-trigger-product
-                      className="cursor-pointer font-normal"
-                    >
-                      <TrashIcon className="mr-2 h-4 w-4" />
-                      Supprimer ({table.getSelectedRowModel().rows.length})
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                      <div
-                        className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                        aria-hidden="true"
-                      >
-                        <CircleAlertIcon className="opacity-80" size={16} />
-                      </div>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Êtes-vous absolument sûr ?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Cette action ne peut pas être annulée. Cela supprimera
-                          définitivement{" "}
-                          {table.getSelectedRowModel().rows.length} produit(s)
-                          sélectionné(s).
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                    </div>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteRows}
-                        className="text-white"
-                      >
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-          </div>
-        </div>
-
-        {/* Table - scroll horizontal + vertical synchronisé */}
-        <div className="flex-1 min-h-0 overflow-auto">
-          <table className="w-full table-fixed">
-            <thead className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-800">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, index, arr) => (
-                    <th
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {loading && !allProducts?.length ? (
-                Array.from({ length: pagination.pageSize }).map((_, index) => (
-                  <tr key={`skeleton-${index}`} className="border-b">
-                    {columns.map((col, colIndex, arr) => (
-                      <td
-                        key={`skeleton-${index}-${colIndex}`}
-                        className={`p-2 align-middle text-sm ${colIndex === 0 ? "pl-4 sm:pl-6" : ""} ${colIndex === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        <Skeleton className="h-4 w-24" />
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                    onClick={() => handleEditProduct(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                        onClick={
-                          ["select", "actions"].includes(cell.column.id)
-                            ? (e) => e.stopPropagation()
-                            : undefined
-                        }
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : error ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="h-24 text-center p-2 text-red-500"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <span>Erreur lors du chargement des produits</span>
-                      <button
-                        onClick={handleRefresh}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Réessayer
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <tr>
-                  <td colSpan={columns.length} className="p-0">
-                    <TableEmptyState
-                      icon={MenuBoardIcon}
-                      title="Aucun produit trouvé"
-                      description="Ajoutez votre premier produit ou service au catalogue."
-                    />
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination - Style identique à Transactions */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
-          <div className="flex-1 text-xs font-normal text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-            {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
-          </div>
-          <div className="flex items-center space-x-4 lg:space-x-6">
-            <div className="flex items-center gap-1.5">
-              <p className="whitespace-nowrap text-xs font-normal">
-                Lignes par page
-              </p>
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => {
-                  table.setPageSize(Number(value));
-                }}
-              >
-                <SelectTrigger className="h-7 w-[70px] text-xs">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center whitespace-nowrap text-xs font-normal">
-              Page {table.getState().pagination.pageIndex + 1} sur{" "}
-              {table.getPageCount() || 1}
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.firstPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Première page"
-                  >
-                    <ChevronFirstIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Page précédente"
-                  >
-                    <ChevronLeftIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Page suivante"
-                  >
-                    <ChevronRightIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.lastPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Dernière page"
-                  >
-                    <ChevronLastIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        </div>
-      </div>
-      {/* Mobile Layout - Style Notion */}
-      <div className="md:hidden">
-        {/* Mobile Toolbar */}
-        <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b space-y-2">
-          {/* First Row: Search + Delete Button */}
-          <div className="flex items-center gap-2">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Input
-                placeholder="Rechercher..."
-                value={globalFilter}
-                onChange={(e) => {
-                  setGlobalFilter(e.target.value);
-                  table.getColumn("name")?.setFilterValue(e.target.value);
-                }}
-                className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
-              />
-            </div>
-
-            {/* Delete button for mobile - shown when rows are selected */}
-            {table.getSelectedRowModel().rows.length > 0 &&
-              canDeleteProducts && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-9 px-2 sm:px-3 text-xs flex-shrink-0"
-                  title={`Supprimer ${table.getSelectedRowModel().rows.length} produit(s)`}
-                  onClick={() => {
-                    // Trigger the delete dialog
-                    const deleteButton = document.querySelector(
-                      "[data-mobile-delete-trigger-product]",
-                    );
-                    if (deleteButton) deleteButton.click();
-                  }}
-                >
-                  <TrashIcon className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-1">
-                    ({table.getSelectedRowModel().rows.length})
-                  </span>
-                </Button>
-              )}
-          </div>
-
-          {/* Second Row: Filter, Import, Export */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            {/* Filter Button */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
+      {!isMobileLayout && (
+        <div className="hidden md:flex md:flex-col h-full overflow-hidden">
+          {/* Filters - Structure comme page factures */}
+          <div className="flex items-center justify-between gap-3 flex-shrink-0 px-4 sm:px-6 py-4">
+            {/* Search + Filtres à gauche */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+                <Search
+                  size={16}
+                  className="text-muted-foreground/80 shrink-0"
+                  aria-hidden="true"
+                />
+                <Input
                   variant="ghost"
-                  size="sm"
-                  className="h-9 px-2 sm:px-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs flex-shrink-0"
-                  title="Filtrer par catégorie"
-                >
-                  <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-1" />
-                  <span className="hidden sm:inline">Filtrer</span>
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto min-w-36 p-3" align="end">
-                <div className="space-y-3">
-                  <div className="text-muted-foreground text-xs font-normal">
-                    Filtrer par catégorie
-                  </div>
-                  <div className="space-y-3">
-                    {uniqueCategoryValues.map((value, i) => (
-                      <div key={value} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`mobile-${id}-${i}`}
-                          checked={selectedCategories.includes(value)}
-                          onCheckedChange={(checked) =>
-                            handleCategoryChange(checked, value)
-                          }
-                        />
-                        <Label
-                          htmlFor={`mobile-${id}-${i}`}
-                          className="flex grow justify-between gap-2 font-normal"
-                        >
-                          {value || "Aucune catégorie"}{" "}
-                          <span className="text-muted-foreground ms-2 text-xs">
-                            {categoryCounts.get(value)}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                  id={`${id}-input`}
+                  ref={inputRef}
+                  value={globalFilter}
+                  onChange={(e) => {
+                    setGlobalFilter(e.target.value);
+                    table.getColumn("name")?.setFilterValue(e.target.value);
+                  }}
+                  placeholder="Recherchez par nom ou par référence..."
+                />
+                {Boolean(globalFilter) && (
+                  <button
+                    onClick={() => {
+                      setGlobalFilter("");
+                      table.getColumn("name")?.setFilterValue("");
+                      inputRef.current?.focus();
+                    }}
+                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                    aria-label="Effacer la recherche"
+                  >
+                    <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
 
-            {/* Import/Export buttons for mobile */}
-            {canImportProducts && (
-              <ProductImportDialog onImportComplete={refetch} />
-            )}
-            {canExportProducts && (
-              <ProductExportButton
-                products={allProducts}
-                selectedRows={table.getSelectedRowModel().rows}
+              {/* Filters Button - move to left side */}
+              <ProductFilters
+                selectedCategories={selectedCategories}
+                setSelectedCategories={setSelectedCategories}
+                uniqueCategories={uniqueCategoryValues}
+                table={table}
+                customFieldNames={Object.fromEntries(
+                  activeCustomFields.map((f) => [`cf_${f.id}`, f.name]),
+                )}
               />
-            )}
-          </div>
-        </div>
+            </div>
 
-        {/* Mobile Table */}
-        <div className="overflow-x-auto pb-24">
-          <Table className="w-full">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="border-b border-gray-100 dark:border-gray-400"
-                >
-                  {headerGroup.headers
-                    .filter(
-                      (header) =>
-                        header.column.id === "select" ||
-                        header.column.id === "name" ||
-                        header.column.id === "category" ||
-                        header.column.id === "actions",
-                    )
-                    .map((header) => (
-                      <TableHead
+            {/* Actions à droite */}
+            <div className="flex items-center gap-2">
+              {/* Delete button - shown when rows are selected */}
+              {table.getSelectedRowModel().rows.length > 0 &&
+                canDeleteProducts && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        data-mobile-delete-trigger-product
+                        className="cursor-pointer font-normal"
+                      >
+                        <TrashIcon className="mr-2 h-4 w-4" />
+                        Supprimer ({table.getSelectedRowModel().rows.length})
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                        <div
+                          className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                          aria-hidden="true"
+                        >
+                          <CircleAlertIcon className="opacity-80" size={16} />
+                        </div>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Êtes-vous absolument sûr ?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action ne peut pas être annulée. Cela
+                            supprimera définitivement{" "}
+                            {table.getSelectedRowModel().rows.length} produit(s)
+                            sélectionné(s).
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                      </div>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteRows}
+                          className="text-white"
+                        >
+                          Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+            </div>
+          </div>
+
+          {/* Table - scroll horizontal + vertical synchronisé */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <table className="w-full table-fixed">
+              <thead className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-800">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header, index, arr) => (
+                      <th
                         key={header.id}
-                        className="py-3 px-3 sm:px-4 text-left font-medium text-gray-600 dark:text-gray-400 text-xs sm:text-sm"
+                        style={{ width: header.getSize() }}
+                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                       >
                         {header.isPlaceholder
                           ? null
@@ -964,33 +671,40 @@ export default function TableProduct({
                               header.column.columnDef.header,
                               header.getContext(),
                             )}
-                      </TableHead>
+                      </th>
                     ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                    onClick={() => handleEditProduct(row.original)}
-                  >
-                    {row
-                      .getVisibleCells()
-                      .filter(
-                        (cell) =>
-                          cell.column.id === "select" ||
-                          cell.column.id === "name" ||
-                          cell.column.id === "category" ||
-                          cell.column.id === "actions",
-                      )
-                      .map((cell) => (
-                        <TableCell
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {loading && !allProducts?.length ? (
+                  Array.from({ length: pagination.pageSize }).map(
+                    (_, index) => (
+                      <tr key={`skeleton-${index}`} className="border-b">
+                        {columns.map((col, colIndex, arr) => (
+                          <td
+                            key={`skeleton-${index}-${colIndex}`}
+                            className={`p-2 align-middle text-sm ${colIndex === 0 ? "pl-4 sm:pl-6" : ""} ${colIndex === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                          >
+                            <Skeleton className="h-4 w-24" />
+                          </td>
+                        ))}
+                      </tr>
+                    ),
+                  )
+                ) : table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      onClick={() => handleEditProduct(row.original)}
+                    >
+                      {row.getVisibleCells().map((cell, index, arr) => (
+                        <td
                           key={cell.id}
-                          className="py-3 px-3 sm:px-4 text-xs sm:text-sm"
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                           onClick={
                             ["select", "actions"].includes(cell.column.id)
                               ? (e) => e.stopPropagation()
@@ -1001,26 +715,323 @@ export default function TableProduct({
                             cell.column.columnDef.cell,
                             cell.getContext(),
                           )}
-                        </TableCell>
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : error ? (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      className="h-24 text-center p-2 text-red-500"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <span>Erreur lors du chargement des produits</span>
+                        <button
+                          onClick={handleRefresh}
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          Réessayer
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td colSpan={columns.length} className="p-0">
+                      <TableEmptyState
+                        icon={MenuBoardIcon}
+                        title="Aucun produit trouvé"
+                        description="Ajoutez votre premier produit ou service au catalogue."
+                      />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination - Style identique à Transactions */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+            <div className="flex-1 text-xs font-normal text-muted-foreground">
+              {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+              {table.getFilteredRowModel().rows.length} ligne(s)
+              sélectionnée(s).
+            </div>
+            <div className="flex items-center space-x-4 lg:space-x-6">
+              <div className="flex items-center gap-1.5">
+                <p className="whitespace-nowrap text-xs font-normal">
+                  Lignes par page
+                </p>
+                <Select
+                  value={`${table.getState().pagination.pageSize}`}
+                  onValueChange={(value) => {
+                    table.setPageSize(Number(value));
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-[70px] text-xs">
+                    <SelectValue
+                      placeholder={table.getState().pagination.pageSize}
+                    />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[10, 20, 30, 40, 50].map((pageSize) => (
+                      <SelectItem key={pageSize} value={`${pageSize}`}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center whitespace-nowrap text-xs font-normal">
+                Page {table.getState().pagination.pageIndex + 1} sur{" "}
+                {table.getPageCount() || 1}
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.firstPage()}
+                      disabled={!table.getCanPreviousPage()}
+                      aria-label="Première page"
+                    >
+                      <ChevronFirstIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.previousPage()}
+                      disabled={!table.getCanPreviousPage()}
+                      aria-label="Page précédente"
+                    >
+                      <ChevronLeftIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.nextPage()}
+                      disabled={!table.getCanNextPage()}
+                      aria-label="Page suivante"
+                    >
+                      <ChevronRightIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.lastPage()}
+                      disabled={!table.getCanNextPage()}
+                      aria-label="Dernière page"
+                    >
+                      <ChevronLastIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Mobile Layout - Style Notion */}
+      {isMobileLayout && (
+        <div className="md:hidden">
+          {/* Mobile Toolbar */}
+          <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b space-y-2">
+            {/* First Row: Search + Delete Button */}
+            <div className="flex items-center gap-2">
+              {/* Search Input */}
+              <div className="flex-1 relative">
+                <Input
+                  placeholder="Rechercher..."
+                  value={globalFilter}
+                  onChange={(e) => {
+                    setGlobalFilter(e.target.value);
+                    table.getColumn("name")?.setFilterValue(e.target.value);
+                  }}
+                  className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
+                />
+              </div>
+
+              {/* Delete button for mobile - shown when rows are selected */}
+              {table.getSelectedRowModel().rows.length > 0 &&
+                canDeleteProducts && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-9 px-2 sm:px-3 text-xs flex-shrink-0"
+                    title={`Supprimer ${table.getSelectedRowModel().rows.length} produit(s)`}
+                    onClick={() => {
+                      // Trigger the delete dialog
+                      const deleteButton = document.querySelector(
+                        "[data-mobile-delete-trigger-product]",
+                      );
+                      if (deleteButton) deleteButton.click();
+                    }}
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">
+                      ({table.getSelectedRowModel().rows.length})
+                    </span>
+                  </Button>
+                )}
+            </div>
+
+            {/* Second Row: Filter, Import, Export */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {/* Filter Button */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 px-2 sm:px-3 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs flex-shrink-0"
+                    title="Filtrer par catégorie"
+                  >
+                    <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400 mr-1" />
+                    <span className="hidden sm:inline">Filtrer</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto min-w-36 p-3" align="end">
+                  <div className="space-y-3">
+                    <div className="text-muted-foreground text-xs font-normal">
+                      Filtrer par catégorie
+                    </div>
+                    <div className="space-y-3">
+                      {uniqueCategoryValues.map((value, i) => (
+                        <div key={value} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`mobile-${id}-${i}`}
+                            checked={selectedCategories.includes(value)}
+                            onCheckedChange={(checked) =>
+                              handleCategoryChange(checked, value)
+                            }
+                          />
+                          <Label
+                            htmlFor={`mobile-${id}-${i}`}
+                            className="flex grow justify-between gap-2 font-normal"
+                          >
+                            {value || "Aucune catégorie"}{" "}
+                            <span className="text-muted-foreground ms-2 text-xs">
+                              {categoryCounts.get(value)}
+                            </span>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Import/Export buttons for mobile */}
+              {canImportProducts && (
+                <ProductImportDialog onImportComplete={refetch} />
+              )}
+              {canExportProducts && (
+                <ProductExportButton
+                  products={allProducts}
+                  selectedRows={table.getSelectedRowModel().rows}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Table */}
+          <div className="overflow-x-auto pb-24">
+            <Table className="w-full">
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="border-b border-gray-100 dark:border-gray-400"
+                  >
+                    {headerGroup.headers
+                      .filter(
+                        (header) =>
+                          header.column.id === "select" ||
+                          header.column.id === "name" ||
+                          header.column.id === "category" ||
+                          header.column.id === "actions",
+                      )
+                      .map((header) => (
+                        <TableHead
+                          key={header.id}
+                          className="py-3 px-3 sm:px-4 text-left font-medium text-gray-600 dark:text-gray-400 text-xs sm:text-sm"
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
                       ))}
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="p-0">
-                    <TableEmptyState
-                      icon={MenuBoardIcon}
-                      title="Aucun produit trouvé"
-                      description="Ajoutez votre premier produit ou service au catalogue."
-                      size="compact"
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                      onClick={() => handleEditProduct(row.original)}
+                    >
+                      {row
+                        .getVisibleCells()
+                        .filter(
+                          (cell) =>
+                            cell.column.id === "select" ||
+                            cell.column.id === "name" ||
+                            cell.column.id === "category" ||
+                            cell.column.id === "actions",
+                        )
+                        .map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className="py-3 px-3 sm:px-4 text-xs sm:text-sm"
+                            onClick={
+                              ["select", "actions"].includes(cell.column.id)
+                                ? (e) => e.stopPropagation()
+                                : undefined
+                            }
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="p-0">
+                      <TableEmptyState
+                        icon={MenuBoardIcon}
+                        title="Aucun produit trouvé"
+                        description="Ajoutez votre premier produit ou service au catalogue."
+                        size="compact"
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modal d'édition unique pour desktop et mobile */}
       <ProductModal

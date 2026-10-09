@@ -12,9 +12,10 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { ExternalLink } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatAmount = (value) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
+  getNumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
     value || 0,
   );
 

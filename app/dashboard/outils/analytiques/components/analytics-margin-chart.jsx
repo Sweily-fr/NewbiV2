@@ -20,6 +20,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatMonthLabel = (monthStr) => {
   if (!monthStr) return "";
@@ -32,7 +33,7 @@ const formatMonthLabel = (monthStr) => {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -212,6 +213,7 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
             />
             <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="3 3" />
             <Area
+              animationDuration={300}
               type="bump"
               dataKey="grossMarginRate"
               stroke={remap("#5b50ff")}

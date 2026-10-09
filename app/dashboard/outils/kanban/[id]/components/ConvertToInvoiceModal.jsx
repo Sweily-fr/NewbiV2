@@ -28,9 +28,10 @@ import {
   Users,
   ExternalLink,
 } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,

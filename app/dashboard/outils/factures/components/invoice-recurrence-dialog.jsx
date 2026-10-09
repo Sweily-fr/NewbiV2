@@ -57,6 +57,7 @@ import {
   nextRecurrenceDay,
   todayDay,
 } from "@/src/utils/recurrenceDays";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const DEFAULT_SUBJECT = "Facture {documentNumber}";
 
@@ -77,7 +78,7 @@ const STATUS_LABELS = {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
+  getNumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(
     value || 0,
   );
 
@@ -154,7 +155,7 @@ export default function InvoiceRecurrenceDialog({
   onSaved,
 }) {
   const { isReadOnly } = useSubscriptionAccess();
-  const { data: emailSettingsData } = useEmailSettings();
+  const { data: emailSettingsData } = useEmailSettings({ skip: !open });
   const { saveRecurrence, loading: saving } = useSaveInvoiceRecurrence();
   const { setStatus, loading: changingStatus } =
     useSetInvoiceRecurrenceStatus();

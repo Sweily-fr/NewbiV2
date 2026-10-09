@@ -9,21 +9,19 @@ import {
 } from "@/src/components/ui/tooltip";
 import { Info, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value || 0);
 
-const formatPercent = (value) =>
-  `${(value || 0).toFixed(1)}%`;
+const formatPercent = (value) => `${(value || 0).toFixed(1)}%`;
 
-const formatNumber = (value) =>
-  (value || 0).toString();
+const formatNumber = (value) => (value || 0).toString();
 
-const formatDays = (value) =>
-  `${Math.round(value || 0)}j`;
+const formatDays = (value) => `${Math.round(value || 0)}j`;
 
 /**
  * Compute N-1 variation percentage
@@ -56,72 +54,77 @@ export function AnalyticsKpiRow({ config, kpi, previousPeriod, loading }) {
 
   return (
     <div className="bg-background border rounded-lg px-4 py-3 flex items-center">
-        {config.map((item, index) => {
-          const value = kpi?.[item.key] ?? 0;
-          const format = item.format || formatCurrency;
-          const formattedValue = format(value);
-          const previousValue = item.previousKey
-            ? previousPeriod?.[item.previousKey]
-            : previousPeriod?.[item.key];
-          const variation = computeVariation(value, previousValue);
-          const isPositive = variation != null && (item.invertTrend ? variation < 0 : variation > 0);
-          const isNegative = variation != null && (item.invertTrend ? variation > 0 : variation < 0);
+      {config.map((item, index) => {
+        const value = kpi?.[item.key] ?? 0;
+        const format = item.format || formatCurrency;
+        const formattedValue = format(value);
+        const previousValue = item.previousKey
+          ? previousPeriod?.[item.previousKey]
+          : previousPeriod?.[item.key];
+        const variation = computeVariation(value, previousValue);
+        const isPositive =
+          variation != null &&
+          (item.invertTrend ? variation < 0 : variation > 0);
+        const isNegative =
+          variation != null &&
+          (item.invertTrend ? variation > 0 : variation < 0);
 
-          // Currency suffix
-          const isCurrency = !item.format || item.format === formatCurrency;
+        // Currency suffix
+        const isCurrency = !item.format || item.format === formatCurrency;
 
-          return (
-            <div key={item.key} className="flex-1 min-w-0 flex items-center">
-              {/* Vertical separator between items */}
-              {index > 0 && <div className="w-px h-10 bg-border mx-4 shrink-0" />}
+        return (
+          <div key={item.key} className="flex-1 min-w-0 flex items-center">
+            {/* Vertical separator between items */}
+            {index > 0 && <div className="w-px h-10 bg-border mx-4 shrink-0" />}
 
-              <div className="min-w-0">
-                <div className="flex items-center gap-1 mb-1 whitespace-nowrap">
-                  <span className="text-xs text-muted-foreground">
-                    {item.label}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1 mb-1 whitespace-nowrap">
+                <span className="text-xs text-muted-foreground">
+                  {item.label}
+                </span>
+                {item.tooltip && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>{item.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-medium tracking-tight">
+                  {formattedValue}
+                </span>
+                {isCurrency && (
+                  <span className="text-xs text-muted-foreground">€</span>
+                )}
+                {variation != null && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-0.5 text-[10px] font-medium ml-1",
+                      isPositive && "text-emerald-600 dark:text-emerald-400",
+                      isNegative && "text-red-500 dark:text-red-400",
+                      !isPositive && !isNegative && "text-muted-foreground",
+                    )}
+                  >
+                    {isPositive && <ArrowUpRight className="h-2.5 w-2.5" />}
+                    {isNegative && <ArrowDownRight className="h-2.5 w-2.5" />}
+                    {variation > 0 ? "+" : ""}
+                    {variation.toFixed(1)}%
                   </span>
-                  {item.tooltip && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>{item.tooltip}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-medium tracking-tight">
-                    {formattedValue}
-                  </span>
-                  {isCurrency && (
-                    <span className="text-xs text-muted-foreground">€</span>
-                  )}
-                  {variation != null && (
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-0.5 text-[10px] font-medium ml-1",
-                        isPositive && "text-emerald-600 dark:text-emerald-400",
-                        isNegative && "text-red-500 dark:text-red-400",
-                        !isPositive && !isNegative && "text-muted-foreground"
-                      )}
-                    >
-                      {isPositive && <ArrowUpRight className="h-2.5 w-2.5" />}
-                      {isNegative && <ArrowDownRight className="h-2.5 w-2.5" />}
-                      {variation > 0 ? "+" : ""}{variation.toFixed(1)}%
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
             </div>
-          );
-        })}
+          </div>
+        );
+      })}
     </div>
   );
 }

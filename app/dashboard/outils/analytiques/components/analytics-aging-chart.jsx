@@ -20,11 +20,12 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const BUCKET_COLORS = ["#fbbf24", "#f97316", "#ef4444", "#dc2626"];
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -133,7 +134,12 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
               width={35}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="totalTTC" radius={[4, 4, 0, 0]} barSize={40}>
+            <Bar
+              animationDuration={300}
+              dataKey="totalTTC"
+              radius={[4, 4, 0, 0]}
+              barSize={40}
+            >
               {chartData.map((_, index) => (
                 <Cell
                   key={`cell-${index}`}

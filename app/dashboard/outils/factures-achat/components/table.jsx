@@ -98,6 +98,8 @@ import {
   EXPENSE_CATEGORY_OPTIONS,
   getCategoryLabel,
 } from "@/lib/category-icons-config";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const STATUS_LABELS = {
   TO_PROCESS: "À traiter",
@@ -139,6 +141,9 @@ export default function PurchaseInvoiceTable({
   // Conversion Gmail : doublon détecté → ouvrir la facture d'achat existante
   onOpenExisting,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -427,11 +432,564 @@ export default function PurchaseInvoiceTable({
   return (
     <>
       {/* Desktop View */}
-      <div className="hidden md:flex md:flex-col flex-1 min-h-0 min-w-0">
-        {/* Toolbar: Search + Bulk Actions */}
-        <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] focus-within:ring-ring/50 focus-within:ring-[3px] transition-[border,box-shadow] duration-200 px-2.5">
+      {!isMobileLayout && (
+        <div className="hidden md:flex md:flex-col flex-1 min-h-0 min-w-0">
+          {/* Toolbar: Search + Bulk Actions */}
+          <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] focus-within:ring-ring/50 focus-within:ring-[3px] transition-[border,box-shadow] duration-200 px-2.5">
+                <Search
+                  size={16}
+                  className="text-muted-foreground/80 shrink-0"
+                  aria-hidden="true"
+                />
+                <Input
+                  variant="ghost"
+                  placeholder="Recherchez par fournisseur, n° facture ou montant..."
+                  value={globalFilter}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                />
+                {Boolean(globalFilter) && (
+                  <button
+                    onClick={() => setGlobalFilter("")}
+                    className="text-muted-foreground/80 hover:text-foreground shrink-0"
+                  >
+                    <CircleXIcon size={16} strokeWidth={2} />
+                  </button>
+                )}
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={activeFiltersCount > 0 ? "primary" : "filter"}
+                    className="cursor-pointer"
+                  >
+                    <ListFilterIcon size={14} />
+                    Filtres
+                    {activeFiltersCount > 0 && (
+                      <span className="ml-0.5 rounded-full bg-white/20 px-1.5 py-0 text-[10px]">
+                        {activeFiltersCount}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-[240px]">
+                  {/* Effacer tous les filtres */}
+                  <DropdownMenuItem
+                    onClick={clearAllFilters}
+                    className="cursor-pointer"
+                  >
+                    Effacer tous les filtres
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Date d'émission - sous-menu calendrier */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="whitespace-nowrap">
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      Date d&apos;émission
+                      {hasDateFilter && (
+                        <Badge variant="secondary" className="ml-auto">
+                          1
+                        </Badge>
+                      )}
+                    </DropdownMenuSubTrigger>
+                    <DateFilterSubmenu
+                      dateRange={dateRange}
+                      onSelectRange={(range) =>
+                        setDateRange(range || { from: null, to: null })
+                      }
+                      onQuickRange={setQuickDateRange}
+                      onClear={() => setDateRange({ from: null, to: null })}
+                    />
+                  </DropdownMenuSub>
+
+                  {/* Statut - sous-menu */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="whitespace-nowrap">
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Statut
+                      {statusFilters.length > 0 && (
+                        <Badge variant="secondary" className="ml-auto">
+                          {statusFilters.length}
+                        </Badge>
+                      )}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                      {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                        <div
+                          key={key}
+                          className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                          onClick={() => toggleStatusFilter(key)}
+                        >
+                          <Checkbox
+                            checked={statusFilters.includes(key)}
+                            className="mr-2 pointer-events-none"
+                          />
+                          <span>{label}</span>
+                        </div>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+
+                  {/* Catégorie - sous-menu */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="whitespace-nowrap">
+                      <Tag className="h-4 w-4 mr-2" />
+                      Catégorie
+                      {categoryFilters.length > 0 && (
+                        <Badge variant="secondary" className="ml-auto">
+                          {categoryFilters.length}
+                        </Badge>
+                      )}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-[240px] max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                      {categoryFilterGroups.map((group) => (
+                        <div key={group.heading}>
+                          <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
+                            {group.heading}
+                          </DropdownMenuLabel>
+                          {group.options.map((opt) => (
+                            <div
+                              key={opt.value}
+                              className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                              onClick={() => toggleCategoryFilter(opt.value)}
+                            >
+                              <Checkbox
+                                checked={categoryFilters.includes(opt.value)}
+                                className="mr-2 pointer-events-none"
+                              />
+                              <span>{opt.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Colonnes visibles - sous-menu */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="whitespace-nowrap">
+                      Colonnes visibles
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                      {table
+                        .getAllColumns()
+                        .filter((col) => col.getCanHide())
+                        .map((col) => (
+                          <div
+                            key={col.id}
+                            className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                            onClick={() =>
+                              col.toggleVisibility(!col.getIsVisible())
+                            }
+                          >
+                            <Checkbox
+                              checked={col.getIsVisible()}
+                              className="mr-2 pointer-events-none"
+                            />
+                            <span>{col.columnDef.meta?.label || col.id}</span>
+                          </div>
+                        ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Bulk actions — toujours visibles, désactivées sans sélection */}
+              {/* Masquées si le rôle ne les permet pas */}
+              {canDeletePurchaseInvoices && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="danger" disabled={!hasSelection}>
+                      <TrashIcon size={14} />
+                      Supprimer{hasSelection ? ` (${selectedRows.length})` : ""}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Confirmer la suppression
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                        facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
+                        {selectedRows.length > 1 ? "s" : ""} ? Cette action ne
+                        peut pas être annulée.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBulkDelete}
+                        className="bg-destructive text-white hover:bg-destructive/90"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {/* Autres actions groupées regroupées dans un menu "⋮" */}
+              {(canEditPurchaseInvoices || canMarkPaidPurchaseInvoices) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={!hasSelection}
+                      aria-label="Actions groupées"
+                    >
+                      <EllipsisVertical size={14} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canMarkPaidPurchaseInvoices && (
+                      <DropdownMenuItem
+                        onClick={() => handleBulkStatus("PAID")}
+                      >
+                        <CheckCircle2 size={14} />
+                        Marquer payées
+                      </DropdownMenuItem>
+                    )}
+                    {canEditPurchaseInvoices && (
+                      <DropdownMenuItem
+                        onClick={() => handleBulkStatus("ARCHIVED")}
+                      >
+                        <Archive size={14} />
+                        Archiver
+                      </DropdownMenuItem>
+                    )}
+                    {canEditPurchaseInvoices && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="gap-2">
+                          <Tag size={14} />
+                          Catégoriser
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                          {EXPENSE_CATEGORY_GROUPS.map((group) => (
+                            <div key={group.heading}>
+                              <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
+                                {group.heading}
+                              </DropdownMenuLabel>
+                              {group.options.map((opt) => (
+                                <DropdownMenuItem
+                                  key={opt.value}
+                                  onClick={() =>
+                                    handleBulkCategorize(opt.value)
+                                  }
+                                >
+                                  {opt.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </div>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] purchase-tabs">
+            <style>{`
+              .purchase-tabs [data-slot="tabs-trigger"][data-state="active"] {
+                text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+              }
+            `}</style>
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) => {
+                setActiveTab(value);
+                setPagination((p) => ({ ...p, pageIndex: 0 }));
+              }}
+            >
+              <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
+                {[
+                  { key: "all", label: "Toutes", count: statusCounts.all },
+                  {
+                    key: "TO_PAY",
+                    label: "À payer",
+                    count: statusCounts.TO_PAY,
+                  },
+                  {
+                    key: "OVERDUE",
+                    label: "En retard",
+                    count: statusCounts.OVERDUE,
+                  },
+                  { key: "PAID", label: "Payées", count: statusCounts.PAID },
+                  ...(importedInvoices.length > 0
+                    ? [
+                        {
+                          key: "imported",
+                          label: "Importées Gmail",
+                          count: importedInvoices.length,
+                          highlight: true,
+                        },
+                      ]
+                    : []),
+                ].map((tab) => (
+                  <TabsTrigger
+                    key={tab.key}
+                    value={tab.key}
+                    className={`relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]`}
+                  >
+                    {tab.highlight && <GoogleIcon className="size-3.5" />}
+                    {tab.label}
+                    <span
+                      className={`text-[10px] leading-none rounded px-1 py-0.5 ${tab.highlight ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-gray-100 dark:bg-gray-800 text-muted-foreground"}`}
+                    >
+                      {tab.count}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Table — normal tabs */}
+          {activeTab !== "imported" && (
+            <>
+              <div className="hidden md:block min-w-0">
+                {/* min-w-fit : sur écran étroit le tableau déborde et défile
+                    horizontalement ; sans ça le bandeau d'en-tête garde la
+                    largeur de l'écran et les lignes passent sous sa partie
+                    sans fond (icônes Justificatif sur l'en-tête). */}
+                <div className="flex flex-col min-w-fit">
+                  {/* Header sticky */}
+                  <div className="sticky top-0 z-10 bg-background border-b border-[#eeeff1] dark:border-[#232323]">
+                    <table className="w-full table-fixed">
+                      <thead>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          <tr key={headerGroup.id}>
+                            {headerGroup.headers.map((header, index, arr) => (
+                              <th
+                                key={header.id}
+                                style={{ width: header.getSize() }}
+                                className={`h-10 px-3 py-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                              >
+                                {header.isPlaceholder
+                                  ? null
+                                  : flexRender(
+                                      header.column.columnDef.header,
+                                      header.getContext(),
+                                    )}
+                              </th>
+                            ))}
+                          </tr>
+                        ))}
+                      </thead>
+                    </table>
+                  </div>
+                  {/* Body */}
+                  <div className="flex flex-col">
+                    {/* Skeleton uniquement au premier chargement : si le cache a
+                        déjà des factures, on les affiche pendant le refetch */}
+                    {loading && invoices.length === 0 ? (
+                      <div className="p-0">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center border-b border-[#eeeff1] dark:border-[#232323] px-4 sm:px-6 py-3 gap-3"
+                          >
+                            <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                            <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                            <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                            <div className="h-4 w-[90px] rounded bg-muted animate-pulse" />
+                            <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                            <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                            <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                            <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                            <div className="h-5 w-[60px] rounded-full bg-muted animate-pulse" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : table.getRowModel().rows?.length ? (
+                      <table className="w-full table-fixed">
+                        <tbody>
+                          {table.getRowModel().rows.map((row) => (
+                            <tr
+                              key={row.id}
+                              data-state={row.getIsSelected() && "selected"}
+                              className="border-b border-[#eeeff1] dark:border-[#232323] hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                              onClick={(e) => {
+                                if (
+                                  e.target.closest('[role="checkbox"]') ||
+                                  e.target.closest("[data-no-row-click]") ||
+                                  e.target.closest('[role="menu"]')
+                                ) {
+                                  return;
+                                }
+                                handleRowClick(row.original);
+                              }}
+                            >
+                              {row.getVisibleCells().map((cell, index, arr) => (
+                                <td
+                                  key={cell.id}
+                                  style={{ width: cell.column.getSize() }}
+                                  className={`px-3 py-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                                >
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext(),
+                                  )}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <TableEmptyState
+                        icon={ShopIcon}
+                        title="Aucune facture d'achat"
+                        description="Importez vos factures fournisseurs ou créez-en une manuellement pour commencer."
+                        className="flex-1"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Pagination */}
+              <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-[#eeeff1] dark:border-[#232323] bg-background sticky bottom-0 z-10">
+                <div className="flex-1 flex items-center gap-3 text-xs font-normal text-muted-foreground">
+                  <span>
+                    {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+                    {table.getFilteredRowModel().rows.length} ligne(s)
+                    sélectionnée(s).
+                  </span>
+                  {/* Les pages suivantes arrivent en arrière-plan : tant que
+                      l'historique n'est pas complet, filtres, compteurs et
+                      export ne portent que sur les factures déjà chargées. */}
+                  {loadingHistory && (
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Chargement de l'historique...
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center space-x-4 lg:space-x-6">
+                  <div className="flex items-center gap-1.5">
+                    <p className="whitespace-nowrap text-xs font-normal">
+                      Lignes par page
+                    </p>
+                    <Select
+                      value={String(pagination.pageSize)}
+                      onValueChange={(value) =>
+                        setPagination({ pageIndex: 0, pageSize: Number(value) })
+                      }
+                    >
+                      <SelectTrigger className="h-7 w-[70px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent side="top">
+                        {[10, 25, 50, 100].map((size) => (
+                          <SelectItem key={size} value={String(size)}>
+                            {size}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center whitespace-nowrap text-xs font-normal">
+                    Page {table.getState().pagination.pageIndex + 1} sur{" "}
+                    {table.getPageCount()}
+                  </div>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                          onClick={() => table.setPageIndex(0)}
+                          disabled={!table.getCanPreviousPage()}
+                          aria-label="Première page"
+                        >
+                          <ChevronFirstIcon size={14} aria-hidden="true" />
+                        </Button>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                          onClick={() => table.previousPage()}
+                          disabled={!table.getCanPreviousPage()}
+                          aria-label="Page précédente"
+                        >
+                          <ChevronLeftIcon size={14} aria-hidden="true" />
+                        </Button>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                          onClick={() => table.nextPage()}
+                          disabled={!table.getCanNextPage()}
+                          aria-label="Page suivante"
+                        >
+                          <ChevronRightIcon size={14} aria-hidden="true" />
+                        </Button>
+                      </PaginationItem>
+                      <PaginationItem>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                          onClick={() =>
+                            table.setPageIndex(table.getPageCount() - 1)
+                          }
+                          disabled={!table.getCanNextPage()}
+                          aria-label="Dernière page"
+                        >
+                          <ChevronLastIcon size={14} aria-hidden="true" />
+                        </Button>
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Imported invoices tab */}
+          {activeTab === "imported" && (
+            <ImportedInvoicesPanel
+              importedInvoices={importedInvoices}
+              importedLoading={importedLoading}
+              importedSelection={importedSelection}
+              setImportedSelection={setImportedSelection}
+              convertImportedInvoice={convertImportedInvoice}
+              convertImportedInvoices={convertImportedInvoices}
+              rejectImportedInvoice={rejectImportedInvoice}
+              convertingOne={convertingOne}
+              convertingBulk={convertingBulk}
+              rejecting={rejecting}
+              onImportedConverted={onImportedConverted}
+              onOpenExisting={onOpenExisting}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Mobile View */}
+      {isMobileLayout && (
+        <div className="md:hidden flex-1 overflow-hidden flex flex-col">
+          {/* Mobile Search */}
+          <div className="px-4 pb-2 flex-shrink-0">
+            <div className="flex items-center gap-2 h-9 rounded-[9px] border border-[#E6E7EA] dark:border-[#2E2E32] px-2.5">
               <Search
                 size={16}
                 className="text-muted-foreground/80 shrink-0"
@@ -439,7 +997,7 @@ export default function PurchaseInvoiceTable({
               />
               <Input
                 variant="ghost"
-                placeholder="Recherchez par fournisseur, n° facture ou montant..."
+                placeholder="Rechercher..."
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
               />
@@ -452,677 +1010,140 @@ export default function PurchaseInvoiceTable({
                 </button>
               )}
             </div>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant={activeFiltersCount > 0 ? "primary" : "filter"}
-                  className="cursor-pointer"
-                >
-                  <ListFilterIcon size={14} />
-                  Filtres
-                  {activeFiltersCount > 0 && (
-                    <span className="ml-0.5 rounded-full bg-white/20 px-1.5 py-0 text-[10px]">
-                      {activeFiltersCount}
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[240px]">
-                {/* Effacer tous les filtres */}
-                <DropdownMenuItem
-                  onClick={clearAllFilters}
-                  className="cursor-pointer"
-                >
-                  Effacer tous les filtres
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                {/* Date d'émission - sous-menu calendrier */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="whitespace-nowrap">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    Date d&apos;émission
-                    {hasDateFilter && (
-                      <Badge variant="secondary" className="ml-auto">
-                        1
-                      </Badge>
-                    )}
-                  </DropdownMenuSubTrigger>
-                  <DateFilterSubmenu
-                    dateRange={dateRange}
-                    onSelectRange={(range) =>
-                      setDateRange(range || { from: null, to: null })
-                    }
-                    onQuickRange={setQuickDateRange}
-                    onClear={() => setDateRange({ from: null, to: null })}
-                  />
-                </DropdownMenuSub>
-
-                {/* Statut - sous-menu */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="whitespace-nowrap">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Statut
-                    {statusFilters.length > 0 && (
-                      <Badge variant="secondary" className="ml-auto">
-                        {statusFilters.length}
-                      </Badge>
-                    )}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                      <div
-                        key={key}
-                        className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                        onClick={() => toggleStatusFilter(key)}
-                      >
-                        <Checkbox
-                          checked={statusFilters.includes(key)}
-                          className="mr-2 pointer-events-none"
-                        />
-                        <span>{label}</span>
-                      </div>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-
-                {/* Catégorie - sous-menu */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="whitespace-nowrap">
-                    <Tag className="h-4 w-4 mr-2" />
-                    Catégorie
-                    {categoryFilters.length > 0 && (
-                      <Badge variant="secondary" className="ml-auto">
-                        {categoryFilters.length}
-                      </Badge>
-                    )}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[240px] max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                    {categoryFilterGroups.map((group) => (
-                      <div key={group.heading}>
-                        <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
-                          {group.heading}
-                        </DropdownMenuLabel>
-                        {group.options.map((opt) => (
-                          <div
-                            key={opt.value}
-                            className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                            onClick={() => toggleCategoryFilter(opt.value)}
-                          >
-                            <Checkbox
-                              checked={categoryFilters.includes(opt.value)}
-                              className="mr-2 pointer-events-none"
-                            />
-                            <span>{opt.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-
-                <DropdownMenuSeparator />
-
-                {/* Colonnes visibles - sous-menu */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="whitespace-nowrap">
-                    Colonnes visibles
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-[220px] max-h-[min(400px,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                    {table
-                      .getAllColumns()
-                      .filter((col) => col.getCanHide())
-                      .map((col) => (
-                        <div
-                          key={col.id}
-                          className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                          onClick={() =>
-                            col.toggleVisibility(!col.getIsVisible())
-                          }
-                        >
-                          <Checkbox
-                            checked={col.getIsVisible()}
-                            className="mr-2 pointer-events-none"
-                          />
-                          <span>{col.columnDef.meta?.label || col.id}</span>
-                        </div>
-                      ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Bulk actions — toujours visibles, désactivées sans sélection */}
-            {/* Masquées si le rôle ne les permet pas */}
-            {canDeletePurchaseInvoices && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="danger" disabled={!hasSelection}>
-                    <TrashIcon size={14} />
-                    Supprimer{hasSelection ? ` (${selectedRows.length})` : ""}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Confirmer la suppression
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                      facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
-                      {selectedRows.length > 1 ? "s" : ""} ? Cette action ne
-                      peut pas être annulée.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleBulkDelete}
-                      className="bg-destructive text-white hover:bg-destructive/90"
-                    >
-                      Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {/* Autres actions groupées regroupées dans un menu "⋮" */}
-            {(canEditPurchaseInvoices || canMarkPaidPurchaseInvoices) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    disabled={!hasSelection}
-                    aria-label="Actions groupées"
-                  >
-                    <EllipsisVertical size={14} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {canMarkPaidPurchaseInvoices && (
-                    <DropdownMenuItem onClick={() => handleBulkStatus("PAID")}>
-                      <CheckCircle2 size={14} />
-                      Marquer payées
-                    </DropdownMenuItem>
-                  )}
-                  {canEditPurchaseInvoices && (
-                    <DropdownMenuItem
-                      onClick={() => handleBulkStatus("ARCHIVED")}
-                    >
-                      <Archive size={14} />
-                      Archiver
-                    </DropdownMenuItem>
-                  )}
-                  {canEditPurchaseInvoices && (
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="gap-2">
-                        <Tag size={14} />
-                        Catégoriser
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                        {EXPENSE_CATEGORY_GROUPS.map((group) => (
-                          <div key={group.heading}>
-                            <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
-                              {group.heading}
-                            </DropdownMenuLabel>
-                            {group.options.map((opt) => (
-                              <DropdownMenuItem
-                                key={opt.value}
-                                onClick={() => handleBulkCategorize(opt.value)}
-                              >
-                                {opt.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </div>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] purchase-tabs">
-          <style>{`
-            .purchase-tabs [data-slot="tabs-trigger"][data-state="active"] {
-              text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
-            }
-          `}</style>
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => {
-              setActiveTab(value);
-              setPagination((p) => ({ ...p, pageIndex: 0 }));
-            }}
-          >
-            <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
-              {[
-                { key: "all", label: "Toutes", count: statusCounts.all },
-                { key: "TO_PAY", label: "À payer", count: statusCounts.TO_PAY },
-                {
-                  key: "OVERDUE",
-                  label: "En retard",
-                  count: statusCounts.OVERDUE,
-                },
-                { key: "PAID", label: "Payées", count: statusCounts.PAID },
-                ...(importedInvoices.length > 0
-                  ? [
-                      {
-                        key: "imported",
-                        label: "Importées Gmail",
-                        count: importedInvoices.length,
-                        highlight: true,
-                      },
-                    ]
-                  : []),
-              ].map((tab) => (
-                <TabsTrigger
-                  key={tab.key}
-                  value={tab.key}
-                  className={`relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]`}
-                >
-                  {tab.highlight && <GoogleIcon className="size-3.5" />}
-                  {tab.label}
-                  <span
-                    className={`text-[10px] leading-none rounded px-1 py-0.5 ${tab.highlight ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-gray-100 dark:bg-gray-800 text-muted-foreground"}`}
-                  >
-                    {tab.count}
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {/* Table — normal tabs */}
-        {activeTab !== "imported" && (
-          <>
-            <div className="hidden md:block min-w-0">
-              {/* min-w-fit : sur écran étroit le tableau déborde et défile
-                  horizontalement ; sans ça le bandeau d'en-tête garde la
-                  largeur de l'écran et les lignes passent sous sa partie
-                  sans fond (icônes Justificatif sur l'en-tête). */}
-              <div className="flex flex-col min-w-fit">
-                {/* Header sticky */}
-                <div className="sticky top-0 z-10 bg-background border-b border-[#eeeff1] dark:border-[#232323]">
-                  <table className="w-full table-fixed">
-                    <thead>
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <tr key={headerGroup.id}>
-                          {headerGroup.headers.map((header, index, arr) => (
-                            <th
-                              key={header.id}
-                              style={{ width: header.getSize() }}
-                              className={`h-10 px-3 py-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                            >
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext(),
-                                  )}
-                            </th>
-                          ))}
-                        </tr>
-                      ))}
-                    </thead>
-                  </table>
-                </div>
-                {/* Body */}
-                <div className="flex flex-col">
-                  {/* Skeleton uniquement au premier chargement : si le cache a
-                      déjà des factures, on les affiche pendant le refetch */}
-                  {loading && invoices.length === 0 ? (
-                    <div className="p-0">
-                      {Array.from({ length: 8 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center border-b border-[#eeeff1] dark:border-[#232323] px-4 sm:px-6 py-3 gap-3"
-                        >
-                          <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                          <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                          <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                          <div className="h-4 w-[90px] rounded bg-muted animate-pulse" />
-                          <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                          <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                          <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                          <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                          <div className="h-5 w-[60px] rounded-full bg-muted animate-pulse" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : table.getRowModel().rows?.length ? (
-                    <table className="w-full table-fixed">
-                      <tbody>
-                        {table.getRowModel().rows.map((row) => (
-                          <tr
-                            key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
-                            className="border-b border-[#eeeff1] dark:border-[#232323] hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                            onClick={(e) => {
-                              if (
-                                e.target.closest('[role="checkbox"]') ||
-                                e.target.closest("[data-no-row-click]") ||
-                                e.target.closest('[role="menu"]')
-                              ) {
-                                return;
-                              }
-                              handleRowClick(row.original);
-                            }}
-                          >
-                            {row.getVisibleCells().map((cell, index, arr) => (
-                              <td
-                                key={cell.id}
-                                style={{ width: cell.column.getSize() }}
-                                className={`px-3 py-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                              >
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext(),
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <TableEmptyState
-                      icon={ShopIcon}
-                      title="Aucune facture d'achat"
-                      description="Importez vos factures fournisseurs ou créez-en une manuellement pour commencer."
-                      className="flex-1"
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Pagination */}
-            <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-[#eeeff1] dark:border-[#232323] bg-background sticky bottom-0 z-10">
-              <div className="flex-1 flex items-center gap-3 text-xs font-normal text-muted-foreground">
-                <span>
-                  {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-                  {table.getFilteredRowModel().rows.length} ligne(s)
-                  sélectionnée(s).
-                </span>
-                {/* Les pages suivantes arrivent en arrière-plan : tant que
-                    l'historique n'est pas complet, filtres, compteurs et
-                    export ne portent que sur les factures déjà chargées. */}
-                {loadingHistory && (
-                  <span className="flex items-center gap-1.5">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Chargement de l'historique...
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center space-x-4 lg:space-x-6">
-                <div className="flex items-center gap-1.5">
-                  <p className="whitespace-nowrap text-xs font-normal">
-                    Lignes par page
-                  </p>
-                  <Select
-                    value={String(pagination.pageSize)}
-                    onValueChange={(value) =>
-                      setPagination({ pageIndex: 0, pageSize: Number(value) })
-                    }
-                  >
-                    <SelectTrigger className="h-7 w-[70px] text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent side="top">
-                      {[10, 25, 50, 100].map((size) => (
-                        <SelectItem key={size} value={String(size)}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center whitespace-nowrap text-xs font-normal">
-                  Page {table.getState().pagination.pageIndex + 1} sur{" "}
-                  {table.getPageCount()}
-                </div>
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                        onClick={() => table.setPageIndex(0)}
-                        disabled={!table.getCanPreviousPage()}
-                        aria-label="Première page"
-                      >
-                        <ChevronFirstIcon size={14} aria-hidden="true" />
-                      </Button>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                        aria-label="Page précédente"
-                      >
-                        <ChevronLeftIcon size={14} aria-hidden="true" />
-                      </Button>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                        aria-label="Page suivante"
-                      >
-                        <ChevronRightIcon size={14} aria-hidden="true" />
-                      </Button>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                        onClick={() =>
-                          table.setPageIndex(table.getPageCount() - 1)
-                        }
-                        disabled={!table.getCanNextPage()}
-                        aria-label="Dernière page"
-                      >
-                        <ChevronLastIcon size={14} aria-hidden="true" />
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Imported invoices tab */}
-        {activeTab === "imported" && (
-          <ImportedInvoicesPanel
-            importedInvoices={importedInvoices}
-            importedLoading={importedLoading}
-            importedSelection={importedSelection}
-            setImportedSelection={setImportedSelection}
-            convertImportedInvoice={convertImportedInvoice}
-            convertImportedInvoices={convertImportedInvoices}
-            rejectImportedInvoice={rejectImportedInvoice}
-            convertingOne={convertingOne}
-            convertingBulk={convertingBulk}
-            rejecting={rejecting}
-            onImportedConverted={onImportedConverted}
-            onOpenExisting={onOpenExisting}
-          />
-        )}
-      </div>
-
-      {/* Mobile View */}
-      <div className="md:hidden flex-1 overflow-hidden flex flex-col">
-        {/* Mobile Search */}
-        <div className="px-4 pb-2 flex-shrink-0">
-          <div className="flex items-center gap-2 h-9 rounded-[9px] border border-[#E6E7EA] dark:border-[#2E2E32] px-2.5">
-            <Search
-              size={16}
-              className="text-muted-foreground/80 shrink-0"
-              aria-hidden="true"
-            />
-            <Input
-              variant="ghost"
-              placeholder="Rechercher..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-            />
-            {Boolean(globalFilter) && (
+          {/* Mobile Tabs */}
+          <div className="flex gap-1 px-4 pb-2 overflow-x-auto flex-shrink-0">
+            {[
+              { key: "all", label: "Toutes", count: statusCounts.all },
+              { key: "TO_PAY", label: "À payer", count: statusCounts.TO_PAY },
+              {
+                key: "OVERDUE",
+                label: "En retard",
+                count: statusCounts.OVERDUE,
+              },
+              { key: "PAID", label: "Payées", count: statusCounts.PAID },
+              ...(importedInvoices.length > 0
+                ? [
+                    {
+                      key: "imported",
+                      label: "Gmail",
+                      count: importedInvoices.length,
+                    },
+                  ]
+                : []),
+            ].map((tab) => (
               <button
-                onClick={() => setGlobalFilter("")}
-                className="text-muted-foreground/80 hover:text-foreground shrink-0"
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
+                  activeTab === tab.key
+                    ? "bg-foreground text-background"
+                    : tab.key === "imported"
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                      : "bg-muted text-muted-foreground"
+                }`}
               >
-                <CircleXIcon size={16} strokeWidth={2} />
+                {tab.label} {tab.count}
               </button>
-            )}
+            ))}
           </div>
-        </div>
 
-        {/* Mobile Tabs */}
-        <div className="flex gap-1 px-4 pb-2 overflow-x-auto flex-shrink-0">
-          {[
-            { key: "all", label: "Toutes", count: statusCounts.all },
-            { key: "TO_PAY", label: "À payer", count: statusCounts.TO_PAY },
-            { key: "OVERDUE", label: "En retard", count: statusCounts.OVERDUE },
-            { key: "PAID", label: "Payées", count: statusCounts.PAID },
-            ...(importedInvoices.length > 0
-              ? [
-                  {
-                    key: "imported",
-                    label: "Gmail",
-                    count: importedInvoices.length,
-                  },
-                ]
-              : []),
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors ${
-                activeTab === tab.key
-                  ? "bg-foreground text-background"
-                  : tab.key === "imported"
-                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                    : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {tab.label} {tab.count}
-            </button>
-          ))}
-        </div>
-
-        {/* Mobile List */}
-        {activeTab !== "imported" ? (
-          <div className="flex-1 overflow-y-auto">
-            {loading && invoices.length === 0 ? (
-              <div className="px-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between border-b border-[#eeeff1] dark:border-[#232323] py-3 gap-3"
-                  >
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="h-4 w-[120px] rounded bg-muted animate-pulse" />
-                      <div className="h-3 w-[80px] rounded bg-muted animate-pulse" />
-                    </div>
-                    <div className="space-y-2 text-right">
-                      <div className="h-4 w-[60px] rounded bg-muted animate-pulse ml-auto" />
-                      <div className="h-4 w-[50px] rounded-full bg-muted animate-pulse ml-auto" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredInvoices.length === 0 ? (
-              <TableEmptyState
-                icon={ShopIcon}
-                title="Aucune facture"
-                description="Importez vos factures fournisseurs pour commencer."
-                size="compact"
-              />
-            ) : (
-              filteredInvoices
-                .filter((inv) => {
-                  if (!globalFilter) return true;
-                  const s = globalFilter.toLowerCase();
-                  return (
-                    (inv.supplierName || "").toLowerCase().includes(s) ||
-                    (inv.invoiceNumber || "").toLowerCase().includes(s) ||
-                    String(inv.amountTTC).includes(s)
-                  );
-                })
-                .map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="border-b border-[#eeeff1] dark:border-[#232323] px-4 py-3 cursor-pointer hover:bg-muted/50 active:bg-muted"
-                    onClick={() => handleRowClick(inv)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-medium text-sm truncate">
-                            {inv.supplierName}
-                          </span>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {inv.invoiceNumber && `${inv.invoiceNumber} · `}
-                          {(() => {
-                            try {
-                              const d = new Date(inv.issueDate);
-                              return isNaN(d.getTime())
-                                ? "—"
-                                : d.toLocaleDateString("fr-FR");
-                            } catch {
-                              return "—";
-                            }
-                          })()}
-                        </div>
+          {/* Mobile List */}
+          {activeTab !== "imported" ? (
+            <div className="flex-1 overflow-y-auto">
+              {loading && invoices.length === 0 ? (
+                <div className="px-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between border-b border-[#eeeff1] dark:border-[#232323] py-3 gap-3"
+                    >
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="h-4 w-[120px] rounded bg-muted animate-pulse" />
+                        <div className="h-3 w-[80px] rounded bg-muted animate-pulse" />
                       </div>
-                      <div className="text-right ml-3">
-                        <div className="font-medium text-sm">
-                          {formatCurrencyAmount(inv.amountTTC, inv.currency)}
-                        </div>
-                        <StatusBadge status={inv.status} small />
+                      <div className="space-y-2 text-right">
+                        <div className="h-4 w-[60px] rounded bg-muted animate-pulse ml-auto" />
+                        <div className="h-4 w-[50px] rounded-full bg-muted animate-pulse ml-auto" />
                       </div>
                     </div>
-                  </div>
-                ))
-            )}
-          </div>
-        ) : (
-          <ImportedInvoicesPanel
-            importedInvoices={importedInvoices}
-            importedLoading={importedLoading}
-            importedSelection={importedSelection}
-            setImportedSelection={setImportedSelection}
-            convertImportedInvoice={convertImportedInvoice}
-            convertImportedInvoices={convertImportedInvoices}
-            rejectImportedInvoice={rejectImportedInvoice}
-            convertingOne={convertingOne}
-            convertingBulk={convertingBulk}
-            rejecting={rejecting}
-            onImportedConverted={onImportedConverted}
-            onOpenExisting={onOpenExisting}
-          />
-        )}
-      </div>
+                  ))}
+                </div>
+              ) : filteredInvoices.length === 0 ? (
+                <TableEmptyState
+                  icon={ShopIcon}
+                  title="Aucune facture"
+                  description="Importez vos factures fournisseurs pour commencer."
+                  size="compact"
+                />
+              ) : (
+                filteredInvoices
+                  .filter((inv) => {
+                    if (!globalFilter) return true;
+                    const s = globalFilter.toLowerCase();
+                    return (
+                      (inv.supplierName || "").toLowerCase().includes(s) ||
+                      (inv.invoiceNumber || "").toLowerCase().includes(s) ||
+                      String(inv.amountTTC).includes(s)
+                    );
+                  })
+                  .map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="border-b border-[#eeeff1] dark:border-[#232323] px-4 py-3 cursor-pointer hover:bg-muted/50 active:bg-muted"
+                      onClick={() => handleRowClick(inv)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-sm truncate">
+                              {inv.supplierName}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {inv.invoiceNumber && `${inv.invoiceNumber} · `}
+                            {(() => {
+                              try {
+                                const d = new Date(inv.issueDate);
+                                return isNaN(d.getTime())
+                                  ? "—"
+                                  : d.toLocaleDateString("fr-FR");
+                              } catch {
+                                return "—";
+                              }
+                            })()}
+                          </div>
+                        </div>
+                        <div className="text-right ml-3">
+                          <div className="font-medium text-sm">
+                            {formatCurrencyAmount(inv.amountTTC, inv.currency)}
+                          </div>
+                          <StatusBadge status={inv.status} small />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+              )}
+            </div>
+          ) : (
+            <ImportedInvoicesPanel
+              importedInvoices={importedInvoices}
+              importedLoading={importedLoading}
+              importedSelection={importedSelection}
+              setImportedSelection={setImportedSelection}
+              convertImportedInvoice={convertImportedInvoice}
+              convertImportedInvoices={convertImportedInvoices}
+              rejectImportedInvoice={rejectImportedInvoice}
+              convertingOne={convertingOne}
+              convertingBulk={convertingBulk}
+              rejecting={rejecting}
+              onImportedConverted={onImportedConverted}
+              onOpenExisting={onOpenExisting}
+            />
+          )}
+        </div>
+      )}
     </>
   );
 }
@@ -1286,7 +1307,7 @@ function ImportedInvoicesPanel({
 
   const formatAmount = (amount) => {
     if (amount == null) return "—";
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);

@@ -60,6 +60,7 @@ import {
   getCategoryLabel,
   isCategoryOfType,
 } from "@/lib/category-icons-config";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Catégorie (sous-catégorie fine ou code large hérité) gardée seulement si
 // elle est du sens demandé (une catégorie de dépense n'est pas valide pour
@@ -76,7 +77,7 @@ const FREQUENCIES = [
 ];
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,

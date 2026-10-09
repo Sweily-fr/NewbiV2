@@ -13,6 +13,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { getTransactionCategory } from "@/lib/bank-categories-config";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const CATEGORY_LABELS = {
   OFFICE_SUPPLIES: "Fournitures",
@@ -95,7 +96,7 @@ const PAYMENT_LABELS = {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -270,6 +271,7 @@ export function AnalyticsExpenseCategoryChart({
               <PieChart>
                 <Tooltip content={<CategoryTooltip />} cursor={false} />
                 <Pie
+                  animationDuration={300}
                   data={chartData}
                   dataKey="amount"
                   nameKey="label"
@@ -400,6 +402,7 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <PieChart>
             <Pie
+              animationDuration={300}
               data={chartData}
               dataKey="totalTTC"
               nameKey="name"

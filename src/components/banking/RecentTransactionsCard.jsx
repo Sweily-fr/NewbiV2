@@ -15,6 +15,7 @@ import { useQuery } from "@apollo/client";
 import { GET_TRANSACTIONS } from "@/src/graphql/queries/banking";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "@/app/dashboard/outils/transactions/components/merchant-logo";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 /**
  * Card affichant les transactions récentes
@@ -49,7 +50,7 @@ export default function RecentTransactionsCard({
   const loading = (isLoading || queryLoading) && !data?.transactions;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);

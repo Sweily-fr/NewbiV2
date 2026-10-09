@@ -8,9 +8,14 @@ import { authClient } from "@/src/lib/auth-client";
  * déconnexion depuis un autre appareil, etc.) et redirige l'utilisateur vers
  * la page session-expired sans attendre sa prochaine navigation.
  *
- * Polling toutes les 30 secondes + check immédiat au retour de focus sur l'onglet.
+ * Polling toutes les 60 secondes + check au retour de focus sur l'onglet
+ * (au plus une fois par 15 s).
  */
-export function SessionValidityDetector({ intervalMs = 30000 }) {
+// 60 s (30 s avant) : chaque passage interroge la base (disableCookieCache) ;
+// le retour de focus revérifie de toute façon, au plus une fois par 15 s.
+const FOCUS_CHECK_MIN_GAP_MS = 15000;
+
+export function SessionValidityDetector({ intervalMs = 60000 }) {
   const redirectingRef = useRef(false);
 
   useEffect(() => {
@@ -61,7 +66,13 @@ export function SessionValidityDetector({ intervalMs = 30000 }) {
     };
 
     const id = setInterval(check, intervalMs);
-    const onFocus = () => check();
+    let lastFocusCheck = 0;
+    const onFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusCheck < FOCUS_CHECK_MIN_GAP_MS) return;
+      lastFocusCheck = now;
+      check();
+    };
     window.addEventListener("focus", onFocus);
 
     return () => {

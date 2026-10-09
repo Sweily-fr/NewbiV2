@@ -12,6 +12,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { getTransactionCategory } from "@/lib/bank-categories-config";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const CA_NAME = "Chiffre d'affaires";
 
@@ -40,7 +41,7 @@ const INCOME_CATEGORY_LABELS = {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -235,6 +236,7 @@ export function AnalyticsRevenuePieChart({
               <PieChart>
                 <Tooltip content={<RevenueTooltip />} cursor={false} />
                 <Pie
+                  animationDuration={300}
                   data={chartData}
                   dataKey="amount"
                   nameKey="name"

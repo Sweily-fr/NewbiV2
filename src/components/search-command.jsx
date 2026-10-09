@@ -74,12 +74,13 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // --- Helpers ---
 
 const formatCurrency = (amount) => {
   if (!amount && amount !== 0) return "";
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount);

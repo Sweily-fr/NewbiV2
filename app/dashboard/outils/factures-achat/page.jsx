@@ -54,9 +54,11 @@ import {
   PurchaseInvoicePageSkeleton,
   PurchaseInvoiceTableSkeleton,
 } from "./components/purchase-invoice-page-skeleton";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatAmount = (amount) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
@@ -99,6 +101,10 @@ function StatsCard({ label, tooltip, amount, count, alert }) {
 }
 
 function PurchaseInvoicesContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   // Le tableau, les compteurs d'onglets, les filtres et l'export travaillent
   // sur la liste chargée : il faut donc tout l'historique, pas la 1re page.
@@ -255,202 +261,52 @@ function PurchaseInvoicesContent() {
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Factures d&apos;achat</h1>
-          </div>
-          <div className="flex gap-2">
-            {/* Bouton Gmail (affiché si connecté) — à gauche d'Exporter */}
-            {gmailConnection && gmailConnection.status !== "disconnected" && (
-              <Button
-                variant="outline"
-                className="gap-1.5 cursor-pointer"
-                onClick={handleOpenGmailDialog}
-              >
-                <GoogleIcon className="size-3.5" />
-                <span className="text-sm">Gmail connecté</span>
-                <Check
-                  className="size-3 text-muted-foreground/60"
-                  strokeWidth={2.5}
-                />
-              </Button>
-            )}
-            {canExportPurchaseInvoices && (
-              <Button variant="outline" onClick={() => setIsExportOpen(true)}>
-                <Download size={14} strokeWidth={1.5} aria-hidden="true" />
-                Exporter
-              </Button>
-            )}
-            {/* Création réservée aux rôles qui ont l'action « create » */}
-            {canCreatePurchaseInvoices && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="primary"
-                    disabled={isReadOnly}
-                    title={readOnlyTooltip}
-                  >
-                    <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                    Nouvelle facture
-                    <ChevronDown size={12} aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                      Ajouter une facture
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem onClick={handleAddManual}>
-                      <Edit3 size={16} />
-                      Saisie manuelle
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleAddOcr}>
-                      <Upload size={16} />
-                      Importer (scan/OCR)
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                      Automatisation
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem onClick={handleOpenGmailDialog}>
-                      <Mail size={16} />
-                      Automatiser (Gmail)
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-
-        {/* Zone scrollable : KPIs + tableau */}
-        <div className="flex-1 min-h-0 overflow-auto">
-          <div className="flex flex-col min-h-full">
-            {/* Stats Cards */}
-            <div className="flex gap-3 px-4 sm:px-6 py-3">
-              {statsLoading ? (
-                <>
-                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-                  <Skeleton className="h-[60px] w-[200px] rounded-lg" />
-                </>
-              ) : (
-                <>
-                  <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-                    <div className="pr-4">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-xs text-muted-foreground">
-                          Total à payer
-                        </span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="bottom"
-                              className="bg-[#202020] text-white border-0"
-                            >
-                              <p>Factures à payer + en retard</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-medium tracking-tight">
-                          {formatAmount(stats.totalToPay)} €
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          TTC
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-px h-10 bg-border mx-4" />
-                    <div className="pl-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-xs text-muted-foreground">
-                          Payé ce mois
-                        </span>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="bottom"
-                              className="bg-[#202020] text-white border-0"
-                            >
-                              <p>Total des factures payées ce mois</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-medium tracking-tight">
-                          {formatAmount(stats.paidThisMonth)} €
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          TTC
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <StatsCard
-                    label="Factures en retard"
-                    tooltip="Factures dont la date d'échéance est dépassée"
-                    amount={stats.totalOverdue}
-                    count={stats.totalOverdueCount}
-                    alert
-                  />
-                  <StatsCard
-                    label="Total du mois"
-                    tooltip="Toutes les factures du mois en cours"
-                    amount={stats.totalThisMonth}
-                    count={stats.totalThisMonthCount}
-                  />
-                </>
-              )}
-            </div>
-
-            {/* Table */}
-            <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
-              <PurchaseInvoiceTable
-                invoices={invoices || []}
-                loading={loading}
-                refetch={refetch}
-                refetchStats={refetchStats}
-                onRowClick={handleRowClick}
-                importedInvoices={importedInvoices}
-                importedLoading={importedLoading}
-                onImportedConverted={handleImportedConverted}
-                onOpenExisting={handleOpenExisting}
-              />
-            </Suspense>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-        <div className="px-4 py-6 flex-shrink-0">
-          <div className="flex items-start justify-between">
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
             <div>
               <h1 className="text-2xl font-medium mb-2">
                 Factures d&apos;achat
               </h1>
             </div>
             <div className="flex gap-2">
+              {/* Bouton Gmail (affiché si connecté) — à gauche d'Exporter */}
+              {gmailConnection && gmailConnection.status !== "disconnected" && (
+                <Button
+                  variant="outline"
+                  className="gap-1.5 cursor-pointer"
+                  onClick={handleOpenGmailDialog}
+                >
+                  <GoogleIcon className="size-3.5" />
+                  <span className="text-sm">Gmail connecté</span>
+                  <Check
+                    className="size-3 text-muted-foreground/60"
+                    strokeWidth={2.5}
+                  />
+                </Button>
+              )}
+              {canExportPurchaseInvoices && (
+                <Button variant="outline" onClick={() => setIsExportOpen(true)}>
+                  <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+                  Exporter
+                </Button>
+              )}
+              {/* Création réservée aux rôles qui ont l'action « create » */}
               {canCreatePurchaseInvoices && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon" className="rounded-full">
-                      <Plus className="h-5 w-5" />
+                    <Button
+                      variant="primary"
+                      disabled={isReadOnly}
+                      title={readOnlyTooltip}
+                    >
+                      <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                      Nouvelle facture
+                      <ChevronDown size={12} aria-hidden="true" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="[--radius:1rem]">
+                  <DropdownMenuContent align="end">
                     <DropdownMenuGroup>
                       <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                         Ajouter une facture
@@ -477,44 +333,203 @@ function PurchaseInvoicesContent() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Stats Cards Mobile */}
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto">
-          {!statsLoading && (
-            <>
-              <StatsCard
-                label="Total à payer"
-                tooltip="Factures à payer + en retard"
-                amount={stats.totalToPay}
-              />
-              <StatsCard
-                label="En retard"
-                tooltip="Factures dont la date d'échéance est dépassée"
-                amount={stats.totalOverdue}
-                count={stats.totalOverdueCount}
-                alert
-              />
-            </>
-          )}
-        </div>
+          {/* Zone scrollable : KPIs + tableau */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <div className="flex flex-col min-h-full">
+              {/* Stats Cards */}
+              <div className="flex gap-3 px-4 sm:px-6 py-3">
+                {statsLoading ? (
+                  <>
+                    <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                    <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                    <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                    <Skeleton className="h-[60px] w-[200px] rounded-lg" />
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+                      <div className="pr-4">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-xs text-muted-foreground">
+                            Total à payer
+                          </span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="bottom"
+                                className="bg-[#202020] text-white border-0"
+                              >
+                                <p>Factures à payer + en retard</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-medium tracking-tight">
+                            {formatAmount(stats.totalToPay)} €
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            TTC
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-px h-10 bg-border mx-4" />
+                      <div className="pl-0">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-xs text-muted-foreground">
+                            Payé ce mois
+                          </span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="bottom"
+                                className="bg-[#202020] text-white border-0"
+                              >
+                                <p>Total des factures payées ce mois</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-lg font-medium tracking-tight">
+                            {formatAmount(stats.paidThisMonth)} €
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            TTC
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <StatsCard
+                      label="Factures en retard"
+                      tooltip="Factures dont la date d'échéance est dépassée"
+                      amount={stats.totalOverdue}
+                      count={stats.totalOverdueCount}
+                      alert
+                    />
+                    <StatsCard
+                      label="Total du mois"
+                      tooltip="Toutes les factures du mois en cours"
+                      amount={stats.totalThisMonth}
+                      count={stats.totalThisMonthCount}
+                    />
+                  </>
+                )}
+              </div>
 
-        {/* Table */}
-        <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
-          <PurchaseInvoiceTable
-            invoices={invoices || []}
-            loading={loading}
-            loadingHistory={loadingHistory}
-            refetch={refetch}
-            refetchStats={refetchStats}
-            onRowClick={handleRowClick}
-            importedInvoices={importedInvoices}
-            importedLoading={importedLoading}
-            onImportedConverted={handleImportedConverted}
-            onOpenExisting={handleOpenExisting}
-          />
-        </Suspense>
-      </div>
+              {/* Table */}
+              <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
+                <PurchaseInvoiceTable
+                  invoices={invoices || []}
+                  loading={loading}
+                  refetch={refetch}
+                  refetchStats={refetchStats}
+                  onRowClick={handleRowClick}
+                  importedInvoices={importedInvoices}
+                  importedLoading={importedLoading}
+                  onImportedConverted={handleImportedConverted}
+                  onOpenExisting={handleOpenExisting}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+          <div className="px-4 py-6 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-2">
+                  Factures d&apos;achat
+                </h1>
+              </div>
+              <div className="flex gap-2">
+                {canCreatePurchaseInvoices && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" className="rounded-full">
+                        <Plus className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="[--radius:1rem]"
+                    >
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                          Ajouter une facture
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem onClick={handleAddManual}>
+                          <Edit3 size={16} />
+                          Saisie manuelle
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleAddOcr}>
+                          <Upload size={16} />
+                          Importer (scan/OCR)
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                          Automatisation
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem onClick={handleOpenGmailDialog}>
+                          <Mail size={16} />
+                          Automatiser (Gmail)
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Cards Mobile */}
+          <div className="flex gap-2 px-4 pb-3 overflow-x-auto">
+            {!statsLoading && (
+              <>
+                <StatsCard
+                  label="Total à payer"
+                  tooltip="Factures à payer + en retard"
+                  amount={stats.totalToPay}
+                />
+                <StatsCard
+                  label="En retard"
+                  tooltip="Factures dont la date d'échéance est dépassée"
+                  amount={stats.totalOverdue}
+                  count={stats.totalOverdueCount}
+                  alert
+                />
+              </>
+            )}
+          </div>
+
+          {/* Table */}
+          <Suspense fallback={<PurchaseInvoiceTableSkeleton />}>
+            <PurchaseInvoiceTable
+              invoices={invoices || []}
+              loading={loading}
+              loadingHistory={loadingHistory}
+              refetch={refetch}
+              refetchStats={refetchStats}
+              onRowClick={handleRowClick}
+              importedInvoices={importedInvoices}
+              importedLoading={importedLoading}
+              onImportedConverted={handleImportedConverted}
+              onOpenExisting={handleOpenExisting}
+            />
+          </Suspense>
+        </div>
+      )}
 
       {/* Drawers — rendered ONCE at page level */}
       {/* Consultation / édition d'une facture existante */}

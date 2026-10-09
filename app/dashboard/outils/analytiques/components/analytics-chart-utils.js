@@ -1,3 +1,4 @@
+import { getNumberFormat } from "@/src/lib/intl-cache";
 /**
  * Vrai si au moins une ligne porte une valeur numérique non nulle sur l'une
  * des clés données. L'API renvoie souvent une ligne par mois de la période
@@ -14,7 +15,7 @@ export function hasChartValues(rows, keys) {
   );
 }
 
-const AXIS_NUMBER = new Intl.NumberFormat("fr-FR", {
+const AXIS_NUMBER = getNumberFormat("fr-FR", {
   maximumFractionDigits: 1,
 });
 

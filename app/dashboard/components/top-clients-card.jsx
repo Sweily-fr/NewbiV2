@@ -12,9 +12,10 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ExternalLink, ArrowUpRight } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount || 0);

@@ -72,6 +72,7 @@ import {
   AccordionTrigger,
 } from "@/src/components/ui/accordion";
 import PercentageSliderInput from "@/src/components/percentage-slider-input";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 // Utilisation du composant ProductSearchCombobox défini dans enhanced-invoice-form.jsx
 
 // Convertir une quantité décimale en { hours, minutes }
@@ -145,7 +146,7 @@ const UNIT_OPTIONS = [
 
 // Fonction utilitaire pour formater les montants en euros
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -352,7 +353,9 @@ export default function ItemsSection({
 
     if (linked.length > 0) {
       linked.forEach((linkedItem) => appendItem(linkedItem));
-      toast.success(linkedItemsAddedMessage(linked.length, itemData.description));
+      toast.success(
+        linkedItemsAddedMessage(linked.length, itemData.description),
+      );
     }
   };
 
@@ -700,7 +703,9 @@ export default function ItemsSection({
                                         <ProductThumbnail
                                           src={currentItem.imageUrl}
                                           className={`size-9 rounded-lg ${
-                                            currentItem.showImage === false ? "opacity-40 grayscale" : ""
+                                            currentItem.showImage === false
+                                              ? "opacity-40 grayscale"
+                                              : ""
                                           }`}
                                         />
                                       )}
@@ -712,8 +717,12 @@ export default function ItemsSection({
                                           variant="secondary"
                                           className="font-normal whitespace-normal max-w-full"
                                         >
-                                          <Link2 size={12} className="!size-3 shrink-0 mr-1" />
-                                          Produit lié à « {linkedParentName(index)} »
+                                          <Link2
+                                            size={12}
+                                            className="!size-3 shrink-0 mr-1"
+                                          />
+                                          Produit lié à «{" "}
+                                          {linkedParentName(index)} »
                                         </Badge>
                                       )}
                                     </div>
@@ -820,9 +829,13 @@ export default function ItemsSection({
                                   showImage={currentItem.showImage}
                                   disabled={!canEdit || isItemFieldLocked}
                                   onShowImageChange={(checked) =>
-                                    setValue(`items.${index}.showImage`, checked, {
-                                      shouldDirty: true,
-                                    })
+                                    setValue(
+                                      `items.${index}.showImage`,
+                                      checked,
+                                      {
+                                        shouldDirty: true,
+                                      },
+                                    )
                                   }
                                 />
                                 {/* Description */}

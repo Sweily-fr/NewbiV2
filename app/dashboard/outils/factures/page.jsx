@@ -31,8 +31,14 @@ import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function InvoicesContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -129,7 +135,8 @@ function InvoicesContent() {
       setInvoiceIdToOpen(id);
       setSidebarReturnTo(searchParams.get("returnTo"));
       // Nettoyer l'URL après avoir récupéré l'ID
-      router.replace("/dashboard/outils/factures", { scroll: false });
+      // Nettoyage de l'URL sans aller-retour serveur (history intégré au routeur).
+      window.history.replaceState(null, "", "/dashboard/outils/factures");
     }
   }, [searchParams, router]);
 
@@ -213,7 +220,7 @@ function InvoicesContent() {
 
   // Formater les montants
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -222,236 +229,243 @@ function InvoicesContent() {
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header - Fixe */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Factures clients</h1>
-            {/* <p className="text-muted-foreground text-sm">
-              Gérez vos factures et suivez vos paiements
-            </p> */}
-          </div>
-          <div className="flex gap-2">
-            {canEditReminders && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsAutoReminderOpen(true)}
-              >
-                <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
-            )}
-            {canEditSettings && (
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
-            )}
-            {canImportInvoices && (
-              <Button variant="outline" onClick={() => setTriggerImport(true)}>
-                <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                Importer
-              </Button>
-            )}
-            <InvoiceExportButton invoices={filteredData} iconOnly={false} />
-            <PermissionButton
-              requiresActiveSubscription
-              resource="invoices"
-              action="create"
-              variant="primary"
-              onClick={handleNewInvoice}
-              className="cursor-pointer"
-              hideIfNoAccess={true}
-              tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouvelle facture
-            </PermissionButton>
-          </div>
-        </div>
-
-        {/* Zone scrollable : KPIs + recherche + onglets + tableau */}
-        <div className="flex-1 min-h-0 overflow-auto">
-          <div className="flex flex-col min-h-full">
-            {/* Stats Cards */}
-            <div className="flex gap-3 px-4 sm:px-6 py-3">
-              {/* CA facturé + CA payé */}
-              <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-                {/* CA facturé */}
-                <div className="pr-4">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      CA facturé
-                    </span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>Total des factures émises (hors brouillons)</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {filteredData === null
-                        ? "..."
-                        : `${formatAmount(invoiceStats.totalBilled)} €`}
-                    </span>
-                    <span className="text-xs text-muted-foreground">HT</span>
-                  </div>
-                </div>
-
-                {/* Separator */}
-                <div className="w-px h-10 bg-border mx-4" />
-
-                {/* CA payé */}
-                <div className="pl-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      CA payé
-                    </span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>Total des factures payées</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {filteredData === null
-                        ? "..."
-                        : `${formatAmount(invoiceStats.totalPaid)} €`}
-                    </span>
-                    <span className="text-xs text-muted-foreground">HT</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Factures en retard */}
-              <div className="bg-background border rounded-lg px-4 py-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs text-muted-foreground">
-                    Factures en retard
-                  </span>
-                  {invoiceStats.overdueCount > 0 && (
-                    <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
-                      {invoiceStats.overdueCount}
-                    </span>
-                  )}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="bg-[#202020] text-white border-0"
-                      >
-                        <p>Factures dont la date d'échéance est dépassée</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-medium tracking-tight">
-                    {filteredData === null
-                      ? "..."
-                      : `${formatAmount(invoiceStats.overdueAmount)} €`}
-                  </span>
-                  <span className="text-xs text-muted-foreground">HT</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Table */}
-            <Suspense fallback={<InvoiceTableSkeleton />}>
-              <InvoiceTable
-                handleNewInvoice={handleNewInvoice}
-                invoiceIdToOpen={invoiceIdToOpen}
-                onAutoOpenedSidebarClose={handleAutoOpenedSidebarClose}
-                onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
-                triggerImport={triggerImport}
-                onImportTriggered={() => setTriggerImport(false)}
-                onFilteredDataChange={handleFilteredDataChange}
-              />
-            </Suspense>
-          </div>
-          {/* Fin min-h-full */}
-        </div>
-        {/* Fin zone scrollable */}
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="px-4 py-6 flex-shrink-0">
-          <div className="flex items-start justify-between">
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header - Fixe */}
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
             <div>
-              <h1 className="text-2xl font-medium mb-1">Factures</h1>
+              <h1 className="text-2xl font-medium mb-2">Factures clients</h1>
+              {/* <p className="text-muted-foreground text-sm">
+                Gérez vos factures et suivez vos paiements
+              </p> */}
             </div>
             <div className="flex gap-2">
               {canEditReminders && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setIsAutoReminderOpen(true)}
-                  className="gap-2"
                 >
-                  <Bell className="h-4 w-4" />
+                  <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
               )}
               {canEditSettings && (
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
                   onClick={() => setIsSettingsOpen(true)}
-                  className="gap-2"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Settings className="w-3.5 h-3.5" aria-hidden="true" />
                 </Button>
               )}
+              {canImportInvoices && (
+                <Button
+                  variant="outline"
+                  onClick={() => setTriggerImport(true)}
+                >
+                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                  Importer
+                </Button>
+              )}
+              <InvoiceExportButton invoices={filteredData} iconOnly={false} />
               <PermissionButton
                 requiresActiveSubscription
                 resource="invoices"
                 action="create"
+                variant="primary"
                 onClick={handleNewInvoice}
-                size="icon"
-                className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                className="cursor-pointer"
                 hideIfNoAccess={true}
                 tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
               >
-                <Plus className="h-5 w-5" />
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouvelle facture
               </PermissionButton>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable
-            invoiceIdToOpen={invoiceIdToOpen}
-            onAutoOpenedSidebarClose={handleAutoOpenedSidebarClose}
-            onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
-          />
-        </Suspense>
-      </div>
+          {/* Zone scrollable : KPIs + recherche + onglets + tableau */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <div className="flex flex-col min-h-full">
+              {/* Stats Cards */}
+              <div className="flex gap-3 px-4 sm:px-6 py-3">
+                {/* CA facturé + CA payé */}
+                <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+                  {/* CA facturé */}
+                  <div className="pr-4">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        CA facturé
+                      </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="bottom"
+                            className="bg-[#202020] text-white border-0"
+                          >
+                            <p>Total des factures émises (hors brouillons)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {filteredData === null
+                          ? "..."
+                          : `${formatAmount(invoiceStats.totalBilled)} €`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">HT</span>
+                    </div>
+                  </div>
+
+                  {/* Separator */}
+                  <div className="w-px h-10 bg-border mx-4" />
+
+                  {/* CA payé */}
+                  <div className="pl-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        CA payé
+                      </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="bottom"
+                            className="bg-[#202020] text-white border-0"
+                          >
+                            <p>Total des factures payées</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {filteredData === null
+                          ? "..."
+                          : `${formatAmount(invoiceStats.totalPaid)} €`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">HT</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Factures en retard */}
+                <div className="bg-background border rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs text-muted-foreground">
+                      Factures en retard
+                    </span>
+                    {invoiceStats.overdueCount > 0 && (
+                      <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
+                        {invoiceStats.overdueCount}
+                      </span>
+                    )}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
+                          <p>Factures dont la date d'échéance est dépassée</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-medium tracking-tight">
+                      {filteredData === null
+                        ? "..."
+                        : `${formatAmount(invoiceStats.overdueAmount)} €`}
+                    </span>
+                    <span className="text-xs text-muted-foreground">HT</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table */}
+              <Suspense fallback={<InvoiceTableSkeleton />}>
+                <InvoiceTable
+                  handleNewInvoice={handleNewInvoice}
+                  invoiceIdToOpen={invoiceIdToOpen}
+                  onAutoOpenedSidebarClose={handleAutoOpenedSidebarClose}
+                  onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
+                  triggerImport={triggerImport}
+                  onImportTriggered={() => setTriggerImport(false)}
+                  onFilteredDataChange={handleFilteredDataChange}
+                />
+              </Suspense>
+            </div>
+            {/* Fin min-h-full */}
+          </div>
+          {/* Fin zone scrollable */}
+        </div>
+      )}
+
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header */}
+          <div className="px-4 py-6 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-1">Factures</h1>
+              </div>
+              <div className="flex gap-2">
+                {canEditReminders && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAutoReminderOpen(true)}
+                    className="gap-2"
+                  >
+                    <Bell className="h-4 w-4" />
+                  </Button>
+                )}
+                {canEditSettings && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                )}
+                <PermissionButton
+                  requiresActiveSubscription
+                  resource="invoices"
+                  action="create"
+                  onClick={handleNewInvoice}
+                  size="icon"
+                  className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                  hideIfNoAccess={true}
+                  tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
+                >
+                  <Plus className="h-5 w-5" />
+                </PermissionButton>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <Suspense fallback={<InvoiceTableSkeleton />}>
+            <InvoiceTable
+              invoiceIdToOpen={invoiceIdToOpen}
+              onAutoOpenedSidebarClose={handleAutoOpenedSidebarClose}
+              onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
+            />
+          </Suspense>
+        </div>
+      )}
 
       {/* Modal des paramètres */}
       <InvoiceSettingsModal

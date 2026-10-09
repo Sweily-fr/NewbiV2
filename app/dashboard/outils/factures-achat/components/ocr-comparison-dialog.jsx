@@ -33,6 +33,7 @@ import {
   parseVatLines,
   sameVatLines,
 } from "@/src/utils/purchase-invoice-vat";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
@@ -218,7 +219,7 @@ export function PurchaseOcrComparisonDialog({
   const formatMoney = (amount, cur) =>
     amount === null || amount === undefined
       ? "—"
-      : new Intl.NumberFormat("fr-FR", {
+      : getNumberFormat("fr-FR", {
           style: "currency",
           currency: cur || currency || "EUR",
         }).format(Number(amount) || 0);
@@ -226,7 +227,7 @@ export function PurchaseOcrComparisonDialog({
   const formatAmount = (amount) =>
     amount === null || amount === undefined || amount === ""
       ? "—"
-      : new Intl.NumberFormat("fr-FR", {
+      : getNumberFormat("fr-FR", {
           style: "currency",
           currency: currency || "EUR",
         }).format(Number(amount) || 0);

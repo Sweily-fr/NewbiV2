@@ -54,6 +54,7 @@ import {
   TransactionsPageSkeleton,
   TransactionTableSkeleton,
 } from "./components/transaction-page-skeleton";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function GestionDepensesContent() {
   const searchParams = useSearchParams();
@@ -236,7 +237,7 @@ function GestionDepensesContent() {
 
   // Formater les montants
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
