@@ -69,6 +69,7 @@ const PdfPreview = dynamic(
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function PurchaseOrderSidebar({
   isOpen,
@@ -155,7 +156,7 @@ export default function PurchaseOrderSidebar({
   const purchaseOrder = fullPurchaseOrder || initialPurchaseOrder;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);

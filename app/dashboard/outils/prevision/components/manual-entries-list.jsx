@@ -27,6 +27,7 @@ import {
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { ManualEntryDialog } from "./manual-entry-dialog";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const FREQUENCY_LABELS = {
   ONCE: "Ponctuel",
@@ -38,7 +39,7 @@ const FREQUENCY_LABELS = {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,

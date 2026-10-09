@@ -121,6 +121,8 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { DocumentText2Icon } from "@/src/components/icons";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -141,6 +143,9 @@ export default function InvoiceTable({
   onFilteredDataChange,
   onBalancesRefetch,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const router = useRouter();
   const inputRef = useRef(null);
   const { invoices, loading, error, refetch } = useInvoices();
@@ -782,108 +787,110 @@ export default function InvoiceTable({
       {/* Fin sticky zone */}
 
       {/* Table body - Desktop */}
-      <div
-        className={cn(
-          "hidden md:flex md:flex-col flex-1",
-          isSideView && "md:hidden",
-        )}
-      >
-        <table className="w-full table-fixed">
-          <tbody>
-            {loading && !invoices?.length ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="border-b">
-                  <td className="p-2 pl-4 sm:pl-6">
-                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                      <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2 pr-4 sm:pr-6">
-                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                  </td>
-                </tr>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                  onClick={(e) => {
-                    // Ignorer les clics provenant de portals React (modals, dropdowns)
-                    if (!e.currentTarget.contains(e.target)) return;
-                    // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
-                    if (
-                      e.target.closest('[role="checkbox"]') ||
-                      e.target.closest("[data-actions-cell]") ||
-                      e.target.closest('button[role="combobox"]') ||
-                      e.target.closest('[role="menu"]') ||
-                      e.target.closest('[role="dialog"]')
-                    ) {
-                      return;
-                    }
-                    const invoice = row.original;
-                    // Ouvrir la sidebar appropriée selon le type
-                    if (invoice._type === "imported") {
-                      setSelectedImportedInvoice(invoice);
-                    } else {
-                      // Déclencher l'ouverture de la sidebar via le bouton d'actions
-                      const actionsButton = e.currentTarget.querySelector(
-                        "[data-view-invoice]",
-                      );
-                      if (actionsButton) {
-                        actionsButton.click();
+      {!isMobileLayout && (
+        <div
+          className={cn(
+            "hidden md:flex md:flex-col flex-1",
+            isSideView && "md:hidden",
+          )}
+        >
+          <table className="w-full table-fixed">
+            <tbody>
+              {loading && !invoices?.length ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="border-b">
+                    <td className="p-2 pl-4 sm:pl-6">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </td>
+                  </tr>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      // Ignorer les clics provenant de portals React (modals, dropdowns)
+                      if (!e.currentTarget.contains(e.target)) return;
+                      // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("[data-actions-cell]") ||
+                        e.target.closest('button[role="combobox"]') ||
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="dialog"]')
+                      ) {
+                        return;
                       }
-                    }
-                  }}
-                >
-                  {row
-                    .getVisibleCells()
-                    .filter((c) => c.column.id !== "_type")
-                    .map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
+                      const invoice = row.original;
+                      // Ouvrir la sidebar appropriée selon le type
+                      if (invoice._type === "imported") {
+                        setSelectedImportedInvoice(invoice);
+                      } else {
+                        // Déclencher l'ouverture de la sidebar via le bouton d'actions
+                        const actionsButton = e.currentTarget.querySelector(
+                          "[data-view-invoice]",
+                        );
+                        if (actionsButton) {
+                          actionsButton.click();
+                        }
+                      }
+                    }}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter((c) => c.column.id !== "_type")
+                      .map((cell, index, arr) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={table.getAllColumns().length} className="p-0">
+                    <TableEmptyState
+                      icon={DocumentText2Icon}
+                      title="Aucune facture trouvée"
+                      description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
+                    />
+                  </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={table.getAllColumns().length} className="p-0">
-                  <TableEmptyState
-                    icon={DocumentText2Icon}
-                    title="Aucune facture trouvée"
-                    description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Mobile Toolbar */}
       <div
@@ -1031,166 +1038,168 @@ export default function InvoiceTable({
       </div>
 
       {/* Mobile Table - Infinite scroll */}
-      <div
-        ref={mobileScrollRef}
-        onScroll={handleMobileScroll}
-        className={cn(
-          "md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20",
-          isSideView && "hidden",
-        )}
-      >
+      {isMobileLayout && (
         <div
-          className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
+          ref={mobileScrollRef}
+          onScroll={handleMobileScroll}
+          className={cn(
+            "md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20",
+            isSideView && "hidden",
+          )}
         >
-          <Table className="w-full">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="border-b border-gray-100 dark:border-gray-400"
-                >
-                  {headerGroup.headers
-                    .filter(
-                      (header) =>
-                        header.column.id === "select" ||
-                        header.column.id === "client" ||
-                        header.column.id === "finalTotalTTC" ||
-                        header.column.id === "actions",
-                    )
-                    .map((header) => (
-                      <TableHead
-                        key={header.id}
-                        style={{ width: header.getSize() }}
-                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {visibleMobileRows.length > 0 ? (
-                <>
-                  {visibleMobileRows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
-                      onClick={(e) => {
-                        // Ignorer les clics provenant de portals React (modals, dropdowns)
-                        if (!e.currentTarget.contains(e.target)) return;
-                        if (
-                          e.target.closest('[role="checkbox"]') ||
-                          e.target.closest("[data-actions-cell]") ||
-                          e.target.closest('[role="menu"]')
-                        )
-                          return;
-                        const invoice = row.original;
-                        if (invoice._type === "imported") {
-                          setSelectedImportedInvoice(invoice);
-                        } else {
-                          setMobileFullscreenInvoice(invoice);
-                        }
-                      }}
-                    >
-                      {row
-                        .getVisibleCells()
-                        .filter(
-                          (cell) =>
-                            cell.column.id === "select" ||
-                            cell.column.id === "client" ||
-                            cell.column.id === "finalTotalTTC" ||
-                            cell.column.id === "actions",
-                        )
-                        .map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            className="py-3 px-4 text-sm"
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  ))}
-                  {isLoadingMoreMobile &&
-                    Array.from({ length: 3 }).map((_, i) => (
+          <div
+            className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
+          >
+            <Table className="w-full">
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="border-b border-gray-100 dark:border-gray-400"
+                  >
+                    {headerGroup.headers
+                      .filter(
+                        (header) =>
+                          header.column.id === "select" ||
+                          header.column.id === "client" ||
+                          header.column.id === "finalTotalTTC" ||
+                          header.column.id === "actions",
+                      )
+                      .map((header) => (
+                        <TableHead
+                          key={header.id}
+                          style={{ width: header.getSize() }}
+                          className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {visibleMobileRows.length > 0 ? (
+                  <>
+                    {visibleMobileRows.map((row) => (
                       <TableRow
-                        key={`mobile-skeleton-${i}`}
-                        className="border-b border-gray-50 dark:border-gray-800"
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                        onClick={(e) => {
+                          // Ignorer les clics provenant de portals React (modals, dropdowns)
+                          if (!e.currentTarget.contains(e.target)) return;
+                          if (
+                            e.target.closest('[role="checkbox"]') ||
+                            e.target.closest("[data-actions-cell]") ||
+                            e.target.closest('[role="menu"]')
+                          )
+                            return;
+                          const invoice = row.original;
+                          if (invoice._type === "imported") {
+                            setSelectedImportedInvoice(invoice);
+                          } else {
+                            setMobileFullscreenInvoice(invoice);
+                          }
+                        }}
                       >
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-4 w-4" />
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <Skeleton className="h-8 w-8 rounded-full" />
-                            <Skeleton className="h-4 w-[100px]" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-4 w-[60px]" />
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-7 w-7" />
-                        </TableCell>
+                        {row
+                          .getVisibleCells()
+                          .filter(
+                            (cell) =>
+                              cell.column.id === "select" ||
+                              cell.column.id === "client" ||
+                              cell.column.id === "finalTotalTTC" ||
+                              cell.column.id === "actions",
+                          )
+                          .map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className="py-3 px-4 text-sm"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </TableCell>
+                          ))}
                       </TableRow>
                     ))}
-                  {hasMoreMobile && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="p-0">
-                        <div ref={mobileSentinelRef} className="h-1" />
+                    {isLoadingMoreMobile &&
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow
+                          key={`mobile-skeleton-${i}`}
+                          className="border-b border-gray-50 dark:border-gray-800"
+                        >
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-4 w-4" />
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <Skeleton className="h-8 w-8 rounded-full" />
+                              <Skeleton className="h-4 w-[100px]" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-4 w-[60px]" />
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-7 w-7" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    {hasMoreMobile && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="p-0">
+                          <div ref={mobileSentinelRef} className="h-1" />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ) : loading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow
+                      key={`skeleton-${i}`}
+                      className="border-b border-gray-50 dark:border-gray-800"
+                    >
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-4 w-4" />
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <Skeleton className="h-4 w-[100px]" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-4 w-[60px]" />
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-7 w-7" />
                       </TableCell>
                     </TableRow>
-                  )}
-                </>
-              ) : loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow
-                    key={`skeleton-${i}`}
-                    className="border-b border-gray-50 dark:border-gray-800"
-                  >
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-4 w-4" />
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <Skeleton className="h-4 w-[100px]" />
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-4 w-[60px]" />
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-7 w-7" />
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="p-0">
+                      <TableEmptyState
+                        icon={DocumentText2Icon}
+                        title="Aucune facture trouvée"
+                        description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
+                        size="compact"
+                      />
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="p-0">
-                    <TableEmptyState
-                      icon={DocumentText2Icon}
-                      title="Aucune facture trouvée"
-                      description="Aucune facture ne correspond à vos critères. Créez-en une nouvelle pour commencer."
-                      size="compact"
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Vue Avoirs - rendue après les onglets mobiles & desktop pour respecter l'ordre visuel */}
       {isCreditNotesView && (
@@ -1446,7 +1455,7 @@ export default function InvoiceTable({
           documentNumber={`${sendEmailInvoice.prefix || "F"}-${sendEmailInvoice.number}`}
           clientName={sendEmailInvoice.client?.name}
           clientEmail={sendEmailInvoice.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", {
+          totalAmount={getNumberFormat("fr-FR", {
             style: "currency",
             currency: "EUR",
           }).format(

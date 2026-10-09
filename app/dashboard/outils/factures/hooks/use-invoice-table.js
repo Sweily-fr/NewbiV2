@@ -51,6 +51,7 @@ import {
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Custom filter functions
 // Une facture importée VALIDATED est "Terminée" au même titre qu'une facture
@@ -435,7 +436,7 @@ export function useInvoiceTable({
             const amount = invoice.totalHT || 0;
             return (
               <div className="font-normal">
-                {new Intl.NumberFormat("fr-FR", {
+                {getNumberFormat("fr-FR", {
                   style: "currency",
                   currency: invoice.currency || "EUR",
                 }).format(amount)}
@@ -447,7 +448,7 @@ export function useInvoiceTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -476,7 +477,7 @@ export function useInvoiceTable({
             const amount = invoice.totalVAT || 0;
             return (
               <div className="font-normal">
-                {new Intl.NumberFormat("fr-FR", {
+                {getNumberFormat("fr-FR", {
                   style: "currency",
                   currency: invoice.currency || "EUR",
                 }).format(amount)}
@@ -488,7 +489,7 @@ export function useInvoiceTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -519,7 +520,7 @@ export function useInvoiceTable({
             const amount = invoice.totalTTC || invoice.total || 0;
             return (
               <div className="font-normal">
-                {new Intl.NumberFormat("fr-FR", {
+                {getNumberFormat("fr-FR", {
                   style: "currency",
                   currency: invoice.currency || "EUR",
                 }).format(amount)}
@@ -560,7 +561,7 @@ export function useInvoiceTable({
 
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}

@@ -63,10 +63,11 @@ import { useLastPurchaseOrderPrefix } from "@/src/graphql/purchaseOrderQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Fonction utilitaire pour formater les montants
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,

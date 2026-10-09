@@ -113,6 +113,8 @@ import { SignatureDialog } from "@/src/components/esignature/signature-dialog";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
 import { getPlanLimits } from "@/src/lib/plan-limits";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -130,6 +132,9 @@ export default function QuoteTable({
   onImportTriggered,
   onBalancesRefetch,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const inputRef = useRef(null);
   const { quotes, loading, error, refetch: refetchQuotes } = useQuotes();
   const { workspaceId } = useRequiredWorkspace();
@@ -701,256 +706,260 @@ export default function QuoteTable({
       </div>
 
       {/* Table body - Desktop */}
-      <div className="hidden md:flex md:flex-col flex-1">
-        <table className="w-full table-fixed">
-          <tbody>
-            {loading && !quotes?.length ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="border-b">
-                  <td className="p-2 pl-4 sm:pl-6">
-                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                      <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2 pr-4 sm:pr-6">
-                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                  </td>
-                </tr>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                  onClick={(e) => {
-                    // Ignorer les clics provenant de portals React (modals, dropdowns)
-                    if (!e.currentTarget.contains(e.target)) return;
-                    // Ne pas ouvrir la sidebar si on clique sur la checkbox ou les actions
-                    if (
-                      e.target.closest('[role="checkbox"]') ||
-                      e.target.closest("[data-actions-cell]") ||
-                      e.target.closest('button[role="combobox"]') ||
-                      e.target.closest('[role="menu"]') ||
-                      e.target.closest('[role="dialog"]')
-                    ) {
-                      return;
-                    }
-                    // Devis importé : ouvrir la sidebar dédiée
-                    if (row.original._type === "imported") {
-                      setSelectedImportedQuote(row.original);
-                      return;
-                    }
-                    // Déclencher l'ouverture de la sidebar via le bouton d'actions
-                    const actionsButton =
-                      e.currentTarget.querySelector("[data-view-quote]");
-                    if (actionsButton) {
-                      actionsButton.click();
-                    }
-                  }}
-                >
-                  {row.getVisibleCells().map((cell, index, arr) => (
-                    <td
-                      key={cell.id}
-                      style={{ width: cell.column.getSize() }}
-                      className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+      {!isMobileLayout && (
+        <div className="hidden md:flex md:flex-col flex-1">
+          <table className="w-full table-fixed">
+            <tbody>
+              {loading && !quotes?.length ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="border-b">
+                    <td className="p-2 pl-4 sm:pl-6">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
                     </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={table.getAllColumns().length} className="p-0">
-                  <TableEmptyState
-                    icon={ClipboardTickIcon}
-                    title="Aucun devis trouvé"
-                    description="Aucun devis ne correspond à vos critères. Créez-en un nouveau pour commencer."
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Table - Infinite scroll */}
-      <div
-        ref={mobileScrollRef}
-        onScroll={handleMobileScroll}
-        className="md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0"
-      >
-        <div
-          className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
-        >
-          <Table className="w-full">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="border-b border-border"
-                >
-                  {headerGroup.headers
-                    .filter(
-                      (header) =>
-                        header.column.id === "select" ||
-                        header.column.id === "client" ||
-                        header.column.id === "finalTotalTTC" ||
-                        header.column.id === "actions",
-                    )
-                    .map((header) => (
-                      <TableHead
-                        key={header.id}
-                        style={{ width: header.getSize() }}
-                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {visibleMobileRows.length > 0 ? (
-                <>
-                  {visibleMobileRows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="border-b border-border hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
-                      onClick={(e) => {
-                        // Ignorer les clics provenant de portals React (modals, dropdowns)
-                        if (!e.currentTarget.contains(e.target)) return;
-                        if (
-                          e.target.closest('[role="checkbox"]') ||
-                          e.target.closest("[data-actions-cell]") ||
-                          e.target.closest('[role="menu"]')
-                        )
-                          return;
-                        if (row.original._type === "imported") {
-                          setSelectedImportedQuote(row.original);
-                          return;
-                        }
-                        setMobileFullscreenQuote(row.original);
-                      }}
-                    >
-                      {row
-                        .getVisibleCells()
-                        .filter(
-                          (cell) =>
-                            cell.column.id === "select" ||
-                            cell.column.id === "client" ||
-                            cell.column.id === "finalTotalTTC" ||
-                            cell.column.id === "actions",
-                        )
-                        .map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            className="py-3 px-4 text-sm"
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        ))}
-                    </TableRow>
-                  ))}
-                  {isLoadingMoreMobile &&
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow
-                        key={`mobile-skeleton-${i}`}
-                        className="border-b border-border"
-                      >
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-4 w-4" />
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <Skeleton className="h-8 w-8 rounded-full" />
-                            <Skeleton className="h-4 w-[100px]" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-4 w-[60px]" />
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <Skeleton className="h-7 w-7" />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  {hasMoreMobile && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="p-0">
-                        <div ref={mobileSentinelRef} className="h-1" />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </>
-              ) : loading ? (
-                Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow
-                    key={`skeleton-${i}`}
-                    className="border-b border-border"
-                  >
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-4 w-4" />
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
+                    <td className="p-2">
                       <div className="flex items-center gap-3">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <Skeleton className="h-4 w-[100px]" />
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
                       </div>
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-4 w-[60px]" />
-                    </TableCell>
-                    <TableCell className="py-3 px-4">
-                      <Skeleton className="h-7 w-7" />
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </td>
+                  </tr>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      // Ignorer les clics provenant de portals React (modals, dropdowns)
+                      if (!e.currentTarget.contains(e.target)) return;
+                      // Ne pas ouvrir la sidebar si on clique sur la checkbox ou les actions
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("[data-actions-cell]") ||
+                        e.target.closest('button[role="combobox"]') ||
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="dialog"]')
+                      ) {
+                        return;
+                      }
+                      // Devis importé : ouvrir la sidebar dédiée
+                      if (row.original._type === "imported") {
+                        setSelectedImportedQuote(row.original);
+                        return;
+                      }
+                      // Déclencher l'ouverture de la sidebar via le bouton d'actions
+                      const actionsButton =
+                        e.currentTarget.querySelector("[data-view-quote]");
+                      if (actionsButton) {
+                        actionsButton.click();
+                      }
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
+                  </tr>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="p-0">
+                <tr>
+                  <td colSpan={table.getAllColumns().length} className="p-0">
                     <TableEmptyState
                       icon={ClipboardTickIcon}
                       title="Aucun devis trouvé"
                       description="Aucun devis ne correspond à vos critères. Créez-en un nouveau pour commencer."
-                      size="compact"
                     />
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
         </div>
-      </div>
+      )}
+
+      {/* Mobile Table - Infinite scroll */}
+      {isMobileLayout && (
+        <div
+          ref={mobileScrollRef}
+          onScroll={handleMobileScroll}
+          className="md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0"
+        >
+          <div
+            className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}
+          >
+            <Table className="w-full">
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="border-b border-border"
+                  >
+                    {headerGroup.headers
+                      .filter(
+                        (header) =>
+                          header.column.id === "select" ||
+                          header.column.id === "client" ||
+                          header.column.id === "finalTotalTTC" ||
+                          header.column.id === "actions",
+                      )
+                      .map((header) => (
+                        <TableHead
+                          key={header.id}
+                          style={{ width: header.getSize() }}
+                          className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {visibleMobileRows.length > 0 ? (
+                  <>
+                    {visibleMobileRows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                        className="border-b border-border hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                        onClick={(e) => {
+                          // Ignorer les clics provenant de portals React (modals, dropdowns)
+                          if (!e.currentTarget.contains(e.target)) return;
+                          if (
+                            e.target.closest('[role="checkbox"]') ||
+                            e.target.closest("[data-actions-cell]") ||
+                            e.target.closest('[role="menu"]')
+                          )
+                            return;
+                          if (row.original._type === "imported") {
+                            setSelectedImportedQuote(row.original);
+                            return;
+                          }
+                          setMobileFullscreenQuote(row.original);
+                        }}
+                      >
+                        {row
+                          .getVisibleCells()
+                          .filter(
+                            (cell) =>
+                              cell.column.id === "select" ||
+                              cell.column.id === "client" ||
+                              cell.column.id === "finalTotalTTC" ||
+                              cell.column.id === "actions",
+                          )
+                          .map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className="py-3 px-4 text-sm"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </TableCell>
+                          ))}
+                      </TableRow>
+                    ))}
+                    {isLoadingMoreMobile &&
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow
+                          key={`mobile-skeleton-${i}`}
+                          className="border-b border-border"
+                        >
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-4 w-4" />
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <Skeleton className="h-8 w-8 rounded-full" />
+                              <Skeleton className="h-4 w-[100px]" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-4 w-[60px]" />
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <Skeleton className="h-7 w-7" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    {hasMoreMobile && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="p-0">
+                          <div ref={mobileSentinelRef} className="h-1" />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ) : loading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow
+                      key={`skeleton-${i}`}
+                      className="border-b border-border"
+                    >
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-4 w-4" />
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <Skeleton className="h-4 w-[100px]" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-4 w-[60px]" />
+                      </TableCell>
+                      <TableCell className="py-3 px-4">
+                        <Skeleton className="h-7 w-7" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="p-0">
+                      <TableEmptyState
+                        icon={ClipboardTickIcon}
+                        title="Aucun devis trouvé"
+                        description="Aucun devis ne correspond à vos critères. Créez-en un nouveau pour commencer."
+                        size="compact"
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
 
       {/* Pagination - Fixe en bas sur desktop */}
       <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background sticky bottom-0 z-10">
@@ -1139,7 +1148,7 @@ export default function QuoteTable({
           documentNumber={`${sendEmailQuote.prefix || "D"}-${sendEmailQuote.number}`}
           clientName={sendEmailQuote.client?.name}
           clientEmail={sendEmailQuote.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", {
+          totalAmount={getNumberFormat("fr-FR", {
             style: "currency",
             currency: "EUR",
           }).format(

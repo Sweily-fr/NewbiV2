@@ -845,7 +845,9 @@ export const useInvoiceBalances = () => {
       overdueAmount: 0,
       overdueCount: 0,
     },
-    loading,
+    // Premier chargement seulement : en cache-and-network, loading reste vrai
+    // pendant la revalidation et les KPI repassaient à « ... » à chaque visite.
+    loading: loading && !data?.invoiceBalances,
     refetch,
   };
 };

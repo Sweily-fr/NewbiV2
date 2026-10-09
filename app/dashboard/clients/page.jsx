@@ -62,6 +62,7 @@ import CreateListDialog from "./components/create-list-dialog";
 import AssignMembersDialog from "./components/assign-members-dialog";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 const STANDARD_COLUMNS = [
   { id: "email", label: "Email" },
@@ -78,6 +79,10 @@ const STANDARD_COLUMNS = [
 ];
 
 function ClientsContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -135,7 +140,8 @@ function ClientsContent() {
     if (searchParams.get("new") === "true") {
       // Ouverture réservée à la création de contacts
       if (canCreateClients) setDialogOpen(true);
-      router.replace("/dashboard/clients", { scroll: false });
+      // Nettoyage de l'URL sans aller-retour serveur (history intégré au routeur).
+      window.history.replaceState(null, "", "/dashboard/clients");
     }
   }, [searchParams, router, canCreateClients]);
 
@@ -294,400 +300,409 @@ function ClientsContent() {
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
-          <div>
-            <h1 className="text-2xl font-medium mb-0">Gestion des contacts</h1>
-            {/* <p className="text-muted-foreground text-sm mt-1">
-              Votre base de données clients. Consultez, organisez et gérez vos contacts.
-            </p> */}
-          </div>
-          <div className="flex gap-2">
-            <AutomationsPopover />
-            {/* Champs personnalisés : consultables en lecture, le panneau
-                masque lui-même la création / modification */}
-            {canReadCustomFields && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setImportDialogView("fields");
-                  setImportDialogOpen(true);
-                }}
-                className="self-start gap-1.5 cursor-pointer"
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
-              >
-                <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
-                Champs
-              </Button>
-            )}
-            {canImportClients && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setImportDialogView("import");
-                  setImportDialogOpen(true);
-                }}
-                className="self-start gap-1.5 cursor-pointer"
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
-              >
-                <Upload size={14} strokeWidth={2} aria-hidden="true" />
-                Importer
-              </Button>
-            )}
-            {canExportClients && (
-              <ClientExportButton workspaceId={workspaceId} />
-            )}
-            {canCreateClients && (
-              <PermissionButton
-                requiresActiveSubscription
-                resource="clients"
-                action="create"
-                variant="primary"
-                onClick={handleOpenInviteDialog}
-                className="self-start"
-                tooltipNoAccess="Vous n'avez pas la permission de créer des contacts"
-              >
-                <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                Nouveau contact
-              </PermissionButton>
-            )}
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search
-                size={16}
-                className="text-muted-foreground/80 shrink-0"
-                aria-hidden="true"
-              />
-              <Input
-                variant="ghost"
-                ref={inputRef}
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                placeholder="Recherchez par nom, email ou SIRET..."
-                aria-label="Filter by name or email"
-              />
-              {Boolean(globalFilter) && (
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
-                  aria-label="Clear filter"
-                  onClick={() => {
-                    setGlobalFilter("");
-                    if (inputRef.current) {
-                      inputRef.current.focus();
-                    }
-                  }}
-                >
-                  <CircleXIcon size={16} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-            <ClientFilters
-              selectedTypes={selectedTypes}
-              setSelectedTypes={setSelectedTypes}
-              columnVisibility={columnVisibility}
-              onColumnVisibilityChange={setColumnVisibility}
-              allColumns={allToggleableColumns}
-              customFieldNames={Object.fromEntries(
-                (customFieldDefinitions || []).map((f) => [
-                  `cf_${f.id}`,
-                  f.name,
-                ]),
-              )}
-            />
-          </div>
-          {/* Actions groupées : chacune suit son action du rôle */}
-          {selectedClients.size > 0 &&
-            (canEditClientLists ||
-              canEditClients ||
-              canBlockClients ||
-              canAssignClients ||
-              canDeleteClients) && (
-              <div className="flex items-center gap-2">
-                {/* Ajouter à une liste (module Listes) */}
-                {canEditClientLists && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={assigningList}
-                        className="gap-2 cursor-pointer"
-                      >
-                        <ListPlus className="w-4 h-4" />
-                        Ajouter à une liste
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      {lists && lists.length > 0 && (
-                        <>
-                          {lists.map((list) => (
-                            <DropdownMenuItem
-                              key={list.id}
-                              onClick={() => handleAddToList(list.id)}
-                              disabled={assigningList}
-                              className="cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2 w-full">
-                                <div
-                                  className="w-3 h-3 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: list.color }}
-                                />
-                                <span>{list.name}</span>
-                              </div>
-                            </DropdownMenuItem>
-                          ))}
-                          {canCreateClientLists && <DropdownMenuSeparator />}
-                        </>
-                      )}
-                      {canCreateClientLists && (
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            setCreateListDialogOpen(true);
-                          }}
-                          className="cursor-pointer gap-2"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Créer une liste</span>
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-
-                {/* Plus d'actions */}
-                {(canEditClients ||
-                  canBlockClients ||
-                  canAssignClients ||
-                  canDeleteClients) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-2 cursor-pointer"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                        Plus d&apos;actions
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-60">
-                      {selectedClients.size === 1 && canEditClients && (
-                        <>
-                          <DropdownMenuItem
-                            className="cursor-pointer gap-2 text-sm"
-                            onClick={() => {
-                              const clientId = Array.from(selectedClients)[0];
-                              router.push(`/dashboard/clients/${clientId}`);
-                            }}
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                            Modifier
-                          </DropdownMenuItem>
-                          {(canBlockClients || canAssignClients) && (
-                            <DropdownMenuSeparator />
-                          )}
-                        </>
-                      )}
-                      {canBlockClients && (
-                        <DropdownMenuItem
-                          className="cursor-pointer gap-2 text-sm"
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            setBlockDialogOpen(true);
-                          }}
-                        >
-                          <ShieldOff className="w-3.5 h-3.5" />
-                          Bloquer{" "}
-                          {selectedClients.size > 1
-                            ? "les contacts"
-                            : "le contact"}
-                        </DropdownMenuItem>
-                      )}
-                      {canAssignClients && (
-                        <DropdownMenuItem
-                          className="cursor-pointer gap-2 text-sm"
-                          onSelect={handleAssign}
-                        >
-                          <UserCheck className="w-3.5 h-3.5" />
-                          Assigner
-                        </DropdownMenuItem>
-                      )}
-                      {canDeleteClients &&
-                        (canBlockClients ||
-                          canAssignClients ||
-                          (selectedClients.size === 1 && canEditClients)) && (
-                          <DropdownMenuSeparator />
-                        )}
-                      {canDeleteClients && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              className="cursor-pointer gap-2 text-sm text-red-600 focus:text-red-600"
-                              onSelect={(e) => e.preventDefault()}
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                              Supprimer définitivement
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                              <div
-                                className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                                aria-hidden="true"
-                              >
-                                <CircleAlertIcon
-                                  className="opacity-80"
-                                  size={16}
-                                />
-                              </div>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Supprimer définitivement ?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Cette action est irréversible.{" "}
-                                  {selectedClients.size} contact
-                                  {selectedClients.size > 1 ? "s" : ""} sera
-                                  {selectedClients.size > 1 ? "ont" : ""}{" "}
-                                  supprimé
-                                  {selectedClients.size > 1 ? "s" : ""}{" "}
-                                  définitivement.
-                                  {selectedBlockedCount > 0 && (
-                                    <>
-                                      {" "}
-                                      {selectedBlockedCount} contact
-                                      {selectedBlockedCount > 1 ? "s" : ""} lié
-                                      {selectedBlockedCount > 1 ? "s" : ""} à
-                                      des factures, devis ou bons de commande ne
-                                      pourr
-                                      {selectedBlockedCount > 1
-                                        ? "ont"
-                                        : "a"}{" "}
-                                      pas être supprimé
-                                      {selectedBlockedCount > 1 ? "s" : ""}.
-                                    </>
-                                  )}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                            </div>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={handleDeleteSelected}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Supprimer
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            )}
-        </div>
-
-        {/* Table */}
-        <ClientsTable
-          workspaceId={workspaceId}
-          lists={lists}
-          onListsUpdated={refetchLists}
-          globalFilter={globalFilter}
-          selectedTypes={selectedTypes}
-          hideSearchBar={true}
-          selectedClients={selectedClients}
-          onSelectedClientsChange={setSelectedClients}
-          columnVisibility={columnVisibility}
-          onColumnVisibilityChange={setColumnVisibility}
-          onClientsLoaded={handleClientsLoaded}
-        />
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="px-4 py-6 flex-shrink-0">
-          <div className="flex items-start justify-between">
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
             <div>
-              <h1 className="text-2xl font-medium mb-1">Contacts</h1>
+              <h1 className="text-2xl font-medium mb-0">
+                Gestion des contacts
+              </h1>
+              {/* <p className="text-muted-foreground text-sm mt-1">
+                Votre base de données clients. Consultez, organisez et gérez vos contacts.
+              </p> */}
             </div>
             <div className="flex gap-2">
+              <AutomationsPopover />
+              {/* Champs personnalisés : consultables en lecture, le panneau
+                  masque lui-même la création / modification */}
               {canReadCustomFields && (
                 <Button
                   variant="outline"
-                  size="icon"
                   onClick={() => {
                     setImportDialogView("fields");
                     setImportDialogOpen(true);
                   }}
-                  className="cursor-pointer"
+                  className="self-start gap-1.5 cursor-pointer"
                   disabled={isReadOnly}
                   title={readOnlyTooltip}
                 >
-                  <Settings2 className="h-4 w-4" />
+                  <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
+                  Champs
                 </Button>
               )}
               {canImportClients && (
                 <Button
                   variant="outline"
-                  size="icon"
                   onClick={() => {
                     setImportDialogView("import");
                     setImportDialogOpen(true);
                   }}
-                  className="cursor-pointer"
+                  className="self-start gap-1.5 cursor-pointer"
                   disabled={isReadOnly}
                   title={readOnlyTooltip}
                 >
-                  <Upload className="h-4 w-4" />
+                  <Upload size={14} strokeWidth={2} aria-hidden="true" />
+                  Importer
                 </Button>
               )}
               {canExportClients && (
-                <ClientExportButton workspaceId={workspaceId} iconOnly />
+                <ClientExportButton workspaceId={workspaceId} />
               )}
               {canCreateClients && (
                 <PermissionButton
                   requiresActiveSubscription
                   resource="clients"
                   action="create"
+                  variant="primary"
                   onClick={handleOpenInviteDialog}
-                  size="icon"
-                  className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
-                  hideIfNoAccess={true}
+                  className="self-start"
                   tooltipNoAccess="Vous n'avez pas la permission de créer des contacts"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                  Nouveau contact
                 </PermissionButton>
               )}
             </div>
           </div>
-        </div>
 
-        <ClientsTable
-          workspaceId={workspaceId}
-          lists={lists}
-          onListsUpdated={refetchLists}
-          globalFilter={globalFilter}
-          selectedTypes={selectedTypes}
-          hideSearchBar={false}
-          selectedClients={selectedClients}
-          onSelectedClientsChange={setSelectedClients}
-          columnVisibility={columnVisibility}
-          onColumnVisibilityChange={setColumnVisibility}
-          onClientsLoaded={handleClientsLoaded}
-        />
-      </div>
+          {/* Search and Filters */}
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+                <Search
+                  size={16}
+                  className="text-muted-foreground/80 shrink-0"
+                  aria-hidden="true"
+                />
+                <Input
+                  variant="ghost"
+                  ref={inputRef}
+                  value={globalFilter}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  placeholder="Recherchez par nom, email ou SIRET..."
+                  aria-label="Filter by name or email"
+                />
+                {Boolean(globalFilter) && (
+                  <button
+                    className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
+                    aria-label="Clear filter"
+                    onClick={() => {
+                      setGlobalFilter("");
+                      if (inputRef.current) {
+                        inputRef.current.focus();
+                      }
+                    }}
+                  >
+                    <CircleXIcon size={16} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+              <ClientFilters
+                selectedTypes={selectedTypes}
+                setSelectedTypes={setSelectedTypes}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
+                allColumns={allToggleableColumns}
+                customFieldNames={Object.fromEntries(
+                  (customFieldDefinitions || []).map((f) => [
+                    `cf_${f.id}`,
+                    f.name,
+                  ]),
+                )}
+              />
+            </div>
+            {/* Actions groupées : chacune suit son action du rôle */}
+            {selectedClients.size > 0 &&
+              (canEditClientLists ||
+                canEditClients ||
+                canBlockClients ||
+                canAssignClients ||
+                canDeleteClients) && (
+                <div className="flex items-center gap-2">
+                  {/* Ajouter à une liste (module Listes) */}
+                  {canEditClientLists && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={assigningList}
+                          className="gap-2 cursor-pointer"
+                        >
+                          <ListPlus className="w-4 h-4" />
+                          Ajouter à une liste
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-56">
+                        {lists && lists.length > 0 && (
+                          <>
+                            {lists.map((list) => (
+                              <DropdownMenuItem
+                                key={list.id}
+                                onClick={() => handleAddToList(list.id)}
+                                disabled={assigningList}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <div
+                                    className="w-3 h-3 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: list.color }}
+                                  />
+                                  <span>{list.name}</span>
+                                </div>
+                              </DropdownMenuItem>
+                            ))}
+                            {canCreateClientLists && <DropdownMenuSeparator />}
+                          </>
+                        )}
+                        {canCreateClientLists && (
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setCreateListDialogOpen(true);
+                            }}
+                            className="cursor-pointer gap-2"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Créer une liste</span>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+
+                  {/* Plus d'actions */}
+                  {(canEditClients ||
+                    canBlockClients ||
+                    canAssignClients ||
+                    canDeleteClients) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-2 cursor-pointer"
+                        >
+                          <MoreHorizontal className="w-4 h-4" />
+                          Plus d&apos;actions
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-60">
+                        {selectedClients.size === 1 && canEditClients && (
+                          <>
+                            <DropdownMenuItem
+                              className="cursor-pointer gap-2 text-sm"
+                              onClick={() => {
+                                const clientId = Array.from(selectedClients)[0];
+                                router.push(`/dashboard/clients/${clientId}`);
+                              }}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              Modifier
+                            </DropdownMenuItem>
+                            {(canBlockClients || canAssignClients) && (
+                              <DropdownMenuSeparator />
+                            )}
+                          </>
+                        )}
+                        {canBlockClients && (
+                          <DropdownMenuItem
+                            className="cursor-pointer gap-2 text-sm"
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              setBlockDialogOpen(true);
+                            }}
+                          >
+                            <ShieldOff className="w-3.5 h-3.5" />
+                            Bloquer{" "}
+                            {selectedClients.size > 1
+                              ? "les contacts"
+                              : "le contact"}
+                          </DropdownMenuItem>
+                        )}
+                        {canAssignClients && (
+                          <DropdownMenuItem
+                            className="cursor-pointer gap-2 text-sm"
+                            onSelect={handleAssign}
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            Assigner
+                          </DropdownMenuItem>
+                        )}
+                        {canDeleteClients &&
+                          (canBlockClients ||
+                            canAssignClients ||
+                            (selectedClients.size === 1 && canEditClients)) && (
+                            <DropdownMenuSeparator />
+                          )}
+                        {canDeleteClients && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                className="cursor-pointer gap-2 text-sm text-red-600 focus:text-red-600"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                Supprimer définitivement
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                                <div
+                                  className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                                  aria-hidden="true"
+                                >
+                                  <CircleAlertIcon
+                                    className="opacity-80"
+                                    size={16}
+                                  />
+                                </div>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Supprimer définitivement ?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Cette action est irréversible.{" "}
+                                    {selectedClients.size} contact
+                                    {selectedClients.size > 1 ? "s" : ""} sera
+                                    {selectedClients.size > 1 ? "ont" : ""}{" "}
+                                    supprimé
+                                    {selectedClients.size > 1 ? "s" : ""}{" "}
+                                    définitivement.
+                                    {selectedBlockedCount > 0 && (
+                                      <>
+                                        {" "}
+                                        {selectedBlockedCount} contact
+                                        {selectedBlockedCount > 1
+                                          ? "s"
+                                          : ""}{" "}
+                                        lié
+                                        {selectedBlockedCount > 1 ? "s" : ""} à
+                                        des factures, devis ou bons de commande
+                                        ne pourr
+                                        {selectedBlockedCount > 1
+                                          ? "ont"
+                                          : "a"}{" "}
+                                        pas être supprimé
+                                        {selectedBlockedCount > 1 ? "s" : ""}.
+                                      </>
+                                    )}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                              </div>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={handleDeleteSelected}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Supprimer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              )}
+          </div>
+
+          {/* Table */}
+          <ClientsTable
+            workspaceId={workspaceId}
+            lists={lists}
+            onListsUpdated={refetchLists}
+            globalFilter={globalFilter}
+            selectedTypes={selectedTypes}
+            hideSearchBar={true}
+            selectedClients={selectedClients}
+            onSelectedClientsChange={setSelectedClients}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
+            onClientsLoaded={handleClientsLoaded}
+          />
+        </div>
+      )}
+
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header */}
+          <div className="px-4 py-6 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-1">Contacts</h1>
+              </div>
+              <div className="flex gap-2">
+                {canReadCustomFields && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setImportDialogView("fields");
+                      setImportDialogOpen(true);
+                    }}
+                    className="cursor-pointer"
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip}
+                  >
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
+                )}
+                {canImportClients && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setImportDialogView("import");
+                      setImportDialogOpen(true);
+                    }}
+                    className="cursor-pointer"
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                )}
+                {canExportClients && (
+                  <ClientExportButton workspaceId={workspaceId} iconOnly />
+                )}
+                {canCreateClients && (
+                  <PermissionButton
+                    requiresActiveSubscription
+                    resource="clients"
+                    action="create"
+                    onClick={handleOpenInviteDialog}
+                    size="icon"
+                    className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                    hideIfNoAccess={true}
+                    tooltipNoAccess="Vous n'avez pas la permission de créer des contacts"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </PermissionButton>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <ClientsTable
+            workspaceId={workspaceId}
+            lists={lists}
+            onListsUpdated={refetchLists}
+            globalFilter={globalFilter}
+            selectedTypes={selectedTypes}
+            hideSearchBar={false}
+            selectedClients={selectedClients}
+            onSelectedClientsChange={setSelectedClients}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
+            onClientsLoaded={handleClientsLoaded}
+          />
+        </div>
+      )}
 
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
       <ClientImportDialog

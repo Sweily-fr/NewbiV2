@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function TruncatedText({ children, className }) {
   const ref = useRef(null);
@@ -288,7 +289,7 @@ export function useKanbanBoardsTable({
                 return (
                   <span className="inline-flex items-center gap-1 font-normal text-[#5b50ff]">
                     <Euro className="h-3.5 w-3.5" />
-                    {new Intl.NumberFormat("fr-FR", {
+                    {getNumberFormat("fr-FR", {
                       style: "currency",
                       currency: "EUR",
                       minimumFractionDigits: 2,

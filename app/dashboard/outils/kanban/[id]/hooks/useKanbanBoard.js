@@ -10,6 +10,10 @@ import { toast } from "@/src/utils/debouncedToast";
 import { forceWsReconnect } from "@/src/lib/apolloClient";
 import { useRef, useCallback, useState, useEffect } from "react";
 
+// Dernier chargement réseau de chaque tableau (fraîcheur au remontage).
+const BOARD_FRESH_MS = 30000;
+const boardFetchedAt = new Map();
+
 // Logs de debug gated par localStorage('kanban-debug' === '1'). Désactivés
 // par défaut pour ne pas alourdir le 'message handler' en prod.
 const __klog =
@@ -81,6 +85,19 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     [],
   );
 
+  // Retour sur un tableau chargé il y a moins de 30 s : cache seul (les
+  // subscriptions le tenaient à jour tant qu'on y était). Au-delà : cache
+  // affiché puis board complet rafraîchi en arrière-plan. nextFetchPolicy ne
+  // vaut que pour la requête en cours, pas pour un nouveau montage : avant,
+  // tout le tableau (jusqu'à 1 000 tâches) était retéléchargé à chaque retour.
+  const boardKey = `${workspaceId}:${id}`;
+  const [mountFetchPolicy] = useState(() => {
+    const fetchedAt = boardFetchedAt.get(boardKey);
+    return fetchedAt && Date.now() - fetchedAt < BOARD_FRESH_MS
+      ? "cache-first"
+      : "cache-and-network";
+  });
+
   const { data, loading, error, refetch } = useQuery(GET_BOARD, {
     variables: {
       id,
@@ -88,11 +105,13 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     },
     errorPolicy: "all",
     skip: !workspaceId || isRedirecting || hasSwitchedWorkspace,
-    // 1er mount : cache + refresh réseau en background.
-    // Re-mount / navigation : cache only (les subscriptions gardent le cache
-    // frais en temps réel, pas besoin de re-fetch tout le board).
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: mountFetchPolicy,
     nextFetchPolicy: "cache-first",
+    onCompleted: () => {
+      if (mountFetchPolicy === "cache-and-network") {
+        boardFetchedAt.set(boardKey, Date.now());
+      }
+    },
     notifyOnNetworkStatusChange: false,
     context: {
       skipErrorToast: isRedirecting,

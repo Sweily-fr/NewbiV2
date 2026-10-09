@@ -21,9 +21,10 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -249,6 +250,7 @@ export function AnalyticsBankFlowChart({
               )}
             />
             <Bar
+              animationDuration={300}
               dataKey="invoiced"
               fill={INVOICED_COLOR}
               fillOpacity={0.85}
@@ -256,6 +258,7 @@ export function AnalyticsBankFlowChart({
               barSize={20}
             />
             <Bar
+              animationDuration={300}
               dataKey="collected"
               fill={COLLECTED_COLOR}
               fillOpacity={0.85}

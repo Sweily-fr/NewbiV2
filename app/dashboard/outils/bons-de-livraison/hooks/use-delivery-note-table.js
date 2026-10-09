@@ -28,6 +28,7 @@ import DeliveryNoteRowActions from "../components/delivery-note-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const statusFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.length) return true;
@@ -370,7 +371,7 @@ export function useDeliveryNoteTable({
               {items.length} ligne{items.length > 1 ? "s" : ""}
               <span className="text-xs text-muted-foreground">
                 {" "}
-                · {new Intl.NumberFormat("fr-FR").format(totalQty)} unité
+                · {getNumberFormat("fr-FR").format(totalQty)} unité
                 {totalQty > 1 ? "s" : ""}
               </span>
             </div>

@@ -51,6 +51,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const PERIOD_OPTIONS = [
   { value: "6", label: "6 mois" },
@@ -627,7 +628,7 @@ export default function PrevisionPage() {
 // ─── KPI Card ───
 
 const formatKpiCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,

@@ -37,6 +37,7 @@ import { I18nProvider } from "react-aria-components";
 import { Calendar as RangeCalendar } from "@/src/components/ui/calendar";
 import { fr } from "date-fns/locale";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const toYMD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -130,7 +131,7 @@ export function TreasuryChart({
     (isLoading || queryLoading) && !data?.dashboardTreasuryChart;
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
       minimumFractionDigits: 2,
@@ -444,6 +445,7 @@ export function TreasuryChart({
             />
             {/* Barres pour les entrées (vert) */}
             <Bar
+              animationDuration={300}
               dataKey="income"
               fill="var(--color-income)"
               radius={[4, 4, 0, 0]}
@@ -451,6 +453,7 @@ export function TreasuryChart({
             />
             {/* Barres pour les sorties (rouge) */}
             <Bar
+              animationDuration={300}
               dataKey="expenses"
               fill="var(--color-expenses)"
               radius={[4, 4, 0, 0]}
@@ -458,6 +461,7 @@ export function TreasuryChart({
             />
             {/* Courbe de trésorerie (zone remplie) */}
             <Area
+              animationDuration={300}
               dataKey="treasury"
               type="monotone"
               fill="url(#fillTreasury)"

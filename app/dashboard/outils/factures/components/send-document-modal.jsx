@@ -157,7 +157,7 @@ export function SendDocumentModal({
   const labels = DOCUMENT_LABELS[documentType] || DOCUMENT_LABELS.invoice;
 
   // Récupérer les paramètres email
-  const { data: emailData } = useEmailSettings();
+  const { data: emailData } = useEmailSettings({ skip: !open });
   const emailSettings = emailData?.getEmailSettings;
 
   // Mutation pour sauvegarder le template

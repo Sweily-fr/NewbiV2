@@ -243,6 +243,7 @@ import {
 import { useMutation, useQuery } from "@apollo/client";
 import { useSession } from "@/src/lib/auth-client";
 import { Lock } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 /**
  * Popover "Accès au tableau" sur la page board.
@@ -727,8 +728,7 @@ function KanbanBoardPageContent({ params }) {
   const canEditKanban = !isPermissionsReady || canDo("kanban", "edit");
   const canShareKanban = !isPermissionsReady || canDo("kanban", "share");
   // « Convertir en facture » crée une facture : action « create » des factures
-  const canCreateInvoice =
-    !isPermissionsReady || canDo("invoices", "create");
+  const canCreateInvoice = !isPermissionsReady || canDo("invoices", "create");
 
   // Hook viewMode en premier pour avoir le bon skeleton dès le début
   const {
@@ -1243,7 +1243,7 @@ function KanbanBoardPageContent({ params }) {
   // Formatage monétaire
   const formatCurrency = React.useCallback(
     (amount) =>
-      new Intl.NumberFormat("fr-FR", {
+      getNumberFormat("fr-FR", {
         style: "currency",
         currency: "EUR",
         minimumFractionDigits: 2,
@@ -1510,419 +1510,399 @@ function KanbanBoardPageContent({ params }) {
   return (
     <BoardMembersLookupProvider userIds={allBoardUserIds}>
       <TaskPresenceContext.Provider value={taskPresenceStore}>
-      <div
-        key={`kanban-board-${id}`}
-        className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
-        style={{ pointerEvents: isBoard ? "auto" : "auto" }}
-      >
-        {/* Header - Fixe en haut */}
-        <div className="flex-shrink-0 bg-background z-10">
-          <div className="flex items-center gap-3 pt-2 pb-2 px-4 sm:px-6 min-w-0">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-1 text-xs text-muted-foreground/50 shrink-0">
-              <span
-                className="hover:text-foreground transition-colors cursor-pointer"
-                onClick={() => router.push("/dashboard/outils/kanban")}
-              >
-                Projets
-              </span>
-              <ChevronRight className="h-3 w-3" />
-            </div>
-
-            {/* Emoji + Titre */}
-            <div className="flex items-center gap-1 min-w-0">
-              <EmojiPicker
-                boardEmoji={boardEmoji}
-                onSelect={handleEmojiSelect}
-                onClear={clearEmoji}
-                disabled={!canEditKanban}
-              />
-              <InlineBoardTitle
-                title={board.title}
-                onSave={(title) => updateBoardField("title", title)}
-                disabled={!canEditKanban}
-              />
-            </div>
-
-            {/* Description — texte tronqué inline, tooltip au hover */}
-            {board.description && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-xs text-muted-foreground/50 truncate max-w-[200px] shrink-0 cursor-default hidden sm:inline">
-                    {board.description}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  align="start"
-                  className="max-w-[320px]"
+        <div
+          key={`kanban-board-${id}`}
+          className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
+          style={{ pointerEvents: isBoard ? "auto" : "auto" }}
+        >
+          {/* Header - Fixe en haut */}
+          <div className="flex-shrink-0 bg-background z-10">
+            <div className="flex items-center gap-3 pt-2 pb-2 px-4 sm:px-6 min-w-0">
+              {/* Breadcrumb */}
+              <div className="flex items-center gap-1 text-xs text-muted-foreground/50 shrink-0">
+                <span
+                  className="hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => router.push("/dashboard/outils/kanban")}
                 >
-                  <p className="text-xs whitespace-pre-wrap break-words">
-                    {board.description}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+                  Projets
+                </span>
+                <ChevronRight className="h-3 w-3" />
+              </div>
 
-            {/* Favori */}
-            <button
-              onClick={toggleFavorite}
-              className="shrink-0 cursor-pointer transition-colors"
-              title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
-            >
-              <Star
-                className={`h-3.5 w-3.5 ${isFavorite ? "text-amber-400 fill-amber-400" : "text-muted-foreground/40 hover:text-amber-400"} transition-colors`}
-              />
-            </button>
+              {/* Emoji + Titre */}
+              <div className="flex items-center gap-1 min-w-0">
+                <EmojiPicker
+                  boardEmoji={boardEmoji}
+                  onSelect={handleEmojiSelect}
+                  onClear={clearEmoji}
+                  disabled={!canEditKanban}
+                />
+                <InlineBoardTitle
+                  title={board.title}
+                  onSave={(title) => updateBoardField("title", title)}
+                  disabled={!canEditKanban}
+                />
+              </div>
 
-            {/* Séparateur */}
-            <div className="h-4 w-px bg-border/60 shrink-0" />
-
-            {/* Priorité / Date / Membres */}
-            <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5 shrink-0">
-              {/* En lecture seule, seules les valeurs renseignées restent visibles */}
-              {(canEditKanban || boardPriority) && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center disabled:cursor-default disabled:hover:bg-transparent"
-                      title="Priorité du projet"
-                      disabled={!canEditKanban}
-                    >
-                      <Flag
-                        className={`h-3.5 w-3.5 transition-colors ${
-                          boardPriority === "high"
-                            ? "text-red-500 fill-red-500"
-                            : boardPriority === "medium"
-                              ? "text-yellow-500 fill-yellow-500"
-                              : boardPriority === "low"
-                                ? "text-green-500 fill-green-500"
-                                : "text-muted-foreground/40 hover:text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-44 p-0"
+              {/* Description — texte tronqué inline, tooltip au hover */}
+              {board.description && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground/50 truncate max-w-[200px] shrink-0 cursor-default hidden sm:inline">
+                      {board.description}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent
                     side="bottom"
                     align="start"
+                    className="max-w-[320px]"
                   >
-                    <div className="p-1.5 space-y-0.5">
-                      {[
-                        {
-                          value: "high",
-                          label: "Urgent",
-                          color: "text-red-500 fill-red-500",
-                        },
-                        {
-                          value: "medium",
-                          label: "Moyen",
-                          color: "text-yellow-500 fill-yellow-500",
-                        },
-                        {
-                          value: "low",
-                          label: "Faible",
-                          color: "text-green-500 fill-green-500",
-                        },
-                        { value: "", label: "Aucune", color: "text-gray-400" },
-                      ].map((p) => (
-                        <button
-                          key={p.value || "none"}
-                          onClick={() => updateBoardField("priority", p.value)}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer ${boardPriority === p.value || (!boardPriority && !p.value) ? "bg-muted/60" : ""}`}
-                        >
-                          <Flag className={`h-3.5 w-3.5 ${p.color}`} />
-                          <span className="text-xs">{p.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                    <p className="text-xs whitespace-pre-wrap break-words">
+                      {board.description}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
-              {/* Date d'échéance */}
-              {(canEditKanban || boardDueDate) && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-default disabled:hover:bg-transparent"
-                      title="Échéance du projet"
-                      disabled={!canEditKanban}
+              {/* Favori */}
+              <button
+                onClick={toggleFavorite}
+                className="shrink-0 cursor-pointer transition-colors"
+                title={
+                  isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"
+                }
+              >
+                <Star
+                  className={`h-3.5 w-3.5 ${isFavorite ? "text-amber-400 fill-amber-400" : "text-muted-foreground/40 hover:text-amber-400"} transition-colors`}
+                />
+              </button>
+
+              {/* Séparateur */}
+              <div className="h-4 w-px bg-border/60 shrink-0" />
+
+              {/* Priorité / Date / Membres */}
+              <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5 shrink-0">
+                {/* En lecture seule, seules les valeurs renseignées restent visibles */}
+                {(canEditKanban || boardPriority) && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center disabled:cursor-default disabled:hover:bg-transparent"
+                        title="Priorité du projet"
+                        disabled={!canEditKanban}
+                      >
+                        <Flag
+                          className={`h-3.5 w-3.5 transition-colors ${
+                            boardPriority === "high"
+                              ? "text-red-500 fill-red-500"
+                              : boardPriority === "medium"
+                                ? "text-yellow-500 fill-yellow-500"
+                                : boardPriority === "low"
+                                  ? "text-green-500 fill-green-500"
+                                  : "text-muted-foreground/40 hover:text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-44 p-0"
+                      side="bottom"
+                      align="start"
                     >
-                      <Calendar
-                        className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? "text-foreground/70" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
+                      <div className="p-1.5 space-y-0.5">
+                        {[
+                          {
+                            value: "high",
+                            label: "Urgent",
+                            color: "text-red-500 fill-red-500",
+                          },
+                          {
+                            value: "medium",
+                            label: "Moyen",
+                            color: "text-yellow-500 fill-yellow-500",
+                          },
+                          {
+                            value: "low",
+                            label: "Faible",
+                            color: "text-green-500 fill-green-500",
+                          },
+                          {
+                            value: "",
+                            label: "Aucune",
+                            color: "text-gray-400",
+                          },
+                        ].map((p) => (
+                          <button
+                            key={p.value || "none"}
+                            onClick={() =>
+                              updateBoardField("priority", p.value)
+                            }
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer ${boardPriority === p.value || (!boardPriority && !p.value) ? "bg-muted/60" : ""}`}
+                          >
+                            <Flag className={`h-3.5 w-3.5 ${p.color}`} />
+                            <span className="text-xs">{p.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+
+                {/* Date d'échéance */}
+                {(canEditKanban || boardDueDate) && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+                        title="Échéance du projet"
+                        disabled={!canEditKanban}
+                      >
+                        <Calendar
+                          className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? "text-foreground/70" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
+                        />
+                        {boardDueDate && (
+                          <span className="text-[11px] text-foreground/60 font-medium">
+                            {format(boardDueDate, "dd MMM", { locale: fr })}
+                          </span>
+                        )}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto p-0"
+                      side="bottom"
+                      align="start"
+                    >
+                      <CalendarComponent
+                        mode="single"
+                        selected={boardDueDate}
+                        onSelect={(date) => {
+                          if (date) {
+                            date.setHours(18, 0, 0, 0);
+                            updateBoardField("dueDate", date.toISOString());
+                          }
+                        }}
+                        locale={fr}
+                        fromDate={new Date()}
+                        className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
                       />
                       {boardDueDate && (
-                        <span className="text-[11px] text-foreground/60 font-medium">
-                          {format(boardDueDate, "dd MMM", { locale: fr })}
-                        </span>
+                        <div className="px-2 pb-2">
+                          <button
+                            onClick={() => updateBoardField("dueDate", null)}
+                            className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                          >
+                            Supprimer la date
+                          </button>
+                        </div>
                       )}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-auto p-0"
-                    side="bottom"
-                    align="start"
-                  >
-                    <CalendarComponent
-                      mode="single"
-                      selected={boardDueDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          date.setHours(18, 0, 0, 0);
-                          updateBoardField("dueDate", date.toISOString());
-                        }
-                      }}
-                      locale={fr}
-                      fromDate={new Date()}
-                      className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-                    />
-                    {boardDueDate && (
-                      <div className="px-2 pb-2">
-                        <button
-                          onClick={() => updateBoardField("dueDate", null)}
-                          className="text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                        >
-                          Supprimer la date
-                        </button>
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
-              )}
+                    </PopoverContent>
+                  </Popover>
+                )}
 
-              {/* Accès au tableau (membres autorisés) */}
-              <BoardAccessPopover
-                board={board}
-                workspaceId={workspaceId}
-                onChange={(nextMembers) =>
-                  updateBoardField("boardMembers", nextMembers)
-                }
-                roleCanEdit={canEditKanban}
-              />
-            </div>
+                {/* Accès au tableau (membres autorisés) */}
+                <BoardAccessPopover
+                  board={board}
+                  workspaceId={workspaceId}
+                  onChange={(nextMembers) =>
+                    updateBoardField("boardMembers", nextMembers)
+                  }
+                  roleCanEdit={canEditKanban}
+                />
+              </div>
 
-            {/* Séparateur */}
-            <div className="h-4 w-px bg-border/60 shrink-0" />
+              {/* Séparateur */}
+              <div className="h-4 w-px bg-border/60 shrink-0" />
 
-            {/* Membres */}
-            {board?.members?.length > 0 && (
-              <BoardMembersPresence
-                members={board.members}
-                workspaceId={workspaceId}
-              />
-            )}
-
-            {/* Spacer */}
-            <div className="flex-1 min-w-[1rem]" />
-
-            {/* Sauv. modèle & Partager */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              {canCreateKanban && (
-                <SaveTemplateDialog boardId={id} boardTitle={board.title} />
-              )}
-              {canShareKanban && (
-                <ShareBoardDialog
-                  boardId={id}
-                  boardTitle={board.title}
+              {/* Membres */}
+              {board?.members?.length > 0 && (
+                <BoardMembersPresence
+                  members={board.members}
                   workspaceId={workspaceId}
                 />
               )}
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between gap-3 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] px-4 sm:px-6 kanban-tabs">
-            <style>{`
+              {/* Spacer */}
+              <div className="flex-1 min-w-[1rem]" />
+
+              {/* Sauv. modèle & Partager */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {canCreateKanban && (
+                  <SaveTemplateDialog boardId={id} boardTitle={board.title} />
+                )}
+                {canShareKanban && (
+                  <ShareBoardDialog
+                    boardId={id}
+                    boardTitle={board.title}
+                    workspaceId={workspaceId}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] px-4 sm:px-6 kanban-tabs">
+              <style>{`
             .kanban-tabs [data-slot="tabs-trigger"][data-state="active"] {
               text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
             }
           `}</style>
-            <Tabs
-              value={viewMode}
-              onValueChange={setViewMode}
-              className="w-auto items-center"
-            >
-              <TabsList className="h-auto rounded-none bg-transparent p-0 gap-1.5">
-                <TabsTrigger
-                  value="list"
-                  className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-                >
-                  <ListViewIcon className="h-4 w-4 md:inline hidden" />
-                  List
-                </TabsTrigger>
-                <TabsTrigger
-                  value="board"
-                  className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
-                >
-                  <BoardViewIcon className="h-4 w-4" />
-                  Board
-                </TabsTrigger>
-                <TabsTrigger
-                  value="gantt"
-                  className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
-                >
-                  <GanttViewIcon className="h-4 w-4" />
-                  Gantt
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <div className="flex items-center gap-2">
-              {/* Bouton Recherche expansible */}
-              <ExpandableSearch
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-              />
-
-              {/* Bouton Filtres */}
-              <DropdownMenu
-                onOpenChange={(open) => {
-                  if (open) fetchMembers();
-                }}
+              <Tabs
+                value={viewMode}
+                onValueChange={setViewMode}
+                className="w-auto items-center"
               >
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant={
-                      selectedMemberIds.length > 0 ? "primary" : "outline"
-                    }
-                    size="icon"
-                    className="relative"
-                    title="Filtres"
+                <TabsList className="h-auto rounded-none bg-transparent p-0 gap-1.5">
+                  <TabsTrigger
+                    value="list"
+                    className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
                   >
-                    <Filter size={14} aria-hidden="true" />
-                    {selectedMemberIds.length > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
-                        {selectedMemberIds.length}
-                      </span>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[240px]">
-                  <DropdownMenuItem
-                    onClick={() => clearSelectedMembers()}
-                    className="cursor-pointer"
+                    <ListViewIcon className="h-4 w-4 md:inline hidden" />
+                    List
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="board"
+                    className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
                   >
-                    Effacer le filtre
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="whitespace-nowrap">
-                      <Users className="h-4 w-4 mr-2" />
-                      Par utilisateurs
+                    <BoardViewIcon className="h-4 w-4" />
+                    Board
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="gantt"
+                    className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
+                  >
+                    <GanttViewIcon className="h-4 w-4" />
+                    Gantt
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <div className="flex items-center gap-2">
+                {/* Bouton Recherche expansible */}
+                <ExpandableSearch
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                />
+
+                {/* Bouton Filtres */}
+                <DropdownMenu
+                  onOpenChange={(open) => {
+                    if (open) fetchMembers();
+                  }}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={
+                        selectedMemberIds.length > 0 ? "primary" : "outline"
+                      }
+                      size="icon"
+                      className="relative"
+                      title="Filtres"
+                    >
+                      <Filter size={14} aria-hidden="true" />
                       {selectedMemberIds.length > 0 && (
-                        <Badge variant="secondary" className="ml-auto">
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#5A50FF] text-[9px] font-bold text-white">
                           {selectedMemberIds.length}
-                        </Badge>
+                        </span>
                       )}
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-[250px]">
-                      {membersLoading ? (
-                        <div className="text-xs text-muted-foreground px-2 py-4 text-center">
-                          Chargement...
-                        </div>
-                      ) : members && members.length > 0 ? (
-                        <div className="space-y-1 p-1">
-                          {members.map((member) => (
-                            <DropdownMenuItem
-                              key={member.id}
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                toggleMemberId(member.id);
-                              }}
-                              className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
-                            >
-                              {member.image ? (
-                                <img
-                                  src={member.image}
-                                  alt={member.name || member.email}
-                                  className="w-6 h-6 rounded-full mr-2 object-cover"
-                                />
-                              ) : (
-                                <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
-                                  {(member.name || member.email)
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </div>
-                              )}
-                              <span className="flex-1">
-                                {member.name || member.email}
-                              </span>
-                              <div
-                                className={`w-4 h-4 rounded border flex items-center justify-center ${
-                                  selectedMemberIds.includes(member.id)
-                                    ? "bg-primary border-primary"
-                                    : "border-muted-foreground/50"
-                                }`}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[240px]">
+                    <DropdownMenuItem
+                      onClick={() => clearSelectedMembers()}
+                      className="cursor-pointer"
+                    >
+                      Effacer le filtre
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="whitespace-nowrap">
+                        <Users className="h-4 w-4 mr-2" />
+                        Par utilisateurs
+                        {selectedMemberIds.length > 0 && (
+                          <Badge variant="secondary" className="ml-auto">
+                            {selectedMemberIds.length}
+                          </Badge>
+                        )}
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-[250px]">
+                        {membersLoading ? (
+                          <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                            Chargement...
+                          </div>
+                        ) : members && members.length > 0 ? (
+                          <div className="space-y-1 p-1">
+                            {members.map((member) => (
+                              <DropdownMenuItem
+                                key={member.id}
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  toggleMemberId(member.id);
+                                }}
+                                className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
                               >
-                                {selectedMemberIds.includes(member.id) && (
-                                  <span className="text-white text-xs">✓</span>
+                                {member.image ? (
+                                  <img
+                                    src={member.image}
+                                    alt={member.name || member.email}
+                                    className="w-6 h-6 rounded-full mr-2 object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
+                                    {(member.name || member.email)
+                                      .charAt(0)
+                                      .toUpperCase()}
+                                  </div>
                                 )}
-                              </div>
-                            </DropdownMenuItem>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground px-2 py-4 text-center">
-                          Aucun membre
-                        </div>
-                      )}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                                <span className="flex-1">
+                                  {member.name || member.email}
+                                </span>
+                                <div
+                                  className={`w-4 h-4 rounded border flex items-center justify-center ${
+                                    selectedMemberIds.includes(member.id)
+                                      ? "bg-primary border-primary"
+                                      : "border-muted-foreground/50"
+                                  }`}
+                                >
+                                  {selectedMemberIds.includes(member.id) && (
+                                    <span className="text-white text-xs">
+                                      ✓
+                                    </span>
+                                  )}
+                                </div>
+                              </DropdownMenuItem>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-muted-foreground px-2 py-4 text-center">
+                            Aucun membre
+                          </div>
+                        )}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              {canCreateKanban && (
-                <Button
-                  variant="primary"
-                  className="cursor-pointer"
-                  onClick={openAddModal}
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                >
-                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                  {isBoard ? "Ajouter une colonne" : "Nouveau status"}
-                </Button>
-              )}
+                {canCreateKanban && (
+                  <Button
+                    variant="primary"
+                    className="cursor-pointer"
+                    onClick={openAddModal}
+                    disabled={isReadOnly}
+                    title={readOnlyTooltip}
+                  >
+                    <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                    {isBoard ? "Ajouter une colonne" : "Nouveau status"}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Contrôles au même niveau - Lien Déplier, Recherche et Filtre */}
-        {isBoard && (
-          <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              {/* Bouton Convertir en facture (création de factures) */}
-              {billableTasks.length > 0 && canCreateInvoice && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={() => setShowConvertModal(true)}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden lg:inline">Convertir en facture</span>
-                </Button>
-              )}
-            </div>
-
-            {/* Prix total */}
-            {billableTasks.length > 0 && (
-              <span className="text-sm font-medium whitespace-nowrap">
-                Dossier à{" "}
-                <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
-                  {formatCurrency(projectTotalPrice)}
-                </span>
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Contrôles pour la vue liste */}
-        {isList && (collapsedColumnsCount > 0 || billableTasks.length > 0) && (
-          <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
-            {billableTasks.length > 0 && (
-              <>
-                {canCreateInvoice && (
+          {/* Contrôles au même niveau - Lien Déplier, Recherche et Filtre */}
+          {isBoard && (
+            <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {/* Bouton Convertir en facture (création de factures) */}
+                {billableTasks.length > 0 && canCreateInvoice && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1935,228 +1915,261 @@ function KanbanBoardPageContent({ params }) {
                     </span>
                   </Button>
                 )}
+              </div>
+
+              {/* Prix total */}
+              {billableTasks.length > 0 && (
                 <span className="text-sm font-medium whitespace-nowrap">
                   Dossier à{" "}
                   <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
                     {formatCurrency(projectTotalPrice)}
                   </span>
                 </span>
-              </>
+              )}
+            </div>
+          )}
+
+          {/* Contrôles pour la vue liste */}
+          {isList &&
+            (collapsedColumnsCount > 0 || billableTasks.length > 0) && (
+              <div className="sticky left-0 px-4 sm:px-6 py-3 bg-background z-10 flex items-center gap-4">
+                {billableTasks.length > 0 && (
+                  <>
+                    {canCreateInvoice && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setShowConvertModal(true)}
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span className="hidden lg:inline">
+                          Convertir en facture
+                        </span>
+                      </Button>
+                    )}
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      Dossier à{" "}
+                      <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
+                        {formatCurrency(projectTotalPrice)}
+                      </span>
+                    </span>
+                  </>
+                )}
+              </div>
             )}
-          </div>
-        )}
 
-        {/* Gantt — gardé monté après 1er passage, juste caché si inactif */}
-        {everGantt && (
-          <div
-            className="w-full"
-            style={{ display: isGantt ? undefined : "none" }}
-          >
-            <KanbanGanttView
-              columns={localColumns}
-              getTasksByColumn={getLocalTasksByColumn}
-              filterTasks={filterTasks}
-              onEditTask={handleOpenEditTaskModal}
-              onAddTask={openAddTaskModal}
-              members={board?.members || []}
-              updateTask={updateTask}
-              workspaceId={workspaceId}
-              boardTitle={board?.title}
-              readOnly={!canEditKanban}
-              canCreate={canCreateKanban}
-            />
-          </div>
-        )}
-
-        {/* Board Content - Zone scrollable pour les colonnes */}
-        <div className="flex-1 overflow-hidden">
-          {/* List — gardée montée après 1er passage */}
-          {everList && (
+          {/* Gantt — gardé monté après 1er passage, juste caché si inactif */}
+          {everGantt && (
             <div
-              className="h-full overflow-auto"
-              style={{ display: isList ? undefined : "none" }}
-              ref={(node) => {
-                listScrollRef.current = node;
-              }}
+              className="w-full"
+              style={{ display: isGantt ? undefined : "none" }}
             >
-              <div className="h-6 bg-background sticky top-0 z-[21]" />
-              <KanbanListView
+              <KanbanGanttView
                 columns={localColumns}
                 getTasksByColumn={getLocalTasksByColumn}
                 filterTasks={filterTasks}
                 onEditTask={handleOpenEditTaskModal}
-                onDeleteTask={handleDeleteTask}
                 onAddTask={openAddTaskModal}
-                onEditColumn={openEditModal}
-                onDeleteColumn={handleDeleteColumn}
                 members={board?.members || []}
-                selectedTaskIds={selectedTaskIds}
-                setSelectedTaskIds={setSelectedTaskIds}
-                moveTask={moveTask}
                 updateTask={updateTask}
-                createTask={createTask}
-                boardId={id}
                 workspaceId={workspaceId}
-                scrollRootRef={listScrollRef}
+                boardTitle={board?.title}
+                readOnly={!canEditKanban}
+                canCreate={canCreateKanban}
               />
             </div>
           )}
 
-          {/* Board — gardé monté après 1er passage */}
-          {everBoard && (
-            <div
-              ref={scrollRef}
-              className="h-full overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-              style={{ display: isBoard ? undefined : "none" }}
-            >
+          {/* Board Content - Zone scrollable pour les colonnes */}
+          <div className="flex-1 overflow-hidden">
+            {/* List — gardée montée après 1er passage */}
+            {everList && (
               <div
-                className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start px-4 sm:px-6 pb-3"
-                style={{
-                  gap: "10px",
+                className="h-full overflow-auto"
+                style={{ display: isList ? undefined : "none" }}
+                ref={(node) => {
+                  listScrollRef.current = node;
                 }}
               >
-                {columnsContent ? (
-                  columnsContent
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="text-muted-foreground mb-4">
-                      Ce tableau ne contient aucune colonne
-                    </div>
-                    {canCreateKanban && (
-                      <Button
-                        variant="default"
-                        onClick={openAddModal}
-                        disabled={isReadOnly}
-                        title={readOnlyTooltip}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Créer votre première colonne
-                      </Button>
-                    )}
-                  </div>
-                )}
+                <div className="h-6 bg-background sticky top-0 z-[21]" />
+                <KanbanListView
+                  columns={localColumns}
+                  getTasksByColumn={getLocalTasksByColumn}
+                  filterTasks={filterTasks}
+                  onEditTask={handleOpenEditTaskModal}
+                  onDeleteTask={handleDeleteTask}
+                  onAddTask={openAddTaskModal}
+                  onEditColumn={openEditModal}
+                  onDeleteColumn={handleDeleteColumn}
+                  members={board?.members || []}
+                  selectedTaskIds={selectedTaskIds}
+                  setSelectedTaskIds={setSelectedTaskIds}
+                  moveTask={moveTask}
+                  updateTask={updateTask}
+                  createTask={createTask}
+                  boardId={id}
+                  workspaceId={workspaceId}
+                  scrollRootRef={listScrollRef}
+                />
               </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* Modals */}
-        <ColumnModal
-          isOpen={isAddColumnOpen}
-          onClose={() => setIsAddColumnOpen(false)}
-          onSubmit={handleCreateColumn}
-          isLoading={createLoading}
-          isEditing={false}
-          columnForm={columnForm}
-          setColumnForm={setColumnForm}
-        />
-
-        <ColumnModal
-          isOpen={isEditColumnOpen}
-          onClose={() => setIsEditColumnOpen(false)}
-          onSubmit={handleUpdateColumn}
-          isLoading={updateLoading}
-          isEditing={true}
-          columnForm={columnForm}
-          setColumnForm={setColumnForm}
-        />
-
-        <TaskModal
-          isOpen={isAddTaskOpen}
-          onClose={closeAddTaskModal}
-          onSubmit={handleCreateTask}
-          isLoading={createTaskLoading}
-          isEditing={false}
-          taskForm={taskForm}
-          setTaskForm={setTaskForm}
-          board={boardForModal}
-          workspaceId={workspaceId}
-          addTag={addTag}
-          removeTag={removeTag}
-          addChecklistItem={addChecklistItem}
-          toggleChecklistItem={toggleChecklistItem}
-          removeChecklistItem={removeChecklistItem}
-          addPendingComment={addPendingComment}
-          removePendingComment={removePendingComment}
-          updatePendingComment={updatePendingComment}
-        />
-
-        <TaskModal
-          isOpen={isEditTaskOpen}
-          onClose={handleCloseEditTaskModal}
-          onSubmit={handleUpdateTask}
-          isLoading={updateTaskLoading}
-          isEditing={true}
-          taskForm={taskForm}
-          setTaskForm={setTaskForm}
-          board={boardForModal}
-          prevTask={taskNavigation.prevTask}
-          nextTask={taskNavigation.nextTask}
-          currentIndex={taskNavigation.currentIndex}
-          totalTasks={taskNavigation.totalTasks}
-          workspaceId={workspaceId}
-          addTag={addTag}
-          removeTag={removeTag}
-          addChecklistItem={addChecklistItem}
-          toggleChecklistItem={toggleChecklistItem}
-          removeChecklistItem={removeChecklistItem}
-          openEditTaskModal={handleOpenEditTaskModal}
-          openLinkedTask={handleOpenLinkedTask}
-          updateTask={updateTask}
-          initialFormRef={initialFormRef}
-          localMutationRef={localMutationRef}
-        />
-
-        <AlertDialog
-          open={isDeleteColumnDialogOpen}
-          onOpenChange={setIsDeleteColumnDialogOpen}
-        >
-          <AlertDialogContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer la colonne ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Êtes-vous sûr de vouloir supprimer la colonne "
-                {columnToDelete?.title}" ?
-                <br />
-                <span className="text-red-500 font-medium">
-                  Cette action est irréversible et supprimera également toutes
-                  les tâches qu'elle contient.
-                </span>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                Annuler
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmDeleteColumn}
-                className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+            {/* Board — gardé monté après 1er passage */}
+            {everBoard && (
+              <div
+                ref={scrollRef}
+                className="h-full overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                style={{ display: isBoard ? undefined : "none" }}
               >
-                {deleteLoading ? (
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
-                )}
-                Supprimer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                <div
+                  className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start px-4 sm:px-6 pb-3"
+                  style={{
+                    gap: "10px",
+                  }}
+                >
+                  {columnsContent ? (
+                    columnsContent
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-muted-foreground mb-4">
+                        Ce tableau ne contient aucune colonne
+                      </div>
+                      {canCreateKanban && (
+                        <Button
+                          variant="default"
+                          onClick={openAddModal}
+                          disabled={isReadOnly}
+                          title={readOnlyTooltip}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Créer votre première colonne
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
-        <ConvertToInvoiceModal
-          open={showConvertModal && canCreateInvoice}
-          onOpenChange={setShowConvertModal}
-          tasks={billableTasks}
-          onConvert={handleConvertToInvoice}
-          getEffectiveSeconds={getEffectiveSeconds}
-          columns={localColumns}
-          members={members}
-          onOpenTask={(task) => {
-            setShowConvertModal(false);
-            handleOpenEditTaskModal(task);
-          }}
-        />
-      </div>
+          {/* Modals */}
+          <ColumnModal
+            isOpen={isAddColumnOpen}
+            onClose={() => setIsAddColumnOpen(false)}
+            onSubmit={handleCreateColumn}
+            isLoading={createLoading}
+            isEditing={false}
+            columnForm={columnForm}
+            setColumnForm={setColumnForm}
+          />
+
+          <ColumnModal
+            isOpen={isEditColumnOpen}
+            onClose={() => setIsEditColumnOpen(false)}
+            onSubmit={handleUpdateColumn}
+            isLoading={updateLoading}
+            isEditing={true}
+            columnForm={columnForm}
+            setColumnForm={setColumnForm}
+          />
+
+          <TaskModal
+            isOpen={isAddTaskOpen}
+            onClose={closeAddTaskModal}
+            onSubmit={handleCreateTask}
+            isLoading={createTaskLoading}
+            isEditing={false}
+            taskForm={taskForm}
+            setTaskForm={setTaskForm}
+            board={boardForModal}
+            workspaceId={workspaceId}
+            addTag={addTag}
+            removeTag={removeTag}
+            addChecklistItem={addChecklistItem}
+            toggleChecklistItem={toggleChecklistItem}
+            removeChecklistItem={removeChecklistItem}
+            addPendingComment={addPendingComment}
+            removePendingComment={removePendingComment}
+            updatePendingComment={updatePendingComment}
+          />
+
+          <TaskModal
+            isOpen={isEditTaskOpen}
+            onClose={handleCloseEditTaskModal}
+            onSubmit={handleUpdateTask}
+            isLoading={updateTaskLoading}
+            isEditing={true}
+            taskForm={taskForm}
+            setTaskForm={setTaskForm}
+            board={boardForModal}
+            prevTask={taskNavigation.prevTask}
+            nextTask={taskNavigation.nextTask}
+            currentIndex={taskNavigation.currentIndex}
+            totalTasks={taskNavigation.totalTasks}
+            workspaceId={workspaceId}
+            addTag={addTag}
+            removeTag={removeTag}
+            addChecklistItem={addChecklistItem}
+            toggleChecklistItem={toggleChecklistItem}
+            removeChecklistItem={removeChecklistItem}
+            openEditTaskModal={handleOpenEditTaskModal}
+            openLinkedTask={handleOpenLinkedTask}
+            updateTask={updateTask}
+            initialFormRef={initialFormRef}
+            localMutationRef={localMutationRef}
+          />
+
+          <AlertDialog
+            open={isDeleteColumnDialogOpen}
+            onOpenChange={setIsDeleteColumnDialogOpen}
+          >
+            <AlertDialogContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer la colonne ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer la colonne "
+                  {columnToDelete?.title}" ?
+                  <br />
+                  <span className="text-red-500 font-medium">
+                    Cette action est irréversible et supprimera également toutes
+                    les tâches qu'elle contient.
+                  </span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  Annuler
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDeleteColumn}
+                  className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+                >
+                  {deleteLoading ? (
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <ConvertToInvoiceModal
+            open={showConvertModal && canCreateInvoice}
+            onOpenChange={setShowConvertModal}
+            tasks={billableTasks}
+            onConvert={handleConvertToInvoice}
+            getEffectiveSeconds={getEffectiveSeconds}
+            columns={localColumns}
+            members={members}
+            onOpenTask={(task) => {
+              setShowConvertModal(false);
+              handleOpenEditTaskModal(task);
+            }}
+          />
+        </div>
       </TaskPresenceContext.Provider>
     </BoardMembersLookupProvider>
   );

@@ -16,6 +16,7 @@ import {
   formatRecurrenceDay,
   formatRecurrenceFrequency,
 } from "@/src/graphql/invoiceRecurrenceQueries";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const COLUMNS = [
   { id: "client", label: "Client", size: 220 },
@@ -49,7 +50,7 @@ const STATUS_ORDER = { ACTIVE: 0, PAUSED: 1, ENDED: 2 };
 const formatCurrency = (value) =>
   value == null
     ? "-"
-    : new Intl.NumberFormat("fr-FR", {
+    : getNumberFormat("fr-FR", {
         style: "currency",
         currency: "EUR",
       }).format(value);

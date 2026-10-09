@@ -87,6 +87,7 @@ import {
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -379,7 +380,7 @@ export default function ModernInvoiceEditor({
         number: `${result.invoice.prefix || "F"}-${result.invoice.number}`,
         clientName: result.invoice.client?.name,
         clientEmail: result.invoice.client?.email,
-        totalAmount: new Intl.NumberFormat("fr-FR", {
+        totalAmount: getNumberFormat("fr-FR", {
           style: "currency",
           currency: "EUR",
         }).format(result.invoice.finalTotalTTC || 0),

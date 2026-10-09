@@ -71,6 +71,7 @@ import DeliveryNoteFilters from "./delivery-note-filters";
 import { DeliveryNoteTableSkeleton } from "./delivery-note-page-skeleton";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 const TAB_CLASS =
   "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]";
@@ -97,6 +98,9 @@ const formatEmailDate = (value) => {
 };
 
 export default function DeliveryNoteTable({ dnIdToOpen }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const inputRef = useRef(null);
   const { deliveryNotes, loading, error, refetch } = useDeliveryNotes();
   const { workspaceId } = useRequiredWorkspace();
@@ -419,119 +423,123 @@ export default function DeliveryNoteTable({ dnIdToOpen }) {
       </div>
 
       {/* Corps du tableau (desktop) */}
-      <div className="hidden md:flex md:flex-col flex-1">
-        <table className="w-full table-fixed">
-          <tbody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                  onClick={(e) => openRowSidebar(e, row)}
-                >
-                  {row.getVisibleCells().map((cell, index, arr) => (
-                    <td
-                      key={cell.id}
-                      style={{ width: cell.column.getSize() }}
-                      className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={table.getAllColumns().length} className="p-0">
-                  <TableEmptyState
-                    icon={Truck}
-                    title="Aucun bon de livraison trouvé"
-                    description="Créez votre premier bon de livraison, ou générez-en un depuis un devis ou une facture."
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Tableau mobile */}
-      <div className="md:hidden overflow-x-auto pb-20">
-        <Table className="w-full">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="border-b border-gray-100 dark:border-gray-400"
-              >
-                {headerGroup.headers
-                  .filter((header) =>
-                    ["select", "client", "status", "actions"].includes(
-                      header.column.id,
-                    ),
-                  )
-                  .map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
-                  onClick={(e) => openRowSidebar(e, row)}
-                >
-                  {row
-                    .getVisibleCells()
-                    .filter((cell) =>
-                      ["select", "client", "status", "actions"].includes(
-                        cell.column.id,
-                      ),
-                    )
-                    .map((cell) => (
-                      <TableCell key={cell.id} className="py-3 px-4 text-sm">
+      {!isMobileLayout && (
+        <div className="hidden md:flex md:flex-col flex-1">
+          <table className="w-full table-fixed">
+            <tbody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => openRowSidebar(e, row)}
+                  >
+                    {row.getVisibleCells().map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
                         )}
-                      </TableCell>
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={table.getAllColumns().length} className="p-0">
+                    <TableEmptyState
+                      icon={Truck}
+                      title="Aucun bon de livraison trouvé"
+                      description="Créez votre premier bon de livraison, ou générez-en un depuis un devis ou une facture."
+                    />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Tableau mobile */}
+      {isMobileLayout && (
+        <div className="md:hidden overflow-x-auto pb-20">
+          <Table className="w-full">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="border-b border-gray-100 dark:border-gray-400"
+                >
+                  {headerGroup.headers
+                    .filter((header) =>
+                      ["select", "client", "status", "actions"].includes(
+                        header.column.id,
+                      ),
+                    )
+                    .map((header) => (
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </TableHead>
                     ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="p-0">
-                  <TableEmptyState
-                    icon={Truck}
-                    title="Aucun bon de livraison trouvé"
-                    description="Créez votre premier bon de livraison."
-                    size="compact"
-                  />
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                    onClick={(e) => openRowSidebar(e, row)}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter((cell) =>
+                        ["select", "client", "status", "actions"].includes(
+                          cell.column.id,
+                        ),
+                      )
+                      .map((cell) => (
+                        <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="p-0">
+                    <TableEmptyState
+                      icon={Truck}
+                      title="Aucun bon de livraison trouvé"
+                      description="Créez votre premier bon de livraison."
+                      size="compact"
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Pagination (desktop) */}
       <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background sticky bottom-0 z-10">
