@@ -94,6 +94,21 @@ async function ensureIndexes(db) {
       idx: { lastSeenAt: -1 },
       opts: { background: true },
     },
+    // Sessions lues par jeton à chaque getSession sans cache cookie (et par
+    // l'API sur le chemin cookie des aperçus et téléchargements), et par
+    // utilisateur pour la limite de sessions. Seul expiresAt était indexé.
+    // Si un index équivalent existe déjà avec d'autres options, l'erreur est
+    // ignorée (Promise.allSettled).
+    {
+      coll: "session",
+      idx: { token: 1 },
+      opts: { background: true },
+    },
+    {
+      coll: "session",
+      idx: { userId: 1 },
+      opts: { background: true },
+    },
   ];
 
   const results = await Promise.allSettled(
