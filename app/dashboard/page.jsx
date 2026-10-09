@@ -6,27 +6,14 @@ import {
   AvatarImage,
   AvatarFallback,
 } from "@/src/components/ui/avatar";
-import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
-import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
-import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
-import Comp333 from "@/src/components/comp-333";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
 import {
   CloudUpload,
   FileCheck2,
@@ -69,28 +56,19 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
-import { TreasuryChart } from "@/src/components/treasury-chart";
-import { ExpenseCategoryChart } from "@/app/dashboard/outils/transactions/components/expense-category-chart";
-import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-chart";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useQuery } from "@apollo/client";
-import {
-  GET_TREASURY_CHART,
-  GET_DASHBOARD_BILLING_MONTH,
-} from "@/src/graphql/queries/dashboardAggregation";
+import { GET_DASHBOARD_BILLING_MONTH } from "@/src/graphql/queries/dashboardAggregation";
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
 import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
-import {
-  getIncomeChartConfig,
-  getExpenseChartConfig,
-} from "@/src/utils/chartDataProcessors";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import {
   ClipboardTickIcon,
@@ -113,17 +91,12 @@ import { useQuoteBalances } from "@/src/graphql/quoteQueries";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
-import { InvoicesToCollectCard } from "@/app/dashboard/components/invoices-to-collect-card";
-import { PurchaseInvoicesStatsCard } from "@/app/dashboard/components/purchase-invoices-stats-card";
-import { PendingQuotesCard } from "@/app/dashboard/components/pending-quotes-card";
-import { OverdueInvoicesCard } from "@/app/dashboard/components/overdue-invoices-card";
-import { MonthlyRevenueCard } from "@/app/dashboard/components/monthly-revenue-card";
-import { TopClientsCard } from "@/app/dashboard/components/top-clients-card";
-import { WeekCalendarCard } from "@/app/dashboard/components/week-calendar-card";
 
 function DashboardContent() {
   const { session } = useUser();
   const router = useRouter();
+  // Éditeurs et outils préchargés au survol des actions rapides.
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { checkAndUpdateAccountStatus, refetchStatus } = useStripeConnect(
     session?.user?.id,
@@ -174,20 +147,6 @@ function DashboardContent() {
     accountId: selectedAccountId,
   });
 
-  // Query pour les graphiques Entrées/Sorties (courbes d'aire sur 365 jours)
-  const { data: flowChartData, loading: flowChartLoading } = useQuery(
-    GET_TREASURY_CHART,
-    {
-      variables: {
-        workspaceId,
-        period: { preset: "365d" },
-        accountId: selectedAccountId === "all" ? null : selectedAccountId,
-      },
-      fetchPolicy: "cache-and-network",
-      skip: !workspaceId,
-    },
-  );
-
   // Cadre Facturation : ventes et achats du mois calendaire courant (TTC),
   // calculés côté serveur (heure de Paris). Le titre du cadre suit le mois
   // renvoyé par l'API pour rester aligné sur les montants affichés.
@@ -210,20 +169,6 @@ function DashboardContent() {
   const EMPTY_BILLING_SIDE = { total: 0, pending: 0, overdue: 0 };
   const monthSales = billingMonth?.sales || EMPTY_BILLING_SIDE;
   const monthPurchases = billingMonth?.purchases || EMPTY_BILLING_SIDE;
-
-  const incomeChartData = useMemo(() => {
-    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
-    return points.map((d) => ({ date: d.date, desktop: d.income, mobile: 0 }));
-  }, [flowChartData]);
-
-  const expenseChartData = useMemo(() => {
-    const points = flowChartData?.dashboardTreasuryChart?.dataPoints || [];
-    return points.map((d) => ({
-      date: d.date,
-      desktop: d.expenses,
-      mobile: 0,
-    }));
-  }, [flowChartData]);
 
   // Compteurs "À traiter"
   const actionCounts = useMemo(() => {
@@ -404,12 +349,9 @@ function DashboardContent() {
 
   // Utiliser les configurations importées
   const { remap } = useChartColors();
-  const incomeChartConfig = getIncomeChartConfig(remap);
-  const expenseChartConfig = getExpenseChartConfig(remap);
 
   // Loading states par section
   const cardsLoading = accountsLoading || transactionsLoading;
-  const chartsLoading = flowChartLoading;
 
   const balanceChartConfig = {
     visitors: {
@@ -572,63 +514,79 @@ function DashboardContent() {
           )}
         </div>
 
-        {/* Actions rapides */}
-        <div className="flex items-center gap-2 flex-wrap -mt-2">
-          <Button
-            variant="primary"
-            className="cursor-pointer"
-            size="sm"
-            disabled={isReadOnly}
-            title={readOnlyTooltip}
-            onClick={() =>
-              !isReadOnly && router.push("/dashboard/outils/devis/new")
-            }
-          >
-            <ClipboardTickIcon className="w-4 h-4" />
-            Créer un devis
-          </Button>
-          <Button
-            variant="primary"
-            className="cursor-pointer"
-            size="sm"
-            disabled={isReadOnly}
-            title={readOnlyTooltip}
-            onClick={() =>
-              !isReadOnly && router.push("/dashboard/outils/factures/new")
-            }
-          >
-            <DocumentText2Icon className="w-4 h-4" />
-            Créer une facture
-          </Button>
-          <Button
-            variant="filter"
-            className="cursor-pointer"
-            size="sm"
-            disabled={isReadOnly}
-            title={readOnlyTooltip}
-            onClick={() =>
-              !isReadOnly &&
-              router.push("/dashboard/outils/factures-achat?action=create")
-            }
-          >
-            <ClipboardImportIcon className="w-4 h-4" />
-            Ajouter une facture d&apos;achat
-          </Button>
-          <Button
-            variant="filter"
-            className="cursor-pointer"
-            size="sm"
-            disabled={isReadOnly}
-            title={readOnlyTooltip}
-            onClick={() =>
-              !isReadOnly &&
-              router.push("/dashboard/outils/transferts-fichiers?new=1")
-            }
-          >
-            <SendIcon className="w-4 h-4" />
-            Transférer un fichier
-          </Button>
-        </div>
+      {/* Actions rapides */}
+      <div className="flex items-center gap-2 flex-wrap -mt-2">
+        <Button
+          variant="primary"
+          className="cursor-pointer"
+          size="sm"
+          disabled={isReadOnly}
+          title={readOnlyTooltip}
+          {...(!isReadOnly
+            ? prefetchIntent("/dashboard/outils/devis/new")
+            : {})}
+          onClick={() =>
+            !isReadOnly && router.push("/dashboard/outils/devis/new")
+          }
+        >
+          <ClipboardTickIcon className="w-4 h-4" />
+          Créer un devis
+        </Button>
+        <Button
+          variant="primary"
+          className="cursor-pointer"
+          size="sm"
+          disabled={isReadOnly}
+          title={readOnlyTooltip}
+          {...(!isReadOnly
+            ? prefetchIntent("/dashboard/outils/factures/new")
+            : {})}
+          onClick={() =>
+            !isReadOnly && router.push("/dashboard/outils/factures/new")
+          }
+        >
+          <DocumentText2Icon className="w-4 h-4" />
+          Créer une facture
+        </Button>
+        <Button
+          variant="filter"
+          className="cursor-pointer"
+          size="sm"
+          disabled={isReadOnly}
+          title={readOnlyTooltip}
+          {...(!isReadOnly
+            ? prefetchIntent(
+                "/dashboard/outils/factures-achat?action=create",
+              )
+            : {})}
+          onClick={() =>
+            !isReadOnly &&
+            router.push("/dashboard/outils/factures-achat?action=create")
+          }
+        >
+          <ClipboardImportIcon className="w-4 h-4" />
+          Ajouter une facture d&apos;achat
+        </Button>
+        <Button
+          variant="filter"
+          className="cursor-pointer"
+          size="sm"
+          disabled={isReadOnly}
+          title={readOnlyTooltip}
+          {...(!isReadOnly
+            ? prefetchIntent(
+                "/dashboard/outils/transferts-fichiers?new=1",
+              )
+            : {})}
+          onClick={() =>
+            !isReadOnly &&
+            router.push("/dashboard/outils/transferts-fichiers?new=1")
+          }
+        >
+          <SendIcon className="w-4 h-4" />
+          Transférer un fichier
+        </Button>
+      </div>
 
         {/* Barre de recherche et actions rapides temporairement désactivées */}
         {/* <div className="flex flex-col gap-3 w-full">
@@ -1366,7 +1324,11 @@ function DashboardContent() {
           </Card>
         </div>
 
-        {/* Sections commentées */}
+        {/* Sections commentées. Leurs imports (graphiques recharts, cartes) et
+            la requête GET_TREASURY_CHART sur 365 jours ont été retirés le
+            09/10/2026 : ils chargeaient recharts et une agrégation serveur à
+            chaque visite pour des blocs invisibles. Les rétablir avant de
+            décommenter. */}
         {/*
         <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-4 md:gap-6 w-full">
           <div className="flex flex-col gap-4 md:gap-6">

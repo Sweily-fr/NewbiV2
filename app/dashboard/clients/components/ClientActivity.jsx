@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useMemo, useEffect } from "react";
 import * as React from "react";
 import { Button } from "@/src/components/ui/button";
@@ -45,9 +46,24 @@ import { toast } from "@/src/components/ui/sonner";
 import { useLazyQuery } from "@apollo/client";
 import { GET_EVENT } from "@/src/graphql/queries/event";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
-import InvoiceMobileFullscreen from "@/app/dashboard/outils/factures/components/invoice-mobile-fullscreen";
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
-import QuoteMobileFullscreen from "@/app/dashboard/outils/devis/components/quote-mobile-fullscreen";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const InvoiceMobileFullscreen = dynamic(
+  () =>
+    import("@/app/dashboard/outils/factures/components/invoice-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
+const QuoteMobileFullscreen = dynamic(
+  () =>
+    import("@/app/dashboard/outils/devis/components/quote-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 const ClientActivity = ({
   client,

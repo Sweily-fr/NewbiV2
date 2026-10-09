@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { ClipboardList, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -36,6 +37,8 @@ function safeFormatDate(dateString) {
 
 export default function ClientQuotesTab({ quotes = [], clientId }) {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
+  const newDocumentHref = `/dashboard/outils/devis/new?clientId=${clientId}`;
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -50,7 +53,7 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
           if (isNaN(dateB.getTime())) return -1;
           return dateB - dateA;
         }),
-    [quotes, clientId]
+    [quotes, clientId],
   );
 
   const formatCurrency = (amount) =>
@@ -66,7 +69,7 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
       <span
         className={cn(
           "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
-          colors
+          colors,
         )}
       >
         {label}
@@ -90,7 +93,8 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
           <Button
             variant="outline"
             className="mt-4"
-            onClick={() => router.push(`/dashboard/outils/devis/new?clientId=${clientId}`)}
+            {...prefetchIntent(newDocumentHref)}
+            onClick={() => router.push(newDocumentHref)}
           >
             <Plus className="h-3.5 w-3.5" />
             Nouveau devis
@@ -103,10 +107,13 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
   return (
     <>
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
-        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">Devis</h3>
+        <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
+          Devis
+        </h3>
         <Button
           variant="outline"
-          onClick={() => router.push(`/dashboard/outils/devis/new?clientId=${clientId}`)}
+          {...prefetchIntent(newDocumentHref)}
+          onClick={() => router.push(newDocumentHref)}
         >
           <Plus className="h-3.5 w-3.5" />
           Nouveau devis

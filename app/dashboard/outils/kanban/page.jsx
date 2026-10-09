@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import {
   KanbanListPageSkeleton,
@@ -121,6 +122,7 @@ function KanbanPageContent() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const [boardPreview, setBoardPreview] = React.useState(null);
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
   const [isDeletingMultiple, setIsDeletingMultiple] = React.useState(false);
@@ -888,6 +890,7 @@ function KanbanPageContent() {
                 <div
                   key={board.id}
                   className="bg-card border border-border rounded-xl p-4 hover:shadow-sm cursor-pointer transition-all group"
+                  {...prefetchIntent(`/dashboard/outils/kanban/${board.id}`)}
                   onClick={() =>
                     router.push(`/dashboard/outils/kanban/${board.id}`)
                   }
@@ -1095,6 +1098,9 @@ function KanbanPageContent() {
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
                       className="border-b border-border hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      {...prefetchIntent(
+                        `/dashboard/outils/kanban/${row.original.id}`,
+                      )}
                       onClick={(e) => {
                         // Ne pas naviguer si on clique sur la checkbox ou les actions
                         if (

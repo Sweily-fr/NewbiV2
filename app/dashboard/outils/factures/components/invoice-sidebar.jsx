@@ -89,7 +89,6 @@ const PdfPreview = dynamic(
   { ssr: false },
 );
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
-import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -101,6 +100,15 @@ import { motion } from "framer-motion";
 import { ReceiptItemIcon } from "@/src/components/icons";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const CreditNoteMobileFullscreen = dynamic(
+  () => import("./credit-note-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 export default function InvoiceSidebar({
   isOpen,

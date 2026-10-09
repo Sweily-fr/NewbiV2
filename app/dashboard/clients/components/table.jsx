@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
@@ -440,6 +441,8 @@ export default function TableClients({
 }) {
   const id = useId();
   const router = useRouter();
+  // Fiche client préchargée au survol de la ligne (voir usePrefetchOnIntent).
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const [columnFilters, setColumnFilters] = useState([]);
   const [internalColumnVisibility, setInternalColumnVisibility] = useState({});
   const columnVisibility = externalColumnVisibility || internalColumnVisibility;
@@ -932,6 +935,7 @@ export default function TableClients({
                   <tr
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    {...prefetchIntent(`/dashboard/clients/${row.original.id}`)}
                     className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                     onClick={(e) => {
                       // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
@@ -1262,6 +1266,7 @@ export default function TableClients({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    {...prefetchIntent(`/dashboard/clients/${row.original.id}`)}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                     onClick={(e) => {
                       // Ne pas naviguer si on clique sur la checkbox, le menu d'actions

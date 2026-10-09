@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useState } from "react";
-import Link from "next/link";
+// Liens préchargés à l'intention de clic (voir nav-link.jsx).
+import Link from "@/src/components/nav-link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import {
