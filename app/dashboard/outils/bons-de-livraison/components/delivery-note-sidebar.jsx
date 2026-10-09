@@ -39,6 +39,7 @@ import { DeliveryNoteStatusBadge } from "../hooks/use-delivery-note-table";
 import DeliveryNotePreview from "./DeliveryNotePreview";
 import DeliveryNotePdfButton from "./delivery-note-pdf-button";
 import DeliveryReceptionDialog from "./delivery-reception-dialog";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Rendu canvas (pdfjs) du PDF archivé, chargé à l'ouverture seulement
 const PdfPreview = dynamic(
@@ -66,7 +67,7 @@ const formatDate = (dateString) => {
 };
 
 const formatQty = (value) =>
-  new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(
+  getNumberFormat("fr-FR", { maximumFractionDigits: 2 }).format(
     parseFloat(value) || 0,
   );
 

@@ -15,6 +15,7 @@ import { QUOTE_STATUS_LABELS } from "@/src/graphql/quoteQueries";
 import { INVOICE_STATUS_LABELS } from "@/src/graphql/invoiceQueries";
 import { PURCHASE_ORDER_STATUS_LABELS } from "@/src/graphql/purchaseOrderQueries";
 import { DELIVERY_NOTE_STATUS_LABELS } from "@/src/graphql/deliveryNoteQueries";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Styles par statut identiques aux cellules "Statut" des tableaux
 // (use-quote-table.js, use-invoice-table.js, use-purchase-order-table.js).
@@ -102,7 +103,7 @@ export function DocumentStatusBadge({ type, status, className }) {
 }
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount || 0);

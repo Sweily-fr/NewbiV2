@@ -72,12 +72,13 @@ import {
 } from "@/src/graphql/deliveryNoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // --- Helpers ---
 
 const formatCurrency = (amount) => {
   if (!amount && amount !== 0) return "";
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount);

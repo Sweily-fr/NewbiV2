@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -164,7 +165,7 @@ export default function ModernCreditNoteEditor({
           number: `${result.creditNote.prefix || "AV"}-${result.creditNote.number}`,
           clientName: result.creditNote.client?.name,
           clientEmail: result.creditNote.client?.email,
-          totalAmount: new Intl.NumberFormat("fr-FR", {
+          totalAmount: getNumberFormat("fr-FR", {
             style: "currency",
             currency: "EUR",
           }).format(amount),

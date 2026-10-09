@@ -113,6 +113,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
 import { useClients } from "@/src/graphql/clientQueries";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function KanbanPageContent() {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -996,7 +997,7 @@ function KanbanPageContent() {
                     {board.totalBillableAmount > 0 && (
                       <span className="inline-flex items-center gap-1 text-[#5b50ff] font-medium">
                         <Euro className="h-3 w-3" />
-                        {new Intl.NumberFormat("fr-FR", {
+                        {getNumberFormat("fr-FR", {
                           style: "currency",
                           currency: "EUR",
                         }).format(board.totalBillableAmount)}

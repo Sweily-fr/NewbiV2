@@ -20,9 +20,10 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -221,6 +222,7 @@ export function AnalyticsRevenueChart({
               content={<CustomTooltip colors={chartColors} remap={remap} />}
             />
             <Bar
+              animationDuration={300}
               dataKey="revenueHT"
               fill={remap("#5b50ff")}
               fillOpacity={0.8}
@@ -228,6 +230,7 @@ export function AnalyticsRevenueChart({
               barSize={20}
             />
             <Bar
+              animationDuration={300}
               dataKey="expenseAmount"
               fill={remap("#000000")}
               fillOpacity={0.7}
@@ -235,6 +238,7 @@ export function AnalyticsRevenueChart({
               barSize={20}
             />
             <Line
+              animationDuration={300}
               type="bump"
               dataKey="grossMarginComputed"
               stroke={remap("#5b50ff")}

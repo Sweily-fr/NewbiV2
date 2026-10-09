@@ -31,6 +31,7 @@ import { I18nProvider } from "react-aria-components";
 import { Calendar as RangeCalendar } from "@/src/components/ui/calendar";
 import { fr } from "date-fns/locale";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const toYMD = (d) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -194,7 +195,7 @@ export function IncomeCategoryChart({
 
   // Formater le montant en euros
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount);
@@ -475,6 +476,7 @@ export function IncomeCategoryChart({
                   }
                 />
                 <Pie
+                  animationDuration={300}
                   data={chartData}
                   dataKey="amount"
                   nameKey="label"

@@ -16,8 +16,13 @@ import ProductCustomFieldsManager from "./components/product-custom-fields-manag
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CataloguesPageSkeleton } from "./components/catalogues-page-skeleton";
 import { useProducts } from "@/src/hooks/useProducts";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 function CataloguesContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
@@ -46,92 +51,98 @@ function CataloguesContent() {
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header - Aligné comme Factures */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCustomFieldsOpen(true)}
-              className="cursor-pointer"
-            >
-              <Settings2 className="w-3.5 h-3.5" />
-              Champs
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => !isReadOnly && setImportDialogOpen(true)}
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-              className="cursor-pointer"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Importer
-            </Button>
-            <ProductExportButton
-              products={allProducts}
-              selectedRows={selectedProducts}
-              iconOnly={false}
-            />
-            <Button
-              variant="primary"
-              onClick={() => !isReadOnly && handleOpenProductDialog()}
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-              className="cursor-pointer"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Ajouter un produit
-            </Button>
-          </div>
-        </div>
-
-        {/* Table - Pleine largeur */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <TableProduct
-            handleAddProduct={handleOpenProductDialog}
-            hideHeaderButtons={true}
-            rowSelection={rowSelection}
-            onRowSelectionChange={setRowSelection}
-          />
-        </div>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header mobile */}
-        <div className="px-4 py-6">
-          <div className="flex items-start justify-between">
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header - Aligné comme Factures */}
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
             <div>
-              <h1 className="text-2xl font-medium mb-2">Catalogue</h1>
-              <p className="text-muted-foreground text-sm">
-                Gérez vos produits et services
-              </p>
+              <h1 className="text-2xl font-medium mb-2">
+                Gestion du Catalogue
+              </h1>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCustomFieldsOpen(true)}
+                className="cursor-pointer"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                Champs
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => !isReadOnly && setImportDialogOpen(true)}
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+                className="cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Importer
+              </Button>
+              <ProductExportButton
+                products={allProducts}
+                selectedRows={selectedProducts}
+                iconOnly={false}
+              />
+              <Button
+                variant="primary"
+                onClick={() => !isReadOnly && handleOpenProductDialog()}
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+                className="cursor-pointer"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Ajouter un produit
+              </Button>
             </div>
           </div>
-        </div>
 
-        {/* Table - Pleine largeur */}
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          <TableProduct
-            handleAddProduct={handleOpenProductDialog}
-            rowSelection={rowSelection}
-            onRowSelectionChange={setRowSelection}
-          />
+          {/* Table - Pleine largeur */}
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <TableProduct
+              handleAddProduct={handleOpenProductDialog}
+              hideHeaderButtons={true}
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
+            />
+          </div>
         </div>
+      )}
 
-        {/* Bouton flottant mobile */}
-        <Button
-          onClick={handleOpenProductDialog}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </div>
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header mobile */}
+          <div className="px-4 py-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-2">Catalogue</h1>
+                <p className="text-muted-foreground text-sm">
+                  Gérez vos produits et services
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Table - Pleine largeur */}
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            <TableProduct
+              handleAddProduct={handleOpenProductDialog}
+              rowSelection={rowSelection}
+              onRowSelectionChange={setRowSelection}
+            />
+          </div>
+
+          {/* Bouton flottant mobile */}
+          <Button
+            onClick={handleOpenProductDialog}
+            className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+            size="icon"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
 
       {/* Modal unique pour desktop et mobile */}
       <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />

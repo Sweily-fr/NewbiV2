@@ -59,6 +59,7 @@ export function ChartRadarGridCircle() {
             <PolarGrid gridType="circle" />
             <PolarAngleAxis dataKey="month" />
             <Radar
+              animationDuration={300}
               dataKey="desktop"
               fill={remap("#5B4FFF")}
               fillOpacity={0.6}

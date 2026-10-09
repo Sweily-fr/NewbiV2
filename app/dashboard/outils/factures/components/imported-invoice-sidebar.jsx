@@ -82,6 +82,7 @@ import { OcrComparisonDialog } from "./ocr-comparison-dialog";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliationGraphQL";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatDateForInput = (dateValue) => {
   if (!dateValue) return "";
@@ -144,7 +145,7 @@ const vatRateFromAmounts = (totalHT, totalVAT) => {
 const currencySymbol = (currency) => {
   try {
     return (
-      new Intl.NumberFormat("fr-FR", {
+      getNumberFormat("fr-FR", {
         style: "currency",
         currency: currency || "EUR",
       })
@@ -452,7 +453,7 @@ export function ImportedInvoiceSidebar({
   };
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: invoice.currency || "EUR",
     }).format(amount || 0);
@@ -963,7 +964,7 @@ export function ImportedInvoiceSidebar({
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">
-                          {new Intl.NumberFormat("fr-FR", {
+                          {getNumberFormat("fr-FR", {
                             style: "currency",
                             currency: "EUR",
                           }).format(tx.amount || 0)}
@@ -1060,7 +1061,7 @@ export function ImportedInvoiceSidebar({
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">
-                                {new Intl.NumberFormat("fr-FR", {
+                                {getNumberFormat("fr-FR", {
                                   style: "currency",
                                   currency: "EUR",
                                 }).format(tx.amount || 0)}

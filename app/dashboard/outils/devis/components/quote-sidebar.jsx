@@ -78,6 +78,7 @@ import {
 } from "@/src/hooks/useESignature";
 import { buildLinkedInvoiceItems } from "@/src/utils/linked-invoice-items";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function QuoteSidebar({
   isOpen,
@@ -171,7 +172,7 @@ export default function QuoteSidebar({
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);
@@ -442,7 +443,11 @@ export default function QuoteSidebar({
           ) : (
             <div className="w-[210mm] max-w-full pointer-events-auto">
               <div className="min-h-[calc(100vh-6rem)] bg-white">
-                <UniversalPreviewPDF data={quote} type="quote" recalcDraftDates />
+                <UniversalPreviewPDF
+                  data={quote}
+                  type="quote"
+                  recalcDraftDates
+                />
               </div>
               {/* Brouillon : pas encore de PDF archivé, l'annexe est montrée à part */}
               <DocumentAnnexPreview annex={quote.annex} tone="dark" />

@@ -74,6 +74,7 @@ import {
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -313,7 +314,7 @@ export default function ModernQuoteEditor({
         number: `${result.quote.prefix || "D"}-${result.quote.number}`,
         clientName: result.quote.client?.name,
         clientEmail: result.quote.client?.email,
-        totalAmount: new Intl.NumberFormat("fr-FR", {
+        totalAmount: getNumberFormat("fr-FR", {
           style: "currency",
           currency: "EUR",
         }).format(result.quote.finalTotalTTC || 0),

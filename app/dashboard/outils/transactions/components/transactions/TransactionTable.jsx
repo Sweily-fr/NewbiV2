@@ -473,6 +473,7 @@ export default function TransactionTable({
   const { workspaceId } = useRequiredWorkspace();
   const { data: session } = useSession();
   const [organizationMembers, setOrganizationMembers] = useState([]);
+  const membersFetchedForRef = useRef(null);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
   // Mutation pour upload de justificatif
@@ -535,10 +536,17 @@ export default function TransactionTable({
       }
     };
 
-    if (activeOrg?.id) {
+    // Membres chargés à la première ouverture de l'export (seul à s'en
+    // servir), et non à chaque affichage de la page Transactions.
+    if (
+      activeOrg?.id &&
+      isExportDialogOpen &&
+      membersFetchedForRef.current !== activeOrg.id
+    ) {
+      membersFetchedForRef.current = activeOrg.id;
       fetchMembers();
     }
-  }, [activeOrg?.id]);
+  }, [activeOrg?.id, isExportDialogOpen]);
 
   // Pagination serveur : items de la page courante + total + compteurs
   // d'onglets calculés sur toute la base
@@ -753,7 +761,9 @@ export default function TransactionTable({
         });
         const result = data?.confirmTransactionReceiptInvoice;
         if (!result?.success) {
-          toast.error(result?.message || "La facture d'achat n'a pas pu être enregistrée");
+          toast.error(
+            result?.message || "La facture d'achat n'a pas pu être enregistrée",
+          );
           return;
         }
         if (action === "CREATE") {
@@ -768,7 +778,9 @@ export default function TransactionTable({
         }
       } catch (error) {
         console.error("❌ [CONFIRM RECEIPT INVOICE]", error);
-        toast.error(error.message || "La facture d'achat n'a pas pu être enregistrée");
+        toast.error(
+          error.message || "La facture d'achat n'a pas pu être enregistrée",
+        );
         return;
       }
       refetch();
@@ -1206,7 +1218,8 @@ export default function TransactionTable({
       onConfirmProposal: (transaction, receiptFile) => {
         setConfirmationQueue([
           {
-            transactionId: transaction.originalTransaction?.id || transaction.id,
+            transactionId:
+              transaction.originalTransaction?.id || transaction.id,
             receiptFile,
             transaction,
           },

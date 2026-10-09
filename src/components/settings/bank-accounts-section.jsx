@@ -46,6 +46,7 @@ import { Callout } from "@/src/components/ui/callout";
 import { BankReconnectAlert } from "@/src/components/banking/BankReconnectAlert";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 /**
  * Formate un IBAN pour l'affichage (groupes de 4)
@@ -65,7 +66,7 @@ const formatIban = (iban, showFull = false) => {
  * Formate un montant en devise
  */
 const formatCurrency = (amount, currency = "EUR") => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: currency,
   }).format(amount || 0);

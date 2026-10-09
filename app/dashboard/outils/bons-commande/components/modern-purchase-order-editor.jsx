@@ -68,6 +68,7 @@ import {
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -318,7 +319,7 @@ export default function ModernPurchaseOrderEditor({
         number: `${result.purchaseOrder.prefix || "BC"}-${result.purchaseOrder.number}`,
         clientName: result.purchaseOrder.client?.name,
         clientEmail: result.purchaseOrder.client?.email,
-        totalAmount: new Intl.NumberFormat("fr-FR", {
+        totalAmount: getNumberFormat("fr-FR", {
           style: "currency",
           currency: "EUR",
         }).format(result.purchaseOrder.finalTotalTTC || 0),

@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { X, LoaderCircle, Settings, Users, Eye, CornerDownLeft } from "lucide-react";
+import {
+  X,
+  LoaderCircle,
+  Settings,
+  Users,
+  Eye,
+  CornerDownLeft,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import {
@@ -40,7 +47,9 @@ export function AutoReminderModal({ open, onOpenChange }) {
   const [updateSettings] = useUpdateInvoiceReminderSettings();
 
   // Récupérer les paramètres Email
-  const { data: emailData, loading: loadingEmail } = useEmailSettings();
+  const { data: emailData, loading: loadingEmail } = useEmailSettings({
+    skip: !open,
+  });
   const [updateEmailSettings] = useUpdateEmailSettings();
 
   const methods = useForm({
@@ -129,7 +138,7 @@ Cordialement,
     } catch (error) {
       console.error("Erreur lors de la sauvegarde:", error);
       toast.error(
-        error.message || "Erreur lors de la sauvegarde des paramètres"
+        error.message || "Erreur lors de la sauvegarde des paramètres",
       );
     } finally {
       setIsSaving(false);
@@ -145,147 +154,145 @@ Cordialement,
         showCloseButton={false}
       >
         <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/40">
-          <DialogHeader>
-            <DialogTitle className="text-sm font-medium">
-              Relances automatiques
-            </DialogTitle>
-          </DialogHeader>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onOpenChange(false)}
-            className="h-8 w-8"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogHeader>
+              <DialogTitle className="text-sm font-medium">
+                Relances automatiques
+              </DialogTitle>
+            </DialogHeader>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
 
-        {/* Content */}
-        <FormProvider {...methods}>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex-1 min-h-0 flex overflow-hidden"
-          >
-            {/* Left Panel - Tabs (full width on mobile) */}
-            <div className="w-full lg:w-1/2 lg:border-r border-border/40 flex flex-col min-h-0">
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="flex-1 flex flex-col min-h-0"
-              >
-                <div className="px-5 py-3 border-b border-border/40 shrink-0">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger
-                      value="settings"
-                      className="gap-2 text-xs md:text-sm"
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span className="hidden sm:inline">Paramètres</span>
-                      <span className="sm:hidden">Config</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="clients"
-                      className="gap-2 text-xs md:text-sm"
-                    >
-                      <Users className="h-4 w-4" />
-                      <span className="hidden sm:inline">
-                        Clients concernés
-                      </span>
-                      <span className="sm:hidden">Clients</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-
-                <TabsContent
-                  value="settings"
-                  className="flex-1 overflow-y-auto p-5 mt-0"
+          {/* Content */}
+          <FormProvider {...methods}>
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex-1 min-h-0 flex overflow-hidden"
+            >
+              {/* Left Panel - Tabs (full width on mobile) */}
+              <div className="w-full lg:w-1/2 lg:border-r border-border/40 flex flex-col min-h-0">
+                <Tabs
+                  value={activeTab}
+                  onValueChange={setActiveTab}
+                  className="flex-1 flex flex-col min-h-0"
                 >
-                  <AutoReminderForm isSmtpConfigured={true} />
-                </TabsContent>
+                  <div className="px-5 py-3 border-b border-border/40 shrink-0">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger
+                        value="settings"
+                        className="gap-2 text-xs md:text-sm"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span className="hidden sm:inline">Paramètres</span>
+                        <span className="sm:hidden">Config</span>
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="clients"
+                        className="gap-2 text-xs md:text-sm"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span className="hidden sm:inline">
+                          Clients concernés
+                        </span>
+                        <span className="sm:hidden">Clients</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
 
-                <TabsContent
-                  value="clients"
-                  className="flex-1 overflow-y-auto p-5 mt-0"
-                >
-                  <AutoReminderClients />
-                </TabsContent>
-              </Tabs>
-            </div>
+                  <TabsContent
+                    value="settings"
+                    className="flex-1 overflow-y-auto p-5 mt-0"
+                  >
+                    <AutoReminderForm isSmtpConfigured={true} />
+                  </TabsContent>
 
-            {/* Right Panel - Preview (hidden on mobile) */}
-            <div className="hidden lg:block w-1/2 overflow-y-auto p-5 bg-gray-50 dark:bg-[#252525]">
-              <AutoReminderPreview formData={watch()} />
-            </div>
-          </form>
-        </FormProvider>
+                  <TabsContent
+                    value="clients"
+                    className="flex-1 overflow-y-auto p-5 mt-0"
+                  >
+                    <AutoReminderClients />
+                  </TabsContent>
+                </Tabs>
+              </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border/40 px-5 py-3">
+              {/* Right Panel - Preview (hidden on mobile) */}
+              <div className="hidden lg:block w-1/2 overflow-y-auto p-5 bg-gray-50 dark:bg-[#252525]">
+                <AutoReminderPreview formData={watch()} />
+              </div>
+            </form>
+          </FormProvider>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between border-t border-border/40 px-5 py-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmit(onSubmit)}
+              disabled={isSaving}
+              className="gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  Sauvegarde...
+                </>
+              ) : (
+                <>
+                  Enregistrer
+                  <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                    <CornerDownLeft className="size-3" />
+                  </kbd>
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Floating Preview Button (mobile/tablet only) */}
           <Button
             type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
+            onClick={() => setShowMobilePreview(true)}
+            className="lg:hidden fixed bottom-24 right-4 h-12 w-12 rounded-full shadow-lg bg-[#5b50ff] hover:bg-[#4a41e0] z-50"
+            size="icon"
           >
-            Annuler
+            <Eye className="h-5 w-5 text-white" />
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit(onSubmit)}
-            disabled={isSaving}
-            className="gap-2"
-          >
-            {isSaving ? (
-              <>
-                <LoaderCircle className="size-4 animate-spin" />
-                Sauvegarde...
-              </>
-            ) : (
-              <>
-                Enregistrer
-                <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
-                  <CornerDownLeft className="size-3" />
-                </kbd>
-              </>
-            )}
-          </Button>
-        </div>
 
-        {/* Floating Preview Button (mobile/tablet only) */}
-        <Button
-          type="button"
-          onClick={() => setShowMobilePreview(true)}
-          className="lg:hidden fixed bottom-24 right-4 h-12 w-12 rounded-full shadow-lg bg-[#5b50ff] hover:bg-[#4a41e0] z-50"
-          size="icon"
-        >
-          <Eye className="h-5 w-5 text-white" />
-        </Button>
-
-        {/* Mobile Preview Overlay */}
-        {showMobilePreview && (
-          <div className="lg:hidden fixed inset-0 z-[60] bg-white dark:bg-[#1a1a1a] flex flex-col">
-            {/* Preview Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border/40">
-              <h3 className="text-sm font-medium">
-                Aperçu de l&apos;email
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowMobilePreview(false)}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+          {/* Mobile Preview Overlay */}
+          {showMobilePreview && (
+            <div className="lg:hidden fixed inset-0 z-[60] bg-white dark:bg-[#1a1a1a] flex flex-col">
+              {/* Preview Header */}
+              <div className="flex items-center justify-between p-4 border-b border-border/40">
+                <h3 className="text-sm font-medium">Aperçu de l&apos;email</h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowMobilePreview(false)}
+                  className="h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              {/* Preview Content */}
+              <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-[#252525]">
+                <AutoReminderPreview formData={watch()} />
+              </div>
             </div>
-            {/* Preview Content */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-[#252525]">
-              <AutoReminderPreview formData={watch()} />
-            </div>
-          </div>
-        )}
+          )}
         </div>
       </DialogContent>
     </Dialog>

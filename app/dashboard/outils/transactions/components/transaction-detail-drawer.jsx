@@ -93,6 +93,7 @@ import {
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const paymentMethodIcons = {
   CARD: CardVuesax,
@@ -1097,7 +1098,7 @@ export function TransactionDetailDrawer({
   };
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount);

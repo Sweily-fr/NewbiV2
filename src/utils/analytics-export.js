@@ -1,3 +1,4 @@
+import { getNumberFormat } from "@/src/lib/intl-cache";
 // xlsx (~800 KB) et jspdf (~400 KB) sont chargés dynamiquement dans les
 // fonctions d'export pour rester hors du chunk de la page analytiques.
 
@@ -332,7 +333,7 @@ export async function exportAnalyticsPDF(data, tab, period) {
         const val = row[h];
         let display;
         if (typeof val === "number") {
-          display = new Intl.NumberFormat("fr-FR", {
+          display = getNumberFormat("fr-FR", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 2,
           }).format(val);

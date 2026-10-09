@@ -13,6 +13,7 @@ import {
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function formatRelativeDate(dateString) {
   if (!dateString) return "";
@@ -113,7 +114,7 @@ export default function ClientOverviewTab({
   }, [clientInvoices]);
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat("fr-FR", {
+    getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount);

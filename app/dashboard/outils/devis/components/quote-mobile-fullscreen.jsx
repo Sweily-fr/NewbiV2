@@ -31,6 +31,7 @@ import LinkedInvoicesList from "./linked-invoices-list";
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import { buildLinkedInvoiceItems } from "@/src/utils/linked-invoice-items";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -51,7 +52,7 @@ export default function QuoteMobileFullscreen({
   const quote = fullQuote || initialQuote;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);

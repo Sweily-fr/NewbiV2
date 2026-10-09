@@ -5,18 +5,16 @@ import { Badge } from "@/src/components/ui/badge";
 import { useCreditNote } from "@/src/graphql/creditNoteQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function CreditNoteMobileFullscreen({
   isOpen,
   onClose,
   creditNote: initialCreditNote,
 }) {
-
   // Récupérer les données complètes de l'avoir
-  const {
-    creditNote: fullCreditNote,
-    loading: loadingFullCreditNote,
-  } = useCreditNote(initialCreditNote?.id);
+  const { creditNote: fullCreditNote, loading: loadingFullCreditNote } =
+    useCreditNote(initialCreditNote?.id);
 
   // Ne rien afficher si pas ouvert ou pas d'avoir
   if (!isOpen || !initialCreditNote) return null;
@@ -25,7 +23,7 @@ export default function CreditNoteMobileFullscreen({
   const creditNote = fullCreditNote || initialCreditNote;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
       minimumFractionDigits: 2,
@@ -91,19 +89,29 @@ export default function CreditNoteMobileFullscreen({
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Client</p>
-                  <p className="font-medium">{creditNote.client?.name || "N/A"}</p>
+                  <p className="font-medium">
+                    {creditNote.client?.name || "N/A"}
+                  </p>
                 </div>
 
                 {creditNote.linkedInvoice && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Facture liée</p>
-                    <p className="font-medium">{creditNote.linkedInvoice.number}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Facture liée
+                    </p>
+                    <p className="font-medium">
+                      {creditNote.linkedInvoice.number}
+                    </p>
                   </div>
                 )}
 
                 <div>
-                  <p className="text-sm text-muted-foreground">Date d'émission</p>
-                  <p className="font-medium">{formatDate(creditNote.issueDate)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Date d'émission
+                  </p>
+                  <p className="font-medium">
+                    {formatDate(creditNote.issueDate)}
+                  </p>
                 </div>
 
                 {creditNote.reason && (
@@ -114,7 +122,9 @@ export default function CreditNoteMobileFullscreen({
                 )}
 
                 <div>
-                  <p className="text-sm text-muted-foreground">Montant total TTC</p>
+                  <p className="text-sm text-muted-foreground">
+                    Montant total TTC
+                  </p>
                   <p className="text-2xl font-bold text-red-600">
                     {formatCurrency(creditNote.finalTotalTTC)}
                   </p>
@@ -144,7 +154,6 @@ export default function CreditNoteMobileFullscreen({
           )}
         </div>
       </div>
-
     </>
   );
 }

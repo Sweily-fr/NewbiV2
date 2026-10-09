@@ -287,8 +287,8 @@ const columns = [
     id: "actions",
     cell: ({ row }) => {
       const rowData = row.original;
-      const isFavorite = rowData.status === 'Par défaut';
-      
+      const isFavorite = rowData.status === "Par défaut";
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -302,13 +302,17 @@ const columns = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32">
-            <DropdownMenuItem onClick={() => onEdit?.(rowData)}>Edit</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onDuplicate?.(rowData)}>Make a copy</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit?.(rowData)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDuplicate?.(rowData)}>
+              Make a copy
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onToggleFavorite?.(rowData)}>
-              {isFavorite ? 'Remove from default' : 'Set as default'}
+              {isFavorite ? "Remove from default" : "Set as default"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="text-red-600 focus:text-red-600"
               onClick={() => onDelete?.(rowData)}
             >
@@ -345,140 +349,157 @@ function DraggableRow({ row }) {
     </TableRow>
   );
 }
-export function DataTable({ data: initialData, textButton, link, onEdit, onDelete, onDuplicate, onToggleFavorite }) {
+export function DataTable({
+  data: initialData,
+  textButton,
+  link,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onToggleFavorite,
+}) {
   const [data, setData] = React.useState(initialData);
-  
+
   // Mise à jour de l'état local lorsque les données initiales changent
   React.useEffect(() => {
     setData(initialData);
   }, [initialData]);
-  
-  // Définir les colonnes à l'intérieur du composant pour avoir accès aux props
-  const columns = React.useMemo(() => [
-    {
-      id: "drag",
-      header: () => null,
-      cell: ({ row }) => <DragHandle id={row.original.id} />,
-    },
-    {
-      id: "select",
-      header: ({ table }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="flex items-center justify-center">
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-          />
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "header",
-      header: "Header",
-      cell: ({ row }) => {
-        return <TableCellViewer item={row.original} />;
-      },
-      enableHiding: false,
-    },
-    {
-      accessorKey: "type",
-      header: "Section Type",
-      cell: ({ row }) => (
-        <div className="w-32">
-          <Badge variant="outline" className="text-muted-foreground px-1.5">
-            {row.original.type}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Badge variant="outline" className="text-muted-foreground px-1.5">
-          {row.original.status === "Done" ? (
-            <CircleCheck className="fill-green-600 dark:fill-green-400" />
-          ) : (
-            <LoaderCircle className="h-4 w-4 animate-spin" />
-          )}
-          {row.original.status}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "target",
-      header: "Target",
-      cell: ({ row }) => (
-        <div className="w-16">
-          <Badge variant="outline" className="text-muted-foreground px-1.5">
-            {row.original.target}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "limit",
-      header: "Limit",
-      cell: ({ row }) => (
-        <div className="w-16">
-          <Badge variant="outline" className="text-muted-foreground px-1.5">
-            {row.original.limit}
-          </Badge>
-        </div>
-      ),
-    },
 
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const rowData = row.original;
-        const isFavorite = rowData.status === 'Par défaut';
-        
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
-                size="icon"
-              >
-                <EllipsisVertical />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
-              <DropdownMenuItem onClick={() => onEdit?.(rowData)}>Edit</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDuplicate?.(rowData)}>Make a copy</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onToggleFavorite?.(rowData)}>
-                {isFavorite ? 'Remove from default' : 'Set as default'}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-red-600 focus:text-red-600"
-                onClick={() => onDelete?.(rowData)}
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
+  // Définir les colonnes à l'intérieur du composant pour avoir accès aux props
+  const columns = React.useMemo(
+    () => [
+      {
+        id: "drag",
+        header: () => null,
+        cell: ({ row }) => <DragHandle id={row.original.id} />,
       },
-    },
-  ], [data, onEdit, onDelete, onDuplicate, onToggleFavorite]);
+      {
+        id: "select",
+        header: ({ table }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
+              }
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
+              aria-label="Select all"
+            />
+          </div>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+            />
+          </div>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: "header",
+        header: "Header",
+        cell: ({ row }) => {
+          return <TableCellViewer item={row.original} />;
+        },
+        enableHiding: false,
+      },
+      {
+        accessorKey: "type",
+        header: "Section Type",
+        cell: ({ row }) => (
+          <div className="w-32">
+            <Badge variant="outline" className="text-muted-foreground px-1.5">
+              {row.original.type}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => (
+          <Badge variant="outline" className="text-muted-foreground px-1.5">
+            {row.original.status === "Done" ? (
+              <CircleCheck className="fill-green-600 dark:fill-green-400" />
+            ) : (
+              <LoaderCircle className="h-4 w-4 animate-spin" />
+            )}
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "target",
+        header: "Target",
+        cell: ({ row }) => (
+          <div className="w-16">
+            <Badge variant="outline" className="text-muted-foreground px-1.5">
+              {row.original.target}
+            </Badge>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "limit",
+        header: "Limit",
+        cell: ({ row }) => (
+          <div className="w-16">
+            <Badge variant="outline" className="text-muted-foreground px-1.5">
+              {row.original.limit}
+            </Badge>
+          </div>
+        ),
+      },
+
+      {
+        id: "actions",
+        cell: ({ row }) => {
+          const rowData = row.original;
+          const isFavorite = rowData.status === "Par défaut";
+
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="data-[state=open]:bg-muted text-muted-foreground flex size-8"
+                  size="icon"
+                >
+                  <EllipsisVertical />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem onClick={() => onEdit?.(rowData)}>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDuplicate?.(rowData)}>
+                  Make a copy
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onToggleFavorite?.(rowData)}>
+                  {isFavorite ? "Remove from default" : "Set as default"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600"
+                  onClick={() => onDelete?.(rowData)}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    [data, onEdit, onDelete, onDuplicate, onToggleFavorite],
+  );
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState({});
@@ -492,7 +513,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
     useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {})
+    useSensor(KeyboardSensor, {}),
   );
 
   const dataIds = React.useMemo(() => data?.map(({ id }) => id) || [], [data]);
@@ -583,7 +604,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
                 .filter(
                   (column) =>
                     typeof column.accessorFn !== "undefined" &&
-                    column.getCanHide()
+                    column.getCanHide(),
                 )
                 .map((column) => {
                   return (
@@ -636,7 +657,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
                             ? null
                             : flexRender(
                                 header.column.columnDef.header,
-                                header.getContext()
+                                header.getContext(),
                               )}
                         </TableHead>
                       );
@@ -829,6 +850,7 @@ function TableCellViewer({ item }) {
                     content={<ChartTooltipContent indicator="dot" />}
                   />
                   <Area
+                    animationDuration={300}
                     dataKey="mobile"
                     type="natural"
                     fill="var(--color-mobile)"
@@ -837,6 +859,7 @@ function TableCellViewer({ item }) {
                     stackId="a"
                   />
                   <Area
+                    animationDuration={300}
                     dataKey="desktop"
                     type="natural"
                     fill="var(--color-desktop)"

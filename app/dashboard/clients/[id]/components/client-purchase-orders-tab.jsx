@@ -18,6 +18,7 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/src/components/ui/empty";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function safeFormatDate(dateString) {
   if (!dateString) return "-";
@@ -60,7 +61,7 @@ export default function ClientPurchaseOrdersTab({
   );
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat("fr-FR", {
+    getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);

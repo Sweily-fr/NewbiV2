@@ -28,6 +28,7 @@ const IMPORTED_DOCUMENT_QUERIES = {
   PURCHASE_INVOICE: ["GetPurchaseInvoices", "GetPurchaseInvoiceStats"],
 };
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   GET_NOTIFICATIONS,
@@ -44,6 +45,7 @@ import {
  * Le polling (60s) s'active uniquement en fallback si le WebSocket échoue.
  */
 export const useActivityNotifications = (options = {}) => {
+  const router = useRouter();
   const { limit = 50, offset = 0, unreadOnly = false } = options;
   const { workspaceId } = useWorkspace();
   const [wsConnected, setWsConnected] = useState(true);
@@ -140,10 +142,18 @@ export const useActivityNotifications = (options = {}) => {
       logoAlt: ext?.name,
       fallbackIcon: ext?.icon || FileDown,
       action: url
-        ? { label: "Voir", onClick: () => window.location.assign(url) }
+        ? {
+            label: "Voir",
+            // Route interne : navigation client (window.location.assign
+            // rechargeait toute l'application).
+            onClick: () =>
+              url.startsWith("/") && !url.startsWith("//")
+                ? router.push(url)
+                : window.location.assign(url),
+          }
         : undefined,
     });
-  }, [subscriptionData, refetch, refetchUnreadCount, apolloClient]);
+  }, [subscriptionData, refetch, refetchUnreadCount, apolloClient, router]);
 
   // Marquer une notification comme lue
   const markAsRead = useCallback(

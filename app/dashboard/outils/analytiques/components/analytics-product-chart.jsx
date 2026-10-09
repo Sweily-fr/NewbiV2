@@ -21,6 +21,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const BAR_COLORS = [
   "#5b50ff",
@@ -36,7 +37,7 @@ const BAR_COLORS = [
 ];
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -168,7 +169,12 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
             />
             <YAxis type="category" dataKey="shortDesc" hide width={0} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="totalHT" radius={[0, 4, 4, 0]} barSize={18}>
+            <Bar
+              animationDuration={300}
+              dataKey="totalHT"
+              radius={[0, 4, 4, 0]}
+              barSize={18}
+            >
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.fill} />
               ))}

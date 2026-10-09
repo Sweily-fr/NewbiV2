@@ -11,8 +11,9 @@ import {
 } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { hasChartValues, formatAxisAmount } from "./analytics-chart-utils";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -160,6 +161,7 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar
+              animationDuration={300}
               dataKey="revenueVAT"
               name="TVA collectée"
               fill={COLLECTED_VAT_COLOR}
@@ -167,6 +169,7 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
               barSize={18}
             />
             <Bar
+              animationDuration={300}
               dataKey="expenseVAT"
               name="TVA déductible"
               fill={DEDUCTIBLE_VAT_COLOR}

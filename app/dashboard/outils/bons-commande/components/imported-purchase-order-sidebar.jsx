@@ -61,6 +61,7 @@ import {
   PAYMENT_METHOD_LABELS,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export function ImportedPurchaseOrderSidebar({
   purchaseOrder,
@@ -188,7 +189,7 @@ export function ImportedPurchaseOrderSidebar({
   };
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: purchaseOrder.currency || "EUR",
     }).format(amount || 0);

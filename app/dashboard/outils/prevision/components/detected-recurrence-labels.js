@@ -1,3 +1,4 @@
+import { getNumberFormat } from "@/src/lib/intl-cache";
 // Libellés de périodicité partagés entre la liste des récurrences détectées
 // et le dialogue « Modifier la récurrence ».
 
@@ -25,7 +26,7 @@ export const FREQUENCY_SUFFIX = {
 };
 
 export const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,

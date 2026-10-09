@@ -590,7 +590,9 @@ export const useQuoteBalances = () => {
       pendingAmount: 0,
       pendingCount: 0,
     },
-    loading,
+    // Premier chargement seulement : en cache-and-network, loading reste vrai
+    // pendant la revalidation et les KPI repassaient à « ... » à chaque visite.
+    loading: loading && !data?.quoteBalances,
     refetch,
   };
 };

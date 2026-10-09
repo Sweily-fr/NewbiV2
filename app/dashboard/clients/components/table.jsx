@@ -129,6 +129,7 @@ import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
 import CreateListDialog from "./create-list-dialog";
 import AssignMembersDialog from "./assign-members-dialog";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -438,6 +439,9 @@ export default function TableClients({
   onClientRemovedFromList,
   onClientsLoaded,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const id = useId();
   const router = useRouter();
   // Fiche client préchargée au survol de la ligne (voir usePrefetchOnIntent).
@@ -758,428 +762,74 @@ export default function TableClients({
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col flex-1 min-h-0">
-        {/* Toolbar - Caché si hideSearchBar */}
-        {!hideSearchBar && (
-          <div className="flex items-center gap-4 px-4 sm:px-6 py-4 flex-shrink-0">
-            {/* Search */}
-            <div className="relative max-w-md">
-              <Input
-                id={`${id}-input`}
-                ref={inputRef}
-                className={cn(
-                  "w-full sm:w-[320px] lg:w-[320px] ps-9",
-                  Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9",
-                )}
-                value={globalFilter}
-                onChange={(e) => {
-                  setGlobalFilter(e.target.value);
-                  table.getColumn("name")?.setFilterValue(e.target.value);
-                }}
-                placeholder="Recherchez par nom, email ou SIRET..."
-                type="text"
-                aria-label="Filter by name or email"
-              />
-              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                <Search size={16} aria-hidden="true" />
-              </div>
-              {Boolean(globalFilter) && (
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Clear filter"
-                  onClick={() => {
-                    setGlobalFilter("");
-                    table.getColumn("name")?.setFilterValue("");
-                    if (inputRef.current) {
-                      inputRef.current.focus();
-                    }
+      {!isMobileLayout && (
+        <div className="hidden md:flex md:flex-col flex-1 min-h-0">
+          {/* Toolbar - Caché si hideSearchBar */}
+          {!hideSearchBar && (
+            <div className="flex items-center gap-4 px-4 sm:px-6 py-4 flex-shrink-0">
+              {/* Search */}
+              <div className="relative max-w-md">
+                <Input
+                  id={`${id}-input`}
+                  ref={inputRef}
+                  className={cn(
+                    "w-full sm:w-[320px] lg:w-[320px] ps-9",
+                    Boolean(table.getColumn("name")?.getFilterValue()) &&
+                      "pe-9",
+                  )}
+                  value={globalFilter}
+                  onChange={(e) => {
+                    setGlobalFilter(e.target.value);
+                    table.getColumn("name")?.setFilterValue(e.target.value);
                   }}
-                >
-                  <CircleXIcon size={16} aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {/* Filters Button */}
-            <ClientFilters
-              selectedTypes={selectedTypes}
-              setSelectedTypes={setSelectedTypes}
-              table={table}
-              columnVisibility={columnVisibility}
-              onColumnVisibilityChange={setColumnVisibility}
-              allColumns={toggleableColumns}
-              customFieldNames={customFieldNamesMap}
-            />
-          </div>
-        )}
-
-        {/* Table - Desktop style avec header sticky et scroll horizontal synchronisé */}
-        <div className="flex-1 min-h-0 overflow-auto border-t border-border">
-          <table className="w-full table-fixed">
-            <thead className="sticky top-0 z-10 bg-background border-b border-border">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, index, arr) => (
-                    <th
-                      key={header.id}
-                      style={{ width: `${header.getSize()}px` }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                        <div
-                          className={cn(
-                            header.column.getCanSort() &&
-                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
-                          )}
-                          onClick={header.column.getToggleSortingHandler()}
-                          onKeyDown={(e) => {
-                            if (
-                              header.column.getCanSort() &&
-                              (e.key === "Enter" || e.key === " ")
-                            ) {
-                              e.preventDefault();
-                              header.column.getToggleSortingHandler()?.(e);
-                            }
-                          }}
-                          tabIndex={header.column.getCanSort() ? 0 : undefined}
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                          {{
-                            asc: (
-                              <ChevronUpIcon
-                                className="shrink-0 opacity-60"
-                                size={16}
-                                aria-hidden="true"
-                              />
-                            ),
-                            desc: (
-                              <ChevronDownIcon
-                                className="shrink-0 opacity-60"
-                                size={16}
-                                aria-hidden="true"
-                              />
-                            ),
-                          }[header.column.getIsSorted()] ?? null}
-                        </div>
-                      ) : (
-                        flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {loading && !rawClients?.length ? (
-                // Skeleton uniquement au premier chargement : si le cache
-                // Apollo a déjà des contacts, on les affiche pendant le
-                // refetch silencieux
-                Array.from({ length: pagination.pageSize }).map((_, index) => (
-                  <tr
-                    key={`skeleton-${index}`}
-                    className="border-b hover:bg-muted/50"
-                  >
-                    <td style={{ width: 28 }} className="p-2 pl-4 sm:pl-6">
-                      <Skeleton className="h-4 w-4 rounded" />
-                    </td>
-                    <td style={{ width: 200 }} className="p-2">
-                      <Skeleton className="h-4 w-32" />
-                    </td>
-                    <td style={{ width: 220 }} className="p-2">
-                      <Skeleton className="h-4 w-40" />
-                    </td>
-                    <td style={{ width: 120 }} className="p-2">
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                    </td>
-                    <td style={{ width: 100 }} className="p-2">
-                      <Skeleton className="h-5 w-12 rounded-full" />
-                    </td>
-                    <td style={{ width: 150 }} className="p-2">
-                      <Skeleton className="h-3 w-24" />
-                    </td>
-                    <td style={{ width: 140 }} className="p-2">
-                      <Skeleton className="h-4 w-28" />
-                    </td>
-                    <td style={{ width: 60 }} className="p-2 pr-4 sm:pr-6">
-                      <div className="flex justify-end">
-                        <Skeleton className="h-8 w-8 rounded" />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    {...prefetchIntent(`/dashboard/clients/${row.original.id}`)}
-                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                    onClick={(e) => {
-                      // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
-                      // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
-                      if (
-                        e.target.closest('[role="checkbox"]') ||
-                        e.target.closest("button") ||
-                        e.target.closest('[role="menuitem"]') ||
-                        e.target.closest('[role="alertdialog"]') ||
-                        e.target.closest('[role="dialog"]')
-                      ) {
-                        return;
+                  placeholder="Recherchez par nom, email ou SIRET..."
+                  type="text"
+                  aria-label="Filter by name or email"
+                />
+                <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                  <Search size={16} aria-hidden="true" />
+                </div>
+                {Boolean(globalFilter) && (
+                  <button
+                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Clear filter"
+                    onClick={() => {
+                      setGlobalFilter("");
+                      table.getColumn("name")?.setFilterValue("");
+                      if (inputRef.current) {
+                        inputRef.current.focus();
                       }
-                      router.push(`/dashboard/clients/${row.original.id}`);
                     }}
                   >
-                    {row.getVisibleCells().map((cell, index, arr) => (
-                      <td
-                        key={cell.id}
-                        style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm font-normal ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : error ? (
-                <tr>
-                  <td colSpan={8} className="h-24 text-center text-red-500 p-2">
-                    <div className="flex flex-col items-center gap-2">
-                      <span>Erreur lors du chargement des clients</span>
-                      <button
-                        onClick={handleRefresh}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Réessayer
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <tr>
-                  <td colSpan={8} className="p-0">
-                    <TableEmptyState
-                      icon={UserEditIcon}
-                      title="Aucun contact"
-                      description="Créez votre premier contact pour commencer à gérer votre base de données clients."
-                      action={
-                        <Button
-                          onClick={handleAddUser}
-                          className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
-                        >
-                          <PlusIcon size={14} className="mr-2" />
-                          Nouveau contact
-                        </Button>
-                      }
-                    />
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    <CircleXIcon size={16} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
 
-        {/* Pagination - Fixe en bas sur desktop */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
-          <div className="flex-1 text-xs font-normal text-muted-foreground">
-            {(() => {
-              const displayTotal = useProvidedClients
-                ? table.getFilteredRowModel().rows.length
-                : totalItems || 0;
-              const start = pagination.pageIndex * pagination.pageSize + 1;
-              const end = Math.min(
-                (pagination.pageIndex + 1) * pagination.pageSize,
-                displayTotal,
-              );
-              return `${start}-${end} sur ${displayTotal}`;
-            })()}
-          </div>
-          <div className="flex items-center space-x-4 lg:space-x-6">
-            <div className="flex items-center gap-1.5">
-              <p className="whitespace-nowrap text-xs font-normal">
-                Lignes par page
-              </p>
-              <Select
-                value={table.getState().pagination.pageSize.toString()}
-                onValueChange={(value) => {
-                  table.setPageSize(Number(value));
-                }}
-              >
-                <SelectTrigger className="h-7 w-[70px] text-xs">
-                  <SelectValue placeholder="Select number of results" />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[5, 10, 25, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={pageSize.toString()}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center whitespace-nowrap text-xs font-normal">
-              Page {pagination.pageIndex + 1} sur{" "}
-              {useProvidedClients ? table.getPageCount() || 1 : totalPages || 1}
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.firstPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Go to first page"
-                  >
-                    <ChevronFirstIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Go to previous page"
-                  >
-                    <ChevronLeftIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Go to next page"
-                  >
-                    <ChevronRightIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.lastPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Go to last page"
-                  >
-                    <ChevronLastIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Layout - Style Notion */}
-      <div className="md:hidden">
-        {/* Mobile Toolbar - Style Notion */}
-        <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b">
-          <div className="flex items-center gap-2">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Input
-                placeholder="Rechercher des clients..."
-                value={globalFilter}
-                onChange={(e) => {
-                  setGlobalFilter(e.target.value);
-                  table.getColumn("name")?.setFilterValue(e.target.value);
-                }}
-                className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
+              {/* Filters Button */}
+              <ClientFilters
+                selectedTypes={selectedTypes}
+                setSelectedTypes={setSelectedTypes}
+                table={table}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
+                allColumns={toggleableColumns}
+                customFieldNames={customFieldNamesMap}
               />
             </div>
+          )}
 
-            {/* Filter Button - Icon only */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto min-w-36 p-3" align="end">
-                <div className="space-y-3">
-                  <div className="text-muted-foreground text-xs font-normal">
-                    Filtrer par type
-                  </div>
-                  <div className="space-y-3">
-                    {uniqueTypeValues.map((value, i) => (
-                      <div key={value} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`mobile-${id}-${i}`}
-                          checked={selectedTypes.includes(value)}
-                          onCheckedChange={(checked) =>
-                            handleTypeChange(checked, value)
-                          }
-                        />
-                        <Label
-                          htmlFor={`mobile-${id}-${i}`}
-                          className="flex grow justify-between gap-2 font-normal"
-                        >
-                          {value === "INDIVIDUAL"
-                            ? "Particulier"
-                            : "Entreprise"}{" "}
-                          <span className="text-muted-foreground ms-2 text-xs">
-                            {typeCounts.get(value)}
-                          </span>
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Add Client Button - Icon only */}
-            {/* <Button
-              variant="default"
-              size="sm"
-              className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
-              onClick={handleAddUser}
-            >
-              <PlusIcon className="h-4 w-4" />
-            </Button> */}
-          </div>
-        </div>
-
-        {/* Table - Mobile style (Notion-like) */}
-        <div className="overflow-x-auto">
-          <Table className="w-full">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow
-                  key={headerGroup.id}
-                  className="border-b border-gray-100 dark:border-gray-400"
-                >
-                  {headerGroup.headers
-                    .filter(
-                      (header) =>
-                        header.column.id === "select" ||
-                        header.column.id === "name" ||
-                        header.column.id === "type" ||
-                        header.column.id === "actions",
-                    )
-                    .map((header) => (
-                      <TableHead
+          {/* Table - Desktop style avec header sticky et scroll horizontal synchronisé */}
+          <div className="flex-1 min-h-0 overflow-auto border-t border-border">
+            <table className="w-full table-fixed">
+              <thead className="sticky top-0 z-10 bg-background border-b border-border">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header, index, arr) => (
+                      <th
                         key={header.id}
-                        className="py-3 px-3 sm:px-4 text-left font-medium text-gray-600 dark:text-gray-400 text-xs sm:text-sm"
+                        style={{ width: `${header.getSize()}px` }}
+                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                       >
                         {header.isPlaceholder ? null : header.column.getCanSort() ? (
                           <div
@@ -1188,6 +838,18 @@ export default function TableClients({
                                 "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
                             )}
                             onClick={header.column.getToggleSortingHandler()}
+                            onKeyDown={(e) => {
+                              if (
+                                header.column.getCanSort() &&
+                                (e.key === "Enter" || e.key === " ")
+                              ) {
+                                e.preventDefault();
+                                header.column.getToggleSortingHandler()?.(e);
+                              }
+                            }}
+                            tabIndex={
+                              header.column.getCanSort() ? 0 : undefined
+                            }
                           >
                             {flexRender(
                               header.column.columnDef.header,
@@ -1216,157 +878,521 @@ export default function TableClients({
                             header.getContext(),
                           )
                         )}
-                      </TableHead>
+                      </th>
                     ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {loading && !rawClients?.length ? (
-                // Skeleton uniquement au premier chargement : si le cache
-                // Apollo a déjà des contacts, on les affiche pendant le
-                // refetch silencieux
-                Array.from({ length: pagination.pageSize }).map((_, index) => (
-                  <TableRow key={`skeleton-${index}`}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-4 rounded" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <Skeleton className="h-8 w-8 rounded" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    {...prefetchIntent(`/dashboard/clients/${row.original.id}`)}
-                    className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                    onClick={(e) => {
-                      // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
-                      // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
-                      if (
-                        e.target.closest('[role="checkbox"]') ||
-                        e.target.closest("button") ||
-                        e.target.closest('[role="menuitem"]') ||
-                        e.target.closest('[role="alertdialog"]') ||
-                        e.target.closest('[role="dialog"]')
-                      ) {
-                        return;
-                      }
-                      router.push(`/dashboard/clients/${row.original.id}`);
-                    }}
-                  >
-                    {row
-                      .getVisibleCells()
-                      .filter(
-                        (cell) =>
-                          cell.column.id === "select" ||
-                          cell.column.id === "name" ||
-                          cell.column.id === "type" ||
-                          cell.column.id === "actions",
-                      )
-                      .map((cell) => (
-                        <TableCell
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {loading && !rawClients?.length ? (
+                  // Skeleton uniquement au premier chargement : si le cache
+                  // Apollo a déjà des contacts, on les affiche pendant le
+                  // refetch silencieux
+                  Array.from({ length: pagination.pageSize }).map(
+                    (_, index) => (
+                      <tr
+                        key={`skeleton-${index}`}
+                        className="border-b hover:bg-muted/50"
+                      >
+                        <td style={{ width: 28 }} className="p-2 pl-4 sm:pl-6">
+                          <Skeleton className="h-4 w-4 rounded" />
+                        </td>
+                        <td style={{ width: 200 }} className="p-2">
+                          <Skeleton className="h-4 w-32" />
+                        </td>
+                        <td style={{ width: 220 }} className="p-2">
+                          <Skeleton className="h-4 w-40" />
+                        </td>
+                        <td style={{ width: 120 }} className="p-2">
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </td>
+                        <td style={{ width: 100 }} className="p-2">
+                          <Skeleton className="h-5 w-12 rounded-full" />
+                        </td>
+                        <td style={{ width: 150 }} className="p-2">
+                          <Skeleton className="h-3 w-24" />
+                        </td>
+                        <td style={{ width: 140 }} className="p-2">
+                          <Skeleton className="h-4 w-28" />
+                        </td>
+                        <td style={{ width: 60 }} className="p-2 pr-4 sm:pr-6">
+                          <div className="flex justify-end">
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  )
+                ) : table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      {...prefetchIntent(
+                        `/dashboard/clients/${row.original.id}`,
+                      )}
+                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      onClick={(e) => {
+                        // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
+                        // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
+                        if (
+                          e.target.closest('[role="checkbox"]') ||
+                          e.target.closest("button") ||
+                          e.target.closest('[role="menuitem"]') ||
+                          e.target.closest('[role="alertdialog"]') ||
+                          e.target.closest('[role="dialog"]')
+                        ) {
+                          return;
+                        }
+                        router.push(`/dashboard/clients/${row.original.id}`);
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell, index, arr) => (
+                        <td
                           key={cell.id}
-                          className="py-3 px-3 sm:px-4 text-xs sm:text-sm"
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-sm font-normal ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                         >
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext(),
                           )}
-                        </TableCell>
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : error ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="h-24 text-center text-red-500 p-2"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <span>Erreur lors du chargement des clients</span>
+                        <button
+                          onClick={handleRefresh}
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          Réessayer
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="p-0">
+                      <TableEmptyState
+                        icon={UserEditIcon}
+                        title="Aucun contact"
+                        description="Créez votre premier contact pour commencer à gérer votre base de données clients."
+                        action={
+                          <Button
+                            onClick={handleAddUser}
+                            className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+                          >
+                            <PlusIcon size={14} className="mr-2" />
+                            Nouveau contact
+                          </Button>
+                        }
+                      />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination - Fixe en bas sur desktop */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+            <div className="flex-1 text-xs font-normal text-muted-foreground">
+              {(() => {
+                const displayTotal = useProvidedClients
+                  ? table.getFilteredRowModel().rows.length
+                  : totalItems || 0;
+                const start = pagination.pageIndex * pagination.pageSize + 1;
+                const end = Math.min(
+                  (pagination.pageIndex + 1) * pagination.pageSize,
+                  displayTotal,
+                );
+                return `${start}-${end} sur ${displayTotal}`;
+              })()}
+            </div>
+            <div className="flex items-center space-x-4 lg:space-x-6">
+              <div className="flex items-center gap-1.5">
+                <p className="whitespace-nowrap text-xs font-normal">
+                  Lignes par page
+                </p>
+                <Select
+                  value={table.getState().pagination.pageSize.toString()}
+                  onValueChange={(value) => {
+                    table.setPageSize(Number(value));
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-[70px] text-xs">
+                    <SelectValue placeholder="Select number of results" />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[5, 10, 25, 50].map((pageSize) => (
+                      <SelectItem key={pageSize} value={pageSize.toString()}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center whitespace-nowrap text-xs font-normal">
+                Page {pagination.pageIndex + 1} sur{" "}
+                {useProvidedClients
+                  ? table.getPageCount() || 1
+                  : totalPages || 1}
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.firstPage()}
+                      disabled={!table.getCanPreviousPage()}
+                      aria-label="Go to first page"
+                    >
+                      <ChevronFirstIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.previousPage()}
+                      disabled={!table.getCanPreviousPage()}
+                      aria-label="Go to previous page"
+                    >
+                      <ChevronLeftIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.nextPage()}
+                      disabled={!table.getCanNextPage()}
+                      aria-label="Go to next page"
+                    >
+                      <ChevronRightIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.lastPage()}
+                      disabled={!table.getCanNextPage()}
+                      aria-label="Go to last page"
+                    >
+                      <ChevronLastIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Layout - Style Notion */}
+      {isMobileLayout && (
+        <div className="md:hidden">
+          {/* Mobile Toolbar - Style Notion */}
+          <div className="px-3 sm:px-4 py-3 sticky top-0 bg-background z-10 border-b">
+            <div className="flex items-center gap-2">
+              {/* Search Input */}
+              <div className="flex-1 relative">
+                <Input
+                  placeholder="Rechercher des clients..."
+                  value={globalFilter}
+                  onChange={(e) => {
+                    setGlobalFilter(e.target.value);
+                    table.getColumn("name")?.setFilterValue(e.target.value);
+                  }}
+                  className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-xs sm:text-sm w-full"
+                />
+              </div>
+
+              {/* Filter Button - Icon only */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto min-w-36 p-3" align="end">
+                  <div className="space-y-3">
+                    <div className="text-muted-foreground text-xs font-normal">
+                      Filtrer par type
+                    </div>
+                    <div className="space-y-3">
+                      {uniqueTypeValues.map((value, i) => (
+                        <div key={value} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`mobile-${id}-${i}`}
+                            checked={selectedTypes.includes(value)}
+                            onCheckedChange={(checked) =>
+                              handleTypeChange(checked, value)
+                            }
+                          />
+                          <Label
+                            htmlFor={`mobile-${id}-${i}`}
+                            className="flex grow justify-between gap-2 font-normal"
+                          >
+                            {value === "INDIVIDUAL"
+                              ? "Particulier"
+                              : "Entreprise"}{" "}
+                            <span className="text-muted-foreground ms-2 text-xs">
+                              {typeCounts.get(value)}
+                            </span>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Add Client Button - Icon only */}
+              {/* <Button
+              variant="default"
+              size="sm"
+              className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
+              onClick={handleAddUser}
+            >
+              <PlusIcon className="h-4 w-4" />
+            </Button> */}
+            </div>
+          </div>
+
+          {/* Table - Mobile style (Notion-like) */}
+          <div className="overflow-x-auto">
+            <Table className="w-full">
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow
+                    key={headerGroup.id}
+                    className="border-b border-gray-100 dark:border-gray-400"
+                  >
+                    {headerGroup.headers
+                      .filter(
+                        (header) =>
+                          header.column.id === "select" ||
+                          header.column.id === "name" ||
+                          header.column.id === "type" ||
+                          header.column.id === "actions",
+                      )
+                      .map((header) => (
+                        <TableHead
+                          key={header.id}
+                          className="py-3 px-3 sm:px-4 text-left font-medium text-gray-600 dark:text-gray-400 text-xs sm:text-sm"
+                        >
+                          {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                            <div
+                              className={cn(
+                                header.column.getCanSort() &&
+                                  "flex h-full cursor-pointer items-center justify-between gap-2 select-none",
+                              )}
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                              {{
+                                asc: (
+                                  <ChevronUpIcon
+                                    className="shrink-0 opacity-60"
+                                    size={16}
+                                    aria-hidden="true"
+                                  />
+                                ),
+                                desc: (
+                                  <ChevronDownIcon
+                                    className="shrink-0 opacity-60"
+                                    size={16}
+                                    aria-hidden="true"
+                                  />
+                                ),
+                              }[header.column.getIsSorted()] ?? null}
+                            </div>
+                          ) : (
+                            flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )
+                          )}
+                        </TableHead>
                       ))}
                   </TableRow>
-                ))
-              ) : error ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={4}
-                    className="h-24 text-center text-red-500"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <span>Erreur lors du chargement des clients</span>
-                      <button
-                        onClick={handleRefresh}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Réessayer
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="p-0">
-                    <TableEmptyState
-                      icon={UserEditIcon}
-                      title="Aucun contact trouvé"
-                      description="Aucun contact ne correspond à vos critères."
-                      size="compact"
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {loading && !rawClients?.length ? (
+                  // Skeleton uniquement au premier chargement : si le cache
+                  // Apollo a déjà des contacts, on les affiche pendant le
+                  // refetch silencieux
+                  Array.from({ length: pagination.pageSize }).map(
+                    (_, index) => (
+                      <TableRow key={`skeleton-${index}`}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-4 rounded" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end">
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ),
+                  )
+                ) : table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      {...prefetchIntent(
+                        `/dashboard/clients/${row.original.id}`,
+                      )}
+                      className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                      onClick={(e) => {
+                        // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
+                        // ou à l'intérieur d'un dialog (portail Radix qui bubble en React)
+                        if (
+                          e.target.closest('[role="checkbox"]') ||
+                          e.target.closest("button") ||
+                          e.target.closest('[role="menuitem"]') ||
+                          e.target.closest('[role="alertdialog"]') ||
+                          e.target.closest('[role="dialog"]')
+                        ) {
+                          return;
+                        }
+                        router.push(`/dashboard/clients/${row.original.id}`);
+                      }}
+                    >
+                      {row
+                        .getVisibleCells()
+                        .filter(
+                          (cell) =>
+                            cell.column.id === "select" ||
+                            cell.column.id === "name" ||
+                            cell.column.id === "type" ||
+                            cell.column.id === "actions",
+                        )
+                        .map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className="py-3 px-3 sm:px-4 text-xs sm:text-sm"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                    </TableRow>
+                  ))
+                ) : error ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="h-24 text-center text-red-500"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <span>Erreur lors du chargement des clients</span>
+                        <button
+                          onClick={handleRefresh}
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          Réessayer
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="p-0">
+                      <TableEmptyState
+                        icon={UserEditIcon}
+                        title="Aucun contact trouvé"
+                        description="Aucun contact ne correspond à vos critères."
+                        size="compact"
+                      />
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-        {/* Pagination mobile : sans elle, seuls les 10 premiers contacts
+          {/* Pagination mobile : sans elle, seuls les 10 premiers contacts
             étaient atteignables (les suivants n'existaient que via la
             recherche). Toujours affichée, comme sur desktop ; pb-24 = marge
             pour la barre de navigation basse. */}
-        <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 pb-24 border-t bg-background">
-          <div className="text-xs font-normal text-muted-foreground">
-            {(() => {
-              const displayTotal = useProvidedClients
-                ? table.getFilteredRowModel().rows.length
-                : totalItems || 0;
-              const start = pagination.pageIndex * pagination.pageSize + 1;
-              const end = Math.min(
-                (pagination.pageIndex + 1) * pagination.pageSize,
-                displayTotal,
-              );
-              return `${start}-${end} sur ${displayTotal}`;
-            })()}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              aria-label="Page précédente"
-            >
-              <ChevronLeftIcon size={16} aria-hidden="true" />
-            </Button>
-            <span className="whitespace-nowrap text-xs font-normal">
-              Page {pagination.pageIndex + 1} sur{" "}
-              {useProvidedClients ? table.getPageCount() || 1 : totalPages || 1}
-            </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              aria-label="Page suivante"
-            >
-              <ChevronRightIcon size={16} aria-hidden="true" />
-            </Button>
+          <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 pb-24 border-t bg-background">
+            <div className="text-xs font-normal text-muted-foreground">
+              {(() => {
+                const displayTotal = useProvidedClients
+                  ? table.getFilteredRowModel().rows.length
+                  : totalItems || 0;
+                const start = pagination.pageIndex * pagination.pageSize + 1;
+                const end = Math.min(
+                  (pagination.pageIndex + 1) * pagination.pageSize,
+                  displayTotal,
+                );
+                return `${start}-${end} sur ${displayTotal}`;
+              })()}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                aria-label="Page précédente"
+              >
+                <ChevronLeftIcon size={16} aria-hidden="true" />
+              </Button>
+              <span className="whitespace-nowrap text-xs font-normal">
+                Page {pagination.pageIndex + 1} sur{" "}
+                {useProvidedClients
+                  ? table.getPageCount() || 1
+                  : totalPages || 1}
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 disabled:pointer-events-none disabled:opacity-50"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                aria-label="Page suivante"
+              >
+                <ChevronRightIcon size={16} aria-hidden="true" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Modal d'édition unique pour desktop et mobile */}
       <ClientsModal

@@ -162,7 +162,15 @@ export function NavMain({
         initialStates[item.title] = isSubActive;
       }
     });
-    setAccountingMenuStates(initialStates);
+    // Même état qu'avant : on garde l'objet existant pour que React saute le
+    // rendu (un nouvel objet à chaque navigation re-rendait toute la sidebar).
+    setAccountingMenuStates((prev) => {
+      const keys = Object.keys(initialStates);
+      const unchanged =
+        keys.length === Object.keys(prev).length &&
+        keys.every((key) => prev[key] === initialStates[key]);
+      return unchanged ? prev : initialStates;
+    });
   }, [items, pathname]);
 
   // Garder les menus ouverts si un sous-lien est actif

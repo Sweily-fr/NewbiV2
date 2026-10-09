@@ -60,6 +60,7 @@ import {
   useConvertImportedQuoteToQuote,
 } from "@/src/graphql/importedQuoteQueries";
 import { toast } from "sonner";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export function ImportedQuoteSidebar({
   quote,
@@ -178,7 +179,7 @@ export function ImportedQuoteSidebar({
   };
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: quote.currency || "EUR",
     }).format(amount || 0);

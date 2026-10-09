@@ -41,6 +41,7 @@ import {
   getDraftEffectiveDates,
 } from "@/src/utils/dateFormatter";
 import InvoiceRecurrenceSection from "./invoice-recurrence-section";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -129,7 +130,7 @@ export default function InvoiceMobileFullscreen({
   const invoice = fullInvoice || initialInvoice;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
       minimumFractionDigits: 2,
