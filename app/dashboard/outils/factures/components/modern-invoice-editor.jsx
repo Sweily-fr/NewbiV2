@@ -41,6 +41,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
 import { useClient } from "@/src/graphql/clientQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import { toast } from "@/src/components/ui/sonner";
@@ -878,15 +879,20 @@ export default function ModernInvoiceEditor({
                 Même schéma que l'éditeur bons de commande. */}
             {debouncedFormData ? (
               <>
-                <div ref={pdfRef}>
-                  <UniversalPreviewPDF
-                    data={previewFormData}
-                    type="invoice"
-                    previousSituationInvoices={previousSituationInvoices}
-                  />
-                </div>
+                <A4PreviewFrame>
+                  <div ref={pdfRef}>
+                    <UniversalPreviewPDF
+                      data={previewFormData}
+                      type="invoice"
+                      previousSituationInvoices={previousSituationInvoices}
+                    />
+                  </div>
+                </A4PreviewFrame>
                 {/* Hors de pdfRef : les PDF navigateur ajoutent déjà l'annexe */}
-                <DocumentAnnexPreview annex={formData?.annex} />
+                <DocumentAnnexPreview
+                  annex={formData?.annex}
+                  className="mx-auto max-w-[794px]"
+                />
               </>
             ) : loading ? (
               <div className="absolute inset-0 flex items-center justify-center bg-[#F9F9F9] dark:bg-[#1a1a1a]">

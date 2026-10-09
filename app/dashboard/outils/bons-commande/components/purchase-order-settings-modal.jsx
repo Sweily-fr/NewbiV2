@@ -6,6 +6,7 @@ import { Button } from "@/src/components/ui/button";
 import { X, LoaderCircle } from "lucide-react";
 import QuoteSettingsView from "@/app/dashboard/outils/devis/components/quote-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { toast } from "@/src/components/ui/sonner";
 import {
   updateOrganization,
@@ -540,8 +541,13 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
               </div>
             ) : (
               <>
-                <UniversalPreviewPDF data={demoData} type="purchaseOrder" />
-                <DocumentAnnexPreview annex={debouncedFormData?.annex} />
+                <A4PreviewFrame>
+                  <UniversalPreviewPDF data={demoData} type="purchaseOrder" />
+                </A4PreviewFrame>
+                <DocumentAnnexPreview
+                  annex={debouncedFormData?.annex}
+                  className="mx-auto max-w-[794px]"
+                />
               </>
             )}
           </div>

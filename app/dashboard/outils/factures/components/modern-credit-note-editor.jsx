@@ -18,6 +18,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useCreditNoteEditor } from "../hooks/use-credit-note-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import EnhancedCreditNoteForm from "./enhanced-credit-note-form";
 import { getActiveOrganization } from "@/src/lib/organization-client";
 import {
@@ -345,22 +346,24 @@ export default function ModernCreditNoteEditor({
         {/* Right Panel - PDF Preview */}
         <div className="hidden lg:flex bg-muted/30 border-l flex-col h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto pl-4 pr-4 pt-6 pb-6 md:pl-18 md:pr-18 md:pt-22 md:pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a]">
-            <div ref={pdfRef}>
-              <UniversalPreviewPDF
-                data={{
-                  ...formData,
-                  originalInvoice,
-                  // L'avoir reprend les champs personnalisés de la facture d'origine
-                  client: formData.client && {
-                    ...formData.client,
-                    documentFields:
-                      originalInvoice?.client?.documentFields ??
-                      formData.client.documentFields,
-                  },
-                }}
-                type="creditNote"
-              />
-            </div>
+            <A4PreviewFrame>
+              <div ref={pdfRef}>
+                <UniversalPreviewPDF
+                  data={{
+                    ...formData,
+                    originalInvoice,
+                    // L'avoir reprend les champs personnalisés de la facture d'origine
+                    client: formData.client && {
+                      ...formData.client,
+                      documentFields:
+                        originalInvoice?.client?.documentFields ??
+                        formData.client.documentFields,
+                    },
+                  }}
+                  type="creditNote"
+                />
+              </div>
+            </A4PreviewFrame>
           </div>
         </div>
       </div>

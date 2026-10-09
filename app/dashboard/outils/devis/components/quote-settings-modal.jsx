@@ -6,6 +6,7 @@ import { Button } from "@/src/components/ui/button";
 import { X, LoaderCircle } from "lucide-react";
 import QuoteSettingsView from "./quote-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
+import A4PreviewFrame from "@/src/components/pdf/a4-preview-frame";
 import { toast } from "@/src/components/ui/sonner";
 import {
   updateOrganization,
@@ -542,8 +543,13 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
               </div>
             ) : (
               <>
-                <UniversalPreviewPDF data={demoData} type="quote" />
-                <DocumentAnnexPreview annex={debouncedFormData?.annex} />
+                <A4PreviewFrame>
+                  <UniversalPreviewPDF data={demoData} type="quote" />
+                </A4PreviewFrame>
+                <DocumentAnnexPreview
+                  annex={debouncedFormData?.annex}
+                  className="mx-auto max-w-[794px]"
+                />
               </>
             )}
           </div>
