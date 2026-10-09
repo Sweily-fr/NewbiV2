@@ -15,6 +15,7 @@ import {
   viewer,
   accountant,
 } from "./permissions";
+import { resetAnalytics } from "@/src/lib/analytics";
 
 export const authClient = createAuthClient({
   // Pas de baseURL explicite : Better Auth utilise "/api/auth" (relatif)
@@ -220,12 +221,8 @@ export async function performLogout({
 
     // 2bis. Reset PostHog: empêche que les events du prochain user soient
     // fusionnés avec l'identité du user qui vient de se déconnecter
-    try {
-      const { default: posthog } = await import("posthog-js");
-      posthog.reset();
-    } catch {
-      // posthog peut ne pas être init (page sans consent analytics)
-    }
+    // Sans télécharger posthog s'il n'est pas chargé.
+    resetAnalytics();
 
     // 3. SignOut Better Auth (supprime le cookie session)
     await authClient.signOut();

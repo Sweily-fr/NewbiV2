@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef } from "react";
 import { FormProvider } from "react-hook-form";
 import {
@@ -18,7 +20,6 @@ import { useCreditNoteEditor } from "../hooks/use-credit-note-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedCreditNoteForm from "./enhanced-credit-note-form";
 import { getActiveOrganization } from "@/src/lib/organization-client";
-import { SendDocumentModal } from "./send-document-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,14 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const SendDocumentModal = dynamic(
+  () => import("./send-document-modal").then((m) => m.SendDocumentModal),
+  { ssr: false },
+);
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -365,7 +374,7 @@ export default function ModernCreditNoteEditor({
       </AlertDialog>
 
       {/* Modal d'envoi par email */}
-      {createdCreditNoteData && (
+      {createdCreditNoteData && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}

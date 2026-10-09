@@ -26,7 +26,7 @@ import {
   getActiveOrganization,
 } from "@/src/lib/organization-client";
 import { useArchiveInvoicePdf } from "@/src/hooks/useArchiveInvoicePdf";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 import {
   getOrganizationAnnex,
   normalizeAnnex,
@@ -2161,7 +2161,7 @@ export function useInvoiceEditor({
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
         }
         await createInvoice(input);
-        posthog.capture("invoice_created", {
+        capture("invoice_created", {
           client_name: input.client?.name,
           currency: input.currency,
           status: input.status || "DRAFT",
@@ -2567,7 +2567,7 @@ export function useInvoiceEditor({
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
         }
         const result = await createInvoice(input);
-        posthog.capture("invoice_sent", {
+        capture("invoice_sent", {
           client_name: input.client?.name,
           currency: input.currency,
           status: input.status,

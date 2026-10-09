@@ -15,7 +15,7 @@ import {
 } from "../../../src/lib/apolloClient";
 import { TwoFactorModal } from "./components/TwoFactorModal";
 import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
-import posthog from "posthog-js";
+import { capture, identify } from "@/src/lib/analytics";
 
 // Fonction pour s'assurer qu'une organisation active est définie
 const ensureActiveOrganization = async () => {
@@ -246,11 +246,11 @@ const LoginForm = () => {
 
         // Identify user in PostHog and capture login event
         if (session?.user) {
-          posthog.identify(session.user.id, {
+          identify(session.user.id, {
             email: session.user.email,
             name: session.user.name,
           });
-          posthog.capture("user_logged_in", {
+          capture("user_logged_in", {
             email: session.user.email,
           });
         }

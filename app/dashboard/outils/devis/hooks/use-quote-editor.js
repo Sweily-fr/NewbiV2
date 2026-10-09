@@ -22,7 +22,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useClient } from "@/src/graphql/clientQueries";
 import { useQuoteNumber } from "./use-quote-number";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
@@ -1883,7 +1883,7 @@ export function useQuoteEditor({
             return false;
           }
 
-          posthog.capture("quote_created", {
+          capture("quote_created", {
             client_name: input.client?.name,
             currency: input.currency,
             status: "DRAFT",
@@ -2259,7 +2259,7 @@ export function useQuoteEditor({
             setValue("number", result.number);
           }
 
-          posthog.capture("quote_sent", {
+          capture("quote_sent", {
             client_name: input.client?.name,
             currency: input.currency,
             is_new_quote: !existingQuote?.id,
