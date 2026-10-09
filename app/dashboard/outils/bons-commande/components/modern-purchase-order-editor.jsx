@@ -246,23 +246,6 @@ export default function ModernPurchaseOrderEditor({
     enabled: mode !== "create" && !loading,
   });
 
-  // Afficher un message si le BC n'existe pas
-  if (
-    mode !== "create" &&
-    !loading &&
-    !loadedPurchaseOrder &&
-    purchaseOrderError
-  ) {
-    return (
-      <ResourceNotFound
-        resourceType="bon de commande"
-        resourceName="Ce bon de commande"
-        listUrl="/dashboard/outils/bons-commande"
-        homeUrl="/dashboard"
-      />
-    );
-  }
-
   const isReadOnly = mode === "view";
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
@@ -281,6 +264,23 @@ export default function ModernPurchaseOrderEditor({
   // recharger ou fermer l'onglet.
   useUnsavedChangesWarning(guardActive && isDirty);
   usePreloadOnIdle(preloadEditorModules);
+
+  // Afficher un message si le BC n'existe pas
+  if (
+    mode !== "create" &&
+    !loading &&
+    !loadedPurchaseOrder &&
+    purchaseOrderError
+  ) {
+    return (
+      <ResourceNotFound
+        resourceType="bon de commande"
+        resourceName="Ce bon de commande"
+        listUrl="/dashboard/outils/bons-commande"
+        homeUrl="/dashboard"
+      />
+    );
+  }
 
   useEffect(() => {
     if (!guardActive) return;

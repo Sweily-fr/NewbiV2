@@ -244,18 +244,6 @@ export default function ModernQuoteEditor({
     enabled: mode !== "create" && !loading,
   });
 
-  // Afficher un message si le devis n'existe pas (après changement d'organisation)
-  if (mode !== "create" && !loading && !loadedQuote && quoteError) {
-    return (
-      <ResourceNotFound
-        resourceType="devis"
-        resourceName="Ce devis"
-        listUrl="/dashboard/outils/devis"
-        homeUrl="/dashboard"
-      />
-    );
-  }
-
   const isReadOnly = mode === "view";
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
@@ -274,6 +262,18 @@ export default function ModernQuoteEditor({
   // recharger ou fermer l'onglet.
   useUnsavedChangesWarning(guardActive && isDirty);
   usePreloadOnIdle(preloadEditorModules);
+
+  // Afficher un message si le devis n'existe pas (après changement d'organisation)
+  if (mode !== "create" && !loading && !loadedQuote && quoteError) {
+    return (
+      <ResourceNotFound
+        resourceType="devis"
+        resourceName="Ce devis"
+        listUrl="/dashboard/outils/devis"
+        homeUrl="/dashboard"
+      />
+    );
+  }
 
   useEffect(() => {
     if (!guardActive) return;

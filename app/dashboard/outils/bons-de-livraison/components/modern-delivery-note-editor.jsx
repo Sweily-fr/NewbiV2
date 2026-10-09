@@ -143,15 +143,6 @@ export default function ModernDeliveryNoteEditor({
     enabled: mode !== "create" && !loading,
   });
 
-  if (
-    mode !== "create" &&
-    !loading &&
-    !loadedDeliveryNote &&
-    deliveryNoteError
-  ) {
-    return <ResourceNotFound listUrl={LIST_URL} homeUrl="/dashboard" />;
-  }
-
   const isCreating = mode === "create";
   const isFinalized = !isCreating && !isDraft;
 
@@ -168,6 +159,15 @@ export default function ModernDeliveryNoteEditor({
   // recharger ou fermer l'onglet.
   useUnsavedChangesWarning(hasUserChanges);
   usePreloadOnIdle(preloadEditorModules);
+
+  if (
+    mode !== "create" &&
+    !loading &&
+    !loadedDeliveryNote &&
+    deliveryNoteError
+  ) {
+    return <ResourceNotFound listUrl={LIST_URL} homeUrl="/dashboard" />;
+  }
 
   useEffect(() => {
     if (!hasUserChanges) return;

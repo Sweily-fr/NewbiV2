@@ -272,18 +272,6 @@ export default function ModernInvoiceEditor({
 
   const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
 
-  // Afficher un message si la facture n'existe pas (après changement d'organisation)
-  if (mode !== "create" && !loading && !loadedInvoice && invoiceError) {
-    return (
-      <ResourceNotFound
-        resourceType="facture"
-        resourceName="Cette facture"
-        listUrl="/dashboard/outils/factures"
-        homeUrl="/dashboard"
-      />
-    );
-  }
-
   const isReadOnly = mode === "view";
   const isEditing = mode === "edit";
   const isCreating = mode === "create";
@@ -303,6 +291,18 @@ export default function ModernInvoiceEditor({
   // recharger ou fermer l'onglet.
   useUnsavedChangesWarning(guardActive && isDirty);
   usePreloadOnIdle(preloadEditorModules);
+
+  // Afficher un message si la facture n'existe pas (après changement d'organisation)
+  if (mode !== "create" && !loading && !loadedInvoice && invoiceError) {
+    return (
+      <ResourceNotFound
+        resourceType="facture"
+        resourceName="Cette facture"
+        listUrl="/dashboard/outils/factures"
+        homeUrl="/dashboard"
+      />
+    );
+  }
 
   // Intercepter le retour arrière du navigateur (bouton, swipe trackpad, ⌘←)
   // UNIQUEMENT quand l'utilisateur a modifié au moins un champ.
