@@ -37,10 +37,12 @@ function PurchaseOrdersContent() {
 
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
   // Paramètres des documents : paramètres de l'entreprise (« orgSettings »)
-  const { canWrite, isReady } = useMyPermissions();
+  const { canDo, isReady } = useMyPermissions();
   const canImportPurchaseOrders =
-    !isReady || canWrite("importedPurchaseOrders");
-  const canEditSettings = !isReady || canWrite("orgSettings");
+    !isReady || canDo("importedPurchaseOrders", "import");
+  const canEditSettings = !isReady || canDo("orgSettings", "edit");
+  // Bouton « Envoyer au client » du toast affiché après une création
+  const canSendPurchaseOrders = !isReady || canDo("purchaseOrders", "send");
 
   // Toast manager et modal d'envoi
   const toastManager = useToastManager();
@@ -61,14 +63,15 @@ function PurchaseOrdersContent() {
             title: "Bon de commande créé avec succès",
             description: `Bon de commande ${poData.number} créé`,
             timeout: 10000,
-            actionProps: poData.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => {
-                    setShowSendEmailModal(true);
-                  },
-                }
-              : undefined,
+            actionProps:
+              poData.clientEmail && canSendPurchaseOrders
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => {
+                      setShowSendEmailModal(true);
+                    },
+                  }
+                : undefined,
           });
 
           sessionStorage.removeItem("newPurchaseOrderData");
@@ -77,7 +80,7 @@ function PurchaseOrdersContent() {
         }
       }
     }
-  }, [toastManager]);
+  }, [toastManager, canSendPurchaseOrders]);
 
   useEffect(() => {
     const id = searchParams.get("id");

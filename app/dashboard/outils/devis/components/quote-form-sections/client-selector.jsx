@@ -86,10 +86,11 @@ export default function ClientSelector({
   setValidationErrors,
 }) {
   const id = useId();
-  // Création / modification de client : droits du module « clients » (tout
-  // autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canWriteClients = !isReady || canWrite("clients");
+  // Création rapide / modification de client : actions « create » et
+  // « edit » des clients (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateClients = !isReady || canDo("clients", "create");
+  const canEditClients = !isReady || canDo("clients", "edit");
   const [activeTab, setActiveTab] = useState("existing");
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -679,7 +680,7 @@ export default function ClientSelector({
                 <User className="h-3.5 w-3.5" />
                 Client existant
               </TabsNewTrigger>
-              {canWriteClients && (
+              {canCreateClients && (
                 <TabsNewTrigger value="new">
                   <Plus className="h-3.5 w-3.5" />
                   Nouveau client
@@ -752,7 +753,7 @@ export default function ClientSelector({
                             <p className="text-sm text-muted-foreground mb-2">
                               Aucun client trouvé{query && ` pour "${query}"`}
                             </p>
-                            {query && canWriteClients && (
+                            {query && canCreateClients && (
                               <Button
                                 type="button"
                                 variant="outline"
@@ -814,7 +815,7 @@ export default function ClientSelector({
                       <div
                         className="flex items-center justify-between w-full rounded-xl border bg-[#F5F5F5] dark:bg-neutral-900 hover:bg-[#EFEFEF] dark:hover:bg-neutral-800 transition-colors duration-[140ms] cursor-pointer py-2 pr-4 pl-2 gap-2.5"
                         onClick={() =>
-                          canWriteClients && onEditClient?.(selectedClient)
+                          canEditClients && onEditClient?.(selectedClient)
                         }
                       >
                         {/* Left: icon + text */}

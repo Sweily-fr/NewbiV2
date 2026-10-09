@@ -7,28 +7,29 @@ import { Button } from "@/src/components/ui/button";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   isHiddenForRole,
-  levelForPath,
+  actionForPath,
   moduleForPath,
 } from "@/src/lib/route-modules";
 
 /**
  * Garde des pages du tableau de bord selon le rôle (Paramètres > Membres >
- * Rôles) : lecture pour une page, écriture pour une création ou une
- * édition. Tant que la grille n'est pas chargée (ou en cas d'erreur réseau),
- * la page s'affiche : l'API refuse de toute façon les données interdites.
+ * Rôles) : « Voir » pour une page, « Créer » pour une création, « Modifier »
+ * pour une édition. Tant que la grille n'est pas chargée (ou en cas d'erreur
+ * réseau), la page s'affiche : l'API refuse de toute façon les données
+ * interdites.
  */
 export function ModuleRouteGuard({ children }) {
   const pathname = usePathname();
-  const { can, isReady, role, levels } = useMyPermissions();
+  const { canDo, isReady, role, levels } = useMyPermissions();
   const moduleKey = moduleForPath(pathname);
 
   if (!moduleKey || !isReady) return children;
 
-  const level = levelForPath(pathname);
+  const action = actionForPath(pathname);
   const hidden = isHiddenForRole(role, levels, moduleKey, { page: true });
-  if (can(moduleKey, level) && !hidden) return children;
+  if (canDo(moduleKey, action) && !hidden) return children;
 
-  const canRead = !hidden && level === "write" && can(moduleKey, "read");
+  const canRead = !hidden && action !== "view" && canDo(moduleKey, "view");
   return (
     <div className="flex flex-1 items-center justify-center px-6 py-24">
       <div className="flex max-w-sm flex-col items-center gap-4 text-center">
@@ -39,7 +40,9 @@ export function ModuleRouteGuard({ children }) {
           <h1 className="text-base font-medium">Accès non autorisé</h1>
           <p className="text-sm text-muted-foreground">
             {canRead
-              ? "Votre rôle permet de consulter cette page, mais pas de créer ni de modifier."
+              ? action === "create"
+                ? "Votre rôle permet de consulter cette page, mais pas de créer."
+                : "Votre rôle permet de consulter cette page, mais pas de modifier."
               : "Votre rôle ne donne pas accès à cette page."}{" "}
             Le super admin de l'espace peut modifier vos droits.
           </p>

@@ -19,9 +19,9 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 export function RowActions({ row, onEdit, onDownloadAttachment }) {
   const transaction = row.original;
   const { isReadOnly, isOwner } = useSubscriptionAccess();
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditBanking = !isReady || canWrite("banking");
+  const { canDo, isReady } = useMyPermissions();
+  // Action « edit » du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditBanking = !isReady || canDo("banking", "edit");
 
   const handleEdit = () => {
     if (onEdit) {

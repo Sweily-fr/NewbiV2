@@ -123,9 +123,10 @@ function KanbanPageContent() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditKanban = !isReady || canWrite("kanban");
-  const canDeleteKanban = !isReady || canDelete("kanban");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canCreateKanban = !isReady || canDo("kanban", "create");
+  const canEditKanban = !isReady || canDo("kanban", "edit");
+  const canDeleteKanban = !isReady || canDo("kanban", "delete");
   // Sélecteur de client réservé aux rôles qui voient les clients
   const canReadClients = !isReady || canRead("clients");
   const router = useRouter();
@@ -379,7 +380,7 @@ function KanbanPageContent() {
             }}
           >
             {/* Masqué si le rôle ne permet pas de créer */}
-            {canEditKanban && (
+            {canCreateKanban && (
               <DialogTrigger asChild>
                 <Button
                   variant="primary"
@@ -879,7 +880,7 @@ function KanbanPageContent() {
                 Créez votre première liste pour organiser vos tâches et projets
               </p>
             </div>
-            {canEditKanban && (
+            {canCreateKanban && (
               <Button
                 onClick={() => setIsCreateDialogOpen(true)}
                 variant="default"

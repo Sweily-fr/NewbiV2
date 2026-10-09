@@ -33,13 +33,16 @@ export default function ProductImageField({
   onUploadingChange,
   showOnDocuments = true,
   onShowOnDocumentsChange,
+  // Droit d'enregistrer le produit (création ou modification), fourni par
+  // la fiche ; à défaut, action « edit » du catalogue
+  canEdit,
 }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const { uploadProductImage, loading } = useUploadProductImage();
-  const { canWrite, isReady } = useMyPermissions();
+  const { canDo, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditProducts = !isReady || canWrite("products");
+  const canEditProducts = canEdit ?? (!isReady || canDo("products", "edit"));
 
   useEffect(() => {
     onUploadingChange?.(loading);

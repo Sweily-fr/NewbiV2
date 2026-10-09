@@ -7,8 +7,8 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 function NewTransfertsContent() {
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditFileTransfers = !isReady || canWrite("fileTransfers");
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
 
   return (
     <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 p-6">
@@ -22,7 +22,7 @@ function NewTransfertsContent() {
         </p>
       </div>
       <div className="w-full">
-        {canEditFileTransfers ? (
+        {canCreateFileTransfers ? (
           <FileUploadNew />
         ) : (
           <p className="text-sm text-muted-foreground">

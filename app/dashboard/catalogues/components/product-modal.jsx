@@ -93,9 +93,11 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   const { updateProduct, loading: updateLoading } = useUpdateProduct();
   const isEditing = !!product;
   const loading = createLoading || updateLoading;
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditProducts = !isReady || canWrite("products");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // « create » pour un nouveau produit, « edit » pour un produit existant
+  const canEditProducts =
+    !isReady || canDo("products", isEditing ? "edit" : "create");
 
   // Custom fields state
   const [customFieldValues, setCustomFieldValues] = useState({});
@@ -498,6 +500,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     excludeId={product?.id}
                     mainUnit={watchedUnit}
                     mainName={watchedName}
+                    canEdit={canEditProducts}
                   />
 
                   {/* Champs personnalisés */}
@@ -517,6 +520,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     onUploadingChange={setImageUploading}
                     showOnDocuments={showImageOnDocuments}
                     onShowOnDocumentsChange={setShowImageOnDocuments}
+                    canEdit={canEditProducts}
                   />
                   <div className="bg-muted/50 rounded-lg p-4 border">
                     <div className="text-sm font-medium text-muted-foreground mb-3">

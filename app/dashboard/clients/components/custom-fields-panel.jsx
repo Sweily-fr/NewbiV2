@@ -456,11 +456,12 @@ export default function CustomFieldsPanel({
   const [deletingField, setDeletingField] = useState(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle sur « Champs personnalisés » (tout autorisé
-  // tant que la grille n'est pas chargée)
-  const canEditFields = !isReady || canWrite("clientCustomFields");
-  const canDeleteClients = !isReady || canDelete("clientCustomFields");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle sur « Champs personnalisés », action par action (tout
+  // autorisé tant que la grille n'est pas chargée)
+  const canCreateFields = !isReady || canDo("clientCustomFields", "create");
+  const canEditFields = !isReady || canDo("clientCustomFields", "edit");
+  const canDeleteFields = !isReady || canDo("clientCustomFields", "delete");
 
   const customFieldsLimit = planLimits?.customFields ?? -1;
   const isLimitReached =
@@ -550,7 +551,7 @@ export default function CustomFieldsPanel({
             Créez des champs personnalisés pour enrichir vos fiches clients avec
             des informations spécifiques à votre activité.
           </p>
-          {canEditFields && (
+          {canCreateFields && (
             <Button
               className="mt-4"
               onClick={() => setIsFormOpen(true)}
@@ -560,7 +561,7 @@ export default function CustomFieldsPanel({
               Créer un champ
             </Button>
           )}
-          {isLimitReached && canEditFields && (
+          {isLimitReached && canCreateFields && (
             <p className="mt-2 text-sm text-amber-600">
               Limite atteinte ({fields.length}/{customFieldsLimit} champs).
               Passez au plan {nextPlanName} pour plus de champs personnalisés.
@@ -574,7 +575,7 @@ export default function CustomFieldsPanel({
               {fields.length} champ{fields.length > 1 ? "s" : ""}
               {customFieldsLimit !== -1 && ` / ${customFieldsLimit}`}
             </p>
-            {canEditFields && (
+            {canCreateFields && (
               <Button
                 size="sm"
                 onClick={() => setIsFormOpen(true)}
@@ -585,7 +586,7 @@ export default function CustomFieldsPanel({
               </Button>
             )}
           </div>
-          {isLimitReached && canEditFields && (
+          {isLimitReached && canCreateFields && (
             <p className="text-sm text-amber-600">
               Limite atteinte ({fields.length}/{customFieldsLimit} champs).
               Passez au plan {nextPlanName} pour plus de champs personnalisés.
@@ -607,7 +608,7 @@ export default function CustomFieldsPanel({
                 onDelete={setDeletingField}
                 onToggle={handleToggle}
                 onToggleDocuments={handleToggleDocuments}
-                canRemove={canDeleteClients}
+                canRemove={canDeleteFields}
                 canEdit={canEditFields}
               />
             ))}

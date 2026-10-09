@@ -46,8 +46,9 @@ import {
   UPDATE_ORGANIZATION_ROLE,
 } from "@/src/graphql/organizationRoleQueries";
 
-function emptyLevels(catalog) {
-  return Object.fromEntries(catalog.modules.map((m) => [m.key, "none"]));
+// Grille vide : aucune action sur aucune page
+function emptyActions(catalog) {
+  return Object.fromEntries(catalog.modules.map((m) => [m.key, []]));
 }
 
 function RoleEditorDialog({
@@ -65,7 +66,7 @@ function RoleEditorDialog({
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [levels, setLevels] = useState({});
+  const [actions, setActions] = useState({});
   const [baseRole, setBaseRole] = useState("viewer");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -88,34 +89,34 @@ function RoleEditorDialog({
     if (role) {
       setName(role.name);
       setDescription(role.description || "");
-      setLevels({ ...emptyLevels(catalog), ...role.levels });
+      setActions({ ...emptyActions(catalog), ...role.actions });
     } else {
       const base = roles.find((r) => r.key === "viewer");
       setName("");
       setDescription("");
       setBaseRole("viewer");
-      setLevels({ ...emptyLevels(catalog), ...(base?.levels || {}) });
+      setActions({ ...emptyActions(catalog), ...(base?.actions || {}) });
     }
   }, [open, role, catalog, roles]);
 
   const applyBaseRole = (key) => {
     setBaseRole(key);
     const base = roles.find((r) => r.key === key);
-    setLevels({ ...emptyLevels(catalog), ...(base?.levels || {}) });
+    setActions({ ...emptyActions(catalog), ...(base?.actions || {}) });
   };
 
   const handleSave = async () => {
     try {
       if (isCreation) {
         await createRole({
-          variables: { input: { name, description, levels } },
+          variables: { input: { name, description, actions } },
         });
         toast.success(`Rôle « ${name.trim()} » créé`);
       } else {
         await updateRole({
           variables: {
             key: role.key,
-            input: isPredefined ? { levels } : { name, description, levels },
+            input: isPredefined ? { actions } : { name, description, actions },
           },
         });
         toast.success("Droits enregistrés");
@@ -130,9 +131,9 @@ function RoleEditorDialog({
   const handleReset = async () => {
     try {
       const { data } = await resetRole({ variables: { key: role.key } });
-      setLevels({
-        ...emptyLevels(catalog),
-        ...data.resetOrganizationRole.levels,
+      setActions({
+        ...emptyActions(catalog),
+        ...data.resetOrganizationRole.actions,
       });
       toast.success("Droits par défaut rétablis");
       onChanged();
@@ -177,10 +178,9 @@ function RoleEditorDialog({
                   : `Modifier « ${role.name} »`}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Sans case cochée, la page n'apparaît pas du tout. Voir : consulter
-              et exporter, sans aucun bouton d'action. Modifier : créer et
-              modifier (gérer, pour le compte). Supprimer : modifier et
-              supprimer.
+              Dépliez une section puis une page pour cocher ses actions une à
+              une. Sans « Voir », la page n'apparaît pas du tout ; cocher une
+              autre action ajoute « Voir ».
             </DialogDescription>
           </DialogHeader>
 
@@ -259,9 +259,9 @@ function RoleEditorDialog({
 
             <RolePermissionsTable
               catalog={catalog}
-              levels={levels}
+              actions={actions}
               disabled={readOnly || busy}
-              onChange={setLevels}
+              onChange={setActions}
             />
           </div>
 

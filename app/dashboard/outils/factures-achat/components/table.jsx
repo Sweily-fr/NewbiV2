@@ -170,10 +170,19 @@ export default function PurchaseInvoiceTable({
     }
   }, [searchParams]);
 
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
-  const canDeletePurchaseInvoices = !isReady || canDelete("purchaseInvoices");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canDo("purchaseInvoices", "edit");
+  const canMarkPaidPurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "markPaid");
+  const canDeletePurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "delete");
+  // Sélection proposée seulement si une action groupée est permise
+  const canSelectPurchaseInvoices =
+    canEditPurchaseInvoices ||
+    canMarkPaidPurchaseInvoices ||
+    canDeletePurchaseInvoices;
 
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { bulkDelete } = useBulkDelete();
@@ -351,10 +360,12 @@ export default function PurchaseInvoiceTable({
         onMarkStatus: handleRowStatus,
         onCategorize: handleRowCategorize,
         categoryLabels: CATEGORIZE_OPTIONS,
-        // Sélection réservée aux actions groupées (écriture)
-      }).filter((column) => column.id !== "select" || canEditPurchaseInvoices),
+        // Sélection réservée aux actions groupées
+      }).filter(
+        (column) => column.id !== "select" || canSelectPurchaseInvoices,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onRowClick, canEditPurchaseInvoices],
+    [onRowClick, canSelectPurchaseInvoices],
   );
 
   const table = useReactTable({
@@ -620,7 +631,7 @@ export default function PurchaseInvoiceTable({
               </AlertDialog>
             )}
             {/* Autres actions groupées regroupées dans un menu "⋮" */}
-            {canEditPurchaseInvoices && (
+            {(canEditPurchaseInvoices || canMarkPaidPurchaseInvoices) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -633,39 +644,45 @@ export default function PurchaseInvoiceTable({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleBulkStatus("PAID")}>
-                    <CheckCircle2 size={14} />
-                    Marquer payées
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleBulkStatus("ARCHIVED")}
-                  >
-                    <Archive size={14} />
-                    Archiver
-                  </DropdownMenuItem>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="gap-2">
-                      <Tag size={14} />
-                      Catégoriser
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                      {EXPENSE_CATEGORY_GROUPS.map((group) => (
-                        <div key={group.heading}>
-                          <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
-                            {group.heading}
-                          </DropdownMenuLabel>
-                          {group.options.map((opt) => (
-                            <DropdownMenuItem
-                              key={opt.value}
-                              onClick={() => handleBulkCategorize(opt.value)}
-                            >
-                              {opt.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </div>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                  {canMarkPaidPurchaseInvoices && (
+                    <DropdownMenuItem onClick={() => handleBulkStatus("PAID")}>
+                      <CheckCircle2 size={14} />
+                      Marquer payées
+                    </DropdownMenuItem>
+                  )}
+                  {canEditPurchaseInvoices && (
+                    <DropdownMenuItem
+                      onClick={() => handleBulkStatus("ARCHIVED")}
+                    >
+                      <Archive size={14} />
+                      Archiver
+                    </DropdownMenuItem>
+                  )}
+                  {canEditPurchaseInvoices && (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="gap-2">
+                        <Tag size={14} />
+                        Catégoriser
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                        {EXPENSE_CATEGORY_GROUPS.map((group) => (
+                          <div key={group.heading}>
+                            <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
+                              {group.heading}
+                            </DropdownMenuLabel>
+                            {group.options.map((opt) => (
+                              <DropdownMenuItem
+                                key={opt.value}
+                                onClick={() => handleBulkCategorize(opt.value)}
+                              >
+                                {opt.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </div>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -1124,11 +1141,13 @@ function ImportedInvoicesPanel({
   onImportedConverted,
   onOpenExisting,
 }) {
-  const { canWrite, isReady } = useMyPermissions();
-  // Valider ou rejeter crée une facture d'achat ; l'API contrôle le module
-  // des factures importées (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  // Valider crée une facture d'achat (« create ») ; l'API contrôle aussi
+  // l'action « edit » des factures importées (tout autorisé tant que la
+  // grille n'est pas chargée)
   const canProcessImported =
-    !isReady || (canWrite("purchaseInvoices") && canWrite("importedInvoices"));
+    !isReady ||
+    (canDo("purchaseInvoices", "create") && canDo("importedInvoices", "edit"));
   const { checkDuplicates } = useCheckPurchaseInvoiceDuplicates();
   // Doublon probable avant conversion : { id (facture importée), duplicates }
   const [duplicateWarning, setDuplicateWarning] = useState(null);

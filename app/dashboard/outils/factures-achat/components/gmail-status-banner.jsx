@@ -24,10 +24,10 @@ function formatTimeAgo(dateStr) {
 export function GmailStatusBanner({ onOpenGmailDialog }) {
   const { connection, stats, loading } = useGmailConnection();
   const { triggerSync, loading: syncing } = useTriggerGmailSync();
-  const { canWrite, isReady } = useMyPermissions();
-  // Synchronisation réservée aux rôles qui peuvent écrire (tout autorisé tant
-  // que la grille n'est pas chargée)
-  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
+  const { canDo, isReady } = useMyPermissions();
+  // Synchronisation Gmail = import de factures d'achat, action « create »
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const canSyncGmail = !isReady || canDo("purchaseInvoices", "create");
 
   if (loading || !connection || connection.status === "disconnected") {
     return null;
@@ -88,7 +88,7 @@ export function GmailStatusBanner({ onOpenGmailDialog }) {
           )}
         </div>
 
-        {canEditPurchaseInvoices && (
+        {canSyncGmail && (
           <Button
             variant="ghost"
             size="icon"

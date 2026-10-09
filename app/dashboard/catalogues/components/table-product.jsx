@@ -317,10 +317,12 @@ export default function TableProduct({
   const id = useId();
   const { workspaceId } = useWorkspace();
   const { fields: customFields } = useProductCustomFields(workspaceId);
-  const { canWrite, canDelete, isReady } = useMyPermissions();
+  const { canDo, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditProducts = !isReady || canWrite("products");
-  const canDeleteProducts = !isReady || canDelete("products");
+  const canEditProducts = !isReady || canDo("products", "edit");
+  const canDeleteProducts = !isReady || canDo("products", "delete");
+  const canImportProducts = !isReady || canDo("products", "import");
+  const canExportProducts = !isReady || canDo("products", "export");
 
   // Stable key for active custom fields to prevent infinite re-renders
   const activeCustomFields = useMemo(
@@ -922,11 +924,15 @@ export default function TableProduct({
             </Popover>
 
             {/* Import/Export buttons for mobile */}
-            <ProductImportDialog onImportComplete={refetch} />
-            <ProductExportButton
-              products={allProducts}
-              selectedRows={table.getSelectedRowModel().rows}
-            />
+            {canImportProducts && (
+              <ProductImportDialog onImportComplete={refetch} />
+            )}
+            {canExportProducts && (
+              <ProductExportButton
+                products={allProducts}
+                selectedRows={table.getSelectedRowModel().rows}
+              />
+            )}
           </div>
         </div>
 

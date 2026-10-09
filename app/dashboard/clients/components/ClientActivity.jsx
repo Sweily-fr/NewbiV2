@@ -155,13 +155,13 @@ const ClientActivity = ({
     useDeleteClientNote(workspaceId);
   const { createEvent } = useCreateEvent();
   const { addActivity } = useAddClientActivity(workspaceId);
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // ajout, modification et suppression des notes = action « notes ».
   // Les notes en attente (création du contact) restent modifiables localement.
-  const canEditClients = !isReady || canWrite("clients");
-  const canDeleteClients = !isReady || canDelete("clients");
-  const canRemoveNote = (note) =>
-    isCreating || note?.isPending || canDeleteClients;
+  const canManageNotes = !isReady || canDo("clients", "notes");
+  const canManageNote = (note) =>
+    isCreating || note?.isPending || canManageNotes;
   const [selectedReminderEvent, setSelectedReminderEvent] = useState(null);
   const [isViewReminderOpen, setIsViewReminderOpen] = useState(false);
   const [fetchEvent] = useLazyQuery(GET_EVENT);
@@ -191,7 +191,7 @@ const ClientActivity = ({
   };
 
   const handleAddNote = async () => {
-    if (!newNote.trim() || (!isCreating && !canEditClients)) return;
+    if (!newNote.trim() || (!isCreating && !canManageNotes)) return;
 
     // En mode création, ajouter à la liste des notes en attente
     if (isCreating) {
@@ -526,82 +526,88 @@ const ClientActivity = ({
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        {item.userId === session?.user?.id && (
-                                          <div className="flex gap-1">
-                                            <Button
-                                              size="sm"
-                                              variant="ghost"
-                                              className="h-7 w-7 p-0 text-muted-foreground"
-                                              style={{
-                                                "--hover-color": "#5b50FF",
-                                              }}
-                                              onMouseEnter={(e) =>
-                                                (e.currentTarget.style.color =
-                                                  "#5b50FF")
-                                              }
-                                              onMouseLeave={(e) =>
-                                                (e.currentTarget.style.color =
-                                                  "")
-                                              }
-                                              onClick={() => {
-                                                setEditingNoteId(item.id);
-                                                setEditingContent(item.content);
-                                              }}
-                                            >
-                                              <Edit2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                            {canRemoveNote(item) && (
-                                              <AlertDialog
-                                                open={noteToDelete === item.id}
-                                                onOpenChange={(open) =>
-                                                  !open && setNoteToDelete(null)
+                                        {item.userId === session?.user?.id &&
+                                          canManageNote(item) && (
+                                            <div className="flex gap-1">
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 w-7 p-0 text-muted-foreground"
+                                                style={{
+                                                  "--hover-color": "#5b50FF",
+                                                }}
+                                                onMouseEnter={(e) =>
+                                                  (e.currentTarget.style.color =
+                                                    "#5b50FF")
                                                 }
+                                                onMouseLeave={(e) =>
+                                                  (e.currentTarget.style.color =
+                                                    "")
+                                                }
+                                                onClick={() => {
+                                                  setEditingNoteId(item.id);
+                                                  setEditingContent(
+                                                    item.content,
+                                                  );
+                                                }}
                                               >
-                                                <AlertDialogTrigger asChild>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                                    onClick={() =>
-                                                      setNoteToDelete(item.id)
-                                                    }
-                                                  >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                  </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                  <AlertDialogTitle>
-                                                    Supprimer la note
-                                                  </AlertDialogTitle>
-                                                  <AlertDialogDescription>
-                                                    Êtes-vous sûr de vouloir
-                                                    supprimer cette note ? Cette
-                                                    action ne peut pas être
-                                                    annulée.
-                                                  </AlertDialogDescription>
-                                                  <div className="flex gap-2 justify-end">
-                                                    <AlertDialogCancel>
-                                                      Annuler
-                                                    </AlertDialogCancel>
-                                                    <AlertDialogAction
-                                                      onClick={() => {
-                                                        handleDeleteNote(
-                                                          item.id,
-                                                          item.isPending,
-                                                        );
-                                                        setNoteToDelete(null);
-                                                      }}
-                                                      disabled={deletingNote}
-                                                      className="bg-destructive text-white hover:bg-destructive/90"
+                                                <Edit2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                              {canManageNote(item) && (
+                                                <AlertDialog
+                                                  open={
+                                                    noteToDelete === item.id
+                                                  }
+                                                  onOpenChange={(open) =>
+                                                    !open &&
+                                                    setNoteToDelete(null)
+                                                  }
+                                                >
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                                      onClick={() =>
+                                                        setNoteToDelete(item.id)
+                                                      }
                                                     >
-                                                      Supprimer
-                                                    </AlertDialogAction>
-                                                  </div>
-                                                </AlertDialogContent>
-                                              </AlertDialog>
-                                            )}
-                                          </div>
-                                        )}
+                                                      <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                    <AlertDialogTitle>
+                                                      Supprimer la note
+                                                    </AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                      Êtes-vous sûr de vouloir
+                                                      supprimer cette note ?
+                                                      Cette action ne peut pas
+                                                      être annulée.
+                                                    </AlertDialogDescription>
+                                                    <div className="flex gap-2 justify-end">
+                                                      <AlertDialogCancel>
+                                                        Annuler
+                                                      </AlertDialogCancel>
+                                                      <AlertDialogAction
+                                                        onClick={() => {
+                                                          handleDeleteNote(
+                                                            item.id,
+                                                            item.isPending,
+                                                          );
+                                                          setNoteToDelete(null);
+                                                        }}
+                                                        disabled={deletingNote}
+                                                        className="bg-destructive text-white hover:bg-destructive/90"
+                                                      >
+                                                        Supprimer
+                                                      </AlertDialogAction>
+                                                    </div>
+                                                  </AlertDialogContent>
+                                                </AlertDialog>
+                                              )}
+                                            </div>
+                                          )}
                                       </div>
                                     </div>
                                     <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">
@@ -866,77 +872,79 @@ const ClientActivity = ({
                               <span className="text-xs text-muted-foreground whitespace-nowrap">
                                 {formatDate(note.createdAt)}
                               </span>
-                              {note.userId === session?.user?.id && (
-                                <div className="flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0 text-muted-foreground"
-                                    style={{ "--hover-color": "#5b50FF" }}
-                                    onMouseEnter={(e) =>
-                                      (e.currentTarget.style.color = "#5b50FF")
-                                    }
-                                    onMouseLeave={(e) =>
-                                      (e.currentTarget.style.color = "")
-                                    }
-                                    onClick={() => {
-                                      setEditingNoteId(note.id);
-                                      setEditingContent(note.content);
-                                    }}
-                                  >
-                                    <Edit2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                  {canRemoveNote(note) && (
-                                    <AlertDialog
-                                      open={noteToDelete === note.id}
-                                      onOpenChange={(open) =>
-                                        !open && setNoteToDelete(null)
+                              {note.userId === session?.user?.id &&
+                                canManageNote(note) && (
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-7 w-7 p-0 text-muted-foreground"
+                                      style={{ "--hover-color": "#5b50FF" }}
+                                      onMouseEnter={(e) =>
+                                        (e.currentTarget.style.color =
+                                          "#5b50FF")
                                       }
+                                      onMouseLeave={(e) =>
+                                        (e.currentTarget.style.color = "")
+                                      }
+                                      onClick={() => {
+                                        setEditingNoteId(note.id);
+                                        setEditingContent(note.content);
+                                      }}
                                     >
-                                      <AlertDialogTrigger asChild>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                          onClick={() =>
-                                            setNoteToDelete(note.id)
-                                          }
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5" />
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogTitle>
-                                          Supprimer la note
-                                        </AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Êtes-vous sûr de vouloir supprimer
-                                          cette note ? Cette action ne peut pas
-                                          être annulée.
-                                        </AlertDialogDescription>
-                                        <div className="flex gap-2 justify-end">
-                                          <AlertDialogCancel>
-                                            Annuler
-                                          </AlertDialogCancel>
-                                          <AlertDialogAction
-                                            onClick={() => {
-                                              handleDeleteNote(
-                                                note.id,
-                                                note.isPending,
-                                              );
-                                              setNoteToDelete(null);
-                                            }}
-                                            disabled={deletingNote}
-                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                    {canManageNote(note) && (
+                                      <AlertDialog
+                                        open={noteToDelete === note.id}
+                                        onOpenChange={(open) =>
+                                          !open && setNoteToDelete(null)
+                                        }
+                                      >
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                            onClick={() =>
+                                              setNoteToDelete(note.id)
+                                            }
                                           >
-                                            Supprimer
-                                          </AlertDialogAction>
-                                        </div>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  )}
-                                </div>
-                              )}
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogTitle>
+                                            Supprimer la note
+                                          </AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Êtes-vous sûr de vouloir supprimer
+                                            cette note ? Cette action ne peut
+                                            pas être annulée.
+                                          </AlertDialogDescription>
+                                          <div className="flex gap-2 justify-end">
+                                            <AlertDialogCancel>
+                                              Annuler
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                              onClick={() => {
+                                                handleDeleteNote(
+                                                  note.id,
+                                                  note.isPending,
+                                                );
+                                                setNoteToDelete(null);
+                                              }}
+                                              disabled={deletingNote}
+                                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                            >
+                                              Supprimer
+                                            </AlertDialogAction>
+                                          </div>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    )}
+                                  </div>
+                                )}
                             </div>
                           </div>
                           <p className="text-sm whitespace-pre-wrap">
@@ -1031,7 +1039,7 @@ const ClientActivity = ({
         </TabsList>
 
         {/* Zone de saisie de note - Sticky en bas (masquée sans écriture) */}
-        {(isCreating || canEditClients) && (
+        {(isCreating || canManageNotes) && (
           <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
             <Textarea
               value={newNote}

@@ -134,14 +134,16 @@ export default function InvoiceSidebar({
   const router = useRouter();
   const { workspaceId } = useRequiredWorkspace();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, isReady } = useMyPermissions();
-  const canEditInvoices = !isReady || canWrite("invoices");
-  // Marquer payée : fonctionnalité « Encaissement des factures »
-  const canMarkPaid = !isReady || canWrite("invoicePayments");
-  const canCreateCreditNotes = !isReady || canWrite("creditNotes");
-  // Rapprochement bancaire : droits du module « banking »
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canDo("invoices", "edit");
+  // Annuler une facture : action « status »
+  const canChangeInvoiceStatus = !isReady || canDo("invoices", "status");
+  // Marquer payée : action séparée des factures
+  const canMarkPaid = !isReady || canDo("invoices", "markPaid");
+  const canCreateCreditNotes = !isReady || canDo("creditNotes", "create");
+  // Rapprochement bancaire : action « reconcile » des transactions
   const canReadBanking = !isReady || canRead("banking");
-  const canLinkTransactions = !isReady || canWrite("banking");
+  const canLinkTransactions = !isReady || canDo("banking", "reconcile");
   // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
   const canReadCreditNotes = !isReady || canRead("creditNotes");
   const canReadQuotes = !isReady || canRead("quotes");
@@ -1793,9 +1795,9 @@ export default function InvoiceSidebar({
           </div> */}
         </div>
 
-        {/* Action Buttons (masqués si le rôle ne permet ni de modifier ni
-            d'encaisser) */}
-        {(canEditInvoices || canMarkPaid) && (
+        {/* Action Buttons (masqués si le rôle ne permet ni de modifier, ni
+            d'annuler, ni d'encaisser) */}
+        {(canEditInvoices || canChangeInvoiceStatus || canMarkPaid) && (
           <div className="border-t px-6 py-4 space-y-3">
             {/* Draft Actions */}
             {canEditInvoices && invoice.status === INVOICE_STATUS.DRAFT && (
@@ -1823,7 +1825,7 @@ export default function InvoiceSidebar({
             {/* Pending Actions */}
             {invoice.status === INVOICE_STATUS.PENDING && (
               <div className="flex gap-2">
-                {canEditInvoices && (
+                {canChangeInvoiceStatus && (
                   <Button
                     variant="outline"
                     onClick={handleCancel}

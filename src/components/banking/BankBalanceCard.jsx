@@ -71,10 +71,10 @@ function BankBalanceCardInner(
   const userRole = getUserRole();
   // Connecter un compte : droit « Applications et banques » du rôle (le
   // comptable ne l'a pas, comme avant les rôles personnalisés)
-  const { can, isReady: permissionsReady } = useMyPermissions();
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
   const canConnectBank =
     userRole !== "accountant" &&
-    (!permissionsReady || can("integrations", "write"));
+    (!permissionsReady || canDo("integrations", "manage"));
 
   // Utiliser les props si disponibles, sinon état local
   const [localAccounts, setLocalAccounts] = useState([]);

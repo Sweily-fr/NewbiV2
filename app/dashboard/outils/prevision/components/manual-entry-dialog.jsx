@@ -133,10 +133,10 @@ function ForecastDetailsList({ rangeStart, rangeEnd }) {
   const { excludeOccurrence, loading: excluding } =
     useExcludeForecastOccurrence();
   const [toDelete, setToDelete] = useState(null);
-  // Retirer une occurrence d'un mois : droit d'écriture du rôle (tout
+  // Retirer une occurrence d'un mois : action « edit » du rôle (tout
   // autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditForecast = !isReady || canWrite("forecast");
+  const { canDo, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canDo("forecast", "edit");
 
   const confirmDelete = async () => {
     if (!toDelete) return;
@@ -280,10 +280,10 @@ export function ManualEntryDialog({
   const { deleteEntry, loading: deleting } = useDeleteManualCashflowEntry();
   const { setMuted } = useMuteDetectedRecurrence();
   const { isScenario, scenarioName } = useForecastScenario();
-  // Supprimer une saisie : droit de suppression du rôle (tout autorisé tant
+  // Supprimer une saisie : action « delete » du rôle (tout autorisé tant
   // que la grille n'est pas chargée)
-  const { canDelete, isReady: permissionsReady } = useMyPermissions();
-  const canDeleteForecast = !permissionsReady || canDelete("forecast");
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canDeleteForecast = !permissionsReady || canDo("forecast", "delete");
   // Ouverture depuis le « + » d'une récurrence détectée : la saisie créée
   // remplace la détection, masquée à l'enregistrement pour ne pas compter le
   // montant deux fois (dans un scénario, masquée dans ce scénario seulement).

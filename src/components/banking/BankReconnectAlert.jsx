@@ -31,8 +31,8 @@ export function BankReconnectAlert() {
   // Reconnecter une banque : droit « Applications et banques » du rôle (tout
   // autorisé tant que la grille n'est pas chargée). Sans ce droit, la
   // bannière informe seulement.
-  const { can, isReady: permissionsReady } = useMyPermissions();
-  const canReconnectBank = !permissionsReady || can("integrations", "write");
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canReconnectBank = !permissionsReady || canDo("integrations", "manage");
   const refreshedAfterCallback = useRef(false);
   const [index, setIndex] = useState(0);
 

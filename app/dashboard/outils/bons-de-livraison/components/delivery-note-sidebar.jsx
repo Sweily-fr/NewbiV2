@@ -80,13 +80,23 @@ export default function DeliveryNoteSidebar({
 }) {
   const router = useRouter();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, isReady } = useMyPermissions();
-  const canEditDeliveryNotes = !isReady || canWrite("deliveryNotes");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditDeliveryNotes = !isReady || canDo("deliveryNotes", "edit");
+  const canSendDeliveryNotes = !isReady || canDo("deliveryNotes", "send");
+  // Émettre, expédier, noter la réception, annuler : action « status »
+  const canChangeDeliveryNoteStatus =
+    !isReady || canDo("deliveryNotes", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizeDeliveryNotes =
+    !isReady ||
+    canDo("deliveryNotes", "create") ||
+    canDo("deliveryNotes", "edit");
   // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
   const canReadQuotes = !isReady || canRead("quotes");
   const canReadInvoices = !isReady || canRead("invoices");
-  // Facturer : création dans le module « invoices »
-  const canWriteInvoices = !isReady || canWrite("invoices");
+  // Facturer : action « convert » du bon de livraison
+  const canConvertDeliveryNotes = !isReady || canDo("deliveryNotes", "convert");
   const { changeStatus, loading: changingStatus } =
     useChangeDeliveryNoteStatus();
   const { createInvoice, loading: creatingInvoice } =
@@ -182,9 +192,11 @@ export default function DeliveryNoteSidebar({
     (isPending || isShipped || isDelivered) &&
     !hasLinkedInvoices &&
     !deliveryNote.sourceInvoice &&
-    canWriteInvoices;
+    canConvertDeliveryNotes;
   const canCancel =
-    (isPending || isShipped) && !hasLinkedInvoices && canEditDeliveryNotes;
+    (isPending || isShipped) &&
+    !hasLinkedInvoices &&
+    canChangeDeliveryNoteStatus;
 
   const deliveryAddress =
     deliveryNote.deliveryAddress?.street || deliveryNote.deliveryAddress?.city
@@ -592,37 +604,44 @@ export default function DeliveryNoteSidebar({
 
         {/* Actions (masquées si le rôle ne permet aucune action) */}
         {(canEditDeliveryNotes ||
+          canChangeDeliveryNoteStatus ||
+          canFinalizeDeliveryNotes ||
+          (canSendDeliveryNotes && onSendEmail) ||
           canInvoice ||
           (isDelivered && hasLinkedInvoices)) && (
           <div className="border-t px-6 py-4 space-y-3">
-            {isDraft && canEditDeliveryNotes && (
+            {isDraft && (canEditDeliveryNotes || canFinalizeDeliveryNotes) && (
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleEdit}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Éditer
-                </Button>
-                <Button
-                  onClick={() =>
-                    changeTo(
-                      DELIVERY_NOTE_STATUS.PENDING,
-                      "Bon de livraison émis, à expédier",
-                    )
-                  }
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Émettre le bon de livraison
-                </Button>
+                {canEditDeliveryNotes && (
+                  <Button
+                    variant="outline"
+                    onClick={handleEdit}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Éditer
+                  </Button>
+                )}
+                {canFinalizeDeliveryNotes && (
+                  <Button
+                    onClick={() =>
+                      changeTo(
+                        DELIVERY_NOTE_STATUS.PENDING,
+                        "Bon de livraison émis, à expédier",
+                      )
+                    }
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Émettre le bon de livraison
+                  </Button>
+                )}
               </div>
             )}
 
-            {isPending && canEditDeliveryNotes && (
+            {isPending && canChangeDeliveryNoteStatus && (
               <>
                 <div className="flex gap-2">
                   <Button
@@ -666,7 +685,7 @@ export default function DeliveryNoteSidebar({
               </>
             )}
 
-            {isShipped && canEditDeliveryNotes && (
+            {isShipped && canChangeDeliveryNoteStatus && (
               <Button
                 variant="primary"
                 onClick={() => setShowReception(true)}
@@ -678,32 +697,33 @@ export default function DeliveryNoteSidebar({
               </Button>
             )}
 
-            {(isPending || isShipped || isDelivered) && (
-              <div className="flex gap-2">
-                {onSendEmail && canEditDeliveryNotes && (
-                  <Button
-                    variant="outline"
-                    onClick={() => onSendEmail(deliveryNote)}
-                    disabled={isLoading}
-                    className="flex-1 font-normal"
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Envoyer
-                  </Button>
-                )}
-                {canInvoice && (
-                  <Button
-                    variant="outline"
-                    onClick={handleInvoice}
-                    disabled={isLoading}
-                    className="flex-1 font-normal"
-                  >
-                    <FileCheck className="h-4 w-4 mr-2" />
-                    Facturer
-                  </Button>
-                )}
-              </div>
-            )}
+            {(isPending || isShipped || isDelivered) &&
+              ((onSendEmail && canSendDeliveryNotes) || canInvoice) && (
+                <div className="flex gap-2">
+                  {onSendEmail && canSendDeliveryNotes && (
+                    <Button
+                      variant="outline"
+                      onClick={() => onSendEmail(deliveryNote)}
+                      disabled={isLoading}
+                      className="flex-1 font-normal"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Envoyer
+                    </Button>
+                  )}
+                  {canInvoice && (
+                    <Button
+                      variant="outline"
+                      onClick={handleInvoice}
+                      disabled={isLoading}
+                      className="flex-1 font-normal"
+                    >
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      Facturer
+                    </Button>
+                  )}
+                </div>
+              )}
 
             {canCancel && (
               <Button

@@ -29,9 +29,12 @@ function CataloguesContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canWrite, isReady } = useMyPermissions();
+  const { canDo, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditProducts = !isReady || canWrite("products");
+  const canCreateProducts = !isReady || canDo("products", "create");
+  const canImportProducts = !isReady || canDo("products", "import");
+  const canExportProducts = !isReady || canDo("products", "export");
+  const canManageCustomFields = !isReady || canDo("products", "customFields");
 
   // Récupérer les produits pour l'export
   const { products: allProducts, refetch } = useProducts(1, 100, "");
@@ -57,8 +60,8 @@ function CataloguesContent() {
             <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
           </div>
           <div className="flex gap-2">
-            {/* Actions d'écriture masquées si le rôle est en lecture seule */}
-            {canEditProducts && (
+            {/* Actions masquées si le rôle ne les permet pas */}
+            {canManageCustomFields && (
               <Button
                 variant="outline"
                 onClick={() => setCustomFieldsOpen(true)}
@@ -68,7 +71,7 @@ function CataloguesContent() {
                 Champs
               </Button>
             )}
-            {canEditProducts && (
+            {canImportProducts && (
               <Button
                 variant="outline"
                 onClick={() => !isReadOnly && setImportDialogOpen(true)}
@@ -80,12 +83,14 @@ function CataloguesContent() {
                 Importer
               </Button>
             )}
-            <ProductExportButton
-              products={allProducts}
-              selectedRows={selectedProducts}
-              iconOnly={false}
-            />
-            {canEditProducts && (
+            {canExportProducts && (
+              <ProductExportButton
+                products={allProducts}
+                selectedRows={selectedProducts}
+                iconOnly={false}
+              />
+            )}
+            {canCreateProducts && (
               <Button
                 variant="primary"
                 onClick={() => !isReadOnly && handleOpenProductDialog()}
@@ -135,7 +140,7 @@ function CataloguesContent() {
         </div>
 
         {/* Bouton flottant mobile */}
-        {canEditProducts && (
+        {canCreateProducts && (
           <Button
             onClick={handleOpenProductDialog}
             className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"

@@ -148,10 +148,11 @@ export default function InvoiceTable({
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : la
   // suppression groupée porte sur les brouillons et les factures importées
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canDo, canDelete, isReady } = useMyPermissions();
   const canBulkDelete =
     !isReady || canDelete("invoices") || canDelete("importedInvoices");
-  const canEditInvoices = !isReady || canWrite("invoices");
+  // Factures récurrentes : action « recurring » des factures
+  const canManageRecurring = !isReady || canDo("invoices", "recurring");
   // Factures importées et avoirs : modules distincts, masqués sans lecture
   const canReadImportedInvoices = !isReady || canRead("importedInvoices");
   const canReadCreditNotes = !isReady || canRead("creditNotes");
@@ -1209,9 +1210,9 @@ export default function InvoiceTable({
           error={recurrencesError}
           onRetry={refetchRecurrences}
           globalFilter={globalFilter}
-          // Gestion des récurrences : réservée à l'écriture sur les factures
+          // Gestion des récurrences : action « recurring » des factures
           onManage={
-            canEditInvoices
+            canManageRecurring
               ? (recurrence) =>
                   setRecurrenceTarget({
                     invoice:

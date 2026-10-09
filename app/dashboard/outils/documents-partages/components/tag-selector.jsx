@@ -172,8 +172,9 @@ export function TagSelector({
   const { createTag } = useCreateDocumentTag();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
   // en lecture seule, tags affichés sans retrait ni ajout
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditTags = !isReady || canWrite("sharedDocuments");
+  // Poser, retirer et créer des tags = action « edit » des documents partagés
+  const { canDo, isReady } = useMyPermissions();
+  const canEditTags = !isReady || canDo("sharedDocuments", "edit");
 
   const colorOf = React.useCallback(
     (name) => resolveTagColor(name, registry),

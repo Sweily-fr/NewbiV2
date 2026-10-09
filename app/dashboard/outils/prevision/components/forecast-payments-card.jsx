@@ -443,10 +443,11 @@ const EXPENSE_CATEGORIES = [
 
 export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
   const { remap } = useChartColors();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
-  // lecture seule, le détail d'un mois ne propose pas de suppression
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditForecast = !isReady || canWrite("forecast");
+  // Action « edit » du rôle (tout autorisé tant que la grille n'est pas
+  // chargée) : sans elle, le détail d'un mois ne propose pas de retirer une
+  // occurrence
+  const { canDo, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canDo("forecast", "edit");
   const incomeColor = remap("#5b50ff");
   const expenseColor = remap("#000000");
 

@@ -39,9 +39,10 @@ export function BoardMembersPopover({
   const [search, setSearch] = useState("");
   const { data: session } = useSession();
   const currentUserId = session?.user?.id ? String(session.user.id) : null;
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const roleCanEdit = !isReady || canWrite("kanban");
+  // Membres d'un tableau = modification du tableau, action « edit » (tout
+  // autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const roleCanEdit = !isReady || canDo("kanban", "edit");
 
   // Pré-charger la liste des membres workspace dès que possible — pas seulement
   // à l'ouverture du popover — pour que les checkboxes soient correctes

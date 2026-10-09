@@ -120,12 +120,16 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
   const { setMuted, loading: muting } = useMuteDetectedRecurrence();
   const { deleteRecurrence, loading: deleting } = useDeleteDetectedRecurrence();
   const { runDetection, loading: detecting } = useRunRecurrenceDetection();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
-  // analyser, modifier, ajouter et masquer demandent l'écriture, supprimer
-  // demande la suppression
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditForecast = !isReady || canWrite("forecast");
-  const canDeleteForecast = !isReady || canDelete("forecast");
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée) : analyser, modifier et masquer demandent « edit »,
+  // supprimer demande « delete ». « Ajouter » crée une prévision (« create »)
+  // puis masque la détection (« edit ») : il demande les deux, sinon le
+  // montant serait compté deux fois.
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateForecast = !isReady || canDo("forecast", "create");
+  const canEditForecast = !isReady || canDo("forecast", "edit");
+  const canDeleteForecast = !isReady || canDo("forecast", "delete");
+  const canConvertToForecast = canCreateForecast && canEditForecast;
   const [expanded, setExpanded] = useState(false);
   const [toDelete, setToDelete] = useState(null);
   const [toEdit, setToEdit] = useState(null);
@@ -307,27 +311,29 @@ export function DetectedRecurrencesList({ onCreateForecast }) {
                         title="Modifier le libellé, le montant, la périodicité ou la catégorie de cette récurrence"
                       />
                     )}
-                    {canEditForecast && onCreateForecast && !rec.isMuted && (
-                      <RowAction
-                        icon={Plus}
-                        label="Ajouter"
-                        onClick={() =>
-                          onCreateForecast({
-                            type: rec.type,
-                            name,
-                            amount,
-                            frequency:
-                              FORECAST_FREQUENCY[frequency] || "MONTHLY",
-                            category,
-                            // La prévision créée remplace la détection, qui
-                            // sera masquée à l'enregistrement (sinon le
-                            // montant serait compté deux fois).
-                            fromDetection: { id: rec.id, name },
-                          })
-                        }
-                        title="Ajouter une prévision manuelle à partir de cette détection (la détection sera masquée)"
-                      />
-                    )}
+                    {canConvertToForecast &&
+                      onCreateForecast &&
+                      !rec.isMuted && (
+                        <RowAction
+                          icon={Plus}
+                          label="Ajouter"
+                          onClick={() =>
+                            onCreateForecast({
+                              type: rec.type,
+                              name,
+                              amount,
+                              frequency:
+                                FORECAST_FREQUENCY[frequency] || "MONTHLY",
+                              category,
+                              // La prévision créée remplace la détection, qui
+                              // sera masquée à l'enregistrement (sinon le
+                              // montant serait compté deux fois).
+                              fromDetection: { id: rec.id, name },
+                            })
+                          }
+                          title="Ajouter une prévision manuelle à partir de cette détection (la détection sera masquée)"
+                        />
+                      )}
                     {canEditForecast && (
                       <button
                         type="button"

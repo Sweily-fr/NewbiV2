@@ -63,9 +63,10 @@ function BlockedContent() {
   const { workspaceId } = useWorkspace();
   const { clients, loading } = useClients(1, 500, "");
   const { unblockClient, loading: unblocking } = useUnblockClient();
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
+  const { canDo, isReady } = useMyPermissions();
+  // Débloquer = action « block » des clients (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canBlockClients = !isReady || canDo("clients", "block");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkUnblocking, setBulkUnblocking] = useState(false);
 
@@ -181,7 +182,7 @@ function BlockedContent() {
             )}
           </div>
         </div>
-        {selectedIds.size > 0 && canEditClients && (
+        {selectedIds.size > 0 && canBlockClients && (
           <div className="flex items-center gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -253,8 +254,8 @@ function BlockedContent() {
             <table className="w-full table-fixed">
               <thead>
                 <tr>
-                  {/* Sélection réservée au déblocage groupé (écriture) */}
-                  {canEditClients && (
+                  {/* Sélection réservée au déblocage groupé */}
+                  {canBlockClients && (
                     <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle font-normal text-xs text-muted-foreground w-[40px]">
                       <Checkbox
                         checked={
@@ -297,7 +298,7 @@ function BlockedContent() {
                       router.push(`/dashboard/clients/${client.id}`)
                     }
                   >
-                    {canEditClients && (
+                    {canBlockClients && (
                       <td
                         className="p-2 pl-4 sm:pl-6 align-middle w-[40px]"
                         onClick={(e) => e.stopPropagation()}
@@ -354,7 +355,7 @@ function BlockedContent() {
                       className="p-2 pr-4 sm:pr-6 align-middle text-right w-[10%]"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {canEditClients && (
+                      {canBlockClients && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button

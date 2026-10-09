@@ -280,17 +280,19 @@ export function SearchCommand() {
   // Droits du rôle (Paramètres > Membres > Rôles), tout autorisé tant que la
   // grille n'est pas chargée : la recherche n'interroge que les documents
   // lisibles (l'API refuserait les autres), les créations demandent
-  // l'écriture et les pages masquées au rôle n'apparaissent pas (comme dans
-  // le menu).
+  // l'action « create » du module et les pages masquées au rôle
+  // n'apparaissent pas (comme dans le menu).
   const {
     can,
+    canDo,
     isReady: permissionsReady,
     role: permissionsRole,
     levels: permissionLevels,
   } = useMyPermissions();
   const canReadModule = (moduleKey) =>
     !permissionsReady || can(moduleKey, "read");
-  const canCreate = (moduleKey) => !permissionsReady || can(moduleKey, "write");
+  const canCreate = (moduleKey) =>
+    !permissionsReady || canDo(moduleKey, "create");
   const canSee = (url) => {
     const moduleKey = moduleForPath(url);
     if (!permissionsReady || !moduleKey) return true;

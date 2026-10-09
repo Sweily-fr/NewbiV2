@@ -102,7 +102,7 @@ const ROLE_DEFINITION_PATHS = new Set([
   "/organization/delete-role",
 ]);
 
-// Inviter, retirer, changer un rôle : droit « Membres » (team = write)
+// Inviter, retirer, changer un rôle : cases de la page « Membres »
 const MEMBER_MANAGEMENT_PATHS = new Set([
   "/organization/invite-member",
   "/organization/update-member-role",
@@ -147,7 +147,7 @@ async function checkOrganizationRoles(ctx) {
   try {
     const { getMongoDb } = await import("./mongodb");
     const { ObjectId } = await import("mongodb");
-    const { getAccountLevel, isOwnerRole } =
+    const { getAccountActions, isOwnerRole } =
       await import("./organization-roles");
     const db = await getMongoDb();
 
@@ -165,23 +165,34 @@ async function checkOrganizationRoles(ctx) {
     }
     if (!organizationId) return;
 
-    const caller = await getAccountLevel(db, {
+    const caller = await getAccountActions(db, {
       userId: session.user.id,
       organizationId,
       moduleKey: isOrgUpdate ? "orgSettings" : "team",
     });
     const callerIsOwner = isOwnerRole(caller.role);
+    // Case de la page Membres exigée par chaque route
+    const requiredTeamAction = {
+      "/organization/invite-member": "invite",
+      "/organization/cancel-invitation": "invite",
+      "/organization/update-member-role": "changeRole",
+      "/organization/remove-member": "remove",
+    }[ctx.path];
 
     if (isOrgUpdate) {
       // Archiver l'espace revient à le supprimer : super admin uniquement
       if (ctx.body?.data?.metadata?.archived && !callerIsOwner) {
         denial = "Seul le super admin peut archiver l'espace.";
-      } else if (caller.role && caller.level !== "write") {
+      } else if (caller.role && !caller.actions.includes("edit")) {
         denial =
           "Votre rôle ne permet pas de modifier les informations de l'entreprise.";
       }
-    } else if (caller.level !== "write") {
-      denial = "Votre rôle ne permet pas de gérer les membres de cet espace.";
+    } else if (!caller.actions.includes(requiredTeamAction)) {
+      denial = {
+        invite: "Votre rôle ne permet pas d'inviter des membres.",
+        changeRole: "Votre rôle ne permet pas de changer les rôles.",
+        remove: "Votre rôle ne permet pas de retirer des membres.",
+      }[requiredTeamAction];
     } else if (
       (ctx.path === "/organization/invite-member" ||
         ctx.path === "/organization/update-member-role") &&
@@ -197,12 +208,10 @@ async function checkOrganizationRoles(ctx) {
       const target = ctx.body?.memberId || ctx.body?.memberIdOrEmail;
       const orgObjectId = new ObjectId(String(organizationId));
       const targetMember = ObjectId.isValid(String(target))
-        ? await db
-            .collection("member")
-            .findOne({
-              _id: new ObjectId(String(target)),
-              organizationId: orgObjectId,
-            })
+        ? await db.collection("member").findOne({
+            _id: new ObjectId(String(target)),
+            organizationId: orgObjectId,
+          })
         : null;
       let targetRole = targetMember?.role;
       if (!targetMember && typeof target === "string" && target.includes("@")) {

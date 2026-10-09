@@ -660,11 +660,13 @@ export default function AutomationsPopover({ trigger }) {
   const planLimits = getPlanLimits(subscription?.plan);
   const canUseClientAutomations = planLimits.clientAutomations;
   const canUseEmailAutomations = planLimits.crmEmailAutomations;
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canDo, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const canReadAutomations = !isReady || canRead("automations");
-  const canEditAutomations = !isReady || canWrite("automations");
-  const canDeleteAutomations = !isReady || canDelete("automations");
+  const canCreateAutomations = !isReady || canDo("automations", "create");
+  // Modifier et activer / désactiver = action « edit »
+  const canEditAutomations = !isReady || canDo("automations", "edit");
+  const canDeleteAutomations = !isReady || canDo("automations", "delete");
   // Listes et champs personnalisés : modules à part (requêtes sautées sans
   // lecture)
   const canReadClientLists = !isReady || canRead("clientLists");
@@ -916,7 +918,7 @@ export default function AutomationsPopover({ trigger }) {
                   )}
                 </div>
 
-                {canEditAutomations && (
+                {canCreateAutomations && (
                   <div className="p-4 border-t">
                     {!showNewForm && (
                       <Button
@@ -1006,7 +1008,7 @@ export default function AutomationsPopover({ trigger }) {
                       )}
                     </div>
 
-                    {canEditAutomations && (
+                    {canCreateAutomations && (
                       <div className="p-4 border-t">
                         {!showNewEmailForm && (
                           <Button

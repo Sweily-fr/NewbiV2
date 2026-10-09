@@ -148,10 +148,14 @@ function RowActions({
   categoryLabels = {},
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
-  const canDeletePurchaseInvoices = !isReady || canDelete("purchaseInvoices");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canDo("purchaseInvoices", "edit");
+  const canMarkPaid = !isReady || canDo("purchaseInvoices", "markPaid");
+  const canDeletePurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "delete");
+  const showMarkPaid = canMarkPaid && invoice.status !== "PAID";
   return (
     <div data-no-row-click>
       <DropdownMenu>
@@ -173,17 +177,19 @@ function RowActions({
               Voir le justificatif
             </DropdownMenuItem>
           )}
+          {(canEditPurchaseInvoices || showMarkPaid) && (
+            <DropdownMenuSeparator />
+          )}
+          {showMarkPaid && (
+            <DropdownMenuItem
+              onClick={() => onMarkStatus?.(invoice.id, "PAID")}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Marquer payée
+            </DropdownMenuItem>
+          )}
           {canEditPurchaseInvoices && (
             <>
-              <DropdownMenuSeparator />
-              {invoice.status !== "PAID" && (
-                <DropdownMenuItem
-                  onClick={() => onMarkStatus?.(invoice.id, "PAID")}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Marquer payée
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem
                 onClick={() => onMarkStatus?.(invoice.id, "ARCHIVED")}
               >

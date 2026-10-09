@@ -329,13 +329,20 @@ export default function DocumentsPartagesPage() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditSharedDocuments = !isReady || canWrite("sharedDocuments");
-  const canDeleteSharedDocuments = !isReady || canDelete("sharedDocuments");
+  const { canDo, isReady } = useMyPermissions();
+  // Importer des fichiers, créer des dossiers = « create »
+  const canCreateSharedDocuments =
+    !isReady || canDo("sharedDocuments", "create");
+  // Renommer, déplacer, tags, visibilité, restaurer = « edit »
+  const canEditSharedDocuments = !isReady || canDo("sharedDocuments", "edit");
+  const canDeleteSharedDocuments =
+    !isReady || canDo("sharedDocuments", "delete");
+  // Corbeille : sélection et menu utiles pour restaurer ou supprimer
+  const canManageTrash = canEditSharedDocuments || canDeleteSharedDocuments;
   // « Transférer » crée un transfert de fichiers (module fileTransfers)
-  const canCreateFileTransfers = !isReady || canWrite("fileTransfers");
-  // Les automatisations de classement relèvent des documents partagés
-  const canEditAutomations = !isReady || canWrite("sharedDocuments");
+  const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
+  // Les automatisations de classement relèvent de l'action « edit »
+  const canEditAutomations = canEditSharedDocuments;
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // États
@@ -778,7 +785,7 @@ export default function DocumentsPartagesPage() {
       // 4. Le rôle permet de créer des dossiers (grille chargée)
       if (
         isReady &&
-        canEditSharedDocuments &&
+        canCreateSharedDocuments &&
         workspaceId &&
         !foldersInitialLoading &&
         !defaultFoldersInitiatedRef.current &&
@@ -798,7 +805,7 @@ export default function DocumentsPartagesPage() {
     initDefaultFolders();
   }, [
     isReady,
-    canEditSharedDocuments,
+    canCreateSharedDocuments,
     workspaceId,
     foldersInitialLoading,
     folders,
@@ -1130,10 +1137,10 @@ export default function DocumentsPartagesPage() {
       e.preventDefault();
       e.stopPropagation();
       // Pas de zone de dépôt si l'import n'est pas autorisé
-      if (isReadOnly || !canEditSharedDocuments) return;
+      if (isReadOnly || !canCreateSharedDocuments) return;
       setIsDragActive(true);
     },
-    [isReadOnly, canEditSharedDocuments],
+    [isReadOnly, canCreateSharedDocuments],
   );
 
   const handleDragLeave = useCallback((e) => {
@@ -1147,11 +1154,11 @@ export default function DocumentsPartagesPage() {
       e.preventDefault();
       e.stopPropagation();
       setIsDragActive(false);
-      if (isReadOnly || !canEditSharedDocuments) return;
+      if (isReadOnly || !canCreateSharedDocuments) return;
       const files = Array.from(e.dataTransfer.files);
       handleFileUpload(files);
     },
-    [handleFileUpload, isReadOnly, canEditSharedDocuments],
+    [handleFileUpload, isReadOnly, canCreateSharedDocuments],
   );
 
   const handleFileInputChange = useCallback(
@@ -1902,7 +1909,7 @@ export default function DocumentsPartagesPage() {
                     </Tooltip>
                   </TooltipProvider>
                 )}
-                {canEditSharedDocuments && (
+                {canCreateSharedDocuments && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1925,7 +1932,7 @@ export default function DocumentsPartagesPage() {
                     </Tooltip>
                   </TooltipProvider>
                 )}
-                {canEditSharedDocuments && (
+                {canCreateSharedDocuments && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -1990,7 +1997,7 @@ export default function DocumentsPartagesPage() {
                   <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
                     Explorateur
                   </span>
-                  {canEditSharedDocuments && (
+                  {canCreateSharedDocuments && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -2088,7 +2095,7 @@ export default function DocumentsPartagesPage() {
                 <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
                   Explorateur
                 </span>
-                {canEditSharedDocuments && (
+                {canCreateSharedDocuments && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -2160,7 +2167,7 @@ export default function DocumentsPartagesPage() {
                           {treeContextMenu.item.isFolder &&
                             !treeContextMenu.item.isInbox && (
                               <>
-                                {canEditSharedDocuments &&
+                                {canCreateSharedDocuments &&
                                   !(
                                     selectedFolders.includes(
                                       treeContextMenu.itemId,
@@ -3210,8 +3217,8 @@ export default function DocumentsPartagesPage() {
                     <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
                       <span className="w-6 hidden sm:block"></span>
                       {/* Sélection inutile sans droit de restaurer
-                          (écriture) ni de supprimer */}
-                      {canEditSharedDocuments && (
+                          (« edit ») ni de supprimer */}
+                      {canManageTrash && (
                         <Checkbox
                           checked={
                             selectedTrashFolders.length ===
@@ -3251,9 +3258,7 @@ export default function DocumentsPartagesPage() {
                       <span className="w-24 text-right hidden md:block">
                         Jours restants
                       </span>
-                      {canEditSharedDocuments && (
-                        <span className="w-8 sm:w-10"></span>
-                      )}
+                      {canManageTrash && <span className="w-8 sm:w-10"></span>}
                     </div>
 
                     {/* Trashed folders with their contents */}
@@ -3292,7 +3297,7 @@ export default function DocumentsPartagesPage() {
                                 )}
                               />
                             </button>
-                            {canEditSharedDocuments && (
+                            {canManageTrash && (
                               <Checkbox
                                 checked={selectedTrashFolders.includes(
                                   folder.id,
@@ -3367,9 +3372,9 @@ export default function DocumentsPartagesPage() {
                                 {folder.daysUntilPermanentDeletion}j
                               </Badge>
                             </span>
-                            {/* Restaurer (écriture) / supprimer : menu absent
+                            {/* Restaurer (« edit ») / supprimer : menu absent
                                 en lecture seule */}
-                            {canEditSharedDocuments && (
+                            {canManageTrash && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -3381,22 +3386,26 @@ export default function DocumentsPartagesPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedTrashFolders([folder.id]);
-                                      setSelectedTrashDocuments([]);
-                                      handleRestoreItems({
-                                        folderIds: [folder.id],
-                                        documentIds: [],
-                                      });
-                                    }}
-                                  >
-                                    <RotateCcw className="h-4 w-4 mr-2" />
-                                    Restaurer
-                                  </DropdownMenuItem>
+                                  {canEditSharedDocuments && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedTrashFolders([folder.id]);
+                                        setSelectedTrashDocuments([]);
+                                        handleRestoreItems({
+                                          folderIds: [folder.id],
+                                          documentIds: [],
+                                        });
+                                      }}
+                                    >
+                                      <RotateCcw className="h-4 w-4 mr-2" />
+                                      Restaurer
+                                    </DropdownMenuItem>
+                                  )}
                                   {canDeleteSharedDocuments && (
                                     <>
-                                      <DropdownMenuSeparator />
+                                      {canEditSharedDocuments && (
+                                        <DropdownMenuSeparator />
+                                      )}
                                       <DropdownMenuItem
                                         onClick={() => {
                                           setSelectedTrashFolders([folder.id]);
@@ -3428,7 +3437,7 @@ export default function DocumentsPartagesPage() {
                               >
                                 <span className="w-6 hidden sm:block"></span>
                                 <span className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-4 rounded-bl-sm hidden sm:block"></span>
-                                {canEditSharedDocuments && (
+                                {canManageTrash && (
                                   <Checkbox
                                     checked={selectedTrashDocuments.includes(
                                       doc.id,
@@ -3459,7 +3468,7 @@ export default function DocumentsPartagesPage() {
                                 <span className="w-24 text-right hidden md:block">
                                   —
                                 </span>
-                                {canEditSharedDocuments && (
+                                {canManageTrash && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button
@@ -3471,22 +3480,26 @@ export default function DocumentsPartagesPage() {
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                      <DropdownMenuItem
-                                        onClick={() => {
-                                          setSelectedTrashDocuments([doc.id]);
-                                          setSelectedTrashFolders([]);
-                                          handleRestoreItems({
-                                            documentIds: [doc.id],
-                                            folderIds: [],
-                                          });
-                                        }}
-                                      >
-                                        <RotateCcw className="h-4 w-4 mr-2" />
-                                        Restaurer
-                                      </DropdownMenuItem>
+                                      {canEditSharedDocuments && (
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            setSelectedTrashDocuments([doc.id]);
+                                            setSelectedTrashFolders([]);
+                                            handleRestoreItems({
+                                              documentIds: [doc.id],
+                                              folderIds: [],
+                                            });
+                                          }}
+                                        >
+                                          <RotateCcw className="h-4 w-4 mr-2" />
+                                          Restaurer
+                                        </DropdownMenuItem>
+                                      )}
                                       {canDeleteSharedDocuments && (
                                         <>
-                                          <DropdownMenuSeparator />
+                                          {canEditSharedDocuments && (
+                                            <DropdownMenuSeparator />
+                                          )}
                                           <DropdownMenuItem
                                             onClick={() => {
                                               setSelectedTrashDocuments([
@@ -3522,7 +3535,7 @@ export default function DocumentsPartagesPage() {
                         )}
                       >
                         <span className="w-6 hidden sm:block"></span>
-                        {canEditSharedDocuments && (
+                        {canManageTrash && (
                           <Checkbox
                             checked={selectedTrashDocuments.includes(doc.id)}
                             onCheckedChange={() =>
@@ -3567,7 +3580,7 @@ export default function DocumentsPartagesPage() {
                             {doc.daysUntilPermanentDeletion}j
                           </Badge>
                         </span>
-                        {canEditSharedDocuments && (
+                        {canManageTrash && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
@@ -3579,22 +3592,26 @@ export default function DocumentsPartagesPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedTrashDocuments([doc.id]);
-                                  setSelectedTrashFolders([]);
-                                  handleRestoreItems({
-                                    documentIds: [doc.id],
-                                    folderIds: [],
-                                  });
-                                }}
-                              >
-                                <RotateCcw className="h-4 w-4 mr-2" />
-                                Restaurer
-                              </DropdownMenuItem>
+                              {canEditSharedDocuments && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTrashDocuments([doc.id]);
+                                    setSelectedTrashFolders([]);
+                                    handleRestoreItems({
+                                      documentIds: [doc.id],
+                                      folderIds: [],
+                                    });
+                                  }}
+                                >
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Restaurer
+                                </DropdownMenuItem>
+                              )}
                               {canDeleteSharedDocuments && (
                                 <>
-                                  <DropdownMenuSeparator />
+                                  {canEditSharedDocuments && (
+                                    <DropdownMenuSeparator />
+                                  )}
                                   <DropdownMenuItem
                                     onClick={() => {
                                       setSelectedTrashDocuments([doc.id]);

@@ -386,9 +386,11 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
   const { createField, loading: createLoading } = useCreateProductCustomField();
   const { updateField, loading: updateLoading } = useUpdateProductCustomField();
   const { deleteField, loading: deleteLoading } = useDeleteProductCustomField();
-  const { canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canDeleteProducts = !isReady || canDelete("products");
+  const { canDo, isReady } = useMyPermissions();
+  // Champs personnalisés : action « customFields » du catalogue (création,
+  // modification et suppression ; tout autorisé tant que la grille n'est
+  // pas chargée)
+  const canManageCustomFields = !isReady || canDo("products", "customFields");
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingField, setEditingField] = useState(null);
@@ -514,7 +516,7 @@ export default function ProductCustomFieldsManager({ open, onOpenChange }) {
                     onEdit={setEditingField}
                     onDelete={setDeletingField}
                     onToggle={handleToggle}
-                    canRemove={canDeleteProducts}
+                    canRemove={canManageCustomFields}
                   />
                 ))}
               </div>

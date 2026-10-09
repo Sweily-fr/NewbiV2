@@ -16,11 +16,13 @@ import {
   Eye,
   EyeOff,
   GitBranch,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   useManualCashflowEntries,
   useHideManualEntryInScenario,
+  useDeleteManualCashflowEntry,
 } from "@/src/hooks/useManualCashflowEntries";
 import { useForecastScenario } from "@/src/contexts/forecast-scenario-context";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -68,10 +70,13 @@ export function ManualEntriesList() {
   const { isScenario, scenarioName } = useForecastScenario();
   const { entries, loading } = useManualCashflowEntries();
   const { setHidden, loading: hiding } = useHideManualEntryInScenario();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
-  // lecture seule, ni modification ni masquage
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditForecast = !isReady || canWrite("forecast");
+  const { deleteEntry, loading: deleting } = useDeleteManualCashflowEntry();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée) : modifier et masquer demandent « edit » ; sans
+  // « edit », « delete » seul propose de supprimer la saisie
+  const { canDo, isReady } = useMyPermissions();
+  const canEditForecast = !isReady || canDo("forecast", "edit");
+  const canDeleteForecast = !isReady || canDo("forecast", "delete");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
@@ -187,7 +192,22 @@ export function ManualEntriesList() {
                   {isIncome ? "+" : "-"}
                   {formatCurrency(entry.amount)}
                 </span>
-                {!canEditForecast ? null : isScenario && isBaseEntry ? (
+                {!canEditForecast ? (
+                  // Suppression seule : pas de saisie de Base depuis un
+                  // scénario (elle toucherait Base)
+                  canDeleteForecast && !(isScenario && isBaseEntry) ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteEntry(entry.id)}
+                      disabled={deleting}
+                      className="h-7 w-7 hover:text-destructive"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </Button>
+                  ) : null
+                ) : isScenario && isBaseEntry ? (
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"

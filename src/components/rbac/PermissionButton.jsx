@@ -90,8 +90,17 @@ export function PermissionButton({
     return () => {
       isMounted = false;
     };
+    // hasPermission change avec la grille d'actions (changement d'espace,
+    // rôle modifié) : la vérification est alors refaite
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resource, action, JSON.stringify(roles), isPermissionLoading, isReady]);
+  }, [
+    resource,
+    action,
+    JSON.stringify(roles),
+    isPermissionLoading,
+    isReady,
+    hasPermission,
+  ]);
 
   // Masquer le bouton si pas d'accès et hideIfNoAccess = true
   if (!isChecking && !hasAccess && hideIfNoAccess) {

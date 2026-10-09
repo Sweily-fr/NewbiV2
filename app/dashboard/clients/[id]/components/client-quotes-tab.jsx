@@ -40,9 +40,10 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const newDocumentHref = `/dashboard/outils/devis/new?clientId=${clientId}`;
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canCreateQuotes = !isReady || canWrite("quotes");
+  const { canDo, isReady } = useMyPermissions();
+  // Bouton « Nouveau » = action « create » (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canCreateQuotes = !isReady || canDo("quotes", "create");
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 

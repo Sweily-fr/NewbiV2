@@ -30,9 +30,12 @@ function InvoiceDetailsContent() {
 
   const { invoice, loading, error } = useInvoice(invoiceId);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditInvoices = !isReady || canWrite("invoices");
-  const canDeleteInvoices = !isReady || canDelete("invoices");
+  const { canDo, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canDo("invoices", "edit");
+  const canSendInvoices = !isReady || canDo("invoices", "send");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
+  const canCreateQuotes = !isReady || canDo("quotes", "create");
+  const canDeleteInvoices = !isReady || canDo("invoices", "delete");
 
   const handleBack = () => {
     router.push("/dashboard/outils/factures");
@@ -88,7 +91,7 @@ function InvoiceDetailsContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          {!isDraft && canEditInvoices && (
+          {!isDraft && canSendInvoices && (
             <Button variant="outline" className="gap-2">
               <Send className="h-4 w-4" />
               Envoyer
@@ -96,7 +99,9 @@ function InvoiceDetailsContent() {
           )}
 
           {/* Menu d'actions : masqué en lecture seule (aucune action possible) */}
-          {canEditInvoices && (
+          {(canCreateInvoices ||
+            canCreateQuotes ||
+            (isDraft && canDeleteInvoices)) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -104,8 +109,12 @@ function InvoiceDetailsContent() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Dupliquer</DropdownMenuItem>
-                <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
+                {canCreateInvoices && (
+                  <DropdownMenuItem>Dupliquer</DropdownMenuItem>
+                )}
+                {canCreateQuotes && (
+                  <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 {isDraft && canDeleteInvoices && (
                   <DropdownMenuItem className="text-destructive">

@@ -39,10 +39,12 @@ export function moduleForPath(pathname) {
   return null;
 }
 
-/** Page de création ou d'édition : demande l'écriture sur le module. */
-export function levelForPath(pathname) {
+/** Action demandée par une page : créer (/new), modifier (/editer), voir. */
+export function actionForPath(pathname) {
   const path = String(pathname || "").split(/[?#]/)[0];
-  return /\/(new|nouveau|editer)(\/|$)/.test(path) ? "write" : "read";
+  if (/\/(new|nouveau)(\/|$)/.test(path)) return "create";
+  if (/\/editer(\/|$)/.test(path)) return "edit";
+  return "view";
 }
 
 /**
