@@ -26,6 +26,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -282,6 +283,10 @@ function SortableItem({ id, disabled, children }) {
  * champ prix / TVA / remise : désignation, détails, quantité, unité, référence.
  */
 export default function ItemsSection({ canEdit, validationErrors = {} }) {
+  // Recherche dans le catalogue : seulement si le rôle peut lire les produits
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, isReady } = useMyPermissions();
+  const canReadProducts = !isReady || canRead("products");
   const {
     watch,
     register,
@@ -402,16 +407,18 @@ export default function ItemsSection({ canEdit, validationErrors = {} }) {
       <CardContent className="space-y-6 p-0">
         {/* Recherche catalogue + ajout d'un article */}
         <div className="flex flex-col md:flex-row gap-3 items-stretch">
-          <div className="flex-1 min-w-0 order-1 md:order-1">
-            <div className="h-full">
-              <ProductSearchCombobox
-                onSelect={addItem}
-                placeholder="Rechercher un produit..."
-                disabled={!canEdit}
-                className="h-full"
-              />
+          {canReadProducts && (
+            <div className="flex-1 min-w-0 order-1 md:order-1">
+              <div className="h-full">
+                <ProductSearchCombobox
+                  onSelect={addItem}
+                  placeholder="Rechercher un produit..."
+                  disabled={!canEdit}
+                  className="h-full"
+                />
+              </div>
             </div>
-          </div>
+          )}
           <div className="flex-shrink-0 order-2 md:order-2 md:w-auto">
             <Button
               onClick={() => addItem()}

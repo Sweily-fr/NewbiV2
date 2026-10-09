@@ -13,6 +13,7 @@ import { Label } from "@/src/components/ui/label";
 import { Switch } from "@/src/components/ui/switch";
 import { toast } from "@/src/components/ui/sonner";
 import { useUploadProductImage } from "@/src/hooks/useProducts";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { cn } from "@/src/lib/utils";
 
 const MAX_SIZE = 10 * 1024 * 1024;
@@ -32,17 +33,23 @@ export default function ProductImageField({
   onUploadingChange,
   showOnDocuments = true,
   onShowOnDocumentsChange,
+  // Droit d'enregistrer le produit (création ou modification), fourni par
+  // la fiche ; à défaut, action « edit » du catalogue
+  canEdit,
 }) {
   const inputRef = useRef(null);
   const [dragging, setDragging] = useState(false);
   const { uploadProductImage, loading } = useUploadProductImage();
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditProducts = canEdit ?? (!isReady || canDo("products", "edit"));
 
   useEffect(() => {
     onUploadingChange?.(loading);
   }, [loading, onUploadingChange]);
 
   const handleFile = async (file) => {
-    if (!file) return;
+    if (!file || !canEditProducts) return;
     if (
       !file.type.startsWith("image/") &&
       !ACCEPTED_EXTENSIONS.test(file.name)
@@ -59,8 +66,11 @@ export default function ProductImageField({
   };
 
   const openPicker = () => {
-    if (!loading) inputRef.current?.click();
+    if (!loading && canEditProducts) inputRef.current?.click();
   };
+
+  // Lecture seule sans image : rien à afficher (pas de zone d'envoi)
+  if (!canEditProducts && !value) return null;
 
   return (
     <div className="space-y-2">
@@ -122,34 +132,36 @@ export default function ProductImageField({
                 alt="Image du produit"
                 className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               />
-              <div className="absolute right-2 top-2 flex gap-1.5">
-                <button
-                  type="button"
-                  title="Remplacer"
-                  aria-label="Remplacer l'image"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openPicker();
-                  }}
-                  disabled={loading}
-                  className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
-                >
-                  <RefreshCw className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  title="Retirer"
-                  aria-label="Retirer l'image"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onChange(null);
-                  }}
-                  disabled={loading}
-                  className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-destructive hover:text-white"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
+              {canEditProducts && (
+                <div className="absolute right-2 top-2 flex gap-1.5">
+                  <button
+                    type="button"
+                    title="Remplacer"
+                    aria-label="Remplacer l'image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openPicker();
+                    }}
+                    disabled={loading}
+                    className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-background"
+                  >
+                    <RefreshCw className="size-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Retirer"
+                    aria-label="Retirer l'image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onChange(null);
+                    }}
+                    disabled={loading}
+                    className="flex size-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow-sm backdrop-blur transition-colors hover:bg-destructive hover:text-white"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <span className="flex flex-col items-center gap-2 px-6 text-center">
@@ -207,6 +219,7 @@ export default function ProductImageField({
             <Switch
               checked={showOnDocuments}
               onCheckedChange={onShowOnDocumentsChange}
+              disabled={!canEditProducts}
               aria-label="Afficher l'image sur les documents"
             />
           </label>

@@ -48,7 +48,12 @@ function useAutoRetryOnError({ error, refetch, enabled = true }) {
   return { isRetrying: !!error && attempts < MAX_AUTO_RETRIES };
 }
 
-export const useClients = (page = 1, limit = 10, search = "") => {
+export const useClients = (
+  page = 1,
+  limit = 10,
+  search = "",
+  { skip = false } = {},
+) => {
   const { workspaceId, loading: workspaceLoading } = useWorkspace();
 
   const {
@@ -58,13 +63,14 @@ export const useClients = (page = 1, limit = 10, search = "") => {
     refetch,
   } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
-    skip: !workspaceId,
+    // skip : clients fournis par l'appelant, ou rôle sans accès aux clients
+    skip: !workspaceId || skip,
   });
 
   const { isRetrying } = useAutoRetryOnError({
     error,
     refetch,
-    enabled: !!workspaceId,
+    enabled: !!workspaceId && !skip,
   });
 
   return {

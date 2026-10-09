@@ -27,6 +27,8 @@ export default function RecentTransactionsCard({
   accountId,
   limit = 5,
   isLoading = false,
+  // Requête différée (droits du rôle pas encore chargés sur l'accueil)
+  skip = false,
 }) {
   const router = useRouter();
 
@@ -38,7 +40,7 @@ export default function RecentTransactionsCard({
       limit,
     },
     fetchPolicy: "cache-and-network",
-    skip: !workspaceId,
+    skip: !workspaceId || skip,
   });
 
   const recentTransactions = data?.transactions || [];

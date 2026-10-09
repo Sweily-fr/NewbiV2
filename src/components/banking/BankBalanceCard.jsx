@@ -42,6 +42,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { findBank } from "@/lib/banks-config";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { getNumberFormat } from "@/src/lib/intl-cache";
@@ -69,6 +70,12 @@ function BankBalanceCardInner(
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   const userRole = getUserRole();
+  // Connecter un compte : droit « Applications et banques » du rôle (le
+  // comptable ne l'a pas, comme avant les rôles personnalisés)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canConnectBank =
+    userRole !== "accountant" &&
+    (!permissionsReady || canDo("integrations", "manage"));
 
   // Utiliser les props si disponibles, sinon état local
   const [localAccounts, setLocalAccounts] = useState([]);
@@ -400,7 +407,7 @@ function BankBalanceCardInner(
             transactions en temps réel.
           </p>
           <div className="flex items-center gap-3">
-            {userRole !== "accountant" && (
+            {canConnectBank && (
               <Button
                 size="sm"
                 className="text-xs font-medium bg-foreground text-background hover:bg-foreground/90"
@@ -586,8 +593,8 @@ function BankBalanceCardInner(
           ))}
         </div>
 
-        {/* Bouton ajouter un compte bancaire (masqué pour le comptable) */}
-        {canAddBankAccount && userRole !== "accountant" && (
+        {/* Bouton ajouter un compte bancaire (selon le rôle) */}
+        {canAddBankAccount && canConnectBank && (
           <Button
             variant="outline"
             size="sm"

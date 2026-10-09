@@ -95,6 +95,7 @@ import { productItemImage } from "@/src/utils/item-image";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import CompanyImport, { QuickCompanyImport } from "./company-import";
 import { toast } from "@/src/components/ui/sonner";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Composant de recherche de produits basé sur Origin UI
@@ -330,6 +331,10 @@ export default function EnhancedInvoiceForm({
     return localStorage.getItem("invoice-advanced-options-open") === "true";
   });
   const canEdit = !readOnly && !loading;
+  // Recherche dans le catalogue : seulement si le rôle peut lire les produits
+  // (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, isReady } = useMyPermissions();
+  const canReadProducts = !isReady || canRead("products");
 
   // Utiliser l'état externe si fourni, sinon utiliser l'état interne
   const currentStep =
@@ -727,7 +732,9 @@ export default function EnhancedInvoiceForm({
               <ItemsSection
                 formatCurrency={formatCurrency}
                 canEdit={canEdit}
-                ProductSearchCombobox={ProductSearchCombobox}
+                ProductSearchCombobox={
+                  canReadProducts ? ProductSearchCombobox : null
+                }
                 validationErrors={validationErrors?.items?.details || []}
                 markFieldAsEditing={markFieldAsEditing}
                 unmarkFieldAsEditing={unmarkFieldAsEditing}

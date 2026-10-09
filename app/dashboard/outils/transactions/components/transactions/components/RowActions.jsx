@@ -11,6 +11,7 @@ import {
 } from "@/src/components/ui/dropdown-menu";
 import { toast } from "@/src/components/ui/sonner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 // Les transactions proviennent du flux bancaire Bridge : pas de suppression.
 // Actions permises : modifier (catégorie/description), copier la description,
@@ -18,6 +19,9 @@ import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 export function RowActions({ row, onEdit, onDownloadAttachment }) {
   const transaction = row.original;
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { canDo, isReady } = useMyPermissions();
+  // Action « edit » du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canEditBanking = !isReady || canDo("banking", "edit");
 
   const handleEdit = () => {
     if (onEdit) {
@@ -46,13 +50,15 @@ export function RowActions({ row, onEdit, onDownloadAttachment }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            onClick={handleEdit}
-            disabled={transaction.source === "invoice" || isReadOnly}
-          >
-            <span>Modifier</span>
-            <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
-          </DropdownMenuItem>
+          {canEditBanking && (
+            <DropdownMenuItem
+              onClick={handleEdit}
+              disabled={transaction.source === "invoice" || isReadOnly}
+            >
+              <span>Modifier</span>
+              <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={handleCopyDescription}>
             <span>Copier description</span>
             <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>

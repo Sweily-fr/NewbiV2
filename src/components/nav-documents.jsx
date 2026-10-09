@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import {
   Crown,
@@ -17,7 +17,8 @@ import {
   CreditCard,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { isHiddenForRole, moduleForPath } from "@/src/lib/route-modules";
 
 import {
   DropdownMenu,
@@ -43,8 +44,24 @@ export function NavDocuments({ items }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const { isActive } = useSubscription();
   const pathname = usePathname();
-  const { getUserRole } = usePermissions();
-  const userRole = getUserRole();
+  // Outils sans accès pour le rôle masqués (grille chargée seulement)
+  const {
+    can,
+    isReady: permissionsReady,
+    role: permissionsRole,
+    levels: permissionLevels,
+  } = useMyPermissions();
+  const canSee = useCallback(
+    (url) => {
+      const moduleKey = moduleForPath(url);
+      if (!permissionsReady || !moduleKey) return true;
+      return (
+        can(moduleKey, "read") &&
+        !isHiddenForRole(permissionsRole, permissionLevels, moduleKey)
+      );
+    },
+    [permissionsReady, can, permissionsRole, permissionLevels],
+  );
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -135,13 +152,8 @@ export function NavDocuments({ items }) {
     },
   ];
 
-  // Filtrer les outils selon le rôle
-  const availableTools =
-    userRole === "accountant"
-      ? allAvailableTools.filter((tool) =>
-          ["Factures", "Devis", "Transactions", "Documents partagés"].includes(tool.name)
-        )
-      : allAvailableTools;
+  // Filtrer les outils selon les droits du rôle
+  const availableTools = allAvailableTools.filter((tool) => canSee(tool.url));
 
   // Load pinned apps from localStorage on component mount
   useEffect(() => {
@@ -158,12 +170,8 @@ export function NavDocuments({ items }) {
               icon: iconMap[app.iconName] || Receipt, // fallback icon
             }));
 
-          // Filtrer selon le rôle accountant
-          if (userRole === "accountant") {
-            validApps = validApps.filter((app) =>
-              ["Factures", "Devis", "Transactions", "Documents partagés"].includes(app.name)
-            );
-          }
+          // Filtrer selon les droits du rôle
+          validApps = validApps.filter((app) => canSee(app.url));
 
           if (validApps.length > 0) {
             setPinnedApps(validApps);
@@ -176,7 +184,7 @@ export function NavDocuments({ items }) {
       }
       setIsLoaded(true);
     }
-  }, [items, userRole]);
+  }, [items, canSee]);
 
   // Save pinned apps to localStorage whenever they change
   useEffect(() => {

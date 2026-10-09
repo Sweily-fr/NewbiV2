@@ -59,6 +59,7 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
   AlertDialog,
@@ -149,6 +150,11 @@ export default function ModernQuoteEditor({
   // Template selector (create mode only)
   const { workspaceId } = useWorkspace();
   const { templates, loading: templatesLoading } = useQuoteTemplates();
+  // Modèles : enregistrer = action « create », supprimer = « delete » (tout
+  // autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canSaveTemplate = !isReady || canDo("quotes", "create");
+  const canManageTemplates = !isReady || canDo("quotes", "delete");
   const [deleteTemplateMutation] = useMutation(DELETE_QUOTE_TEMPLATE, {
     refetchQueries: [
       { query: GET_QUOTE_TEMPLATES, variables: { workspaceId } },
@@ -604,7 +610,7 @@ export default function ModernQuoteEditor({
                     </Button>
 
                     {((isCreating && templates.length > 0) ||
-                      (!isCreating && quoteId)) && (
+                      (!isCreating && quoteId && canSaveTemplate)) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="icon" title="Modèles">
@@ -651,21 +657,27 @@ export default function ModernQuoteEditor({
                                   </div>
                                 </DropdownMenuItem>
                               ))}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onSelect={() => setShowManageTemplates(true)}
-                                className="gap-2"
-                              >
-                                <SlidersHorizontal className="h-4 w-4 shrink-0" />
-                                <span className="text-sm">
-                                  Gérer les modèles
-                                </span>
-                              </DropdownMenuItem>
+                              {canManageTemplates && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onSelect={() =>
+                                      setShowManageTemplates(true)
+                                    }
+                                    className="gap-2"
+                                  >
+                                    <SlidersHorizontal className="h-4 w-4 shrink-0" />
+                                    <span className="text-sm">
+                                      Gérer les modèles
+                                    </span>
+                                  </DropdownMenuItem>
+                                </>
+                              )}
                             </>
                           )}
 
                           {/* Sauvegarder comme modèle (mode édition) */}
-                          {!isCreating && quoteId && (
+                          {!isCreating && quoteId && canSaveTemplate && (
                             <DropdownMenuItem
                               onSelect={() => setShowSaveTemplateDialog(true)}
                               className="gap-2"

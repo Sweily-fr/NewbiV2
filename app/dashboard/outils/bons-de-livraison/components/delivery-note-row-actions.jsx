@@ -38,6 +38,7 @@ import {
 } from "@/src/graphql/deliveryNoteQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import DeliveryReceptionDialog from "./delivery-reception-dialog";
 
 export default function DeliveryNoteRowActions({
@@ -51,6 +52,22 @@ export default function DeliveryNoteRowActions({
   const [showReception, setShowReception] = useState(false);
 
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditDeliveryNotes = !isReady || canDo("deliveryNotes", "edit");
+  const canDeleteDeliveryNotes = !isReady || canDo("deliveryNotes", "delete");
+  const canSendDeliveryNotes = !isReady || canDo("deliveryNotes", "send");
+  // Émettre, expédier, noter la réception, annuler : action « status »
+  const canChangeDeliveryNoteStatus =
+    !isReady || canDo("deliveryNotes", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizeDeliveryNotes =
+    !isReady ||
+    canDo("deliveryNotes", "create") ||
+    canDo("deliveryNotes", "edit");
+  // Facturer : action « convert » du bon de livraison
+  const canConvertDeliveryNotes = !isReady || canDo("deliveryNotes", "convert");
   const { changeStatus, loading: changingStatus } =
     useChangeDeliveryNoteStatus();
   const { deleteDeliveryNote, loading: isDeleting } = useDeleteDeliveryNote();
@@ -111,7 +128,8 @@ export default function DeliveryNoteRowActions({
   const canInvoice =
     (isPending || isShipped || isDelivered) &&
     !hasLinkedInvoices &&
-    !deliveryNote.sourceInvoice;
+    !deliveryNote.sourceInvoice &&
+    canConvertDeliveryNotes;
   const canCancel = (isDraft || isPending || isShipped) && !hasLinkedInvoices;
 
   return (
@@ -125,7 +143,7 @@ export default function DeliveryNoteRowActions({
           aria-hidden="true"
         />
         <ButtonGroup>
-          {!isDraft && (
+          {!isDraft && canSendDeliveryNotes && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -166,18 +184,20 @@ export default function DeliveryNoteRowActions({
                 Voir
               </DropdownMenuItem>
               {/* Un BL émis reste modifiable tant qu'il n'est pas livré */}
-              {(isDraft || isPending || isShipped) && (
+              {canEditDeliveryNotes && (isDraft || isPending || isShipped) && (
                 <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Modifier
                 </DropdownMenuItem>
               )}
 
-              {(isDraft || isPending || isShipped || canInvoice) && (
-                <DropdownMenuSeparator />
-              )}
+              {(((canEditDeliveryNotes ||
+                canChangeDeliveryNoteStatus ||
+                canFinalizeDeliveryNotes) &&
+                (isDraft || isPending || isShipped)) ||
+                canInvoice) && <DropdownMenuSeparator />}
 
-              {isDraft && (
+              {canFinalizeDeliveryNotes && isDraft && (
                 <DropdownMenuItem
                   onClick={handleView}
                   disabled={isLoading || isReadOnly}
@@ -187,7 +207,7 @@ export default function DeliveryNoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {isPending && (
+              {canChangeDeliveryNoteStatus && isPending && (
                 <>
                   <DropdownMenuItem
                     onClick={() =>
@@ -223,7 +243,7 @@ export default function DeliveryNoteRowActions({
                 </>
               )}
 
-              {isShipped && (
+              {canChangeDeliveryNoteStatus && isShipped && (
                 <DropdownMenuItem
                   onClick={() => setShowReception(true)}
                   disabled={isLoading || isReadOnly}
@@ -243,7 +263,7 @@ export default function DeliveryNoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {canCancel && !isDraft && (
+              {canChangeDeliveryNoteStatus && canCancel && !isDraft && (
                 <DropdownMenuItem
                   onClick={() =>
                     changeTo(
@@ -258,7 +278,7 @@ export default function DeliveryNoteRowActions({
                 </DropdownMenuItem>
               )}
 
-              {isDraft && (
+              {isDraft && canDeleteDeliveryNotes && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

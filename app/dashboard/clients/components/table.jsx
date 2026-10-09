@@ -124,6 +124,7 @@ import {
   useRemoveClientFromList,
 } from "@/src/hooks/useClientLists";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
@@ -446,6 +447,22 @@ export default function TableClients({
   const router = useRouter();
   // Fiche client préchargée au survol de la ligne (voir usePrefetchOnIntent).
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canCreateClients = !isReady || canDo("clients", "create");
+  // Sélection proposée seulement si une action groupée est permise
+  const canSelectClients =
+    !isReady ||
+    canDo("clients", "edit") ||
+    canDo("clients", "block") ||
+    canDo("clients", "assign") ||
+    canDo("clients", "delete") ||
+    canDo("clientLists", "edit");
+  // Colonne « Factures » : données du module Factures
+  const canReadInvoices = !isReady || canRead("invoices");
+  // Fiche client ouvrable seulement avec la lecture des clients (vue d'une
+  // liste)
+  const canOpenClients = !isReady || canRead("clients");
   const [columnFilters, setColumnFilters] = useState([]);
   const [internalColumnVisibility, setInternalColumnVisibility] = useState({});
   const columnVisibility = externalColumnVisibility || internalColumnVisibility;
@@ -498,6 +515,9 @@ export default function TableClients({
     pagination.pageIndex + 1,
     pagination.pageSize,
     debouncedGlobalFilter,
+    // Pas de requête si les clients sont fournis (vue d'une liste) ou si le
+    // rôle ne peut pas lire les clients
+    { skip: useProvidedClients || !canOpenClients },
   );
 
   const {
@@ -652,6 +672,12 @@ export default function TableClients({
       handleSelectAll,
       clients,
       customFieldDefinitions,
+    ).filter(
+      // Sélection retirée sans action groupée possible (lecture seule),
+      // colonne « Factures » retirée sans lecture des factures
+      (column) =>
+        (column.id !== "select" || canSelectClients) &&
+        (column.id !== "invoiceCount" || canReadInvoices),
     ),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -687,7 +713,7 @@ export default function TableClients({
     const standard = [
       { id: "email", label: "Email" },
       { id: "type", label: "Type" },
-      { id: "invoiceCount", label: "Factures" },
+      ...(canReadInvoices ? [{ id: "invoiceCount", label: "Factures" }] : []),
       { id: "address", label: "Adresse" },
       { id: "phone", label: "Téléphone" },
       { id: "firstName", label: "Prénom" },
@@ -701,7 +727,7 @@ export default function TableClients({
       label: f.name,
     }));
     return [...standard, ...cfCols];
-  }, [customFieldDefinitions]);
+  }, [customFieldDefinitions, canReadInvoices]);
 
   const customFieldNamesMap = useMemo(
     () =>
@@ -928,9 +954,11 @@ export default function TableClients({
                     <tr
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      {...prefetchIntent(
-                        `/dashboard/clients/${row.original.id}`,
-                      )}
+                      {...(canOpenClients
+                        ? prefetchIntent(
+                            `/dashboard/clients/${row.original.id}`,
+                          )
+                        : {})}
                       className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                       onClick={(e) => {
                         // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
@@ -940,7 +968,8 @@ export default function TableClients({
                           e.target.closest("button") ||
                           e.target.closest('[role="menuitem"]') ||
                           e.target.closest('[role="alertdialog"]') ||
-                          e.target.closest('[role="dialog"]')
+                          e.target.closest('[role="dialog"]') ||
+                          !canOpenClients
                         ) {
                           return;
                         }
@@ -986,13 +1015,15 @@ export default function TableClients({
                         title="Aucun contact"
                         description="Créez votre premier contact pour commencer à gérer votre base de données clients."
                         action={
-                          <Button
-                            onClick={handleAddUser}
-                            className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
-                          >
-                            <PlusIcon size={14} className="mr-2" />
-                            Nouveau contact
-                          </Button>
+                          canCreateClients ? (
+                            <Button
+                              onClick={handleAddUser}
+                              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+                            >
+                              <PlusIcon size={14} className="mr-2" />
+                              Nouveau contact
+                            </Button>
+                          ) : undefined
                         }
                       />
                     </td>
@@ -1168,13 +1199,13 @@ export default function TableClients({
 
               {/* Add Client Button - Icon only */}
               {/* <Button
-              variant="default"
-              size="sm"
-              className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
-              onClick={handleAddUser}
-            >
-              <PlusIcon className="h-4 w-4" />
-            </Button> */}
+                variant="default"
+                size="sm"
+                className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
+                onClick={handleAddUser}
+              >
+                <PlusIcon className="h-4 w-4" />
+              </Button> */}
             </div>
           </div>
 
@@ -1270,9 +1301,11 @@ export default function TableClients({
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      {...prefetchIntent(
-                        `/dashboard/clients/${row.original.id}`,
-                      )}
+                      {...(canOpenClients
+                        ? prefetchIntent(
+                            `/dashboard/clients/${row.original.id}`,
+                          )
+                        : {})}
                       className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                       onClick={(e) => {
                         // Ne pas naviguer si on clique sur la checkbox, le menu d'actions
@@ -1282,7 +1315,8 @@ export default function TableClients({
                           e.target.closest("button") ||
                           e.target.closest('[role="menuitem"]') ||
                           e.target.closest('[role="alertdialog"]') ||
-                          e.target.closest('[role="dialog"]')
+                          e.target.closest('[role="dialog"]') ||
+                          !canOpenClients
                         ) {
                           return;
                         }
@@ -1345,9 +1379,9 @@ export default function TableClients({
           </div>
 
           {/* Pagination mobile : sans elle, seuls les 10 premiers contacts
-            étaient atteignables (les suivants n'existaient que via la
-            recherche). Toujours affichée, comme sur desktop ; pb-24 = marge
-            pour la barre de navigation basse. */}
+              étaient atteignables (les suivants n'existaient que via la
+              recherche). Toujours affichée, comme sur desktop ; pb-24 = marge
+              pour la barre de navigation basse. */}
           <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2 pb-24 border-t bg-background">
             <div className="text-xs font-normal text-muted-foreground">
               {(() => {
@@ -1437,12 +1471,26 @@ function RowActions({
   const { unblockClient } = useUnblockClient();
   const { addToLists } = useAddClientToLists();
   const { removeClient: removeClientFromList } = useRemoveClientFromList();
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditClients = !isReady || canDo("clients", "edit");
+  const canDeleteClients = !isReady || canDo("clients", "delete");
+  const canBlockClients = !isReady || canDo("clients", "block");
+  const canAssignClients = !isReady || canDo("clients", "assign");
+  // Listes : module à part (ajouter / retirer un contact = « edit »,
+  // nouvelle liste = « create »)
+  const canReadClientLists = !isReady || canRead("clientLists");
+  const canEditClientLists = !isReady || canDo("clientLists", "edit");
+  const canCreateClientLists = !isReady || canDo("clientLists", "create");
+  const hasMembershipActions =
+    canEditClientLists || canBlockClients || canAssignClients;
   // Listes du contact : chargées seulement quand on s'apprête à ouvrir son
   // menu (survol ou ouverture), et non pour chaque ligne du tableau au montage.
   const [listsRequested, setListsRequested] = useState(false);
   const requestLists = useCallback(() => setListsRequested(true), []);
   const { lists } = useClientListsByClient(
-    workspaceId || "",
+    canReadClientLists ? workspaceId || "" : "",
     listsRequested ? client.id : null,
   );
 
@@ -1572,104 +1620,120 @@ function RowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={handleEdit}>
-              <span>Modifier</span>
-            </DropdownMenuItem>
+            {canEditClients && (
+              <DropdownMenuItem onClick={handleEdit}>
+                <span>Modifier</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={handleCopyEmail}>
               <span>Copier email</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
 
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            {/* Ajouter à une liste */}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger disabled={addingToList} className="gap-2">
-                <ListPlus className="w-3.5 h-3.5" />
-                <span>Ajouter à une liste</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {(() => {
-                  const currentListIds = new Set(
-                    (lists || []).map((l) => l.id),
-                  );
-                  const availableLists = (allLists || []).filter(
-                    (l) => !currentListIds.has(l.id),
-                  );
-                  return (
-                    <>
-                      {(allLists || []).length > 0 &&
-                        availableLists.length === 0 && (
-                          <DropdownMenuItem disabled>
-                            Aucune liste disponible
-                          </DropdownMenuItem>
-                        )}
-                      {availableLists.map((list) => (
-                        <DropdownMenuItem
-                          key={list.id}
-                          onClick={() => handleAddToList(list.id)}
-                          disabled={addingToList}
-                          className="cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2 w-full">
-                            <div
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: list.color }}
-                            />
-                            <span>{list.name}</span>
-                          </div>
-                        </DropdownMenuItem>
-                      ))}
-                      {(allLists || []).length > 0 && <DropdownMenuSeparator />}
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          setCreateListDialogOpen(true);
-                        }}
-                        className="cursor-pointer gap-2"
-                      >
-                        <PlusIcon className="w-3.5 h-3.5" />
-                        <span>Créer une liste</span>
-                      </DropdownMenuItem>
-                    </>
-                  );
-                })()}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+          {hasMembershipActions && <DropdownMenuSeparator />}
+          {hasMembershipActions && (
+            <DropdownMenuGroup>
+              {/* Ajouter à une liste */}
+              {canEditClientLists && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger
+                    disabled={addingToList}
+                    className="gap-2"
+                  >
+                    <ListPlus className="w-3.5 h-3.5" />
+                    <span>Ajouter à une liste</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {(() => {
+                      const currentListIds = new Set(
+                        (lists || []).map((l) => l.id),
+                      );
+                      const availableLists = (allLists || []).filter(
+                        (l) => !currentListIds.has(l.id),
+                      );
+                      return (
+                        <>
+                          {(allLists || []).length > 0 &&
+                            availableLists.length === 0 && (
+                              <DropdownMenuItem disabled>
+                                Aucune liste disponible
+                              </DropdownMenuItem>
+                            )}
+                          {availableLists.map((list) => (
+                            <DropdownMenuItem
+                              key={list.id}
+                              onClick={() => handleAddToList(list.id)}
+                              disabled={addingToList}
+                              className="cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2 w-full">
+                                <div
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: list.color }}
+                                />
+                                <span>{list.name}</span>
+                              </div>
+                            </DropdownMenuItem>
+                          ))}
+                          {(allLists || []).length > 0 &&
+                            canCreateClientLists && <DropdownMenuSeparator />}
+                          {canCreateClientLists && (
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setCreateListDialogOpen(true);
+                              }}
+                              className="cursor-pointer gap-2"
+                            >
+                              <PlusIcon className="w-3.5 h-3.5" />
+                              <span>Créer une liste</span>
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
 
-            {/* Retirer de la liste courante */}
-            {currentList?.id && (
-              <DropdownMenuItem
-                onClick={handleRemoveFromCurrentList}
-                disabled={removingFromList}
-                className="gap-2"
-              >
-                <ListMinus className="w-3.5 h-3.5" />
-                <span>Retirer de la liste</span>
-              </DropdownMenuItem>
-            )}
+              {/* Retirer de la liste courante */}
+              {currentList?.id && canEditClientLists && (
+                <DropdownMenuItem
+                  onClick={handleRemoveFromCurrentList}
+                  disabled={removingFromList}
+                  className="gap-2"
+                >
+                  <ListMinus className="w-3.5 h-3.5" />
+                  <span>Retirer de la liste</span>
+                </DropdownMenuItem>
+              )}
 
-            {/* Assigner */}
-            <DropdownMenuItem onSelect={handleAssign}>
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>Assigner</span>
-            </DropdownMenuItem>
+              {/* Assigner */}
+              {canAssignClients && (
+                <DropdownMenuItem onSelect={handleAssign}>
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Assigner</span>
+                </DropdownMenuItem>
+              )}
 
-            {/* Bloquer / Débloquer */}
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                if (client.isBlocked) {
-                  handleUnblock();
-                } else {
-                  setShowBlockDialog(true);
-                }
-              }}
-            >
-              <ShieldOff className="w-3.5 h-3.5" />
-              <span>{client.isBlocked ? "Débloquer" : "Bloquer"}</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+              {/* Bloquer / Débloquer */}
+              {canBlockClients && (
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    if (client.isBlocked) {
+                      handleUnblock();
+                    } else {
+                      setShowBlockDialog(true);
+                    }
+                  }}
+                >
+                  <ShieldOff className="w-3.5 h-3.5" />
+                  <span>{client.isBlocked ? "Débloquer" : "Bloquer"}</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuGroup>
+          )}
 
           {/* Listes liées */}
           {lists && lists.length > 0 && (
@@ -1706,34 +1770,36 @@ function RowActions({
             </>
           )}
 
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className={
-              client.hasDocuments
-                ? "opacity-50 cursor-not-allowed"
-                : "text-destructive focus:text-destructive"
-            }
-            onSelect={(e) => {
-              if (client.hasDocuments) {
-                e.preventDefault();
-              } else {
-                setShowDeleteDialog(true);
+          {canDeleteClients && <DropdownMenuSeparator />}
+          {canDeleteClients && (
+            <DropdownMenuItem
+              className={
+                client.hasDocuments
+                  ? "opacity-50 cursor-not-allowed"
+                  : "text-destructive focus:text-destructive"
               }
-            }}
-            onMouseEnter={(e) => {
-              if (client.hasDocuments) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setShowDeleteTooltip({
-                  top: rect.bottom + 6,
-                  left: rect.right,
-                });
-              }
-            }}
-            onMouseLeave={() => setShowDeleteTooltip(null)}
-            variant="destructive"
-          >
-            <span>Supprimer</span>
-          </DropdownMenuItem>
+              onSelect={(e) => {
+                if (client.hasDocuments) {
+                  e.preventDefault();
+                } else {
+                  setShowDeleteDialog(true);
+                }
+              }}
+              onMouseEnter={(e) => {
+                if (client.hasDocuments) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setShowDeleteTooltip({
+                    top: rect.bottom + 6,
+                    left: rect.right,
+                  });
+                }
+              }}
+              onMouseLeave={() => setShowDeleteTooltip(null)}
+              variant="destructive"
+            >
+              <span>Supprimer</span>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -13,6 +13,7 @@ import {
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   useDeletePurchaseInvoice,
   useBulkDelete,
@@ -173,6 +174,20 @@ export default function PurchaseInvoiceTable({
       setActiveTab(status);
     }
   }, [searchParams]);
+
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canDo("purchaseInvoices", "edit");
+  const canMarkPaidPurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "markPaid");
+  const canDeletePurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "delete");
+  // Sélection proposée seulement si une action groupée est permise
+  const canSelectPurchaseInvoices =
+    canEditPurchaseInvoices ||
+    canMarkPaidPurchaseInvoices ||
+    canDeletePurchaseInvoices;
 
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { bulkDelete } = useBulkDelete();
@@ -350,9 +365,12 @@ export default function PurchaseInvoiceTable({
         onMarkStatus: handleRowStatus,
         onCategorize: handleRowCategorize,
         categoryLabels: CATEGORIZE_OPTIONS,
-      }),
+        // Sélection réservée aux actions groupées
+      }).filter(
+        (column) => column.id !== "select" || canSelectPurchaseInvoices,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onRowClick],
+    [onRowClick, canSelectPurchaseInvoices],
   );
 
   const table = useReactTable({
@@ -585,94 +603,109 @@ export default function PurchaseInvoiceTable({
 
             <div className="flex items-center gap-2">
               {/* Bulk actions — toujours visibles, désactivées sans sélection */}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="danger" disabled={!hasSelection}>
-                    <TrashIcon size={14} />
-                    Supprimer{hasSelection ? ` (${selectedRows.length})` : ""}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Confirmer la suppression
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                      facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
-                      {selectedRows.length > 1 ? "s" : ""} ? Cette action ne
-                      peut pas être annulée.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleBulkDelete}
-                      className="bg-destructive text-white hover:bg-destructive/90"
-                    >
-                      Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {/* Masquées si le rôle ne les permet pas */}
+              {canDeletePurchaseInvoices && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="danger" disabled={!hasSelection}>
+                      <TrashIcon size={14} />
+                      Supprimer{hasSelection ? ` (${selectedRows.length})` : ""}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Confirmer la suppression
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                        facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
+                        {selectedRows.length > 1 ? "s" : ""} ? Cette action ne
+                        peut pas être annulée.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleBulkDelete}
+                        className="bg-destructive text-white hover:bg-destructive/90"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
               {/* Autres actions groupées regroupées dans un menu "⋮" */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    disabled={!hasSelection}
-                    aria-label="Actions groupées"
-                  >
-                    <EllipsisVertical size={14} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleBulkStatus("PAID")}>
-                    <CheckCircle2 size={14} />
-                    Marquer payées
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleBulkStatus("ARCHIVED")}
-                  >
-                    <Archive size={14} />
-                    Archiver
-                  </DropdownMenuItem>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="gap-2">
-                      <Tag size={14} />
-                      Catégoriser
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
-                      {EXPENSE_CATEGORY_GROUPS.map((group) => (
-                        <div key={group.heading}>
-                          <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
-                            {group.heading}
-                          </DropdownMenuLabel>
-                          {group.options.map((opt) => (
-                            <DropdownMenuItem
-                              key={opt.value}
-                              onClick={() => handleBulkCategorize(opt.value)}
-                            >
-                              {opt.label}
-                            </DropdownMenuItem>
+              {(canEditPurchaseInvoices || canMarkPaidPurchaseInvoices) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      disabled={!hasSelection}
+                      aria-label="Actions groupées"
+                    >
+                      <EllipsisVertical size={14} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canMarkPaidPurchaseInvoices && (
+                      <DropdownMenuItem
+                        onClick={() => handleBulkStatus("PAID")}
+                      >
+                        <CheckCircle2 size={14} />
+                        Marquer payées
+                      </DropdownMenuItem>
+                    )}
+                    {canEditPurchaseInvoices && (
+                      <DropdownMenuItem
+                        onClick={() => handleBulkStatus("ARCHIVED")}
+                      >
+                        <Archive size={14} />
+                        Archiver
+                      </DropdownMenuItem>
+                    )}
+                    {canEditPurchaseInvoices && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="gap-2">
+                          <Tag size={14} />
+                          Catégoriser
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-56 max-h-[min(20.5rem,var(--radix-dropdown-menu-content-available-height))] overflow-y-auto">
+                          {EXPENSE_CATEGORY_GROUPS.map((group) => (
+                            <div key={group.heading}>
+                              <DropdownMenuLabel className="text-[11px] text-muted-foreground font-normal">
+                                {group.heading}
+                              </DropdownMenuLabel>
+                              {group.options.map((opt) => (
+                                <DropdownMenuItem
+                                  key={opt.value}
+                                  onClick={() =>
+                                    handleBulkCategorize(opt.value)
+                                  }
+                                >
+                                  {opt.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </div>
                           ))}
-                        </div>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
 
           {/* Tabs */}
           <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] purchase-tabs">
             <style>{`
-            .purchase-tabs [data-slot="tabs-trigger"][data-state="active"] {
-              text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
-            }
-          `}</style>
+              .purchase-tabs [data-slot="tabs-trigger"][data-state="active"] {
+                text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+              }
+            `}</style>
             <Tabs
               value={activeTab}
               onValueChange={(value) => {
@@ -728,9 +761,9 @@ export default function PurchaseInvoiceTable({
             <>
               <div className="hidden md:block min-w-0">
                 {/* min-w-fit : sur écran étroit le tableau déborde et défile
-                  horizontalement ; sans ça le bandeau d'en-tête garde la
-                  largeur de l'écran et les lignes passent sous sa partie
-                  sans fond (icônes Justificatif sur l'en-tête). */}
+                    horizontalement ; sans ça le bandeau d'en-tête garde la
+                    largeur de l'écran et les lignes passent sous sa partie
+                    sans fond (icônes Justificatif sur l'en-tête). */}
                 <div className="flex flex-col min-w-fit">
                   {/* Header sticky */}
                   <div className="sticky top-0 z-10 bg-background border-b border-[#eeeff1] dark:border-[#232323]">
@@ -760,7 +793,7 @@ export default function PurchaseInvoiceTable({
                   {/* Body */}
                   <div className="flex flex-col">
                     {/* Skeleton uniquement au premier chargement : si le cache a
-                      déjà des factures, on les affiche pendant le refetch */}
+                        déjà des factures, on les affiche pendant le refetch */}
                     {loading && invoices.length === 0 ? (
                       <div className="p-0">
                         {Array.from({ length: 8 }).map((_, i) => (
@@ -836,8 +869,8 @@ export default function PurchaseInvoiceTable({
                     sélectionnée(s).
                   </span>
                   {/* Les pages suivantes arrivent en arrière-plan : tant que
-                    l'historique n'est pas complet, filtres, compteurs et
-                    export ne portent que sur les factures déjà chargées. */}
+                      l'historique n'est pas complet, filtres, compteurs et
+                      export ne portent que sur les factures déjà chargées. */}
                   {loadingHistory && (
                     <span className="flex items-center gap-1.5">
                       <Loader2 className="h-3 w-3 animate-spin" />
@@ -1129,6 +1162,13 @@ function ImportedInvoicesPanel({
   onImportedConverted,
   onOpenExisting,
 }) {
+  const { canDo, isReady } = useMyPermissions();
+  // Valider crée une facture d'achat (« create ») ; l'API contrôle aussi
+  // l'action « edit » des factures importées (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canProcessImported =
+    !isReady ||
+    (canDo("purchaseInvoices", "create") && canDo("importedInvoices", "edit"));
   const { checkDuplicates } = useCheckPurchaseInvoiceDuplicates();
   // Doublon probable avant conversion : { id (facture importée), duplicates }
   const [duplicateWarning, setDuplicateWarning] = useState(null);
@@ -1295,7 +1335,7 @@ function ImportedInvoicesPanel({
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Bulk action bar */}
-      {importedSelection.size > 0 && (
+      {canProcessImported && importedSelection.size > 0 && (
         <div className="flex items-center gap-2 px-4 sm:px-6 py-2 border-b bg-amber-50 dark:bg-amber-900/10 flex-shrink-0">
           <span className="text-xs text-amber-700 dark:text-amber-400">
             {importedSelection.size} sélectionnée
@@ -1322,7 +1362,10 @@ function ImportedInvoicesPanel({
       <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323]">
         <div className="grid grid-cols-[40px_1fr_140px_100px_100px_100px] gap-2 px-4 sm:px-6 h-10 items-center">
           <div>
-            <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+            {/* Sélection réservée à la validation groupée */}
+            {canProcessImported && (
+              <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+            )}
           </div>
           <div className="text-xs text-muted-foreground font-normal">
             Fournisseur
@@ -1354,10 +1397,12 @@ function ImportedInvoicesPanel({
             {/* Desktop row */}
             <div className="hidden md:grid grid-cols-[40px_1fr_140px_100px_100px_100px] gap-2 px-4 sm:px-6 py-2.5 items-center">
               <div>
-                <Checkbox
-                  checked={importedSelection.has(inv.id)}
-                  onCheckedChange={() => toggleOne(inv.id)}
-                />
+                {canProcessImported && (
+                  <Checkbox
+                    checked={importedSelection.has(inv.id)}
+                    onCheckedChange={() => toggleOne(inv.id)}
+                  />
+                )}
               </div>
               <div className="flex items-center gap-2 min-w-0">
                 <Mail size={14} className="text-amber-500 shrink-0" />
@@ -1375,36 +1420,42 @@ function ImportedInvoicesPanel({
                 {formatDate(inv.invoiceDate)}
               </div>
               <div className="flex items-center justify-end gap-1">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                  onClick={() => handleConvertOne(inv.id)}
-                  disabled={convertingOne || rejecting}
-                  title="Valider"
-                >
-                  <CheckCircle2 size={15} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  onClick={() => handleRejectOne(inv.id)}
-                  disabled={convertingOne || rejecting}
-                  title="Rejeter"
-                >
-                  <XCircle size={15} />
-                </Button>
+                {canProcessImported && (
+                  <>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      onClick={() => handleConvertOne(inv.id)}
+                      disabled={convertingOne || rejecting}
+                      title="Valider"
+                    >
+                      <CheckCircle2 size={15} />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      onClick={() => handleRejectOne(inv.id)}
+                      disabled={convertingOne || rejecting}
+                      title="Rejeter"
+                    >
+                      <XCircle size={15} />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Mobile row */}
             <div className="md:hidden px-4 py-3">
               <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={importedSelection.has(inv.id)}
-                  onCheckedChange={() => toggleOne(inv.id)}
-                />
+                {canProcessImported && (
+                  <Checkbox
+                    checked={importedSelection.has(inv.id)}
+                    onCheckedChange={() => toggleOne(inv.id)}
+                  />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <Mail size={13} className="text-amber-500 shrink-0" />
@@ -1422,22 +1473,24 @@ function ImportedInvoicesPanel({
                   <div className="text-sm font-medium">
                     {formatAmount(inv.totalTTC)} €
                   </div>
-                  <div className="flex gap-1 mt-1 justify-end">
-                    <button
-                      className="p-1 text-green-600 hover:bg-green-50 rounded"
-                      onClick={() => handleConvertOne(inv.id)}
-                      disabled={convertingOne || rejecting}
-                    >
-                      <CheckCircle2 size={16} />
-                    </button>
-                    <button
-                      className="p-1 text-red-500 hover:bg-red-50 rounded"
-                      onClick={() => handleRejectOne(inv.id)}
-                      disabled={convertingOne || rejecting}
-                    >
-                      <XCircle size={16} />
-                    </button>
-                  </div>
+                  {canProcessImported && (
+                    <div className="flex gap-1 mt-1 justify-end">
+                      <button
+                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                        onClick={() => handleConvertOne(inv.id)}
+                        disabled={convertingOne || rejecting}
+                      >
+                        <CheckCircle2 size={16} />
+                      </button>
+                      <button
+                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                        onClick={() => handleRejectOne(inv.id)}
+                        disabled={convertingOne || rejecting}
+                      >
+                        <XCircle size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

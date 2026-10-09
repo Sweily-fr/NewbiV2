@@ -6,6 +6,7 @@ import { sortByDateDesc } from "@/src/lib/document-dates";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -150,6 +151,16 @@ export default function InvoiceTable({
   const { invoices, loading, error, refetch } = useInvoices();
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : la
+  // suppression groupée porte sur les brouillons et les factures importées
+  const { canRead, canDo, canDelete, isReady } = useMyPermissions();
+  const canBulkDelete =
+    !isReady || canDelete("invoices") || canDelete("importedInvoices");
+  // Factures récurrentes : action « recurring » des factures
+  const canManageRecurring = !isReady || canDo("invoices", "recurring");
+  // Factures importées et avoirs : modules distincts, masqués sans lecture
+  const canReadImportedInvoices = !isReady || canRead("importedInvoices");
+  const canReadCreditNotes = !isReady || canRead("creditNotes");
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
   // Vrai si la sidebar a été ouverte automatiquement via ?id= (ex: depuis Transactions)
   const sidebarAutoOpenedRef = useRef(false);
@@ -188,14 +199,14 @@ export default function InvoiceTable({
     importedInvoices,
     loading: importedLoading,
     refetch: refetchImported,
-  } = useImportedInvoices(workspaceId);
+  } = useImportedInvoices(canReadImportedInvoices ? workspaceId : null);
 
   // Hook pour les avoirs (count pour le badge du tab) : seul le total sert,
   // limit 1 évite de rapatrier toute la liste d'avoirs.
-  const { totalCount: creditNotesCount } = useCreditNotes({
-    page: 1,
-    limit: 1,
-  });
+  const { totalCount: creditNotesCount } = useCreditNotes(
+    { page: 1, limit: 1 },
+    { skip: !canReadCreditNotes },
+  );
 
   // Factures récurrentes : badge dans la liste, onglet dédié, dialog
   const {
@@ -239,7 +250,9 @@ export default function InvoiceTable({
       _type: "normal",
     }));
 
-    const imported = (importedInvoices || []).map((inv) => ({
+    const imported = (
+      canReadImportedInvoices ? importedInvoices || [] : []
+    ).map((inv) => ({
       ...inv,
       _type: "imported",
       // Mapper les champs pour compatibilité avec le tableau
@@ -258,7 +271,7 @@ export default function InvoiceTable({
     // Tri par date d'émission (puis création) quel que soit le type : les
     // dates peuvent être des timestamps en chaîne, sortByDateDesc les gère.
     return sortByDateDesc([...normalInvoices, ...imported]);
-  }, [invoices, importedInvoices]);
+  }, [invoices, importedInvoices, canReadImportedInvoices]);
 
   // Facture importée affichée dans la sidebar : l'objet sélectionné au clic
   // (ou l'élément de la file de revue) est un instantané. Après chaque
@@ -384,7 +397,7 @@ export default function InvoiceTable({
     }
   };
 
-  const isCreditNotesView = activeTab === "credit-notes";
+  const isCreditNotesView = activeTab === "credit-notes" && canReadCreditNotes;
   const isRecurringView = activeTab === "recurring";
   // Onglets qui remplacent le tableau des factures par leur propre vue
   const isSideView = isCreditNotesView || isRecurringView;
@@ -464,7 +477,7 @@ export default function InvoiceTable({
     { id: "pending", label: "À encaisser" },
     { id: "overdue", label: "En retard" },
     { id: "completed", label: "Terminées" },
-    { id: "credit-notes", label: "Avoirs" },
+    ...(canReadCreditNotes ? [{ id: "credit-notes", label: "Avoirs" }] : []),
     { id: "recurring", label: "Récurrentes" },
   ];
 
@@ -626,7 +639,7 @@ export default function InvoiceTable({
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
             {/* Bulk delete - visible quand des rows sont sélectionnées */}
-            {selectedRows.length > 0 && (
+            {selectedRows.length > 0 && canBulkDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -719,15 +732,17 @@ export default function InvoiceTable({
                   {invoiceCounts.completed}
                 </span>
               </TabsTrigger>
-              <TabsTrigger
-                value="credit-notes"
-                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
-              >
-                <span>Avoirs</span>
-                <span className="text-xs text-muted-foreground">
-                  {invoiceCounts["credit-notes"]}
-                </span>
-              </TabsTrigger>
+              {canReadCreditNotes && (
+                <TabsTrigger
+                  value="credit-notes"
+                  className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+                >
+                  <span>Avoirs</span>
+                  <span className="text-xs text-muted-foreground">
+                    {invoiceCounts["credit-notes"]}
+                  </span>
+                </TabsTrigger>
+              )}
               <TabsTrigger
                 value="recurring"
                 className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
@@ -1204,14 +1219,18 @@ export default function InvoiceTable({
           error={recurrencesError}
           onRetry={refetchRecurrences}
           globalFilter={globalFilter}
-          onManage={(recurrence) =>
-            setRecurrenceTarget({
-              invoice:
-                (invoices || []).find(
-                  (inv) => inv.id === recurrence.sourceInvoiceId,
-                ) || null,
-              sourceInvoiceId: recurrence.sourceInvoiceId,
-            })
+          // Gestion des récurrences : action « recurring » des factures
+          onManage={
+            canManageRecurring
+              ? (recurrence) =>
+                  setRecurrenceTarget({
+                    invoice:
+                      (invoices || []).find(
+                        (inv) => inv.id === recurrence.sourceInvoiceId,
+                      ) || null,
+                    sourceInvoiceId: recurrence.sourceInvoiceId,
+                  })
+              : undefined
           }
         />
       )}

@@ -255,14 +255,16 @@ export default function RecurringInvoicesTable({
                       className="p-2 pr-4 sm:pr-6 align-middle text-right"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => onManage?.(recurrence)}
-                      >
-                        {ended ? "Reprogrammer" : "Gérer"}
-                      </Button>
+                      {onManage && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => onManage(recurrence)}
+                        >
+                          {ended ? "Reprogrammer" : "Gérer"}
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 );

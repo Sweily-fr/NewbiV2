@@ -300,11 +300,13 @@ export const useClients = (options = {}) => {
     page = 1,
     limit = 50,
     search = "",
+    // Rôle sans accès aux clients : pas de requête
+    skip = false,
   } = options;
 
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
-    skip: !workspaceId,
+    skip: !workspaceId || skip,
     fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-and-network",
     errorPolicy: "all",

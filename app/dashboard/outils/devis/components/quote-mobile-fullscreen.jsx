@@ -31,6 +31,7 @@ import LinkedInvoicesList from "./linked-invoices-list";
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import { buildLinkedInvoiceItems } from "@/src/utils/linked-invoice-items";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function QuoteMobileFullscreen({
@@ -40,6 +41,24 @@ export default function QuoteMobileFullscreen({
   onRefetch,
 }) {
   const router = useRouter();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canDo("quotes", "edit");
+  // Finaliser un brouillon, accepter ou refuser : action « status »
+  const canChangeQuoteStatus = !isReady || canDo("quotes", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizeQuotes =
+    !isReady || canDo("quotes", "create") || canDo("quotes", "edit");
+  // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
+  const canReadInvoices = !isReady || canRead("invoices");
+  const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
+  // Conversions : action « convert » du devis et création du document cible
+  const canConvertQuotes = !isReady || canDo("quotes", "convert");
+  const canConvertToInvoice =
+    canConvertQuotes && (!isReady || canDo("invoices", "create"));
+  const canConvertToPurchaseOrder =
+    canConvertQuotes && (!isReady || canDo("purchaseOrders", "create"));
   const [showPreview, setShowPreview] = useState(false);
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
 
@@ -597,7 +616,8 @@ export default function QuoteMobileFullscreen({
                 </Button>
 
                 {/* Bons de commande liés (créés à partir de ce devis) */}
-                {quote.linkedPurchaseOrders &&
+                {canReadPurchaseOrders &&
+                  quote.linkedPurchaseOrders &&
                   quote.linkedPurchaseOrders.length > 0 && (
                     <div className="space-y-2.5">
                       <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -622,7 +642,7 @@ export default function QuoteMobileFullscreen({
                   )}
 
                 {/* Factures liées */}
-                {quote.status === QUOTE_STATUS.COMPLETED && (
+                {canReadInvoices && quote.status === QUOTE_STATUS.COMPLETED && (
                   <LinkedInvoicesList quote={quote} />
                 )}
               </div>
@@ -637,22 +657,23 @@ export default function QuoteMobileFullscreen({
             }}
           >
             {(quote.status === QUOTE_STATUS.DRAFT ||
-              quote.status === QUOTE_STATUS.PENDING) && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  router.push(`/dashboard/outils/devis/${quote.id}/editer`);
-                  onClose();
-                }}
-                size="sm"
-                className="w-full font-normal"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Éditer
-              </Button>
-            )}
+              quote.status === QUOTE_STATUS.PENDING) &&
+              canEditQuotes && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push(`/dashboard/outils/devis/${quote.id}/editer`);
+                    onClose();
+                  }}
+                  size="sm"
+                  className="w-full font-normal"
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Éditer
+                </Button>
+              )}
 
-            {quote.status === QUOTE_STATUS.DRAFT && (
+            {quote.status === QUOTE_STATUS.DRAFT && canFinalizeQuotes && (
               <Button
                 onClick={handleSendQuote}
                 disabled={isLoading}
@@ -669,35 +690,36 @@ export default function QuoteMobileFullscreen({
             )}
 
             {(quote.status === QUOTE_STATUS.PENDING ||
-              quote.status === QUOTE_STATUS.IMPORTED) && (
-              <div className="grid grid-cols-2 gap-1.5">
-                {/* Accepter : acceptation manuelle possible, la signature
+              quote.status === QUOTE_STATUS.IMPORTED) &&
+              canChangeQuoteStatus && (
+                <div className="grid grid-cols-2 gap-1.5">
+                  {/* Accepter : acceptation manuelle possible, la signature
                     électronique accepte aussi le devis automatiquement. */}
-                <Button
-                  onClick={handleAccept}
-                  disabled={isLoading}
-                  size="sm"
-                  className="font-normal"
-                >
-                  {changingStatus ? (
-                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                  )}
-                  Accepter
-                </Button>
-                <Button
-                  onClick={handleReject}
-                  variant="destructive"
-                  size="sm"
-                  className="font-normal w-full"
-                  disabled={isLoading}
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Rejeter
-                </Button>
-              </div>
-            )}
+                  <Button
+                    onClick={handleAccept}
+                    disabled={isLoading}
+                    size="sm"
+                    className="font-normal"
+                  >
+                    {changingStatus ? (
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                    )}
+                    Accepter
+                  </Button>
+                  <Button
+                    onClick={handleReject}
+                    variant="destructive"
+                    size="sm"
+                    className="font-normal w-full"
+                    disabled={isLoading}
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Rejeter
+                  </Button>
+                </div>
+              )}
 
             {quote.status === QUOTE_STATUS.COMPLETED && (
               <div className="space-y-1.5">
@@ -710,7 +732,7 @@ export default function QuoteMobileFullscreen({
 
                 {/* Aucune limite de nombre de factures liées : le popover
                     s'affiche tant qu'il reste du montant à facturer. */}
-                {!quote.hasPurchaseOrderInvoices && (
+                {!quote.hasPurchaseOrderInvoices && canConvertToInvoice && (
                   <CreateLinkedInvoicePopover
                     quote={quote}
                     onCreateLinkedInvoice={handleCreateLinkedInvoice}
@@ -719,6 +741,7 @@ export default function QuoteMobileFullscreen({
                 )}
 
                 {!quote.hasPurchaseOrderInvoices &&
+                  canConvertToInvoice &&
                   (!quote.linkedInvoices ||
                     quote.linkedInvoices.length === 0) && (
                     <Button
@@ -733,16 +756,18 @@ export default function QuoteMobileFullscreen({
                     </Button>
                   )}
 
-                <Button
-                  variant="outline"
-                  onClick={handleConvertToPurchaseOrder}
-                  disabled={isLoading}
-                  size="sm"
-                  className="w-full font-normal"
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Convertir en bon de commande
-                </Button>
+                {canConvertToPurchaseOrder && (
+                  <Button
+                    variant="outline"
+                    onClick={handleConvertToPurchaseOrder}
+                    disabled={isLoading}
+                    size="sm"
+                    className="w-full font-normal"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Convertir en bon de commande
+                  </Button>
+                )}
               </div>
             )}
 

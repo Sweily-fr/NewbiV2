@@ -101,6 +101,7 @@ import {
   useUnreconcilePurchaseInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
 import { ReconcileCandidateDialog } from "./reconcile-candidate-dialog";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
@@ -267,6 +268,22 @@ export function PurchaseInvoiceDetailDrawer({
   embedded = false,
 }) {
   const isCreate = mode === "create";
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditPurchaseInvoices = !isReady || canDo("purchaseInvoices", "edit");
+  const canDeletePurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "delete");
+  const canMarkPaidPurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "markPaid");
+  // Ajout d'un justificatif = action « create » (comme côté API)
+  const canAddReceipts = !isReady || canDo("purchaseInvoices", "create");
+  // Rapprochement : transactions visibles avec la lecture des transactions,
+  // lier / délier avec l'action « reconcile » des deux modules
+  const canReadBanking = !isReady || canRead("banking");
+  const canLinkTransactions =
+    !isReady ||
+    (canDo("purchaseInvoices", "reconcile") && canDo("banking", "reconcile"));
   const [isEditMode, setIsEditMode] = useState(isCreate);
   const [form, setForm] = useState({
     supplierName: "",
@@ -618,6 +635,7 @@ export function PurchaseInvoiceDetailDrawer({
   // Actions cycle de vie e-facture reçue (visible si liée à SuperPDP et reçue)
   const canActOnEInvoice =
     !isCreate &&
+    canEditPurchaseInvoices &&
     invoice?.superPdpInvoiceId &&
     invoice?.eInvoiceStatus === "RECEIVED";
 
@@ -644,8 +662,11 @@ export function PurchaseInvoiceDetailDrawer({
     const reason = window.prompt("Motif du litige (optionnel) :") || undefined;
     await submitEvent(invoice.id, "fr:207", reason);
   };
+  // Suggestions = transactions bancaires : pas de requête sans leur lecture
   const { suggestions } = useReconciliationSuggestions(
-    !isCreate && invoice?.id && invoice?.status !== "PAID" ? invoice.id : null,
+    !isCreate && canReadBanking && invoice?.id && invoice?.status !== "PAID"
+      ? invoice.id
+      : null,
   );
 
   useEffect(() => {
@@ -836,8 +857,8 @@ export function PurchaseInvoiceDetailDrawer({
         }
       }
       // Paiement déjà passé en banque : proposer la transaction trouvée,
-      // rien n'est lié sans confirmation.
-      if (isCreate && saved.id) {
+      // rien n'est lié sans confirmation (droit de rapprocher requis).
+      if (isCreate && saved.id && canLinkTransactions) {
         const found = await fetchReconcileCandidate(saved.id);
         if (found) {
           setReconcileCandidate({
@@ -956,6 +977,7 @@ export function PurchaseInvoiceDetailDrawer({
             relance de l'analyse depuis l'en-tête, comme sur les factures
             importées, visible en lecture comme en modification. */}
         {!isCreate &&
+          canEditPurchaseInvoices &&
           invoice?.files?.length > 0 &&
           renderReanalyzeTrigger(
             <Button
@@ -1038,7 +1060,7 @@ export function PurchaseInvoiceDetailDrawer({
                         ? "Le justificatif n'a pas pu être lu : vérifiez le fournisseur, le numéro et les montants."
                         : "Certaines valeurs peuvent être fausses. Relancez l'analyse pour comparer et corriger."}
                     </p>
-                    {hasFile && (
+                    {hasFile && canEditPurchaseInvoices && (
                       <div className="pt-1.5">
                         {renderReanalyzeTrigger(
                           <Button
@@ -1741,59 +1763,72 @@ export function PurchaseInvoiceDetailDrawer({
                       ? ` (${invoice.files.length})`
                       : ""}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 font-normal gap-1.5 text-xs"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingFiles}
-                      title="Ajouter un ou plusieurs justificatifs"
-                    >
-                      {uploadingFiles ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Plus className="h-3.5 w-3.5" />
+                  {/* Ajout (« create ») et relance OCR (« edit ») */}
+                  {(canAddReceipts || canEditPurchaseInvoices) && (
+                    <div className="flex items-center gap-2">
+                      {canAddReceipts && (
+                        <>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 font-normal gap-1.5 text-xs"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingFiles}
+                            title="Ajouter un ou plusieurs justificatifs"
+                          >
+                            {uploadingFiles ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Plus className="h-3.5 w-3.5" />
+                            )}
+                            Ajouter
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="application/pdf,image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                              handleAddFiles(e.target.files);
+                              e.target.value = "";
+                            }}
+                          />
+                        </>
                       )}
-                      Ajouter
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="application/pdf,image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => {
-                        handleAddFiles(e.target.files);
-                        e.target.value = "";
-                      }}
-                    />
-                    {/* Relance OCR : les valeurs relues sont comparées avant
+                      {/* Relance OCR : les valeurs relues sont comparées avant
                         application, rien n'est écrasé sans choix. */}
-                    {invoice?.files?.length > 0 &&
-                      renderReanalyzeTrigger(
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-7 font-normal gap-1.5 text-xs"
-                          disabled={reanalyzing || saving}
-                          title="Relire le justificatif et comparer avec les valeurs actuelles"
-                        >
-                          {reanalyzing ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <ScanSearch className="h-3.5 w-3.5" />
-                          )}
-                          {reanalyzing
-                            ? "Analyse en cours..."
-                            : "Relancer l'analyse"}
-                        </Button>,
-                      )}
-                  </div>
+                      {canEditPurchaseInvoices &&
+                        invoice?.files?.length > 0 &&
+                        renderReanalyzeTrigger(
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 font-normal gap-1.5 text-xs"
+                            disabled={reanalyzing || saving}
+                            title="Relire le justificatif et comparer avec les valeurs actuelles"
+                          >
+                            {reanalyzing ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <ScanSearch className="h-3.5 w-3.5" />
+                            )}
+                            {reanalyzing
+                              ? "Analyse en cours..."
+                              : "Relancer l'analyse"}
+                          </Button>,
+                        )}
+                    </div>
+                  )}
                 </div>
-                {!invoice?.files?.length && (
+                {!invoice?.files?.length && !canAddReceipts && (
+                  <p className="text-sm text-muted-foreground">
+                    Aucun justificatif
+                  </p>
+                )}
+                {!invoice?.files?.length && canAddReceipts && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -1888,23 +1923,25 @@ export function PurchaseInvoiceDetailDrawer({
                           active={isShown}
                           onClick={() => togglePreview(fileIndex)}
                         />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground"
-                          title="Relancer l'analyse OCR sur ce justificatif"
-                          disabled={reanalyzing || saving}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleReanalyze(file.id);
-                          }}
-                        >
-                          {reanalyzing ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <ScanSearch className="h-4 w-4" />
-                          )}
-                        </Button>
+                        {canEditPurchaseInvoices && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-muted-foreground"
+                            title="Relancer l'analyse OCR sur ce justificatif"
+                            disabled={reanalyzing || saving}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReanalyze(file.id);
+                            }}
+                          >
+                            {reanalyzing ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ScanSearch className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1917,29 +1954,31 @@ export function PurchaseInvoiceDetailDrawer({
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          title="Retirer ce justificatif"
-                          disabled={removingFileId === file.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (
-                              window.confirm(
-                                "Retirer ce justificatif de la facture ?",
-                              )
-                            ) {
-                              handleRemoveFile(file.id);
-                            }
-                          }}
-                        >
-                          {removingFileId === file.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
+                        {canEditPurchaseInvoices && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                            title="Retirer ce justificatif"
+                            disabled={removingFileId === file.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (
+                                window.confirm(
+                                  "Retirer ce justificatif de la facture ?",
+                                )
+                              ) {
+                                handleRemoveFile(file.id);
+                              }
+                            }}
+                          >
+                            {removingFileId === file.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
@@ -1951,8 +1990,9 @@ export function PurchaseInvoiceDetailDrawer({
           {/* Rapprochement bancaire : transactions liées (déliaison unitaire),
               suggestions automatiques et recherche manuelle. N↔N : une
               facture d'achat peut couvrir plusieurs prélèvements (relevé
-              mensuel Qonto) et une transaction porter plusieurs factures. */}
-          {!isCreate && (
+              mensuel Qonto) et une transaction porter plusieurs factures.
+              Masqué sans lecture des transactions. */}
+          {!isCreate && canReadBanking && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -1985,20 +2025,22 @@ export function PurchaseInvoiceDetailDrawer({
                         transactionId={txId}
                         purchaseInvoiceId={invoice?.id}
                         action={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                            disabled={unlinkLoading}
-                            onClick={() => handleUnlinkTransaction(txId)}
-                            title="Détacher cette transaction"
-                          >
-                            {unlinkingTransactionId === txId ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Unlink className="h-4 w-4" />
-                            )}
-                          </Button>
+                          canLinkTransactions ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                              disabled={unlinkLoading}
+                              onClick={() => handleUnlinkTransaction(txId)}
+                              title="Détacher cette transaction"
+                            >
+                              {unlinkingTransactionId === txId ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Unlink className="h-4 w-4" />
+                              )}
+                            </Button>
+                          ) : null
                         }
                       />
                     ))}
@@ -2030,18 +2072,20 @@ export function PurchaseInvoiceDetailDrawer({
                               </span>
                             </div>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-green-600 border-green-200 hover:bg-green-50"
-                            disabled={reconcileLoading}
-                            onClick={() =>
-                              handleReconcile(s.transactionId, "DOCUMENT")
-                            }
-                          >
-                            <LinkIcon className="h-3.5 w-3.5 mr-1" />
-                            Rapprocher
-                          </Button>
+                          {canLinkTransactions && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-green-600 border-green-200 hover:bg-green-50"
+                              disabled={reconcileLoading}
+                              onClick={() =>
+                                handleReconcile(s.transactionId, "DOCUMENT")
+                              }
+                            >
+                              <LinkIcon className="h-3.5 w-3.5 mr-1" />
+                              Rapprocher
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -2049,17 +2093,19 @@ export function PurchaseInvoiceDetailDrawer({
                 )}
 
                 {!showTransactionPicker ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setShowTransactionPicker(true)}
-                  >
-                    <Search className="h-3.5 w-3.5 mr-1.5" />
-                    {linkedTransactionIds.length > 0
-                      ? "Rattacher une autre transaction"
-                      : "Rechercher une transaction"}
-                  </Button>
+                  canLinkTransactions && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setShowTransactionPicker(true)}
+                    >
+                      <Search className="h-3.5 w-3.5 mr-1.5" />
+                      {linkedTransactionIds.length > 0
+                        ? "Rattacher une autre transaction"
+                        : "Rechercher une transaction"}
+                    </Button>
+                  )
                 ) : (
                   <div className="border rounded-lg p-3 space-y-3">
                     <div className="flex items-center justify-between">
@@ -2304,15 +2350,17 @@ export function PurchaseInvoiceDetailDrawer({
           </div>
         ) : (
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1 font-normal"
-              onClick={() => setIsEditMode(true)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Modifier
-            </Button>
-            {invoice?.status !== "PAID" && (
+            {canEditPurchaseInvoices && (
+              <Button
+                variant="outline"
+                className="flex-1 font-normal"
+                onClick={() => setIsEditMode(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+            )}
+            {canMarkPaidPurchaseInvoices && invoice?.status !== "PAID" && (
               <Button
                 variant="primary"
                 className="flex-1 font-normal"
@@ -2323,34 +2371,38 @@ export function PurchaseInvoiceDetailDrawer({
                 Payée
               </Button>
             )}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Supprimer cette facture ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Cette action est irréversible.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-destructive text-white hover:bg-destructive/90"
+            {canDeletePurchaseInvoices && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Supprimer cette facture ?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est irréversible.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-white hover:bg-destructive/90"
+                    >
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         )}
       </DrawerFooter>
@@ -2463,8 +2515,11 @@ export function PurchaseInvoiceDetailDrawer({
           paymentMethodLabels={paymentMethodLabels}
           onApply={applyOcrPatch}
           reconciled={!!invoice?.isReconciled}
-          onUnlinkAndApply={(patch) =>
-            applyOcrPatch(patch, { unlinkFirst: true })
+          // Délier d'abord : droit de rapprocher requis
+          onUnlinkAndApply={
+            canLinkTransactions
+              ? (patch) => applyOcrPatch(patch, { unlinkFirst: true })
+              : null
           }
           applying={applyingOcr}
         />

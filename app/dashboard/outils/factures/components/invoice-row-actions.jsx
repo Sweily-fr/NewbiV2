@@ -47,6 +47,7 @@ import { useDeliveryNotesAccess } from "@/src/hooks/useDeliveryNotesAccess";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 // InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
 import { formatLocalDate } from "@/src/utils/dateFormatter";
 
@@ -82,6 +83,21 @@ export default function InvoiceRowActions({
   const { canCreate } = usePermissions();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canDo("invoices", "edit");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
+  const canSendInvoices = !isReady || canDo("invoices", "send");
+  // Annuler une facture : action « status »
+  const canChangeInvoiceStatus = !isReady || canDo("invoices", "status");
+  const canManageRecurring = !isReady || canDo("invoices", "recurring");
+  // Marquer payée : action séparée (le comptable l'a sans pouvoir modifier
+  // les factures)
+  const canMarkPaid = !isReady || canDo("invoices", "markPaid");
+  const canDeleteInvoices = !isReady || canDo("invoices", "delete");
+  const canDeleteImportedInvoices =
+    !isReady || canDo("importedInvoices", "delete");
+  const canCreateDeliveryNotes = !isReady || canDo("deliveryNotes", "create");
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -199,6 +215,7 @@ export default function InvoiceRowActions({
   // Un bon de livraison se prépare pour toute facture émise (hors annulée)
   const canCreateDeliveryNote =
     deliveryNotesAllowed &&
+    canCreateDeliveryNotes &&
     !isImportedInvoice &&
     (invoice.status === INVOICE_STATUS.PENDING ||
       invoice.status === INVOICE_STATUS.COMPLETED ||
@@ -266,15 +283,19 @@ export default function InvoiceRowActions({
               <Eye className="mr-2 h-4 w-4" />
               Voir
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleDeleteImported}
-              className="text-red-600 focus:text-red-600"
-              disabled={isDeletingImported || isReadOnly}
-            >
-              <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-              Supprimer
-            </DropdownMenuItem>
+            {canDeleteImportedInvoices && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDeleteImported}
+                  className="text-red-600 focus:text-red-600"
+                  disabled={isDeletingImported || isReadOnly}
+                >
+                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                  Supprimer
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <div className="px-2 py-1.5 text-sm text-muted-foreground">
               Facture importée
@@ -307,7 +328,7 @@ export default function InvoiceRowActions({
         />
         <ButtonGroup>
           {/* Icône d'envoi par email - visible pour les factures non brouillon */}
-          {invoice.status !== "DRAFT" && (
+          {invoice.status !== "DRAFT" && canSendInvoices && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -347,17 +368,19 @@ export default function InvoiceRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={isReadOnly}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSaveAsTemplate?.(invoice);
-                }}
-              >
-                <BookTemplate className="mr-2 h-4 w-4" />
-                Sauv. modèle
-              </DropdownMenuItem>
-              {(canBeRecurring || hasLiveRecurrence) && (
+              {canCreateInvoices && (
+                <DropdownMenuItem
+                  disabled={isReadOnly}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSaveAsTemplate?.(invoice);
+                  }}
+                >
+                  <BookTemplate className="mr-2 h-4 w-4" />
+                  Sauv. modèle
+                </DropdownMenuItem>
+              )}
+              {canManageRecurring && (canBeRecurring || hasLiveRecurrence) && (
                 <DropdownMenuItem
                   disabled={isReadOnly}
                   onClick={(e) => {
@@ -371,7 +394,7 @@ export default function InvoiceRowActions({
                     : "Rendre récurrente"}
                 </DropdownMenuItem>
               )}
-              {invoice.status === INVOICE_STATUS.DRAFT && (
+              {invoice.status === INVOICE_STATUS.DRAFT && canEditInvoices && (
                 <DropdownMenuItem onClick={handleEdit} disabled={isReadOnly}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Éditer
@@ -380,13 +403,15 @@ export default function InvoiceRowActions({
 
               {invoice.status === INVOICE_STATUS.PENDING && (
                 <>
-                  <DropdownMenuItem
-                    onClick={handleMarkAsPaid}
-                    disabled={isReadOnly}
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Marquer comme payée
-                  </DropdownMenuItem>
+                  {canMarkPaid && (
+                    <DropdownMenuItem
+                      onClick={handleMarkAsPaid}
+                      disabled={isReadOnly}
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Marquer comme payée
+                    </DropdownMenuItem>
+                  )}
                   {invoice.paymentLink && (
                     <DropdownMenuItem onClick={handleCopyPaymentLink}>
                       <Link2 className="mr-2 h-4 w-4" />
@@ -438,40 +463,49 @@ export default function InvoiceRowActions({
                 )}
 
               {/* Annuler - pour les factures en attente */}
-              {invoice.status === INVOICE_STATUS.PENDING && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleCancel}
-                    className="text-red-600 focus:text-red-600"
-                    disabled={isReadOnly}
-                  >
-                    <XCircle className="mr-2 h-4 w-4 text-red-600" />
-                    Annuler
-                  </DropdownMenuItem>
-                </>
-              )}
+              {invoice.status === INVOICE_STATUS.PENDING &&
+                canChangeInvoiceStatus && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleCancel}
+                      className="text-red-600 focus:text-red-600"
+                      disabled={isReadOnly}
+                    >
+                      <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                      Annuler
+                    </DropdownMenuItem>
+                  </>
+                )}
 
               {/* Créer la facture et Supprimer - pour les brouillons */}
               {invoice.status === INVOICE_STATUS.DRAFT && (
                 <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleCreateInvoice}
-                    disabled={isLoading || isReadOnly}
-                  >
-                    <FileText className="mr-2 h-4 w-4" />
-                    Créer la facture
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-red-600 focus:text-red-600"
-                    disabled={isReadOnly}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4 text-red-600" />
-                    Supprimer
-                  </DropdownMenuItem>
+                  {canEditInvoices && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleCreateInvoice}
+                        disabled={isLoading || isReadOnly}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        Créer la facture
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {canDeleteInvoices && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleDelete}
+                        className="text-red-600 focus:text-red-600"
+                        disabled={isReadOnly}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </>
               )}
               {isReadOnly && (

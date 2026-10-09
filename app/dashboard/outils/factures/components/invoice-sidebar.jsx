@@ -54,6 +54,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useLazyQuery, useQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { INVOICE_DOCUMENT_URL } from "@/src/graphql/eInvoicingQueries";
 import {
   EInvoiceStatusBadge,
@@ -133,6 +134,22 @@ export default function InvoiceSidebar({
 
   const router = useRouter();
   const { workspaceId } = useRequiredWorkspace();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canDo("invoices", "edit");
+  // Annuler une facture : action « status »
+  const canChangeInvoiceStatus = !isReady || canDo("invoices", "status");
+  // Marquer payée : action séparée des factures
+  const canMarkPaid = !isReady || canDo("invoices", "markPaid");
+  const canCreateCreditNotes = !isReady || canDo("creditNotes", "create");
+  // Rapprochement bancaire : action « reconcile » des transactions
+  const canReadBanking = !isReady || canRead("banking");
+  const canLinkTransactions = !isReady || canDo("banking", "reconcile");
+  // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
+  const canReadCreditNotes = !isReady || canRead("creditNotes");
+  const canReadQuotes = !isReady || canRead("quotes");
+  const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
+  const canReadDeliveryNotes = !isReady || canRead("deliveryNotes");
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
 
@@ -174,7 +191,7 @@ export default function InvoiceSidebar({
     creditNotes,
     loading: loadingCreditNotes,
     error: creditNotesError,
-  } = useCreditNotesByInvoice(initialInvoice?.id);
+  } = useCreditNotesByInvoice(canReadCreditNotes ? initialInvoice?.id : null);
 
   // Récupérer les données complètes de la facture
   const {
@@ -299,6 +316,7 @@ export default function InvoiceSidebar({
   useEffect(() => {
     if (
       isOpen &&
+      canReadBanking &&
       initialInvoice?.id &&
       initialInvoice?.status === INVOICE_STATUS.PENDING &&
       (initialInvoice?.linkedTransactionIds?.length || 0) === 0
@@ -807,7 +825,8 @@ export default function InvoiceSidebar({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Section Paiement détecté */}
-          {invoice.status === INVOICE_STATUS.PENDING &&
+          {canLinkTransactions &&
+            invoice.status === INVOICE_STATUS.PENDING &&
             (invoice.linkedTransactionIds?.length || 0) === 0 &&
             suggestedTransactions.length > 0 && (
               <>
@@ -1234,118 +1253,125 @@ export default function InvoiceSidebar({
             </div>
           </div>
 
-          <Separator />
+          {/* Credit Notes Section (masquée sans accès aux avoirs) */}
+          {canReadCreditNotes && <Separator />}
 
-          {/* Credit Notes Section */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ReceiptItemIcon className="h-4 w-4 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
-                  Avoirs
-                </p>
+          {canReadCreditNotes && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ReceiptItemIcon className="h-4 w-4 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Avoirs
+                  </p>
+                </div>
+                {(invoice.status === INVOICE_STATUS.PENDING ||
+                  invoice.status === INVOICE_STATUS.COMPLETED ||
+                  invoice.status === INVOICE_STATUS.CANCELED) &&
+                  !creditNoteLimitReached &&
+                  canCreateCreditNotes && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCreateCreditNote}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Créer
+                    </Button>
+                  )}
               </div>
-              {(invoice.status === INVOICE_STATUS.PENDING ||
-                invoice.status === INVOICE_STATUS.COMPLETED ||
-                invoice.status === INVOICE_STATUS.CANCELED) &&
-                !creditNoteLimitReached && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCreateCreditNote}
-                    className="h-7 px-2 text-xs"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Créer
-                  </Button>
-                )}
-            </div>
 
-            {loadingCreditNotes ? (
-              <div className="flex items-center justify-center py-4">
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              </div>
-            ) : creditNotesError ? (
-              <div className="text-sm text-red-500 py-2">
-                Erreur lors du chargement des avoirs: {creditNotesError.message}
-              </div>
-            ) : creditNotes && creditNotes.length > 0 ? (
-              <div className="space-y-2">
-                {creditNotes.map((creditNote) => (
-                  <div
-                    key={creditNote.id}
-                    className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div
-                        className="flex flex-col cursor-pointer flex-1 min-w-0"
-                        onClick={() => handleViewCreditNote(creditNote)}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Receipt className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm font-medium truncate">
-                            {creditNote.number}
-                          </span>
+              {loadingCreditNotes ? (
+                <div className="flex items-center justify-center py-4">
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                </div>
+              ) : creditNotesError ? (
+                <div className="text-sm text-red-500 py-2">
+                  Erreur lors du chargement des avoirs:{" "}
+                  {creditNotesError.message}
+                </div>
+              ) : creditNotes && creditNotes.length > 0 ? (
+                <div className="space-y-2">
+                  {creditNotes.map((creditNote) => (
+                    <div
+                      key={creditNote.id}
+                      className="p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div
+                          className="flex flex-col cursor-pointer flex-1 min-w-0"
+                          onClick={() => handleViewCreditNote(creditNote)}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <Receipt className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                            <span className="text-sm font-medium truncate">
+                              {creditNote.number}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground ml-9">
+                            {formatDate(creditNote.issueDate)} •{" "}
+                            {formatCurrency(creditNote.finalTotalTTC || 0)}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground ml-9">
-                          {formatDate(creditNote.issueDate)} •{" "}
-                          {formatCurrency(creditNote.finalTotalTTC || 0)}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <UniversalPDFDownloaderWithFacturX
+                            data={creditNote}
+                            type="creditNote"
+                            enableFacturX={true}
+                            filename={`avoir-${creditNote.number}`}
+                          />
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <UniversalPDFDownloaderWithFacturX
-                          data={creditNote}
-                          type="creditNote"
-                          enableFacturX={true}
-                          filename={`avoir-${creditNote.number}`}
-                        />
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-4 text-sm text-muted-foreground">
-                {invoice.status === INVOICE_STATUS.PENDING ||
-                invoice.status === INVOICE_STATUS.COMPLETED ||
-                invoice.status === INVOICE_STATUS.CANCELED ? (
-                  <div>
-                    <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    {creditNoteLimitReached ? (
-                      <>
-                        <p>Limite d'avoirs atteinte</p>
-                        <p className="text-xs mt-1">
-                          La somme des avoirs a atteint le montant de la facture
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p>Aucun avoir créé</p>
-                        <p className="text-xs mt-1">
-                          Cliquez sur "Créer" pour ajouter un avoir
-                        </p>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Aucun avoir</p>
-                    <p className="text-xs mt-1">
-                      Les avoirs ne peuvent être créés que pour les factures en
-                      attente, terminées ou annulées
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  {invoice.status === INVOICE_STATUS.PENDING ||
+                  invoice.status === INVOICE_STATUS.COMPLETED ||
+                  invoice.status === INVOICE_STATUS.CANCELED ? (
+                    <div>
+                      <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      {creditNoteLimitReached ? (
+                        <>
+                          <p>Limite d'avoirs atteinte</p>
+                          <p className="text-xs mt-1">
+                            La somme des avoirs a atteint le montant de la
+                            facture
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p>Aucun avoir créé</p>
+                          {canCreateCreditNotes && (
+                            <p className="text-xs mt-1">
+                              Cliquez sur "Créer" pour ajouter un avoir
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <Receipt className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>Aucun avoir</p>
+                      <p className="text-xs mt-1">
+                        Les avoirs ne peuvent être créés que pour les factures
+                        en attente, terminées ou annulées
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Section Paiement Bancaire — liste des transactions rattachées
               (N↔N : plusieurs transactions possibles). Header avec bouton
               "Ajouter" pour attacher une autre transaction (paiement
               échelonné). Chaque row : nom / date / montant + bouton délier. */}
-          {(invoice.linkedTransactions?.length || 0) > 0 && (
+          {canReadBanking && (invoice.linkedTransactions?.length || 0) > 0 && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -1356,16 +1382,18 @@ export default function InvoiceSidebar({
                       Paiement bancaire
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowTransactionPicker(true)}
-                    disabled={linkingTransaction}
-                    className="h-7 px-2 text-xs"
-                  >
-                    <Link2 className="h-3 w-3 mr-1" />
-                    Ajouter
-                  </Button>
+                  {canLinkTransactions && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowTransactionPicker(true)}
+                      disabled={linkingTransaction}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Link2 className="h-3 w-3 mr-1" />
+                      Ajouter
+                    </Button>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1404,19 +1432,21 @@ export default function InvoiceSidebar({
                           </span>
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleUnlinkTransaction(tx.id)}
-                        disabled={linkingTransaction}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                      >
-                        {linkingTransaction ? (
-                          <LoaderCircle className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Unlink className="h-3 w-3" />
-                        )}
-                      </Button>
+                      {canLinkTransactions && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleUnlinkTransaction(tx.id)}
+                          disabled={linkingTransaction}
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        >
+                          {linkingTransaction ? (
+                            <LoaderCircle className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Unlink className="h-3 w-3" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1505,8 +1535,10 @@ export default function InvoiceSidebar({
             </>
           )}
 
-          {/* Section Paiement Bancaire - Pour factures en attente sans suggestions */}
-          {invoice.status === INVOICE_STATUS.PENDING &&
+          {/* Section Paiement Bancaire - Pour factures en attente sans suggestions
+              (invitation à rattacher : réservée à l'écriture sur « banking ») */}
+          {canLinkTransactions &&
+            invoice.status === INVOICE_STATUS.PENDING &&
             (invoice.linkedTransactionIds?.length || 0) === 0 &&
             suggestedTransactions.length === 0 && (
               <>
@@ -1519,16 +1551,18 @@ export default function InvoiceSidebar({
                         Paiement bancaire
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowTransactionPicker(true)}
-                      disabled={linkingTransaction}
-                      className="h-7 px-2 text-xs"
-                    >
-                      <Link2 className="h-3 w-3 mr-1" />
-                      Rattacher
-                    </Button>
+                    {canLinkTransactions && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowTransactionPicker(true)}
+                        disabled={linkingTransaction}
+                        className="h-7 px-2 text-xs"
+                      >
+                        <Link2 className="h-3 w-3 mr-1" />
+                        Rattacher
+                      </Button>
+                    )}
                   </div>
 
                   {loadingTransactions ? (
@@ -1645,7 +1679,7 @@ export default function InvoiceSidebar({
             )}
 
           {/* Devis lié (devis à l'origine de cette facture) */}
-          {invoice.sourceQuote && (
+          {canReadQuotes && invoice.sourceQuote && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -1669,7 +1703,7 @@ export default function InvoiceSidebar({
           )}
 
           {/* Bon de commande lié (BC à l'origine de cette facture) */}
-          {invoice.sourcePurchaseOrder && (
+          {canReadPurchaseOrders && invoice.sourcePurchaseOrder && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -1693,7 +1727,7 @@ export default function InvoiceSidebar({
           )}
 
           {/* Bon de livraison lié (BL à l'origine de cette facture) */}
-          {invoice.sourceDeliveryNote && (
+          {canReadDeliveryNotes && invoice.sourceDeliveryNote && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -1717,7 +1751,8 @@ export default function InvoiceSidebar({
           )}
 
           {/* Bons de livraison générés depuis cette facture */}
-          {invoice.linkedDeliveryNotes &&
+          {canReadDeliveryNotes &&
+            invoice.linkedDeliveryNotes &&
             invoice.linkedDeliveryNotes.length > 0 && (
               <>
                 <Separator />
@@ -1761,55 +1796,62 @@ export default function InvoiceSidebar({
           </div> */}
         </div>
 
-        {/* Action Buttons */}
-        <div className="border-t px-6 py-4 space-y-3">
-          {/* Draft Actions */}
-          {invoice.status === INVOICE_STATUS.DRAFT && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Éditer
-              </Button>
-              <Button
-                onClick={handleCreateInvoice}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Créer la facture
-              </Button>
-            </div>
-          )}
+        {/* Action Buttons (masqués si le rôle ne permet ni de modifier, ni
+            d'annuler, ni d'encaisser) */}
+        {(canEditInvoices || canChangeInvoiceStatus || canMarkPaid) && (
+          <div className="border-t px-6 py-4 space-y-3">
+            {/* Draft Actions */}
+            {canEditInvoices && invoice.status === INVOICE_STATUS.DRAFT && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleEdit}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Éditer
+                </Button>
+                <Button
+                  onClick={handleCreateInvoice}
+                  disabled={isLoading}
+                  className="flex-1 font-normal"
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Créer la facture
+                </Button>
+              </div>
+            )}
 
-          {/* Pending Actions */}
-          {invoice.status === INVOICE_STATUS.PENDING && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Annuler la facture
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleMarkAsPaid}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Marquer comme payée
-              </Button>
-            </div>
-          )}
-        </div>
+            {/* Pending Actions */}
+            {invoice.status === INVOICE_STATUS.PENDING && (
+              <div className="flex gap-2">
+                {canChangeInvoiceStatus && (
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Annuler la facture
+                  </Button>
+                )}
+                {canMarkPaid && (
+                  <Button
+                    variant="primary"
+                    onClick={handleMarkAsPaid}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Marquer comme payée
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* Modal de confirmation avant l'annulation de la facture */}

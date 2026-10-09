@@ -30,6 +30,7 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
@@ -48,6 +49,17 @@ function InvoicesContent() {
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
+
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canImportInvoices = !isReady || canDo("importedInvoices", "import");
+  // Relances automatiques : action « reminders » des factures ; paramètres
+  // des documents : paramètres de l'entreprise (« orgSettings »)
+  const canEditReminders = !isReady || canDo("invoices", "reminders");
+  const canEditSettings = !isReady || canDo("orgSettings", "edit");
+  // Bouton « Envoyer au client » du toast affiché après une création
+  const canSendInvoices = !isReady || canDo("invoices", "send");
+  const canSendCreditNotes = !isReady || canDo("creditNotes", "send");
 
   // Toast manager et modal d'envoi pour les nouvelles factures/avoirs
   const toastManager = useToastManager();
@@ -71,12 +83,13 @@ function InvoicesContent() {
             title: "Facture créée avec succès",
             description: `Facture ${data.number} créée`,
             timeout: 10000,
-            actionProps: data.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => setShowSendEmailModal(true),
-                }
-              : undefined,
+            actionProps:
+              data.clientEmail && canSendInvoices
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => setShowSendEmailModal(true),
+                  }
+                : undefined,
           });
 
           sessionStorage.removeItem("newInvoiceData");
@@ -99,12 +112,13 @@ function InvoicesContent() {
             title: "Avoir créé avec succès",
             description: `Avoir ${data.number} créé`,
             timeout: 10000,
-            actionProps: data.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => setShowSendEmailModal(true),
-                }
-              : undefined,
+            actionProps:
+              data.clientEmail && canSendCreditNotes
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => setShowSendEmailModal(true),
+                  }
+                : undefined,
           });
 
           sessionStorage.removeItem("newCreditNoteData");
@@ -113,7 +127,7 @@ function InvoicesContent() {
         }
       }
     }
-  }, [toastManager]);
+  }, [toastManager, canSendInvoices, canSendCreditNotes]);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -222,28 +236,37 @@ function InvoicesContent() {
             <div>
               <h1 className="text-2xl font-medium mb-2">Factures clients</h1>
               {/* <p className="text-muted-foreground text-sm">
-              Gérez vos factures et suivez vos paiements
-            </p> */}
+                Gérez vos factures et suivez vos paiements
+              </p> */}
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsAutoReminderOpen(true)}
-              >
-                <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
-              <Button variant="outline" onClick={() => setTriggerImport(true)}>
-                <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                Importer
-              </Button>
+              {canEditReminders && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsAutoReminderOpen(true)}
+                >
+                  <MailCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                </Button>
+              )}
+              {canEditSettings && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsSettingsOpen(true)}
+                >
+                  <Settings className="w-3.5 h-3.5" aria-hidden="true" />
+                </Button>
+              )}
+              {canImportInvoices && (
+                <Button
+                  variant="outline"
+                  onClick={() => setTriggerImport(true)}
+                >
+                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                  Importer
+                </Button>
+              )}
               <InvoiceExportButton invoices={filteredData} iconOnly={false} />
               <PermissionButton
                 requiresActiveSubscription
@@ -252,6 +275,7 @@ function InvoicesContent() {
                 variant="primary"
                 onClick={handleNewInvoice}
                 className="cursor-pointer"
+                hideIfNoAccess={true}
                 tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
               >
                 <Plus size={14} strokeWidth={2} aria-hidden="true" />
@@ -396,22 +420,26 @@ function InvoicesContent() {
                 <h1 className="text-2xl font-medium mb-1">Factures</h1>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAutoReminderOpen(true)}
-                  className="gap-2"
-                >
-                  <Bell className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
+                {canEditReminders && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAutoReminderOpen(true)}
+                    className="gap-2"
+                  >
+                    <Bell className="h-4 w-4" />
+                  </Button>
+                )}
+                {canEditSettings && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                )}
                 <PermissionButton
                   requiresActiveSubscription
                   resource="invoices"

@@ -30,6 +30,7 @@ import DeleteListDialog from "./delete-list-dialog";
 import ListClientsView from "./list-clients-view";
 import AddClientsToListDialog from "./add-clients-to-list-dialog";
 import { useDeleteClientList } from "@/src/hooks/useClientLists";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,6 +76,14 @@ export default function ClientListsView({
   const [deletingList, setDeletingList] = useState(null);
   const [addingClientsToList, setAddingClientsToList] = useState(null);
   const { deleteList } = useDeleteClientList();
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle sur les listes, action par action (tout autorisé tant
+  // que la grille n'est pas chargée)
+  const canCreateLists = !isReady || canDo("clientLists", "create");
+  const canEditLists = !isReady || canDo("clientLists", "edit");
+  const canDeleteLists = !isReady || canDo("clientLists", "delete");
+  // « Ajouter des contacts » liste les fiches du module Clients
+  const canReadClients = !isReady || canRead("clients");
 
   // Mettre à jour selectedList quand initialSelectedList change
   useEffect(() => {
@@ -106,146 +115,157 @@ export default function ClientListsView({
 
   // Colonnes du tableau - Style identique au Kanban
   const columns = useMemo(
-    () => [
-      {
-        id: "select",
-        header: ({ table }) => {
-          const selectableRows = table
-            .getRowModel()
-            .rows.filter((r) => !r.original.isDefault);
-          const allSelected =
-            selectableRows.length > 0 &&
-            selectableRows.every((r) => r.getIsSelected());
-          const someSelected =
-            !allSelected && selectableRows.some((r) => r.getIsSelected());
-          return (
-            <Checkbox
-              checked={allSelected || (someSelected && "indeterminate")}
-              onCheckedChange={(value) => {
-                selectableRows.forEach((r) => r.toggleSelected(!!value));
-              }}
-              aria-label="Sélectionner tout"
-              disabled={selectableRows.length === 0}
-            />
-          );
-        },
-        cell: ({ row }) => {
-          if (row.original.isDefault) return null;
-          return (
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Sélectionner la ligne"
-            />
-          );
-        },
-        size: 40,
-        enableSorting: false,
-        enableHiding: false,
-      },
-      {
-        accessorKey: "name",
-        header: "Nom",
-        size: 300,
-        cell: (info) => {
-          const list = info.row.original;
-          return (
-            <div className="flex items-center gap-3">
-              <div
-                className="w-3 h-3 rounded-full flex-shrink-0"
-                style={{ backgroundColor: list.color }}
+    () =>
+      [
+        {
+          id: "select",
+          header: ({ table }) => {
+            const selectableRows = table
+              .getRowModel()
+              .rows.filter((r) => !r.original.isDefault);
+            const allSelected =
+              selectableRows.length > 0 &&
+              selectableRows.every((r) => r.getIsSelected());
+            const someSelected =
+              !allSelected && selectableRows.some((r) => r.getIsSelected());
+            return (
+              <Checkbox
+                checked={allSelected || (someSelected && "indeterminate")}
+                onCheckedChange={(value) => {
+                  selectableRows.forEach((r) => r.toggleSelected(!!value));
+                }}
+                aria-label="Sélectionner tout"
+                disabled={selectableRows.length === 0}
               />
-              <span className="truncate">{list.name}</span>
-              {list.isDefault && (
-                <Badge variant="outline" className="text-xs font-normal">
-                  Par défaut
-                </Badge>
-              )}
-            </div>
-          );
+            );
+          },
+          cell: ({ row }) => {
+            if (row.original.isDefault) return null;
+            return (
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label="Sélectionner la ligne"
+              />
+            );
+          },
+          size: 40,
+          enableSorting: false,
+          enableHiding: false,
         },
-      },
-      {
-        accessorKey: "description",
-        header: "Description",
-        size: 300,
-        cell: (info) => {
-          const description = info.getValue();
-          if (!description)
-            return <span className="text-muted-foreground">-</span>;
-          return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-muted-foreground truncate block max-w-[250px] cursor-default">
-                    {description}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[300px]">
-                  <p className="text-sm">{description}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          );
+        {
+          accessorKey: "name",
+          header: "Nom",
+          size: 300,
+          cell: (info) => {
+            const list = info.row.original;
+            return (
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: list.color }}
+                />
+                <span className="truncate">{list.name}</span>
+                {list.isDefault && (
+                  <Badge variant="outline" className="text-xs font-normal">
+                    Par défaut
+                  </Badge>
+                )}
+              </div>
+            );
+          },
         },
-      },
-      {
-        accessorKey: "clientCount",
-        header: "Contacts",
-        size: 150,
-        cell: (info) => (
-          <Badge variant="secondary" className="gap-1 font-normal w-fit">
-            <Users className="w-3 h-3" />
-            {info.getValue()}
-          </Badge>
-        ),
-      },
-      {
-        id: "actions",
-        header: "Actions",
-        size: 100,
-        cell: (info) => {
-          const list = info.row.original;
-          if (list.isDefault) return null;
-          return (
-            <div onClick={(e) => e.stopPropagation()}>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setAddingClientsToList(list)}
-                    className="cursor-pointer"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Ajouter des contacts
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setEditingList(list)}
-                    className="cursor-pointer"
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Modifier
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setDeletingList(list)}
-                    className="cursor-pointer text-destructive focus:text-destructive"
-                    variant="destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2 text-destructive" />
-                    Supprimer
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          );
+        {
+          accessorKey: "description",
+          header: "Description",
+          size: 300,
+          cell: (info) => {
+            const description = info.getValue();
+            if (!description)
+              return <span className="text-muted-foreground">-</span>;
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-muted-foreground truncate block max-w-[250px] cursor-default">
+                      {description}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[300px]">
+                    <p className="text-sm">{description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          },
         },
-      },
-    ],
-    [],
+        {
+          accessorKey: "clientCount",
+          header: "Contacts",
+          size: 150,
+          cell: (info) => (
+            <Badge variant="secondary" className="gap-1 font-normal w-fit">
+              <Users className="w-3 h-3" />
+              {info.getValue()}
+            </Badge>
+          ),
+        },
+        {
+          id: "actions",
+          header: "Actions",
+          size: 100,
+          cell: (info) => {
+            const list = info.row.original;
+            if (list.isDefault) return null;
+            if (!canEditLists && !canDeleteLists) return null;
+            return (
+              <div onClick={(e) => e.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {canEditLists && (
+                      <>
+                        {canReadClients && (
+                          <DropdownMenuItem
+                            onClick={() => setAddingClientsToList(list)}
+                            className="cursor-pointer"
+                          >
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Ajouter des contacts
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() => setEditingList(list)}
+                          className="cursor-pointer"
+                        >
+                          <Edit2 className="w-4 h-4 mr-2" />
+                          Modifier
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {canDeleteLists && (
+                      <DropdownMenuItem
+                        onClick={() => setDeletingList(list)}
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                        variant="destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2 text-destructive" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          },
+        },
+        // Sélection réservée à la suppression groupée
+      ].filter((column) => column.id !== "select" || canDeleteLists),
+    [canEditLists, canDeleteLists, canReadClients],
   );
 
   // Créer la table avec React Table
@@ -293,13 +313,15 @@ export default function ClientListsView({
           description="Créez votre première liste pour organiser vos contacts par catégories ou segments."
           className="flex-1"
           action={
-            <Button
-              onClick={onCreateList}
-              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
-            >
-              <Plus size={14} className="mr-2" />
-              Créer une liste
-            </Button>
+            canCreateLists ? (
+              <Button
+                onClick={onCreateList}
+                className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+              >
+                <Plus size={14} className="mr-2" />
+                Créer une liste
+              </Button>
+            ) : undefined
           }
         />
       ) : (

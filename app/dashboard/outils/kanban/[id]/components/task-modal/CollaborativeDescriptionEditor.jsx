@@ -100,6 +100,8 @@ export const CollaborativeDescriptionEditor = forwardRef(
       onBlur: onBlurProp,
       onUnavailable,
       placeholder = "Ajouter une description...",
+      // Lecture seule (rôle sans écriture) : suit le document, sans saisie
+      readOnly = false,
     },
     ref,
   ) {
@@ -192,8 +194,8 @@ export const CollaborativeDescriptionEditor = forwardRef(
     // Éditable seulement une fois le document reçu du serveur : sinon on
     // taperait dans un document vide qui écraserait le contenu à la fusion.
     useEffect(() => {
-      if (editor) editor.setEditable(!!provider && synced);
-    }, [editor, provider, synced]);
+      if (editor) editor.setEditable(!!provider && synced && !readOnly);
+    }, [editor, provider, synced, readOnly]);
 
     // L'ancien éditeur exposait commit() pour forcer la propagation avant une
     // sauvegarde : ici le serveur persiste lui-même, rien à faire.
@@ -237,71 +239,74 @@ export const CollaborativeDescriptionEditor = forwardRef(
         className="flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs cursor-text overflow-hidden min-w-0"
         onClick={() => editor?.commands.focus()}
       >
-        <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
-          <div className="flex items-center gap-0.5">
-            {TOOLBAR.map((item) => {
-              const isActive = !!editorState?.active?.[item.active];
-              return (
-                <Tooltip key={item.tooltip}>
+        {!readOnly && (
+          <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
+            <div className="flex items-center gap-0.5">
+              {TOOLBAR.map((item) => {
+                const isActive = !!editorState?.active?.[item.active];
+                return (
+                  <Tooltip key={item.tooltip}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={!synced}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!editor) return;
+                          if (item.run) item.run(editor.chain().focus()).run();
+                          else applyLink();
+                        }}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40 ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
+                      >
+                        <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{item.tooltip}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-1">
+              {synced && status !== "connected" && (
+                <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      disabled={!synced}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!editor) return;
-                        if (item.run) item.run(editor.chain().focus()).run();
-                        else applyLink();
-                      }}
-                      className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40 ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
-                    >
-                      <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                    </button>
+                    <span className="flex h-7 w-7 items-center justify-center text-amber-500">
+                      <WifiOff className="h-3.5 w-3.5" strokeWidth={1.75} />
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
-                    <p>{item.tooltip}</p>
+                    <p>
+                      Reconnexion en cours, vos modifications seront
+                      synchronisées
+                    </p>
                   </TooltipContent>
                 </Tooltip>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-1">
-            {synced && status !== "connected" && (
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="flex h-7 w-7 items-center justify-center text-amber-500">
-                    <WifiOff className="h-3.5 w-3.5" strokeWidth={1.75} />
-                  </span>
+                  <button
+                    type="button"
+                    disabled={!synced}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      editor?.chain().focus().clearContent().run();
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p>
-                    Reconnexion en cours, vos modifications seront synchronisées
-                  </p>
+                  <p>Effacer</p>
                 </TooltipContent>
               </Tooltip>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  disabled={!synced}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    editor?.chain().focus().clearContent().run();
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Effacer</p>
-              </TooltipContent>
-            </Tooltip>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="relative px-4 py-3 min-h-[100px] max-h-[200px] overflow-y-auto overflow-x-hidden">
           {!synced && (
@@ -309,7 +314,7 @@ export const CollaborativeDescriptionEditor = forwardRef(
               Connexion à l'édition partagée…
             </span>
           )}
-          {synced && isEmpty && (
+          {synced && isEmpty && !readOnly && (
             <span className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none">
               {placeholder}
             </span>

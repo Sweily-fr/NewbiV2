@@ -93,6 +93,7 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import Link from "next/link";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import dynamic from "next/dynamic";
 import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
 
@@ -499,14 +500,14 @@ export function TeamSwitcher() {
         </SidebarMenuItem>
       </SidebarMenu>
       {inviteDialogOpen && (
-      <InviteMemberModal
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        onSuccess={() => {
-          // Rafraîchir les organisations
-          loadOrganizations({ force: true });
-        }}
-      />
+        <InviteMemberModal
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          onSuccess={() => {
+            // Rafraîchir les organisations
+            loadOrganizations({ force: true });
+          }}
+        />
       )}
       {settingsModalOpen && (
         <SettingsModal
@@ -516,18 +517,18 @@ export function TeamSwitcher() {
         />
       )}
       {renameModalOpen && (
-      <RenameOrganizationModal
-        open={renameModalOpen}
-        onOpenChange={setRenameModalOpen}
-        organization={selectedOrganization}
-        onSuccess={() => {
-          // Rafraîchir les organisations
-          loadOrganizations({ force: true });
-          if (refetchActiveOrg) {
-            refetchActiveOrg();
-          }
-        }}
-      />
+        <RenameOrganizationModal
+          open={renameModalOpen}
+          onOpenChange={setRenameModalOpen}
+          organization={selectedOrganization}
+          onSuccess={() => {
+            // Rafraîchir les organisations
+            loadOrganizations({ force: true });
+            if (refetchActiveOrg) {
+              refetchActiveOrg();
+            }
+          }}
+        />
       )}
     </>
   );
@@ -599,6 +600,8 @@ function SortableOrganizationItem({
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const buttonRef = React.useRef(null);
   const colorButtonRef = React.useRef(null);
+  const { canDo } = useMyPermissions();
+  const canManageTeam = canDo("team", "invite");
 
   // Récupérer la couleur et l'icône personnalisées
   const customColor = org.customColor || "#5b4fff";
@@ -743,18 +746,21 @@ function SortableOrganizationItem({
             {/* Séparateur */}
             <div className="h-px bg-border my-1" />
 
-            {/* Ajouter des membres */}
-            <div
-              className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowActionsMenu(false);
-                setInviteDialogOpen(true);
-              }}
-            >
-              <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-normal flex-1">Ajouter des membres</span>
-            </div>
+            {/* Ajouter des membres : la fenêtre invite dans l'espace actif,
+                réservée aux rôles qui gèrent les membres */}
+            {isActive && canManageTeam && (
+              <div
+                className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-xs outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowActionsMenu(false);
+                  setInviteDialogOpen(true);
+                }}
+              >
+                <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-normal flex-1">Ajouter des membres</span>
+              </div>
+            )}
 
             {/* Quitter l'organisation - Seulement si pas owner */}
             {org.role !== "owner" && (

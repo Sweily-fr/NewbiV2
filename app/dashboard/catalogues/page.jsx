@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Plus } from "lucide-react";
 import {
   ImportIcon as Upload,
@@ -33,6 +34,12 @@ function CataloguesContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const canCreateProducts = !isReady || canDo("products", "create");
+  const canImportProducts = !isReady || canDo("products", "import");
+  const canExportProducts = !isReady || canDo("products", "export");
+  const canManageCustomFields = !isReady || canDo("products", "customFields");
 
   // Récupérer les produits pour l'export
   const { products: allProducts, refetch } = useProducts(1, 100, "");
@@ -61,39 +68,48 @@ function CataloguesContent() {
               </h1>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCustomFieldsOpen(true)}
-                className="cursor-pointer"
-              >
-                <Settings2 className="w-3.5 h-3.5" />
-                Champs
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => !isReadOnly && setImportDialogOpen(true)}
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
-                className="cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Importer
-              </Button>
-              <ProductExportButton
-                products={allProducts}
-                selectedRows={selectedProducts}
-                iconOnly={false}
-              />
-              <Button
-                variant="primary"
-                onClick={() => !isReadOnly && handleOpenProductDialog()}
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
-                className="cursor-pointer"
-              >
-                <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                Ajouter un produit
-              </Button>
+              {/* Actions masquées si le rôle ne les permet pas */}
+              {canManageCustomFields && (
+                <Button
+                  variant="outline"
+                  onClick={() => setCustomFieldsOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                  Champs
+                </Button>
+              )}
+              {canImportProducts && (
+                <Button
+                  variant="outline"
+                  onClick={() => !isReadOnly && setImportDialogOpen(true)}
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                  className="cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Importer
+                </Button>
+              )}
+              {canExportProducts && (
+                <ProductExportButton
+                  products={allProducts}
+                  selectedRows={selectedProducts}
+                  iconOnly={false}
+                />
+              )}
+              {canCreateProducts && (
+                <Button
+                  variant="primary"
+                  onClick={() => !isReadOnly && handleOpenProductDialog()}
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                  className="cursor-pointer"
+                >
+                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                  Ajouter un produit
+                </Button>
+              )}
             </div>
           </div>
 
@@ -134,13 +150,15 @@ function CataloguesContent() {
           </div>
 
           {/* Bouton flottant mobile */}
-          <Button
-            onClick={handleOpenProductDialog}
-            className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-            size="icon"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
+          {canCreateProducts && (
+            <Button
+              onClick={handleOpenProductDialog}
+              className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+              size="icon"
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
+          )}
         </div>
       )}
 

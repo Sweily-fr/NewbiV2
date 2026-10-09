@@ -6,6 +6,7 @@ import { sortByDateDesc } from "@/src/lib/document-dates";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   flexRender,
   getCoreRowModel,
@@ -154,9 +155,17 @@ export default function QuoteTable({
     },
   });
 
-  const { importedQuotes, refetch: refetchImported } =
-    useImportedQuotes(workspaceId);
   const { canCreate, canExport } = usePermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : la
+  // suppression groupée porte sur les brouillons et les devis importés
+  const { canRead, canDelete, isReady } = useMyPermissions();
+  const canDeleteQuotes =
+    !isReady || canDelete("quotes") || canDelete("importedQuotes");
+  // Devis importés (OCR) : module distinct, masqués sans lecture
+  const canReadImportedQuotes = !isReady || canRead("importedQuotes");
+  const { importedQuotes, refetch: refetchImported } = useImportedQuotes(
+    canReadImportedQuotes ? workspaceId : null,
+  );
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
   const esignatureLevel = planLimits.esignature; // false | "ses" | "qes"
@@ -182,7 +191,7 @@ export default function QuoteTable({
       ...q,
       _type: "normal",
     }));
-    const imported = (importedQuotes || [])
+    const imported = (canReadImportedQuotes ? importedQuotes || [] : [])
       // Une fois converti (VALIDATED), l'import est représenté par le vrai
       // devis « Devis importé » : on masque la ligne OCR pour éviter le doublon.
       .filter((q) => q.status !== "VALIDATED")
@@ -200,7 +209,7 @@ export default function QuoteTable({
     // Tri par date d'émission (puis création) quel que soit le type : les
     // dates peuvent être des timestamps en chaîne, sortByDateDesc les gère.
     return sortByDateDesc([...normalQuotes, ...imported]);
-  }, [quotes, importedQuotes]);
+  }, [quotes, importedQuotes, canReadImportedQuotes]);
 
   const {
     table,
@@ -437,7 +446,7 @@ export default function QuoteTable({
           {/* Actions à droite */}
           <div className="flex items-center gap-2">
             {/* Bulk delete - visible quand des rows sont sélectionnées */}
-            {selectedRows.length > 0 && (
+            {selectedRows.length > 0 && canDeleteQuotes && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button

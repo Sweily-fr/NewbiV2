@@ -98,10 +98,23 @@ const providerLabels = {
   apple: "Apple Calendar",
 };
 
-export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
+export function EventDialog({
+  event,
+  isOpen,
+  onClose,
+  onSave,
+  onDelete,
+  // canEdit : enregistrer cet événement (action « create » pour un nouvel
+  // événement, « edit » sinon, résolue par l'appelant)
+  canEdit = true,
+  canDelete = true,
+  // Ajout et modification des étiquettes de couleur (action « edit »)
+  canEditLabels = true,
+}) {
   const { labels, getLabelForColor, updateLabels, updateLoading } =
     useCalendarColorLabels();
-  const isReadOnly = event?.isReadOnly || false;
+  // Événement externe, ou rôle sans droit d'enregistrer cet événement
+  const isReadOnly = event?.isReadOnly || !canEdit;
 
   // State pour la modal d'édition/ajout d'étiquette
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
@@ -338,11 +351,13 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                       : "Nouvel événement"}
                 </SheetTitle>
                 <SheetDescription className="text-xs">
-                  {isReadOnly
-                    ? `Synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"}`
-                    : event?.id
-                      ? "Modifiez les détails ci-dessous"
-                      : "Remplissez les informations de votre événement"}
+                  {isReadOnly && !event?.isReadOnly
+                    ? "Votre rôle permet de consulter les événements, pas de les modifier"
+                    : isReadOnly
+                      ? `Synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"}`
+                      : event?.id
+                        ? "Modifiez les détails ci-dessous"
+                        : "Remplissez les informations de votre événement"}
                 </SheetDescription>
               </div>
             </div>
@@ -666,22 +681,24 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                           {entry.label}
                         </span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLabelEditIndex(index);
-                          setLabelDialogColor(entry.color);
-                          setLabelDialogText(entry.label);
-                          setLabelDialogOpen(true);
-                        }}
-                        className="p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-colors"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
+                      {canEditLabels && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLabelEditIndex(index);
+                            setLabelDialogColor(entry.color);
+                            setLabelDialogText(entry.label);
+                            setLabelDialogOpen(true);
+                          }}
+                          className="p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-colors"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
                   {/* Bouton ajouter */}
-                  {labels.length < 20 && (
+                  {canEditLabels && labels.length < 20 && (
                     <button
                       type="button"
                       onClick={() => {
@@ -787,7 +804,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 </div>
               ) : (
                 <div className="flex w-full items-center justify-between">
-                  {event?.id ? (
+                  {event?.id && canDelete ? (
                     <Button
                       variant="ghost"
                       size="sm"

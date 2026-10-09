@@ -39,6 +39,7 @@ import {
 } from "./components/blocked-page-skeleton";
 import { useClients, useUnblockClient } from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   ShieldOff,
   ShieldCheck,
@@ -62,6 +63,10 @@ function BlockedContent() {
   const { workspaceId } = useWorkspace();
   const { clients, loading } = useClients(1, 500, "");
   const { unblockClient, loading: unblocking } = useUnblockClient();
+  const { canDo, isReady } = useMyPermissions();
+  // Débloquer = action « block » des clients (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canBlockClients = !isReady || canDo("clients", "block");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkUnblocking, setBulkUnblocking] = useState(false);
 
@@ -177,7 +182,7 @@ function BlockedContent() {
             )}
           </div>
         </div>
-        {selectedIds.size > 0 && (
+        {selectedIds.size > 0 && canBlockClients && (
           <div className="flex items-center gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -249,16 +254,19 @@ function BlockedContent() {
             <table className="w-full table-fixed">
               <thead>
                 <tr>
-                  <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle font-normal text-xs text-muted-foreground w-[40px]">
-                    <Checkbox
-                      checked={
-                        paginatedClients.length > 0 &&
-                        paginatedClients.every((c) => selectedIds.has(c.id))
-                      }
-                      onCheckedChange={toggleSelectAll}
-                      aria-label="Tout sélectionner"
-                    />
-                  </th>
+                  {/* Sélection réservée au déblocage groupé */}
+                  {canBlockClients && (
+                    <th className="h-10 p-2 pl-4 sm:pl-6 text-left align-middle font-normal text-xs text-muted-foreground w-[40px]">
+                      <Checkbox
+                        checked={
+                          paginatedClients.length > 0 &&
+                          paginatedClients.every((c) => selectedIds.has(c.id))
+                        }
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Tout sélectionner"
+                      />
+                    </th>
+                  )}
                   <th className="h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground w-[28%]">
                     Contact
                   </th>
@@ -290,16 +298,18 @@ function BlockedContent() {
                       router.push(`/dashboard/clients/${client.id}`)
                     }
                   >
-                    <td
-                      className="p-2 pl-4 sm:pl-6 align-middle w-[40px]"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Checkbox
-                        checked={selectedIds.has(client.id)}
-                        onCheckedChange={() => toggleSelect(client.id)}
-                        aria-label={`Sélectionner ${client.name}`}
-                      />
-                    </td>
+                    {canBlockClients && (
+                      <td
+                        className="p-2 pl-4 sm:pl-6 align-middle w-[40px]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={selectedIds.has(client.id)}
+                          onCheckedChange={() => toggleSelect(client.id)}
+                          aria-label={`Sélectionner ${client.name}`}
+                        />
+                      </td>
+                    )}
                     <td className="p-2 align-middle w-[28%]">
                       <div className="flex items-center gap-2">
                         <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -345,46 +355,48 @@ function BlockedContent() {
                       className="p-2 pr-4 sm:pr-6 align-middle text-right w-[10%]"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs font-normal hover:opacity-80"
-                            style={{ color: "#5b50FF" }}
-                            disabled={unblocking}
-                          >
-                            Débloquer
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                            <div
-                              className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                              aria-hidden="true"
-                            >
-                              <ShieldCheck className="opacity-80" size={16} />
-                            </div>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Débloquer ce contact ?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {client.name} pourra de nouveau être utilisé
-                                dans vos documents et communications.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                          </div>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleUnblock(client.id)}
+                      {canBlockClients && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs font-normal hover:opacity-80"
+                              style={{ color: "#5b50FF" }}
+                              disabled={unblocking}
                             >
                               Débloquer
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                              <div
+                                className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                                aria-hidden="true"
+                              >
+                                <ShieldCheck className="opacity-80" size={16} />
+                              </div>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Débloquer ce contact ?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {client.name} pourra de nouveau être utilisé
+                                  dans vos documents et communications.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                            </div>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleUnblock(client.id)}
+                              >
+                                Débloquer
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </td>
                   </tr>
                 ))}

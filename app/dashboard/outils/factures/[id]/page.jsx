@@ -21,6 +21,7 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 function InvoiceDetailsContent() {
   const router = useRouter();
@@ -28,6 +29,13 @@ function InvoiceDetailsContent() {
   const invoiceId = params.id;
 
   const { invoice, loading, error } = useInvoice(invoiceId);
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canDo("invoices", "edit");
+  const canSendInvoices = !isReady || canDo("invoices", "send");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
+  const canCreateQuotes = !isReady || canDo("quotes", "create");
+  const canDeleteInvoices = !isReady || canDo("invoices", "delete");
 
   const handleBack = () => {
     router.push("/dashboard/outils/factures");
@@ -57,7 +65,7 @@ function InvoiceDetailsContent() {
   }
 
   const isDraft = invoice.status === "DRAFT";
-  const canEdit = isDraft;
+  const canEdit = isDraft && canEditInvoices;
 
   return (
     <div className="space-y-6">
@@ -83,30 +91,39 @@ function InvoiceDetailsContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          {!isDraft && (
+          {!isDraft && canSendInvoices && (
             <Button variant="outline" className="gap-2">
               <Send className="h-4 w-4" />
               Envoyer
             </Button>
           )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Dupliquer</DropdownMenuItem>
-              <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {isDraft && (
-                <DropdownMenuItem className="text-destructive">
-                  Supprimer
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Menu d'actions : masqué en lecture seule (aucune action possible) */}
+          {(canCreateInvoices ||
+            canCreateQuotes ||
+            (isDraft && canDeleteInvoices)) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canCreateInvoices && (
+                  <DropdownMenuItem>Dupliquer</DropdownMenuItem>
+                )}
+                {canCreateQuotes && (
+                  <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {isDraft && canDeleteInvoices && (
+                  <DropdownMenuItem className="text-destructive">
+                    Supprimer
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

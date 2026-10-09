@@ -418,8 +418,11 @@ export const columns = [
       const toConfirm = receipts.filter(
         (f) => f?.proposal && !f.proposal.dismissedAt,
       );
+      // Confirmer crée la facture d'achat : masqué si le rôle n'a pas
+      // l'action « justificatifs » des transactions
+      const canConfirm = table.options.meta?.canManageReceipts !== false;
       const confirmTag =
-        toConfirm.length > 0 ? (
+        canConfirm && toConfirm.length > 0 ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

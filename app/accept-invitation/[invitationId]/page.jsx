@@ -30,6 +30,7 @@ import {
   FileChartColumn,
   ChartPie,
 } from "lucide-react";
+import { predefinedRoleLabel } from "@/src/lib/role-labels";
 
 export default function AcceptInvitationPage() {
   const { invitationId } = useParams();
@@ -257,13 +258,7 @@ export default function AcceptInvitationPage() {
       ? "https://play.google.com/store/apps/details?id=com.anonymous.appnewbi"
       : "https://apps.apple.com/app/id6772126520";
     const roleLabel =
-      {
-        owner: "Propriétaire",
-        admin: "Administrateur",
-        member: "Membre",
-        viewer: "Invité",
-        accountant: "Comptable",
-      }[invitation.role] || "Membre";
+      invitation.roleName || predefinedRoleLabel(invitation.role);
 
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-white dark:bg-background">
@@ -464,11 +459,7 @@ export default function AcceptInvitationPage() {
               Vous avez été invité à rejoindre{" "}
               <strong>{invitation.organizationName}</strong> en tant que{" "}
               <strong>
-                {invitation.role === "owner" && "Propriétaire"}
-                {invitation.role === "admin" && "Administrateur"}
-                {invitation.role === "member" && "Membre"}
-                {invitation.role === "viewer" && "Invité"}
-                {invitation.role === "accountant" && "Comptable"}
+                {invitation.roleName || predefinedRoleLabel(invitation.role)}
               </strong>
               .
             </p>

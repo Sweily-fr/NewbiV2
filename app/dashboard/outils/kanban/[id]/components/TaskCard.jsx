@@ -401,8 +401,13 @@ const TaskCard = memo(
     workspaceId,
     allBoardTags = [],
     members = [],
+    // Droits du rôle, fournis par la colonne / la liste (un seul appel au hook)
+    canEdit = true,
+    canDelete = true,
   }) {
     const { isReadOnly, isOwner } = useSubscriptionAccess();
+    // Édition bloquée : abonnement en lecture seule ou rôle sans écriture
+    const isLocked = isReadOnly || !canEdit;
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [showImagePreview, setShowImagePreview] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -609,105 +614,114 @@ const TaskCard = memo(
           {/* Contenu avec padding */}
           <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col flex-1">
             {/* Bloc d'actions flottant : top-right au hover, bottom-right pendant l'édition */}
-            <div
-              className={`absolute right-1.5 transition-all z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border bg-white dark:bg-card p-0.5 ${
-                isEditingTitle
-                  ? "bottom-1.5 opacity-100"
-                  : tagPopoverOpen
-                    ? "top-1.5 opacity-100"
-                    : "top-1.5 opacity-0 group-hover/card:opacity-100"
-              }`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                disabled={isReadOnly}
-                onMouseDown={(e) => {
-                  if (isReadOnly) return;
-                  // Empêcher le blur de l'input avant notre handler
-                  e.preventDefault();
-                }}
-                onClick={isReadOnly ? undefined : startEditingTitle}
-                title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
+            {/* Masqué si le rôle ne permet ni de modifier ni de supprimer */}
+            {(canEdit || canDelete) && (
+              <div
+                className={`absolute right-1.5 transition-all z-10 flex items-center gap-0.5 rounded-md shadow-xs border border-border bg-white dark:bg-card p-0.5 ${
+                  isEditingTitle
+                    ? "bottom-1.5 opacity-100"
+                    : tagPopoverOpen
+                      ? "top-1.5 opacity-100"
+                      : "top-1.5 opacity-0 group-hover/card:opacity-100"
+                }`}
+                onClick={(e) => e.stopPropagation()}
               >
-                {isEditingTitle ? (
-                  <X className="h-3.5 w-3.5" />
-                ) : (
-                  <Pencil className="h-3.5 w-3.5" />
-                )}
-              </Button>
-              {updateTask && !isReadOnly && (
-                <CardTagPopover
-                  task={task}
-                  updateTask={updateTask}
-                  workspaceId={workspaceId}
-                  allBoardTags={allBoardTags}
-                  isOpen={tagPopoverOpen}
-                  onOpenChange={handleTagPopoverChange}
-                />
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                {canEdit && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 w-6 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    disabled={isLocked}
+                    onMouseDown={(e) => {
+                      if (isLocked) return;
+                      // Empêcher le blur de l'input avant notre handler
                       e.preventDefault();
                     }}
+                    onClick={isLocked ? undefined : startEditingTitle}
+                    title={isEditingTitle ? "Enregistrer" : "Modifier le titre"}
                   >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
+                    {isEditingTitle ? (
+                      <X className="h-3.5 w-3.5" />
+                    ) : (
+                      <Pencil className="h-3.5 w-3.5" />
+                    )}
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.stopPropagation();
-                      onEdit(task);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                    }}
-                    disabled={isReadOnly}
-                    className="cursor-pointer"
-                  >
-                    <Edit className="mr-2 h-3.5 w-3.5" />
-                    Modifier
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDeleteClick(e);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                    }}
-                    disabled={isReadOnly}
-                    variant="destructive"
-                    className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-3 w-3" />
-                    Supprimer
-                  </DropdownMenuItem>
-                  {isReadOnly && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                        {isOwner
-                          ? "Mode lecture seule · Renouvelez votre abonnement"
-                          : "Mode lecture seule · Contactez l'administrateur"}
-                      </div>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                )}
+                {updateTask && !isLocked && (
+                  <CardTagPopover
+                    task={task}
+                    updateTask={updateTask}
+                    workspaceId={workspaceId}
+                    allBoardTags={allBoardTags}
+                    isOpen={tagPopoverOpen}
+                    onOpenChange={handleTagPopoverChange}
+                  />
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                    >
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    {canEdit && (
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.stopPropagation();
+                          onEdit(task);
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
+                        }}
+                        disabled={isLocked}
+                        className="cursor-pointer"
+                      >
+                        <Edit className="mr-2 h-3.5 w-3.5" />
+                        Modifier
+                      </DropdownMenuItem>
+                    )}
+                    {canDelete && (
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeleteClick(e);
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
+                        }}
+                        disabled={isReadOnly}
+                        variant="destructive"
+                        className="cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-3 w-3" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    )}
+                    {isReadOnly && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                          {isOwner
+                            ? "Mode lecture seule · Renouvelez votre abonnement"
+                            : "Mode lecture seule · Contactez l'administrateur"}
+                        </div>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
             {/* Titre */}
             {isEditingTitle ? (
@@ -841,7 +855,7 @@ const TaskCard = memo(
                 <TimerDisplay timeTracking={task.timeTracking} />
 
                 {/* Avatars avec popover assignation */}
-                {updateTask && !isReadOnly ? (
+                {updateTask && !isLocked ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -938,7 +952,7 @@ const TaskCard = memo(
                 )}
 
                 {/* Date avec popover calendrier */}
-                {updateTask && !isReadOnly ? (
+                {updateTask && !isLocked ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -1036,7 +1050,7 @@ const TaskCard = memo(
                 )}
 
                 {/* Priorité avec popover */}
-                {updateTask && !isReadOnly ? (
+                {updateTask && !isLocked ? (
                   <Popover
                     onOpenChange={(open) => {
                       if (!open) lockInteraction();
@@ -1222,6 +1236,8 @@ const TaskCard = memo(
       pt.claudeWorkingSince === nt.claudeWorkingSince &&
       pt.claudeCodingSince === nt.claudeCodingSince &&
       prevProps.isDragging === nextProps.isDragging &&
+      prevProps.canEdit === nextProps.canEdit &&
+      prevProps.canDelete === nextProps.canDelete &&
       (pt.tags === nt.tags ||
         (pt.tags?.length ?? 0) === (nt.tags?.length ?? 0)) &&
       (pt.checklist === nt.checklist ||

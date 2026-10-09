@@ -21,6 +21,7 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useQuotes, useQuoteBalances } from "@/src/graphql/quoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
@@ -36,6 +37,14 @@ function QuotesContent() {
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
+
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
+  // Paramètres des documents : paramètres de l'entreprise (« orgSettings »)
+  const { canDo, isReady } = useMyPermissions();
+  const canImportQuotes = !isReady || canDo("importedQuotes", "import");
+  const canEditSettings = !isReady || canDo("orgSettings", "edit");
+  // Bouton « Envoyer au client » du toast affiché après une création
+  const canSendQuotes = !isReady || canDo("quotes", "send");
 
   // Toast manager et modal d'envoi pour les nouveaux devis
   const toastManager = useToastManager();
@@ -57,14 +66,15 @@ function QuotesContent() {
             title: "Devis créé avec succès",
             description: `Devis ${quoteData.number} créé`,
             timeout: 10000,
-            actionProps: quoteData.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => {
-                    setShowSendEmailModal(true);
-                  },
-                }
-              : undefined,
+            actionProps:
+              quoteData.clientEmail && canSendQuotes
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => {
+                      setShowSendEmailModal(true);
+                    },
+                  }
+                : undefined,
           });
 
           // Supprimer les données du sessionStorage
@@ -74,7 +84,7 @@ function QuotesContent() {
         }
       }
     }
-  }, [toastManager]);
+  }, [toastManager, canSendQuotes]);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -119,17 +129,24 @@ function QuotesContent() {
               <h1 className="text-2xl font-medium mb-2">Devis clients</h1>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
-              <Button variant="outline" onClick={() => setTriggerImport(true)}>
-                <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                Importer
-              </Button>
+              {canEditSettings && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsSettingsOpen(true)}
+                >
+                  <Settings className="w-3.5 h-3.5" aria-hidden="true" />
+                </Button>
+              )}
+              {canImportQuotes && (
+                <Button
+                  variant="outline"
+                  onClick={() => setTriggerImport(true)}
+                >
+                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                  Importer
+                </Button>
+              )}
               <QuoteExportButton quotes={quotes} iconOnly={false} />
               <PermissionButton
                 requiresActiveSubscription
@@ -138,6 +155,7 @@ function QuotesContent() {
                 variant="primary"
                 onClick={handleNewQuote}
                 className="cursor-pointer"
+                hideIfNoAccess={true}
                 tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
               >
                 <Plus size={14} strokeWidth={2} aria-hidden="true" />
@@ -241,14 +259,16 @@ function QuotesContent() {
                 <h1 className="text-2xl font-medium mb-1">Devis</h1>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
+                {canEditSettings && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                )}
                 <PermissionButton
                   requiresActiveSubscription
                   resource="quotes"

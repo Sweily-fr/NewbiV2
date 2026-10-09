@@ -18,6 +18,7 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "@/src/components/ui/sonner";
 import { CREATE_BOARD } from "@/src/graphql/kanbanQueries";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export default function NewKanbanPage() {
   const router = useRouter();
@@ -27,24 +28,19 @@ export default function NewKanbanPage() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateKanban = !isReady || canDo("kanban", "create");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
   });
 
   const [createBoard, { loading }] = useMutation(CREATE_BOARD, {
-    onCompleted: async (data) => {
-      try {
-        // Créer les colonnes par défaut
-        await createDefaultColumns(data.createBoard.id);
-        toast.success("Tableau créé avec succès");
-        router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
-      } catch (error) {
-        console.error("Error in onCompleted:", error);
-        // Même si les colonnes échouent, on redirige vers le tableau
-        toast.success("Tableau créé avec succès");
-        router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
-      }
+    onCompleted: (data) => {
+      // Colonnes par défaut créées par l'API avec le tableau
+      toast.success("Tableau créé avec succès");
+      router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
     },
     onError: (error) => {
       toast.error("Erreur lors de la création du tableau");
@@ -56,6 +52,8 @@ export default function NewKanbanPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Rôle sans écriture : pas de création (Entrée dans le formulaire)
+    if (!canCreateKanban) return;
 
     if (!formData.title.trim()) {
       toast.error("Le titre est requis");
@@ -160,21 +158,24 @@ export default function NewKanbanPage() {
               >
                 Annuler
               </Button>
-              <Button
-                type="submit"
-                disabled={isReadOnly || loading || !formData.title.trim()}
-                title={readOnlyTooltip}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                {loading ? (
-                  <>
-                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                    Création...
-                  </>
-                ) : (
-                  "Créer le tableau"
-                )}
-              </Button>
+              {/* Masqué si le rôle ne permet pas de créer */}
+              {canCreateKanban && (
+                <Button
+                  type="submit"
+                  disabled={isReadOnly || loading || !formData.title.trim()}
+                  title={readOnlyTooltip}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? (
+                    <>
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      Création...
+                    </>
+                  ) : (
+                    "Créer le tableau"
+                  )}
+                </Button>
+              )}
             </div>
           </form>
         </CardContent>

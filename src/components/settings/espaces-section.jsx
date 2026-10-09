@@ -14,6 +14,7 @@ import {
   User,
   KeyRound,
   Users,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -73,8 +74,18 @@ import { Separator } from "@/src/components/ui/separator";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { toast } from "@/src/components/ui/sonner";
+import { useMutation } from "@apollo/client";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import {
+  roleBadgeStyle,
+  useOrganizationRoles,
+} from "@/src/hooks/useOrganizationRoles";
+import { TRANSFER_ORGANIZATION_OWNERSHIP } from "@/src/graphql/organizationRoleQueries";
+import { invalidateFullOrganizationCache } from "@/src/lib/full-organization-cache";
 
-export default function EspacesSection({ canManageOrgSettings = true }) {
+export default function EspacesSection() {
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [members, setMembers] = useState([]);
@@ -96,9 +107,20 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
   const [memberToChangeRole, setMemberToChangeRole] = useState(null);
   const [selectedNewRole, setSelectedNewRole] = useState("");
+  const [memberToPromote, setMemberToPromote] = useState(null);
 
   const { data: session } = useSession();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const { workspaceId } = useWorkspace();
+  const { canDo, refetch: refetchMyPermissions } = useMyPermissions();
+  const {
+    roles: organizationRoles,
+    getRoleLabel,
+    refetch: refetchRoles,
+  } = useOrganizationRoles(selectedOrg?.id, { skip: !selectedOrg });
+  const [transferOwnership, { loading: transferring }] = useMutation(
+    TRANSFER_ORGANIZATION_OWNERSHIP,
+  );
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
@@ -349,37 +371,45 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     }
   };
 
-  const getRoleBadgeStyle = (role) => {
-    switch (role) {
-      case "admin":
-        return "bg-blue-100 border-blue-300 text-blue-800 font-normal";
-      case "member":
-        return "bg-gray-100 border-gray-300 text-gray-800 font-normal";
-      case "viewer":
-        return "bg-orange-100 border-orange-300 text-orange-800 font-normal";
-      case "accountant":
-        return "bg-purple-100 border-purple-300 text-purple-800 font-normal";
-      case "owner":
-        return "bg-green-50 border-green-200 text-green-600 font-normal";
-      default:
-        return "bg-gray-100 border-gray-300 text-gray-800 font-normal";
-    }
-  };
+  // Droit de gérer les membres de l'espace ouvert : grille du rôle pour
+  // l'espace actif, super admin seulement pour un autre espace (Better Auth
+  // revérifie côté serveur dans tous les cas)
+  const myMembership = members.find(
+    (m) => m.type === "member" && m.email === session?.user?.email,
+  );
+  const isSelectedOrgActive = Boolean(
+    selectedOrg && selectedOrg.id === workspaceId,
+  );
+  const iAmOwner = myMembership?.role === "owner";
+  // Cases de la page « Membres » du rôle : inviter, changer les rôles,
+  // retirer (annuler une invitation = inviter)
+  const canTeam = (action) =>
+    isSelectedOrgActive ? canDo("team", action) : iAmOwner;
+  const canInviteMembers = canTeam("invite");
+  const canChangeRoles = canTeam("changeRole");
+  const canRemoveMembers = canTeam("remove");
+  const canManageOrgSettings =
+    canInviteMembers || canChangeRoles || canRemoveMembers;
+  const assignableRoles = organizationRoles.filter((r) => r.key !== "owner");
 
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case "admin":
-        return "Administrateur";
-      case "member":
-        return "Membre";
-      case "viewer":
-        return "Lecteur";
-      case "accountant":
-        return "Comptable";
-      case "owner":
-        return "Propriétaire";
-      default:
-        return role;
+  const confirmTransferOwnership = async () => {
+    if (!memberToPromote) return;
+    try {
+      await transferOwnership({
+        variables: { memberId: memberToPromote.id },
+        context: { headers: { "x-organization-id": selectedOrg?.id } },
+      });
+      toast.success(
+        `${memberToPromote.name || memberToPromote.email} est maintenant super admin`,
+      );
+      invalidateFullOrganizationCache(selectedOrg?.id);
+      refetchMyPermissions?.();
+      refetchRoles?.();
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (error) {
+      toast.error(error?.message || "Impossible de transférer le rôle");
+    } finally {
+      setMemberToPromote(null);
     }
   };
 
@@ -389,7 +419,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
   // Gérer le changement de rôle d'un membre
   const handleRoleChange = async (member, newRole) => {
-    if (!canManageOrgSettings) {
+    if (!canChangeRoles) {
       toast.error("Vous n'avez pas la permission de modifier les rôles");
       return;
     }
@@ -468,18 +498,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             </p>
             <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
-
-          {!canManageOrgSettings && (
-            <div className="mt-4 mb-6">
-              <Callout type="warning" noMargin>
-                <p>
-                  Vous n'avez pas la permission de modifier les paramètres de
-                  l'organisation. Seuls les <strong>owners</strong> et{" "}
-                  <strong>admins</strong> peuvent effectuer ces modifications.
-                </p>
-              </Callout>
-            </div>
-          )}
 
           {/* Organizations Table */}
           <div>
@@ -631,6 +649,17 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
+          {!canManageOrgSettings && myMembership && (
+            <div className="mb-4">
+              <Callout type="info" noMargin>
+                <p>
+                  Votre rôle ne permet pas d'inviter ni de gérer les membres de
+                  cet espace.
+                </p>
+              </Callout>
+            </div>
+          )}
+
           {/* Search + Filter + Invite */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 mb-4">
             <div className="relative flex-1">
@@ -685,12 +714,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             <Button
               type="button"
               onClick={() => setInviteDialogOpen(true)}
-              disabled={!canManageOrgSettings || isReadOnly}
+              disabled={!canInviteMembers || isReadOnly}
               className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
               title={
                 readOnlyTooltip ||
-                (!canManageOrgSettings
-                  ? "Seuls les owners et admins peuvent ajouter des membres"
+                (!canInviteMembers
+                  ? "Votre rôle ne permet pas d'inviter des membres"
                   : "")
               }
             >
@@ -786,10 +815,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={cn(
-                              "font-normal",
-                              getRoleBadgeStyle(member.role),
-                            )}
+                            className={roleBadgeStyle(member.role)}
                           >
                             {updatingRoleForMember === member.id
                               ? "..."
@@ -802,45 +828,66 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          {canManageOrgSettings && member.role !== "owner" && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 cursor-pointer"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  className="cursor-pointer"
-                                  disabled={isReadOnly}
-                                  title={readOnlyTooltip}
-                                  onClick={() => {
-                                    if (isReadOnly) return;
-                                    setMemberToChangeRole(member);
-                                    setSelectedNewRole(member.role);
-                                    setRoleChangeDialogOpen(true);
-                                  }}
-                                >
-                                  <KeyRound className="h-4 w-4 mr-2" />
-                                  Changer le rôle
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
-                                  onClick={() => handleDeleteMember(member)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  {member.type === "invitation"
-                                    ? "Annuler l'invitation"
-                                    : "Retirer de l'espace"}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
+                          {canManageOrgSettings &&
+                            member.role !== "owner" &&
+                            !isCurrentUser && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 cursor-pointer"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {canChangeRoles && (
+                                    <DropdownMenuItem
+                                      className="cursor-pointer"
+                                      disabled={isReadOnly}
+                                      title={readOnlyTooltip}
+                                      onClick={() => {
+                                        if (isReadOnly) return;
+                                        setMemberToChangeRole(member);
+                                        setSelectedNewRole(member.role);
+                                        setRoleChangeDialogOpen(true);
+                                      }}
+                                    >
+                                      <KeyRound className="h-4 w-4 mr-2" />
+                                      Changer le rôle
+                                    </DropdownMenuItem>
+                                  )}
+                                  {iAmOwner &&
+                                    isSelectedOrgActive &&
+                                    member.type === "member" && (
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() =>
+                                          setMemberToPromote(member)
+                                        }
+                                      >
+                                        <Crown className="h-4 w-4 mr-2" />
+                                        Transférer le rôle de super admin
+                                      </DropdownMenuItem>
+                                    )}
+                                  {(member.type === "invitation"
+                                    ? canInviteMembers
+                                    : canRemoveMembers) && (
+                                    <DropdownMenuItem
+                                      className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
+                                      onClick={() => handleDeleteMember(member)}
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      {member.type === "invitation"
+                                        ? "Annuler l'invitation"
+                                        : "Retirer de l'espace"}
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                         </TableCell>
                       </TableRow>
                     );
@@ -918,9 +965,16 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                     <SelectValue>{getRoleLabel(selectedNewRole)}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {["admin", "member", "accountant", "viewer"].map((r) => (
-                      <SelectItem key={r} value={r}>
-                        {getRoleLabel(r)}
+                    {assignableRoles.map((r) => (
+                      <SelectItem key={r.key} value={r.key}>
+                        <div className="flex flex-col items-start">
+                          <span>{r.name}</span>
+                          {r.description && (
+                            <span className="text-xs text-muted-foreground">
+                              {r.description}
+                            </span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -972,6 +1026,40 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Transfert du rôle de super admin */}
+      <AlertDialog
+        open={Boolean(memberToPromote)}
+        onOpenChange={(open) => !open && setMemberToPromote(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Transférer le rôle de super admin
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold">
+                {memberToPromote?.name || memberToPromote?.email}
+              </span>{" "}
+              deviendra super admin de l'espace : gestion des membres, des rôles
+              et de l'abonnement. Vous deviendrez administrateur. Seul le
+              nouveau super admin pourra vous rendre ce rôle.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmTransferOwnership}
+              disabled={transferring}
+              className="cursor-pointer"
+            >
+              Transférer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

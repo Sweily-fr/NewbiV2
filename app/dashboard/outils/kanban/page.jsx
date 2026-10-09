@@ -9,6 +9,7 @@ import {
   KanbanTableSkeleton,
 } from "./components/kanban-list-skeleton";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   Plus,
   Trash2,
@@ -122,6 +123,13 @@ function KanbanPageContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canCreateKanban = !isReady || canDo("kanban", "create");
+  const canEditKanban = !isReady || canDo("kanban", "edit");
+  const canDeleteKanban = !isReady || canDo("kanban", "delete");
+  // Sélecteur de client réservé aux rôles qui voient les clients
+  const canReadClients = !isReady || canRead("clients");
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const [boardPreview, setBoardPreview] = React.useState(null);
@@ -156,7 +164,8 @@ function KanbanPageContent() {
     }
   }, []);
 
-  const { clients } = useClients({ limit: 200 });
+  // Sans droit sur les clients : requête ignorée
+  const { clients } = useClients({ limit: 200, skip: !canReadClients });
   const { workspaceId } = useWorkspace();
   const [toggleFavoriteMutation] = useMutation(TOGGLE_BOARD_FAVORITE);
   const handleToggleFavorite = (boardId) => {
@@ -219,8 +228,8 @@ function KanbanPageContent() {
     uniqueCategories,
   } = useKanbanBoardsTable({
     data: boards,
-    onEdit: handleEditClick,
-    onDelete: (board) => setBoardToDelete(board),
+    onEdit: canEditKanban ? handleEditClick : undefined,
+    onDelete: canDeleteKanban ? (board) => setBoardToDelete(board) : undefined,
     onPreview: (board) => setBoardPreview(board),
     formatDate,
     clientFilter,
@@ -371,17 +380,20 @@ function KanbanPageContent() {
               }
             }}
           >
-            <DialogTrigger asChild>
-              <Button
-                variant="primary"
-                className="cursor-pointer"
-                disabled={isReadOnly}
-                title={readOnlyTooltip}
-              >
-                <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                Nouvelle liste
-              </Button>
-            </DialogTrigger>
+            {/* Masqué si le rôle ne permet pas de créer */}
+            {canCreateKanban && (
+              <DialogTrigger asChild>
+                <Button
+                  variant="primary"
+                  className="cursor-pointer"
+                  disabled={isReadOnly}
+                  title={readOnlyTooltip}
+                >
+                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                  Nouvelle liste
+                </Button>
+              </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[520px] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
               <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
                 <form onSubmit={handleCreateBoard}>
@@ -483,7 +495,7 @@ function KanbanPageContent() {
                           <Label className="text-xs text-muted-foreground">
                             Template
                           </Label>
-                          {templates.length > 0 && (
+                          {templates.length > 0 && canDeleteKanban && (
                             <Popover>
                               <PopoverTrigger asChild>
                                 <Button
@@ -564,34 +576,36 @@ function KanbanPageContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs text-muted-foreground">
-                          Client
-                        </Label>
-                        <Select
-                          value={formData.clientId || "none"}
-                          onValueChange={(value) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              clientId: value === "none" ? null : value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="w-full min-w-0">
-                            <SelectValue placeholder="Aucun" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">Aucun client</SelectItem>
-                            {clients.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>
-                                {c.type === "INDIVIDUAL"
-                                  ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                                  : c.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {canReadClients && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">
+                            Client
+                          </Label>
+                          <Select
+                            value={formData.clientId || "none"}
+                            onValueChange={(value) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                clientId: value === "none" ? null : value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="w-full min-w-0">
+                              <SelectValue placeholder="Aucun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Aucun client</SelectItem>
+                              {clients.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.type === "INDIVIDUAL"
+                                    ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
+                                    : c.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -777,7 +791,7 @@ function KanbanPageContent() {
 
         <div className="flex items-center gap-2">
           {/* Bulk delete */}
-          {selectedRows.length > 0 && (
+          {selectedRows.length > 0 && canDeleteKanban && (
             <AlertDialog
               open={isDeleteMultipleOpen}
               onOpenChange={setIsDeleteMultipleOpen}
@@ -867,13 +881,17 @@ function KanbanPageContent() {
                 Créez votre première liste pour organiser vos tâches et projets
               </p>
             </div>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              variant="default"
-              className="mx-auto flex items-center gap-2 font-normal"
-            >
-              Créer votre première liste
-            </Button>
+            {canCreateKanban && (
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                variant="default"
+                className="mx-auto flex items-center gap-2 font-normal"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
+              >
+                Créer votre première liste
+              </Button>
+            )}
           </div>
         </div>
       ) : viewMode === "grid" ? (
@@ -918,46 +936,54 @@ function KanbanPageContent() {
                           className={`h-3.5 w-3.5 ${isFav ? "text-yellow-400 fill-yellow-400" : ""}`}
                         />
                       </button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                      {(canEditKanban || canDeleteKanban) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-44"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-44"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditClick(board, e);
-                            }}
-                            className="gap-2 cursor-pointer"
-                          >
-                            <Edit className="h-3.5 w-3.5" />
-                            Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setBoardToDelete(board);
-                            }}
-                            variant="destructive"
-                            className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            {canEditKanban && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditClick(board, e);
+                                }}
+                                className="gap-2 cursor-pointer"
+                              >
+                                <Edit className="h-3.5 w-3.5" />
+                                Modifier
+                              </DropdownMenuItem>
+                            )}
+                            {canEditKanban && canDeleteKanban && (
+                              <DropdownMenuSeparator />
+                            )}
+                            {canDeleteKanban && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setBoardToDelete(board);
+                                }}
+                                variant="destructive"
+                                className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </div>
 
@@ -1341,35 +1367,37 @@ function KanbanPageContent() {
                   </div>
                 </div>
 
-                {/* Client */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">
-                    Client
-                  </Label>
-                  <Select
-                    value={formData.clientId || "none"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        clientId: value === "none" ? null : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full min-w-0">
-                      <SelectValue placeholder="Aucun client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Aucun client</SelectItem>
-                      {clients.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.type === "INDIVIDUAL"
-                            ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                            : c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Client (masqué sans droit sur les clients) */}
+                {canReadClients && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      Client
+                    </Label>
+                    <Select
+                      value={formData.clientId || "none"}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          clientId: value === "none" ? null : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full min-w-0">
+                        <SelectValue placeholder="Aucun client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Aucun client</SelectItem>
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.type === "INDIVIDUAL"
+                              ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
+                              : c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               {/* Footer */}

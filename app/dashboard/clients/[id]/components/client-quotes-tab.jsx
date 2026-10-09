@@ -6,6 +6,7 @@ import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { ClipboardList, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
 import {
   QUOTE_STATUS_LABELS,
@@ -40,6 +41,10 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const newDocumentHref = `/dashboard/outils/devis/new?clientId=${clientId}`;
+  const { canDo, isReady } = useMyPermissions();
+  // Bouton « Nouveau » = action « create » (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canCreateQuotes = !isReady || canDo("quotes", "create");
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -91,15 +96,17 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
               Ce client n'a pas encore de devis.
             </EmptyDescription>
           </EmptyHeader>
-          <Button
-            variant="outline"
-            className="mt-4"
-            {...prefetchIntent(newDocumentHref)}
-            onClick={() => router.push(newDocumentHref)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouveau devis
-          </Button>
+          {canCreateQuotes && (
+            <Button
+              variant="outline"
+              className="mt-4"
+              {...prefetchIntent(newDocumentHref)}
+              onClick={() => router.push(newDocumentHref)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nouveau devis
+            </Button>
+          )}
         </Empty>
       </div>
     );
@@ -111,14 +118,16 @@ export default function ClientQuotesTab({ quotes = [], clientId }) {
         <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
           Devis
         </h3>
-        <Button
-          variant="outline"
-          {...prefetchIntent(newDocumentHref)}
-          onClick={() => router.push(newDocumentHref)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nouveau devis
-        </Button>
+        {canCreateQuotes && (
+          <Button
+            variant="outline"
+            {...prefetchIntent(newDocumentHref)}
+            onClick={() => router.push(newDocumentHref)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nouveau devis
+          </Button>
+        )}
       </div>
 
       <div className="overflow-auto">

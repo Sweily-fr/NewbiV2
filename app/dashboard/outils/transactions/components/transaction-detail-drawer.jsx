@@ -91,6 +91,7 @@ import {
   getStandaloneReceipts,
 } from "./transactions/utils/receiptFiles";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { getNumberFormat } from "@/src/lib/intl-cache";
@@ -203,6 +204,20 @@ export function TransactionDetailDrawer({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée). En lecture seule, aucune action n'est affichée :
+  //   - edit : catégorie, description, transaction manuelle ;
+  //   - receipts : déposer / retirer un justificatif, confirmer la facture
+  //     d'achat proposée ;
+  //   - reconcile : rattacher / détacher des factures, ignorer / réactiver.
+  // Rattacher ou détacher une facture d'achat relève aussi de l'action
+  // « reconcile » des factures d'achat côté API.
+  const canEditBanking = !isReady || canDo("banking", "edit");
+  const canManageReceipts = !isReady || canDo("banking", "receipts");
+  const canReconcile = !isReady || canDo("banking", "reconcile");
+  const canLinkPurchaseInvoices =
+    canReconcile && (!isReady || canDo("purchaseInvoices", "reconcile"));
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -519,9 +534,11 @@ export function TransactionDetailDrawer({
   const canPickInvoice =
     transaction?.amount > 0 &&
     (!isManualTransaction || transaction?.type === "INCOME");
-  // Rattachement d'une facture d'achat existante : dépenses uniquement.
+  // Rattachement d'une facture d'achat existante : dépenses uniquement, et
+  // seulement si le rôle peut rattacher (transactions et factures d'achat).
   const canPickPurchaseInvoice =
     !isCreateMode &&
+    canLinkPurchaseInvoices &&
     (transaction?.amount < 0 ||
       (isManualTransaction && transaction?.type === "EXPENSE"));
   // Transaction exclue du rapprochement par une action "ignorer" : proposer
@@ -1372,7 +1389,7 @@ export function TransactionDetailDrawer({
                         type={formData.type}
                       />
                     </div>
-                  ) : (
+                  ) : canEditBanking ? (
                     <div className="mb-1">
                       <CategorySearchSelect
                         value={viewCategoryForm}
@@ -1380,6 +1397,11 @@ export function TransactionDetailDrawer({
                         type={transaction?.amount > 0 ? "INCOME" : "EXPENSE"}
                       />
                     </div>
+                  ) : (
+                    // Rôle en lecture seule : catégorie affichée sans sélecteur
+                    <p className="mb-1 text-sm font-normal text-muted-foreground">
+                      {categoryConfig.label}
+                    </p>
                   )}
 
                   {/* Montant — lecture seule (issu du flux bancaire Bridge) */}
@@ -1546,24 +1568,36 @@ export function TransactionDetailDrawer({
             </div>
 
             {/* Description : seul champ texte modifiable d'une transaction
-                bancaire (enregistrée au blur) */}
-            {!isCreateMode && isBankTransaction && !isEditingForm && (
-              <div className="space-y-3">
-                <p className="text-sm font-normal text-muted-foreground">
-                  Description
-                </p>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => handleChange("description")(e.target.value)}
-                  onBlur={handleDescriptionSave}
-                  placeholder="Description de la transaction"
-                  rows={3}
-                  className="rounded-xl"
-                  disabled={isReadOnly}
-                  title={readOnlyTooltip}
-                />
-              </div>
-            )}
+                bancaire (enregistrée au blur). Rôle en lecture seule : texte
+                simple, sans champ. */}
+            {!isCreateMode &&
+              isBankTransaction &&
+              !isEditingForm &&
+              (canEditBanking || formData.description) && (
+                <div className="space-y-3">
+                  <p className="text-sm font-normal text-muted-foreground">
+                    Description
+                  </p>
+                  {canEditBanking ? (
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        handleChange("description")(e.target.value)
+                      }
+                      onBlur={handleDescriptionSave}
+                      placeholder="Description de la transaction"
+                      rows={3}
+                      className="rounded-xl"
+                      disabled={isReadOnly}
+                      title={readOnlyTooltip}
+                    />
+                  ) : (
+                    <p className="text-sm text-foreground whitespace-pre-wrap break-words">
+                      {formData.description}
+                    </p>
+                  )}
+                </div>
+              )}
 
             {/* Référence bancaire brute (Bridge provider_description) :
                 conserve les références de virement (ex. numéros de facture)
@@ -1622,7 +1656,7 @@ export function TransactionDetailDrawer({
               </div>
 
               {/* Zone d'upload — large card dashed, toujours visible pour ajouter plusieurs justificatifs */}
-              {(isCreateMode || !isReadOnly) && (
+              {canManageReceipts && (isCreateMode || !isReadOnly) && (
                 <div
                   className={`relative flex flex-col items-center justify-center gap-3 px-6 py-8 rounded-lg cursor-pointer border border-dashed text-center transition-colors duration-[120ms] ${
                     dragActive
@@ -1729,7 +1763,9 @@ export function TransactionDetailDrawer({
                                 ? "À envoyer"
                                 : "Justificatif déposé"}
                             </span>
-                            {rcpt.proposal && onConfirmProposal ? (
+                            {rcpt.proposal &&
+                            onConfirmProposal &&
+                            canManageReceipts ? (
                               <div className="mt-2">
                                 {/* Mise de côté : plus d'étiquette d'alerte,
                                     mais la facture reste créable. */}
@@ -1760,19 +1796,21 @@ export function TransactionDetailDrawer({
                               onClick={() => togglePreviewReceipt(idx)}
                               label="Voir le justificatif"
                             />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveReceiptFile(rcpt);
-                                closePreview();
-                              }}
-                              title="Retirer"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canManageReceipts && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveReceiptFile(rcpt);
+                                  closePreview();
+                                }}
+                                title="Retirer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1834,31 +1872,33 @@ export function TransactionDetailDrawer({
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              const result = await unlinkTransaction(
-                                transaction.id,
-                                inv.id,
-                              );
-                              if (result.success) {
-                                toast.success("Facture détachée");
-                                onRefresh?.();
-                              } else {
-                                toast.error(result.error || "Erreur");
+                        {canReconcile && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const result = await unlinkTransaction(
+                                  transaction.id,
+                                  inv.id,
+                                );
+                                if (result.success) {
+                                  toast.success("Facture détachée");
+                                  onRefresh?.();
+                                } else {
+                                  toast.error(result.error || "Erreur");
+                                }
+                              } catch (err) {
+                                toast.error("Erreur lors du détachement");
                               }
-                            } catch (err) {
-                              toast.error("Erreur lors du détachement");
-                            }
-                          }}
-                          title="Détacher la facture"
-                        >
-                          <Unlink className="h-4 w-4" />
-                        </Button>
+                            }}
+                            title="Détacher la facture"
+                          >
+                            <Unlink className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                     {transaction.reconciliationDate && (
@@ -1929,22 +1969,24 @@ export function TransactionDetailDrawer({
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          const result = await unlinkImportedInvoice(
-                            transaction.id,
-                            inv.id,
-                          );
-                          if (result?.success) onRefresh?.();
-                        }}
-                        title="Détacher la facture importée"
-                      >
-                        <Unlink className="h-4 w-4" />
-                      </Button>
+                      {canReconcile && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const result = await unlinkImportedInvoice(
+                              transaction.id,
+                              inv.id,
+                            );
+                            if (result?.success) onRefresh?.();
+                          }}
+                          title="Détacher la facture importée"
+                        >
+                          <Unlink className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -2066,27 +2108,30 @@ export function TransactionDetailDrawer({
                           >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleUnlinkPurchaseInvoice(pi);
-                            }}
-                            disabled={
-                              isReadOnly || unlinkingPurchaseInvoiceId !== null
-                            }
-                            title={
-                              readOnlyTooltip || "Détacher la facture d'achat"
-                            }
-                          >
-                            {unlinkingPurchaseInvoiceId === pi.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Unlink className="h-4 w-4" />
-                            )}
-                          </Button>
+                          {canLinkPurchaseInvoices && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnlinkPurchaseInvoice(pi);
+                              }}
+                              disabled={
+                                isReadOnly ||
+                                unlinkingPurchaseInvoiceId !== null
+                              }
+                              title={
+                                readOnlyTooltip || "Détacher la facture d'achat"
+                              }
+                            >
+                              {unlinkingPurchaseInvoiceId === pi.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Unlink className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2228,20 +2273,22 @@ export function TransactionDetailDrawer({
                     Rapprochement ignoré pour cette transaction
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 px-2 text-xs shrink-0"
-                  onClick={handleUnignoreReconciliation}
-                  disabled={isReadOnly || isUnignoring}
-                  title={readOnlyTooltip}
-                >
-                  {isUnignoring ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    "Réactiver"
-                  )}
-                </Button>
+                {canReconcile && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs shrink-0"
+                    onClick={handleUnignoreReconciliation}
+                    disabled={isReadOnly || isUnignoring}
+                    title={readOnlyTooltip}
+                  >
+                    {isUnignoring ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      "Réactiver"
+                    )}
+                  </Button>
+                )}
               </div>
             )}
 
@@ -2251,6 +2298,7 @@ export function TransactionDetailDrawer({
                 d'argent sans suggestion, un sélecteur avec recherche permet le
                 rattachement manuel. */}
             {!isCreateMode &&
+              canReconcile &&
               !isIgnoredReconciliation &&
               (matchingInvoices.length > 0 || canPickInvoice) && (
                 <div className="space-y-3">
@@ -2494,7 +2542,7 @@ export function TransactionDetailDrawer({
                 >
                   Annuler
                 </Button>
-                {(isCreateMode || isEditMode) && (
+                {(isCreateMode || isEditMode) && canEditBanking && (
                   <Button
                     variant="primary"
                     className="flex-1 font-normal gap-1.5"

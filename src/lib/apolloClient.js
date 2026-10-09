@@ -289,7 +289,10 @@ const authLink = setContext(async (_, { headers }) => {
   const organizationId = _workspaceReady ? _confirmedOrgId : null;
   const userRole = _workspaceReady ? localStorage.getItem("user_role") : null;
 
-  if (organizationId) {
+  // Une requête peut viser un autre espace dont l'utilisateur est membre
+  // (ex. rôles d'un espace ouvert dans Paramètres > Membres) : l'API
+  // vérifie l'appartenance, l'en-tête explicite est conservé.
+  if (organizationId && !headers?.["x-organization-id"]) {
     requestHeaders["x-organization-id"] = organizationId;
   }
   if (userRole) {

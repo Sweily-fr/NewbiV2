@@ -50,6 +50,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useSignatureV2 } from "../hooks/useSignatureV2";
 import {
   DELETE_SIGNATURE_V2,
@@ -209,6 +210,13 @@ export default function SignatureEditor({ id }) {
   const searchParams = useSearchParams();
   const isNew = searchParams?.get("new") === "1";
   const { isReadOnly: subscriptionReadOnly } = useSubscriptionAccess();
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée) : modifier et définir par défaut = « edit »,
+  // dupliquer = « create », supprimer = « delete »
+  const canEditSignatures = !isReady || canDo("signatures", "edit");
+  const canCreateSignatures = !isReady || canDo("signatures", "create");
+  const canDeleteSignatures = !isReady || canDo("signatures", "delete");
 
   const {
     sig,
@@ -233,8 +241,10 @@ export default function SignatureEditor({ id }) {
     initialRender,
   } = useSignatureV2(id);
   // Un refus définitif d'enregistrement (signature supprimée, rôle,
-  // abonnement) met l'éditeur en lecture seule, comme un abonnement expiré
-  const isReadOnly = subscriptionReadOnly || Boolean(saveBlocked);
+  // abonnement) met l'éditeur en lecture seule, comme un abonnement expiré ;
+  // un rôle sans droit d'écriture l'ouvre directement en consultation
+  const isReadOnly =
+    subscriptionReadOnly || !canEditSignatures || Boolean(saveBlocked);
   // Signature ouverte juste après sa création et pas encore modifiée (ni
   // texte ni image) : choisir la personne n'y demande pas de confirmation.
   // Valeurs du premier affichage : l'adresse perd aussitôt ?new=1.
@@ -1238,38 +1248,43 @@ export default function SignatureEditor({ id }) {
               >
                 <LayoutTemplate size={14} />
                 Modèle <span className="font-medium text-foreground">{reference.name}</span>
-                <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden dark:text-[#8b7fff]">
-                  Changer
-                  <ChevronRight size={12} />
-                </span>
+                {canEditSignatures && (
+                  <span className="inline-flex items-center text-xs text-[#5b4fff] opacity-0 transition-opacity group-hover:opacity-100 @max-[812px]:hidden dark:text-[#8b7fff]">
+                    Changer
+                    <ChevronRight size={12} />
+                  </span>
+                )}
               </button>
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <div className="mr-1 flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
-                onClick={undo}
-                disabled={!canUndo || isReadOnly}
-                aria-label="Annuler"
-                title={`Annuler (${undoKeys().undo})`}
-              >
-                <Undo2 size={16} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
-                onClick={redo}
-                disabled={!canRedo || isReadOnly}
-                aria-label="Rétablir"
-                title={`Rétablir (${undoKeys().redo})`}
-              >
-                <Redo2 size={16} />
-              </Button>
-            </div>
+            {/* Annuler / rétablir : rôles qui peuvent modifier */}
+            {canEditSignatures && (
+              <div className="mr-1 flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
+                  onClick={undo}
+                  disabled={!canUndo || isReadOnly}
+                  aria-label="Annuler"
+                  title={`Annuler (${undoKeys().undo})`}
+                >
+                  <Undo2 size={16} />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
+                  onClick={redo}
+                  disabled={!canRedo || isReadOnly}
+                  aria-label="Rétablir"
+                  title={`Rétablir (${undoKeys().redo})`}
+                >
+                  <Redo2 size={16} />
+                </Button>
+              </div>
+            )}
             <Button
               variant="outline"
               onClick={handleCopy}
@@ -1312,43 +1327,57 @@ export default function SignatureEditor({ id }) {
                 <span className="hidden @max-[812px]:inline">Installer</span>
               </Button>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
-                  aria-label="Plus d'actions"
-                >
-                  <MoreHorizontal size={16} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={handleSetDefault}
-                  disabled={sig.isDefault || isReadOnly}
-                >
-                  <Star size={14} />
-                  Définir par défaut
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleDuplicate}
-                  disabled={isReadOnly}
-                >
-                  <CopyPlus size={14} />
-                  Dupliquer
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setConfirmDelete(true)}
-                  disabled={isReadOnly}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Trash2 size={14} />
-                  Supprimer
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Actions selon le rôle : défaut (« edit »), copie
+                (« create »), supprimer (« delete ») */}
+            {(canEditSignatures || canCreateSignatures || canDeleteSignatures) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-9 w-9 p-0 cursor-pointer ${FOCUS_RING}`}
+                    aria-label="Plus d'actions"
+                  >
+                    <MoreHorizontal size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {canEditSignatures && (
+                    <DropdownMenuItem
+                      onClick={handleSetDefault}
+                      disabled={sig.isDefault || isReadOnly}
+                    >
+                      <Star size={14} />
+                      Définir par défaut
+                    </DropdownMenuItem>
+                  )}
+                  {/* isReadOnly inclut l'absence de « edit » : la copie et la
+                      suppression ne dépendent que de l'abonnement et d'un
+                      refus d'enregistrement */}
+                  {canCreateSignatures && (
+                    <DropdownMenuItem
+                      onClick={handleDuplicate}
+                      disabled={subscriptionReadOnly || Boolean(saveBlocked)}
+                    >
+                      <CopyPlus size={14} />
+                      Dupliquer
+                    </DropdownMenuItem>
+                  )}
+                  {(canEditSignatures || canCreateSignatures) &&
+                    canDeleteSignatures && <DropdownMenuSeparator />}
+                  {canDeleteSignatures && (
+                    <DropdownMenuItem
+                      onClick={() => setConfirmDelete(true)}
+                      disabled={subscriptionReadOnly || Boolean(saveBlocked)}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <Trash2 size={14} />
+                      Supprimer
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 

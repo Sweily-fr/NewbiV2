@@ -68,6 +68,7 @@ const PdfPreview = dynamic(
 );
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function PurchaseOrderSidebar({
@@ -78,6 +79,26 @@ export default function PurchaseOrderSidebar({
   isViewMode = false,
 }) {
   const router = useRouter();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditPurchaseOrders = !isReady || canDo("purchaseOrders", "edit");
+  // Changements de statut (dont la finalisation du brouillon) : action
+  // « status » des bons de commande
+  const canChangePurchaseOrderStatus =
+    !isReady || canDo("purchaseOrders", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizePurchaseOrders =
+    !isReady ||
+    canDo("purchaseOrders", "create") ||
+    canDo("purchaseOrders", "edit");
+  // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
+  const canReadQuotes = !isReady || canRead("quotes");
+  const canReadInvoices = !isReady || canRead("invoices");
+  // Conversion : action « convert » du BC et création de la facture
+  const canConvertPurchaseOrders =
+    !isReady || canDo("purchaseOrders", "convert");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
@@ -294,7 +315,10 @@ export default function PurchaseOrderSidebar({
   const hasLinkedInvoices =
     !!purchaseOrder.linkedInvoices && purchaseOrder.linkedInvoices.length > 0;
   const canConvertToInvoice =
-    (isValidated || isInProgress || isDelivered) && !hasLinkedInvoices;
+    (isValidated || isInProgress || isDelivered) &&
+    !hasLinkedInvoices &&
+    canConvertPurchaseOrders &&
+    canCreateInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
@@ -739,7 +763,7 @@ export default function PurchaseOrderSidebar({
           </div>
 
           {/* Devis lié (devis à l'origine de ce bon de commande) */}
-          {purchaseOrder.sourceQuote && (
+          {canReadQuotes && purchaseOrder.sourceQuote && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -763,7 +787,8 @@ export default function PurchaseOrderSidebar({
           )}
 
           {/* Linked Invoices */}
-          {purchaseOrder.linkedInvoices &&
+          {canReadInvoices &&
+            purchaseOrder.linkedInvoices &&
             purchaseOrder.linkedInvoices.length > 0 && (
               <>
                 <Separator />
@@ -791,107 +816,117 @@ export default function PurchaseOrderSidebar({
             )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="border-t px-6 py-4 space-y-3">
-          {/* DRAFT: Éditer + Créer le bon de commande (paire) */}
-          {isDraft && (
-            <div className="flex gap-2">
+        {/* Action Buttons (masqués si le rôle ne permet aucune action) */}
+        {(canEditPurchaseOrders ||
+          canChangePurchaseOrderStatus ||
+          canFinalizePurchaseOrders ||
+          canConvertToInvoice) && (
+          <div className="border-t px-6 py-4 space-y-3">
+            {/* DRAFT: Éditer + Créer le bon de commande (paire) */}
+            {isDraft &&
+              (canEditPurchaseOrders || canFinalizePurchaseOrders) && (
+                <div className="flex gap-2">
+                  {canEditPurchaseOrders && (
+                    <Button
+                      variant="outline"
+                      onClick={handleEdit}
+                      disabled={isLoading}
+                      className="flex-1 font-normal"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Éditer
+                    </Button>
+                  )}
+                  {canFinalizePurchaseOrders && (
+                    <Button
+                      onClick={handleConfirm}
+                      disabled={isLoading}
+                      className="flex-1 font-normal"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Créer le bon de commande
+                    </Button>
+                  )}
+                </div>
+              )}
+
+            {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full) */}
+            {isConfirmed && canChangePurchaseOrderStatus && (
+              <>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleRevertToDraft}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Repasser brouillon
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleValidate}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Valider
+                  </Button>
+                </div>
+                {canCancel && (
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isLoading}
+                    className="w-full font-normal"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Annuler le bon de commande
+                  </Button>
+                )}
+              </>
+            )}
+
+            {/* VALIDATED: Démarrer le traitement (single) */}
+            {isValidated && canChangePurchaseOrderStatus && (
+              <Button
+                variant="primary"
+                onClick={handleStartProgress}
+                disabled={isLoading}
+                className="w-full font-normal"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Démarrer le traitement
+              </Button>
+            )}
+
+            {/* IN_PROGRESS: Marquer comme livré (single) */}
+            {isInProgress && canChangePurchaseOrderStatus && (
+              <Button
+                variant="primary"
+                onClick={handleDeliver}
+                disabled={isLoading}
+                className="w-full font-normal"
+              >
+                <Truck className="h-4 w-4 mr-2" />
+                Marquer comme livré
+              </Button>
+            )}
+
+            {/* Convertir en facture - disponible pour VALIDATED, IN_PROGRESS, DELIVERED sans facture liée */}
+            {canConvertToInvoice && (
               <Button
                 variant="outline"
-                onClick={handleEdit}
+                onClick={handleConvertToInvoice}
                 disabled={isLoading}
-                className="flex-1 font-normal"
+                className="w-full font-normal"
               >
-                <Pencil className="h-4 w-4 mr-2" />
-                Éditer
+                <FileCheck className="h-4 w-4 mr-2" />
+                Convertir en facture
               </Button>
-              <Button
-                onClick={handleConfirm}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Créer le bon de commande
-              </Button>
-            </div>
-          )}
-
-          {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full) */}
-          {isConfirmed && (
-            <>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleRevertToDraft}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Repasser brouillon
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleValidate}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Valider
-                </Button>
-              </div>
-              {canCancel && (
-                <Button
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                  className="w-full font-normal"
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Annuler le bon de commande
-                </Button>
-              )}
-            </>
-          )}
-
-          {/* VALIDATED: Démarrer le traitement (single) */}
-          {isValidated && (
-            <Button
-              variant="primary"
-              onClick={handleStartProgress}
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Démarrer le traitement
-            </Button>
-          )}
-
-          {/* IN_PROGRESS: Marquer comme livré (single) */}
-          {isInProgress && (
-            <Button
-              variant="primary"
-              onClick={handleDeliver}
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <Truck className="h-4 w-4 mr-2" />
-              Marquer comme livré
-            </Button>
-          )}
-
-          {/* Convertir en facture - disponible pour VALIDATED, IN_PROGRESS, DELIVERED sans facture liée */}
-          {canConvertToInvoice && (
-            <Button
-              variant="outline"
-              onClick={handleConvertToInvoice}
-              disabled={isLoading}
-              className="w-full font-normal"
-            >
-              <FileCheck className="h-4 w-4 mr-2" />
-              Convertir en facture
-            </Button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </motion.div>
     </>
   );

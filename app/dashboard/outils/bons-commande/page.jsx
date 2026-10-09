@@ -24,6 +24,7 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
@@ -39,6 +40,15 @@ function PurchaseOrdersContent() {
   // Ref pour déclencher l'import depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
+  // Paramètres des documents : paramètres de l'entreprise (« orgSettings »)
+  const { canDo, isReady } = useMyPermissions();
+  const canImportPurchaseOrders =
+    !isReady || canDo("importedPurchaseOrders", "import");
+  const canEditSettings = !isReady || canDo("orgSettings", "edit");
+  // Bouton « Envoyer au client » du toast affiché après une création
+  const canSendPurchaseOrders = !isReady || canDo("purchaseOrders", "send");
 
   // Toast manager et modal d'envoi
   const toastManager = useToastManager();
@@ -59,14 +69,15 @@ function PurchaseOrdersContent() {
             title: "Bon de commande créé avec succès",
             description: `Bon de commande ${poData.number} créé`,
             timeout: 10000,
-            actionProps: poData.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => {
-                    setShowSendEmailModal(true);
-                  },
-                }
-              : undefined,
+            actionProps:
+              poData.clientEmail && canSendPurchaseOrders
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => {
+                      setShowSendEmailModal(true);
+                    },
+                  }
+                : undefined,
           });
 
           sessionStorage.removeItem("newPurchaseOrderData");
@@ -75,7 +86,7 @@ function PurchaseOrdersContent() {
         }
       }
     }
-  }, [toastManager]);
+  }, [toastManager, canSendPurchaseOrders]);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -159,17 +170,24 @@ function PurchaseOrdersContent() {
               <h1 className="text-2xl font-medium mb-2">Bons de commande</h1>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-              </Button>
-              <Button variant="outline" onClick={() => setTriggerImport(true)}>
-                <Download className="w-3.5 h-3.5" aria-hidden="true" />
-                Importer
-              </Button>
+              {canEditSettings && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsSettingsOpen(true)}
+                >
+                  <Settings className="w-3.5 h-3.5" aria-hidden="true" />
+                </Button>
+              )}
+              {canImportPurchaseOrders && (
+                <Button
+                  variant="outline"
+                  onClick={() => setTriggerImport(true)}
+                >
+                  <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                  Importer
+                </Button>
+              )}
               <PurchaseOrderExportButton
                 purchaseOrders={purchaseOrders}
                 iconOnly={false}
@@ -181,6 +199,7 @@ function PurchaseOrdersContent() {
                 variant="primary"
                 onClick={handleNewPurchaseOrder}
                 className="cursor-pointer"
+                hideIfNoAccess={true}
                 data-testid="new-purchase-order-button"
                 tooltipNoAccess="Vous n'avez pas la permission de créer des bons de commande"
               >
@@ -282,14 +301,16 @@ function PurchaseOrdersContent() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsSettingsOpen(true)}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
+                {canEditSettings && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="gap-2"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>

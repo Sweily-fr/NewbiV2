@@ -151,32 +151,37 @@ export function useKanbanBoardsTable({
   // Define columns
   const columns = useMemo(
     () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
-            aria-label="Sélectionner tout"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner la ligne"
-            onClick={(e) => e.stopPropagation()}
-          />
-        ),
-        size: 44,
-        enableSorting: false,
-        enableHiding: false,
-      },
+      // Sélection : ne sert qu'à la suppression groupée (masquée sans droit)
+      ...(onDelete
+        ? [
+            {
+              id: "select",
+              header: ({ table }) => (
+                <Checkbox
+                  checked={
+                    table.getIsAllPageRowsSelected() ||
+                    (table.getIsSomePageRowsSelected() && "indeterminate")
+                  }
+                  onCheckedChange={(value) =>
+                    table.toggleAllPageRowsSelected(!!value)
+                  }
+                  aria-label="Sélectionner tout"
+                />
+              ),
+              cell: ({ row }) => (
+                <Checkbox
+                  checked={row.getIsSelected()}
+                  onCheckedChange={(value) => row.toggleSelected(!!value)}
+                  aria-label="Sélectionner la ligne"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ),
+              size: 44,
+              enableSorting: false,
+              enableHiding: false,
+            },
+          ]
+        : []),
       {
         accessorKey: "title",
         header: () => <span className="font-normal">Nom de la liste</span>,
@@ -328,28 +333,36 @@ export function useKanbanBoardsTable({
                     <Eye className="h-3.5 w-3.5" />
                     Aperçu
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit?.(board, e);
-                    }}
-                    className="gap-2 cursor-pointer"
-                  >
-                    <Edit className="h-3.5 w-3.5" />
-                    Modifier
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete?.(board);
-                    }}
-                    variant="destructive"
-                    className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Supprimer
-                  </DropdownMenuItem>
+                  {/* Modifier / Supprimer masqués si le rôle ne le permet pas
+                      (handler non fourni) */}
+                  {onEdit && (
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(board, e);
+                      }}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <Edit className="h-3.5 w-3.5" />
+                      Modifier
+                    </DropdownMenuItem>
+                  )}
+                  {onDelete && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(board);
+                        }}
+                        variant="destructive"
+                        className="gap-2 cursor-pointer text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10 [&_svg]:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

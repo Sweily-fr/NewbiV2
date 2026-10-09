@@ -6,6 +6,7 @@ import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { Package, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import PurchaseOrderSidebar from "@/app/dashboard/outils/bons-commande/components/purchase-order-sidebar";
 import {
   PURCHASE_ORDER_STATUS_LABELS,
@@ -43,6 +44,10 @@ export default function ClientPurchaseOrdersTab({
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const newDocumentHref = `/dashboard/outils/bons-commande/new?clientId=${clientId}`;
+  const { canDo, isReady } = useMyPermissions();
+  // Bouton « Nouveau » = action « create » (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canCreatePurchaseOrders = !isReady || canDo("purchaseOrders", "create");
   const [selectedPurchaseOrder, setSelectedPurchaseOrder] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -94,15 +99,17 @@ export default function ClientPurchaseOrdersTab({
               Ce client n&apos;a pas encore de bon de commande.
             </EmptyDescription>
           </EmptyHeader>
-          <Button
-            variant="outline"
-            className="mt-4"
-            {...prefetchIntent(newDocumentHref)}
-            onClick={() => router.push(newDocumentHref)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouveau bon de commande
-          </Button>
+          {canCreatePurchaseOrders && (
+            <Button
+              variant="outline"
+              className="mt-4"
+              {...prefetchIntent(newDocumentHref)}
+              onClick={() => router.push(newDocumentHref)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nouveau bon de commande
+            </Button>
+          )}
         </Empty>
       </div>
     );
@@ -114,14 +121,16 @@ export default function ClientPurchaseOrdersTab({
         <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
           Bons de commande
         </h3>
-        <Button
-          variant="outline"
-          {...prefetchIntent(newDocumentHref)}
-          onClick={() => router.push(newDocumentHref)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nouveau bon de commande
-        </Button>
+        {canCreatePurchaseOrders && (
+          <Button
+            variant="outline"
+            {...prefetchIntent(newDocumentHref)}
+            onClick={() => router.push(newDocumentHref)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nouveau bon de commande
+          </Button>
+        )}
       </div>
 
       <div className="overflow-auto">

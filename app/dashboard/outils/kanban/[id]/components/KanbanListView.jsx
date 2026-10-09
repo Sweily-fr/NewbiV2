@@ -75,6 +75,7 @@ import {
 } from "../hooks/useMemberToggle";
 import { useLazyVisible } from "../hooks/useLazyVisible";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
 import { calculateTaskAmount, formatTaskAmount } from "./taskAmount";
 import { toast } from "sonner";
@@ -133,6 +134,7 @@ const MembersPopover = React.memo(function MembersPopover({
   workspaceId,
   isTrigger,
   popoverOpenRef,
+  readOnly = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -140,6 +142,8 @@ const MembersPopover = React.memo(function MembersPopover({
   const triggerRef = useRef(null);
 
   const handleOpenChange = (open) => {
+    // Rôle sans écriture : l'assignation reste en lecture seule
+    if (open && readOnly) return;
     setIsOpen(open);
     if (open) {
       setSearchQuery("");
@@ -198,16 +202,18 @@ const MembersPopover = React.memo(function MembersPopover({
                       {memberInfo?.name || memberId}
                     </TooltipContent>
                   </Tooltip>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMember(memberId);
-                    }}
-                    className="absolute -top-1.5 -right-0.5 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
-                    title="Supprimer l'assignation"
-                  >
-                    <X className="w-2 h-2 text-white stroke-[3]" />
-                  </button>
+                  {!readOnly && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMember(memberId);
+                      }}
+                      className="absolute -top-1.5 -right-0.5 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
+                      title="Supprimer l'assignation"
+                    >
+                      <X className="w-2 h-2 text-white stroke-[3]" />
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -407,6 +413,11 @@ function BulkActionBar({
   boardId,
   workspaceId,
   listRef,
+  // Actions précises du rôle : « edit » (assignés, date, priorité, déplacer),
+  // « create » (dupliquer), « delete » (supprimer)
+  canEdit = true,
+  canCreate = true,
+  canDelete = true,
 }) {
   const bulkBarRef = useRef(null);
   const count = selectedTaskIds.size;
@@ -462,7 +473,8 @@ function BulkActionBar({
     document.head.appendChild(style);
   }, []);
 
-  if (count === 0) return null;
+  // Rien à proposer à un rôle sans aucune action groupée
+  if (count === 0 || !(canEdit || canCreate || canDelete)) return null;
 
   const selectedIds = Array.from(selectedTaskIds);
 
@@ -621,183 +633,191 @@ function BulkActionBar({
 
         {/* Actions — poussées à droite */}
         <div className="flex-1 flex items-center justify-end gap-1 ml-3">
-          {/* Assignees */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
-                style={{ color: "#BEBEBE" }}
-              >
-                <Users className="h-3.5 w-3.5" />
-                Assignés
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-0" side="top" align="start">
-              <div className="px-2 pt-2 pb-0.5">
-                <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
-                  Assigner à
-                </span>
-              </div>
-              <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
-                {members.map((member) => {
-                  const memberId = member.userId || member.id;
-                  const memberName =
-                    member.name || member.user?.name || memberId;
-                  const memberImage = member.image || member.user?.image;
-                  const assignedCount = selectedIds.filter((id) =>
-                    getAssignedMembers(id).includes(memberId),
-                  ).length;
-                  const allAssigned = assignedCount === selectedIds.length;
-                  return (
-                    <button
-                      key={memberId}
-                      onClick={() => bulkToggleAssign(memberId)}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                    >
-                      <div
-                        className={`rounded-full flex-shrink-0 ${allAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
+          {canEdit && (
+            <>
+              {/* Assignees */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
+                    style={{ color: "#BEBEBE" }}
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    Assignés
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-0" side="top" align="start">
+                  <div className="px-2 pt-2 pb-0.5">
+                    <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+                      Assigner à
+                    </span>
+                  </div>
+                  <div className="p-1.5 pt-0.5 space-y-0.5 max-h-[280px] overflow-y-auto">
+                    {members.map((member) => {
+                      const memberId = member.userId || member.id;
+                      const memberName =
+                        member.name || member.user?.name || memberId;
+                      const memberImage = member.image || member.user?.image;
+                      const assignedCount = selectedIds.filter((id) =>
+                        getAssignedMembers(id).includes(memberId),
+                      ).length;
+                      const allAssigned = assignedCount === selectedIds.length;
+                      return (
+                        <button
+                          key={memberId}
+                          onClick={() => bulkToggleAssign(memberId)}
+                          className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                        >
+                          <div
+                            className={`rounded-full flex-shrink-0 ${allAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
+                          >
+                            <UserAvatar
+                              src={memberImage}
+                              name={memberName}
+                              size="xs"
+                              className="h-5 w-5"
+                            />
+                          </div>
+                          <span className="flex-1 text-left text-xs font-medium truncate">
+                            {memberName}
+                          </span>
+                          {allAssigned ? (
+                            <Check className="h-3.5 w-3.5 text-[#5A50FF] flex-shrink-0" />
+                          ) : assignedCount > 0 ? (
+                            <Minus className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Date */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
+                    style={{ color: "#BEBEBE" }}
+                  >
+                    <Calendar className="h-3.5 w-3.5" />
+                    Échéance
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" side="top" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        date.setHours(18, 0, 0, 0);
+                        bulkUpdateField("dueDate", date.toISOString());
+                      }
+                    }}
+                    locale={fr}
+                    fromDate={new Date()}
+                    className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Priorité */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
+                    style={{ color: "#BEBEBE" }}
+                  >
+                    <Flag className="h-3.5 w-3.5" />
+                    Priorité
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-0" side="top" align="start">
+                  <div className="p-1.5 space-y-0.5">
+                    {PRIORITIES.map((p) => (
+                      <button
+                        key={p.value || "none"}
+                        onClick={() => bulkUpdateField("priority", p.value)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
                       >
-                        <UserAvatar
-                          src={memberImage}
-                          name={memberName}
-                          size="xs"
-                          className="h-5 w-5"
-                        />
-                      </div>
-                      <span className="flex-1 text-left text-xs font-medium truncate">
-                        {memberName}
-                      </span>
-                      {allAssigned ? (
-                        <Check className="h-3.5 w-3.5 text-[#5A50FF] flex-shrink-0" />
-                      ) : assignedCount > 0 ? (
-                        <Minus className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0" />
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </PopoverContent>
-          </Popover>
+                        <Flag className={`h-3.5 w-3.5 ${p.color} ${p.fill}`} />
+                        <span className="text-xs">{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
 
-          {/* Date */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
-                style={{ color: "#BEBEBE" }}
-              >
-                <Calendar className="h-3.5 w-3.5" />
-                Échéance
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" side="top" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={undefined}
-                onSelect={(date) => {
-                  if (date) {
-                    date.setHours(18, 0, 0, 0);
-                    bulkUpdateField("dueDate", date.toISOString());
-                  }
+              {/* Séparateur */}
+              <div
+                style={{
+                  width: "1px",
+                  height: "16px",
+                  backgroundColor: "rgba(255,255,255,.2)",
+                  margin: "0 2px",
+                  flexShrink: 0,
                 }}
-                locale={fr}
-                fromDate={new Date()}
-                className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
               />
-            </PopoverContent>
-          </Popover>
 
-          {/* Priorité */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
-                style={{ color: "#BEBEBE" }}
-              >
-                <Flag className="h-3.5 w-3.5" />
-                Priorité
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-0" side="top" align="start">
-              <div className="p-1.5 space-y-0.5">
-                {PRIORITIES.map((p) => (
+              {/* Déplacer */}
+              <Popover open={moveOpen} onOpenChange={setMoveOpen}>
+                <PopoverTrigger asChild>
                   <button
-                    key={p.value || "none"}
-                    onClick={() => bulkUpdateField("priority", p.value)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
+                    style={{ color: "#BEBEBE" }}
                   >
-                    <Flag className={`h-3.5 w-3.5 ${p.color} ${p.fill}`} />
-                    <span className="text-xs">{p.label}</span>
+                    <ArrowRightLeft className="h-3.5 w-3.5" />
+                    Déplacer/Ajouter
                   </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          {/* Séparateur */}
-          <div
-            style={{
-              width: "1px",
-              height: "16px",
-              backgroundColor: "rgba(255,255,255,.2)",
-              margin: "0 2px",
-              flexShrink: 0,
-            }}
-          />
-
-          {/* Déplacer */}
-          <Popover open={moveOpen} onOpenChange={setMoveOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer whitespace-nowrap"
-                style={{ color: "#BEBEBE" }}
-              >
-                <ArrowRightLeft className="h-3.5 w-3.5" />
-                Déplacer/Ajouter
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-52 p-0" side="top" align="start">
-              <div className="px-2 pt-2 pb-0.5">
-                <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
-                  Déplacer vers
-                </span>
-              </div>
-              <div className="p-1.5 pt-0.5 space-y-0.5">
-                {columns.map((col) => (
-                  <button
-                    key={col.id}
-                    onClick={() => bulkMove(col.id)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
-                  >
-                    <div
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: col.color || "#94a3b8" }}
-                    />
-                    <span className="text-xs">{col.title}</span>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+                </PopoverTrigger>
+                <PopoverContent className="w-52 p-0" side="top" align="start">
+                  <div className="px-2 pt-2 pb-0.5">
+                    <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+                      Déplacer vers
+                    </span>
+                  </div>
+                  <div className="p-1.5 pt-0.5 space-y-0.5">
+                    {columns.map((col) => (
+                      <button
+                        key={col.id}
+                        onClick={() => bulkMove(col.id)}
+                        className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
+                      >
+                        <div
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: col.color || "#94a3b8" }}
+                        />
+                        <span className="text-xs">{col.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
 
           {/* Dupliquer */}
-          <button
-            onClick={bulkDuplicate}
-            className="flex items-center justify-center p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
-            style={{ color: "#BEBEBE" }}
-            title="Dupliquer"
-          >
-            <CopyPlus className="h-4 w-4" />
-          </button>
+          {canCreate && (
+            <button
+              onClick={bulkDuplicate}
+              className="flex items-center justify-center p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
+              style={{ color: "#BEBEBE" }}
+              title="Dupliquer"
+            >
+              <CopyPlus className="h-4 w-4" />
+            </button>
+          )}
 
           {/* Supprimer */}
-          <button
-            onClick={bulkDelete}
-            className="flex items-center justify-center p-1.5 rounded-md text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
-            title="Supprimer"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {canDelete && (
+            <button
+              onClick={bulkDelete}
+              className="flex items-center justify-center p-1.5 rounded-md text-red-400 hover:bg-red-500/20 transition-colors cursor-pointer"
+              title="Supprimer"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
 
           {/* Séparateur */}
           <div
@@ -841,6 +861,11 @@ function TaskActionsMenu({
   workspaceId,
   onEditTask,
   onDeleteTask,
+  // Actions précises du rôle : « edit » (assignés, échéance, priorité,
+  // déplacer, modifier), « create » (dupliquer), « delete » (supprimer)
+  canEdit = true,
+  canCreate = true,
+  canDelete = true,
 }) {
   const [open, setOpen] = useState(false);
 
@@ -908,192 +933,206 @@ function TaskActionsMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        {/* Assignés */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="gap-2">
-            <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            Assignés
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-56 max-h-[280px] overflow-y-auto">
-            {members.map((member) => {
-              const memberId = member.userId || member.id;
-              const memberName = member.name || member.user?.name || memberId;
-              const memberImage = member.image || member.user?.image;
-              const isAssigned = assignedMembers.includes(memberId);
-              return (
-                <DropdownMenuItem
-                  key={memberId}
-                  onSelect={(e) => {
-                    // Garder le menu ouvert pour assigner plusieurs membres
-                    e.preventDefault();
-                    toggleMember(memberId);
-                  }}
-                  className="gap-2 cursor-pointer"
-                >
-                  <div
-                    className={`rounded-full flex-shrink-0 ${isAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
-                  >
-                    <UserAvatar
-                      src={memberImage}
-                      name={memberName}
-                      size="xs"
-                      className="h-5 w-5"
-                    />
-                  </div>
-                  <span className="flex-1 text-left text-xs font-medium truncate">
-                    {memberName}
-                  </span>
-                  {isAssigned && (
-                    <Check className="h-3.5 w-3.5 text-[#5A50FF] flex-shrink-0" />
-                  )}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+        {canEdit && (
+          <>
+            {/* Assignés */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="gap-2">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                Assignés
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-56 max-h-[280px] overflow-y-auto">
+                {members.map((member) => {
+                  const memberId = member.userId || member.id;
+                  const memberName =
+                    member.name || member.user?.name || memberId;
+                  const memberImage = member.image || member.user?.image;
+                  const isAssigned = assignedMembers.includes(memberId);
+                  return (
+                    <DropdownMenuItem
+                      key={memberId}
+                      onSelect={(e) => {
+                        // Garder le menu ouvert pour assigner plusieurs membres
+                        e.preventDefault();
+                        toggleMember(memberId);
+                      }}
+                      className="gap-2 cursor-pointer"
+                    >
+                      <div
+                        className={`rounded-full flex-shrink-0 ${isAssigned ? "ring-[1.5px] ring-[#5A50FF] ring-offset-1 ring-offset-background" : ""}`}
+                      >
+                        <UserAvatar
+                          src={memberImage}
+                          name={memberName}
+                          size="xs"
+                          className="h-5 w-5"
+                        />
+                      </div>
+                      <span className="flex-1 text-left text-xs font-medium truncate">
+                        {memberName}
+                      </span>
+                      {isAssigned && (
+                        <Check className="h-3.5 w-3.5 text-[#5A50FF] flex-shrink-0" />
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
-        {/* Échéance */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="gap-2">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            Échéance
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="p-0">
-            <CalendarComponent
-              mode="single"
-              selected={task.dueDate ? new Date(task.dueDate) : undefined}
-              onSelect={(date) => {
-                if (!date) return;
-                date.setHours(18, 0, 0, 0);
-                setOpen(false);
-                updateTask({
-                  variables: {
-                    input: { id: task.id, dueDate: date.toISOString() },
-                    workspaceId,
-                  },
-                });
-              }}
-              locale={fr}
-              fromDate={new Date()}
-              className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-            />
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-
-        {/* Priorité */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="gap-2">
-            <Flag className="h-3.5 w-3.5 text-muted-foreground" />
-            Priorité
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-44">
-            {PRIORITIES.map((p) => {
-              const isActive =
-                (p.value === "" && !currentPriority) ||
-                currentPriority === p.value;
-              return (
-                <DropdownMenuItem
-                  key={p.value || "none"}
-                  onSelect={() =>
+            {/* Échéance */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="gap-2">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                Échéance
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={task.dueDate ? new Date(task.dueDate) : undefined}
+                  onSelect={(date) => {
+                    if (!date) return;
+                    date.setHours(18, 0, 0, 0);
+                    setOpen(false);
                     updateTask({
                       variables: {
-                        input: { id: task.id, priority: p.value },
+                        input: { id: task.id, dueDate: date.toISOString() },
                         workspaceId,
                       },
-                    })
-                  }
-                  className="gap-2 cursor-pointer"
-                >
-                  <Flag className={`h-3.5 w-3.5 ${p.color} ${p.fill}`} />
-                  <span className="flex-1 text-xs">{p.label}</span>
-                  {isActive && <Check className="h-3.5 w-3.5 text-[#5A50FF]" />}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-
-        {/* Déplacer */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="gap-2">
-            <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
-            Déplacer
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-44">
-            {columns.map((col) => (
-              <DropdownMenuItem
-                key={col.id}
-                onSelect={() => {
-                  // Différer la mutation : la maj optimiste démonte la ligne
-                  // (changement de colonne) ; laisser le menu se fermer et
-                  // nettoyer son portail d'abord. Cf. StatusPopoverContent.
-                  const variables = {
-                    id: task.id,
-                    columnId: col.id,
-                    position: 0,
-                    workspaceId,
-                  };
-                  setTimeout(() => {
-                    moveTask({ variables }).catch((error) => {
-                      console.error(
-                        "Erreur lors du déplacement de la tâche:",
-                        error,
-                      );
                     });
-                  }, 0);
-                }}
-                className="gap-2 cursor-pointer"
-              >
-                <div
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: col.color || "#94a3b8" }}
+                  }}
+                  locale={fr}
+                  fromDate={new Date()}
+                  className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
                 />
-                <span className="flex-1 text-xs">{col.title}</span>
-                {col.id === task.columnId && (
-                  <Check className="h-3.5 w-3.5 text-[#5A50FF]" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
-        <DropdownMenuSeparator />
+            {/* Priorité */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="gap-2">
+                <Flag className="h-3.5 w-3.5 text-muted-foreground" />
+                Priorité
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-44">
+                {PRIORITIES.map((p) => {
+                  const isActive =
+                    (p.value === "" && !currentPriority) ||
+                    currentPriority === p.value;
+                  return (
+                    <DropdownMenuItem
+                      key={p.value || "none"}
+                      onSelect={() =>
+                        updateTask({
+                          variables: {
+                            input: { id: task.id, priority: p.value },
+                            workspaceId,
+                          },
+                        })
+                      }
+                      className="gap-2 cursor-pointer"
+                    >
+                      <Flag className={`h-3.5 w-3.5 ${p.color} ${p.fill}`} />
+                      <span className="flex-1 text-xs">{p.label}</span>
+                      {isActive && (
+                        <Check className="h-3.5 w-3.5 text-[#5A50FF]" />
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            {/* Déplacer */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="gap-2">
+                <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                Déplacer
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-44">
+                {columns.map((col) => (
+                  <DropdownMenuItem
+                    key={col.id}
+                    onSelect={() => {
+                      // Différer la mutation : la maj optimiste démonte la ligne
+                      // (changement de colonne) ; laisser le menu se fermer et
+                      // nettoyer son portail d'abord. Cf. StatusPopoverContent.
+                      const variables = {
+                        id: task.id,
+                        columnId: col.id,
+                        position: 0,
+                        workspaceId,
+                      };
+                      setTimeout(() => {
+                        moveTask({ variables }).catch((error) => {
+                          console.error(
+                            "Erreur lors du déplacement de la tâche:",
+                            error,
+                          );
+                        });
+                      }, 0);
+                    }}
+                    className="gap-2 cursor-pointer"
+                  >
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: col.color || "#94a3b8" }}
+                    />
+                    <span className="flex-1 text-xs">{col.title}</span>
+                    {col.id === task.columnId && (
+                      <Check className="h-3.5 w-3.5 text-[#5A50FF]" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </>
+        )}
+
+        {canEdit && canCreate && <DropdownMenuSeparator />}
 
         {/* Dupliquer */}
-        <DropdownMenuItem
-          onSelect={() => {
-            setTimeout(() => duplicateTask(), 0);
-          }}
-          className="gap-2 cursor-pointer"
-        >
-          <CopyPlus className="h-3.5 w-3.5 text-muted-foreground" />
-          Dupliquer
-        </DropdownMenuItem>
+        {canCreate && (
+          <DropdownMenuItem
+            onSelect={() => {
+              setTimeout(() => duplicateTask(), 0);
+            }}
+            className="gap-2 cursor-pointer"
+          >
+            <CopyPlus className="h-3.5 w-3.5 text-muted-foreground" />
+            Dupliquer
+          </DropdownMenuItem>
+        )}
 
         {/* Modifier */}
-        <DropdownMenuItem
-          onSelect={() => {
-            // Laisser le menu se fermer avant d'ouvrir la modale d'édition
-            setTimeout(() => onEditTask(task), 0);
-          }}
-          className="gap-2 cursor-pointer"
-        >
-          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-          Modifier
-        </DropdownMenuItem>
+        {canEdit && (
+          <DropdownMenuItem
+            onSelect={() => {
+              // Laisser le menu se fermer avant d'ouvrir la modale d'édition
+              setTimeout(() => onEditTask(task), 0);
+            }}
+            className="gap-2 cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+            Modifier
+          </DropdownMenuItem>
+        )}
 
-        <DropdownMenuSeparator />
-
-        {/* Supprimer */}
-        <DropdownMenuItem
-          onSelect={() => {
-            setTimeout(() => onDeleteTask(task.id), 0);
-          }}
-          className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
-        >
-          <Trash2 className="h-3.5 w-3.5 text-red-600" />
-          Supprimer
-        </DropdownMenuItem>
+        {/* Supprimer (masqué si le rôle ne le permet pas) */}
+        {canDelete && (
+          <>
+            {(canEdit || canCreate) && <DropdownMenuSeparator />}
+            <DropdownMenuItem
+              onSelect={() => {
+                setTimeout(() => onDeleteTask(task.id), 0);
+              }}
+              className="gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-red-600" />
+              Supprimer
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -1109,6 +1148,7 @@ function StatusPopoverWrapper({
   moveTask,
   workspaceId,
   popoverOpenRef,
+  disabled = false,
 }) {
   const triggerRef = useRef(null);
   const [popoverSide, setPopoverSide] = useState("bottom");
@@ -1137,7 +1177,8 @@ function StatusPopoverWrapper({
     >
       <PopoverTrigger asChild ref={triggerRef}>
         <button
-          className="px-2 py-1 rounded-md min-w-0 max-w-full text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+          disabled={disabled}
+          className="px-2 py-1 rounded-md min-w-0 max-w-full text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity disabled:cursor-default disabled:hover:opacity-100"
           style={{
             backgroundColor: `${column.color || "#94a3b8"}20`,
             borderColor: `${column.color || "#94a3b8"}20`,
@@ -1961,6 +2002,7 @@ function InlineEditTitle({
   workspaceId,
   popoverOpenRef,
   allBoardTags = [],
+  readOnly = false,
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(task.title);
@@ -2023,15 +2065,17 @@ function InlineEditTitle({
       {task.description && (
         <DescriptionHoverPopover description={task.description} />
       )}
-      <Button
-        variant="outline"
-        size="sm"
-        className="flex-shrink-0 h-5 w-5 p-0 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-background"
-        onClick={startEditing}
-        title="Modifier le nom"
-      >
-        <Pencil className="h-3 w-3 text-muted-foreground" />
-      </Button>
+      {!readOnly && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-shrink-0 h-5 w-5 p-0 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-background"
+          onClick={startEditing}
+          title="Modifier le nom"
+        >
+          <Pencil className="h-3 w-3 text-muted-foreground" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -2090,7 +2134,13 @@ function TagsTooltipGrid({ tags }) {
 /**
  * Cellule Tags pour la vue liste — affiche premier tag + badge "+N" + bouton ajouter
  */
-function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
+function TaskTagsCell({
+  task,
+  updateTask,
+  workspaceId,
+  allBoardTags,
+  readOnly = false,
+}) {
   const allTags = useMemo(() => {
     const tags = task.tags || [];
     if (tags.length === 0) return [];
@@ -2222,12 +2272,14 @@ function TaskTagsCell({ task, updateTask, workspaceId, allBoardTags }) {
           </TooltipContent>
         </Tooltip>
       )}
-      <InlineTagPopover
-        task={task}
-        updateTask={updateTask}
-        workspaceId={workspaceId}
-        allBoardTags={allBoardTags}
-      />
+      {!readOnly && (
+        <InlineTagPopover
+          task={task}
+          updateTask={updateTask}
+          workspaceId={workspaceId}
+          allBoardTags={allBoardTags}
+        />
+      )}
     </div>
   );
 }
@@ -2249,6 +2301,7 @@ const TaskRow = React.memo(function TaskRow({
   isPrevSelected,
   popoverOpenRef,
   scrollRootRef,
+  canDrag = true,
   children,
 }) {
   // Windowing de contenu : on ne monte le contenu lourd de la ligne (popovers,
@@ -2269,7 +2322,7 @@ const TaskRow = React.memo(function TaskRow({
         minHeight: LIST_ROW_MIN_HEIGHT,
         ...(isSelected ? { backgroundColor: "#5A50FF0D" } : {}),
       }}
-      className={`grid px-4 sm:px-6 py-1.5 items-center hover:bg-muted/50 cursor-grab active:cursor-grabbing group relative overflow-hidden after:absolute after:bottom-0 after:h-px after:content-[""] ${isSelected ? "after:left-0 after:right-0 after:bg-[#5A50FF]/35" : "after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:bg-border/60"} ${isSelected && index > 0 && !isPrevSelected ? 'before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-[#5A50FF]/35 before:content-[""]' : ""}`}
+      className={`grid px-4 sm:px-6 py-1.5 items-center hover:bg-muted/50 ${canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"} group relative overflow-hidden after:absolute after:bottom-0 after:h-px after:content-[""] ${isSelected ? "after:left-0 after:right-0 after:bg-[#5A50FF]/35" : "after:left-6 after:right-6 after:sm:left-8 after:sm:right-8 after:bg-border/60"} ${isSelected && index > 0 && !isPrevSelected ? 'before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-[#5A50FF]/35 before:content-[""]' : ""}`}
       onClick={(e) => {
         if (
           e.target.closest(
@@ -2341,27 +2394,37 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
   popoverOpenRef,
   onEditTask,
   onDeleteTask,
+  // Droits du rôle, calculés une fois dans KanbanListView
+  canEdit = true,
+  canCreate = true,
+  canDelete = true,
 }) {
+  // Sélection et menu « ⋮ » proposés dès qu'une action est permise
+  const hasRowActions = canEdit || canCreate || canDelete;
   return (
     <>
       {/* Nom avec drag handle et checkbox */}
       <div className="min-w-0">
         <div className="flex items-center gap-3">
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={(checked) => {
-              if (checked === "indeterminate") return;
-              onToggleSelect(task.id, !!checked);
-            }}
-            className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${isSelected ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
-            onClick={(e) => e.stopPropagation()}
-          />
+          {/* Sélection pour les actions groupées */}
+          {hasRowActions && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={(checked) => {
+                if (checked === "indeterminate") return;
+                onToggleSelect(task.id, !!checked);
+              }}
+              className={`flex-shrink-0 h-4 w-4 border-muted-foreground/30 mr-4 transition-opacity ${isSelected ? "opacity-100 border-[#5A50FF] bg-[#5A50FF] text-white data-[state=checked]:bg-[#5A50FF] data-[state=checked]:border-[#5A50FF]" : "opacity-0 group-hover:opacity-100"}`}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
           {/* modal={false} : pas de scroll-lock body → pas d'écran figé si la
               ligne se démonte (move) pendant la fermeture du menu */}
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                disabled={!canEdit}
+                className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity disabled:cursor-default disabled:hover:opacity-100"
                 style={{
                   backgroundColor: column.color || "#94a3b8",
                   border: `1.5px solid ${column.color || "#94a3b8"}60`,
@@ -2369,7 +2432,7 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
                   outlineOffset: "1.5px",
                 }}
                 onClick={(e) => e.stopPropagation()}
-                title="Changer le status"
+                title={canEdit ? "Changer le status" : undefined}
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-40">
@@ -2417,6 +2480,7 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             workspaceId={workspaceId}
             popoverOpenRef={popoverOpenRef}
             allBoardTags={allBoardTags}
+            readOnly={!canEdit}
           />
           <TaskPresenceAvatars
             taskId={task.id}
@@ -2432,6 +2496,7 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
         updateTask={updateTask}
         workspaceId={workspaceId}
         allBoardTags={allBoardTags}
+        readOnly={!canEdit}
       />
 
       {/* Assignée */}
@@ -2445,17 +2510,20 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             workspaceId={workspaceId}
             isTrigger={true}
             popoverOpenRef={popoverOpenRef}
+            readOnly={!canEdit}
           />
         ) : (
-          <MembersPopover
-            task={task}
-            membersInfo={membersInfo}
-            members={members}
-            updateTask={updateTask}
-            workspaceId={workspaceId}
-            isTrigger={false}
-            popoverOpenRef={popoverOpenRef}
-          />
+          canEdit && (
+            <MembersPopover
+              task={task}
+              membersInfo={membersInfo}
+              members={members}
+              updateTask={updateTask}
+              workspaceId={workspaceId}
+              isTrigger={false}
+              popoverOpenRef={popoverOpenRef}
+            />
+          )
         )}
       </div>
 
@@ -2468,6 +2536,7 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
           moveTask={moveTask}
           workspaceId={workspaceId}
           popoverOpenRef={popoverOpenRef}
+          disabled={!canEdit}
         />
       </div>
 
@@ -2480,7 +2549,8 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
           popoverOpenRef={popoverOpenRef}
           trigger={
             <button
-              className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
+              disabled={!canEdit}
+              className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity disabled:cursor-default disabled:hover:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               {task.priority ? (
@@ -2506,7 +2576,8 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className="flex items-center min-w-0 gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
+                  disabled={!canEdit}
+                  className="flex items-center min-w-0 gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:ring-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span className="truncate font-normal text-foreground/70">
@@ -2558,89 +2629,93 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
                 </div>
               </PopoverContent>
             </Popover>
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                try {
-                  await updateTask({
-                    variables: {
-                      input: { id: task.id, dueDate: null },
-                      workspaceId,
-                    },
-                  });
-                } catch (error) {
-                  console.error(
-                    "Erreur lors de la suppression de la date:",
-                    error,
-                  );
-                }
-              }}
-              className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
-              title="Supprimer la date"
-            >
-              <X className="w-2 h-2 text-white stroke-[3]" />
-            </button>
+            {canEdit && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    await updateTask({
+                      variables: {
+                        input: { id: task.id, dueDate: null },
+                        workspaceId,
+                      },
+                    });
+                  } catch (error) {
+                    console.error(
+                      "Erreur lors de la suppression de la date:",
+                      error,
+                    );
+                  }
+                }}
+                className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
+                title="Supprimer la date"
+              >
+                <X className="w-2 h-2 text-white stroke-[3]" />
+              </button>
+            )}
           </div>
         ) : (
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
-                onClick={(e) => e.stopPropagation()}
-                title="Ajouter une date d'échéance"
-              >
-                <Calendar className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" side="top" align="start">
-              <div className="flex flex-col">
-                <div className="border-b p-2">
-                  <CalendarComponent
-                    mode="single"
-                    selected={undefined}
-                    onSelect={async (date) => {
-                      if (date) {
-                        try {
-                          date.setHours(18, 0, 0, 0);
-                          await updateTask({
-                            variables: {
-                              input: {
-                                id: task.id,
-                                dueDate: date.toISOString(),
+          canEdit && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  title="Ajouter une date d'échéance"
+                >
+                  <Calendar className="h-4 w-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" side="top" align="start">
+                <div className="flex flex-col">
+                  <div className="border-b p-2">
+                    <CalendarComponent
+                      mode="single"
+                      selected={undefined}
+                      onSelect={async (date) => {
+                        if (date) {
+                          try {
+                            date.setHours(18, 0, 0, 0);
+                            await updateTask({
+                              variables: {
+                                input: {
+                                  id: task.id,
+                                  dueDate: date.toISOString(),
+                                },
+                                workspaceId,
                               },
-                              workspaceId,
-                            },
-                          });
-                        } catch (error) {
-                          console.error(
-                            "Erreur lors de la mise à jour de la date:",
-                            error,
-                          );
+                            });
+                          } catch (error) {
+                            console.error(
+                              "Erreur lors de la mise à jour de la date:",
+                              error,
+                            );
+                          }
                         }
-                      }
-                    }}
-                    initialFocus
-                    locale={fr}
-                    fromDate={new Date()}
-                    className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
-                  />
-                </div>
-                <div className="p-4 flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                    </div>
-                    <Input
-                      type="time"
-                      defaultValue="18:00"
-                      className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
-                      step="300"
+                      }}
+                      initialFocus
+                      locale={fr}
+                      fromDate={new Date()}
+                      className="border-0 p-2 text-xs [--cell-size:--spacing(8)]"
                     />
                   </div>
+                  <div className="p-4 flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                      </div>
+                      <Input
+                        type="time"
+                        defaultValue="18:00"
+                        className="pl-10 appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+                        step="300"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+          )
         )}
       </div>
 
@@ -2658,20 +2733,25 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
         })()}
       </div>
 
-      {/* Actions */}
+      {/* Actions (masquées pour un rôle en lecture seule) */}
       <div className="flex items-center justify-center gap-1">
-        <TaskActionsMenu
-          task={task}
-          columns={columns}
-          members={members}
-          updateTask={updateTask}
-          moveTask={moveTask}
-          createTask={createTask}
-          boardId={boardId}
-          workspaceId={workspaceId}
-          onEditTask={onEditTask}
-          onDeleteTask={onDeleteTask}
-        />
+        {hasRowActions && (
+          <TaskActionsMenu
+            task={task}
+            columns={columns}
+            members={members}
+            updateTask={updateTask}
+            moveTask={moveTask}
+            createTask={createTask}
+            boardId={boardId}
+            workspaceId={workspaceId}
+            onEditTask={onEditTask}
+            onDeleteTask={onDeleteTask}
+            canEdit={canEdit}
+            canCreate={canCreate}
+            canDelete={canDelete}
+          />
+        )}
       </div>
     </>
   );
@@ -2705,6 +2785,13 @@ export function KanbanListView({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateKanban = !isReady || canDo("kanban", "create");
+  const canEditKanban = !isReady || canDo("kanban", "edit");
+  const canDeleteKanban = !isReady || canDo("kanban", "delete");
+  // « Tout sélectionner » utile seulement avec une action groupée permise
+  const hasBulkActions = canEditKanban || canCreateKanban || canDeleteKanban;
   const [collapsedColumns, setCollapsedColumns] = useState(new Set());
   const [expandedEmptyColumns, setExpandedEmptyColumns] = useState(new Set());
   const [inlineAddColumnId, setInlineAddColumnId] = useState(null);
@@ -2945,27 +3032,31 @@ export function KanbanListView({
                             <DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">
                               Options du groupe
                             </DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditColumn?.(column);
-                              }}
-                              className="gap-2"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Renommer
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditColumn?.(column);
-                              }}
-                              className="gap-2"
-                            >
-                              <Settings className="h-3.5 w-3.5" />
-                              Modifier le status
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            {canEditKanban && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditColumn?.(column);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  Renommer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditColumn?.(column);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Settings className="h-3.5 w-3.5" />
+                                  Modifier le status
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -2979,21 +3070,23 @@ export function KanbanListView({
                                 : "Replier le groupe"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const tasks = getFilteredTasksByColumn(
-                                  column.id,
-                                );
-                                const newSelected = new Set(selectedTaskIds);
-                                tasks.forEach((t) => newSelected.add(t.id));
-                                setSelectedTaskIds(newSelected);
-                              }}
-                              className="gap-2"
-                            >
-                              <CheckCheck className="h-3.5 w-3.5" />
-                              Tout sélectionner
-                            </DropdownMenuItem>
+                            {hasBulkActions && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const tasks = getFilteredTasksByColumn(
+                                    column.id,
+                                  );
+                                  const newSelected = new Set(selectedTaskIds);
+                                  tasks.forEach((t) => newSelected.add(t.id));
+                                  setSelectedTaskIds(newSelected);
+                                }}
+                                className="gap-2"
+                              >
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                Tout sélectionner
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3017,32 +3110,38 @@ export function KanbanListView({
                                 ? "Déplier tous les groupes"
                                 : "Replier tous les groupes"}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteColumn?.(column);
-                              }}
-                              className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                              Supprimer
-                            </DropdownMenuItem>
+                            {canDeleteKanban && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteColumn?.(column);
+                                  }}
+                                  className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setInlineAddColumnId(column.id);
-                          }}
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                          title={readOnlyTooltip || "Ajouter une tâche"}
-                          disabled={isReadOnly}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </Button>
+                        {canCreateKanban && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setInlineAddColumnId(column.id);
+                            }}
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                            title={readOnlyTooltip || "Ajouter une tâche"}
+                            disabled={isReadOnly}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3115,27 +3214,31 @@ export function KanbanListView({
                             <DropdownMenuLabel className="text-[11px] font-medium text-muted-foreground/60 uppercase tracking-wider">
                               Options du groupe
                             </DropdownMenuLabel>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditColumn?.(column);
-                              }}
-                              className="gap-2"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Renommer
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEditColumn?.(column);
-                              }}
-                              className="gap-2"
-                            >
-                              <Settings className="h-3.5 w-3.5" />
-                              Modifier le status
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            {canEditKanban && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditColumn?.(column);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  Renommer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditColumn?.(column);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Settings className="h-3.5 w-3.5" />
+                                  Modifier le status
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3149,21 +3252,23 @@ export function KanbanListView({
                                 : "Replier le groupe"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const tasks = getFilteredTasksByColumn(
-                                  column.id,
-                                );
-                                const newSelected = new Set(selectedTaskIds);
-                                tasks.forEach((t) => newSelected.add(t.id));
-                                setSelectedTaskIds(newSelected);
-                              }}
-                              className="gap-2"
-                            >
-                              <CheckCheck className="h-3.5 w-3.5" />
-                              Tout sélectionner
-                            </DropdownMenuItem>
+                            {hasBulkActions && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const tasks = getFilteredTasksByColumn(
+                                    column.id,
+                                  );
+                                  const newSelected = new Set(selectedTaskIds);
+                                  tasks.forEach((t) => newSelected.add(t.id));
+                                  setSelectedTaskIds(newSelected);
+                                }}
+                                className="gap-2"
+                              >
+                                <CheckCheck className="h-3.5 w-3.5" />
+                                Tout sélectionner
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3187,32 +3292,38 @@ export function KanbanListView({
                                 ? "Déplier tous les groupes"
                                 : "Replier tous les groupes"}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteColumn?.(column);
-                              }}
-                              className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
-                            >
-                              <Trash2 className="h-3.5 w-3.5 text-red-600" />
-                              Supprimer
-                            </DropdownMenuItem>
+                            {canDeleteKanban && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteColumn?.(column);
+                                  }}
+                                  className="gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setInlineAddColumnId(column.id);
-                          }}
-                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                          title={readOnlyTooltip || "Ajouter une tâche"}
-                          disabled={isReadOnly}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </Button>
+                        {canCreateKanban && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setInlineAddColumnId(column.id);
+                            }}
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                            title={readOnlyTooltip || "Ajouter une tâche"}
+                            disabled={isReadOnly}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -3265,6 +3376,7 @@ export function KanbanListView({
                             }
                             popoverOpenRef={popoverOpenRef}
                             scrollRootRef={scrollRootRef}
+                            canDrag={canEditKanban}
                           >
                             <TaskListRowContent
                               task={task}
@@ -3283,6 +3395,9 @@ export function KanbanListView({
                               popoverOpenRef={popoverOpenRef}
                               onEditTask={onEditTask}
                               onDeleteTask={onDeleteTask}
+                              canEdit={canEditKanban}
+                              canCreate={canCreateKanban}
+                              canDelete={canDeleteKanban}
                             />
                             {/* LEGACY-INLINE-START — bloc remplacé par TaskListRowContent ci-dessus, gardé temporairement pour preuve mais désactivé via condition false */}
                             {false && (
@@ -3675,27 +3790,29 @@ export function KanbanListView({
                     onEditTask={onEditTask}
                   />
                 ) : (
-                  <div
-                    className={`px-4 sm:px-6 py-1.5 min-h-[36px] flex items-center hover:bg-muted/50 transition-colors group/add ${isReadOnly ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
-                    onClick={() =>
-                      !isReadOnly && setInlineAddColumnId(column.id)
-                    }
-                    title={readOnlyTooltip}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-4 w-4 flex-shrink-0" />
-                      <div className="h-4 w-4 flex-shrink-0 mr-4" />
-                      <div
-                        className="flex items-center gap-2 text-sm font-normal"
-                        style={{ color: "#646464" }}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span className="px-2 py-0.5 rounded-md border border-transparent group-hover/add:border-border/60 group-hover/add:bg-white dark:group-hover/add:bg-background group-hover/add:text-foreground/70 transition-all">
-                          Ajouter une tâche
-                        </span>
+                  canCreateKanban && (
+                    <div
+                      className={`px-4 sm:px-6 py-1.5 min-h-[36px] flex items-center hover:bg-muted/50 transition-colors group/add ${isReadOnly ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
+                      onClick={() =>
+                        !isReadOnly && setInlineAddColumnId(column.id)
+                      }
+                      title={readOnlyTooltip}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 flex-shrink-0" />
+                        <div className="h-4 w-4 flex-shrink-0 mr-4" />
+                        <div
+                          className="flex items-center gap-2 text-sm font-normal"
+                          style={{ color: "#646464" }}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span className="px-2 py-0.5 rounded-md border border-transparent group-hover/add:border-border/60 group-hover/add:bg-white dark:group-hover/add:bg-background group-hover/add:text-foreground/70 transition-all">
+                            Ajouter une tâche
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )
                 )}
               </>
             )}
@@ -3717,6 +3834,9 @@ export function KanbanListView({
         boardId={boardId}
         workspaceId={workspaceId}
         listRef={listRef}
+        canEdit={canEditKanban}
+        canCreate={canCreateKanban}
+        canDelete={canDeleteKanban}
       />
     </div>
   );

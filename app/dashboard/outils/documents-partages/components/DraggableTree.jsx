@@ -775,6 +775,7 @@ function TreeItem({
   isChecked,
   onCheckChange,
   isDragging,
+  dragEnabled = true,
   children,
 }) {
   const isFolder = item.isFolder;
@@ -795,8 +796,9 @@ function TreeItem({
           "flex items-center gap-2 py-1.5 pr-2 rounded select-none min-w-0 w-full",
           "transition-colors duration-100",
           "hover:bg-accent/40",
-          !isInbox && "cursor-grab active:cursor-grabbing",
-          isInbox && "cursor-pointer",
+          // Pas de curseur de glisser si le rôle ne permet pas de déplacer
+          !isInbox && dragEnabled && "cursor-grab active:cursor-grabbing",
+          (isInbox || !dragEnabled) && "cursor-pointer",
         )}
         onClick={onClick}
         onContextMenu={onContextMenu}
@@ -887,6 +889,8 @@ export function DraggableTree({
   onContextMenu,
   selectedFolders = [],
   onToggleFolderSelection,
+  // false : glisser-déposer désactivé (rôle sans droit de modification)
+  dragEnabled = true,
 }) {
   const [expandedFolders, setExpandedFolders] = useState(
     new Set(["inbox", "my-folders"]),
@@ -988,6 +992,7 @@ export function DraggableTree({
     onMoveFolderRef,
     getSiblingsRef,
     setDragId: (id) => setDragIdRef.current(id),
+    enabled: dragEnabled,
   });
 
   const renderItem = useCallback(
@@ -1006,6 +1011,7 @@ export function DraggableTree({
           isExpanded={isExpanded}
           isChecked={isFolderChecked}
           isDragging={dragId === itemId}
+          dragEnabled={dragEnabled}
           onCheckChange={
             item.isFolder && !item.isInbox && onToggleFolderSelection
               ? () => onToggleFolderSelection(itemId)
@@ -1050,6 +1056,7 @@ export function DraggableTree({
       onContextMenu,
       onToggleFolderSelection,
       dragId,
+      dragEnabled,
     ],
   );
 

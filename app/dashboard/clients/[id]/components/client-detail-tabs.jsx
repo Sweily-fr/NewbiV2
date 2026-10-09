@@ -20,6 +20,7 @@ import ClientNotesTab from "./client-notes-tab";
 import ClientInvoicesTab from "./client-invoices-tab";
 import ClientQuotesTab from "./client-quotes-tab";
 import ClientPurchaseOrdersTab from "./client-purchase-orders-tab";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 const tabTriggerClass =
   "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]";
@@ -33,13 +34,19 @@ export default function ClientDetailTabs({
   onClientUpdate,
 }) {
   const searchParams = useSearchParams();
+  const { canRead, isReady } = useMyPermissions();
+  // Onglets des documents : masqués sans lecture du module (tout visible
+  // tant que la grille n'est pas chargée)
+  const canReadInvoices = !isReady || canRead("invoices");
+  const canReadQuotes = !isReady || canRead("quotes");
+  const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
 
   const validTabs = [
     "activity",
     "notes",
-    "invoices",
-    "quotes",
-    "purchaseorders",
+    ...(canReadInvoices ? ["invoices"] : []),
+    ...(canReadQuotes ? ["quotes"] : []),
+    ...(canReadPurchaseOrders ? ["purchaseorders"] : []),
   ];
   const tabParam = searchParams.get("tab");
   const activeTab = validTabs.includes(tabParam) ? tabParam : "activity";
@@ -104,33 +111,39 @@ export default function ClientDetailTabs({
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="invoices" className={tabTriggerClass}>
-            <FileText className="h-3.5 w-3.5" />
-            Factures
-            {clientInvoicesCount > 0 && (
-              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                {clientInvoicesCount}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="quotes" className={tabTriggerClass}>
-            <ClipboardList className="h-3.5 w-3.5" />
-            Devis
-            {clientQuotesCount > 0 && (
-              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                {clientQuotesCount}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="purchaseorders" className={tabTriggerClass}>
-            <Package className="h-3.5 w-3.5" />
-            Bons de commande
-            {clientPurchaseOrdersCount > 0 && (
-              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                {clientPurchaseOrdersCount}
-              </span>
-            )}
-          </TabsTrigger>
+          {canReadInvoices && (
+            <TabsTrigger value="invoices" className={tabTriggerClass}>
+              <FileText className="h-3.5 w-3.5" />
+              Factures
+              {clientInvoicesCount > 0 && (
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  {clientInvoicesCount}
+                </span>
+              )}
+            </TabsTrigger>
+          )}
+          {canReadQuotes && (
+            <TabsTrigger value="quotes" className={tabTriggerClass}>
+              <ClipboardList className="h-3.5 w-3.5" />
+              Devis
+              {clientQuotesCount > 0 && (
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  {clientQuotesCount}
+                </span>
+              )}
+            </TabsTrigger>
+          )}
+          {canReadPurchaseOrders && (
+            <TabsTrigger value="purchaseorders" className={tabTriggerClass}>
+              <Package className="h-3.5 w-3.5" />
+              Bons de commande
+              {clientPurchaseOrdersCount > 0 && (
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  {clientPurchaseOrdersCount}
+                </span>
+              )}
+            </TabsTrigger>
+          )}
         </TabsList>
       </div>
 
@@ -152,29 +165,35 @@ export default function ClientDetailTabs({
         />
       </TabsContent>
 
-      <TabsContent
-        value="invoices"
-        className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
-      >
-        <ClientInvoicesTab invoices={invoices} clientId={client.id} />
-      </TabsContent>
+      {canReadInvoices && (
+        <TabsContent
+          value="invoices"
+          className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
+        >
+          <ClientInvoicesTab invoices={invoices} clientId={client.id} />
+        </TabsContent>
+      )}
 
-      <TabsContent
-        value="quotes"
-        className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
-      >
-        <ClientQuotesTab quotes={quotes} clientId={client.id} />
-      </TabsContent>
+      {canReadQuotes && (
+        <TabsContent
+          value="quotes"
+          className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
+        >
+          <ClientQuotesTab quotes={quotes} clientId={client.id} />
+        </TabsContent>
+      )}
 
-      <TabsContent
-        value="purchaseorders"
-        className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
-      >
-        <ClientPurchaseOrdersTab
-          purchaseOrders={purchaseOrders}
-          clientId={client.id}
-        />
-      </TabsContent>
+      {canReadPurchaseOrders && (
+        <TabsContent
+          value="purchaseorders"
+          className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
+        >
+          <ClientPurchaseOrdersTab
+            purchaseOrders={purchaseOrders}
+            clientId={client.id}
+          />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

@@ -20,6 +20,10 @@ import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { toast } from "@/src/components/ui/sonner";
 import { capture } from "@/src/lib/analytics";
+import {
+  DEFAULT_INVITE_ROLE,
+  PREDEFINED_ROLE_LABELS,
+} from "@/src/lib/role-labels";
 
 const successSteps = ["welcome", "invite", "theme"];
 
@@ -40,7 +44,7 @@ function SuccessContent() {
   // Invite state
   const [inviteEmails, setInviteEmails] = useState([]);
   const [inviteInput, setInviteInput] = useState("");
-  const [inviteRole, setInviteRole] = useState("member");
+  const [inviteRole, setInviteRole] = useState(DEFAULT_INVITE_ROLE);
   const [isSendingInvites, setIsSendingInvites] = useState(false);
   const inviteInputRef = useRef(null);
   const { inviteMember } = useOrganizationInvitations();
@@ -395,10 +399,13 @@ function SuccessContent() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Administrateur</SelectItem>
-                        <SelectItem value="member">Membre</SelectItem>
-                        <SelectItem value="viewer">Lecteur</SelectItem>
-                        <SelectItem value="accountant">Comptable</SelectItem>
+                        {["viewer", "member", "admin", "accountant"].map(
+                          (key) => (
+                            <SelectItem key={key} value={key}>
+                              {PREDEFINED_ROLE_LABELS[key]}
+                            </SelectItem>
+                          ),
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

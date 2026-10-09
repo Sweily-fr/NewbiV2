@@ -6,6 +6,7 @@ import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { cn } from "@/src/lib/utils";
 import { FileText, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
 import {
   INVOICE_STATUS,
@@ -41,6 +42,10 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
   const router = useRouter();
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const newDocumentHref = `/dashboard/outils/factures/new?clientId=${clientId}`;
+  const { canDo, isReady } = useMyPermissions();
+  // Bouton « Nouveau » = action « create » (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -106,15 +111,17 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
               Ce client n'a pas encore de facture.
             </EmptyDescription>
           </EmptyHeader>
-          <Button
-            variant="outline"
-            className="mt-4"
-            {...prefetchIntent(newDocumentHref)}
-            onClick={() => router.push(newDocumentHref)}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouvelle facture
-          </Button>
+          {canCreateInvoices && (
+            <Button
+              variant="outline"
+              className="mt-4"
+              {...prefetchIntent(newDocumentHref)}
+              onClick={() => router.push(newDocumentHref)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Nouvelle facture
+            </Button>
+          )}
         </Empty>
       </div>
     );
@@ -126,14 +133,16 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
         <h3 className="text-base font-medium text-[#242529] dark:text-foreground">
           Factures
         </h3>
-        <Button
-          variant="outline"
-          {...prefetchIntent(newDocumentHref)}
-          onClick={() => router.push(newDocumentHref)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Nouvelle facture
-        </Button>
+        {canCreateInvoices && (
+          <Button
+            variant="outline"
+            {...prefetchIntent(newDocumentHref)}
+            onClick={() => router.push(newDocumentHref)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Nouvelle facture
+          </Button>
+        )}
       </div>
 
       <div className="overflow-auto">
