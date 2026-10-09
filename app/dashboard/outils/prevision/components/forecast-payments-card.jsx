@@ -48,6 +48,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import { MonthDetailsDrawer } from "./month-details-drawer";
 import { useChartColors } from "@/src/hooks/useChartColors";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // ─── Shared layout constants ───
 
@@ -78,7 +79,7 @@ const getBadgeStyle = (pct) => {
 // ─── Formatters ───
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,
@@ -86,7 +87,7 @@ const formatCurrency = (value) =>
   }).format(value || 0);
 
 const formatCurrencyShort = (value) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
@@ -710,6 +711,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
                   />
 
                   <Bar
+                    animationDuration={300}
                     yAxisId="bars"
                     dataKey="actualIncome"
                     stackId="income"
@@ -718,6 +720,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
                     radius={[4, 4, 0, 0]}
                   />
                   <Bar
+                    animationDuration={300}
                     yAxisId="bars"
                     dataKey="forecastIncome"
                     stackId="income"
@@ -726,6 +729,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
                     radius={[4, 4, 0, 0]}
                   />
                   <Bar
+                    animationDuration={300}
                     yAxisId="bars"
                     dataKey="actualExpense"
                     stackId="expense"
@@ -734,6 +738,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
                     radius={[4, 4, 0, 0]}
                   />
                   <Bar
+                    animationDuration={300}
                     yAxisId="bars"
                     dataKey="forecastExpense"
                     stackId="expense"
@@ -743,6 +748,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
                   />
 
                   <Line
+                    animationDuration={300}
                     yAxisId="balance"
                     dataKey="balance"
                     type="monotone"
@@ -804,7 +810,7 @@ export function ForecastPaymentsCard({ months, kpi, loading, onCellClick }) {
 
 const formatNumber = (value) => {
   if (!value || value === 0) return "–";
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     maximumFractionDigits: 0,
   }).format(Math.round(value));
 };

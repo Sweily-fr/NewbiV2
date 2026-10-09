@@ -8,7 +8,7 @@ import {
   UNBLOCK_CLIENT,
   ASSIGN_CLIENT_MEMBERS,
 } from "../graphql/mutations/clients";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 import { GET_CLIENTS, GET_CLIENT } from "../graphql/queries/clients";
 import { GET_CLIENT_LISTS } from "../graphql/queries/clientLists";
 import { toast } from "@/src/components/ui/sonner";
@@ -133,7 +133,7 @@ export const useCreateClient = () => {
       awaitRefetchQueries: false,
       onCompleted: (data) => {
         const newClient = data?.createClient;
-        posthog.capture("client_created", {
+        capture("client_created", {
           client_type: newClient?.type,
         });
         toast.success("Client créé avec succès");

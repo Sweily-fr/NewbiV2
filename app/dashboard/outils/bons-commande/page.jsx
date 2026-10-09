@@ -24,8 +24,14 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function PurchaseOrdersContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [poIdToOpen, setPoIdToOpen] = useState(null);
@@ -75,7 +81,8 @@ function PurchaseOrdersContent() {
     const id = searchParams.get("id");
     if (id) {
       setPoIdToOpen(id);
-      router.replace("/dashboard/outils/bons-commande", { scroll: false });
+      // Nettoyage de l'URL sans aller-retour serveur (history intégré au routeur).
+      window.history.replaceState(null, "", "/dashboard/outils/bons-commande");
     }
   }, [searchParams, router]);
 
@@ -135,7 +142,7 @@ function PurchaseOrdersContent() {
   }, [purchaseOrders]);
 
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -144,163 +151,167 @@ function PurchaseOrdersContent() {
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header - Fixe */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Bons de commande</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-            </Button>
-            <Button variant="outline" onClick={() => setTriggerImport(true)}>
-              <Download className="w-3.5 h-3.5" aria-hidden="true" />
-              Importer
-            </Button>
-            <PurchaseOrderExportButton
-              purchaseOrders={purchaseOrders}
-              iconOnly={false}
-            />
-            <PermissionButton
-              requiresActiveSubscription
-              resource="purchaseOrders"
-              action="create"
-              variant="primary"
-              onClick={handleNewPurchaseOrder}
-              className="cursor-pointer"
-              data-testid="new-purchase-order-button"
-              tooltipNoAccess="Vous n'avez pas la permission de créer des bons de commande"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouveau bon de commande
-            </PermissionButton>
-          </div>
-        </div>
-
-        {/* Zone scrollable */}
-        <div className="flex-1 min-h-0 overflow-auto">
-          <div className="flex flex-col min-h-full">
-            {/* Stats Cards */}
-            <div className="flex gap-3 px-4 sm:px-6 py-3">
-              <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-                <div className="pr-4">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      Total commandé
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {poLoading
-                        ? "..."
-                        : `${formatAmount(poStats.totalAmount)} €`}
-                    </span>
-                    <span className="text-xs text-muted-foreground">HT</span>
-                  </div>
-                </div>
-
-                <div className="w-px h-10 bg-border mx-4" />
-
-                <div className="pl-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      Total confirmé
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {poLoading
-                        ? "..."
-                        : `${formatAmount(poStats.confirmedAmount)} €`}
-                    </span>
-                    <span className="text-xs text-muted-foreground">HT</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-background border rounded-lg px-4 py-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs text-muted-foreground">
-                    En cours de traitement
-                  </span>
-                  {poStats.inProgressCount > 0 && (
-                    <span className="h-4 w-4 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 text-[10px] font-medium">
-                      {poStats.inProgressCount}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-medium tracking-tight">
-                    {poLoading
-                      ? "..."
-                      : `${formatAmount(poStats.inProgressAmount)} €`}
-                  </span>
-                  <span className="text-xs text-muted-foreground">HT</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Table */}
-            <Suspense fallback={<PurchaseOrderTableSkeleton />}>
-              <PurchaseOrderTable
-                handleNewPurchaseOrder={handleNewPurchaseOrder}
-                poIdToOpen={poIdToOpen}
-                triggerImport={triggerImport}
-                onImportTriggered={() => setTriggerImport(false)}
-                onBalancesRefetch={refetchPurchaseOrders}
-              />
-            </Suspense>
-          </div>
-          {/* Fin min-h-full */}
-        </div>
-        {/* Fin zone scrollable */}
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden">
-        <div className="px-4 py-6">
-          <div className="flex items-start justify-between">
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header - Fixe */}
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
             <div>
               <h1 className="text-2xl font-medium mb-2">Bons de commande</h1>
-              <p className="text-muted-foreground text-sm">
-                Gérez vos bons de commande clients
-              </p>
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => setIsSettingsOpen(true)}
-                className="gap-2"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
               </Button>
+              <Button variant="outline" onClick={() => setTriggerImport(true)}>
+                <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                Importer
+              </Button>
+              <PurchaseOrderExportButton
+                purchaseOrders={purchaseOrders}
+                iconOnly={false}
+              />
+              <PermissionButton
+                requiresActiveSubscription
+                resource="purchaseOrders"
+                action="create"
+                variant="primary"
+                onClick={handleNewPurchaseOrder}
+                className="cursor-pointer"
+                data-testid="new-purchase-order-button"
+                tooltipNoAccess="Vous n'avez pas la permission de créer des bons de commande"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouveau bon de commande
+              </PermissionButton>
             </div>
           </div>
+
+          {/* Zone scrollable */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <div className="flex flex-col min-h-full">
+              {/* Stats Cards */}
+              <div className="flex gap-3 px-4 sm:px-6 py-3">
+                <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+                  <div className="pr-4">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        Total commandé
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {poLoading
+                          ? "..."
+                          : `${formatAmount(poStats.totalAmount)} €`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">HT</span>
+                    </div>
+                  </div>
+
+                  <div className="w-px h-10 bg-border mx-4" />
+
+                  <div className="pl-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        Total confirmé
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {poLoading
+                          ? "..."
+                          : `${formatAmount(poStats.confirmedAmount)} €`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">HT</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-background border rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs text-muted-foreground">
+                      En cours de traitement
+                    </span>
+                    {poStats.inProgressCount > 0 && (
+                      <span className="h-4 w-4 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 text-[10px] font-medium">
+                        {poStats.inProgressCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-medium tracking-tight">
+                      {poLoading
+                        ? "..."
+                        : `${formatAmount(poStats.inProgressAmount)} €`}
+                    </span>
+                    <span className="text-xs text-muted-foreground">HT</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table */}
+              <Suspense fallback={<PurchaseOrderTableSkeleton />}>
+                <PurchaseOrderTable
+                  handleNewPurchaseOrder={handleNewPurchaseOrder}
+                  poIdToOpen={poIdToOpen}
+                  triggerImport={triggerImport}
+                  onImportTriggered={() => setTriggerImport(false)}
+                  onBalancesRefetch={refetchPurchaseOrders}
+                />
+              </Suspense>
+            </div>
+            {/* Fin min-h-full */}
+          </div>
+          {/* Fin zone scrollable */}
         </div>
+      )}
 
-        <Suspense fallback={<PurchaseOrderTableSkeleton />}>
-          <PurchaseOrderTable />
-        </Suspense>
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="md:hidden">
+          <div className="px-4 py-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-2">Bons de commande</h1>
+                <p className="text-muted-foreground text-sm">
+                  Gérez vos bons de commande clients
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
 
-        <PermissionButton
-          requiresActiveSubscription
-          resource="purchaseOrders"
-          action="create"
-          onClick={handleNewPurchaseOrder}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-          hideIfNoAccess={true}
-          tooltipNoAccess="Vous n'avez pas la permission de créer des bons de commande"
-        >
-          <Plus className="h-6 w-6" />
-        </PermissionButton>
-      </div>
+          <Suspense fallback={<PurchaseOrderTableSkeleton />}>
+            <PurchaseOrderTable />
+          </Suspense>
+
+          <PermissionButton
+            requiresActiveSubscription
+            resource="purchaseOrders"
+            action="create"
+            onClick={handleNewPurchaseOrder}
+            className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+            size="icon"
+            hideIfNoAccess={true}
+            tooltipNoAccess="Vous n'avez pas la permission de créer des bons de commande"
+          >
+            <Plus className="h-6 w-6" />
+          </PermissionButton>
+        </div>
+      )}
 
       {/* Modal d'envoi par email */}
       {newPoData && (

@@ -36,6 +36,7 @@ import QuoteRowActions from "../components/quote-row-actions";
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Custom filter functions
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -106,14 +107,6 @@ const formatDateForSearch = (dateValue) => {
       `${month}/${year}`,
       // Format mois-année avec tirets (MM-AAAA)
       `${month}-${year}`,
-      // Format texte en français
-      date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }),
-      date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-      date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
     ].filter(
       (value, index, self) =>
         // Supprimer les doublons et valeurs vides
@@ -667,7 +660,7 @@ export function useQuoteTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -697,7 +690,7 @@ export function useQuoteTable({
             return "—";
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -748,7 +741,7 @@ export function useQuoteTable({
 
           return (
             <div className="font-normal">
-              {new Intl.NumberFormat("fr-FR", {
+              {getNumberFormat("fr-FR", {
                 style: "currency",
                 currency: "EUR",
               }).format(amount)}
@@ -816,6 +809,22 @@ export function useQuoteTable({
     }
   }, [data]);
 
+  // Filtres de colonnes mémoïsés : un tableau recréé à chaque rendu faisait
+  // recalculer à react-table tout le modèle filtré (recherche comprise) à
+  // chaque rendu, même sans changement de filtre.
+  const columnFilters = useMemo(
+    () => [
+      ...(statusFilter.length > 0
+        ? [{ id: "status", value: statusFilter }]
+        : []),
+      ...(clientFilter.length > 0
+        ? [{ id: "client", value: clientFilter }]
+        : []),
+      ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+    ],
+    [statusFilter, clientFilter, dateFilter],
+  );
+
   // Create table instance with optimized settings
   const table = useReactTable({
     data,
@@ -843,15 +852,7 @@ export function useQuoteTable({
     state: {
       globalFilter,
       columnVisibility,
-      columnFilters: [
-        ...(statusFilter.length > 0
-          ? [{ id: "status", value: statusFilter }]
-          : []),
-        ...(clientFilter.length > 0
-          ? [{ id: "client", value: clientFilter }]
-          : []),
-        ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
-      ],
+      columnFilters,
     },
     // Use the memoized filter function
     filterFns: {

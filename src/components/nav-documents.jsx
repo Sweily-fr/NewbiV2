@@ -35,7 +35,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/src/components/ui/sidebar";
-import Link from "next/link";
+// Liens préchargés à l'intention de clic (voir nav-link.jsx).
+import Link from "@/src/components/nav-link";
 import { usePathname } from "next/navigation";
 
 export function NavDocuments({ items }) {

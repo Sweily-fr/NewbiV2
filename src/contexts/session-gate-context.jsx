@@ -10,7 +10,7 @@ import React, {
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { Loader2 } from "lucide-react";
-import posthog from "posthog-js";
+import { identify } from "@/src/lib/analytics";
 
 const SessionGateContext = createContext({ isReady: false });
 
@@ -67,27 +67,13 @@ export function SessionGateProvider({ children }) {
 
   // Identifier l'user PostHog quand la session est restaurée (reload, retour app)
   // Si pas de consent analytics, opt_out_capturing_by_default empêche l'envoi.
+  // Mis en file jusqu'au chargement différé de posthog (src/lib/analytics).
   useEffect(() => {
     if (!session?.user?.id) return;
-    let cancelled = false;
-    let attempts = 0;
-    const identify = () => {
-      if (cancelled) return;
-      // L'init PostHog est différée à l'idle (instrumentation-client) :
-      // attendre qu'elle soit faite avant d'identifier.
-      if (!posthog.__loaded) {
-        if (attempts++ < 10) setTimeout(identify, 500);
-        return;
-      }
-      posthog.identify(session.user.id, {
-        email: session.user.email,
-        name: session.user.name,
-      });
-    };
-    identify();
-    return () => {
-      cancelled = true;
-    };
+    identify(session.user.id, {
+      email: session.user.email,
+      name: session.user.name,
+    });
   }, [session?.user?.id]);
 
   if (!isReady) {

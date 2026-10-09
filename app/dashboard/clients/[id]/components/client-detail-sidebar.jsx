@@ -43,6 +43,7 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { toast } from "@/src/components/ui/sonner";
 import { useClientListsByClient } from "@/src/hooks/useClientLists";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function SidebarSection({ title, defaultOpen = true, children }) {
   return (
@@ -169,8 +170,7 @@ export default function ClientDetailSidebar({
         const text = Array.isArray(value)
           ? value
               .map(
-                (v) =>
-                  fieldDef.options?.find((o) => o.value === v)?.label || v,
+                (v) => fieldDef.options?.find((o) => o.value === v)?.label || v,
               )
               .join(", ")
           : String(value);
@@ -238,7 +238,7 @@ export default function ClientDetailSidebar({
   }, [clientInvoices]);
 
   const formatCurrency = (amount) =>
-    new Intl.NumberFormat("fr-FR", {
+    getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount);

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import {
   Card,
   CardContent,
@@ -11,9 +12,10 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ExternalLink, ArrowUpRight } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount || 0);
@@ -29,6 +31,7 @@ function getInitials(name) {
 
 export function TopClientsCard({ className, paidInvoices = [], isLoading }) {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
 
   const topClients = useMemo(() => {
     const map = new Map();
@@ -109,6 +112,9 @@ export function TopClientsCard({ className, paidInvoices = [], isLoading }) {
                   type="button"
                   key={client.clientId}
                   disabled={!isClickable}
+                  {...(isClickable
+                    ? prefetchIntent(`/dashboard/clients/${client.clientId}`)
+                    : {})}
                   onClick={() =>
                     isClickable &&
                     router.push(`/dashboard/clients/${client.clientId}`)

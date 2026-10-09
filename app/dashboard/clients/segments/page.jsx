@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
@@ -457,6 +458,7 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 // ==================== Segment Detail View ====================
 function SegmentDetailView({ segment, onBack }) {
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -615,6 +617,7 @@ function SegmentDetailView({ segment, onBack }) {
                 {clients.map((client) => (
                   <tr
                     key={client.id}
+                    {...prefetchIntent(`/dashboard/clients/${client.id}`)}
                     onClick={() =>
                       router.push(`/dashboard/clients/${client.id}`)
                     }

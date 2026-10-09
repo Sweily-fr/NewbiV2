@@ -54,8 +54,13 @@ import {
 import FileUploadNew from "./components/file-upload-new";
 import { useFileTransfer } from "./hooks/useFileTransfer";
 import { cn } from "@/src/lib/utils";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 
 function TransfertsContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const { transfers, transfersLoading, refetchTransfers, formatFileSize } =
     useFileTransfer();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -181,16 +186,17 @@ function TransfertsContent() {
   return (
     <>
       {/* Desktop Layout - Full height avec scroll uniquement sur le tableau */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">
-              Transferts de fichiers
-            </h1>
-          </div>
-          <div className="flex gap-2">
-            {/* <TooltipProvider>
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
+            <div>
+              <h1 className="text-2xl font-medium mb-2">
+                Transferts de fichiers
+              </h1>
+            </div>
+            <div className="flex gap-2">
+              {/* <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -209,177 +215,182 @@ function TransfertsContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider> */}
-            <Button
-              variant="primary"
-              onClick={() => setShowUploadModal(true)}
-              className="cursor-pointer"
-              disabled={isReadOnly}
-              title={readOnlyTooltip}
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouveau transfert
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="flex gap-3 px-4 sm:px-6 py-3">
-          {/* Transferts actifs + Téléchargés */}
-          <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-            {/* Transferts actifs */}
-            <div className="pr-4">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-xs text-muted-foreground">
-                  En attente
-                </span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="bg-[#202020] text-white border-0"
-                    >
-                      <p>Transferts en attente de téléchargement</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-medium tracking-tight">
-                  {transfersLoading ? "..." : transferStats.activeTransfers}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  transfert(s)
-                </span>
-              </div>
-            </div>
-
-            {/* Separator */}
-            <div className="w-px h-10 bg-border mx-4" />
-
-            {/* Téléchargés */}
-            <div className="pl-0">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-xs text-muted-foreground">
-                  Téléchargés
-                </span>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="bg-[#202020] text-white border-0"
-                    >
-                      <p>Transferts téléchargés au moins une fois</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-medium tracking-tight">
-                  {transfersLoading ? "..." : transferStats.downloadedTransfers}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  transfert(s)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Transferts expirés */}
-          <div className="bg-background border rounded-lg px-4 py-3">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-xs text-muted-foreground">Expirés</span>
-              {transferStats.expiredTransfers > 0 && (
-                <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
-                  {transferStats.expiredTransfers}
-                </span>
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className="bg-[#202020] text-white border-0"
-                  >
-                    <p>Transferts dont la date d'expiration est dépassée</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg font-medium tracking-tight">
-                {transfersLoading ? "..." : transferStats.expiredTransfers}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                transfert(s)
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <Suspense fallback={<TransferTableSkeleton />}>
-          <TransferTable
-            transfers={transfers}
-            onRefresh={refetchTransfers}
-            loading={transfersLoading}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            transferCounts={transferCounts}
-            onSelectionChange={setSelectionState}
-            selectionState={selectionState}
-            onShowDeleteDialog={() => setShowDeleteDialog(true)}
-          />
-        </Suspense>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="px-4 py-6 flex-shrink-0">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-medium mb-1">Transferts</h1>
-            </div>
-            <div className="flex gap-2">
               <Button
+                variant="primary"
                 onClick={() => setShowUploadModal(true)}
-                size="icon"
-                className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                className="cursor-pointer"
+                disabled={isReadOnly}
+                title={readOnlyTooltip}
               >
-                <Plus className="h-5 w-5" />
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouveau transfert
               </Button>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <Suspense fallback={<TransferTableSkeleton />}>
-          <TransferTable
-            transfers={transfers}
-            onRefresh={refetchTransfers}
-            loading={transfersLoading}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            transferCounts={transferCounts}
-            onSelectionChange={setSelectionState}
-            selectionState={selectionState}
-            onShowDeleteDialog={() => setShowDeleteDialog(true)}
-            isMobile={true}
-          />
-        </Suspense>
-      </div>
+          {/* Stats Cards */}
+          <div className="flex gap-3 px-4 sm:px-6 py-3">
+            {/* Transferts actifs + Téléchargés */}
+            <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+              {/* Transferts actifs */}
+              <div className="pr-4">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-xs text-muted-foreground">
+                    En attente
+                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>Transferts en attente de téléchargement</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-medium tracking-tight">
+                    {transfersLoading ? "..." : transferStats.activeTransfers}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    transfert(s)
+                  </span>
+                </div>
+              </div>
+
+              {/* Separator */}
+              <div className="w-px h-10 bg-border mx-4" />
+
+              {/* Téléchargés */}
+              <div className="pl-0">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-xs text-muted-foreground">
+                    Téléchargés
+                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>Transferts téléchargés au moins une fois</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-medium tracking-tight">
+                    {transfersLoading
+                      ? "..."
+                      : transferStats.downloadedTransfers}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    transfert(s)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Transferts expirés */}
+            <div className="bg-background border rounded-lg px-4 py-3">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs text-muted-foreground">Expirés</span>
+                {transferStats.expiredTransfers > 0 && (
+                  <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
+                    {transferStats.expiredTransfers}
+                  </span>
+                )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[#202020] text-white border-0"
+                    >
+                      <p>Transferts dont la date d'expiration est dépassée</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-medium tracking-tight">
+                  {transfersLoading ? "..." : transferStats.expiredTransfers}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  transfert(s)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <Suspense fallback={<TransferTableSkeleton />}>
+            <TransferTable
+              transfers={transfers}
+              onRefresh={refetchTransfers}
+              loading={transfersLoading}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              transferCounts={transferCounts}
+              onSelectionChange={setSelectionState}
+              selectionState={selectionState}
+              onShowDeleteDialog={() => setShowDeleteDialog(true)}
+            />
+          </Suspense>
+        </div>
+      )}
+
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header */}
+          <div className="px-4 py-6 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-1">Transferts</h1>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowUploadModal(true)}
+                  size="icon"
+                  className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <Suspense fallback={<TransferTableSkeleton />}>
+            <TransferTable
+              transfers={transfers}
+              onRefresh={refetchTransfers}
+              loading={transfersLoading}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              transferCounts={transferCounts}
+              onSelectionChange={setSelectionState}
+              selectionState={selectionState}
+              onShowDeleteDialog={() => setShowDeleteDialog(true)}
+              isMobile={true}
+            />
+          </Suspense>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -406,9 +417,10 @@ function TransfertsContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Upload Modal - Desktop (style invite member dialog) */}
+      {/* Upload Modal - Desktop (style invite member dialog). Une seule des
+          deux modales est ouverte : FileUploadNew était monté deux fois. */}
       <Dialog
-        open={showUploadModal}
+        open={showUploadModal && !isMobile}
         onOpenChange={(open) => !isUploading && setShowUploadModal(open)}
       >
         <DialogContent className="hidden md:flex flex-col sm:max-w-[980px] h-[85vh] p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
@@ -432,7 +444,7 @@ function TransfertsContent() {
       </Dialog>
 
       {/* Upload Modal - Mobile fullscreen */}
-      {showUploadModal && (
+      {showUploadModal && isMobile && (
         <div className="md:hidden fixed inset-0 z-[100] bg-background flex flex-col">
           {/* Header */}
           <div className="flex-shrink-0 border-b">

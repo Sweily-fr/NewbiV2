@@ -95,6 +95,7 @@ import { productItemImage } from "@/src/utils/item-image";
 import ClientSelector from "./invoices-form-sections/client-selector";
 import CompanyImport, { QuickCompanyImport } from "./company-import";
 import { toast } from "@/src/components/ui/sonner";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({
@@ -531,7 +532,7 @@ export default function EnhancedInvoiceForm({
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount);

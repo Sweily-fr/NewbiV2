@@ -21,8 +21,14 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useQuotes, useQuoteBalances } from "@/src/graphql/quoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function QuotesContent() {
+  // Une seule des deux mises en page (bureau ou mobile) est montée : les
+  // deux étaient rendues et l'une masquée en CSS, d'où deux tableaux, deux
+  // jeux de requêtes et de hooks par ligne sur chaque page de liste.
+  const isMobile = useIsMobile();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -75,7 +81,8 @@ function QuotesContent() {
     if (id) {
       setQuoteIdToOpen(id);
       // Nettoyer l'URL après avoir récupéré l'ID
-      router.replace("/dashboard/outils/devis", { scroll: false });
+      // Nettoyage de l'URL sans aller-retour serveur (history intégré au routeur).
+      window.history.replaceState(null, "", "/dashboard/outils/devis");
     }
   }, [searchParams, router]);
 
@@ -95,7 +102,7 @@ function QuotesContent() {
 
   // Formater les montants
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -104,167 +111,171 @@ function QuotesContent() {
   return (
     <>
       {/* Desktop Layout */}
-      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header - Fixe */}
-        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Devis clients</h1>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSettingsOpen(true)}
-            >
-              <Settings className="w-3.5 h-3.5" aria-hidden="true" />
-            </Button>
-            <Button variant="outline" onClick={() => setTriggerImport(true)}>
-              <Download className="w-3.5 h-3.5" aria-hidden="true" />
-              Importer
-            </Button>
-            <QuoteExportButton quotes={quotes} iconOnly={false} />
-            <PermissionButton
-              requiresActiveSubscription
-              resource="quotes"
-              action="create"
-              variant="primary"
-              onClick={handleNewQuote}
-              className="cursor-pointer"
-              tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouveau devis
-            </PermissionButton>
-          </div>
-        </div>
-
-        {/* Zone scrollable : KPIs + recherche + onglets + tableau */}
-        <div className="flex-1 min-h-0 overflow-auto">
-          <div className="flex flex-col min-h-full">
-            {/* Stats Cards */}
-            <div className="flex gap-3 px-4 sm:px-6 py-3">
-              {/* Total devisé + Total accepté */}
-              <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
-                {/* Total devisé */}
-                <div className="pr-4">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      Total devis
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {balancesLoading
-                        ? "..."
-                        : `${formatAmount(quoteStats.totalQuoted)} €`}
-                    </span>
-                    <span className="text-xs text-muted-foreground">HT</span>
-                  </div>
-                </div>
-
-                {/* Separator */}
-                <div className="w-px h-10 bg-border mx-4" />
-
-                {/* Total accepté */}
-                <div className="pl-0">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-xs text-muted-foreground">
-                      Total accepté
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-lg font-medium tracking-tight">
-                      {balancesLoading
-                        ? "..."
-                        : `${formatAmount(quoteStats.totalAccepted)} €`}
-                    </span>
-                    <span className="text-xs text-muted-foreground">HT</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Devis en attente */}
-              <div className="bg-background border rounded-lg px-4 py-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs text-muted-foreground">
-                    Devis en attente
-                  </span>
-                  {quoteStats.pendingCount > 0 && (
-                    <span className="h-4 w-4 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 text-[10px] font-medium">
-                      {quoteStats.pendingCount}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-lg font-medium tracking-tight">
-                    {balancesLoading
-                      ? "..."
-                      : `${formatAmount(quoteStats.pendingAmount)} €`}
-                  </span>
-                  <span className="text-xs text-muted-foreground">HT</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Table */}
-            <Suspense fallback={<QuoteTableSkeleton />}>
-              <QuoteTable
-                handleNewQuote={handleNewQuote}
-                quoteIdToOpen={quoteIdToOpen}
-                triggerImport={triggerImport}
-                onImportTriggered={() => setTriggerImport(false)}
-                onBalancesRefetch={refetchBalances}
-              />
-            </Suspense>
-          </div>
-          {/* Fin min-h-full */}
-        </div>
-        {/* Fin zone scrollable */}
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-        {/* Header */}
-        <div className="px-4 py-6 flex-shrink-0">
-          <div className="flex items-start justify-between">
+      {!isMobile && (
+        <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header - Fixe */}
+          <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
             <div>
-              <h1 className="text-2xl font-medium mb-1">Devis</h1>
+              <h1 className="text-2xl font-medium mb-2">Devis clients</h1>
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => setIsSettingsOpen(true)}
-                className="gap-2"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="w-3.5 h-3.5" aria-hidden="true" />
               </Button>
+              <Button variant="outline" onClick={() => setTriggerImport(true)}>
+                <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                Importer
+              </Button>
+              <QuoteExportButton quotes={quotes} iconOnly={false} />
               <PermissionButton
                 requiresActiveSubscription
                 resource="quotes"
                 action="create"
+                variant="primary"
                 onClick={handleNewQuote}
-                size="icon"
-                className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
-                hideIfNoAccess={true}
+                className="cursor-pointer"
                 tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
               >
-                <Plus className="h-5 w-5" />
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouveau devis
               </PermissionButton>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <Suspense fallback={<QuoteTableSkeleton />}>
-          <QuoteTable
-            quoteIdToOpen={quoteIdToOpen}
-            triggerImport={triggerImport}
-            onImportTriggered={() => setTriggerImport(false)}
-            onBalancesRefetch={refetchBalances}
-          />
-        </Suspense>
-      </div>
+          {/* Zone scrollable : KPIs + recherche + onglets + tableau */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <div className="flex flex-col min-h-full">
+              {/* Stats Cards */}
+              <div className="flex gap-3 px-4 sm:px-6 py-3">
+                {/* Total devisé + Total accepté */}
+                <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+                  {/* Total devisé */}
+                  <div className="pr-4">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        Total devis
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {balancesLoading
+                          ? "..."
+                          : `${formatAmount(quoteStats.totalQuoted)} €`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">HT</span>
+                    </div>
+                  </div>
+
+                  {/* Separator */}
+                  <div className="w-px h-10 bg-border mx-4" />
+
+                  {/* Total accepté */}
+                  <div className="pl-0">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        Total accepté
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-medium tracking-tight">
+                        {balancesLoading
+                          ? "..."
+                          : `${formatAmount(quoteStats.totalAccepted)} €`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">HT</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Devis en attente */}
+                <div className="bg-background border rounded-lg px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-xs text-muted-foreground">
+                      Devis en attente
+                    </span>
+                    {quoteStats.pendingCount > 0 && (
+                      <span className="h-4 w-4 flex items-center justify-center rounded-full bg-orange-100 text-orange-500 text-[10px] font-medium">
+                        {quoteStats.pendingCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-medium tracking-tight">
+                      {balancesLoading
+                        ? "..."
+                        : `${formatAmount(quoteStats.pendingAmount)} €`}
+                    </span>
+                    <span className="text-xs text-muted-foreground">HT</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table */}
+              <Suspense fallback={<QuoteTableSkeleton />}>
+                <QuoteTable
+                  handleNewQuote={handleNewQuote}
+                  quoteIdToOpen={quoteIdToOpen}
+                  triggerImport={triggerImport}
+                  onImportTriggered={() => setTriggerImport(false)}
+                  onBalancesRefetch={refetchBalances}
+                />
+              </Suspense>
+            </div>
+            {/* Fin min-h-full */}
+          </div>
+          {/* Fin zone scrollable */}
+        </div>
+      )}
+
+      {/* Mobile Layout */}
+      {isMobile && (
+        <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+          {/* Header */}
+          <div className="px-4 py-6 flex-shrink-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-medium mb-1">Devis</h1>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <PermissionButton
+                  requiresActiveSubscription
+                  resource="quotes"
+                  action="create"
+                  onClick={handleNewQuote}
+                  size="icon"
+                  className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                  hideIfNoAccess={true}
+                  tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
+                >
+                  <Plus className="h-5 w-5" />
+                </PermissionButton>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <Suspense fallback={<QuoteTableSkeleton />}>
+            <QuoteTable
+              quoteIdToOpen={quoteIdToOpen}
+              triggerImport={triggerImport}
+              onImportTriggered={() => setTriggerImport(false)}
+              onBalancesRefetch={refetchBalances}
+            />
+          </Suspense>
+        </div>
+      )}
 
       {/* Modal des paramètres */}
       <QuoteSettingsModal

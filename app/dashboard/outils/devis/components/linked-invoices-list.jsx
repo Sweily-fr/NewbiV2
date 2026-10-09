@@ -3,10 +3,11 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Fonction utilitaire pour formater les montants
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount || 0);

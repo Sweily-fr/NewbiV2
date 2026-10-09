@@ -19,7 +19,7 @@ import { useTheme } from "@/src/components/theme-provider";
 import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { toast } from "@/src/components/ui/sonner";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 
 const successSteps = ["welcome", "invite", "theme"];
 
@@ -168,7 +168,7 @@ function SuccessContent() {
             // ferme l'onglet avant cette page), il faudra plus tard ajouter
             // le même capture côté backend dans newbi-api sur l'event
             // Stripe `customer.subscription.created`.
-            posthog.capture("subscription_paid", {
+            capture("subscription_paid", {
               stripe_session_id: sessionId,
             });
 

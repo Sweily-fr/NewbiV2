@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { pickItemImage } from "@/src/utils/item-image";
 import { FormProvider } from "react-hook-form";
@@ -34,7 +36,6 @@ import { usePurchaseOrderEditor } from "../hooks/use-purchase-order-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedQuoteForm from "@/app/dashboard/outils/devis/components/enhanced-quote-form";
-import QuoteSettingsView from "@/app/dashboard/outils/devis/components/quote-settings-view";
 import { toast } from "@/src/components/ui/sonner";
 import {
   updateOrganization,
@@ -43,9 +44,6 @@ import {
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useClient } from "@/src/graphql/clientQueries";
-import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
-import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
-import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
 import {
   usePurchaseOrderTemplates,
   GET_PURCHASE_ORDER_TEMPLATES,
@@ -68,6 +66,52 @@ import {
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { getNumberFormat } from "@/src/lib/intl-cache";
+import { chunkLoadFallback } from "@/src/lib/chunk-load-fallback";
+import { usePreloadOnIdle } from "@/src/hooks/usePreloadOnIdle";
+import { useUnsavedChangesWarning } from "@/src/hooks/useUnsavedChangesWarning";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const QuoteSettingsView = dynamic(
+  () =>
+    import("@/app/dashboard/outils/devis/components/quote-settings-view").catch(
+      chunkLoadFallback,
+    ),
+  { ssr: false },
+);
+const ClientsModal = dynamic(
+  () =>
+    import("@/app/dashboard/clients/components/clients-modal").catch(
+      chunkLoadFallback,
+    ),
+  { ssr: false },
+);
+const SendDocumentModal = dynamic(
+  () =>
+    import("@/app/dashboard/outils/factures/components/send-document-modal")
+      .then((m) => m.SendDocumentModal)
+      .catch(chunkLoadFallback),
+  { ssr: false },
+);
+const SavePurchaseOrderTemplateDialog = dynamic(
+  () =>
+    import("./SavePurchaseOrderTemplateDialog")
+      .then((m) => m.SavePurchaseOrderTemplateDialog)
+      .catch(chunkLoadFallback),
+  { ssr: false },
+);
+
+// Préchargées quand le navigateur est inactif après l'ouverture de l'éditeur :
+// déjà là si une nouvelle version est mise en ligne pendant la saisie.
+const preloadEditorModules = () =>
+  Promise.all([
+    import("@/app/dashboard/outils/devis/components/quote-settings-view"),
+    import("@/app/dashboard/clients/components/clients-modal"),
+    import("@/app/dashboard/outils/factures/components/send-document-modal"),
+    import("./SavePurchaseOrderTemplateDialog"),
+  ]);
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -196,6 +240,25 @@ export default function ModernPurchaseOrderEditor({
     enabled: mode !== "create" && !loading,
   });
 
+  const isReadOnly = mode === "view";
+  const isEditing = mode === "edit";
+  const isCreating = mode === "create";
+
+  // La modal de confirmation ne s'affiche que si le bon de commande est "draftable" :
+  // un client sélectionné ET au moins un article.
+  const watchedFormItems = form.watch("items");
+  const watchedClient = form.watch("client");
+  const hasItems =
+    Array.isArray(watchedFormItems) && watchedFormItems.length > 0;
+  const hasClient = !!(watchedClient && watchedClient.id);
+  const hasUserChanges = hasClient && hasItems;
+  const guardActive = hasUserChanges && !isReadOnly;
+
+  // Modifications non enregistrées : confirmation du navigateur avant de
+  // recharger ou fermer l'onglet.
+  useUnsavedChangesWarning(guardActive && isDirty);
+  usePreloadOnIdle(preloadEditorModules);
+
   // Afficher un message si le BC n'existe pas
   if (
     mode !== "create" &&
@@ -212,20 +275,6 @@ export default function ModernPurchaseOrderEditor({
       />
     );
   }
-
-  const isReadOnly = mode === "view";
-  const isEditing = mode === "edit";
-  const isCreating = mode === "create";
-
-  // La modal de confirmation ne s'affiche que si le bon de commande est "draftable" :
-  // un client sélectionné ET au moins un article.
-  const watchedFormItems = form.watch("items");
-  const watchedClient = form.watch("client");
-  const hasItems =
-    Array.isArray(watchedFormItems) && watchedFormItems.length > 0;
-  const hasClient = !!(watchedClient && watchedClient.id);
-  const hasUserChanges = hasClient && hasItems;
-  const guardActive = hasUserChanges && !isReadOnly;
 
   useEffect(() => {
     if (!guardActive) return;
@@ -318,7 +367,7 @@ export default function ModernPurchaseOrderEditor({
         number: `${result.purchaseOrder.prefix || "BC"}-${result.purchaseOrder.number}`,
         clientName: result.purchaseOrder.client?.name,
         clientEmail: result.purchaseOrder.client?.email,
-        totalAmount: new Intl.NumberFormat("fr-FR", {
+        totalAmount: getNumberFormat("fr-FR", {
           style: "currency",
           currency: "EUR",
         }).format(result.purchaseOrder.finalTotalTTC || 0),
@@ -735,7 +784,7 @@ export default function ModernPurchaseOrderEditor({
       </div>
 
       {/* Modal d'édition du client */}
-      {formData.client && (
+      {formData.client && showEditClient && (
         <ClientsModal
           open={showEditClient}
           onOpenChange={setShowEditClient}
@@ -792,7 +841,7 @@ export default function ModernPurchaseOrderEditor({
       </AlertDialog>
 
       {/* Modal d'envoi par email */}
-      {createdPurchaseOrderData && (
+      {createdPurchaseOrderData && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}
@@ -817,7 +866,7 @@ export default function ModernPurchaseOrderEditor({
       )}
 
       {/* Dialog de sauvegarde comme modèle */}
-      {purchaseOrderId && (
+      {purchaseOrderId && showSaveTemplateDialog && (
         <SavePurchaseOrderTemplateDialog
           purchaseOrderId={purchaseOrderId}
           purchaseOrderNumber={`${formData?.prefix || "BC"}-${formData?.number || ""}`}

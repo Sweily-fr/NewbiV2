@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Tabs,
   TabsContent,
@@ -32,7 +32,6 @@ export default function ClientDetailTabs({
   workspaceId,
   onClientUpdate,
 }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const validTabs = [
@@ -53,7 +52,13 @@ export default function ClientDetailTabs({
       params.set("tab", tab);
     }
     const query = params.toString();
-    router.replace(`?${query}`, { scroll: false });
+    // history.replaceState (intégré au routeur Next) : l'onglet change sans
+    // l'aller-retour serveur de router.replace.
+    window.history.replaceState(
+      null,
+      "",
+      query ? `?${query}` : window.location.pathname,
+    );
   };
 
   const clientInvoicesCount = useMemo(

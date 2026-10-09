@@ -7,6 +7,7 @@ import {
   GET_TRANSACTIONS,
 } from "@/src/graphql/queries/banking";
 import { GET_DASHBOARD_SUMMARY } from "@/src/graphql/queries/dashboardAggregation";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Durée de validité du cache (5 minutes)
 const CACHE_TTL = 5 * 60 * 1000;
@@ -233,7 +234,7 @@ export function useDashboardData({
       ttl: CACHE_TTL,
     },
     formatCurrency: (amount) => {
-      return new Intl.NumberFormat("fr-FR", {
+      return getNumberFormat("fr-FR", {
         style: "currency",
         currency: "EUR",
       }).format(amount || 0);

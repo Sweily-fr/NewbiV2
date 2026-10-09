@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useState } from "react";
-import Link from "next/link";
+// Liens préchargés à l'intention de clic (voir nav-link.jsx).
+import Link from "@/src/components/nav-link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import {
@@ -34,7 +35,6 @@ const SettingsModal = dynamic(
   () => import("@/src/components/settings-modal").then((m) => m.SettingsModal),
   { ssr: false },
 );
-import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 
 import {
   SidebarGroup,
@@ -58,6 +58,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+
+// Promo e-invoicing : chargée et montée seulement à l'ouverture.
+const EInvoicingPromoModal = dynamic(
+  () =>
+    import("@/src/components/e-invoicing-promo-modal").then(
+      (m) => m.EInvoicingPromoModal,
+    ),
+  { ssr: false },
+);
 
 // Composant pour le menu Aide et support avec dropdown
 function HelpDropdownMenu({ onCommunityClick }) {
@@ -412,10 +421,12 @@ export function NavSecondary({
         </SidebarMenu>
 
         {/* Modal de promotion facturation électronique */}
-        <EInvoicingPromoModal
-          open={eInvoicingPromoOpen}
-          onOpenChange={setEInvoicingPromoOpen}
-        />
+        {eInvoicingPromoOpen && (
+          <EInvoicingPromoModal
+            open={eInvoicingPromoOpen}
+            onOpenChange={setEInvoicingPromoOpen}
+          />
+        )}
 
         {/* Paramètres ouverts sur l'abonnement quand l'utilisateur n'a pas de plan actif */}
         {subscriptionModalOpen && (

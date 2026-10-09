@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import {
   KanbanListPageSkeleton,
@@ -112,6 +113,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
 import { useClients } from "@/src/graphql/clientQueries";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function KanbanPageContent() {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -121,6 +123,7 @@ function KanbanPageContent() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   const router = useRouter();
+  const { intentProps: prefetchIntent } = usePrefetchOnIntent();
   const [boardPreview, setBoardPreview] = React.useState(null);
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
   const [isDeletingMultiple, setIsDeletingMultiple] = React.useState(false);
@@ -888,6 +891,7 @@ function KanbanPageContent() {
                 <div
                   key={board.id}
                   className="bg-card border border-border rounded-xl p-4 hover:shadow-sm cursor-pointer transition-all group"
+                  {...prefetchIntent(`/dashboard/outils/kanban/${board.id}`)}
                   onClick={() =>
                     router.push(`/dashboard/outils/kanban/${board.id}`)
                   }
@@ -993,7 +997,7 @@ function KanbanPageContent() {
                     {board.totalBillableAmount > 0 && (
                       <span className="inline-flex items-center gap-1 text-[#5b50ff] font-medium">
                         <Euro className="h-3 w-3" />
-                        {new Intl.NumberFormat("fr-FR", {
+                        {getNumberFormat("fr-FR", {
                           style: "currency",
                           currency: "EUR",
                         }).format(board.totalBillableAmount)}
@@ -1095,6 +1099,9 @@ function KanbanPageContent() {
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
                       className="border-b border-border hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      {...prefetchIntent(
+                        `/dashboard/outils/kanban/${row.original.id}`,
+                      )}
                       onClick={(e) => {
                         // Ne pas naviguer si on clique sur la checkbox ou les actions
                         if (

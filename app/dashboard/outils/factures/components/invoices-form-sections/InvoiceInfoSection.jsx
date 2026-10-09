@@ -67,10 +67,11 @@ import {
   SEARCH_QUOTES_FOR_REFERENCE,
 } from "@/src/graphql/quoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Fonction utilitaire pour formater les montants
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 2,

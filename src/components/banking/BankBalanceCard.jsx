@@ -44,6 +44,7 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 function BankBalanceCardInner(
   {
@@ -265,7 +266,7 @@ function BankBalanceCardInner(
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
     }).format(amount || 0);

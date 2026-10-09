@@ -88,6 +88,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
 import { ClipboardImportIcon } from "@/src/components/icons";
 import { useEmailTrackingSubscription } from "@/src/graphql/documentEmailQueries";
+import { useIsMobile } from "@/src/hooks/use-mobile";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 export default function PurchaseOrderTable({
   handleNewPurchaseOrder,
@@ -96,6 +98,9 @@ export default function PurchaseOrderTable({
   onImportTriggered,
   onBalancesRefetch,
 }) {
+  // Lignes bureau ou cartes mobiles : un seul des deux rendus est monté
+  // (les deux l'étaient, l'un masqué en CSS).
+  const isMobileLayout = useIsMobile();
   const inputRef = useRef(null);
   const { purchaseOrders, loading, error, refetch } = usePurchaseOrders();
   const { workspaceId } = useRequiredWorkspace();
@@ -524,207 +529,211 @@ export default function PurchaseOrderTable({
       </div>
 
       {/* Table body - Desktop */}
-      <div className="hidden md:flex md:flex-col flex-1">
-        <table className="w-full table-fixed">
-          <tbody>
-            {loading && !purchaseOrders?.length ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <tr key={`skeleton-${i}`} className="border-b">
-                  <td className="p-2 pl-4 sm:pl-6">
-                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                      <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2">
-                    <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
-                  </td>
-                  <td className="p-2 pr-4 sm:pr-6">
-                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                  </td>
-                </tr>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                  onClick={(e) => {
-                    // Ignorer les clics provenant de portals React (modals, dropdowns)
-                    if (!e.currentTarget.contains(e.target)) return;
-                    if (
-                      e.target.closest('[role="checkbox"]') ||
-                      e.target.closest("[data-actions-cell]") ||
-                      e.target.closest('button[role="combobox"]') ||
-                      e.target.closest('[role="menu"]') ||
-                      e.target.closest('[role="dialog"]')
-                    ) {
-                      return;
-                    }
-                    // Bon de commande importé : ouvrir la sidebar dédiée
-                    if (row.original._type === "imported") {
-                      setSelectedImportedPurchaseOrder(row.original);
-                      return;
-                    }
-                    const actionsButton = e.currentTarget.querySelector(
-                      "[data-view-purchase-order]",
-                    );
-                    if (actionsButton) {
-                      actionsButton.click();
-                    }
-                  }}
-                >
-                  {row.getVisibleCells().map((cell, index, arr) => (
-                    <td
-                      key={cell.id}
-                      style={{ width: cell.column.getSize() }}
-                      className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
+      {!isMobileLayout && (
+        <div className="hidden md:flex md:flex-col flex-1">
+          <table className="w-full table-fixed">
+            <tbody>
+              {loading && !purchaseOrders?.length ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="border-b">
+                    <td className="p-2 pl-4 sm:pl-6">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
                     </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={table.getAllColumns().length} className="p-0">
-                  <TableEmptyState
-                    icon={ClipboardImportIcon}
-                    title="Aucun bon de commande trouvé"
-                    description="Créez votre premier bon de commande pour vos achats fournisseurs."
-                  />
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Table - Mobile */}
-      <div className="md:hidden overflow-x-auto pb-20">
-        <Table className="w-full">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="border-b border-gray-100 dark:border-gray-400"
-              >
-                {headerGroup.headers
-                  .filter(
-                    (header) =>
-                      header.column.id === "select" ||
-                      header.column.id === "client" ||
-                      header.column.id === "finalTotalTTC" ||
-                      header.column.id === "actions",
-                  )
-                  .map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading && !purchaseOrders?.length ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <TableRow
-                  key={`skeleton-${i}`}
-                  className="border-b border-gray-50 dark:border-gray-800"
-                >
-                  <TableCell className="py-3 px-4">
-                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                  </TableCell>
-                  <TableCell className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                      <div className="h-4 w-[100px] rounded bg-muted animate-pulse" />
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 px-4">
-                    <div className="h-4 w-[60px] rounded bg-muted animate-pulse" />
-                  </TableCell>
-                  <TableCell className="py-3 px-4">
-                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
-                  onClick={(e) => {
-                    if (row.original._type !== "imported") return;
-                    if (
-                      e.target.closest('[role="checkbox"]') ||
-                      e.target.closest("[data-actions-cell]") ||
-                      e.target.closest('[role="menu"]')
-                    )
-                      return;
-                    setSelectedImportedPurchaseOrder(row.original);
-                  }}
-                >
-                  {row
-                    .getVisibleCells()
-                    .filter(
-                      (cell) =>
-                        cell.column.id === "select" ||
-                        cell.column.id === "client" ||
-                        cell.column.id === "finalTotalTTC" ||
-                        cell.column.id === "actions",
-                    )
-                    .map((cell) => (
-                      <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                    <td className="p-2">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </td>
+                  </tr>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      // Ignorer les clics provenant de portals React (modals, dropdowns)
+                      if (!e.currentTarget.contains(e.target)) return;
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("[data-actions-cell]") ||
+                        e.target.closest('button[role="combobox"]') ||
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="dialog"]')
+                      ) {
+                        return;
+                      }
+                      // Bon de commande importé : ouvrir la sidebar dédiée
+                      if (row.original._type === "imported") {
+                        setSelectedImportedPurchaseOrder(row.original);
+                        return;
+                      }
+                      const actionsButton = e.currentTarget.querySelector(
+                        "[data-view-purchase-order]",
+                      );
+                      if (actionsButton) {
+                        actionsButton.click();
+                      }
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={`p-2 align-middle text-[13px] ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
                         )}
-                      </TableCell>
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={table.getAllColumns().length} className="p-0">
+                    <TableEmptyState
+                      icon={ClipboardImportIcon}
+                      title="Aucun bon de commande trouvé"
+                      description="Créez votre premier bon de commande pour vos achats fournisseurs."
+                    />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Table - Mobile */}
+      {isMobileLayout && (
+        <div className="md:hidden overflow-x-auto pb-20">
+          <Table className="w-full">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow
+                  key={headerGroup.id}
+                  className="border-b border-gray-100 dark:border-gray-400"
+                >
+                  {headerGroup.headers
+                    .filter(
+                      (header) =>
+                        header.column.id === "select" ||
+                        header.column.id === "client" ||
+                        header.column.id === "finalTotalTTC" ||
+                        header.column.id === "actions",
+                    )
+                    .map((header) => (
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </TableHead>
                     ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} className="p-0">
-                  <TableEmptyState
-                    icon={ClipboardImportIcon}
-                    title="Aucun bon de commande trouvé"
-                    description="Créez votre premier bon de commande pour vos achats fournisseurs."
-                    size="compact"
-                  />
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {loading && !purchaseOrders?.length ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow
+                    key={`skeleton-${i}`}
+                    className="border-b border-gray-50 dark:border-gray-800"
+                  >
+                    <TableCell className="py-3 px-4">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                        <div className="h-4 w-[100px] rounded bg-muted animate-pulse" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <div className="h-4 w-[60px] rounded bg-muted animate-pulse" />
+                    </TableCell>
+                    <TableCell className="py-3 px-4">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                    onClick={(e) => {
+                      if (row.original._type !== "imported") return;
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("[data-actions-cell]") ||
+                        e.target.closest('[role="menu"]')
+                      )
+                        return;
+                      setSelectedImportedPurchaseOrder(row.original);
+                    }}
+                  >
+                    {row
+                      .getVisibleCells()
+                      .filter(
+                        (cell) =>
+                          cell.column.id === "select" ||
+                          cell.column.id === "client" ||
+                          cell.column.id === "finalTotalTTC" ||
+                          cell.column.id === "actions",
+                      )
+                      .map((cell) => (
+                        <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="p-0">
+                    <TableEmptyState
+                      icon={ClipboardImportIcon}
+                      title="Aucun bon de commande trouvé"
+                      description="Créez votre premier bon de commande pour vos achats fournisseurs."
+                      size="compact"
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Pagination - Desktop */}
       <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background sticky bottom-0 z-10">
@@ -888,7 +897,7 @@ export default function PurchaseOrderTable({
           documentNumber={`${sendEmailPO.prefix || "BC"}-${sendEmailPO.number}`}
           clientName={sendEmailPO.client?.name}
           clientEmail={sendEmailPO.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", {
+          totalAmount={getNumberFormat("fr-FR", {
             style: "currency",
             currency: "EUR",
           }).format(sendEmailPO.finalTotalTTC || sendEmailPO.totalTTC || 0)}

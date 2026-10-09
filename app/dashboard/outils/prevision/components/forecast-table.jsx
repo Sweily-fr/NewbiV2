@@ -22,6 +22,7 @@ import {
   BadgeDollarSign,
   Briefcase,
 } from "lucide-react";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // ─── Category structure (Qonto-style grouped hierarchy) ───
 
@@ -165,7 +166,7 @@ const EXPENSE_GROUPS = [
 
 const formatAmount = (value) => {
   if (!value || value === 0) return "-";
-  return new Intl.NumberFormat("fr-FR", {
+  return getNumberFormat("fr-FR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(Math.abs(value));

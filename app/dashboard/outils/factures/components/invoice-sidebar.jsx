@@ -89,7 +89,6 @@ const PdfPreview = dynamic(
   { ssr: false },
 );
 import { LinkedDocumentRow } from "@/src/components/documents/linked-document-row";
-import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -101,6 +100,16 @@ import { motion } from "framer-motion";
 import { ReceiptItemIcon } from "@/src/components/icons";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
+import { getNumberFormat } from "@/src/lib/intl-cache";
+
+// Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
+// il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
+const CreditNoteMobileFullscreen = dynamic(
+  () => import("./credit-note-mobile-fullscreen"),
+  {
+    ssr: false,
+  },
+);
 
 export default function InvoiceSidebar({
   isOpen,
@@ -400,7 +409,7 @@ export default function InvoiceSidebar({
 
   // Debug: Vérifier si les données complètes sont récupérées
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("fr-FR", {
+    return getNumberFormat("fr-FR", {
       style: "currency",
       currency: "EUR",
       minimumFractionDigits: 2,
@@ -1388,7 +1397,7 @@ export default function InvoiceSidebar({
                           <span>•</span>
                           <span className="font-medium text-green-600 dark:text-green-400">
                             +
-                            {new Intl.NumberFormat("fr-FR", {
+                            {getNumberFormat("fr-FR", {
                               style: "currency",
                               currency: tx.currency || "EUR",
                             }).format(tx.amount || 0)}
@@ -1473,7 +1482,7 @@ export default function InvoiceSidebar({
                                 <span>•</span>
                                 <span className="font-medium text-green-600">
                                   +
-                                  {new Intl.NumberFormat("fr-FR", {
+                                  {getNumberFormat("fr-FR", {
                                     style: "currency",
                                     currency: tx.currency || "EUR",
                                   }).format(tx.amount || 0)}

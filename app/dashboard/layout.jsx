@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { preconnect } from "react-dom";
 import { headers } from "next/headers";
 import { ObjectId } from "mongodb";
 import { auth } from "@/src/lib/auth";
@@ -316,7 +317,22 @@ const SESSION_FETCH_RETRY_DELAYS_MS = [1000, 2000, 3000, 0];
  * Server Component Layout pour le Dashboard
  * Vérifie l'authentification ET l'abonnement côté serveur avant de rendre le contenu
  */
+// Origine de l'API GraphQL (NEXT_PUBLIC_API_URL se termine par « / »).
+const API_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_API_URL).origin;
+  } catch {
+    return null;
+  }
+})();
+
 export default async function DashboardLayout({ children }) {
+  // Connexion à l'API ouverte dès réception du HTML (<link rel="preconnect">)
+  // : sinon la première requête GraphQL payait DNS + TCP + TLS (50 à 150 ms)
+  // une fois le JavaScript chargé. use-credentials : les requêtes Apollo
+  // partent avec credentials: "include", donc sur ce pool de connexions.
+  if (API_ORIGIN) preconnect(API_ORIGIN, { crossOrigin: "use-credentials" });
+
   // Récupérer les headers de la requête
   const headersList = await headers();
 

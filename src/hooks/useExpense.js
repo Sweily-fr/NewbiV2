@@ -5,7 +5,7 @@ import {
   UPDATE_EXPENSE_OCR_METADATA,
   APPLY_OCR_DATA_TO_EXPENSE,
 } from "../graphql/mutations/expense";
-import posthog from "posthog-js";
+import { capture } from "@/src/lib/analytics";
 import { GET_EXPENSES } from "../graphql/queries/expense";
 import { useRequiredWorkspace } from "./useWorkspace";
 import { mapCategoryToEnum } from "@/app/dashboard/outils/transactions/components/transactions/utils/mappers";
@@ -163,7 +163,7 @@ export const useExpense = () => {
       });
 
       const createdExpense = expenseResult.data.createExpense;
-      posthog.capture("expense_created", {
+      capture("expense_created", {
         amount: input.amount,
         currency: input.currency,
         category: input.category,

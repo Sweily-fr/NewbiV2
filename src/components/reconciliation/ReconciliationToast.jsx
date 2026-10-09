@@ -18,6 +18,7 @@ import {
   removeIgnoredSuggestion,
   RECONCILIATION_REPROPOSE_EVENT,
 } from "@/src/lib/reconciliationIgnored";
+import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Délai avant confirmation serveur (fenêtre d'undo)
 const UNDO_DELAY_MS = 5000;
@@ -26,7 +27,7 @@ const UNDO_DELAY_MS = 5000;
 // Helpers
 // ---------------------------------------------------------------------------
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat("fr-FR", {
+  getNumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
   }).format(amount || 0);
@@ -490,7 +491,9 @@ export function ReconciliationToastProvider({ children }) {
 
   // Masqués uniquement tant qu'un panneau est ouvert ; seul « Masquer »
   // écarte une suggestion.
-  const toastVisible = useReconciliationToastVisibility();
+  const toastVisible = useReconciliationToastVisibility(
+    activeSuggestions.length > 0,
+  );
 
   return (
     <>
