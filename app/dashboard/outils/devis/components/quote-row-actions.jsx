@@ -124,13 +124,24 @@ export default function QuoteRowActions({
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { allowed: deliveryNotesAllowed } = useDeliveryNotesAccess();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditQuotes = !isReady || canWrite("quotes");
-  const canDeleteQuotes = !isReady || canDelete("quotes");
-  // Conversions : création dans le module cible
-  const canWriteInvoices = !isReady || canWrite("invoices");
-  const canWritePurchaseOrders = !isReady || canWrite("purchaseOrders");
-  const canWriteDeliveryNotes = !isReady || canWrite("deliveryNotes");
+  const { canDo, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canDo("quotes", "edit");
+  const canCreateQuotes = !isReady || canDo("quotes", "create");
+  const canDeleteQuotes = !isReady || canDo("quotes", "delete");
+  const canSendQuotes = !isReady || canDo("quotes", "send");
+  // Finaliser un brouillon, accepter, refuser : action « status »
+  const canChangeQuoteStatus = !isReady || canDo("quotes", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizeQuotes =
+    !isReady || canDo("quotes", "create") || canDo("quotes", "edit");
+  const canSignQuotes = !isReady || canDo("quotes", "sign");
+  // Conversions : action « convert » du devis, puis création du document
+  // cible dans son éditeur
+  const canConvertQuotes = !isReady || canDo("quotes", "convert");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
+  const canCreatePurchaseOrders = !isReady || canDo("purchaseOrders", "create");
+  const canCreateDeliveryNotes = !isReady || canDo("deliveryNotes", "create");
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const handleView = () => {
@@ -307,29 +318,29 @@ export default function QuoteRowActions({
   const isLoading = changingStatus || isDeleting || creatingDeliveryNote;
 
   // Logique pour déterminer quelles actions sont disponibles
-  // Conversion : écriture sur le devis et sur le document créé
+  // Conversion : action « convert » du devis et création du document cible
   const canConvertToPO =
     quote.status === QUOTE_STATUS.COMPLETED &&
-    canEditQuotes &&
-    canWritePurchaseOrders;
+    canConvertQuotes &&
+    canCreatePurchaseOrders;
   // Un bon de livraison se prépare dès que le devis est envoyé ou accepté
   const canCreateDeliveryNote =
     deliveryNotesAllowed &&
-    canWriteDeliveryNotes &&
+    canCreateDeliveryNotes &&
     (quote.status === QUOTE_STATUS.PENDING ||
       quote.status === QUOTE_STATUS.COMPLETED);
   // Un devis déjà facturé via un bon de commande ne peut plus être converti
   // directement en facture (même message que dans la sidebar).
   const canConvertToInvoice =
-    canEditQuotes &&
-    canWriteInvoices &&
+    canConvertQuotes &&
+    canCreateInvoices &&
     quote.status === QUOTE_STATUS.COMPLETED &&
     (!quote.linkedInvoices || quote.linkedInvoices.length === 0) &&
     !quote.hasPurchaseOrderInvoices;
   const hasStatusActions =
-    (canEditQuotes &&
-      (quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
-        quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
+    (canFinalizeQuotes && quote.status === QUOTE_STATUS.DRAFT) || // Envoyer le devis
+    (canChangeQuoteStatus &&
+      (quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
         quote.status === QUOTE_STATUS.IMPORTED)) || // Accepter/Rejeter (devis importé)
     canConvertToInvoice ||
     canConvertToPO ||
@@ -358,7 +369,7 @@ export default function QuoteRowActions({
           {/* Icône d'envoi par email - visible pour les devis non brouillon (hors importés) */}
           {quote.status !== QUOTE_STATUS.DRAFT &&
             quote.status !== QUOTE_STATUS.IMPORTED &&
-            canEditQuotes && (
+            canSendQuotes && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -398,7 +409,7 @@ export default function QuoteRowActions({
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
               </DropdownMenuItem>
-              {canEditQuotes && (
+              {canCreateQuotes && (
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
@@ -422,7 +433,7 @@ export default function QuoteRowActions({
               {/* Séparateur entre les actions de base et les actions de statut */}
               {hasStatusActions && <DropdownMenuSeparator />}
 
-              {canEditQuotes && quote.status === QUOTE_STATUS.DRAFT && (
+              {canFinalizeQuotes && quote.status === QUOTE_STATUS.DRAFT && (
                 <DropdownMenuItem
                   onClick={handleSendQuote}
                   disabled={isLoading || isReadOnly}
@@ -434,7 +445,7 @@ export default function QuoteRowActions({
 
               {/* Accepter : acceptation manuelle possible, la signature
                   électronique accepte aussi le devis automatiquement. */}
-              {canEditQuotes &&
+              {canChangeQuoteStatus &&
                 (quote.status === QUOTE_STATUS.PENDING ||
                   quote.status === QUOTE_STATUS.IMPORTED) && (
                   <>
@@ -480,7 +491,7 @@ export default function QuoteRowActions({
 
               {/* Faire signer - uniquement les devis en attente (un devis accepté
                   ou refusé ne peut plus être signé), sans signature en cours/terminée */}
-              {canEditQuotes &&
+              {canSignQuotes &&
                 quote.status === QUOTE_STATUS.PENDING &&
                 (!quote.signatureStatus ||
                   quote.signatureStatus === "ERROR" ||
@@ -519,7 +530,7 @@ export default function QuoteRowActions({
                 )}
 
               {/* Annuler la signature - visible quand une demande est en cours */}
-              {canEditQuotes &&
+              {canSignQuotes &&
                 [
                   "PENDING",
                   "WAIT_VALIDATION",
@@ -540,7 +551,7 @@ export default function QuoteRowActions({
                 )}
 
               {/* Rejeter le devis - en rouge */}
-              {canEditQuotes &&
+              {canChangeQuoteStatus &&
                 (quote.status === QUOTE_STATUS.PENDING ||
                   quote.status === QUOTE_STATUS.IMPORTED) && (
                   <>

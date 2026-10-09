@@ -41,16 +41,23 @@ export default function QuoteMobileFullscreen({
 }) {
   const router = useRouter();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, isReady } = useMyPermissions();
-  const canEditQuotes = !isReady || canWrite("quotes");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canDo("quotes", "edit");
+  // Finaliser un brouillon, accepter ou refuser : action « status »
+  const canChangeQuoteStatus = !isReady || canDo("quotes", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizeQuotes =
+    !isReady || canDo("quotes", "create") || canDo("quotes", "edit");
   // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
   const canReadInvoices = !isReady || canRead("invoices");
   const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
-  // Conversions : création dans le module cible
+  // Conversions : action « convert » du devis et création du document cible
+  const canConvertQuotes = !isReady || canDo("quotes", "convert");
   const canConvertToInvoice =
-    canEditQuotes && (!isReady || canWrite("invoices"));
+    canConvertQuotes && (!isReady || canDo("invoices", "create"));
   const canConvertToPurchaseOrder =
-    canEditQuotes && (!isReady || canWrite("purchaseOrders"));
+    canConvertQuotes && (!isReady || canDo("purchaseOrders", "create"));
   const [showPreview, setShowPreview] = useState(false);
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
 
@@ -665,7 +672,7 @@ export default function QuoteMobileFullscreen({
                 </Button>
               )}
 
-            {quote.status === QUOTE_STATUS.DRAFT && canEditQuotes && (
+            {quote.status === QUOTE_STATUS.DRAFT && canFinalizeQuotes && (
               <Button
                 onClick={handleSendQuote}
                 disabled={isLoading}
@@ -683,7 +690,7 @@ export default function QuoteMobileFullscreen({
 
             {(quote.status === QUOTE_STATUS.PENDING ||
               quote.status === QUOTE_STATUS.IMPORTED) &&
-              canEditQuotes && (
+              canChangeQuoteStatus && (
                 <div className="grid grid-cols-2 gap-1.5">
                   {/* Accepter : acceptation manuelle possible, la signature
                     électronique accepte aussi le devis automatiquement. */}

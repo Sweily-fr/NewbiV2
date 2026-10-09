@@ -443,10 +443,17 @@ export default function TableClients({
   const router = useRouter();
   // Fiche client préchargée au survol de la ligne (voir usePrefetchOnIntent).
   const { intentProps: prefetchIntent } = usePrefetchOnIntent();
-  const { canRead, canWrite, isReady } = useMyPermissions();
+  const { canRead, canDo, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canEditClientLists = !isReady || canWrite("clientLists");
+  const canCreateClients = !isReady || canDo("clients", "create");
+  // Sélection proposée seulement si une action groupée est permise
+  const canSelectClients =
+    !isReady ||
+    canDo("clients", "edit") ||
+    canDo("clients", "block") ||
+    canDo("clients", "assign") ||
+    canDo("clients", "delete") ||
+    canDo("clientLists", "edit");
   // Colonne « Factures » : données du module Factures
   const canReadInvoices = !isReady || canRead("invoices");
   // Fiche client ouvrable seulement avec la lecture des clients (vue d'une
@@ -665,7 +672,7 @@ export default function TableClients({
       // Sélection retirée sans action groupée possible (lecture seule),
       // colonne « Factures » retirée sans lecture des factures
       (column) =>
-        (column.id !== "select" || canEditClients || canEditClientLists) &&
+        (column.id !== "select" || canSelectClients) &&
         (column.id !== "invoiceCount" || canReadInvoices),
     ),
     getCoreRowModel: getCoreRowModel(),
@@ -993,7 +1000,7 @@ export default function TableClients({
                       title="Aucun contact"
                       description="Créez votre premier contact pour commencer à gérer votre base de données clients."
                       action={
-                        canEditClients ? (
+                        canCreateClients ? (
                           <Button
                             onClick={handleAddUser}
                             className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
@@ -1438,13 +1445,20 @@ function RowActions({
   const { unblockClient } = useUnblockClient();
   const { addToLists } = useAddClientToLists();
   const { removeClient: removeClientFromList } = useRemoveClientFromList();
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canDeleteClients = !isReady || canDelete("clients");
-  // Listes : module à part (ajouter / retirer un contact = écriture)
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditClients = !isReady || canDo("clients", "edit");
+  const canDeleteClients = !isReady || canDo("clients", "delete");
+  const canBlockClients = !isReady || canDo("clients", "block");
+  const canAssignClients = !isReady || canDo("clients", "assign");
+  // Listes : module à part (ajouter / retirer un contact = « edit »,
+  // nouvelle liste = « create »)
   const canReadClientLists = !isReady || canRead("clientLists");
-  const canEditClientLists = !isReady || canWrite("clientLists");
+  const canEditClientLists = !isReady || canDo("clientLists", "edit");
+  const canCreateClientLists = !isReady || canDo("clientLists", "create");
+  const hasMembershipActions =
+    canEditClientLists || canBlockClients || canAssignClients;
   // Listes du contact : chargées seulement quand on s'apprête à ouvrir son
   // menu (survol ou ouverture), et non pour chaque ligne du tableau au montage.
   const [listsRequested, setListsRequested] = useState(false);
@@ -1590,8 +1604,8 @@ function RowActions({
             </DropdownMenuItem>
           </DropdownMenuGroup>
 
-          {(canEditClients || canEditClientLists) && <DropdownMenuSeparator />}
-          {(canEditClients || canEditClientLists) && (
+          {hasMembershipActions && <DropdownMenuSeparator />}
+          {hasMembershipActions && (
             <DropdownMenuGroup>
               {/* Ajouter à une liste */}
               {canEditClientLists && (
@@ -1635,19 +1649,20 @@ function RowActions({
                               </div>
                             </DropdownMenuItem>
                           ))}
-                          {(allLists || []).length > 0 && (
-                            <DropdownMenuSeparator />
+                          {(allLists || []).length > 0 &&
+                            canCreateClientLists && <DropdownMenuSeparator />}
+                          {canCreateClientLists && (
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setCreateListDialogOpen(true);
+                              }}
+                              className="cursor-pointer gap-2"
+                            >
+                              <PlusIcon className="w-3.5 h-3.5" />
+                              <span>Créer une liste</span>
+                            </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              setCreateListDialogOpen(true);
-                            }}
-                            className="cursor-pointer gap-2"
-                          >
-                            <PlusIcon className="w-3.5 h-3.5" />
-                            <span>Créer une liste</span>
-                          </DropdownMenuItem>
                         </>
                       );
                     })()}
@@ -1668,7 +1683,7 @@ function RowActions({
               )}
 
               {/* Assigner */}
-              {canEditClients && (
+              {canAssignClients && (
                 <DropdownMenuItem onSelect={handleAssign}>
                   <UserCheck className="w-3.5 h-3.5" />
                   <span>Assigner</span>
@@ -1676,7 +1691,7 @@ function RowActions({
               )}
 
               {/* Bloquer / Débloquer */}
-              {canEditClients && (
+              {canBlockClients && (
                 <DropdownMenuItem
                   onSelect={(e) => {
                     e.preventDefault();

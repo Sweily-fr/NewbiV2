@@ -266,11 +266,16 @@ export function TaskModal({
   localMutationRef,
 }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditKanban = !isReady || canWrite("kanban");
-  // Suppression d'une pièce jointe : niveau « suppression » côté API
-  const canDeleteKanban = !isReady || canDelete("kanban");
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // remplir la tâche = « create » à la création, « edit » ensuite (dates,
+  // membres, checklist, description, pièces jointes…)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditKanban =
+    !isReady || canDo("kanban", isEditing ? "edit" : "create");
+  // Suppression d'une pièce jointe : action « delete » côté API
+  const canDeleteKanban = !isReady || canDo("kanban", "delete");
+  // Ajout, modification et suppression des commentaires
+  const canCommentKanban = !isReady || canDo("kanban", "comment");
   // Sélecteurs (status, dates, priorité, tags, membres) fermés en lecture seule
   const pickerOpen = canEditKanban ? undefined : false;
   // Autres membres qui ont aussi cette tâche ouverte (présence temps réel)
@@ -1889,7 +1894,7 @@ export function TaskModal({
                         boardMembers={board?.members || []}
                         columns={board?.columns || []}
                         onTaskUpdate={setTaskForm}
-                        canComment={canEditKanban}
+                        canComment={canCommentKanban}
                       />
                     </Suspense>
                   ) : (
@@ -1899,6 +1904,7 @@ export function TaskModal({
                       removePendingComment={removePendingComment}
                       updatePendingComment={updatePendingComment}
                       currentUser={board?.members?.[0]}
+                      canComment={canCommentKanban}
                     />
                   )}
                 </div>
@@ -2801,7 +2807,7 @@ export function TaskModal({
                         boardMembers={board?.members || []}
                         columns={board?.columns || []}
                         onTaskUpdate={setTaskForm}
-                        canComment={canEditKanban}
+                        canComment={canCommentKanban}
                       />
                     </Suspense>
                   ) : (
@@ -2811,6 +2817,7 @@ export function TaskModal({
                       removePendingComment={removePendingComment}
                       updatePendingComment={updatePendingComment}
                       currentUser={board?.members?.[0]}
+                      canComment={canCommentKanban}
                     />
                   )}
                 </div>

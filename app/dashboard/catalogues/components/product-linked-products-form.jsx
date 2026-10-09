@@ -78,11 +78,14 @@ export default function ProductLinkedProductsForm({
   excludeId,
   mainUnit,
   mainName,
+  // Droit d'enregistrer le produit (création ou modification), fourni par
+  // la fiche ; à défaut, action « edit » du catalogue
+  canEdit,
 }) {
   const { workspaceId } = useRequiredWorkspace();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditProducts = !isReady || canWrite("products");
+  const { canDo, isReady } = useMyPermissions();
+  const canEditProducts = canEdit ?? (!isReady || canDo("products", "edit"));
   const [open, setOpen] = useState(false);
   // Côté d'ouverture choisi à chaque ouverture : celui qui a le plus de place
   const [side, setSide] = useState("bottom");

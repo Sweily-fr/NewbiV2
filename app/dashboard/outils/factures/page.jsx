@@ -45,12 +45,15 @@ function InvoicesContent() {
   const [triggerImport, setTriggerImport] = useState(false);
 
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canImportInvoices = !isReady || canWrite("importedInvoices");
-  // Relances automatiques : module « invoices » ; paramètres des documents :
-  // paramètres de l'entreprise (« orgSettings »)
-  const canEditReminders = !isReady || canWrite("invoices");
-  const canEditSettings = !isReady || canWrite("orgSettings");
+  const { canDo, isReady } = useMyPermissions();
+  const canImportInvoices = !isReady || canDo("importedInvoices", "import");
+  // Relances automatiques : action « reminders » des factures ; paramètres
+  // des documents : paramètres de l'entreprise (« orgSettings »)
+  const canEditReminders = !isReady || canDo("invoices", "reminders");
+  const canEditSettings = !isReady || canDo("orgSettings", "edit");
+  // Bouton « Envoyer au client » du toast affiché après une création
+  const canSendInvoices = !isReady || canDo("invoices", "send");
+  const canSendCreditNotes = !isReady || canDo("creditNotes", "send");
 
   // Toast manager et modal d'envoi pour les nouvelles factures/avoirs
   const toastManager = useToastManager();
@@ -74,12 +77,13 @@ function InvoicesContent() {
             title: "Facture créée avec succès",
             description: `Facture ${data.number} créée`,
             timeout: 10000,
-            actionProps: data.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => setShowSendEmailModal(true),
-                }
-              : undefined,
+            actionProps:
+              data.clientEmail && canSendInvoices
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => setShowSendEmailModal(true),
+                  }
+                : undefined,
           });
 
           sessionStorage.removeItem("newInvoiceData");
@@ -102,12 +106,13 @@ function InvoicesContent() {
             title: "Avoir créé avec succès",
             description: `Avoir ${data.number} créé`,
             timeout: 10000,
-            actionProps: data.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => setShowSendEmailModal(true),
-                }
-              : undefined,
+            actionProps:
+              data.clientEmail && canSendCreditNotes
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => setShowSendEmailModal(true),
+                  }
+                : undefined,
           });
 
           sessionStorage.removeItem("newCreditNoteData");
@@ -116,7 +121,7 @@ function InvoicesContent() {
         }
       }
     }
-  }, [toastManager]);
+  }, [toastManager, canSendInvoices, canSendCreditNotes]);
 
   useEffect(() => {
     const id = searchParams.get("id");

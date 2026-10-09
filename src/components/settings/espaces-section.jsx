@@ -112,7 +112,7 @@ export default function EspacesSection() {
   const { data: session } = useSession();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const { workspaceId } = useWorkspace();
-  const { can, refetch: refetchMyPermissions } = useMyPermissions();
+  const { canDo, refetch: refetchMyPermissions } = useMyPermissions();
   const {
     roles: organizationRoles,
     getRoleLabel,
@@ -381,9 +381,15 @@ export default function EspacesSection() {
     selectedOrg && selectedOrg.id === workspaceId,
   );
   const iAmOwner = myMembership?.role === "owner";
-  const canManageOrgSettings = isSelectedOrgActive
-    ? can("team", "write")
-    : iAmOwner;
+  // Cases de la page « Membres » du rôle : inviter, changer les rôles,
+  // retirer (annuler une invitation = inviter)
+  const canTeam = (action) =>
+    isSelectedOrgActive ? canDo("team", action) : iAmOwner;
+  const canInviteMembers = canTeam("invite");
+  const canChangeRoles = canTeam("changeRole");
+  const canRemoveMembers = canTeam("remove");
+  const canManageOrgSettings =
+    canInviteMembers || canChangeRoles || canRemoveMembers;
   const assignableRoles = organizationRoles.filter((r) => r.key !== "owner");
 
   const confirmTransferOwnership = async () => {
@@ -413,7 +419,7 @@ export default function EspacesSection() {
 
   // Gérer le changement de rôle d'un membre
   const handleRoleChange = async (member, newRole) => {
-    if (!canManageOrgSettings) {
+    if (!canChangeRoles) {
       toast.error("Vous n'avez pas la permission de modifier les rôles");
       return;
     }
@@ -708,11 +714,11 @@ export default function EspacesSection() {
             <Button
               type="button"
               onClick={() => setInviteDialogOpen(true)}
-              disabled={!canManageOrgSettings || isReadOnly}
+              disabled={!canInviteMembers || isReadOnly}
               className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
               title={
                 readOnlyTooltip ||
-                (!canManageOrgSettings
+                (!canInviteMembers
                   ? "Votre rôle ne permet pas d'inviter des membres"
                   : "")
               }
@@ -837,20 +843,22 @@ export default function EspacesSection() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    className="cursor-pointer"
-                                    disabled={isReadOnly}
-                                    title={readOnlyTooltip}
-                                    onClick={() => {
-                                      if (isReadOnly) return;
-                                      setMemberToChangeRole(member);
-                                      setSelectedNewRole(member.role);
-                                      setRoleChangeDialogOpen(true);
-                                    }}
-                                  >
-                                    <KeyRound className="h-4 w-4 mr-2" />
-                                    Changer le rôle
-                                  </DropdownMenuItem>
+                                  {canChangeRoles && (
+                                    <DropdownMenuItem
+                                      className="cursor-pointer"
+                                      disabled={isReadOnly}
+                                      title={readOnlyTooltip}
+                                      onClick={() => {
+                                        if (isReadOnly) return;
+                                        setMemberToChangeRole(member);
+                                        setSelectedNewRole(member.role);
+                                        setRoleChangeDialogOpen(true);
+                                      }}
+                                    >
+                                      <KeyRound className="h-4 w-4 mr-2" />
+                                      Changer le rôle
+                                    </DropdownMenuItem>
+                                  )}
                                   {iAmOwner &&
                                     isSelectedOrgActive &&
                                     member.type === "member" && (
@@ -864,15 +872,19 @@ export default function EspacesSection() {
                                         Transférer le rôle de super admin
                                       </DropdownMenuItem>
                                     )}
-                                  <DropdownMenuItem
-                                    className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
-                                    onClick={() => handleDeleteMember(member)}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    {member.type === "invitation"
-                                      ? "Annuler l'invitation"
-                                      : "Retirer de l'espace"}
-                                  </DropdownMenuItem>
+                                  {(member.type === "invitation"
+                                    ? canInviteMembers
+                                    : canRemoveMembers) && (
+                                    <DropdownMenuItem
+                                      className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
+                                      onClick={() => handleDeleteMember(member)}
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      {member.type === "invitation"
+                                        ? "Annuler l'invitation"
+                                        : "Retirer de l'espace"}
+                                    </DropdownMenuItem>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             )}

@@ -27,8 +27,8 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 export default function BankingConnectButton() {
   const { workspaceId } = useWorkspace();
   // Connecter une banque : droit « Applications et banques » du rôle
-  const { can, isReady: permissionsReady } = useMyPermissions();
-  const canConnectBank = !permissionsReady || can("integrations", "write");
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canConnectBank = !permissionsReady || canDo("integrations", "manage");
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isOwner

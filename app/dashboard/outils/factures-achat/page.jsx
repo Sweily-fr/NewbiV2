@@ -123,9 +123,13 @@ function PurchaseInvoicesContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée) : saisie, import OCR et Gmail = « create »
+  const canCreatePurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "create");
+  const canExportPurchaseInvoices =
+    !isReady || canDo("purchaseInvoices", "export");
   const { workspaceId } = useWorkspace();
   const {
     importedInvoices,
@@ -273,12 +277,14 @@ function PurchaseInvoicesContent() {
                 />
               </Button>
             )}
-            <Button variant="outline" onClick={() => setIsExportOpen(true)}>
-              <Download size={14} strokeWidth={1.5} aria-hidden="true" />
-              Exporter
-            </Button>
-            {/* Création réservée aux rôles qui peuvent écrire */}
-            {canEditPurchaseInvoices && (
+            {canExportPurchaseInvoices && (
+              <Button variant="outline" onClick={() => setIsExportOpen(true)}>
+                <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+                Exporter
+              </Button>
+            )}
+            {/* Création réservée aux rôles qui ont l'action « create » */}
+            {canCreatePurchaseInvoices && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -437,7 +443,7 @@ function PurchaseInvoicesContent() {
               </h1>
             </div>
             <div className="flex gap-2">
-              {canEditPurchaseInvoices && (
+              {canCreatePurchaseInvoices && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button size="icon" className="rounded-full">
@@ -536,8 +542,8 @@ function PurchaseInvoicesContent() {
       />
       {/* Création — drawer unifié (onglets Saisie manuelle / Import OCR) */}
       <PurchaseInvoiceCreateDrawer
-        // Lien direct ?action=create : jamais ouvert sans droit d'écriture
-        open={isCreateDrawerOpen && canEditPurchaseInvoices}
+        // Lien direct ?action=create : jamais ouvert sans droit de création
+        open={isCreateDrawerOpen && canCreatePurchaseInvoices}
         initialTab={createInitialTab}
         onOpenChange={(open) => {
           setIsCreateDrawerOpen(open);
@@ -554,7 +560,7 @@ function PurchaseInvoicesContent() {
         onOpenExisting={handleOpenExisting}
       />
       <ExportDialog
-        open={isExportOpen}
+        open={isExportOpen && canExportPurchaseInvoices}
         onOpenChange={setIsExportOpen}
         invoices={invoices || []}
         loadingHistory={loadingHistory}

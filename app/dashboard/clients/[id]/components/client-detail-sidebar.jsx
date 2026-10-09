@@ -140,13 +140,14 @@ export default function ClientDetailSidebar({
   onEdit,
 }) {
   const [showMore, setShowMore] = useState(false);
-  const { canRead, canWrite, isReady } = useMyPermissions();
+  const { canRead, canDo, isReady } = useMyPermissions();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
+  const canEditClients = !isReady || canDo("clients", "edit");
   // Champs personnalisés, listes et factures : modules à part (requêtes
   // sautées et sections masquées sans lecture)
   const canReadCustomFields = !isReady || canRead("clientCustomFields");
-  const canEditCustomFields = !isReady || canWrite("clientCustomFields");
+  // Case « Sur les documents » = modification du champ personnalisé
+  const canEditCustomFields = !isReady || canDo("clientCustomFields", "edit");
   const canReadClientLists = !isReady || canRead("clientLists");
   const canReadInvoices = !isReady || canRead("invoices");
   const { fields: customFieldDefs } = useClientCustomFields(

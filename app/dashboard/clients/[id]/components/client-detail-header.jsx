@@ -54,11 +54,15 @@ export default function ClientDetailHeader({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canDeleteClients = !isReady || canDelete("clients");
-  const canCreateReminder = !isReady || canWrite("calendar");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canEditClients = !isReady || canDo("clients", "edit");
+  const canDeleteClients = !isReady || canDo("clients", "delete");
+  const canBlockClients = !isReady || canDo("clients", "block");
+  const canAssignClients = !isReady || canDo("clients", "assign");
+  // Rappel = nouvel événement du calendrier
+  const canCreateReminder = !isReady || canDo("calendar", "create");
   // Actions d'écriture masquées sans le droit (désactivées seulement en
   // abonnement lecture seule)
   const editDisabled = isReadOnly;
@@ -164,7 +168,11 @@ export default function ClientDetailHeader({
         )}
 
         {/* More dropdown (rien à proposer en lecture seule sans téléphone) */}
-        {(canEditClients || client.phone) && (
+        {(canEditClients ||
+          canBlockClients ||
+          canAssignClients ||
+          canDeleteClients ||
+          client.phone) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
@@ -173,38 +181,42 @@ export default function ClientDetailHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               {canEditClients && (
-                <>
-                  <DropdownMenuItem
-                    onClick={onEdit}
-                    disabled={editDisabled}
-                    title={editTooltip}
-                    className="cursor-pointer gap-2 text-xs"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Modifier
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={client.isBlocked ? onUnblock : onBlock}
-                    disabled={editDisabled}
-                    title={editTooltip}
-                    className="cursor-pointer gap-2 text-xs"
-                  >
-                    <ShieldOff className="w-3.5 h-3.5" />
-                    {client.isBlocked
-                      ? "Débloquer le contact"
-                      : "Bloquer le contact"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onAssign}
-                    disabled={editDisabled}
-                    title={editTooltip}
-                    className="cursor-pointer gap-2 text-xs"
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    Assigner
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem
+                  onClick={onEdit}
+                  disabled={editDisabled}
+                  title={editTooltip}
+                  className="cursor-pointer gap-2 text-xs"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Modifier
+                </DropdownMenuItem>
+              )}
+              {canEditClients && (canBlockClients || canAssignClients) && (
+                <DropdownMenuSeparator />
+              )}
+              {canBlockClients && (
+                <DropdownMenuItem
+                  onClick={client.isBlocked ? onUnblock : onBlock}
+                  disabled={editDisabled}
+                  title={editTooltip}
+                  className="cursor-pointer gap-2 text-xs"
+                >
+                  <ShieldOff className="w-3.5 h-3.5" />
+                  {client.isBlocked
+                    ? "Débloquer le contact"
+                    : "Bloquer le contact"}
+                </DropdownMenuItem>
+              )}
+              {canAssignClients && (
+                <DropdownMenuItem
+                  onClick={onAssign}
+                  disabled={editDisabled}
+                  title={editTooltip}
+                  className="cursor-pointer gap-2 text-xs"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  Assigner
+                </DropdownMenuItem>
               )}
               {client.phone && (
                 <DropdownMenuItem

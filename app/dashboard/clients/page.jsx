@@ -111,13 +111,20 @@ function ClientsContent() {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canDeleteClients = !isReady || canDelete("clients");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée)
+  const canCreateClients = !isReady || canDo("clients", "create");
+  const canEditClients = !isReady || canDo("clients", "edit");
+  const canDeleteClients = !isReady || canDo("clients", "delete");
+  const canImportClients = !isReady || canDo("clients", "import");
+  const canExportClients = !isReady || canDo("clients", "export");
+  const canBlockClients = !isReady || canDo("clients", "block");
+  const canAssignClients = !isReady || canDo("clients", "assign");
   // Listes et champs personnalisés : modules à part
   const canReadClientLists = !isReady || canRead("clientLists");
-  const canEditClientLists = !isReady || canWrite("clientLists");
+  const canCreateClientLists = !isReady || canDo("clientLists", "create");
+  const canEditClientLists = !isReady || canDo("clientLists", "edit");
   const canReadCustomFields = !isReady || canRead("clientCustomFields");
   const { fields: customFieldDefinitions } = useClientCustomFields(
     canReadCustomFields ? workspaceId : null,
@@ -126,11 +133,11 @@ function ClientsContent() {
   // Ouvrir automatiquement le modal si ?new=true dans l'URL
   useEffect(() => {
     if (searchParams.get("new") === "true") {
-      // Création réservée à l'écriture sur les clients
-      if (canEditClients) setDialogOpen(true);
+      // Ouverture réservée à la création de contacts
+      if (canCreateClients) setDialogOpen(true);
       router.replace("/dashboard/clients", { scroll: false });
     }
-  }, [searchParams, router, canEditClients]);
+  }, [searchParams, router, canCreateClients]);
 
   // Colonne « Factures » proposée seulement avec la lecture des factures
   const canReadInvoices = !isReady || canRead("invoices");
@@ -315,7 +322,7 @@ function ClientsContent() {
                 Champs
               </Button>
             )}
-            {canEditClients && (
+            {canImportClients && (
               <Button
                 variant="outline"
                 onClick={() => {
@@ -330,8 +337,10 @@ function ClientsContent() {
                 Importer
               </Button>
             )}
-            <ClientExportButton workspaceId={workspaceId} />
-            {canEditClients && (
+            {canExportClients && (
+              <ClientExportButton workspaceId={workspaceId} />
+            )}
+            {canCreateClients && (
               <PermissionButton
                 requiresActiveSubscription
                 resource="clients"
@@ -394,9 +403,13 @@ function ClientsContent() {
               )}
             />
           </div>
-          {/* Actions groupées : toutes demandent au moins l'écriture */}
+          {/* Actions groupées : chacune suit son action du rôle */}
           {selectedClients.size > 0 &&
-            (canEditClients || canEditClientLists) && (
+            (canEditClientLists ||
+              canEditClients ||
+              canBlockClients ||
+              canAssignClients ||
+              canDeleteClients) && (
               <div className="flex items-center gap-2">
                 {/* Ajouter à une liste (module Listes) */}
                 {canEditClientLists && (
@@ -431,25 +444,30 @@ function ClientsContent() {
                               </div>
                             </DropdownMenuItem>
                           ))}
-                          <DropdownMenuSeparator />
+                          {canCreateClientLists && <DropdownMenuSeparator />}
                         </>
                       )}
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          setCreateListDialogOpen(true);
-                        }}
-                        className="cursor-pointer gap-2"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Créer une liste</span>
-                      </DropdownMenuItem>
+                      {canCreateClientLists && (
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setCreateListDialogOpen(true);
+                          }}
+                          className="cursor-pointer gap-2"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Créer une liste</span>
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
 
                 {/* Plus d'actions */}
-                {canEditClients && (
+                {(canEditClients ||
+                  canBlockClients ||
+                  canAssignClients ||
+                  canDeleteClients) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -462,7 +480,7 @@ function ClientsContent() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-60">
-                      {selectedClients.size === 1 && (
+                      {selectedClients.size === 1 && canEditClients && (
                         <>
                           <DropdownMenuItem
                             className="cursor-pointer gap-2 text-sm"
@@ -474,30 +492,41 @@ function ClientsContent() {
                             <Pencil className="w-3.5 h-3.5" />
                             Modifier
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
+                          {(canBlockClients || canAssignClients) && (
+                            <DropdownMenuSeparator />
+                          )}
                         </>
                       )}
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2 text-sm"
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          setBlockDialogOpen(true);
-                        }}
-                      >
-                        <ShieldOff className="w-3.5 h-3.5" />
-                        Bloquer{" "}
-                        {selectedClients.size > 1
-                          ? "les contacts"
-                          : "le contact"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer gap-2 text-sm"
-                        onSelect={handleAssign}
-                      >
-                        <UserCheck className="w-3.5 h-3.5" />
-                        Assigner
-                      </DropdownMenuItem>
-                      {canDeleteClients && <DropdownMenuSeparator />}
+                      {canBlockClients && (
+                        <DropdownMenuItem
+                          className="cursor-pointer gap-2 text-sm"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setBlockDialogOpen(true);
+                          }}
+                        >
+                          <ShieldOff className="w-3.5 h-3.5" />
+                          Bloquer{" "}
+                          {selectedClients.size > 1
+                            ? "les contacts"
+                            : "le contact"}
+                        </DropdownMenuItem>
+                      )}
+                      {canAssignClients && (
+                        <DropdownMenuItem
+                          className="cursor-pointer gap-2 text-sm"
+                          onSelect={handleAssign}
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          Assigner
+                        </DropdownMenuItem>
+                      )}
+                      {canDeleteClients &&
+                        (canBlockClients ||
+                          canAssignClients ||
+                          (selectedClients.size === 1 && canEditClients)) && (
+                          <DropdownMenuSeparator />
+                        )}
                       {canDeleteClients && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -609,7 +638,7 @@ function ClientsContent() {
                   <Settings2 className="h-4 w-4" />
                 </Button>
               )}
-              {canEditClients && (
+              {canImportClients && (
                 <Button
                   variant="outline"
                   size="icon"
@@ -624,8 +653,10 @@ function ClientsContent() {
                   <Upload className="h-4 w-4" />
                 </Button>
               )}
-              <ClientExportButton workspaceId={workspaceId} iconOnly />
-              {canEditClients && (
+              {canExportClients && (
+                <ClientExportButton workspaceId={workspaceId} iconOnly />
+              )}
+              {canCreateClients && (
                 <PermissionButton
                   requiresActiveSubscription
                   resource="clients"

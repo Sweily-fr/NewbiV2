@@ -30,17 +30,34 @@ export const organizationRoles = {
 };
 
 /**
- * Niveaux par défaut des modules du compte qu'un hook Better Auth doit
+ * Actions par défaut des pages du compte qu'un hook Better Auth doit
  * vérifier (mêmes valeurs que les grilles prédéfinies de l'API). Un rôle
- * ajusté ou personnalisé a sa grille dans `organizationRole.levels`.
+ * ajusté ou personnalisé a sa grille dans `organizationRole.actions` (ou
+ * `levels` s'il a été enregistré avant les actions).
  */
-const DEFAULT_ACCOUNT_LEVELS = {
-  owner: { team: "write", orgSettings: "write" },
-  admin: { team: "read", orgSettings: "write" },
-  member: { team: "read", orgSettings: "read" },
-  viewer: { team: "read", orgSettings: "read" },
-  accountant: { team: "read", orgSettings: "read" },
+const ACCOUNT_ACTIONS = {
+  team: ["view", "invite", "changeRole", "remove"],
+  orgSettings: ["view", "edit"],
 };
+
+const DEFAULT_ACCOUNT_ACTIONS = {
+  owner: ACCOUNT_ACTIONS,
+  admin: { team: ["view"], orgSettings: ["view", "edit"] },
+  member: { team: ["view"], orgSettings: ["view"] },
+  viewer: { team: ["view"], orgSettings: ["view"] },
+  accountant: { team: ["view"], orgSettings: ["view"] },
+};
+
+/** Actions d'une page du compte dans un document `organizationRole`. */
+function storedAccountActions(doc, moduleKey) {
+  if (!doc) return null;
+  if (doc.actions) return doc.actions[moduleKey] || [];
+  const level = doc.levels?.[moduleKey];
+  if (!level) return null;
+  if (level === "write" || level === "delete")
+    return ACCOUNT_ACTIONS[moduleKey];
+  return level === "read" ? ["view"] : [];
+}
 
 function toObjectId(ObjectId, id) {
   if (!id) return null;
@@ -49,30 +66,32 @@ function toObjectId(ObjectId, id) {
 }
 
 /**
- * Rôle d'un utilisateur dans un espace et son niveau sur un module du
- * compte (`team` ou `orgSettings`). Renvoie `{ role: null }` si l'utilisateur
- * n'est pas membre.
+ * Rôle d'un utilisateur dans un espace et ses actions sur une page du compte
+ * (`team` ou `orgSettings`). Renvoie `{ role: null, actions: [] }` si
+ * l'utilisateur n'est pas membre.
  */
-export async function getAccountLevel(
+export async function getAccountActions(
   db,
   { userId, organizationId, moduleKey },
 ) {
   const { ObjectId } = await import("mongodb");
   const orgId = toObjectId(ObjectId, organizationId);
   const uid = toObjectId(ObjectId, userId);
-  if (!orgId || !uid) return { role: null, level: "none" };
+  if (!orgId || !uid) return { role: null, actions: [] };
 
   const member = await db
     .collection("member")
     .findOne({ organizationId: orgId, userId: uid });
-  if (!member) return { role: null, level: "none" };
+  if (!member) return { role: null, actions: [] };
 
   const roles = String(member.role || "")
     .toLowerCase()
     .split(",")
     .map((r) => r.trim())
     .filter(Boolean);
-  if (roles.includes("owner")) return { role: "owner", level: "write" };
+  if (roles.includes("owner")) {
+    return { role: "owner", actions: ACCOUNT_ACTIONS[moduleKey] || [] };
+  }
 
   const stored = await db
     .collection("organizationRole")
@@ -80,16 +99,15 @@ export async function getAccountLevel(
     .toArray();
   const byRole = new Map(stored.map((d) => [String(d.role).toLowerCase(), d]));
 
-  const rank = { none: 0, read: 1, write: 2, delete: 3 };
-  let level = "none";
+  const actions = new Set();
   for (const role of roles) {
-    const candidate =
-      byRole.get(role)?.levels?.[moduleKey] ??
-      DEFAULT_ACCOUNT_LEVELS[role]?.[moduleKey] ??
-      "none";
-    if ((rank[candidate] ?? 0) > rank[level]) level = candidate;
+    const granted =
+      storedAccountActions(byRole.get(role), moduleKey) ??
+      DEFAULT_ACCOUNT_ACTIONS[role]?.[moduleKey] ??
+      [];
+    for (const a of granted) actions.add(a);
   }
-  return { role: roles.join(","), level };
+  return { role: roles.join(","), actions: [...actions] };
 }
 
 export function isOwnerRole(role) {

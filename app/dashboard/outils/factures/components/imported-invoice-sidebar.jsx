@@ -262,14 +262,14 @@ export function ImportedInvoiceSidebar({
   const isLoading = updateLoading || deleteLoading || validateLoading;
 
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditImported = !isReady || canWrite("importedInvoices");
-  const canDeleteImported = !isReady || canDelete("importedInvoices");
-  // Rapprochement bancaire : droits du module « banking »
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditImported = !isReady || canDo("importedInvoices", "edit");
+  const canDeleteImported = !isReady || canDo("importedInvoices", "delete");
+  // Rapprochement bancaire : action « reconcile » des transactions
   const canReadBanking = !isReady || canRead("banking");
-  const canLinkTransactions = !isReady || canWrite("banking");
-  // Création rapide d'un client : droits du module « clients »
-  const canCreateClients = !isReady || canWrite("clients");
+  const canLinkTransactions = !isReady || canDo("banking", "reconcile");
+  // Création rapide d'un client : action « create » des clients
+  const canCreateClients = !isReady || canDo("clients", "create");
 
   // Rapprochement bancaire (N↔N) : transactions liées, recherche manuelle.
   const {

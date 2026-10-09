@@ -76,11 +76,11 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
   const [scanPeriod, setScanPeriod] = useState("3");
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const { canWrite, isReady } = useMyPermissions();
+  const { canDo, isReady } = useMyPermissions();
   // Connexion, synchronisation et déconnexion importent des factures d'achat :
-  // consultation seule sans droit d'écriture (tout autorisé tant que la
+  // action « create », consultation seule sinon (tout autorisé tant que la
   // grille n'est pas chargée)
-  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
+  const canManageGmail = !isReady || canDo("purchaseInvoices", "create");
 
   const handleConnect = async () => {
     try {
@@ -218,7 +218,7 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                 )}
 
                 {/* Footer (marge seule en consultation) */}
-                {canEditPurchaseInvoices ? (
+                {canManageGmail ? (
                   <div className="flex items-center justify-between border-t border-border/40 mt-4 -mx-5 px-5 py-3">
                     <Button
                       variant="ghost"
@@ -288,7 +288,7 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                 </div>
 
                 {/* Scan period */}
-                {canEditPurchaseInvoices && (
+                {canManageGmail && (
                   <div className="mt-4">
                     <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
                       Période du scan initial
@@ -317,7 +317,7 @@ export function GmailConnectionDialog({ open, onOpenChange }) {
                 </div>
 
                 {/* Footer (marge seule en consultation) */}
-                {canEditPurchaseInvoices ? (
+                {canManageGmail ? (
                   <div className="flex items-center justify-end border-t border-border/40 mt-4 -mx-5 px-5 py-3">
                     <Button
                       variant="primary"

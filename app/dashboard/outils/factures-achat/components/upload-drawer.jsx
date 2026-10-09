@@ -156,10 +156,12 @@ export function PurchaseInvoiceUploadDrawer({
   const { addFile } = useAddPurchaseInvoiceFile();
   const { reconcile } = useReconcilePurchaseInvoice();
   const { fetchReconcileCandidate } = usePurchaseInvoiceReconciliationPicker();
-  const { canWrite, isReady } = useMyPermissions();
-  // Proposition de rapprochement : droit d'écriture sur les transactions
-  // (tout autorisé tant que la grille n'est pas chargée)
-  const canLinkTransactions = !isReady || canWrite("banking");
+  const { canDo, isReady } = useMyPermissions();
+  // Proposition de rapprochement : action « reconcile » des factures d'achat
+  // et des transactions (tout autorisé tant que la grille n'est pas chargée)
+  const canLinkTransactions =
+    !isReady ||
+    (canDo("purchaseInvoices", "reconcile") && canDo("banking", "reconcile"));
   // Facture créée alors que le paiement est déjà passé : transaction sûre
   // proposée avec confirmation ({ invoiceId, label, transaction } ou null).
   const [reconcileCandidate, setReconcileCandidate] = useState(null);

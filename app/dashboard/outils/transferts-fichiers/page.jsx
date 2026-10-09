@@ -68,8 +68,8 @@ function TransfertsContent() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditFileTransfers = !isReady || canWrite("fileTransfers");
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateFileTransfers = !isReady || canDo("fileTransfers", "create");
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -78,7 +78,7 @@ function TransfertsContent() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   // Modale de création (aussi ouverte par ?new=1) : fermée si le rôle
   // ne permet pas de créer un transfert
-  const isUploadModalOpen = showUploadModal && canEditFileTransfers;
+  const isUploadModalOpen = showUploadModal && canCreateFileTransfers;
 
   // Calculer les statistiques des transferts
   const transferStats = useMemo(() => {
@@ -216,7 +216,7 @@ function TransfertsContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider> */}
-            {canEditFileTransfers && (
+            {canCreateFileTransfers && (
               <Button
                 variant="primary"
                 onClick={() => setShowUploadModal(true)}
@@ -360,7 +360,7 @@ function TransfertsContent() {
               <h1 className="text-2xl font-medium mb-1">Transferts</h1>
             </div>
             <div className="flex gap-2">
-              {canEditFileTransfers && (
+              {canCreateFileTransfers && (
                 <Button
                   onClick={() => setShowUploadModal(true)}
                   size="icon"

@@ -175,10 +175,11 @@ export default function PrevisionPage() {
   const { subscription } = useSubscription();
   const planLimits = getPlanLimits(subscription?.plan);
   const forecastMonths = planLimits.forecastMonths;
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
-  // lecture seule, aucune saisie de prévision n'est proposée
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditForecast = !isReady || canWrite("forecast");
+  // Action « create » du rôle (tout autorisé tant que la grille n'est pas
+  // chargée) : sans elle, ni « Ajouter une prévision » ni « + » dans les
+  // cellules du tableau
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateForecast = !isReady || canDo("forecast", "create");
 
   // Determine the max allowed period and default period based on plan
   const maxPeriod = forecastMonths;
@@ -293,7 +294,7 @@ export default function PrevisionPage() {
                 activeScenarioId={activeScenarioId}
                 onScenarioChange={setActiveScenarioId}
               />
-              {canEditForecast && (
+              {canCreateForecast && (
                 <Button
                   variant="primary"
                   onClick={() => {
@@ -563,7 +564,7 @@ export default function PrevisionPage() {
             months={forecastData?.months}
             kpi={forecastData?.kpi}
             loading={loading}
-            onCellClick={canEditForecast ? handleCellClick : undefined}
+            onCellClick={canCreateForecast ? handleCellClick : undefined}
           />
         </div>
 

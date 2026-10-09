@@ -203,13 +203,20 @@ export function TransactionDetailDrawer({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const { canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
-  // En lecture seule, aucune action n'est affichée. Rattacher ou détacher une
-  // facture d'achat relève aussi du module des factures d'achat côté API.
-  const canEditBanking = !isReady || canWrite("banking");
-  const canEditPurchaseInvoices = !isReady || canWrite("purchaseInvoices");
-  const canLinkPurchaseInvoices = canEditBanking && canEditPurchaseInvoices;
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée). En lecture seule, aucune action n'est affichée :
+  //   - edit : catégorie, description, transaction manuelle ;
+  //   - receipts : déposer / retirer un justificatif, confirmer la facture
+  //     d'achat proposée ;
+  //   - reconcile : rattacher / détacher des factures, ignorer / réactiver.
+  // Rattacher ou détacher une facture d'achat relève aussi de l'action
+  // « reconcile » des factures d'achat côté API.
+  const canEditBanking = !isReady || canDo("banking", "edit");
+  const canManageReceipts = !isReady || canDo("banking", "receipts");
+  const canReconcile = !isReady || canDo("banking", "reconcile");
+  const canLinkPurchaseInvoices =
+    canReconcile && (!isReady || canDo("purchaseInvoices", "reconcile"));
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -1648,7 +1655,7 @@ export function TransactionDetailDrawer({
               </div>
 
               {/* Zone d'upload — large card dashed, toujours visible pour ajouter plusieurs justificatifs */}
-              {(isCreateMode || (!isReadOnly && canEditBanking)) && (
+              {canManageReceipts && (isCreateMode || !isReadOnly) && (
                 <div
                   className={`relative flex flex-col items-center justify-center gap-3 px-6 py-8 rounded-lg cursor-pointer border border-dashed text-center transition-colors duration-[120ms] ${
                     dragActive
@@ -1757,7 +1764,7 @@ export function TransactionDetailDrawer({
                             </span>
                             {rcpt.proposal &&
                             onConfirmProposal &&
-                            canEditBanking ? (
+                            canManageReceipts ? (
                               <div className="mt-2">
                                 {/* Mise de côté : plus d'étiquette d'alerte,
                                     mais la facture reste créable. */}
@@ -1788,7 +1795,7 @@ export function TransactionDetailDrawer({
                               onClick={() => togglePreviewReceipt(idx)}
                               label="Voir le justificatif"
                             />
-                            {canEditBanking && (
+                            {canManageReceipts && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1864,7 +1871,7 @@ export function TransactionDetailDrawer({
                         >
                           <ExternalLink className="h-4 w-4" />
                         </Button>
-                        {canEditBanking && (
+                        {canReconcile && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1961,7 +1968,7 @@ export function TransactionDetailDrawer({
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
-                      {canEditBanking && (
+                      {canReconcile && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -2265,7 +2272,7 @@ export function TransactionDetailDrawer({
                     Rapprochement ignoré pour cette transaction
                   </p>
                 </div>
-                {canEditBanking && (
+                {canReconcile && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -2290,7 +2297,7 @@ export function TransactionDetailDrawer({
                 d'argent sans suggestion, un sélecteur avec recherche permet le
                 rattachement manuel. */}
             {!isCreateMode &&
-              canEditBanking &&
+              canReconcile &&
               !isIgnoredReconciliation &&
               (matchingInvoices.length > 0 || canPickInvoice) && (
                 <div className="space-y-3">

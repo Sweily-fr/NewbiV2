@@ -15,6 +15,7 @@ import { useDeliveryNoteStats } from "@/src/graphql/deliveryNoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 import { DeliveryNotesAccessGuard } from "./components/delivery-notes-access-guard";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 function DeliveryNotesContent() {
   const router = useRouter();
@@ -24,6 +25,10 @@ function DeliveryNotesContent() {
   const toastManager = useToastManager();
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [newDnData, setNewDnData] = useState(null);
+  // Bouton « Envoyer au client » du toast : action « send » (tout autorisé
+  // tant que la grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canSendDeliveryNotes = !isReady || canDo("deliveryNotes", "send");
 
   // Un bon de livraison vient d'être créé (éditeur) : toast + proposition d'envoi
   useEffect(() => {
@@ -38,19 +43,20 @@ function DeliveryNotesContent() {
         title: "Bon de livraison créé avec succès",
         description: `Bon de livraison ${dnData.number} créé`,
         timeout: 10000,
-        actionProps: dnData.clientEmail
-          ? {
-              children: "Envoyer au client",
-              onClick: () => setShowSendEmailModal(true),
-            }
-          : undefined,
+        actionProps:
+          dnData.clientEmail && canSendDeliveryNotes
+            ? {
+                children: "Envoyer au client",
+                onClick: () => setShowSendEmailModal(true),
+              }
+            : undefined,
       });
     } catch {
       // données illisibles : on ignore
     } finally {
       sessionStorage.removeItem("newDeliveryNoteData");
     }
-  }, [toastManager]);
+  }, [toastManager, canSendDeliveryNotes]);
 
   useEffect(() => {
     const id = searchParams.get("id");

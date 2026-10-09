@@ -118,9 +118,8 @@ function DashboardContent() {
   // visible tant que la grille n'est pas chargée (pas de clignotement).
   // Requêtes : elles attendent la grille, sauf si son chargement échoue.
   const {
-    can,
+    canDo,
     canRead,
-    canWrite,
     isReady: permissionsReady,
     error: permissionsError,
     role: permissionsRole,
@@ -128,8 +127,9 @@ function DashboardContent() {
   } = useMyPermissions();
   const permissionsPending = !permissionsReady && !permissionsError;
   const canReadModule = (moduleKey) => !permissionsReady || canRead(moduleKey);
-  const canWriteModule = (moduleKey) =>
-    !permissionsReady || canWrite(moduleKey);
+  // Action « create » du module (actions rapides)
+  const canCreateModule = (moduleKey) =>
+    !permissionsReady || canDo(moduleKey, "create");
   const canReadBanking = canReadModule("banking");
   const canReadInvoices = canReadModule("invoices");
   const canReadQuotes = canReadModule("quotes");
@@ -139,11 +139,11 @@ function DashboardContent() {
   const canReadBillingMonth = canReadInvoices || canReadOverview;
   // Courbes Entrées/Sorties : lisibles avec les transactions ou la Vue d'ensemble
   const canReadTreasuryChart = canReadBanking || canReadOverview;
-  // Connecter une banque : droit « Applications et banques » du rôle
-  const canConnectBank = !permissionsReady || can("integrations", "write");
-  const canCreateQuotes = canWriteModule("quotes");
-  const canCreateInvoices = canWriteModule("invoices");
-  const canCreatePurchaseInvoices = canWriteModule("purchaseInvoices");
+  // Connecter une banque : action « manage » de « Applications et banques »
+  const canConnectBank = !permissionsReady || canDo("integrations", "manage");
+  const canCreateQuotes = canCreateModule("quotes");
+  const canCreateInvoices = canCreateModule("invoices");
+  const canCreatePurchaseInvoices = canCreateModule("purchaseInvoices");
   // Transferts de fichiers : masqués au Comptable tant qu'il garde son niveau
   // par défaut (comme dans le menu)
   const fileTransfersHidden = isHiddenForRole(
@@ -154,7 +154,7 @@ function DashboardContent() {
   const canSeeFileTransfers =
     canReadModule("fileTransfers") && !fileTransfersHidden;
   const canTransferFiles =
-    canWriteModule("fileTransfers") && !fileTransfersHidden;
+    canCreateModule("fileTransfers") && !fileTransfersHidden;
   const canSeeKanban = canReadModule("kanban");
   const hasQuickActions =
     canCreateQuotes ||
@@ -589,7 +589,7 @@ function DashboardContent() {
           ) : null}
         </div>
 
-        {/* Actions rapides (selon le droit d'écriture du rôle sur chaque module) */}
+        {/* Actions rapides (selon l'action « create » du rôle sur chaque module) */}
         {hasQuickActions && (
           <div className="flex items-center gap-2 flex-wrap -mt-2">
             {canCreateQuotes && (

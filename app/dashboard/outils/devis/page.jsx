@@ -34,9 +34,11 @@ function QuotesContent() {
 
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée).
   // Paramètres des documents : paramètres de l'entreprise (« orgSettings »)
-  const { canWrite, isReady } = useMyPermissions();
-  const canImportQuotes = !isReady || canWrite("importedQuotes");
-  const canEditSettings = !isReady || canWrite("orgSettings");
+  const { canDo, isReady } = useMyPermissions();
+  const canImportQuotes = !isReady || canDo("importedQuotes", "import");
+  const canEditSettings = !isReady || canDo("orgSettings", "edit");
+  // Bouton « Envoyer au client » du toast affiché après une création
+  const canSendQuotes = !isReady || canDo("quotes", "send");
 
   // Toast manager et modal d'envoi pour les nouveaux devis
   const toastManager = useToastManager();
@@ -58,14 +60,15 @@ function QuotesContent() {
             title: "Devis créé avec succès",
             description: `Devis ${quoteData.number} créé`,
             timeout: 10000,
-            actionProps: quoteData.clientEmail
-              ? {
-                  children: "Envoyer au client",
-                  onClick: () => {
-                    setShowSendEmailModal(true);
-                  },
-                }
-              : undefined,
+            actionProps:
+              quoteData.clientEmail && canSendQuotes
+                ? {
+                    children: "Envoyer au client",
+                    onClick: () => {
+                      setShowSendEmailModal(true);
+                    },
+                  }
+                : undefined,
           });
 
           // Supprimer les données du sessionStorage
@@ -75,7 +78,7 @@ function QuotesContent() {
         }
       }
     }
-  }, [toastManager]);
+  }, [toastManager, canSendQuotes]);
 
   useEffect(() => {
     const id = searchParams.get("id");

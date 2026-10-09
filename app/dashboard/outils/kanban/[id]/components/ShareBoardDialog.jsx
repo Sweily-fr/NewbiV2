@@ -95,10 +95,11 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditKanban = !isReady || canWrite("kanban");
-  const canDeleteKanban = !isReady || canDelete("kanban");
+  // Liens publics (créer, modifier, révoquer, supprimer, visiteurs) =
+  // action « share » du kanban, comme côté API (tout autorisé tant que la
+  // grille n'est pas chargée)
+  const { canDo, isReady } = useMyPermissions();
+  const canShareKanban = !isReady || canDo("kanban", "share");
   const [isOpen, setIsOpen] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
@@ -460,7 +461,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
               )}
 
               {/* Bouton pour créer un nouveau lien (masqué sans écriture) */}
-              {!showCreateForm && canEditKanban && (
+              {!showCreateForm && canShareKanban && (
                 <Button
                   onClick={() => setShowCreateForm(true)}
                   className="w-full gap-2"
@@ -577,7 +578,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                               <ExternalLink className="h-4 w-4" />
                             </Button>
 
-                            {(canEditKanban || canDeleteKanban) && (
+                            {canShareKanban && (
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button
@@ -592,7 +593,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                   className="w-48 p-2"
                                   align="end"
                                 >
-                                  {canEditKanban &&
+                                  {canShareKanban &&
                                     (share.isActive ? (
                                       <Button
                                         variant="ghost"
@@ -618,7 +619,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                         Réactiver
                                       </Button>
                                     ))}
-                                  {canDeleteKanban && (
+                                  {canShareKanban && (
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -721,7 +722,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                           {formatDate(visitor.lastVisitAt)}
                                         </div>
                                       </div>
-                                      {canDeleteKanban && (
+                                      {canShareKanban && (
                                         <Button
                                           variant="ghost"
                                           size="icon"
@@ -817,7 +818,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                             {formatDate(request.requestedAt)}
                                           </span>
                                         </div>
-                                        {canEditKanban && (
+                                        {canShareKanban && (
                                           <div className="flex items-center gap-1">
                                             <Button
                                               variant="ghost"
@@ -900,7 +901,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                           </span>
                                         )}
                                       </div>
-                                      {canEditKanban && (
+                                      {canShareKanban && (
                                         <Button
                                           variant="ghost"
                                           size="sm"

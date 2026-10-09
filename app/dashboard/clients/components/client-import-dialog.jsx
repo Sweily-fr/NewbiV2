@@ -60,11 +60,12 @@ export default function ClientImportDialog({
   initialView = "import",
 }) {
   const { workspaceId } = useWorkspace();
-  const { canRead, canWrite, isReady } = useMyPermissions();
+  const { canRead, canDo, isReady } = useMyPermissions();
   // Champs personnalisés : module à part (requête sautée sans lecture,
-  // création réservée à l'écriture)
+  // création réservée à l'action « create » du module)
   const canReadCustomFields = !isReady || canRead("clientCustomFields");
-  const canEditCustomFields = !isReady || canWrite("clientCustomFields");
+  const canCreateCustomFields =
+    !isReady || canDo("clientCustomFields", "create");
   const { fields: customFields } = useClientCustomFields(
     canReadCustomFields ? workspaceId : null,
   );
@@ -415,7 +416,7 @@ export default function ClientImportDialog({
                       customFieldMappings={customFieldMappings}
                       onCustomFieldMappingsChange={setCustomFieldMappings}
                       onCreateCustomField={
-                        canEditCustomFields ? handleCreateCustomField : null
+                        canCreateCustomFields ? handleCreateCustomField : null
                       }
                       existingCustomFields={customFields}
                     />

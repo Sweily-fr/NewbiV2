@@ -91,17 +91,32 @@ export default function QuoteSidebar({
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { workspaceId } = useRequiredWorkspace();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, isReady } = useMyPermissions();
-  const canEditQuotes = !isReady || canWrite("quotes");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditQuotes = !isReady || canDo("quotes", "edit");
+  // Finaliser un brouillon, accepter, refuser ou annuler : action « status »
+  const canChangeQuoteStatus = !isReady || canDo("quotes", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizeQuotes =
+    !isReady || canDo("quotes", "create") || canDo("quotes", "edit");
+  const canSignQuotes = !isReady || canDo("quotes", "sign");
   // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
   const canReadInvoices = !isReady || canRead("invoices");
   const canReadPurchaseOrders = !isReady || canRead("purchaseOrders");
   const canReadDeliveryNotes = !isReady || canRead("deliveryNotes");
-  // Conversions : création dans le module cible
+  // Conversions : action « convert » du devis et création du document cible
+  const canConvertQuotes = !isReady || canDo("quotes", "convert");
   const canConvertToInvoice =
-    canEditQuotes && (!isReady || canWrite("invoices"));
+    canConvertQuotes && (!isReady || canDo("invoices", "create"));
   const canConvertToPurchaseOrder =
-    canEditQuotes && (!isReady || canWrite("purchaseOrders"));
+    canConvertQuotes && (!isReady || canDo("purchaseOrders", "create"));
+  const hasFooterActions =
+    canEditQuotes ||
+    canChangeQuoteStatus ||
+    canFinalizeQuotes ||
+    canSignQuotes ||
+    canConvertToInvoice ||
+    canConvertToPurchaseOrder;
 
   const [fetchClient] = useLazyQuery(GET_CLIENT, {
     fetchPolicy: "network-only",
@@ -883,11 +898,11 @@ export default function QuoteSidebar({
           )}
         </div>
 
-        {/* Action Buttons (pied masqué si le rôle ne permet pas de modifier,
+        {/* Action Buttons (pied masqué si le rôle ne permet aucune action,
             sauf pour la preuve de signature) */}
         <div
           className={`border-t px-6 py-4 space-y-3 ${
-            canEditQuotes || quote.signatureStatus === "DONE" ? "" : "hidden"
+            hasFooterActions || quote.signatureStatus === "DONE" ? "" : "hidden"
           }`}
         >
           {/* Annuler une demande de signature CLIENT en cours.
@@ -898,7 +913,7 @@ export default function QuoteSidebar({
             quote.signatureStatus,
           ) &&
             signatureStatus?.id &&
-            canEditQuotes && (
+            canSignQuotes && (
               <Button
                 variant="outline"
                 onClick={handleCancelSignatureRequest}
@@ -915,32 +930,37 @@ export default function QuoteSidebar({
             )}
 
           {/* Draft Actions */}
-          {quote.status === QUOTE_STATUS.DRAFT && canEditQuotes && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Éditer
-              </Button>
-              <Button
-                onClick={handleSendQuote}
-                disabled={isLoading}
-                className="flex-1 font-normal"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Créer le devis
-              </Button>
-            </div>
-          )}
+          {quote.status === QUOTE_STATUS.DRAFT &&
+            (canEditQuotes || canFinalizeQuotes) && (
+              <div className="flex gap-2">
+                {canEditQuotes && (
+                  <Button
+                    variant="outline"
+                    onClick={handleEdit}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Éditer
+                  </Button>
+                )}
+                {canFinalizeQuotes && (
+                  <Button
+                    onClick={handleSendQuote}
+                    disabled={isLoading}
+                    className="flex-1 font-normal"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Créer le devis
+                  </Button>
+                )}
+              </div>
+            )}
 
           {/* Pending / Imported Actions */}
           {(quote.status === QUOTE_STATUS.PENDING ||
             quote.status === QUOTE_STATUS.IMPORTED) &&
-            canEditQuotes && (
+            canChangeQuoteStatus && (
               <div className="flex gap-2">
                 <Button
                   variant="outline"

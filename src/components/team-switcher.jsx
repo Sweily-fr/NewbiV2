@@ -584,8 +584,8 @@ function SortableOrganizationItem({
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const buttonRef = React.useRef(null);
   const colorButtonRef = React.useRef(null);
-  const { can } = useMyPermissions();
-  const canManageTeam = can("team", "write");
+  const { canDo } = useMyPermissions();
+  const canManageTeam = canDo("team", "invite");
 
   // Récupérer la couleur et l'icône personnalisées
   const customColor = org.customColor || "#5b4fff";

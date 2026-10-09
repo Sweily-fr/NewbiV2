@@ -44,11 +44,13 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
   const { scenarios } = useForecastScenarios();
   const { upsertScenario, loading: saving } = useUpsertForecastScenario();
   const { deleteScenario, loading: deleting } = useDeleteForecastScenario();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) : en
-  // lecture seule, on peut seulement changer de scénario affiché
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  const canEditForecast = !isReady || canWrite("forecast");
-  const canDeleteForecast = !isReady || canDelete("forecast");
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée) : en lecture seule, on peut seulement changer de
+  // scénario affiché
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateForecast = !isReady || canDo("forecast", "create");
+  const canEditForecast = !isReady || canDo("forecast", "edit");
+  const canDeleteForecast = !isReady || canDo("forecast", "delete");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -149,7 +151,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                {canEditForecast && (
+                {canEditForecast ? (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -160,7 +162,20 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
                   >
                     Modifier
                   </button>
-                )}
+                ) : canDeleteForecast ? (
+                  // Suppression sans droit de modification : pas de dialogue
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(s.id);
+                    }}
+                    disabled={deleting}
+                    className="text-[10px] text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity px-1 disabled:opacity-50"
+                  >
+                    Supprimer
+                  </button>
+                ) : null}
                 <Check
                   className={cn(
                     "h-4 w-4 text-[#5b4fff] shrink-0",
@@ -171,7 +186,7 @@ export function ScenarioSelector({ activeScenarioId, onScenarioChange }) {
             </DropdownMenuItem>
           ))}
 
-          {canEditForecast && scenarios.length < 5 && (
+          {canCreateForecast && scenarios.length < 5 && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={openCreate} className="cursor-pointer">

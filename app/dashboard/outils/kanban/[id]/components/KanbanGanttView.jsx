@@ -123,8 +123,10 @@ export function KanbanGanttView({
   updateTask,
   workspaceId,
   boardTitle,
-  // Rôle sans écriture : pas de création au clic ni de redimensionnement
+  // Rôle sans l'action « edit » : pas de redimensionnement des barres
   readOnly = false,
+  // Rôle sans l'action « create » : pas de création de tâche au clic
+  canCreate = !readOnly,
 }) {
   // Date de référence de la période affichée. Volontairement NON alignée sur
   // le lundi : un jeudi 2 juillet doit afficher Q3/juillet, pas Q2/juin (le
@@ -766,7 +768,7 @@ export function KanbanGanttView({
     };
 
     const handleClick = (e) => {
-      if (readOnly) return;
+      if (!canCreate) return;
       // Ne pas créer de tâche si on vient de redimensionner
       if (justResizedRef.current) {
         return;
@@ -823,7 +825,7 @@ export function KanbanGanttView({
       timeline.removeEventListener("mouseleave", handleMouseLeave);
       timeline.removeEventListener("click", handleClick);
     };
-  }, [daysToDisplay, dayWidth, columns, onEditTask, readOnly]);
+  }, [daysToDisplay, dayWidth, columns, onEditTask, canCreate]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-10rem)] bg-background">
@@ -1244,10 +1246,10 @@ export function KanbanGanttView({
             <div
               // overflow-x-clip : les poignées de resize (right: -10px) des
               // barres en bord de période ne doivent pas créer de scroll.
-              // Pas de curseur « clic » en lecture seule (pas de création)
+              // Pas de curseur « clic » sans droit de création
               className={cn(
                 "relative overflow-x-clip",
-                !readOnly && "cursor-pointer",
+                canCreate && "cursor-pointer",
               )}
               style={{
                 minWidth: `${daysToDisplay.length * dayWidth}px`,
@@ -1296,7 +1298,7 @@ export function KanbanGanttView({
               </div>
 
               {/* Cercle qui suit le curseur - masqué sur mobile/tablette */}
-              {!readOnly && cursorPosition.visible && !isOverTask && (
+              {canCreate && cursorPosition.visible && !isOverTask && (
                 <div
                   className="fixed pointer-events-none hidden md:block"
                   style={{

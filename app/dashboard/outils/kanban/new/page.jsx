@@ -29,26 +29,18 @@ export default function NewKanbanPage() {
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canWrite, isReady } = useMyPermissions();
-  const canEditKanban = !isReady || canWrite("kanban");
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateKanban = !isReady || canDo("kanban", "create");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
   });
 
   const [createBoard, { loading }] = useMutation(CREATE_BOARD, {
-    onCompleted: async (data) => {
-      try {
-        // Créer les colonnes par défaut
-        await createDefaultColumns(data.createBoard.id);
-        toast.success("Tableau créé avec succès");
-        router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
-      } catch (error) {
-        console.error("Error in onCompleted:", error);
-        // Même si les colonnes échouent, on redirige vers le tableau
-        toast.success("Tableau créé avec succès");
-        router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
-      }
+    onCompleted: (data) => {
+      // Colonnes par défaut créées par l'API avec le tableau
+      toast.success("Tableau créé avec succès");
+      router.push(`/dashboard/outils/kanban/${data.createBoard.id}`);
     },
     onError: (error) => {
       toast.error("Erreur lors de la création du tableau");
@@ -61,7 +53,7 @@ export default function NewKanbanPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Rôle sans écriture : pas de création (Entrée dans le formulaire)
-    if (!canEditKanban) return;
+    if (!canCreateKanban) return;
 
     if (!formData.title.trim()) {
       toast.error("Le titre est requis");
@@ -167,7 +159,7 @@ export default function NewKanbanPage() {
                 Annuler
               </Button>
               {/* Masqué si le rôle ne permet pas de créer */}
-              {canEditKanban && (
+              {canCreateKanban && (
                 <Button
                   type="submit"
                   disabled={isReadOnly || loading || !formData.title.trim()}

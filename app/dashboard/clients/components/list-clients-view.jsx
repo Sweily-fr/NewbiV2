@@ -67,18 +67,19 @@ export default function ListClientsView({
   const { addClients } = useAddClientsToList();
   const { removeClients } = useRemoveClientsFromList();
   const { deleteClient } = useDeleteClient();
-  const { canRead, canWrite, canDelete, isReady } = useMyPermissions();
+  const { canRead, canDo, isReady } = useMyPermissions();
   // Champs personnalisés : module à part (requête sautée sans lecture)
   const canReadCustomFields = !isReady || canRead("clientCustomFields");
   const { fields: customFieldDefinitions } = useClientCustomFields(
     canReadCustomFields ? workspaceId : null,
   );
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  // Ajouter / retirer des contacts : module « Listes »
-  const canEditClients = !isReady || canWrite("clientLists");
-  const canDeleteClients = !isReady || canDelete("clients");
+  // Ajouter / retirer / déplacer des contacts : action « edit » des listes
+  const canEditLists = !isReady || canDo("clientLists", "edit");
+  // Suppression définitive des fiches : action « delete » des clients
+  const canDeleteClients = !isReady || canDo("clients", "delete");
   // « Ajouter des contacts » liste les fiches du module Clients
-  const canAddContacts = canEditClients && (!isReady || canRead("clients"));
+  const canAddContacts = canEditLists && (!isReady || canRead("clients"));
 
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -291,7 +292,7 @@ export default function ListClientsView({
                 {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
               </span>
 
-              {canEditClients && (
+              {canEditLists && (
                 <>
                   <Button
                     size="sm"

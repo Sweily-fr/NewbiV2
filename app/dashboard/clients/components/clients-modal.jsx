@@ -75,13 +75,17 @@ export default function ClientsModal({
   const [isMobile, setIsMobile] = useState(false);
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
-  const { canRead, canWrite, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditClients = !isReady || canWrite("clients");
-  const canCreateReminder = !isReady || canWrite("calendar");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // enregistrer = « edit » sur une fiche existante, « create » sinon
+  const canSaveClient =
+    !isReady || canDo("clients", client ? "edit" : "create");
+  // Rappel = nouvel événement du calendrier
+  const canCreateReminder = !isReady || canDo("calendar", "create");
   const canReadCustomFields = !isReady || canRead("clientCustomFields");
-  const canEditClientLists = !isReady || canWrite("clientLists");
-  const roleTooltip = !canEditClients
+  // Rattachement à la liste courante = modification de la liste
+  const canEditClientLists = !isReady || canDo("clientLists", "edit");
+  const roleTooltip = !canSaveClient
     ? "Votre rôle ne permet pas cette action"
     : undefined;
 
@@ -1493,12 +1497,12 @@ export default function ClientsModal({
                   >
                     Annuler
                   </Button>
-                  {canEditClients && (
+                  {canSaveClient && (
                     <Button
                       type="submit"
                       disabled={
                         loading ||
-                        !canEditClients ||
+                        !canSaveClient ||
                         Object.keys(errors).length > 0 ||
                         Object.keys(customErrors).length > 0
                       }
@@ -2309,12 +2313,12 @@ export default function ClientsModal({
                   >
                     Annuler
                   </Button>
-                  {canEditClients && (
+                  {canSaveClient && (
                     <Button
                       type="submit"
                       disabled={
                         loading ||
-                        !canEditClients ||
+                        !canSaveClient ||
                         Object.keys(errors).length > 0 ||
                         Object.keys(customErrors).length > 0
                       }

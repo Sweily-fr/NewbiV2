@@ -210,10 +210,13 @@ export default function SignatureEditor({ id }) {
   const searchParams = useSearchParams();
   const isNew = searchParams?.get("new") === "1";
   const { isReadOnly: subscriptionReadOnly } = useSubscriptionAccess();
-  const { canWrite, canDelete, isReady } = useMyPermissions();
-  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const canEditSignatures = !isReady || canWrite("signatures");
-  const canDeleteSignatures = !isReady || canDelete("signatures");
+  const { canDo, isReady } = useMyPermissions();
+  // Droits du rôle, action par action (tout autorisé tant que la grille
+  // n'est pas chargée) : modifier et définir par défaut = « edit »,
+  // dupliquer = « create », supprimer = « delete »
+  const canEditSignatures = !isReady || canDo("signatures", "edit");
+  const canCreateSignatures = !isReady || canDo("signatures", "create");
+  const canDeleteSignatures = !isReady || canDo("signatures", "delete");
 
   const {
     sig,
@@ -1324,8 +1327,9 @@ export default function SignatureEditor({ id }) {
                 <span className="hidden @max-[812px]:inline">Installer</span>
               </Button>
             </div>
-            {/* Actions selon le rôle : modifier (défaut, copie), supprimer */}
-            {(canEditSignatures || canDeleteSignatures) && (
+            {/* Actions selon le rôle : défaut (« edit »), copie
+                (« create »), supprimer (« delete ») */}
+            {(canEditSignatures || canCreateSignatures || canDeleteSignatures) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -1339,30 +1343,32 @@ export default function SignatureEditor({ id }) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {canEditSignatures && (
-                    <>
-                      <DropdownMenuItem
-                        onClick={handleSetDefault}
-                        disabled={sig.isDefault || isReadOnly}
-                      >
-                        <Star size={14} />
-                        Définir par défaut
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={handleDuplicate}
-                        disabled={isReadOnly}
-                      >
-                        <CopyPlus size={14} />
-                        Dupliquer
-                      </DropdownMenuItem>
-                    </>
+                    <DropdownMenuItem
+                      onClick={handleSetDefault}
+                      disabled={sig.isDefault || isReadOnly}
+                    >
+                      <Star size={14} />
+                      Définir par défaut
+                    </DropdownMenuItem>
                   )}
-                  {canEditSignatures && canDeleteSignatures && (
-                    <DropdownMenuSeparator />
+                  {/* isReadOnly inclut l'absence de « edit » : la copie et la
+                      suppression ne dépendent que de l'abonnement et d'un
+                      refus d'enregistrement */}
+                  {canCreateSignatures && (
+                    <DropdownMenuItem
+                      onClick={handleDuplicate}
+                      disabled={subscriptionReadOnly || Boolean(saveBlocked)}
+                    >
+                      <CopyPlus size={14} />
+                      Dupliquer
+                    </DropdownMenuItem>
                   )}
+                  {(canEditSignatures || canCreateSignatures) &&
+                    canDeleteSignatures && <DropdownMenuSeparator />}
                   {canDeleteSignatures && (
                     <DropdownMenuItem
                       onClick={() => setConfirmDelete(true)}
-                      disabled={isReadOnly}
+                      disabled={subscriptionReadOnly || Boolean(saveBlocked)}
                       className="text-red-600 focus:text-red-600"
                     >
                       <Trash2 size={14} />

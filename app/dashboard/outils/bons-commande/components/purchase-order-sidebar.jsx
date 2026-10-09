@@ -79,13 +79,25 @@ export default function PurchaseOrderSidebar({
 }) {
   const router = useRouter();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, isReady } = useMyPermissions();
-  const canEditPurchaseOrders = !isReady || canWrite("purchaseOrders");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditPurchaseOrders = !isReady || canDo("purchaseOrders", "edit");
+  // Changements de statut (dont la finalisation du brouillon) : action
+  // « status » des bons de commande
+  const canChangePurchaseOrderStatus =
+    !isReady || canDo("purchaseOrders", "status");
+  // Valider un brouillon fait partie de la création : « Créer » ou
+  // « Modifier » (comme l'API), les autres statuts demandent « status »
+  const canFinalizePurchaseOrders =
+    !isReady ||
+    canDo("purchaseOrders", "create") ||
+    canDo("purchaseOrders", "edit");
   // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
   const canReadQuotes = !isReady || canRead("quotes");
   const canReadInvoices = !isReady || canRead("invoices");
-  // Conversion : création dans le module « invoices »
-  const canWriteInvoices = !isReady || canWrite("invoices");
+  // Conversion : action « convert » du BC et création de la facture
+  const canConvertPurchaseOrders =
+    !isReady || canDo("purchaseOrders", "convert");
+  const canCreateInvoices = !isReady || canDo("invoices", "create");
   const { changeStatus, loading: changingStatus } =
     useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
@@ -304,7 +316,8 @@ export default function PurchaseOrderSidebar({
   const canConvertToInvoice =
     (isValidated || isInProgress || isDelivered) &&
     !hasLinkedInvoices &&
-    canWriteInvoices;
+    canConvertPurchaseOrders &&
+    canCreateInvoices;
   // Annulation possible uniquement avant validation client
   const canCancel = (isDraft || isConfirmed) && !hasLinkedInvoices;
 
@@ -802,34 +815,42 @@ export default function PurchaseOrderSidebar({
             )}
         </div>
 
-        {/* Action Buttons (masqués si le rôle ne permet pas de modifier) */}
-        {canEditPurchaseOrders && (
+        {/* Action Buttons (masqués si le rôle ne permet aucune action) */}
+        {(canEditPurchaseOrders ||
+          canChangePurchaseOrderStatus ||
+          canFinalizePurchaseOrders ||
+          canConvertToInvoice) && (
           <div className="border-t px-6 py-4 space-y-3">
             {/* DRAFT: Éditer + Créer le bon de commande (paire) */}
-            {isDraft && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleEdit}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Éditer
-                </Button>
-                <Button
-                  onClick={handleConfirm}
-                  disabled={isLoading}
-                  className="flex-1 font-normal"
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Créer le bon de commande
-                </Button>
-              </div>
-            )}
+            {isDraft &&
+              (canEditPurchaseOrders || canFinalizePurchaseOrders) && (
+                <div className="flex gap-2">
+                  {canEditPurchaseOrders && (
+                    <Button
+                      variant="outline"
+                      onClick={handleEdit}
+                      disabled={isLoading}
+                      className="flex-1 font-normal"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Éditer
+                    </Button>
+                  )}
+                  {canFinalizePurchaseOrders && (
+                    <Button
+                      onClick={handleConfirm}
+                      disabled={isLoading}
+                      className="flex-1 font-normal"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Créer le bon de commande
+                    </Button>
+                  )}
+                </div>
+              )}
 
             {/* CONFIRMED: Repasser brouillon / Valider (paire) + Annuler (full) */}
-            {isConfirmed && (
+            {isConfirmed && canChangePurchaseOrderStatus && (
               <>
                 <div className="flex gap-2">
                   <Button
@@ -866,7 +887,7 @@ export default function PurchaseOrderSidebar({
             )}
 
             {/* VALIDATED: Démarrer le traitement (single) */}
-            {isValidated && (
+            {isValidated && canChangePurchaseOrderStatus && (
               <Button
                 variant="primary"
                 onClick={handleStartProgress}
@@ -879,7 +900,7 @@ export default function PurchaseOrderSidebar({
             )}
 
             {/* IN_PROGRESS: Marquer comme livré (single) */}
-            {isInProgress && (
+            {isInProgress && canChangePurchaseOrderStatus && (
               <Button
                 variant="primary"
                 onClick={handleDeliver}

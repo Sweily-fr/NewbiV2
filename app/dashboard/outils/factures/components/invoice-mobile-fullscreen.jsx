@@ -53,10 +53,12 @@ export default function InvoiceMobileFullscreen({
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
-  const { canRead, canWrite, isReady } = useMyPermissions();
-  const canEditInvoices = !isReady || canWrite("invoices");
-  // Marquer payée : fonctionnalité « Encaissement des factures »
-  const canMarkPaid = !isReady || canWrite("invoicePayments");
+  const { canRead, canDo, isReady } = useMyPermissions();
+  const canEditInvoices = !isReady || canDo("invoices", "edit");
+  // Annuler une facture : action « status »
+  const canChangeInvoiceStatus = !isReady || canDo("invoices", "status");
+  // Marquer payée : action séparée des factures
+  const canMarkPaid = !isReady || canDo("invoices", "markPaid");
   // Documents liés d'autres modules : affichés seulement s'ils sont lisibles
   const canReadCreditNotes = !isReady || canRead("creditNotes");
   const canReadQuotes = !isReady || canRead("quotes");
@@ -978,7 +980,7 @@ export default function InvoiceMobileFullscreen({
 
             {invoice.status === INVOICE_STATUS.PENDING && (
               <>
-                {(canEditInvoices || canMarkPaid) && (
+                {(canChangeInvoiceStatus || canMarkPaid) && (
                   <div className="grid grid-cols-2 gap-1.5">
                     {canMarkPaid && (
                       <Button
@@ -995,7 +997,7 @@ export default function InvoiceMobileFullscreen({
                         Payée
                       </Button>
                     )}
-                    {canEditInvoices && (
+                    {canChangeInvoiceStatus && (
                       <Button
                         onClick={handleCancel}
                         variant="destructive"
