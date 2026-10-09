@@ -757,9 +757,42 @@ export default function TransactionTable({
             action,
             values: action === "CREATE" ? values : null,
             purchaseInvoiceId: purchaseInvoiceId || null,
+            // Facture ressemblante affichée au moment de créer : une autre,
+            // apparue depuis l'analyse, suspend la création côté API
+            ...(action === "CREATE" && {
+              acknowledgedDuplicateId:
+                item.receiptFile?.proposal?.duplicate?.id || null,
+            }),
           },
         });
         const result = data?.confirmTransactionReceiptInvoice;
+        if (result?.duplicate) {
+          // Une facture ressemblante a été enregistrée depuis l'analyse
+          // (l'autre copie du même document confirmée juste avant…) : rien
+          // n'est créé, la modale reste ouverte et affiche le choix
+          // « Rattacher » / « Créer quand même », corrections conservées.
+          setConfirmationQueue((queue) =>
+            queue.map((q) =>
+              q.receiptFile?.id === item.receiptFile?.id
+                ? {
+                    ...q,
+                    receiptFile: {
+                      ...q.receiptFile,
+                      proposal: {
+                        ...q.receiptFile.proposal,
+                        duplicate: result.duplicate,
+                      },
+                    },
+                  }
+                : q,
+            ),
+          );
+          toast.warning("Une facture d'achat ressemblante existe déjà", {
+            description:
+              "Elle a été enregistrée depuis l'analyse. Rattachez le justificatif à cette facture ou créez-en une quand même.",
+          });
+          return;
+        }
         if (!result?.success) {
           toast.error(
             result?.message || "La facture d'achat n'a pas pu être enregistrée",
