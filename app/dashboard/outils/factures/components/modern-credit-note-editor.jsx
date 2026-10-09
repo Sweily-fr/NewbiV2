@@ -32,14 +32,25 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { chunkLoadFallback } from "@/src/lib/chunk-load-fallback";
+import { usePreloadOnIdle } from "@/src/hooks/usePreloadOnIdle";
+import { useUnsavedChangesWarning } from "@/src/hooks/useUnsavedChangesWarning";
 
 // Modales et vues secondaires chargées et montées à la demande : importées
 // statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
 // gz) pour des écrans rarement ouverts.
 const SendDocumentModal = dynamic(
-  () => import("./send-document-modal").then((m) => m.SendDocumentModal),
+  () =>
+    import("./send-document-modal")
+      .then((m) => m.SendDocumentModal)
+      .catch(chunkLoadFallback),
   { ssr: false },
 );
+
+// Préchargées quand le navigateur est inactif après l'ouverture de l'éditeur :
+// déjà là si une nouvelle version est mise en ligne pendant la saisie.
+const preloadEditorModules = () =>
+  Promise.all([import("./send-document-modal")]);
 
 export default function ModernCreditNoteEditor({
   mode = "create",
@@ -102,6 +113,11 @@ export default function ModernCreditNoteEditor({
   // (Les avoirs n'ont pas de concept de brouillon : on propose juste de rester ou quitter.)
   const hasUserChanges = isDirty;
   const guardActive = hasUserChanges && !isReadOnly;
+
+  // Modifications non enregistrées : confirmation du navigateur avant de
+  // recharger ou fermer l'onglet.
+  useUnsavedChangesWarning(guardActive);
+  usePreloadOnIdle(preloadEditorModules);
 
   // Retour vers la LISTE des factures : on arrive sur l'avoir depuis la liste
   // (sidebar ou menu de ligne). La page détail /factures/[id] rouvre un éditeur
