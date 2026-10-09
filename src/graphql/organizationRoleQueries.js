@@ -113,3 +113,14 @@ export const TRANSFER_ORGANIZATION_OWNERSHIP = gql`
     }
   }
 `;
+
+// Demande d'accès au super admin (page refusée par le rôle)
+export const REQUEST_MODULE_ACCESS = gql`
+  mutation RequestModuleAccess($module: String!, $action: String) {
+    requestModuleAccess(module: $module, action: $action) {
+      success
+      ownerName
+      alreadyRequested
+    }
+  }
+`;

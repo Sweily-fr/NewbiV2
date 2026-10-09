@@ -6,7 +6,7 @@ import {
 } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import { getExternalSource } from "@/src/components/document-source-badge";
-import { FileDown } from "lucide-react";
+import { FileDown, KeyRound } from "lucide-react";
 
 // Documents arrivés d'une plateforme externe (Qonto, PDP…) : listes à
 // rafraîchir sans recharger la page, par nom d'opération GraphQL.
@@ -102,6 +102,26 @@ export const useActivityNotifications = (options = {}) => {
     if (!incoming) return;
     refetch();
     refetchUnreadCount();
+
+    // Demande d'accès d'un membre (super admin) : toast avec un lien vers
+    // l'onglet Rôles des paramètres
+    if (incoming.type === "ACCESS_REQUESTED") {
+      if (!rememberToasted(incoming.id)) return;
+      toast.document(incoming.title || "Demande d'accès", {
+        description: incoming.message,
+        fallbackIcon: KeyRound,
+        action: {
+          label: "Gérer les rôles",
+          onClick: () =>
+            window.dispatchEvent(
+              new CustomEvent("newbi:open-settings", {
+                detail: { tab: "roles" },
+              }),
+            ),
+        },
+      });
+      return;
+    }
 
     // Document importé (Qonto…) ou reçu via la PDP : la liste concernée se
     // met à jour toute seule, avec un toast cliquable.

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@apollo/client";
-import { ArrowLeft, LockKeyhole, Mail } from "lucide-react";
+import { useMutation, useQuery } from "@apollo/client";
+import { ArrowLeft, Check, LockKeyhole, Send } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Avatar,
@@ -13,21 +13,34 @@ import {
 } from "@/src/components/ui/avatar";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { GET_ROLE_CATALOG } from "@/src/graphql/organizationRoleQueries";
 import {
-  getFullOrganizationCached,
-  peekFullOrganization,
-} from "@/src/lib/full-organization-cache";
+  GET_ROLE_CATALOG,
+  REQUEST_MODULE_ACCESS,
+} from "@/src/graphql/organizationRoleQueries";
+import { toast } from "@/src/components/ui/sonner";
 import { pathForModule } from "@/src/lib/route-modules";
 
-// Super admin de l'espace : la personne qui peut donner l'accès
-function findOwner(org) {
-  const owner = org?.members?.find((m) =>
-    String(m.role || "")
-      .split(",")
-      .includes("owner"),
+// Super admin de l'espace : la personne qui peut donner l'accès. La liste
+// des membres (Paramètres > Membres) donne sa photo, enregistrée dans le
+// champ `avatar` de Newbi (le champ `image` de Better Auth est souvent vide).
+async function fetchOwner(workspaceId) {
+  if (!workspaceId) return null;
+  const response = await fetch(`/api/organizations/${workspaceId}/members`);
+  const result = await response.json();
+  const owner = (result?.data || []).find(
+    (m) =>
+      m.type === "member" &&
+      String(m.role || "")
+        .split(",")
+        .includes("owner"),
   );
-  return owner?.user || null;
+  return owner
+    ? {
+        name: owner.name || owner.email,
+        email: owner.email,
+        avatar: owner.avatar || owner.image || null,
+      }
+    : null;
 }
 
 // Guillemets français avec espaces insécables : jamais seuls en bout de ligne
@@ -57,21 +70,48 @@ function initials(name = "") {
 export function AccessDeniedPage({ moduleKey, action, canView }) {
   const router = useRouter();
   const { roleName } = useMyPermissions();
-  const { workspaceId, organization } = useWorkspace();
+  const { workspaceId } = useWorkspace();
   const { data } = useQuery(GET_ROLE_CATALOG, { fetchPolicy: "cache-first" });
 
-  const [owner, setOwner] = useState(() =>
-    findOwner(peekFullOrganization(workspaceId)?.org),
-  );
+  const [owner, setOwner] = useState(null);
   useEffect(() => {
     let active = true;
-    getFullOrganizationCached(workspaceId).then((org) => {
-      if (active) setOwner(findOwner(org));
-    });
+    fetchOwner(workspaceId)
+      .then((found) => {
+        if (active) setOwner(found);
+      })
+      .catch(() => {});
     return () => {
       active = false;
     };
   }, [workspaceId]);
+
+  // Demande envoyée par Newbi (notification + e-mail au super admin)
+  const [requested, setRequested] = useState(false);
+  const [requestAccess, { loading: requesting }] = useMutation(
+    REQUEST_MODULE_ACCESS,
+  );
+  const handleRequestAccess = async () => {
+    try {
+      const { data: result } = await requestAccess({
+        variables: { module: moduleKey, action },
+      });
+      const ownerName = result?.requestModuleAccess?.ownerName;
+      setRequested(true);
+      toast.success(
+        result?.requestModuleAccess?.alreadyRequested
+          ? "Demande déjà envoyée"
+          : "Demande d'accès envoyée",
+        {
+          description: ownerName
+            ? `${ownerName} a été prévenu par notification et par e-mail.`
+            : "Le super admin a été prévenu.",
+        },
+      );
+    } catch (error) {
+      toast.error(error?.message || "Impossible d'envoyer la demande");
+    }
+  };
 
   const pageLabel =
     data?.roleCatalog?.modules?.find((m) => m.key === moduleKey)?.label ||
@@ -91,17 +131,6 @@ export function AccessDeniedPage({ moduleKey, action, canView }) {
           : "de les modifier"
       }.`
     : `Votre rôle${roleName ? ` ${quote(roleName)}` : ""} ne donne pas accès à ${quote(pageLabel)}.`;
-
-  const workspaceName = organization?.name
-    ? ` dans l'espace ${organization.name}`
-    : "";
-  const mailto = owner?.email
-    ? `mailto:${owner.email}?subject=${encodeURIComponent(
-        `Accès à ${quote(pageLabel)} sur Newbi`,
-      )}&body=${encodeURIComponent(
-        `Bonjour,\n\nPourriez-vous m'ouvrir l'accès à ${quote(pageLabel)}${workspaceName} sur Newbi ?\n\nMerci !`,
-      )}`
-    : null;
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-16 sm:px-6 sm:py-24">
@@ -137,7 +166,7 @@ export function AccessDeniedPage({ moduleKey, action, canView }) {
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <Avatar className="size-9">
                 <AvatarImage
-                  src={owner.image}
+                  src={owner.avatar}
                   alt={owner.name || owner.email}
                 />
                 <AvatarFallback className="bg-[#5b4fff]/10 text-xs text-[#5b4fff] dark:text-[#8b85ff]">
@@ -152,19 +181,25 @@ export function AccessDeniedPage({ moduleKey, action, canView }) {
                   Super admin de l'espace
                 </p>
               </div>
-              {mailto && (
-                <Button
-                  asChild
-                  size="sm"
-                  variant="outline"
-                  className="w-full cursor-pointer gap-1.5 sm:w-auto sm:shrink-0"
-                >
-                  <a href={mailto}>
-                    <Mail className="size-3.5" />
-                    Demander l'accès
-                  </a>
-                </Button>
-              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="w-full cursor-pointer gap-1.5 sm:w-auto sm:shrink-0"
+                disabled={requesting || requested}
+                onClick={handleRequestAccess}
+              >
+                {requested ? (
+                  <Check className="size-3.5" />
+                ) : (
+                  <Send className="size-3.5" />
+                )}
+                {requested
+                  ? "Demande envoyée"
+                  : requesting
+                    ? "Envoi…"
+                    : "Demander l'accès"}
+              </Button>
             </div>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">

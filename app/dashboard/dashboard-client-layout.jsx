@@ -91,6 +91,31 @@ function DashboardContent({ children }) {
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
 
+  // Lien vers un onglet des paramètres (ex. ?parametres=roles dans une
+  // demande d'accès) : ouvre la fenêtre sur cet onglet puis retire le
+  // paramètre de l'adresse
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("parametres");
+    if (!tab) return;
+    setSettingsInitialTab(tab);
+    setSettingsModalOpen(true);
+    params.delete("parametres");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [pathname, router]);
+
+  // Même ouverture depuis un toast ou une notification, sans changer de page
+  useEffect(() => {
+    const openSettings = (event) => {
+      setSettingsInitialTab(event.detail?.tab || "preferences");
+      setSettingsModalOpen(true);
+    };
+    window.addEventListener("newbi:open-settings", openSettings);
+    return () =>
+      window.removeEventListener("newbi:open-settings", openSettings);
+  }, []);
+
   // Les chunks de la modale de paramètres (~11 000 lignes de sections) et de
   // la sidebar communautaire ne sont téléchargés qu'à la première ouverture.
   const [settingsEverOpened, setSettingsEverOpened] = useState(false);
