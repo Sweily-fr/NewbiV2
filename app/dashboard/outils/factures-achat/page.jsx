@@ -102,8 +102,13 @@ function PurchaseInvoicesContent() {
   const searchParams = useSearchParams();
   // Le tableau, les compteurs d'onglets, les filtres et l'export travaillent
   // sur la liste chargée : il faut donc tout l'historique, pas la 1re page.
+  // Une page de 1 000 couvre l'historique de quasiment tous les espaces en
+  // une seule requête ; les pages suivantes, s'il y en a, restent chargées par
+  // usePurchaseInvoices. Avec 200, l'historique arrivait en plusieurs requêtes
+  // enchaînées et la revalidation du cache le ramenait à 200 lignes à chaque
+  // visite avant de tout recharger.
   const { invoices, loading, loadingHistory, refetch } = usePurchaseInvoices({
-    limit: 200,
+    limit: 1000,
     loadAll: true,
   });
   const {

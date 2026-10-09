@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@apollo/client";
+import { GET_ANALYTICS_TRANSACTIONS } from "@/src/graphql/queries/banking";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useTreasuryForecastData } from "@/src/hooks/useTreasuryForecast";
 import { AnalyticsTreasuryBalanceChart } from "./components/analytics-treasury-balance-chart";
@@ -298,25 +300,54 @@ export default function AnalytiquesPage() {
     dateRange?.endDate,
   );
 
-  // Bank data. skipInvoices : la page ne lit pas la liste des factures du hook
-  // (ses indicateurs de facturation viennent de financialAnalytics).
-  const {
-    bankTransactions,
-    bankAccounts,
-    bankBalance,
-    totalIncome,
-    totalExpenses,
-    invoices,
-    paidInvoices,
-    paidExpenses,
-    isLoading: bankLoading,
-    invoicesLoading,
-    transactionsLoading,
-    formatCurrency: dashFormatCurrency,
-  } = useDashboardData({ skipInvoices: true });
+  // Solde (comptes + espèces) via le résumé calculé par l'API ; la page ne lit
+  // ni la liste des factures du hook ni ses transactions (skipInvoices,
+  // skipTransactions) : ses graphiques ont leur propre requête bornée.
+  const { bankBalance, isLoading: summaryLoading } = useDashboardData({
+    skipInvoices: true,
+    skipTransactions: true,
+  });
 
-  // Transactions bancaires restreintes à la période sélectionnée — le hook
-  // useDashboardData renvoie l'historique complet, sans filtre de dates
+  // Début de la fenêtre de transactions : début de la période affichée, et au
+  // moins 365 jours en arrière pour les options 30/90/365 j du graphique de
+  // solde (reconstitué à rebours depuis le solde actuel). Date du jour à la
+  // journée près pour garder des variables stables (clé du cache Apollo).
+  const transactionsWindowStart = useMemo(() => {
+    const yearAgo = new Date();
+    yearAgo.setDate(yearAgo.getDate() - 366);
+    const periodStart = dateRange?.startDate
+      ? new Date(dateRange.startDate)
+      : null;
+    const start =
+      periodStart && !isNaN(periodStart.getTime()) && periodStart < yearAgo
+        ? periodStart
+        : yearAgo;
+    return start.toISOString().slice(0, 10);
+  }, [dateRange?.startDate]);
+
+  const { data: analyticsTxData, loading: analyticsTxLoading } = useQuery(
+    GET_ANALYTICS_TRANSACTIONS,
+    {
+      variables: {
+        workspaceId,
+        filters: { startDate: transactionsWindowStart },
+        limit: 0,
+      },
+      fetchPolicy: "cache-and-network",
+      skip: !workspaceId,
+    },
+  );
+  const bankTransactions = useMemo(
+    () => analyticsTxData?.transactions || [],
+    [analyticsTxData],
+  );
+  // Squelettes au premier chargement seulement (pas à chaque revalidation).
+  const bankLoading =
+    (summaryLoading && bankBalance === 0) ||
+    (analyticsTxLoading && !analyticsTxData);
+
+  // Transactions bancaires restreintes à la période sélectionnée (la requête
+  // remonte plus loin pour le graphique de solde)
   const filteredBankTransactions = useMemo(() => {
     if (!dateRange?.startDate || !dateRange?.endDate) return bankTransactions;
     const start = new Date(dateRange.startDate);
