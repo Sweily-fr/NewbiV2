@@ -1,6 +1,8 @@
 import { gql, useQuery, useMutation } from "@apollo/client";
 
 // Fragments
+// Sans ocrData : le texte OCR complet de chaque facture importée partait avec
+// la liste (jusqu'à 1 000 lignes) alors qu'aucun écran des factures ne le lit.
 const IMPORTED_INVOICE_FRAGMENT = gql`
   fragment ImportedInvoiceFields on ImportedInvoice {
     id
@@ -68,11 +70,6 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
       originalFileName
       mimeType
       fileSize
-    }
-    ocrData {
-      extractedText
-      confidence
-      processedAt
     }
     notes
     linkedExpenseId

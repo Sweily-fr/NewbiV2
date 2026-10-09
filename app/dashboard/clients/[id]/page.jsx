@@ -6,14 +6,15 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { ClientDetailSkeleton } from "./components/client-detail-skeleton";
 import {
   useClient,
-  useClients,
   useDeleteClient,
   useBlockClient,
   useUnblockClient,
 } from "@/src/hooks/useClients";
+import { useQuery } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useQuotes } from "@/src/graphql/quoteQueries";
+import { GET_CLIENT_NAVIGATION_IDS } from "@/src/graphql/clientQueries";
 import { usePurchaseOrders } from "@/src/graphql/purchaseOrderQueries";
 import { useCreateEvent } from "@/src/hooks/useEvents";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
@@ -52,7 +53,11 @@ function ClientDetailContent() {
     error: clientError,
     refetch: refetchClient,
   } = useClient(isValid ? id : null);
-  const { clients: allClients } = useClients(1, 1000);
+  const { data: navigationData } = useQuery(GET_CLIENT_NAVIGATION_IDS, {
+    variables: { workspaceId, page: 1, limit: 1000, search: "" },
+    skip: !workspaceId,
+  });
+  const allClients = navigationData?.clients?.items;
   const { invoices } = useInvoices();
   const { quotes } = useQuotes();
   const { purchaseOrders } = usePurchaseOrders();

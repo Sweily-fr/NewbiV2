@@ -124,7 +124,6 @@ import {
   useRemoveClientFromList,
 } from "@/src/hooks/useClientLists";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
-import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
@@ -149,7 +148,6 @@ const columns = (
   onSelectClient,
   onSelectAll,
   allClients,
-  invoiceCountByClient = {},
   customFieldDefinitions = [],
 ) => [
   {
@@ -312,8 +310,9 @@ const columns = (
     header: "Factures",
     id: "invoiceCount",
     cell: ({ row }) => {
-      const clientId = row.original.id;
-      const count = invoiceCountByClient[clientId] || 0;
+      // Compté par l'API sur toutes les factures du client (l'ancien calcul
+      // ne voyait que les 50 dernières factures de l'espace).
+      const count = row.original.invoiceCount || 0;
 
       return <span className="text-sm text-muted-foreground">{count}</span>;
     },
@@ -546,21 +545,6 @@ export default function TableClients({
   const { deleteClient } = useDeleteClient();
 
   // Récupérer les factures pour calculer le nombre par client
-  const { invoices } = useInvoices();
-
-  // Calculer le nombre de factures par client
-  const invoiceCountByClient = useMemo(() => {
-    const counts = {};
-    if (invoices && invoices.length > 0) {
-      invoices.forEach((invoice) => {
-        const clientId = invoice.client?.id;
-        if (clientId) {
-          counts[clientId] = (counts[clientId] || 0) + 1;
-        }
-      });
-    }
-    return counts;
-  }, [invoices]);
 
   // Collecter tous les userIds assignés sur la page courante et récupérer
   // leurs infos via la même query GraphQL que le kanban (`usersInfo`)
@@ -663,7 +647,6 @@ export default function TableClients({
       onSelectClient,
       handleSelectAll,
       clients,
-      invoiceCountByClient,
       customFieldDefinitions,
     ),
     getCoreRowModel: getCoreRowModel(),
@@ -1428,7 +1411,14 @@ function RowActions({
   const { unblockClient } = useUnblockClient();
   const { addToLists } = useAddClientToLists();
   const { removeClient: removeClientFromList } = useRemoveClientFromList();
-  const { lists } = useClientListsByClient(workspaceId || "", client.id);
+  // Listes du contact : chargées seulement quand on s'apprête à ouvrir son
+  // menu (survol ou ouverture), et non pour chaque ligne du tableau au montage.
+  const [listsRequested, setListsRequested] = useState(false);
+  const requestLists = useCallback(() => setListsRequested(true), []);
+  const { lists } = useClientListsByClient(
+    workspaceId || "",
+    listsRequested ? client.id : null,
+  );
 
   const handleAddToList = useCallback(
     async (listId) => {
@@ -1537,9 +1527,13 @@ function RowActions({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          if (open) requestLists();
+        }}
+      >
         <DropdownMenuTrigger asChild>
-          <div className="flex justify-end">
+          <div className="flex justify-end" onPointerEnter={requestLists}>
             <Button
               size="icon"
               variant="ghost"

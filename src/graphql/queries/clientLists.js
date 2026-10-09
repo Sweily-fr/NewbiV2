@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const GET_CLIENT_LISTS = gql`
   query GetClientLists($workspaceId: String!) {
@@ -54,8 +54,20 @@ export const GET_CLIENT_LIST = gql`
 `;
 
 export const GET_CLIENTS_IN_LIST = gql`
-  query GetClientsInList($workspaceId: String!, $listId: ID!, $page: Int, $limit: Int, $search: String) {
-    clientsInList(workspaceId: $workspaceId, listId: $listId, page: $page, limit: $limit, search: $search) {
+  query GetClientsInList(
+    $workspaceId: String!
+    $listId: ID!
+    $page: Int
+    $limit: Int
+    $search: String
+  ) {
+    clientsInList(
+      workspaceId: $workspaceId
+      listId: $listId
+      page: $page
+      limit: $limit
+      search: $search
+    ) {
       items {
         id
         name
@@ -80,6 +92,7 @@ export const GET_CLIENTS_IN_LIST = gql`
         siret
         vatNumber
         hasDocuments
+        invoiceCount
       }
       totalItems
       currentPage

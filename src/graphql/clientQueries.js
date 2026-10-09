@@ -128,6 +128,29 @@ export const GET_CLIENTS = gql`
   ${CLIENT_FRAGMENT}
 `;
 
+// Ordre des clients pour précédent / suivant sur la fiche client : seulement
+// les identifiants (même champ et mêmes arguments que la liste). GET_CLIENTS
+// avec limit 1000 rapatriait les fiches complètes, notes et activité comprises.
+export const GET_CLIENT_NAVIGATION_IDS = gql`
+  query GetClientNavigationIds(
+    $workspaceId: String!
+    $page: Int
+    $limit: Int
+    $search: String
+  ) {
+    clients(
+      workspaceId: $workspaceId
+      page: $page
+      limit: $limit
+      search: $search
+    ) {
+      items {
+        id
+      }
+    }
+  }
+`;
+
 export const GET_CLIENT = gql`
   query GetClient($workspaceId: String!, $id: ID!) {
     client(workspaceId: $workspaceId, id: $id) {
