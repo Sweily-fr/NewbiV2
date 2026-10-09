@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -21,18 +23,31 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
+// Imports directs plutôt que le barrel "use client" de l'agenda, qui tirait
+// tout le calendrier (vues, glisser-déposer, connexions) dans les pages qui
+// affichent cette carte.
+import { EventItem } from "@/app/dashboard/calendar/components/event-item";
 import {
-  EventDialog,
-  EventItem,
   EventGap,
   EventHeight,
+  DefaultStartHour,
+} from "@/app/dashboard/calendar/components/constants";
+import {
   getAllEventsForDay,
   sortEvents,
   addHoursToDate,
-  DefaultStartHour,
-} from "@/app/dashboard/calendar/components";
+} from "@/app/dashboard/calendar/components/utils";
 import { useEvents, useEventOperations } from "@/src/hooks/useEvents";
 import { cn } from "@/src/lib/utils";
+
+// Fenêtre d'événement chargée et montée à l'ouverture seulement.
+const EventDialog = dynamic(
+  () =>
+    import("@/app/dashboard/calendar/components/event-dialog").then(
+      (m) => m.EventDialog,
+    ),
+  { ssr: false },
+);
 
 export function WeekCalendarCard({ className }) {
   const router = useRouter();
@@ -273,16 +288,18 @@ export function WeekCalendarCard({ className }) {
         </div>
       </CardContent>
 
-      <EventDialog
-        event={selectedEvent}
-        isOpen={isEventDialogOpen}
-        onClose={() => {
-          setIsEventDialogOpen(false);
-          setSelectedEvent(null);
-        }}
-        onSave={handleEventSave}
-        onDelete={handleEventDelete}
-      />
+      {isEventDialogOpen && (
+        <EventDialog
+          event={selectedEvent}
+          isOpen={isEventDialogOpen}
+          onClose={() => {
+            setIsEventDialogOpen(false);
+            setSelectedEvent(null);
+          }}
+          onSave={handleEventSave}
+          onDelete={handleEventDelete}
+        />
+      )}
     </Card>
   );
 }

@@ -96,10 +96,19 @@ describe("mobile middleware — routes non concernées", () => {
 
 describe("mobile middleware — config matcher", () => {
   it("ne matche que les préfixes de l'app (transfert et site public exclus)", () => {
-    expect(config.matcher).toEqual([
+    expect(config.matcher.map((m) => m.source)).toEqual([
       "/dashboard/:path*",
       "/onboarding/:path*",
       "/create-workspace/:path*",
     ]);
+  });
+
+  it("laisse passer les préchargements sans les redirections mobiles", () => {
+    for (const m of config.matcher) {
+      expect(m.missing).toEqual([
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ]);
+    }
   });
 });
