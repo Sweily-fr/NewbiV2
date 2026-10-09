@@ -217,11 +217,7 @@ import { ShareBoardDialog } from "./components/ShareBoardDialog";
 import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
-import {
-  KanbanPageSkeleton,
-  KanbanListSkeleton,
-  KanbanGanttSkeleton,
-} from "./components/KanbanPageSkeleton";
+import { KanbanPageSkeleton } from "./components/KanbanPageSkeleton";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -730,7 +726,7 @@ function KanbanBoardPageContent({ params }) {
   // « Convertir en facture » crée une facture : action « create » des factures
   const canCreateInvoice = !isPermissionsReady || canDo("invoices", "create");
 
-  // Hook viewMode en premier pour avoir le bon skeleton dès le début
+  // Hook viewMode (le skeleton de chargement lit la même préférence)
   const {
     viewMode,
     setViewMode,
@@ -1493,14 +1489,14 @@ function KanbanBoardPageContent({ params }) {
     return null;
   }
 
-  // Pendant le chargement, afficher le skeleton adapté à la vue active
+  // Pendant le chargement, même skeleton que les loading.jsx : il lit lui-même
+  // la vue enregistrée (viewMode vaut encore null au premier rendu), donc un
+  // seul placeholder, celui de la vue active, du clic jusqu'au contenu.
   // Note: workspaceLoading retiré car !board couvre déjà le cas où workspaceId n'est pas dispo
   // (la query est skip si !workspaceId → board reste undefined → !board = true)
   // Cela évite de montrer un skeleton inutile quand les données sont déjà en cache Apollo
   if (loading || !board) {
-    if (isList) return <KanbanListSkeleton />;
-    if (isGantt) return <KanbanGanttSkeleton />;
-    return <KanbanPageSkeleton />;
+    return <KanbanPageSkeleton boardId={id} />;
   }
 
   if (isRedirecting) {
