@@ -767,6 +767,7 @@ export const CONFIRM_TRANSACTION_RECEIPT_INVOICE = gql`
     $action: ReceiptInvoiceProposalAction!
     $values: ReceiptInvoiceValuesInput
     $purchaseInvoiceId: ID
+    $acknowledgedDuplicateId: ID
   ) {
     confirmTransactionReceiptInvoice(
       transactionId: $transactionId
@@ -775,10 +776,21 @@ export const CONFIRM_TRANSACTION_RECEIPT_INVOICE = gql`
       action: $action
       values: $values
       purchaseInvoiceId: $purchaseInvoiceId
+      acknowledgedDuplicateId: $acknowledgedDuplicateId
     ) {
       success
       message
       purchaseInvoiceId
+      duplicate {
+        id
+        invoiceNumber
+        supplierName
+        amountTTC
+        currency
+        issueDate
+        reason
+        linkTransaction
+      }
     }
   }
 `;
