@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import Head from "next/head";
 import {
   Avatar,
@@ -67,7 +69,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { usePrefetchOnIntent } from "@/src/hooks/usePrefetchOnIntent";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
-import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
 import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
 import { useChartColors } from "@/src/hooks/useChartColors";
 import {
@@ -91,6 +92,16 @@ import { useQuoteBalances } from "@/src/graphql/quoteQueries";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import { GET_RECONCILIATION_SUGGESTIONS } from "@/src/graphql/queries/reconciliation";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
+
+// Animation d'abonnement Pro (framer-motion) chargée seulement quand elle se
+// joue.
+const ProSubscriptionOverlay = dynamic(
+  () =>
+    import("@/src/components/pro-subscription-overlay").then(
+      (m) => m.ProSubscriptionOverlay,
+    ),
+  { ssr: false },
+);
 
 function DashboardContent() {
   const { session } = useUser();
@@ -1468,10 +1479,12 @@ function DashboardWithSearchParams() {
   return (
     <>
       <DashboardContent />
+      {showProAnimation && (
       <ProSubscriptionOverlay
-        isVisible={showProAnimation}
+          isVisible
         onComplete={handleProAnimationComplete}
       />
+      )}
     </>
   );
 }

@@ -93,7 +93,6 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import Link from "next/link";
-import { InviteMemberModal } from "./invite-member-modal";
 import dynamic from "next/dynamic";
 import { fetchOrganizationsWithOrder } from "@/src/lib/organizations-with-order";
 
@@ -108,7 +107,6 @@ import {
   ProfileAddIcon as UserPlus,
 } from "@/src/components/icons";
 
-import { RenameOrganizationModal } from "./rename-organization-modal";
 import { setOrganizationIdForApollo } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter, usePathname } from "next/navigation";
@@ -133,6 +131,20 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/src/components/ui/sidebar";
+
+// Modales d'invitation et de renommage : chargées et montées seulement à
+// l'ouverture (elles étaient dans le JS de toutes les pages du dashboard).
+const InviteMemberModal = dynamic(
+  () => import("./invite-member-modal").then((m) => m.InviteMemberModal),
+  { ssr: false },
+);
+const RenameOrganizationModal = dynamic(
+  () =>
+    import("./rename-organization-modal").then(
+      (m) => m.RenameOrganizationModal,
+    ),
+  { ssr: false },
+);
 
 export function TeamSwitcher() {
   const { isMobile, state } = useSidebar();
@@ -486,6 +498,7 @@ export function TeamSwitcher() {
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>
+      {inviteDialogOpen && (
       <InviteMemberModal
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
@@ -494,6 +507,7 @@ export function TeamSwitcher() {
           loadOrganizations({ force: true });
         }}
       />
+      )}
       {settingsModalOpen && (
         <SettingsModal
           open={settingsModalOpen}
@@ -501,6 +515,7 @@ export function TeamSwitcher() {
           initialTab={settingsInitialTab}
         />
       )}
+      {renameModalOpen && (
       <RenameOrganizationModal
         open={renameModalOpen}
         onOpenChange={setRenameModalOpen}
@@ -513,6 +528,7 @@ export function TeamSwitcher() {
           }
         }}
       />
+      )}
     </>
   );
 }

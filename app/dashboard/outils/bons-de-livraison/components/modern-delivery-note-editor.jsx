@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { FormProvider } from "react-hook-form";
 import { X, LoaderCircle, Settings } from "lucide-react";
@@ -20,15 +22,31 @@ import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSync";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { useClient } from "@/src/graphql/clientQueries";
-import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
-import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 import { formatDeliveryNoteReference } from "@/src/graphql/deliveryNoteQueries";
 import { useDeliveryNoteEditor } from "../hooks/use-delivery-note-editor";
 import EnhancedDeliveryNoteForm from "./enhanced-delivery-note-form";
-import DeliveryNoteSettingsView from "./delivery-note-settings-view";
 import { toast } from "@/src/components/ui/sonner";
 import DeliveryNotePreview from "./DeliveryNotePreview";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const DeliveryNoteSettingsView = dynamic(
+  () => import("./delivery-note-settings-view"),
+  { ssr: false },
+);
+const ClientsModal = dynamic(
+  () => import("@/app/dashboard/clients/components/clients-modal"),
+  { ssr: false },
+);
+const SendDocumentModal = dynamic(
+  () =>
+    import("@/app/dashboard/outils/factures/components/send-document-modal").then(
+      (m) => m.SendDocumentModal,
+    ),
+  { ssr: false },
+);
 
 const LIST_URL = "/dashboard/outils/bons-de-livraison";
 
@@ -325,7 +343,7 @@ export default function ModernDeliveryNoteEditor({
         </div>
       </div>
 
-      {formData.client && (
+      {formData.client && showEditClient && (
         <ClientsModal
           open={showEditClient}
           onOpenChange={setShowEditClient}
@@ -382,7 +400,7 @@ export default function ModernDeliveryNoteEditor({
         </AlertDialogContent>
       </AlertDialog>
 
-      {createdDeliveryNote && (
+      {createdDeliveryNote && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}

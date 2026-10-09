@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { useState, useEffect, useRef, useMemo } from "react";
 import { pickItemImage } from "@/src/utils/item-image";
 import { FormProvider } from "react-hook-form";
@@ -41,7 +43,6 @@ import { useClient } from "@/src/graphql/clientQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
 import EnhancedQuoteForm from "./enhanced-quote-form";
-import QuoteSettingsView from "./quote-settings-view";
 import { toast } from "@/src/components/ui/sonner";
 import {
   updateOrganization,
@@ -49,9 +50,6 @@ import {
 } from "@/src/lib/organization-client";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
-import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
-import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
-import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
 import {
   useQuoteTemplates,
   GET_QUOTE_TEMPLATES,
@@ -75,6 +73,29 @@ import { useOrganizationUpdatedSync } from "@/src/hooks/useOrganizationUpdatedSy
 import { getOrganizationAnnex } from "@/src/utils/document-annex";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+
+// Modales et vues secondaires chargées et montées à la demande : importées
+// statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
+// gz) pour des écrans rarement ouverts.
+const QuoteSettingsView = dynamic(() => import("./quote-settings-view"), {
+  ssr: false,
+});
+const ClientsModal = dynamic(
+  () => import("@/app/dashboard/clients/components/clients-modal"),
+  { ssr: false },
+);
+const SendDocumentModal = dynamic(
+  () =>
+    import("@/app/dashboard/outils/factures/components/send-document-modal").then(
+      (m) => m.SendDocumentModal,
+    ),
+  { ssr: false },
+);
+const SaveQuoteTemplateDialog = dynamic(
+  () =>
+    import("./SaveQuoteTemplateDialog").then((m) => m.SaveQuoteTemplateDialog),
+  { ssr: false },
+);
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -749,7 +770,7 @@ export default function ModernQuoteEditor({
       </div>
 
       {/* Modal d'édition du client */}
-      {formData.client && (
+      {formData.client && showEditClient && (
         <ClientsModal
           open={showEditClient}
           onOpenChange={setShowEditClient}
@@ -805,7 +826,7 @@ export default function ModernQuoteEditor({
       </AlertDialog>
 
       {/* Modal d'envoi par email */}
-      {createdQuoteData && (
+      {createdQuoteData && showSendEmailModal && (
         <SendDocumentModal
           open={showSendEmailModal}
           onOpenChange={setShowSendEmailModal}
@@ -829,7 +850,7 @@ export default function ModernQuoteEditor({
       )}
 
       {/* Dialog de sauvegarde comme modèle */}
-      {quoteId && (
+      {quoteId && showSaveTemplateDialog && (
         <SaveQuoteTemplateDialog
           quoteId={quoteId}
           quoteNumber={`${formData?.prefix || "D"}-${formData?.number || ""}`}
