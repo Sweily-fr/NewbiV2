@@ -106,14 +106,6 @@ const formatDateForSearch = (dateValue) => {
       `${month}/${year}`,
       // Format mois-année avec tirets (MM-AAAA)
       `${month}-${year}`,
-      // Format texte en français
-      date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }),
-      date.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-      date.toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }),
     ].filter(
       (value, index, self) =>
         // Supprimer les doublons et valeurs vides
@@ -816,6 +808,22 @@ export function useQuoteTable({
     }
   }, [data]);
 
+  // Filtres de colonnes mémoïsés : un tableau recréé à chaque rendu faisait
+  // recalculer à react-table tout le modèle filtré (recherche comprise) à
+  // chaque rendu, même sans changement de filtre.
+  const columnFilters = useMemo(
+    () => [
+      ...(statusFilter.length > 0
+        ? [{ id: "status", value: statusFilter }]
+        : []),
+      ...(clientFilter.length > 0
+        ? [{ id: "client", value: clientFilter }]
+        : []),
+      ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
+    ],
+    [statusFilter, clientFilter, dateFilter],
+  );
+
   // Create table instance with optimized settings
   const table = useReactTable({
     data,
@@ -843,15 +851,7 @@ export function useQuoteTable({
     state: {
       globalFilter,
       columnVisibility,
-      columnFilters: [
-        ...(statusFilter.length > 0
-          ? [{ id: "status", value: statusFilter }]
-          : []),
-        ...(clientFilter.length > 0
-          ? [{ id: "client", value: clientFilter }]
-          : []),
-        ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
-      ],
+      columnFilters,
     },
     // Use the memoized filter function
     filterFns: {

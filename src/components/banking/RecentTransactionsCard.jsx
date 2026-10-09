@@ -41,7 +41,10 @@ export default function RecentTransactionsCard({
   });
 
   const recentTransactions = data?.transactions || [];
-  const loading = isLoading || queryLoading;
+  // Squelette au premier chargement seulement : en cache-and-network, loading
+  // reste à true pendant la revalidation même quand le cache a les données, et
+  // le squelette remplaçait la liste à chaque visite de la page.
+  const loading = (isLoading || queryLoading) && !data?.transactions;
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {

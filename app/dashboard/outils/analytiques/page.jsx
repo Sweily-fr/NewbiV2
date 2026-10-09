@@ -298,7 +298,8 @@ export default function AnalytiquesPage() {
     dateRange?.endDate,
   );
 
-  // Bank data
+  // Bank data. skipInvoices : la page ne lit pas la liste des factures du hook
+  // (ses indicateurs de facturation viennent de financialAnalytics).
   const {
     bankTransactions,
     bankAccounts,
@@ -312,7 +313,7 @@ export default function AnalytiquesPage() {
     invoicesLoading,
     transactionsLoading,
     formatCurrency: dashFormatCurrency,
-  } = useDashboardData();
+  } = useDashboardData({ skipInvoices: true });
 
   // Transactions bancaires restreintes à la période sélectionnée — le hook
   // useDashboardData renvoie l'historique complet, sans filtre de dates
