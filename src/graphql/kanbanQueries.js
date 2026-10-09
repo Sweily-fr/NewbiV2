@@ -67,6 +67,23 @@ export const GET_BOARDS = gql`
   }
 `;
 
+// Liste des tableaux pour la sidebar : seulement ce qu'elle affiche. GET_BOARDS
+// déclenche par tableau les résolveurs de colonnes, client, membres et
+// compteurs (4 à 5 requêtes Mongo chacun) à chaque chargement complet. Même
+// champ racine boards(workspaceId) que GET_BOARDS : Apollo partage la liste en
+// cache, les écritures de la page Kanban (création, suppression, temps réel)
+// mettent donc aussi la sidebar à jour.
+export const GET_BOARDS_NAV = gql`
+  query GetBoardsNav($workspaceId: ID) {
+    boards(workspaceId: $workspaceId) {
+      id
+      title
+      isFavorite
+      createdAt
+    }
+  }
+`;
+
 export const TOGGLE_BOARD_FAVORITE = gql`
   mutation ToggleBoardFavorite($boardId: ID!, $workspaceId: ID) {
     toggleBoardFavorite(boardId: $boardId, workspaceId: $workspaceId) {
