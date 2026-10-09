@@ -28,25 +28,40 @@ import EnhancedDeliveryNoteForm from "./enhanced-delivery-note-form";
 import { toast } from "@/src/components/ui/sonner";
 import DeliveryNotePreview from "./DeliveryNotePreview";
 import { useWithClientDocumentFields } from "@/src/hooks/useClientDocumentFields";
+import { chunkLoadFallback } from "@/src/lib/chunk-load-fallback";
+import { usePreloadOnIdle } from "@/src/hooks/usePreloadOnIdle";
+import { useUnsavedChangesWarning } from "@/src/hooks/useUnsavedChangesWarning";
 
 // Modales et vues secondaires chargées et montées à la demande : importées
 // statiquement, elles alourdissaient le JavaScript de l'éditeur (50 à 65 kB
 // gz) pour des écrans rarement ouverts.
 const DeliveryNoteSettingsView = dynamic(
-  () => import("./delivery-note-settings-view"),
+  () => import("./delivery-note-settings-view").catch(chunkLoadFallback),
   { ssr: false },
 );
 const ClientsModal = dynamic(
-  () => import("@/app/dashboard/clients/components/clients-modal"),
+  () =>
+    import("@/app/dashboard/clients/components/clients-modal").catch(
+      chunkLoadFallback,
+    ),
   { ssr: false },
 );
 const SendDocumentModal = dynamic(
   () =>
-    import("@/app/dashboard/outils/factures/components/send-document-modal").then(
-      (m) => m.SendDocumentModal,
-    ),
+    import("@/app/dashboard/outils/factures/components/send-document-modal")
+      .then((m) => m.SendDocumentModal)
+      .catch(chunkLoadFallback),
   { ssr: false },
 );
+
+// Préchargées quand le navigateur est inactif après l'ouverture de l'éditeur :
+// déjà là si une nouvelle version est mise en ligne pendant la saisie.
+const preloadEditorModules = () =>
+  Promise.all([
+    import("./delivery-note-settings-view"),
+    import("@/app/dashboard/clients/components/clients-modal"),
+    import("@/app/dashboard/outils/factures/components/send-document-modal"),
+  ]);
 
 const LIST_URL = "/dashboard/outils/bons-de-livraison";
 
@@ -148,6 +163,11 @@ export default function ModernDeliveryNoteEditor({
     Array.isArray(watchedItems) &&
     watchedItems.length > 0 &&
     form.formState.isDirty;
+
+  // Modifications non enregistrées : confirmation du navigateur avant de
+  // recharger ou fermer l'onglet.
+  useUnsavedChangesWarning(hasUserChanges);
+  usePreloadOnIdle(preloadEditorModules);
 
   useEffect(() => {
     if (!hasUserChanges) return;
