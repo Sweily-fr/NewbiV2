@@ -2,7 +2,7 @@
  * Configuration SEO centralisée pour toutes les pages du site
  * Contient les métadonnées, descriptions, mots-clés et données structurées
  */
-import { PLANS_DISPLAY } from "@/src/lib/plans-display";
+import { PLANS_DISPLAY, formatPrice } from "@/src/lib/plans-display";
 
 const baseUrl =
   process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://www.newbi.fr";
@@ -85,15 +85,15 @@ export const seoData = {
         availableLanguage: ["French", "fr"],
       },
       sameAs: [
-      // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
-      // Google la reconnaît (panneau de marque). Repris du footer, seule source
-      // de vérité des liens sociaux.
-      "https://www.instagram.com/newbi_fr",
-      "https://fr.linkedin.com/company/newbi-france",
-      "https://www.tiktok.com/@newbi.fr",
-      "https://www.youtube.com/@Newbi_fr",
-      "https://fr.trustpilot.com/review/newbi.fr",
-    ],
+        // Comptes officiels : plus l'entité déclare de profils vérifiables, mieux
+        // Google la reconnaît (panneau de marque). Repris du footer, seule source
+        // de vérité des liens sociaux.
+        "https://www.instagram.com/newbi_fr",
+        "https://fr.linkedin.com/company/newbi-france",
+        "https://www.tiktok.com/@newbi.fr",
+        "https://www.youtube.com/@Newbi_fr",
+        "https://fr.trustpilot.com/review/newbi.fr",
+      ],
       offers: {
         "@type": "Offer",
         description: "Essai gratuit de 30 jours",
@@ -291,7 +291,8 @@ export const seoData = {
   },
 
   kanban: {
-    title: "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
+    title:
+      "Gestion de projet pour freelances et TPE : kanban et tâches | Newbi",
     description:
       "Organisez vos projets sur des tableaux kanban partagés, reliés à vos clients et à vos factures. Inclus dans Newbi, 30 jours gratuits.",
     keywords:
@@ -479,8 +480,7 @@ export const seoData = {
   // Page Tarifs
   pricing: {
     title: "Tarifs Newbi - Offres Freelance, TPE et Entreprise",
-    description:
-      "Comparez les offres Newbi : Freelance dès 17,99 € TTC/mois, TPE et Entreprise. 30 jours gratuits, sans carte bancaire, sans engagement.",
+    description: `Comparez les offres Newbi : Freelance dès ${formatPrice(PLANS_DISPLAY[0].monthlyPrice)} TTC/mois, TPE et Entreprise. 30 jours gratuits, sans carte bancaire, sans engagement.`,
     keywords:
       "tarifs newbi, prix abonnement, plan entrepreneur, facturation prix, devis tarif, essai gratuit, abonnement mensuel",
     canonical: `${baseUrl}/tarifs`,
@@ -522,7 +522,7 @@ export const seoData = {
         {
           "@type": "Offer",
           name: "Freelance",
-          price: "17.99",
+          price: PLANS_DISPLAY[0].monthlyPrice.toFixed(2),
           priceCurrency: "EUR",
           description: "Abonnement mensuel TTC, 1 utilisateur",
           availability: "https://schema.org/InStock",

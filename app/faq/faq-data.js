@@ -5,6 +5,16 @@
  * lui rendu côté serveur, puisse en dériver le bloc FAQPage : un composant
  * client ne peut pas exporter de métadonnées ni garantir un JSON-LD au SSR.
  */
+import { PLANS_DISPLAY, formatPrice } from "@/src/lib/plans-display";
+
+// Montants dérivés de plans-display.js, source unique des tarifs.
+const lignesTarifs = PLANS_DISPLAY.map(
+  (p, i) =>
+    `• ${p.displayName} : ${formatPrice(p.monthlyPrice)}/mois, ou ${formatPrice(
+      p.annualMonthlyPrice,
+    )}/mois ${i === 0 ? "en réglant à l'année" : "à l'année"}`,
+).join("\n");
+
 export const faqData = [
   {
     category: "Questions générales",
@@ -34,7 +44,7 @@ export const faqData = [
     questions: [
       {
         q: "Quelles formules et quels prix propose Newbi ? Y a-t-il un essai gratuit ?",
-        a: "À l'inscription vous bénéficiez de 30 jours gratuits, sans carte bancaire, durant lesquels vous pouvez résilier à tout moment.\n\nEnsuite, trois formules, toutes en TTC :\n• Freelance : 17,99 €/mois, ou 16,19 €/mois en réglant à l'année\n• TPE : 48,99 €/mois, ou 44,09 €/mois à l'année\n• Entreprise : 94,99 €/mois, ou 85,49 €/mois à l'année\n\nL'engagement annuel revient à 10 % de moins que le mensuel. Vous pouvez à tout moment changer de formule ou résilier sans conditions.",
+        a: `À l'inscription vous bénéficiez de 30 jours gratuits, sans carte bancaire, durant lesquels vous pouvez résilier à tout moment.\n\nEnsuite, trois formules, toutes en TTC :\n${lignesTarifs}\n\nL'engagement annuel revient à 10 % de moins que le mensuel. Vous pouvez à tout moment changer de formule ou résilier sans conditions.`,
       },
       {
         q: "Quels moyens de paiement sont acceptés pour l'abonnement Newbi ?",
