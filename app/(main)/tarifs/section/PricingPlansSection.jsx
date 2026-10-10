@@ -140,7 +140,9 @@ function Bascule({ actif, onChange, id }) {
 }
 
 export default function PricingPlansSection() {
-  const [annuel, setAnnuel] = React.useState(true);
+  // Mensuel par défaut : en annuel, la grille ouvrait sur 16,19 € au lieu
+  // du prix de référence 17,99 € TTC, lu comme un montant HT.
+  const [annuel, setAnnuel] = React.useState(false);
 
   return (
     <section className="px-5 pt-16 md:pt-[88px] pb-16 md:pb-24 lg:pb-28">
