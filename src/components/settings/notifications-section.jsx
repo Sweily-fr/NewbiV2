@@ -149,6 +149,14 @@ const notificationCategories = {
         email: true,
         push: true,
       },
+      {
+        key: "kanban_mention",
+        label: "Mentions dans les tâches",
+        description:
+          "Quand quelqu'un vous mentionne dans un commentaire de tâche",
+        email: true,
+        push: true,
+      },
     ],
   },
 };

@@ -30,6 +30,7 @@ const IMPORTED_DOCUMENT_QUERIES = {
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useSession } from "@/src/lib/auth-client";
 import {
   GET_NOTIFICATIONS,
   GET_UNREAD_NOTIFICATIONS_COUNT,
@@ -48,6 +49,8 @@ export const useActivityNotifications = (options = {}) => {
   const router = useRouter();
   const { limit = 50, offset = 0, unreadOnly = false } = options;
   const { workspaceId } = useWorkspace();
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id;
   const [wsConnected, setWsConnected] = useState(true);
 
   // Pas de polling si WebSocket connecté, fallback 60s sinon
@@ -96,9 +99,21 @@ export const useActivityNotifications = (options = {}) => {
 
   const apolloClient = useApolloClient();
 
+  // Notification reçue par WebSocket, si elle est bien destinée à
+  // l'utilisateur connecté. L'API filtre désormais le destinataire ; ce
+  // contrôle protège aussi d'une API pas encore à jour, qui diffusait les
+  // notifications à tout l'espace (toasts des autres membres).
+  const incomingNotification =
+    currentUserId &&
+    subscriptionData?.notificationReceived &&
+    String(subscriptionData.notificationReceived.userId) ===
+      String(currentUserId)
+      ? subscriptionData.notificationReceived
+      : null;
+
   // Rafraîchir quand une nouvelle notification arrive via WebSocket
   useEffect(() => {
-    const incoming = subscriptionData?.notificationReceived;
+    const incoming = incomingNotification;
     if (!incoming) return;
     refetch();
     refetchUnreadCount();
@@ -173,7 +188,7 @@ export const useActivityNotifications = (options = {}) => {
           }
         : undefined,
     });
-  }, [subscriptionData, refetch, refetchUnreadCount, apolloClient, router]);
+  }, [incomingNotification, refetch, refetchUnreadCount, apolloClient, router]);
 
   // Marquer une notification comme lue
   const markAsRead = useCallback(
@@ -233,7 +248,7 @@ export const useActivityNotifications = (options = {}) => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    newNotification: subscriptionData?.notificationReceived,
+    newNotification: incomingNotification,
   };
 };
 

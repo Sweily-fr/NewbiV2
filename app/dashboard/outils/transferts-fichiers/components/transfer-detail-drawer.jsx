@@ -153,12 +153,14 @@ function newDownloadSessionId() {
     : `dl-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-// Construire l'URL de preview
+// Construire l'URL de preview. Le jeton propriétaire est requis : l'API
+// exige le mot de passe d'un transfert protégé à tout autre visiteur (un
+// aperçu n'est pas compté comme téléchargement).
 function getPreviewUrl(transfer, file) {
   const apiUrl = (
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
   ).replace(/\/$/, "");
-  return `${apiUrl}/api/files/preview/${transfer.id}/${file.fileId || file.id}${transferAuthQuery(transfer)}`;
+  return `${apiUrl}/api/files/preview/${transfer.id}/${file.fileId || file.id}${transferAuthQuery(transfer, { asOwner: true })}`;
 }
 
 export function TransferDetailDrawer({
