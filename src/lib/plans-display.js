@@ -16,9 +16,7 @@
  *     prochaine modification de prix.
  *   - Les clés techniques (freelance / pme / entreprise) NE CHANGENT PAS.
  *     Le label affiché du plan `pme` est désormais "TPE" partout.
- *   - Tous les prix sont en TTC. Jusqu'au 10/10/2026 la grille affichait
- *     les montants HT (17,99 / 48,99 / 94,99) sous la mention « TTC » :
- *     les montants ci-dessous sont ces HT × 1,2, arrondis au centime.
+ *   - Tous les prix sont en TTC.
  *
  * Pas d'imports server-only ici : ce module doit être consommable depuis
  * n'importe quel composant (server ou client) sans casser le bundle.
@@ -30,22 +28,22 @@ export const PLANS_DISPLAY = [
     key: "freelance",
     displayName: "Freelance",
     description: "Pour les indépendants",
-    monthlyPrice: 21.59,
-    annualMonthlyPrice: 19.43,
+    monthlyPrice: 17.99,
+    annualMonthlyPrice: 16.19,
   },
   {
     key: "pme",
     displayName: "TPE",
     description: "Pour les équipes en croissance",
-    monthlyPrice: 58.79,
-    annualMonthlyPrice: 52.91,
+    monthlyPrice: 48.99,
+    annualMonthlyPrice: 44.09,
   },
   {
     key: "entreprise",
     displayName: "Entreprise",
     description: "Pour les structures avancées",
-    monthlyPrice: 113.99,
-    annualMonthlyPrice: 102.59,
+    monthlyPrice: 94.99,
+    annualMonthlyPrice: 85.49,
   },
 ];
 
@@ -332,12 +330,12 @@ export function getAnnualTotalAmount(plan) {
  *     key,
  *     displayName,
  *     description,
- *     monthly:           "21,59 €/mois TTC",
- *     annualPerMonth:    "19,43 €/mois TTC",
- *     annualTotal:       "233,16 € TTC/an",
- *     monthlyAmount:     21.59,
- *     annualMonthlyAmount: 19.43,
- *     annualTotalAmount: 233.16,
+ *     monthly:           "17,99 €/mois TTC",
+ *     annualPerMonth:    "16,19 €/mois TTC",
+ *     annualTotal:       "194,28 € TTC/an",
+ *     monthlyAmount:     17.99,
+ *     annualMonthlyAmount: 16.19,
+ *     annualTotalAmount: 194.28,
  *   }
  *
  * Options : { includeTtc: boolean = true, suffix: "/mois" }
