@@ -37,6 +37,12 @@ export const GET_NOTIFICATIONS = gql`
           documentNumber
           source
           amountTTC
+          documentModel
+          event
+          invoiceId
+          importedInvoiceId
+          quoteId
+          importedQuoteId
         }
         read
         readAt
@@ -108,6 +114,12 @@ export const NOTIFICATION_RECEIVED_SUBSCRIPTION = gql`
         documentNumber
         source
         amountTTC
+        documentModel
+        event
+        invoiceId
+        importedInvoiceId
+        quoteId
+        importedQuoteId
       }
       read
       readAt

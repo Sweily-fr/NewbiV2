@@ -50,6 +50,10 @@ export const GET_NOTIFICATION_PREFERENCES = gql`
         email
         push
       }
+      kanban_mention {
+        email
+        push
+      }
     }
   }
 `;
