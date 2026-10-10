@@ -6,7 +6,46 @@ import { Input } from "@/src/components/ui/input";
 import { Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
-export function PasswordModal({ transferId, onPasswordVerified }) {
+/**
+ * Vérifie le mot de passe d'un transfert auprès de l'API. En cas de succès,
+ * l'API remet un jeton d'accès (exigé pour chaque téléchargement et aperçu),
+ * la liste des fichiers et le message de l'expéditeur.
+ * @returns {Promise<{ ok: boolean, status: number, data: object }>}
+ */
+export async function requestTransferPasswordAccess({
+  transferId,
+  password,
+  shareLink,
+  accessKey,
+}) {
+  const apiUrl = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+  ).replace(/\/$/, "");
+
+  const response = await fetch(`${apiUrl}/api/transfers/verify-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      transferId,
+      password,
+      // Secret de partage exigé par l'API avec le mot de passe
+      link: shareLink,
+      key: accessKey,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  return { ok: response.ok && !!data.success, status: response.status, data };
+}
+
+export function PasswordModal({
+  transferId,
+  shareLink,
+  accessKey,
+  onPasswordVerified,
+}) {
   const [passwordInput, setPasswordInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -19,28 +58,18 @@ export function PasswordModal({ transferId, onPasswordVerified }) {
 
     setIsVerifying(true);
     try {
-      const apiUrl = (
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-      ).replace(/\/$/, "");
-
-      const response = await fetch(`${apiUrl}/api/transfers/verify-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          transferId,
-          password: passwordInput,
-        }),
+      const { ok, data } = await requestTransferPasswordAccess({
+        transferId,
+        password: passwordInput,
+        shareLink,
+        accessKey,
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (ok) {
         toast.success("Accès autorisé");
-        // Transmettre le mot de passe vérifié : le backend l'exige désormais
-        // pour autoriser le téléchargement des transferts protégés.
-        onPasswordVerified(passwordInput);
+        // Le mot de passe reste en mémoire le temps de la page pour
+        // renouveler le jeton d'accès sans le redemander
+        onPasswordVerified(passwordInput, data);
       } else {
         toast.error(data.message || "Mot de passe incorrect");
       }

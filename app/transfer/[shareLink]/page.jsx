@@ -32,6 +32,7 @@ import {
   PaymentModal,
   PdfPreview,
 } from "./components";
+import { requestTransferPasswordAccess } from "./components/password-screen";
 
 // Déclenche un téléchargement natif : la réponse étant une pièce jointe
 // (Content-Disposition: attachment), le navigateur garde la page affichée
@@ -65,6 +66,13 @@ const IN_PAGE_SINGLE_FILE_LIMIT = 400 * 1024 * 1024;
 
 // Nombre de fichiers téléchargés simultanément par « Tout télécharger »
 const BULK_CONCURRENCY = 3;
+
+// Transfert protégé : le jeton d'accès (2 h) est renouvelé avant un
+// téléchargement ou un aperçu s'il lui reste moins que cette durée
+const ACCESS_TOKEN_MIN_REMAINING_MS = 15 * 60 * 1000;
+
+const PASSWORD_AGAIN_MESSAGE =
+  "Saisissez à nouveau le mot de passe du transfert";
 
 // --- Écriture ZIP « store » (sans compression) par référence de Blobs ---
 // Permet d'assembler l'archive finale sans jamais recopier les données :
@@ -181,16 +189,20 @@ export default function TransferPage() {
   const accessKey = searchParams.get("key");
   const paymentStatus = searchParams.get("payment_status");
 
-  // 🔐 Query d'autorisation pour les routes /api/files (secret de partage +
-  // mot de passe éventuel) — remplace le simple transferId devinable.
+  // 🔐 Query d'autorisation pour les routes de fichiers de l'API : secret de
+  // partage et, pour un transfert protégé, jeton d'accès remis par
+  // verify-password (jamais le mot de passe lui-même dans une URL).
   // `session` identifie le téléchargement en cours : un même clic traverse
   // plusieurs endpoints (un appel proxy par fichier, puis le marquage de fin),
   // et le backend s'en sert pour ne compter et ne notifier qu'une seule fois.
-  const buildFileAuthQuery = (downloadSessionId) => {
+  const buildFileAuthQuery = (
+    downloadSessionId,
+    accessToken = accessRef.current.token,
+  ) => {
     const p = new URLSearchParams();
     if (shareLink) p.set("link", shareLink);
     if (accessKey) p.set("key", accessKey);
-    if (verifiedPassword) p.set("password", verifiedPassword);
+    if (accessToken) p.set("accessToken", accessToken);
     if (downloadSessionId) p.set("session", downloadSessionId);
     const qs = p.toString();
     return qs ? `?${qs}` : "";
@@ -227,9 +239,15 @@ export default function TransferPage() {
     }
   };
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
-  // Mot de passe vérifié, conservé pour autoriser les téléchargements côté API
-  // (le backend exige désormais link + key + mot de passe éventuel).
+  // Mot de passe vérifié, gardé en mémoire le temps de la page pour
+  // renouveler le jeton d'accès sans le redemander
   const [verifiedPassword, setVerifiedPassword] = useState("");
+  // Accès remis par verify-password : liste des fichiers et message de
+  // l'expéditeur (la requête publique ne les donne plus avant le mot de
+  // passe). Le jeton exigé par l'API est lu dans accessRef, à jour même au
+  // milieu d'un téléchargement.
+  const [passwordAccess, setPasswordAccess] = useState(null);
+  const accessRef = useRef({ token: null, expiresAt: 0 });
   const [previewFile, setPreviewFile] = useState(null);
   const [previewFileIndex, setPreviewFileIndex] = useState(0);
   const [thumbnailError, setThumbnailError] = useState(false);
@@ -298,7 +316,72 @@ export default function TransferPage() {
   });
 
   const transfer = data?.getFileTransferByLink;
-  const transferFiles = transfer?.fileTransfer?.files || [];
+  const isPasswordProtected = !!transfer?.fileTransfer?.passwordProtected;
+  // Transfert protégé : fichiers et message remis avec le jeton d'accès.
+  // Sinon (ou API qui les donne encore), ceux de la requête publique.
+  const transferFiles =
+    passwordAccess?.files || transfer?.fileTransfer?.files || [];
+  const transferMessage =
+    passwordAccess?.transferMessage || transfer?.fileTransfer?.message;
+
+  // Mot de passe accepté par l'API : jeton d'accès, fichiers et message
+  const applyPasswordAccess = (accessData, password) => {
+    accessRef.current = {
+      token: accessData?.accessToken || null,
+      expiresAt: accessData?.expiresAt
+        ? new Date(accessData.expiresAt).getTime()
+        : 0,
+    };
+    setPasswordAccess((prev) => ({
+      // Liste et message ne changent pas au renouvellement du jeton : on
+      // garde les premiers (pas de nouvelle lecture d'une archive ZIP)
+      files:
+        prev?.files ||
+        (Array.isArray(accessData?.files) ? accessData.files : null),
+      transferMessage:
+        prev?.transferMessage || accessData?.transferMessage || null,
+      expiresAt: accessRef.current.expiresAt,
+    }));
+    if (password !== undefined) setVerifiedPassword(password || "");
+    setIsPasswordVerified(true);
+  };
+
+  // Jeton expiré ou refusé : la fenêtre du mot de passe s'affiche à nouveau
+  const requirePasswordAgain = () => {
+    accessRef.current = { token: null, expiresAt: 0 };
+    setVerifiedPassword("");
+    setIsPasswordVerified(false);
+  };
+
+  // Jeton d'accès valable encore au moins 15 min, renouvelé au besoin avec
+  // le mot de passe déjà saisi. null : transfert non protégé, ou API qui ne
+  // remet pas encore de jeton (elle n'en exige alors pas).
+  const ensureAccessToken = async () => {
+    if (!isPasswordProtected) return null;
+    const { token, expiresAt } = accessRef.current;
+    if (!token) return null;
+    if (expiresAt - Date.now() > ACCESS_TOKEN_MIN_REMAINING_MS) return token;
+    const { ok, data: accessData } = await requestTransferPasswordAccess({
+      transferId: transfer?.fileTransfer?.id,
+      password: verifiedPassword,
+      shareLink,
+      accessKey,
+    }).catch(() => ({ ok: false, data: null }));
+    if (ok && accessData?.accessToken) {
+      applyPasswordAccess(accessData);
+      return accessData.accessToken;
+    }
+    requirePasswordAgain();
+    throw new Error(PASSWORD_AGAIN_MESSAGE);
+  };
+
+  // Réponse 401 de l'API sur un transfert protégé : jeton refusé
+  const assertNotPasswordRejected = (response) => {
+    if (response.status === 401 && isPasswordProtected) {
+      requirePasswordAgain();
+      throw new Error(PASSWORD_AGAIN_MESSAGE);
+    }
+  };
 
   // Détection d'un transfert mono-ZIP (créé depuis documents partagés).
   // On parse alors le ZIP côté client pour exposer ses entrées comme des fichiers.
@@ -364,11 +447,15 @@ export default function TransferPage() {
     downloadSessionId,
   ) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    // Jeton relu pour chaque fichier : un long « Tout télécharger » peut
+    // dépasser sa durée de validité
+    const accessToken = await ensureAccessToken();
     const response = await fetch(
-      `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId)}`,
+      `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId, accessToken)}`,
       { signal },
     );
 
+    assertNotPasswordRejected(response);
     if (!response.ok || !response.body) {
       throw new Error("Erreur lors du téléchargement");
     }
@@ -455,6 +542,7 @@ export default function TransferPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const accessToken = await ensureAccessToken();
 
       // Demander l'autorisation de téléchargement au serveur
       const authResponse = await fetch(
@@ -469,11 +557,13 @@ export default function TransferPage() {
             email: `guest-${Date.now()}@newbi.fr`,
             link: shareLink,
             key: accessKey,
+            accessToken,
           }),
           signal: abortController.signal,
         },
       );
 
+      assertNotPasswordRejected(authResponse);
       if (!authResponse.ok) {
         throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
@@ -506,7 +596,7 @@ export default function TransferPage() {
         // Laisser le navigateur mobile gérer le téléchargement nativement,
         // sans quitter la page de transfert
         triggerMobileDownload(
-          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId)}`,
+          `${apiUrl}api/files/download/${transfer?.fileTransfer?.id}/${fileId}${buildFileAuthQuery(downloadSessionId, accessToken)}`,
         );
         toast.info(
           "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
@@ -552,7 +642,7 @@ export default function TransferPage() {
 
   // Fonction pour télécharger tous les fichiers
   const downloadAllFiles = async () => {
-    const transferFilesList = transfer?.fileTransfer?.files || [];
+    const transferFilesList = transferFiles;
 
     // Transfert à un seul fichier : même logique que le téléchargement
     // individuel (streaming avec progression, natif au-delà du seuil)
@@ -576,6 +666,7 @@ export default function TransferPage() {
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+      const accessToken = await ensureAccessToken();
 
       // Demander l'autorisation de téléchargement pour tous les fichiers
       const authResponse = await fetch(
@@ -589,11 +680,13 @@ export default function TransferPage() {
             email: `guest-${Date.now()}@newbi.fr`, // Email unique pour traçabilité
             link: shareLink,
             key: accessKey,
+            accessToken,
           }),
           signal: abortController.signal,
         },
       );
 
+      assertNotPasswordRejected(authResponse);
       if (!authResponse.ok) {
         throw new Error(`Erreur d'autorisation: ${authResponse.status}`);
       }
@@ -639,7 +732,7 @@ export default function TransferPage() {
         transferFilesList.some((f) => (f.size || 0) > ZIP32_LIMIT)
       ) {
         triggerMobileDownload(
-          `${apiUrl}file-transfer/download-all?link=${shareLink}&key=${accessKey}&session=${downloadSessionId}`,
+          `${apiUrl}file-transfer/download-all${buildFileAuthQuery(downloadSessionId, accessToken)}`,
         );
         toast.info(
           "Acceptez le téléchargement — la progression s'affiche dans les téléchargements de votre navigateur",
@@ -751,7 +844,7 @@ export default function TransferPage() {
   };
 
   // Fonction pour ouvrir la prévisualisation
-  const openPreview = (file, index = 0) => {
+  const openPreview = async (file, index = 0) => {
     // Entrée extraite d'un ZIP: utiliser la blob URL générée côté client
     if (file?.isZipEntry) {
       const previewUrl = zipBlobUrls[file.path] || null;
@@ -764,10 +857,17 @@ export default function TransferPage() {
       return;
     }
 
+    let accessToken;
+    try {
+      accessToken = await ensureAccessToken();
+    } catch (error) {
+      toast.error(error.message);
+      return;
+    }
     const apiUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
-    const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}${buildFileAuthQuery()}`;
+    const previewUrl = `${apiUrl}/api/files/preview/${transfer?.fileTransfer?.id}/${file.fileId || file.id || file._id}${buildFileAuthQuery(undefined, accessToken)}`;
     setPreviewFile({
       ...file,
       previewUrl,
@@ -822,8 +922,7 @@ export default function TransferPage() {
   };
 
   // Vérifier si le transfert nécessite un mot de passe et s'il n'est pas encore vérifié
-  const needsPasswordVerification =
-    !!transfer?.fileTransfer?.passwordProtected && !isPasswordVerified;
+  const needsPasswordVerification = isPasswordProtected && !isPasswordVerified;
 
   if (!shareLink || !accessKey) {
     return (
@@ -872,7 +971,7 @@ export default function TransferPage() {
   );
 
   // Calculer la taille totale des fichiers
-  const totalSize = transfer?.fileTransfer?.files?.reduce(
+  const totalSize = transferFiles.reduce(
     (acc, file) => acc + (file.size || 0),
     0,
   );
@@ -973,10 +1072,11 @@ export default function TransferPage() {
       {needsPasswordVerification && (
         <PasswordModal
           transferId={transfer?.fileTransfer?.id}
-          onPasswordVerified={(pwd) => {
-            setIsPasswordVerified(true);
-            setVerifiedPassword(pwd || "");
-          }}
+          shareLink={shareLink}
+          accessKey={accessKey}
+          onPasswordVerified={(pwd, accessData) =>
+            applyPasswordAccess(accessData, pwd)
+          }
         />
       )}
 
@@ -1286,7 +1386,7 @@ export default function TransferPage() {
               </div>
 
               {/* Message personnalisé de l'expéditeur */}
-              {transfer?.fileTransfer?.message?.trim() && (
+              {transferMessage?.trim() && (
                 <div className="mx-4 mb-4 rounded-xl bg-gray-50 border border-gray-200 p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <MessageSquare className="w-4 h-4 text-[#5a50ff] flex-shrink-0" />
@@ -1295,7 +1395,7 @@ export default function TransferPage() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 whitespace-pre-wrap break-words">
-                    {transfer.fileTransfer.message}
+                    {transferMessage}
                   </p>
                 </div>
               )}
@@ -1418,7 +1518,7 @@ export default function TransferPage() {
                   >
                     {bulkProgress
                       ? `Téléchargement ${bulkProgress.done} / ${bulkProgress.total}`
-                      : (transfer?.fileTransfer?.files?.length || 0) > 1
+                      : transferFiles.length > 1
                         ? "Tout télécharger"
                         : "Télécharger"}
                   </Button>
