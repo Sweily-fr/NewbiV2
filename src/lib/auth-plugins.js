@@ -236,8 +236,8 @@ export const stripePlugin = stripe({
         },
         metadata: {
           displayName: "Pack Freelance",
-          monthlyPrice: 21.59, // TTC, cf. plans-display.js
-          annualPrice: 19.43, // -10% de réduction
+          monthlyPrice: 17.99,
+          annualPrice: 16.19, // -10% de réduction
           workspaceAddonPrice: 11.99,
           description: "Pour les indépendants et freelances",
         },
@@ -255,8 +255,8 @@ export const stripePlugin = stripe({
         },
         metadata: {
           displayName: "Pack PME",
-          monthlyPrice: 58.79, // TTC, cf. plans-display.js
-          annualPrice: 52.91, // -10% de réduction
+          monthlyPrice: 48.99,
+          annualPrice: 44.09, // -10% de réduction (48.99 * 12 * 0.90 / 12)
           workspaceAddonPrice: 11.99,
           description: "Pour les petites et moyennes entreprises",
         },
@@ -274,8 +274,8 @@ export const stripePlugin = stripe({
         },
         metadata: {
           displayName: "Pack Entreprise",
-          monthlyPrice: 113.99, // TTC, cf. plans-display.js
-          annualPrice: 102.59, // -10% de réduction
+          monthlyPrice: 94.99,
+          annualPrice: 85.49, // -10% de réduction (94.99 * 12 * 0.90 / 12)
           workspaceAddonPrice: 11.99,
           description: "Pour les grandes équipes",
         },

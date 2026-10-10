@@ -4,7 +4,6 @@ import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
 import { SeatSyncService } from "@/src/services/seatSyncService";
 import { withErrorHandler } from "@/src/lib/security";
-import { getPlanDisplay } from "@/src/lib/plans-display";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 
@@ -310,15 +309,16 @@ async function handler(request) {
     );
   }
 
-  // 8. Prix d'affichage, dérivés du module central (plans-display.js)
-  const prixAffiche = (planKey) => {
-    const plan = getPlanDisplay(planKey);
-    if (!plan) return 0;
-    return isAnnual ? plan.annualMonthlyPrice : plan.monthlyPrice;
+  // 8. Définir les prix pour l'affichage
+  const planPrices = {
+    freelance: { monthly: 17.99, annual: 16.19 },
+    pme: { monthly: 48.99, annual: 44.09 },
+    entreprise: { monthly: 94.99, annual: 85.49 },
   };
 
-  const currentPrice = prixAffiche(currentPlan);
-  const newPrice = prixAffiche(newPlan);
+  const currentPrice =
+    planPrices[currentPlan]?.[isAnnual ? "annual" : "monthly"] || 0;
+  const newPrice = planPrices[newPlan]?.[isAnnual ? "annual" : "monthly"] || 0;
   const priceDifference = newPrice - currentPrice;
 
   // 9. Calculer les dates
