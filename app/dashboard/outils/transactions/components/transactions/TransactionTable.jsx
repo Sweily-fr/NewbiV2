@@ -477,6 +477,8 @@ export default function TransactionTable({
   // l'analyse d'un justificatif (tout autorisé tant que la grille n'est pas
   // chargée)
   const canManageReceipts = !isReady || canDo("banking", "receipts");
+  // Action « reconcile » : la pastille « Match » ouvre le rapprochement
+  const canReconcile = !isReady || canDo("banking", "reconcile");
   const { data: session } = useSession();
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const membersFetchedForRef = useRef(null);
@@ -1266,6 +1268,7 @@ export default function TransactionTable({
         setConfirmationIndex(0);
       },
       canManageReceipts,
+      canReconcile,
       bankAccounts,
     },
   });

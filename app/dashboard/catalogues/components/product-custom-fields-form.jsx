@@ -24,7 +24,7 @@ import {
 import { Type, Info, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
-function CustomFieldInput({ field, value, onChange }) {
+function CustomFieldInput({ field, value, onChange, canEdit = true }) {
   const handleChange = (newValue) => {
     onChange(field.id, newValue);
   };
@@ -113,16 +113,24 @@ function CustomFieldInput({ field, value, onChange }) {
               {selectedValues.map((val) => {
                 const option = field.options?.find((o) => o.value === val);
                 return (
+                  // Lecture seule : valeur affichée sans « × » pour la retirer
                   <Badge
                     key={val}
                     variant="secondary"
-                    className="cursor-pointer hover:bg-destructive/20"
-                    onClick={() =>
-                      handleChange(selectedValues.filter((v) => v !== val))
+                    className={
+                      canEdit ? "cursor-pointer hover:bg-destructive/20" : ""
+                    }
+                    onClick={
+                      canEdit
+                        ? () =>
+                            handleChange(
+                              selectedValues.filter((v) => v !== val),
+                            )
+                        : undefined
                     }
                   >
                     {option?.label || val}
-                    <span className="ml-1">×</span>
+                    {canEdit && <span className="ml-1">×</span>}
                   </Badge>
                 );
               })}
@@ -174,7 +182,11 @@ function CustomFieldInput({ field, value, onChange }) {
   }
 }
 
-export default function ProductCustomFieldsForm({ values = {}, onChange }) {
+export default function ProductCustomFieldsForm({
+  values = {},
+  onChange,
+  canEdit = true,
+}) {
   const { workspaceId } = useWorkspace();
   const { fields, loading } = useProductCustomFields(workspaceId);
 
@@ -223,6 +235,7 @@ export default function ProductCustomFieldsForm({ values = {}, onChange }) {
               field={field}
               value={values[field.id]}
               onChange={onChange}
+              canEdit={canEdit}
             />
           </div>
         ))}
