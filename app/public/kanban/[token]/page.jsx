@@ -105,6 +105,7 @@ import {
   Upload,
   ImagePlus,
   ZoomIn,
+  Lock,
 } from "lucide-react";
 import {
   format,
@@ -588,11 +589,84 @@ function EmailModal({ isOpen, onSubmit, loading, error, shareLinkName }) {
 }
 
 // BannedAccessPage Component - Page de demande d'accès pour les utilisateurs bannis
+// Partage protégé par mot de passe : demandé avant d'afficher le tableau.
+// onSubmit renvoie le message d'erreur à afficher, ou null.
+function SharePasswordGate({ shareLinkName, email, onSubmit }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!password || loading) return;
+    setLoading(true);
+    setError(null);
+    const message = await onSubmit(password);
+    setLoading(false);
+    if (message) setError(message);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          <div className="text-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Lock className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              {shareLinkName || "Tableau partagé"}
+            </h1>
+            <p className="text-muted-foreground">
+              Ce tableau est protégé par un mot de passe. Saisissez celui que le
+              propriétaire vous a communiqué.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="share-password" className="text-sm">
+                Mot de passe du tableau
+              </Label>
+              <Input
+                id="share-password"
+                type="password"
+                autoFocus
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!password || loading}
+            >
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Accéder au tableau
+            </Button>
+            {email && (
+              <p className="text-xs text-center text-muted-foreground">
+                Email utilisé : <span className="font-medium">{email}</span>
+              </p>
+            )}
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function BannedAccessPage({ email, token, onAccessApproved }) {
   const [name, setName] = useState(email?.split("@")[0] || "");
   const [message, setMessage] = useState("");
   const [requestSent, setRequestSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Partage protégé sans jeton d'accès en main : mot de passe demandé
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [sharePassword, setSharePassword] = useState("");
 
   const [requestAccess] = useMutation(REQUEST_ACCESS);
 
@@ -619,10 +693,24 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
 
     try {
       const result = await requestAccess({
-        variables: { token, email, name, message },
+        variables: {
+          token,
+          email,
+          name,
+          message,
+          password: needsPassword ? sharePassword : null,
+          accessToken: readStoredAccessToken(token) || null,
+        },
       });
 
-      if (result.data?.requestAccess?.success) {
+      if (result.data?.requestAccess?.requiresPassword) {
+        setNeedsPassword(true);
+        if (needsPassword) {
+          toast.error(
+            result.data.requestAccess.message || "Mot de passe incorrect",
+          );
+        }
+      } else if (result.data?.requestAccess?.success) {
         setRequestSent(true);
         if (result.data.requestAccess.alreadyRequested) {
           toast.info("Votre demande est déjà en attente de validation");
@@ -715,10 +803,33 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
                       className="resize-none"
                     />
                   </div>
+
+                  {needsPassword && (
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="banned-share-password"
+                        className="text-sm"
+                      >
+                        Mot de passe du tableau
+                      </Label>
+                      <Input
+                        id="banned-share-password"
+                        type="password"
+                        autoFocus
+                        value={sharePassword}
+                        onChange={(e) => setSharePassword(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || (needsPassword && !sharePassword)}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -801,6 +912,7 @@ function ProfileModal({
           token,
           email: visitorEmail,
           file,
+          accessToken: readStoredAccessToken(token) || null,
         },
       });
 
@@ -1298,6 +1410,7 @@ function PublicTaskActivity({
                 taskId: task.id,
                 file: imageData.file,
                 visitorEmail,
+                accessToken: readStoredAccessToken(token) || null,
               },
             });
             if (result.data?.uploadExternalCommentImage?.success) {
@@ -1338,6 +1451,7 @@ function PublicTaskActivity({
           taskId: task.id,
           content: commentContent || null,
           visitorEmail,
+          accessToken: readStoredAccessToken(token) || null,
           images: hasUploadedImages
             ? uploadedImageUrls.map((img) => ({
                 id: img.id,
@@ -2793,16 +2907,19 @@ function PublicTaskModal({
   canViewComments,
   boardMembers,
 }) {
-  if (!task) return null;
-
-  const currentColumn = columns?.find((c) => c.id === task.columnId);
+  // Hook avant le retour anticipé : l'ordre des hooks doit rester stable
+  // quand la modale passe d'une tâche à aucune tâche
   const checklistProgress = useMemo(() => {
-    if (!task.checklist?.length) return { completed: 0, total: 0 };
+    if (!task?.checklist?.length) return { completed: 0, total: 0 };
     return {
       completed: task.checklist.filter((i) => i.completed).length,
       total: task.checklist.length,
     };
-  }, [task.checklist]);
+  }, [task?.checklist]);
+
+  if (!task) return null;
+
+  const currentColumn = columns?.find((c) => c.id === task.columnId);
 
   // Générer une couleur pour un tag basée sur son nom
   const getTagColor = (tagName) => {
@@ -3596,6 +3713,35 @@ function PublicTaskModal({
 // Helper pour le localStorage
 const getStorageKey = (token) => `public_kanban_visitor_${token}`;
 
+// Jeton d'accès d'un partage protégé par mot de passe, remis par l'API
+// (12 h) : gardé pour les rechargements et l'abonnement temps réel, à la
+// place du mot de passe lui-même
+const getAccessTokenKey = (token) => `public_kanban_access_${token}`;
+// Copie en mémoire : lue par les commentaires, images et profil du visiteur
+const accessTokensInMemory = new Map();
+
+const readStoredAccessToken = (token) => {
+  if (accessTokensInMemory.has(token)) return accessTokensInMemory.get(token);
+  try {
+    return localStorage.getItem(getAccessTokenKey(token)) || "";
+  } catch {
+    return "";
+  }
+};
+
+const storeAccessToken = (token, accessToken) => {
+  accessTokensInMemory.set(token, accessToken || "");
+  try {
+    if (accessToken) {
+      localStorage.setItem(getAccessTokenKey(token), accessToken);
+    } else {
+      localStorage.removeItem(getAccessTokenKey(token));
+    }
+  } catch {
+    // Stockage indisponible (navigation privée) : mot de passe redemandé
+  }
+};
+
 // Main Page Component
 export default function PublicKanbanPage({ params }) {
   const { token } = use(params);
@@ -3615,6 +3761,10 @@ export default function PublicKanbanPage({ params }) {
   const [collapsedColumns, setCollapsedColumns] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [isInitializing, setIsInitializing] = useState(true);
+  // Partage protégé : e-mail (et utilisateur invité) en attente du mot de passe
+  const [passwordGate, setPasswordGate] = useState(null);
+  const [shareAccessToken, setShareAccessToken] = useState(null);
+  const shareAccessTokenRef = useRef(null);
 
   const [validateToken, { loading: validatingToken }] = useLazyQuery(
     VALIDATE_PUBLIC_TOKEN,
@@ -3626,9 +3776,42 @@ export default function PublicKanbanPage({ params }) {
   );
   const [validateInvitedSession] = useLazyQuery(VALIDATE_INVITED_SESSION);
 
+  // getPublicBoard avec la preuve du mot de passe d'un partage protégé :
+  // le mot de passe saisi, sinon le jeton remis lors d'une ouverture
+  // précédente. Le jeton reçu est gardé pour l'abonnement temps réel.
+  const fetchPublicBoard = useCallback(
+    async (email, password = null) => {
+      if (shareAccessTokenRef.current === null) {
+        shareAccessTokenRef.current = readStoredAccessToken(token);
+      }
+      const result = await getPublicBoard({
+        variables: {
+          token,
+          email,
+          password: password || null,
+          accessToken: shareAccessTokenRef.current || null,
+        },
+      });
+      const data = result.data?.getPublicBoard;
+      if (data?.success || data?.requiresPassword) {
+        const nextToken = (data.success && data.accessToken) || "";
+        shareAccessTokenRef.current = nextToken;
+        setShareAccessToken(nextToken || null);
+        storeAccessToken(token, nextToken);
+      }
+      return result;
+    },
+    [token, getPublicBoard],
+  );
+
   // Subscription pour les mises à jour en temps réel
   useSubscription(PUBLIC_TASK_UPDATED_SUBSCRIPTION, {
-    variables: { token, boardId: boardData?.id },
+    variables: {
+      token,
+      boardId: boardData?.id,
+      accessToken: shareAccessToken,
+      email: visitorEmail?.toLowerCase() || null,
+    },
     skip: !boardData?.id || !token,
     onData: ({ data }) => {
       const payload = data?.data?.publicTaskUpdated;
@@ -3780,9 +3963,16 @@ export default function PublicKanbanPage({ params }) {
               const validUser = validationResult.data.validateInvitedSession;
 
               // Récupérer le board avec l'email de l'utilisateur
-              const result = await getPublicBoard({
-                variables: { token, email: validUser.email },
-              });
+              const result = await fetchPublicBoard(validUser.email);
+
+              if (result.data?.getPublicBoard?.requiresPassword) {
+                setPasswordGate({
+                  email: validUser.email,
+                  userInvited: validUser,
+                });
+                setIsInitializing(false);
+                return;
+              }
 
               if (result.data?.getPublicBoard?.success) {
                 setVisitorEmail(validUser.email);
@@ -3808,9 +3998,12 @@ export default function PublicKanbanPage({ params }) {
           const session = JSON.parse(storedSession);
           if (session.email) {
             // Essayer de récupérer le board avec l'email stocké
-            const result = await getPublicBoard({
-              variables: { token, email: session.email },
-            });
+            const result = await fetchPublicBoard(session.email);
+            if (result.data?.getPublicBoard?.requiresPassword) {
+              setPasswordGate({ email: session.email, userInvited: null });
+              setIsInitializing(false);
+              return;
+            }
             if (result.data?.getPublicBoard?.success) {
               setVisitorEmail(session.email);
               setBoardData(result.data.getPublicBoard.board);
@@ -3848,7 +4041,7 @@ export default function PublicKanbanPage({ params }) {
     };
 
     initSession();
-  }, [token, validateToken, getPublicBoard, validateInvitedSession]);
+  }, [token, validateToken, fetchPublicBoard, validateInvitedSession]);
 
   // Handle authentication success (nouveau système UserInvited)
   const handleAuthSuccess = async (authResult) => {
@@ -3861,9 +4054,7 @@ export default function PublicKanbanPage({ params }) {
 
     try {
       // Récupérer le board avec l'email de l'utilisateur authentifié
-      const result = await getPublicBoard({
-        variables: { token, email: user.email },
-      });
+      const result = await fetchPublicBoard(user.email);
 
       if (result.data?.getPublicBoard?.success) {
         setVisitorEmail(user.email);
@@ -3879,6 +4070,9 @@ export default function PublicKanbanPage({ params }) {
           name: user.name || user.email.split("@")[0],
           image: user.image,
         });
+      } else if (result.data?.getPublicBoard?.requiresPassword) {
+        setShowAuthModal(false);
+        setPasswordGate({ email: user.email, userInvited: user });
       } else {
         setAccessError(result.data?.getPublicBoard?.message || "Accès refusé");
       }
@@ -3899,7 +4093,7 @@ export default function PublicKanbanPage({ params }) {
   // Handle email submission (ancien système - conservé pour compatibilité)
   const handleEmailSubmit = async (email) => {
     try {
-      const result = await getPublicBoard({ variables: { token, email } });
+      const result = await fetchPublicBoard(email);
       if (result.data?.getPublicBoard?.success) {
         setVisitorEmail(email);
         setBoardData(result.data.getPublicBoard.board);
@@ -3942,6 +4136,9 @@ export default function PublicKanbanPage({ params }) {
           setVisitorEmail(email);
           setIsBanned(true);
           setShowAuthModal(false);
+        } else if (result.data?.getPublicBoard?.requiresPassword) {
+          setShowAuthModal(false);
+          setPasswordGate({ email, userInvited: null });
         } else {
           setAccessError(
             result.data?.getPublicBoard?.message || "Accès refusé",
@@ -3960,6 +4157,7 @@ export default function PublicKanbanPage({ params }) {
         variables: {
           token,
           email: visitorEmail,
+          accessToken: shareAccessTokenRef.current || null,
           input: {
             firstName: profileData.firstName,
             lastName: profileData.lastName,
@@ -4063,6 +4261,58 @@ export default function PublicKanbanPage({ params }) {
     setCollapsedColumns((prev) => ({ ...prev, [columnId]: !prev[columnId] }));
   };
 
+  // Mot de passe du partage saisi : ouvre le tableau, ou renvoie le message
+  // d'erreur à afficher sous le champ
+  const handleSharePasswordSubmit = async (password) => {
+    const gate = passwordGate;
+    if (!gate) return null;
+    try {
+      const result = await fetchPublicBoard(gate.email, password);
+      const data = result.data?.getPublicBoard;
+      if (data?.success) {
+        const user = gate.userInvited;
+        const visitor = data.share?.visitors?.find(
+          (v) => v.email === gate.email.toLowerCase(),
+        );
+        setVisitorEmail(gate.email);
+        if (user) setUserInvited(user);
+        setBoardData(data.board);
+        setPermissions(data.share?.permissions);
+        setVisitorProfile(
+          user
+            ? {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                name: user.name || gate.email.split("@")[0],
+                image: user.image,
+              }
+            : {
+                firstName: visitor?.firstName,
+                lastName: visitor?.lastName,
+                name: visitor?.name || gate.email.split("@")[0],
+                image: visitor?.image,
+              },
+        );
+        setPasswordGate(null);
+        return null;
+      }
+      if (data?.requiresPassword) {
+        return data.message || "Mot de passe incorrect";
+      }
+      setPasswordGate(null);
+      if (data?.isBanned) {
+        setVisitorEmail(gate.email);
+        setIsBanned(true);
+      } else {
+        setAccessError(data?.message || "Accès refusé");
+      }
+      return null;
+    } catch (error) {
+      console.error("Erreur vérification du mot de passe:", error);
+      return "Une erreur est survenue";
+    }
+  };
+
   // Loading state (initialisation ou validation)
   if (isInitializing || validatingToken) {
     return (
@@ -4075,8 +4325,9 @@ export default function PublicKanbanPage({ params }) {
     );
   }
 
-  // Error state
-  if (accessError && !showEmailModal) {
+  // Error state (showEmailModal, reliquat de l'ancien modal e-mail, n'était
+  // plus déclaré : toute erreur d'accès levait une ReferenceError)
+  if (accessError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md w-full mx-4">
@@ -4100,10 +4351,10 @@ export default function PublicKanbanPage({ params }) {
           // Recharger les données du tableau quand l'accès est approuvé
           setIsBanned(false);
           try {
-            const result = await getPublicBoard({
-              variables: { token, email: visitorEmail },
-            });
-            if (result.data?.getPublicBoard?.success) {
+            const result = await fetchPublicBoard(visitorEmail);
+            if (result.data?.getPublicBoard?.requiresPassword) {
+              setPasswordGate({ email: visitorEmail, userInvited: null });
+            } else if (result.data?.getPublicBoard?.success) {
               setBoardData(result.data.getPublicBoard.board);
               setPermissions(result.data.getPublicBoard.share?.permissions);
 
@@ -4126,6 +4377,17 @@ export default function PublicKanbanPage({ params }) {
             window.location.reload();
           }
         }}
+      />
+    );
+  }
+
+  // Partage protégé : mot de passe avant d'afficher le tableau
+  if (passwordGate) {
+    return (
+      <SharePasswordGate
+        shareLinkName={shareLinkName}
+        email={passwordGate.email}
+        onSubmit={handleSharePasswordSubmit}
       />
     );
   }

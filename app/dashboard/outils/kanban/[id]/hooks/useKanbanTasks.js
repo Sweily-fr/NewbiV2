@@ -20,6 +20,32 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { computeAutoSaveSignature } from "./taskFormSignature";
 import { isDescriptionHandledByCollab } from "../components/task-modal/collabConfig";
 import { perfMark } from "@/src/utils/kanbanPerf";
+import {
+  useTaskFieldMutations,
+  isServerChecklistId,
+  newChecklistItemId,
+  cleanTagInput,
+} from "./useTaskFieldMutations";
+
+// Listes de la tâche ouverte, relues dans le cache (calques optimistes
+// compris) pour réaligner le modal une fois les modifications envoyées
+const TASK_LISTS_FRAGMENT = gql`
+  fragment TaskModalLists on Task {
+    assignedMembers
+    tags {
+      name
+      className
+      bg
+      text
+      border
+    }
+    checklist {
+      id
+      text
+      completed
+    }
+  }
+`;
 
 const UPLOAD_TASK_IMAGE = gql`
   mutation UploadTaskImage(
@@ -87,9 +113,7 @@ const SYNCED_SCALAR_FIELDS = [
   "dueDate",
   "columnId",
 ];
-const tagsKey = (tags) =>
-  Array.isArray(tags) ? tags.map((t) => t?.name || "").join("|") : "";
-// Les ids de checklist sont régénérés côté client : on compare texte + état
+// Comparaison texte + état (les éléments sans id serveur reçoivent un id local)
 const checklistKey = (list) =>
   Array.isArray(list)
     ? list.map((i) => `${i?.text || ""}:${i?.completed ? 1 : 0}`).join("|")
@@ -101,7 +125,9 @@ const normalizeChecklist = (list) =>
     completed: Boolean(item?.completed),
   }));
 
-// Instantané « côté serveur » des champs synchronisables d'un formulaire
+// Instantané « côté serveur » des champs synchronisables d'un formulaire.
+// Membres, tags et checklist n'en font plus partie : ils sont envoyés
+// élément par élément dès le clic (voir taskFieldOps), jamais par l'auto-save.
 const serverSnapshotOf = (form) => ({
   title: form.title ?? "",
   description: form.description ?? "",
@@ -110,8 +136,6 @@ const serverSnapshotOf = (form) => ({
   startDate: form.startDate ?? "",
   dueDate: form.dueDate ?? "",
   columnId: form.columnId ?? "",
-  tagsKey: tagsKey(form.tags),
-  checklistKey: checklistKey(form.checklist),
 });
 
 export const useKanbanTasks = (boardId, board) => {
@@ -140,6 +164,11 @@ export const useKanbanTasks = (boardId, board) => {
   // espace en fin de titre, date reformatée…), le champ resterait « sale »
   // et l'auto-save repartirait à chaque resynchronisation, à l'infini.
   const lastSentSignatureRef = useRef(null);
+  // Modifications de membres / tags / checklist en cours sur la tâche ouverte
+  const pendingListOpsRef = useRef(0);
+  // Dernier formulaire rendu (diff de la checklist, doublons de tags)
+  const taskFormRef = useRef(taskForm);
+  taskFormRef.current = taskForm;
 
   // Lazy query pour charger les détails d'une tâche (comments, activity, timeTracking.entries)
   // Chargé uniquement quand on ouvre le modal de détail.
@@ -295,23 +324,20 @@ export const useKanbanTasks = (boardId, board) => {
           const dirty = local !== (serverPrev[field] ?? "");
           synced[field] = dirty ? prev[field] : serverNext[field];
         }
-        synced.tags =
-          tagsKey(prev.tags) !== serverPrev.tagsKey ? prev.tags : remoteTags;
-        synced.checklist =
-          checklistKey(prev.checklist) !== serverPrev.checklistKey
-            ? prev.checklist
-            : remoteChecklist;
+        // Membres, tags, checklist : modifiés élément par élément (mutations
+        // atomiques), jamais « sales ». Tant qu'une modification locale est
+        // en cours, on garde l'affichage local (réaligné sur le cache à la
+        // dernière réponse) ; sinon la valeur du board, qui contient aussi
+        // les changements des autres membres.
+        const listsBusy = pendingListOpsRef.current > 0;
+        synced.tags = listsBusy ? prev.tags : remoteTags;
+        synced.checklist = listsBusy ? prev.checklist : remoteChecklist;
 
         Object.assign(synced, {
-          // NE PAS écraser les membres avec la valeur du board pendant l'édition.
-          // Les membres sont pilotés localement (toggle + flush debouncé, exclus
-          // de l'auto-save) : un écho non lié (commentaire, autre champ, autre
-          // utilisateur) qui re-synchroniserait `assignedMembers` avec une valeur
-          // en retard écraserait l'état optimiste en plein milieu d'une série de
-          // clics → on supprimerait/remettrait le mauvais membre. On garde donc
-          // toujours la valeur locale (la vérité serveur est rétablie en cas
-          // d'échec via le onError du flush).
-          assignedMembers: prev.assignedMembers,
+          assignedMembers:
+            !listsBusy && Array.isArray(remote.assignedMembers)
+              ? remote.assignedMembers
+              : prev.assignedMembers,
           // Les liens sont posés des deux côtés côté serveur : un écho peut
           // venir de la tâche d'en face, on prend donc la valeur du board.
           linkedTasks: Array.isArray(remote.linkedTasks)
@@ -863,13 +889,10 @@ export const useKanbanTasks = (boardId, board) => {
 
     lastSentSignatureRef.current = computeAutoSaveSignature(taskForm);
     try {
-      // NOTE: `assignedMembers` est volontairement EXCLU du payload d'auto-save.
-      // Les assignations/désassignations sont gérées exclusivement par
-      // `handleMemberToggle` dans TaskModal via une mutation dédiée. Inclure ici
-      // `assignedMembers` provoquait une race condition : l'auto-save pouvait
-      // renvoyer un état stale et écraser une assignation récente, ce qui
-      // déclenchait l'envoi d'un email d'assignation à la mauvaise personne
-      // (le diff côté serveur étant fait contre un oldTask périmé).
+      // NOTE: `assignedMembers` est volontairement EXCLU du payload d'auto-save
+      // (assignTaskMember / unassignTaskMember via taskFieldOps). L'inclure
+      // renvoyait un état périmé qui écrasait une assignation récente et
+      // envoyait l'e-mail d'assignation à la mauvaise personne.
       const input = {
         id: editingTask.id,
         title: taskForm.title,
@@ -886,12 +909,9 @@ export const useKanbanTasks = (boardId, board) => {
         startDate: taskForm.startDate || null,
         dueDate: taskForm.dueDate || null,
         columnId: taskForm.columnId,
-        tags: cleanTags(taskForm.tags),
-        checklist: taskForm.checklist.map((item) => ({
-          id: item.id || undefined,
-          text: item.text,
-          completed: item.completed || false,
-        })),
+        // Ni tags ni checklist : envoyés élément par élément dès le clic
+        // (taskFieldOps). Renvoyer ici les tableaux complets du formulaire
+        // écraserait les modifications faites en même temps par un collègue.
       };
 
       await updateTask({
@@ -904,6 +924,189 @@ export const useKanbanTasks = (boardId, board) => {
       toast.error(`Erreur lors de la mise à jour: ${error.message}`);
     }
   };
+
+  // ── Membres, tags et checklist de la tâche ouverte ─────────────────────
+  // Envoyés élément par élément dès le clic (mutations atomiques) : deux
+  // personnes qui modifient la tâche en même temps ne s'écrasent plus. Le
+  // formulaire est mis à jour tout de suite, puis réaligné sur le cache (état
+  // serveur + modifications encore en cours) quand la dernière réponse
+  // arrive, erreur comprise.
+  const fieldMutations = useTaskFieldMutations(workspaceId);
+  const editingTaskId = editingTask?.id || null;
+
+  const alignListsWithCache = useCallback(
+    (taskId) => {
+      let lists = null;
+      try {
+        lists = apolloClient.cache.readFragment(
+          {
+            id: apolloClient.cache.identify({ __typename: "Task", id: taskId }),
+            fragment: TASK_LISTS_FRAGMENT,
+          },
+          true,
+        );
+      } catch {
+        lists = null;
+      }
+      if (!lists) return;
+      setTaskForm((prev) => {
+        if (prev?.id !== taskId) return prev;
+        return {
+          ...prev,
+          assignedMembers: lists.assignedMembers || [],
+          tags: lists.tags || [],
+          checklist: normalizeChecklist(lists.checklist || []),
+        };
+      });
+    },
+    [apolloClient],
+  );
+
+  const runTaskListOp = useCallback(
+    (taskId, send) => {
+      pendingListOpsRef.current += 1;
+      Promise.resolve()
+        .then(send)
+        .catch(() => {
+          // toast déjà affiché ; le réalignement ci-dessous rétablit l'état
+        })
+        .finally(() => {
+          pendingListOpsRef.current -= 1;
+          if (pendingListOpsRef.current === 0) alignListsWithCache(taskId);
+        });
+    },
+    [alignListsWithCache],
+  );
+
+  const taskFieldOps = useMemo(() => {
+    if (!editingTaskId) return null;
+    const taskId = editingTaskId;
+
+    const removeTagNow = (tagName) => {
+      setTaskForm((prev) => ({
+        ...prev,
+        tags: (prev.tags || []).filter(
+          (t) => (t?.name || "").toLowerCase() !== tagName.toLowerCase(),
+        ),
+      }));
+      runTaskListOp(taskId, () => fieldMutations.removeTag(taskId, tagName));
+    };
+
+    return {
+      // assign : décidé par l'appelant (état local à jour même entre deux
+      // clics rapides, avant le re-render)
+      setMember: (memberId, assign) => {
+        setTaskForm((prev) => {
+          const current = (prev.assignedMembers || []).filter(
+            (id) => id !== memberId,
+          );
+          return {
+            ...prev,
+            assignedMembers: assign ? [...current, memberId] : current,
+          };
+        });
+        runTaskListOp(taskId, () =>
+          fieldMutations.setMember(taskId, memberId, assign),
+        );
+      },
+
+      addTag: (tag) => {
+        const clean = cleanTagInput(tag);
+        if (!clean.name) return;
+        const exists = (taskFormRef.current?.tags || []).some(
+          (t) => (t?.name || "").toLowerCase() === clean.name.toLowerCase(),
+        );
+        if (exists) return;
+        setTaskForm((prev) => ({
+          ...prev,
+          tags: [...(prev.tags || []), clean],
+        }));
+        runTaskListOp(taskId, () => fieldMutations.addTag(taskId, clean));
+      },
+
+      removeTag: removeTagNow,
+
+      clearTags: () => {
+        (taskFormRef.current?.tags || []).forEach((t) => {
+          if (t?.name) removeTagNow(t.name);
+        });
+      },
+
+      // Liste complète renvoyée par le composant Checklist : on en déduit
+      // l'élément ajouté, modifié ou supprimé
+      changeChecklist: (nextItems) => {
+        const prevItems = taskFormRef.current?.checklist || [];
+        const prevById = new Map(prevItems.map((item) => [item.id, item]));
+        const nextIds = new Set(nextItems.map((item) => item.id));
+        const sends = [];
+        // Élément sans id serveur (API pas encore à jour, donnée ancienne) :
+        // impossible de le cibler, on retombe sur l'envoi de la liste
+        // complète
+        let needsFullList = false;
+
+        const next = nextItems.map((item) => {
+          const before = prevById.get(item.id);
+          if (!before) {
+            const created = {
+              id: newChecklistItemId(),
+              text: item.text,
+              completed: Boolean(item.completed),
+            };
+            sends.push(() => fieldMutations.addChecklistItem(taskId, created));
+            return created;
+          }
+          const changes = {};
+          if ((before.text || "") !== (item.text || "")) {
+            changes.text = item.text;
+          }
+          if (Boolean(before.completed) !== Boolean(item.completed)) {
+            changes.completed = Boolean(item.completed);
+          }
+          if (Object.keys(changes).length > 0) {
+            if (isServerChecklistId(item.id)) {
+              sends.push(() =>
+                fieldMutations.updateChecklistItem(taskId, item.id, changes),
+              );
+            } else {
+              needsFullList = true;
+            }
+          }
+          return item;
+        });
+        prevItems.forEach((item) => {
+          if (nextIds.has(item.id)) return;
+          if (isServerChecklistId(item.id)) {
+            sends.push(() =>
+              fieldMutations.removeChecklistItem(taskId, item.id),
+            );
+          } else {
+            needsFullList = true;
+          }
+        });
+
+        setTaskForm((prev) => ({ ...prev, checklist: next }));
+        if (needsFullList) {
+          runTaskListOp(taskId, () =>
+            updateTask({
+              variables: {
+                input: {
+                  id: taskId,
+                  checklist: next.map((item) => ({
+                    id: isServerChecklistId(item.id) ? item.id : undefined,
+                    text: item.text,
+                    completed: Boolean(item.completed),
+                  })),
+                },
+                workspaceId,
+              },
+            }),
+          );
+          return;
+        }
+        sends.forEach((send) => runTaskListOp(taskId, send));
+      },
+    };
+  }, [editingTaskId, fieldMutations, runTaskListOp, updateTask, workspaceId]);
 
   const handleDeleteTask = useCallback(
     async (taskId) => {
@@ -1122,5 +1325,7 @@ export const useKanbanTasks = (boardId, board) => {
     moveTask,
     updateTask,
     createTask,
+    // Membres / tags / checklist de la tâche ouverte (null en création)
+    taskFieldOps,
   };
 };

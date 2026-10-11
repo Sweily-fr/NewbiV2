@@ -827,6 +827,7 @@ function KanbanBoardPageContent({ params }) {
     createTask,
     initialFormRef,
     localMutationRef,
+    taskFieldOps,
   } = useKanbanTasks(id, board);
 
   // Présence : annonce la tâche ouverte dans la modale d'édition et expose aux
@@ -2111,9 +2112,9 @@ function KanbanBoardPageContent({ params }) {
             removeChecklistItem={removeChecklistItem}
             openEditTaskModal={handleOpenEditTaskModal}
             openLinkedTask={handleOpenLinkedTask}
-            updateTask={updateTask}
             initialFormRef={initialFormRef}
             localMutationRef={localMutationRef}
+            taskFieldOps={taskFieldOps}
           />
 
           <AlertDialog

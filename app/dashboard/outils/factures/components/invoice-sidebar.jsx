@@ -102,6 +102,7 @@ import { ReceiptItemIcon } from "@/src/components/icons";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
 import DocumentAnnexPreview from "@/src/components/documents/document-annex-preview";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -566,7 +567,7 @@ export default function InvoiceSidebar({
 
     if (shippingData?.billShipping && shippingData?.shippingAmountHT > 0) {
       shippingAmountHT = parseFloat(shippingData.shippingAmountHT) || 0;
-      const shippingVatRate = parseFloat(shippingData.shippingVatRate) || 20;
+      const shippingVatRate = shippingVatRateOf(shippingData.shippingVatRate);
       shippingTax =
         invoiceData?.isReverseCharge || shippingVatRate === 0
           ? 0

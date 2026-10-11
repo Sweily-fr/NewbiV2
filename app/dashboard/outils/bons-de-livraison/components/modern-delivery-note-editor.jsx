@@ -161,15 +161,6 @@ export default function ModernDeliveryNoteEditor({
   useUnsavedChangesWarning(hasUserChanges);
   usePreloadOnIdle(preloadEditorModules);
 
-  if (
-    mode !== "create" &&
-    !loading &&
-    !loadedDeliveryNote &&
-    deliveryNoteError
-  ) {
-    return <ResourceNotFound listUrl={LIST_URL} homeUrl="/dashboard" />;
-  }
-
   useEffect(() => {
     if (!hasUserChanges) return;
     if (!sentinelPushedRef.current) {
@@ -187,6 +178,17 @@ export default function ModernDeliveryNoteEditor({
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [hasUserChanges]);
+
+  // Retour anticipé placé après le dernier hook : le placer avant changeait
+  // le nombre de hooks appelés d'un rendu à l'autre (règle des hooks)
+  if (
+    mode !== "create" &&
+    !loading &&
+    !loadedDeliveryNote &&
+    deliveryNoteError
+  ) {
+    return <ResourceNotFound listUrl={LIST_URL} homeUrl="/dashboard" />;
+  }
 
   const leaveEditor = () => {
     bypassGuardRef.current = true;

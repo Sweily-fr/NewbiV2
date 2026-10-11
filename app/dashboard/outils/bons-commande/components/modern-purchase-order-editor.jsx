@@ -266,23 +266,6 @@ export default function ModernPurchaseOrderEditor({
   useUnsavedChangesWarning(guardActive && isDirty);
   usePreloadOnIdle(preloadEditorModules);
 
-  // Afficher un message si le BC n'existe pas
-  if (
-    mode !== "create" &&
-    !loading &&
-    !loadedPurchaseOrder &&
-    purchaseOrderError
-  ) {
-    return (
-      <ResourceNotFound
-        resourceType="bon de commande"
-        resourceName="Ce bon de commande"
-        listUrl="/dashboard/outils/bons-commande"
-        homeUrl="/dashboard"
-      />
-    );
-  }
-
   useEffect(() => {
     if (!guardActive) return;
 
@@ -344,6 +327,25 @@ export default function ModernPurchaseOrderEditor({
   };
 
   const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
+
+  // Afficher un message si le BC n'existe pas.
+  // Placé après le dernier hook : avant, le nombre de hooks appelés
+  // variait d'un rendu à l'autre (règle des hooks).
+  if (
+    mode !== "create" &&
+    !loading &&
+    !loadedPurchaseOrder &&
+    purchaseOrderError
+  ) {
+    return (
+      <ResourceNotFound
+        resourceType="bon de commande"
+        resourceName="Ce bon de commande"
+        listUrl="/dashboard/outils/bons-commande"
+        homeUrl="/dashboard"
+      />
+    );
+  }
 
   const handleCloseSettings = () => {
     if (closeSettingsHandler) {

@@ -15,7 +15,7 @@ import {
 } from "@/src/graphql/deliveryNoteQueries";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
 import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { formatCalendarDate, formatLocalDate } from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { mapOrganizationToCompanyInfo } from "@/src/utils/organizationCompanyInfo";
 
@@ -57,7 +57,8 @@ const toInputDate = (value) => {
       ? new Date(parseInt(value, 10))
       : new Date(value);
   if (isNaN(d.getTime())) return "";
-  return formatLocalDate(d);
+  // Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM)
+  return formatCalendarDate(d);
 };
 
 /**
@@ -65,7 +66,8 @@ const toInputDate = (value) => {
  */
 function getInitialFormData(organization) {
   return {
-    prefix: refreshPrefixDate(organization?.deliveryNotePrefix) || defaultPrefix(),
+    prefix:
+      refreshPrefixDate(organization?.deliveryNotePrefix) || defaultPrefix(),
     number: "",
     issueDate: formatLocalDate(),
     deliveryDate: "",
@@ -414,9 +416,7 @@ export function useDeliveryNoteEditor({
       ...formData,
       id: deliveryNoteId,
       number:
-        isDraft || mode === "create"
-          ? nextNumber || "0001"
-          : formData.number,
+        isDraft || mode === "create" ? nextNumber || "0001" : formData.number,
       // L'aperçu affiche le numéro « à venir » d'un brouillon
       status: isDraft || mode === "create" ? "PENDING" : formData.status,
       deliveryAddress,
@@ -532,7 +532,8 @@ export function useDeliveryNoteEditor({
           ...(wasDraft ? { status: "PENDING" } : {}),
         });
       }
-      if (!result) throw new Error("Le bon de livraison n'a pas été enregistré");
+      if (!result)
+        throw new Error("Le bon de livraison n'a pas été enregistré");
       // Archivage PDF non bloquant (comme devis / BC)
       archiveDocument(result);
       return { success: true, deliveryNote: result };

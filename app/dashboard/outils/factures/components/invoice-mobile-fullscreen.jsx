@@ -43,6 +43,7 @@ import {
 } from "@/src/utils/dateFormatter";
 import InvoiceRecurrenceSection from "./invoice-recurrence-section";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -268,7 +269,7 @@ export default function InvoiceMobileFullscreen({
 
     if (shippingData?.billShipping && shippingData?.shippingAmountHT > 0) {
       shippingAmountHT = parseFloat(shippingData.shippingAmountHT) || 0;
-      const shippingVatRate = parseFloat(shippingData.shippingVatRate) || 20;
+      const shippingVatRate = shippingVatRateOf(shippingData.shippingVatRate);
       shippingTax =
         invoiceData?.isReverseCharge || shippingVatRate === 0
           ? 0

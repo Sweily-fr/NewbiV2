@@ -3,20 +3,14 @@
  * pertinents pour l'auto-save. On évite de stringify les champs lourds
  * (comments, activity, images, timeTracking) car ils ne sont pas envoyés
  * via l'auto-save et changeraient inutilement la signature.
+ *
+ * Membres, tags et checklist n'en font pas partie : ils sont envoyés
+ * élément par élément dès le clic (mutations atomiques, voir taskFieldOps
+ * dans useKanbanTasks). Les inclure relançait un updateTask sans objet à
+ * chaque case cochée.
  */
 export function computeAutoSaveSignature(form) {
   if (!form) return "";
-  const tagsKey = Array.isArray(form.tags)
-    ? form.tags.map((t) => t?.name || "").join("|")
-    : "";
-  const checklistKey = Array.isArray(form.checklist)
-    ? form.checklist
-        .map((i) => `${i?.id || ""}:${i?.text || ""}:${i?.completed ? 1 : 0}`)
-        .join("|")
-    : "";
-  const membersKey = Array.isArray(form.assignedMembers)
-    ? form.assignedMembers.join("|")
-    : "";
   return [
     form.title || "",
     form.description || "",
@@ -25,8 +19,5 @@ export function computeAutoSaveSignature(form) {
     form.startDate || "",
     form.dueDate || "",
     form.columnId || "",
-    tagsKey,
-    checklistKey,
-    membersKey,
-  ].join("");
+  ].join("");
 }

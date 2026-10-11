@@ -69,11 +69,9 @@ import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
-import {
-  useTaskMembers,
-  useDebouncedMemberFlush,
-} from "../hooks/useMemberToggle";
+import { useTaskMembers } from "../hooks/useMemberToggle";
 import { useLazyVisible } from "../hooks/useLazyVisible";
+import { useTaskFieldMutations } from "../hooks/useTaskFieldMutations";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
@@ -130,7 +128,6 @@ const MembersPopover = React.memo(function MembersPopover({
   task,
   membersInfo,
   members,
-  updateTask,
   workspaceId,
   isTrigger,
   popoverOpenRef,
@@ -163,11 +160,10 @@ const MembersPopover = React.memo(function MembersPopover({
     }
   };
 
-  // Base optimiste + debounce : les clics rapides calculent à partir de l'état
-  // local (et non du cache qui retarde), et sont coalescés en une mutation.
+  // Base optimiste : les clics rapides calculent à partir de l'état local
+  // (et non du cache qui retarde), un membre par mutation.
   const { members: effectiveMembers, toggle: toggleMember } = useTaskMembers({
     task,
-    updateTask,
     workspaceId,
   });
 
@@ -423,21 +419,13 @@ function BulkActionBar({
   const count = selectedTaskIds.size;
   const [moveOpen, setMoveOpen] = useState(false);
 
-  // Assignation : état optimiste par tâche (taskId → membres) + debounce.
-  // Les clics rapides calculent depuis l'état local (le cache retarde le temps
-  // de l'écho serveur) et sont coalescés en une mutation par tâche.
+  // Assignation : état optimiste par tâche (taskId → membres). Les clics
+  // rapides calculent depuis l'état local (le cache retarde le temps de
+  // l'écho serveur) ; chaque tâche reçoit un assignTaskMember /
+  // unassignTaskMember (un membre à la fois, pas d'écrasement entre
+  // collègues).
   const [assignOverrides, setAssignOverrides] = useState({});
-  const flushMembers = useDebouncedMemberFlush({
-    updateTask,
-    workspaceId,
-    // En cas d'échec serveur, revenir à la vérité du cache pour cette tâche.
-    onError: (taskId) =>
-      setAssignOverrides((prev) => {
-        const next = { ...prev };
-        delete next[taskId];
-        return next;
-      }),
-  });
+  const fieldMutations = useTaskFieldMutations(workspaceId);
   React.useEffect(() => {
     setAssignOverrides({});
   }, [selectedTaskIds]);
@@ -540,7 +528,16 @@ function BulkActionBar({
           ? current
           : [...current, memberId];
       overrides[taskId] = next;
-      if (next !== current) flushMembers(taskId, next);
+      if (next !== current) {
+        fieldMutations.setMember(taskId, memberId, !allHave).catch(() =>
+          // Échec : retour à la vérité du cache pour cette tâche
+          setAssignOverrides((prev) => {
+            const rest = { ...prev };
+            delete rest[taskId];
+            return rest;
+          }),
+        );
+      }
     });
     setAssignOverrides((prev) => ({ ...prev, ...overrides }));
   };
@@ -869,11 +866,10 @@ function TaskActionsMenu({
 }) {
   const [open, setOpen] = useState(false);
 
-  // Même mécanique optimiste + debounce que MembersPopover : les clics
-  // rapides calculent depuis l'état local et sont coalescés en une mutation.
+  // Même mécanique optimiste que MembersPopover : les clics rapides
+  // calculent depuis l'état local, un membre par mutation.
   const { members: assignedMembers, toggle: toggleMember } = useTaskMembers({
     task,
-    updateTask,
     workspaceId,
   });
 
@@ -1732,12 +1728,7 @@ function resolveTagColors(tag) {
   return { ...tag, bg: c.bg, text: c.text, border: c.border };
 }
 
-function InlineTagPopover({
-  task,
-  updateTask,
-  workspaceId,
-  allBoardTags = [],
-}) {
+function InlineTagPopover({ task, workspaceId, allBoardTags = [] }) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const taskTags = task.tags || [];
@@ -1770,53 +1761,24 @@ function InlineTagPopover({
     return TAG_COLORS.find((c) => !usedBgs.has(c.bg)) || TAG_COLORS[0];
   };
 
+  // Un tag à la fois (addTaskTag / removeTaskTag) : ne remplace plus la
+  // liste complète, qui écrasait les tags posés en même temps par un collègue
+  const fieldMutations = useTaskFieldMutations(workspaceId);
+
   const addTagToTask = (tag) => {
-    const newTags = [
-      ...taskTags,
-      {
+    fieldMutations
+      .addTag(task.id, {
         name: tag.name,
         className: "",
         bg: tag.bg,
         text: tag.text,
         border: tag.border,
-      },
-    ];
-    updateTask({
-      variables: {
-        input: {
-          id: task.id,
-          tags: newTags.map((t) => ({
-            name: t.name,
-            className: t.className || "",
-            bg: t.bg,
-            text: t.text,
-            border: t.border,
-          })),
-        },
-        workspaceId,
-      },
-    });
+      })
+      .catch(() => {});
   };
 
   const removeTagFromTask = (tagName) => {
-    const newTags = taskTags.filter(
-      (t) => t.name.toLowerCase() !== tagName.toLowerCase(),
-    );
-    updateTask({
-      variables: {
-        input: {
-          id: task.id,
-          tags: newTags.map((t) => ({
-            name: t.name,
-            className: t.className || "",
-            bg: t.bg,
-            text: t.text,
-            border: t.border,
-          })),
-        },
-        workspaceId,
-      },
-    });
+    fieldMutations.removeTag(task.id, tagName).catch(() => {});
   };
 
   const createAndAdd = () => {
@@ -2134,13 +2096,7 @@ function TagsTooltipGrid({ tags }) {
 /**
  * Cellule Tags pour la vue liste — affiche premier tag + badge "+N" + bouton ajouter
  */
-function TaskTagsCell({
-  task,
-  updateTask,
-  workspaceId,
-  allBoardTags,
-  readOnly = false,
-}) {
+function TaskTagsCell({ task, workspaceId, allBoardTags, readOnly = false }) {
   const allTags = useMemo(() => {
     const tags = task.tags || [];
     if (tags.length === 0) return [];
@@ -2275,7 +2231,6 @@ function TaskTagsCell({
       {!readOnly && (
         <InlineTagPopover
           task={task}
-          updateTask={updateTask}
           workspaceId={workspaceId}
           allBoardTags={allBoardTags}
         />
