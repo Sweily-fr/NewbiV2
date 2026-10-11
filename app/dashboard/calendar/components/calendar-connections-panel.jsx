@@ -15,6 +15,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { toast } from "@/src/components/ui/sonner";
 import { useCalendarConnections } from "@/src/hooks/useCalendarConnections";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { CalendarConnectionCard } from "./calendar-connection-card";
 import { AppleCredentialsDialog } from "./apple-credentials-dialog";
 import { useSession } from "@/src/lib/auth-client";
@@ -90,6 +91,8 @@ export function CalendarConnectionsPanel({ canManage = true }) {
   const [connecting, setConnecting] = useState(null);
   const { data: sessionData } = useSession();
   const isReady = !!sessionData?.user;
+  // Espace actif : l'API y vérifie le droit « Modifier » du calendrier
+  const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
@@ -114,7 +117,7 @@ export function CalendarConnectionsPanel({ canManage = true }) {
 
   const handleCalendarConnect = useCallback(
     async (provider) => {
-      if (!isReady) {
+      if (!isReady || !workspaceId) {
         toast.error(
           "Session non disponible. Veuillez rafraichir la page et reessayer.",
         );
@@ -132,13 +135,18 @@ export function CalendarConnectionsPanel({ canManage = true }) {
           `/api/calendar-connect/${provider}/authorize`,
           {
             credentials: "include",
+            headers: { "x-workspace-id": workspaceId },
           },
         );
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
-            errorData.error || errorData.details || `Erreur ${response.status}`,
+            // Refus du rôle : { error: "FORBIDDEN", message } côté API
+            errorData.message ||
+              errorData.error ||
+              errorData.details ||
+              `Erreur ${response.status}`,
           );
         }
 
@@ -159,7 +167,7 @@ export function CalendarConnectionsPanel({ canManage = true }) {
         setConnecting(null);
       }
     },
-    [isReady],
+    [isReady, workspaceId],
   );
 
   // Rien à consulter ni à connecter : pas de bouton
