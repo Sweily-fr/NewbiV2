@@ -1,31 +1,56 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { auth } from "@/src/lib/auth";
+import {
+  apiError,
+  requireSession,
+  requireOrgStripeCustomer,
+  resolveBillingOrgId,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia",
 });
 
-export async function POST(request) {
-  let customerId;
+/**
+ * POST /api/stripe/billing-portal
+ *
+ * Ouvre le portail de facturation Stripe du client de l'espace actif (ou de
+ * l'espace passé dans `organizationId`), avec le droit « Gérer
+ * l'abonnement ». Le `customerId` éventuellement envoyé par le front n'est
+ * accepté que s'il appartient à cet espace ; sans lui, on prend le client
+ * de l'abonnement de l'espace.
+ *
+ * Body (facultatif) : { customerId?, organizationId? }
+ */
+async function handler(request) {
+  const { user, session } = await requireSession(request);
+
+  // Body facultatif : la boîte « abonnement inactif » appelle la route sans
+  // body, la page Facturation envoie le client Stripe affiché.
+  let body = {};
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
+    body = (await request.json()) || {};
+  } catch {
+    body = {};
+  }
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
+  const orgId = resolveBillingOrgId(session, body.organizationId);
+  const customerId = await requireOrgStripeCustomer({
+    userId: user.id,
+    orgId,
+    action: "manage",
+    customerId: body.customerId || null,
+  });
 
-    ({ customerId } = await request.json());
+  if (!customerId) {
+    return apiError(
+      400,
+      "Aucune facturation Stripe associée à cette organisation",
+    );
+  }
 
-    if (!customerId) {
-      return NextResponse.json(
-        { error: "Customer ID requis" },
-        { status: 400 },
-      );
-    }
-
+  try {
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || request.headers.get("origin")}/dashboard`,
@@ -56,3 +81,5 @@ export async function POST(request) {
     );
   }
 }
+
+export const POST = withErrorHandler(handler);

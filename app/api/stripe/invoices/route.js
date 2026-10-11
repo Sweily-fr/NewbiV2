@@ -1,40 +1,44 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { auth } from "@/src/lib/auth";
-import { withErrorHandler } from "@/src/lib/security";
+import {
+  requireSession,
+  requireOrgStripeCustomer,
+  resolveBillingOrgId,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia",
 });
 
+/**
+ * GET /api/stripe/invoices?customerId=&organizationId=
+ *
+ * Factures d'abonnement du client Stripe de l'espace actif (ou de l'espace
+ * passé dans `organizationId`), avec le droit « Voir » sur l'abonnement. Un
+ * `customerId` qui n'appartient pas à l'espace est refusé.
+ */
 async function handler(request) {
+  const { user, session } = await requireSession(request);
+
+  const url = new URL(request.url);
+  const orgId = resolveBillingOrgId(
+    session,
+    url.searchParams.get("organizationId"),
+  );
+  const stripeCustomerId = await requireOrgStripeCustomer({
+    userId: user.id,
+    orgId,
+    action: "view",
+    customerId: url.searchParams.get("customerId"),
+  });
+
+  // Espace sans client Stripe : aucun historique de facturation.
+  if (!stripeCustomerId) {
+    return NextResponse.json({ success: true, invoices: [], count: 0 });
+  }
+
   try {
-    // Vérifier l'authentification
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, message: "Non authentifié" },
-        { status: 401 },
-      );
-    }
-
-    // Récupérer le customer ID depuis les paramètres de la requête
-    const url = new URL(request.url);
-    const stripeCustomerId = url.searchParams.get("customerId");
-
-    if (!stripeCustomerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Customer ID manquant",
-        },
-        { status: 400 },
-      );
-    }
-
     // Récupérer les factures Stripe pour ce customer
     const invoices = await stripe.invoices.list({
       customer: stripeCustomerId,
