@@ -5,8 +5,9 @@ import { withErrorHandler } from "@/src/lib/security";
 
 async function handler(request) {
   // Outil de dev uniquement : envoie de vrais emails via Resend sans
-  // authentification, donc jamais joignable en production.
-  if (process.env.NODE_ENV === "production") {
+  // authentification, donc joignable seulement en développement local
+  // (comme les routes /api/admin/*-test-users) ; partout ailleurs, 404.
+  if (process.env.NODE_ENV !== "development") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

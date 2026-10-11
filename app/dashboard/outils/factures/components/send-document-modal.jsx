@@ -35,6 +35,7 @@ import {
   useUpdateEmailSettings,
 } from "@/src/graphql/emailQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { generatePDFFromElement } from "@/src/utils/generatePDF";
 import { toast } from "sonner";
 import {
@@ -162,6 +163,11 @@ export function SendDocumentModal({
 
   // Mutation pour sauvegarder le template
   const [updateEmailSettings] = useUpdateEmailSettings();
+  // Modèles d'e-mail de l'espace : réglage de l'entreprise (« Modifier » les
+  // informations de l'entreprise, exigé par l'API). Sans ce droit, l'envoi
+  // fonctionne mais le texte n'est pas retenu comme modèle.
+  const { canDo, isReady } = useMyPermissions();
+  const canSaveTemplate = isReady && canDo("orgSettings", "edit");
 
   // Mutations pour chaque type de document
   const [sendInvoiceEmail] = useSendInvoiceEmail();
@@ -293,7 +299,7 @@ export function SendDocumentModal({
       }
 
       // Sauvegarder le template en base de données pour les prochains envois
-      if (emailSettings && emailSettings.fromEmail) {
+      if (canSaveTemplate && emailSettings && emailSettings.fromEmail) {
         const templateUpdate = {
           fromEmail: emailSettings.fromEmail,
           fromName: emailSettings.fromName || "",

@@ -20,6 +20,7 @@ import { format, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sanitizeInput, detectInjectionAttempt } from "@/src/lib/validation";
 import { useCalendarColorLabels } from "@/src/hooks/useCalendarColorLabels";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 import {
   DefaultEndHour,
@@ -113,6 +114,11 @@ export function EventDialog({
 }) {
   const { labels, getLabelForColor, updateLabels, updateLoading } =
     useCalendarColorLabels();
+  // Étiquettes : « Modifier » le calendrier exigé par l'API, quel que soit
+  // l'écran qui ouvre la fiche (calendrier, rappel client…)
+  const { canDo, isReady } = useMyPermissions();
+  const canManageLabels =
+    canEditLabels && (!isReady || canDo("calendar", "edit"));
   // Événement externe, ou rôle sans droit d'enregistrer cet événement
   const isReadOnly = event?.isReadOnly || !canEdit;
 
@@ -374,249 +380,334 @@ export function EventDialog({
 
           {/* Form content - scrollable */}
           <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-            {/* Title */}
-            <div className="space-y-2">
-              <Input
-                id="title"
-                value={title}
-                disabled={isReadOnly}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                  if (fieldErrors.title) {
-                    setFieldErrors((prev) => ({ ...prev, title: null }));
-                  }
-                }}
-                placeholder="Titre de l'événement"
-                className={cn(
-                  "h-11 text-base font-medium border-0 border-b rounded-none px-0 shadow-none focus-visible:ring-0 focus-visible:border-primary",
-                  fieldErrors.title && "border-red-500",
-                )}
-              />
-              {fieldErrors.title && (
-                <p className="text-xs text-red-500">{fieldErrors.title}</p>
-              )}
-            </div>
-
-            {/* Date & Time section */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm font-medium">Date et heure</span>
-              </div>
-
-              <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-                {/* Start */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-10 shrink-0">
-                    Début
-                  </span>
-                  <Popover
-                    open={!isReadOnly && startDateOpen}
-                    onOpenChange={setStartDateOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="start-date"
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "h-8 flex-1 justify-start gap-2 font-normal text-xs",
-                          !startDate && "text-muted-foreground",
-                        )}
-                      >
-                        <RiCalendarLine
-                          size={14}
-                          className="text-muted-foreground"
-                        />
-                        {startDate
-                          ? format(startDate, "EEE d MMM yyyy", { locale: fr })
-                          : "Choisir"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-2" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        defaultMonth={startDate}
-                        locale={fr}
-                        onSelect={(date) => {
-                          if (date) {
-                            setStartDate(date);
-                            if (isBefore(endDate, date)) {
-                              setEndDate(date);
-                            }
-                            setError(null);
-                            setStartDateOpen(false);
-                          }
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  {!allDay && (
-                    <Select
-                      value={startTime}
-                      onValueChange={setStartTime}
-                      disabled={isReadOnly}
-                    >
-                      <SelectTrigger className="h-8 w-24 text-xs">
-                        <SelectValue placeholder="Heure" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                {/* End */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground w-10 shrink-0">
-                    Fin
-                  </span>
-                  <Popover
-                    open={!isReadOnly && endDateOpen}
-                    onOpenChange={setEndDateOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="end-date"
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "h-8 flex-1 justify-start gap-2 font-normal text-xs",
-                          !endDate && "text-muted-foreground",
-                        )}
-                      >
-                        <RiCalendarLine
-                          size={14}
-                          className="text-muted-foreground"
-                        />
-                        {endDate
-                          ? format(endDate, "EEE d MMM yyyy", { locale: fr })
-                          : "Choisir"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-2" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        defaultMonth={endDate}
-                        locale={fr}
-                        disabled={{ before: startDate }}
-                        onSelect={(date) => {
-                          if (date) {
-                            setEndDate(date);
-                            setError(null);
-                            setEndDateOpen(false);
-                          }
-                        }}
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  {!allDay && (
-                    <Select
-                      value={endTime}
-                      onValueChange={setEndTime}
-                      disabled={isReadOnly}
-                    >
-                      <SelectTrigger className="h-8 w-24 text-xs">
-                        <SelectValue placeholder="Heure" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                {/* All day toggle */}
-                <div className="flex items-center gap-2 pt-1">
-                  <Checkbox
-                    id="all-day"
-                    checked={allDay}
-                    disabled={isReadOnly}
-                    onCheckedChange={(checked) => setAllDay(checked === true)}
-                    className="h-3.5 w-3.5"
-                  />
-                  <Label
-                    htmlFor="all-day"
-                    className="text-xs text-muted-foreground cursor-pointer"
-                  >
-                    Toute la journée
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm font-medium">Lieu</span>
-              </div>
-              <Input
-                id="location"
-                value={location}
-                disabled={isReadOnly}
-                onChange={(e) => {
-                  setLocation(e.target.value);
-                  if (fieldErrors.location) {
-                    setFieldErrors((prev) => ({ ...prev, location: null }));
-                  }
-                }}
-                placeholder="Ajouter un lieu"
-                className={cn(
-                  "h-9 text-sm",
-                  fieldErrors.location && "border-red-500",
-                )}
-              />
-              {fieldErrors.location && (
-                <p className="text-xs text-red-500">{fieldErrors.location}</p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <AlignLeft className="h-4 w-4" />
-                <span className="text-sm font-medium">Description</span>
-              </div>
-              <Textarea
-                id="description"
-                value={description}
-                disabled={isReadOnly}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  if (fieldErrors.description) {
-                    setFieldErrors((prev) => ({
-                      ...prev,
-                      description: null,
-                    }));
-                  }
-                }}
-                placeholder="Ajouter une description"
-                rows={3}
-                className={cn(
-                  "text-sm resize-none",
-                  fieldErrors.description && "border-red-500",
-                )}
-              />
-              {fieldErrors.description && (
-                <p className="text-xs text-red-500">
-                  {fieldErrors.description}
+            {isReadOnly ? (
+              // Lecture seule (rôle sans le droit ou événement externe) :
+              // valeurs en texte simple, sans champ grisé
+              <>
+                <p className="text-base font-medium break-words">
+                  {title || "(sans titre)"}
                 </p>
-              )}
-            </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-sm font-medium">Date et heure</span>
+                  </div>
+                  <div className="rounded-xl border bg-muted/30 p-4 space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-10 shrink-0">
+                        Début
+                      </span>
+                      <span>
+                        {format(startDate, "EEE d MMM yyyy", { locale: fr })}
+                        {!allDay &&
+                          ` à ${format(startDate, "H:mm", { locale: fr })}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-10 shrink-0">
+                        Fin
+                      </span>
+                      <span>
+                        {format(endDate, "EEE d MMM yyyy", { locale: fr })}
+                        {!allDay &&
+                          ` à ${format(endDate, "H:mm", { locale: fr })}`}
+                      </span>
+                    </div>
+                    {allDay && (
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Toute la journée
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {location && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span className="text-sm font-medium">Lieu</span>
+                    </div>
+                    <p className="text-sm break-words">{location}</p>
+                  </div>
+                )}
+
+                {description && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <AlignLeft className="h-4 w-4" />
+                      <span className="text-sm font-medium">Description</span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap break-words">
+                      {description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Étiquette connue seulement (couleur d'un calendrier externe
+                    sans étiquette : rien à afficher) */}
+                {labels.some((entry) => entry.color === color) && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Tag className="h-4 w-4" />
+                      <span className="text-sm font-medium">Etiquette</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span>{getLabelForColor(color)}</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Title */}
+                <div className="space-y-2">
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      if (fieldErrors.title) {
+                        setFieldErrors((prev) => ({ ...prev, title: null }));
+                      }
+                    }}
+                    placeholder="Titre de l'événement"
+                    className={cn(
+                      "h-11 text-base font-medium border-0 border-b rounded-none px-0 shadow-none focus-visible:ring-0 focus-visible:border-primary",
+                      fieldErrors.title && "border-red-500",
+                    )}
+                  />
+                  {fieldErrors.title && (
+                    <p className="text-xs text-red-500">{fieldErrors.title}</p>
+                  )}
+                </div>
+
+                {/* Date & Time section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-sm font-medium">Date et heure</span>
+                  </div>
+
+                  <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                    {/* Start */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-10 shrink-0">
+                        Début
+                      </span>
+                      <Popover
+                        open={startDateOpen}
+                        onOpenChange={setStartDateOpen}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="start-date"
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-8 flex-1 justify-start gap-2 font-normal text-xs",
+                              !startDate && "text-muted-foreground",
+                            )}
+                          >
+                            <RiCalendarLine
+                              size={14}
+                              className="text-muted-foreground"
+                            />
+                            {startDate
+                              ? format(startDate, "EEE d MMM yyyy", {
+                                  locale: fr,
+                                })
+                              : "Choisir"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={startDate}
+                            defaultMonth={startDate}
+                            locale={fr}
+                            onSelect={(date) => {
+                              if (date) {
+                                setStartDate(date);
+                                if (isBefore(endDate, date)) {
+                                  setEndDate(date);
+                                }
+                                setError(null);
+                                setStartDateOpen(false);
+                              }
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {!allDay && (
+                        <Select value={startTime} onValueChange={setStartTime}>
+                          <SelectTrigger className="h-8 w-24 text-xs">
+                            <SelectValue placeholder="Heure" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeOptions.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+
+                    {/* End */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground w-10 shrink-0">
+                        Fin
+                      </span>
+                      <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="end-date"
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "h-8 flex-1 justify-start gap-2 font-normal text-xs",
+                              !endDate && "text-muted-foreground",
+                            )}
+                          >
+                            <RiCalendarLine
+                              size={14}
+                              className="text-muted-foreground"
+                            />
+                            {endDate
+                              ? format(endDate, "EEE d MMM yyyy", {
+                                  locale: fr,
+                                })
+                              : "Choisir"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={endDate}
+                            defaultMonth={endDate}
+                            locale={fr}
+                            disabled={{ before: startDate }}
+                            onSelect={(date) => {
+                              if (date) {
+                                setEndDate(date);
+                                setError(null);
+                                setEndDateOpen(false);
+                              }
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
+
+                      {!allDay && (
+                        <Select value={endTime} onValueChange={setEndTime}>
+                          <SelectTrigger className="h-8 w-24 text-xs">
+                            <SelectValue placeholder="Heure" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeOptions.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+
+                    {/* All day toggle */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <Checkbox
+                        id="all-day"
+                        checked={allDay}
+                        onCheckedChange={(checked) =>
+                          setAllDay(checked === true)
+                        }
+                        className="h-3.5 w-3.5"
+                      />
+                      <Label
+                        htmlFor="all-day"
+                        className="text-xs text-muted-foreground cursor-pointer"
+                      >
+                        Toute la journée
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-sm font-medium">Lieu</span>
+                  </div>
+                  <Input
+                    id="location"
+                    value={location}
+                    onChange={(e) => {
+                      setLocation(e.target.value);
+                      if (fieldErrors.location) {
+                        setFieldErrors((prev) => ({ ...prev, location: null }));
+                      }
+                    }}
+                    placeholder="Ajouter un lieu"
+                    className={cn(
+                      "h-9 text-sm",
+                      fieldErrors.location && "border-red-500",
+                    )}
+                  />
+                  {fieldErrors.location && (
+                    <p className="text-xs text-red-500">
+                      {fieldErrors.location}
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <AlignLeft className="h-4 w-4" />
+                    <span className="text-sm font-medium">Description</span>
+                  </div>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      if (fieldErrors.description) {
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          description: null,
+                        }));
+                      }
+                    }}
+                    placeholder="Ajouter une description"
+                    rows={3}
+                    className={cn(
+                      "text-sm resize-none",
+                      fieldErrors.description && "border-red-500",
+                    )}
+                  />
+                  {fieldErrors.description && (
+                    <p className="text-xs text-red-500">
+                      {fieldErrors.description}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Membres assignés */}
             {!isReadOnly && (
@@ -681,7 +772,7 @@ export function EventDialog({
                           {entry.label}
                         </span>
                       </button>
-                      {canEditLabels && (
+                      {canManageLabels && (
                         <button
                           type="button"
                           onClick={() => {
@@ -698,7 +789,7 @@ export function EventDialog({
                     </div>
                   ))}
                   {/* Bouton ajouter */}
-                  {canEditLabels && labels.length < 20 && (
+                  {canManageLabels && labels.length < 20 && (
                     <button
                       type="button"
                       onClick={() => {

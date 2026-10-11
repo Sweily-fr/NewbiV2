@@ -34,9 +34,33 @@ async function handler(request) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // 2. Récupérer l'abonnement et les membres
     const { mongoDb } = await import("@/src/lib/mongodb");
     const { ObjectId } = await import("mongodb");
+
+    // 2. Droit « Changer le rôle » sur l'équipe de CET espace : sans ce
+    //    contrôle, n'importe quel utilisateur connecté lisait l'abonnement
+    //    et le nombre de comptables de n'importe quel espace.
+    const { getAccountActions } = await import("@/src/lib/organization-roles");
+    const { role, actions } = await getAccountActions(mongoDb, {
+      userId: session.user.id,
+      organizationId,
+      moduleKey: "team",
+    });
+    if (!role) {
+      return NextResponse.json(
+        { error: "Non autorisé", canChange: false, reason: "Non autorisé" },
+        { status: 403 },
+      );
+    }
+    if (!actions.includes("changeRole")) {
+      const reason = "Votre rôle ne permet pas de changer les rôles.";
+      return NextResponse.json(
+        { error: reason, canChange: false, reason },
+        { status: 403 },
+      );
+    }
+
+    // 3. Récupérer l'abonnement et les membres
 
     const subscription = await mongoDb.collection("subscription").findOne({
       referenceId: organizationId,
@@ -49,10 +73,12 @@ async function handler(request) {
     if (!subscription) {
       let trialActive = false;
       if (isAppTrialEnabled() && ObjectId.isValid(organizationId)) {
-        const orgDoc = await mongoDb.collection("organization").findOne(
-          { _id: new ObjectId(organizationId) },
-          { projection: { isTrialActive: 1, trialEndDate: 1 } },
-        );
+        const orgDoc = await mongoDb
+          .collection("organization")
+          .findOne(
+            { _id: new ObjectId(organizationId) },
+            { projection: { isTrialActive: 1, trialEndDate: 1 } },
+          );
         trialActive = isTrialAppActive(orgDoc);
       }
 
@@ -66,7 +92,7 @@ async function handler(request) {
       planName = "freelance";
     }
 
-    // 3. Si le nouveau rôle n'est pas comptable, pas de restriction
+    // 4. Si le nouveau rôle n'est pas comptable, pas de restriction
     if (newRole !== "accountant") {
       return NextResponse.json({
         canChange: true,
@@ -74,7 +100,7 @@ async function handler(request) {
       });
     }
 
-    // 4. Vérifier la limite de comptables
+    // 5. Vérifier la limite de comptables
     const planLimits = getPlanLimits(planName);
 
     // Compter les comptables actuels

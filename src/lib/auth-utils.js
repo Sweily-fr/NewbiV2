@@ -1,11 +1,61 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { resend } from "./resend";
 import { emailTemplates } from "./email-templates";
 
-// Fonction pour générer un token de réactivation
-export function generateReactivationToken(userId) {
-  // Simple token basé sur l'ID utilisateur et timestamp
-  const timestamp = Date.now();
-  return Buffer.from(`${userId}:${timestamp}`).toString("base64");
+/** Durée de validité d'un lien de réactivation */
+export const REACTIVATION_TOKEN_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function reactivationSignature(payload) {
+  const secret = process.env.BETTER_AUTH_SECRET;
+  if (!secret) {
+    throw new Error("BETTER_AUTH_SECRET requis pour les liens de réactivation");
+  }
+  return createHmac("sha256", secret)
+    .update(`reactivation:${payload}`)
+    .digest("base64url");
+}
+
+/**
+ * Jeton de réactivation de compte : `base64url(userId:horodatage).signature`,
+ * signé HMAC avec BETTER_AUTH_SECRET. L'ancien jeton (base64 de
+ * `userId:horodatage`, sans signature) se fabriquait à partir de l'id et
+ * de l'email d'un compte.
+ */
+export function generateReactivationToken(userId, now = Date.now()) {
+  const payload = Buffer.from(`${userId}:${now}`).toString("base64url");
+  return `${payload}.${reactivationSignature(payload)}`;
+}
+
+/**
+ * Vérifie un jeton de réactivation (signature en temps constant, âge
+ * maximal 24 h).
+ *
+ * @returns {{ userId: string, timestamp: number } | null}
+ */
+export function verifyReactivationToken(token, now = Date.now()) {
+  if (typeof token !== "string") return null;
+  const [payload, signature, extra] = token.split(".");
+  if (!payload || !signature || extra !== undefined) return null;
+
+  let expected;
+  try {
+    expected = reactivationSignature(payload);
+  } catch {
+    return null;
+  }
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+
+  const [userId, rawTimestamp] = Buffer.from(payload, "base64url")
+    .toString("utf-8")
+    .split(":");
+  const timestamp = Number(rawTimestamp);
+  if (!userId || !Number.isFinite(timestamp)) return null;
+  if (timestamp > now || now - timestamp > REACTIVATION_TOKEN_MAX_AGE_MS) {
+    return null;
+  }
+  return { userId, timestamp };
 }
 
 // Fonction pour envoyer un email de réactivation

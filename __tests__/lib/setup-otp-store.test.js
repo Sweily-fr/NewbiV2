@@ -100,3 +100,36 @@ describe("setupOtpStore.verify", () => {
     expect(await setupOtpStore.verify("u", 123456)).toBe(true);
   });
 });
+
+describe("setupOtpStore.verify : limite d'essais", () => {
+  it("compte un mauvais code", async () => {
+    collection.findOne.mockResolvedValue({
+      userId: "u",
+      otp: "123456",
+      attempts: 1,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    expect(await setupOtpStore.verify("u", "000000")).toBe(false);
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      { userId: "u" },
+      { $inc: { attempts: 1 } },
+    );
+  });
+
+  it("invalide le code après 5 essais erronés", async () => {
+    collection.findOne.mockResolvedValue({
+      userId: "u",
+      otp: "123456",
+      attempts: 4,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    expect(await setupOtpStore.verify("u", "000000")).toBe(false);
+    expect(collection.deleteOne).toHaveBeenCalledWith({ userId: "u" });
+  });
+
+  it("réinitialise le compteur à chaque nouveau code", async () => {
+    collection.updateOne.mockResolvedValue({});
+    await setupOtpStore.set("u", "123456", 1000);
+    expect(collection.updateOne.mock.calls[0][1].$set.attempts).toBe(0);
+  });
+});

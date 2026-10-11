@@ -6,11 +6,27 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, PDFName, PDFString, PDFArray } from "pdf-lib";
 
-import { withErrorHandler } from "@/src/lib/security";
+import {
+  apiError,
+  hasInternalSecret,
+  requireSession,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 async function handler(request) {
+  // Utilisateur connecté (navigateur) ou appel interne (facturx-pdf) :
+  // auparavant ouverte à tous, la route chargeait et réécrivait n'importe
+  // quel PDF pour n'importe qui.
+  if (!hasInternalSecret(request)) {
+    await requireSession(request);
+  }
+
   const { pdfBase64, xmlString, invoiceNumber, documentType } =
     await request.json();
+
+  if (typeof pdfBase64 !== "string" || typeof xmlString !== "string") {
+    return apiError(400, "pdfBase64 et xmlString requis");
+  }
 
   console.log("🔧 Génération Factur-X conforme...");
 

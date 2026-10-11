@@ -1,8 +1,26 @@
 import { NextResponse } from "next/server";
-import { requireSession, withErrorHandler } from "@/src/lib/security";
+import {
+  requireSession,
+  requireOrgMembership,
+  apiError,
+  withErrorHandler,
+} from "@/src/lib/security";
 
+/**
+ * GET /api/calendar-connect/google/authorize
+ *
+ * Proxy vers l'API : URL d'autorisation OAuth Google. L'espace actif
+ * (en-tête x-workspace-id) est transmis : l'API y exige le droit « Modifier »
+ * du calendrier.
+ */
 async function handler(request) {
-  const { cookieHeader } = await requireSession(request);
+  const { user, cookieHeader } = await requireSession(request);
+
+  const workspaceId = request.headers.get("x-workspace-id");
+  if (!workspaceId) {
+    return apiError(400, "Header x-workspace-id manquant");
+  }
+  await requireOrgMembership(user.id, workspaceId);
 
   const backendUrl = (
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
@@ -14,6 +32,7 @@ async function handler(request) {
       headers: {
         Cookie: cookieHeader,
         "Content-Type": "application/json",
+        "x-workspace-id": workspaceId,
       },
     },
   );

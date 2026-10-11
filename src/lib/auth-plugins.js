@@ -429,6 +429,16 @@ export const stripePlugin = stripe({
                 `✅ [STRIPE WEBHOOK] Organisation traitée via shared utility: ${referenceId}`,
               );
 
+              // Les métadonnées du checkout portent l'ancien espace actif :
+              // on y inscrit le nouvel espace pour les synchros suivantes.
+              const { stampSubscriptionOrganization } =
+                await import("./org-creation.js");
+              await stampSubscriptionOrganization(
+                stripe,
+                subscription,
+                referenceId,
+              );
+
               // Ne pas continuer vers la création d'abonnement normale
               break;
             } else {

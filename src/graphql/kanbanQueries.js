@@ -1389,23 +1389,26 @@ export const GET_PUBLIC_SHARES = gql`
   }
 `;
 
-// Query pour accéder au tableau public (visiteurs externes)
+// Query pour accéder au tableau public (visiteurs externes). Identité :
+// session visiteur (sessionToken, remise par authenticateInvitedUser une
+// fois l'adresse prouvée par code) ou membre connecté de l'espace
 export const GET_PUBLIC_BOARD = gql`
   query GetPublicBoard(
     $token: String!
-    $email: String!
+    $sessionToken: String
     $password: String
     $accessToken: String
   ) {
     getPublicBoard(
       token: $token
-      email: $email
+      sessionToken: $sessionToken
       password: $password
       accessToken: $accessToken
     ) {
       success
       message
       requiresPassword
+      requiresVisitorSession
       accessToken
       board {
         id
@@ -1500,6 +1503,15 @@ export const GET_PUBLIC_BOARD = gql`
           canViewDueDates
           canViewAttachments
         }
+        # Fiche du visiteur courant uniquement
+        visitors {
+          id
+          email
+          firstName
+          lastName
+          name
+          image
+        }
       }
       visitorEmail
       isBanned
@@ -1511,7 +1523,7 @@ export const GET_PUBLIC_BOARD = gql`
 export const REQUEST_ACCESS = gql`
   mutation RequestAccess(
     $token: String!
-    $email: String!
+    $sessionToken: String
     $name: String
     $message: String
     $password: String
@@ -1519,7 +1531,7 @@ export const REQUEST_ACCESS = gql`
   ) {
     requestAccess(
       token: $token
-      email: $email
+      sessionToken: $sessionToken
       name: $name
       message: $message
       password: $password
@@ -1529,6 +1541,7 @@ export const REQUEST_ACCESS = gql`
       message
       alreadyRequested
       requiresPassword
+      requiresVisitorSession
     }
   }
 `;
@@ -1791,7 +1804,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
     $token: String!
     $taskId: ID!
     $content: String
-    $visitorEmail: String!
+    $sessionToken: String
     $images: [CommentImageInput!]
     $accessToken: String
   ) {
@@ -1799,12 +1812,13 @@ export const ADD_EXTERNAL_COMMENT = gql`
       token: $token
       taskId: $taskId
       content: $content
-      visitorEmail: $visitorEmail
+      sessionToken: $sessionToken
       images: $images
       accessToken: $accessToken
     ) {
       success
       message
+      requiresVisitorSession
       task {
         id
         title
@@ -1880,18 +1894,19 @@ export const ADD_EXTERNAL_COMMENT = gql`
 export const UPDATE_VISITOR_PROFILE = gql`
   mutation UpdateVisitorProfile(
     $token: String!
-    $email: String!
+    $sessionToken: String
     $input: UpdateVisitorProfileInput!
     $accessToken: String
   ) {
     updateVisitorProfile(
       token: $token
-      email: $email
+      sessionToken: $sessionToken
       input: $input
       accessToken: $accessToken
     ) {
       success
       message
+      requiresVisitorSession
       visitor {
         id
         email
@@ -1908,19 +1923,20 @@ export const UPDATE_VISITOR_PROFILE = gql`
 export const UPLOAD_VISITOR_IMAGE = gql`
   mutation UploadVisitorImage(
     $token: String!
-    $email: String!
+    $sessionToken: String
     $file: Upload!
     $accessToken: String
   ) {
     uploadVisitorImage(
       token: $token
-      email: $email
+      sessionToken: $sessionToken
       file: $file
       accessToken: $accessToken
     ) {
       success
       message
       imageUrl
+      requiresVisitorSession
     }
   }
 `;
@@ -1931,18 +1947,19 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
     $token: String!
     $taskId: ID!
     $file: Upload!
-    $visitorEmail: String!
+    $sessionToken: String
     $accessToken: String
   ) {
     uploadExternalCommentImage(
       token: $token
       taskId: $taskId
       file: $file
-      visitorEmail: $visitorEmail
+      sessionToken: $sessionToken
       accessToken: $accessToken
     ) {
       success
       message
+      requiresVisitorSession
       image {
         id
         key
@@ -1960,13 +1977,13 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
     $token: String!
     $boardId: ID!
     $accessToken: String
-    $email: String
+    $sessionToken: String
   ) {
     publicTaskUpdated(
       token: $token
       boardId: $boardId
       accessToken: $accessToken
-      email: $email
+      sessionToken: $sessionToken
     ) {
       type
       task {
@@ -2076,7 +2093,18 @@ export const CHECK_INVITED_EMAIL = gql`
   }
 `;
 
-// Mutation pour authentifier ou créer un utilisateur invité
+// Mutation pour envoyer un code de vérification à l'adresse du visiteur
+export const REQUEST_INVITED_EMAIL_CODE = gql`
+  mutation RequestInvitedEmailCode($token: String!, $email: String!) {
+    requestInvitedEmailCode(token: $token, email: $email) {
+      success
+      message
+    }
+  }
+`;
+
+// Mutation pour authentifier ou créer un utilisateur invité : adresse
+// prouvée par emailCode, ou mot de passe d'un compte déjà vérifié
 export const AUTHENTICATE_INVITED_USER = gql`
   mutation AuthenticateInvitedUser($input: AuthInvitedInput!) {
     authenticateInvitedUser(input: $input) {
@@ -2110,6 +2138,7 @@ export const AUTHENTICATE_INVITED_USER = gql`
       }
       isBanned
       banReason
+      requiresEmailCode
     }
   }
 `;

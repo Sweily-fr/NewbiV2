@@ -1,36 +1,62 @@
 import { NextResponse } from "next/server";
-import { withErrorHandler } from "@/src/lib/security";
+import Stripe from "stripe";
+import {
+  apiError,
+  getOrgStripeCustomerIds,
+  requireOrgMembership,
+  requireSession,
+  withErrorHandler,
+} from "@/src/lib/security";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+/**
+ * POST /api/auth/subscription/sync
+ *
+ * Diagnostic : compte les abonnements Stripe d'un espace (les abonnements
+ * eux-mêmes sont créés par les webhooks Stripe, Better Auth n'exposant pas
+ * de création directe).
+ *
+ * Auparavant sans authentification, la route listait les 100 derniers
+ * abonnements de TOUTE la plateforme Stripe pour n'importe quel appelant.
+ * Elle exige maintenant la session, l'appartenance à l'espace `referenceId`,
+ * et ne regarde que les clients Stripe de cet espace.
+ *
+ * Body : { referenceId } (id de l'espace)
+ */
 async function handler(request) {
-  const { referenceId } = await request.json();
+  const { user } = await requireSession(request);
 
-  if (!referenceId) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return apiError(400, "Body JSON invalide");
+  }
+  const { referenceId } = body || {};
+
+  if (!referenceId || typeof referenceId !== "string") {
     return NextResponse.json({ error: "referenceId requis" }, { status: 400 });
   }
 
-  // Initialiser Stripe
-  const Stripe = (await import("stripe")).default;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  await requireOrgMembership(user.id, referenceId);
 
-  // Récupérer tous les abonnements Stripe
-  const stripeSubscriptions = await stripe.subscriptions.list({
-    limit: 100,
-    expand: ["data.customer"],
-  });
-
-  // Utiliser directement Better Auth pour créer les abonnements
+  // Seuls les clients Stripe de cet espace, et parmi leurs abonnements ceux
+  // rattachés à cet espace (un même client peut payer plusieurs espaces).
+  const customerIds = await getOrgStripeCustomerIds(referenceId);
   let syncCount = 0;
 
-  for (const subscription of stripeSubscriptions.data) {
-    try {
-      // IMPORTANT: Better Auth ne fournit pas auth.api.createSubscription()
-      // Les abonnements sont créés automatiquement via les webhooks Stripe
-      // Cette route sert uniquement à diagnostiquer pourquoi les webhooks ne fonctionnent pas
-
-      syncCount++; // Compter pour le diagnostic
-    } catch (error) {
-      console.error(`[SYNC] Erreur pour abonnement ${subscription.id}:`, error);
-    }
+  for (const customer of customerIds) {
+    const { data } = await stripe.subscriptions.list({
+      customer,
+      status: "all",
+      limit: 100,
+    });
+    syncCount += data.filter(
+      (subscription) =>
+        subscription.metadata?.referenceId === referenceId ||
+        subscription.metadata?.organizationId === referenceId,
+    ).length;
   }
 
   return NextResponse.json({

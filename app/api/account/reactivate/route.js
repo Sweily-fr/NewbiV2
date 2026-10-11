@@ -1,44 +1,55 @@
-import { auth } from "@/src/lib/auth";
 import { NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
+import { verifyReactivationToken } from "@/src/lib/auth-utils";
+import { createIpRateLimiter } from "@/src/lib/security/ip-rate-limit";
 
+const isRateLimited = createIpRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+});
+
+/**
+ * POST /api/account/reactivate
+ *
+ * Réactive un compte désactivé depuis le lien envoyé par email. Le jeton
+ * est signé (HMAC) et vaut 24 h : l'ancien jeton, simple base64 de
+ * `userId:horodatage`, se fabriquait par quiconque connaissait l'id et
+ * l'email du compte.
+ *
+ * Body : { email, token }
+ */
 export async function POST(request) {
+  if (isRateLimited(request)) {
+    return NextResponse.json(
+      { error: "Trop de tentatives. Réessayez dans quelques minutes." },
+      { status: 429 },
+    );
+  }
+
   try {
     const { email, token } = await request.json();
 
-    if (!email || !token) {
+    if (!email || !token || typeof email !== "string") {
       return NextResponse.json(
         { error: "Email et token requis" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Décoder le token
-    let userId, timestamp;
-    try {
-      const decoded = Buffer.from(token, "base64").toString("utf-8");
-      [userId, timestamp] = decoded.split(":");
-    } catch (error) {
-      return NextResponse.json({ error: "Token invalide" }, { status: 400 });
+    const verified = verifyReactivationToken(token);
+    if (!verified || !ObjectId.isValid(verified.userId)) {
+      return NextResponse.json(
+        { error: "Lien invalide ou expiré" },
+        { status: 400 },
+      );
     }
 
-    // Vérifier que le token n'est pas expiré (24 heures)
-    const tokenAge = Date.now() - parseInt(timestamp);
-    const maxAge = 24 * 60 * 60 * 1000; // 24 heures en millisecondes
-
-    if (tokenAge > maxAge) {
-      return NextResponse.json({ error: "Token expiré" }, { status: 400 });
-    }
-
-    // Trouver l'utilisateur via MongoDB directement
     const { mongoDb } = await import("@/src/lib/mongodb");
     const usersCollection = mongoDb.collection("user");
+    const userObjectId = new ObjectId(verified.userId);
 
-    // D'abord chercher l'utilisateur par email seulement
-    const userByEmail = await usersCollection.findOne({ email: email });
-
-    // Puis chercher avec les critères complets
     const user = await usersCollection.findOne({
-      _id: new (await import("mongodb")).ObjectId(userId),
+      _id: userObjectId,
       email: email,
       isActive: false, // Vérifier que le compte est bien désactivé
     });
@@ -46,19 +57,18 @@ export async function POST(request) {
     if (!user) {
       return NextResponse.json(
         { error: "Utilisateur non trouvé ou compte déjà actif" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    // Réactiver le compte via MongoDB
     await usersCollection.updateOne(
-      { _id: new (await import("mongodb")).ObjectId(userId) },
+      { _id: userObjectId },
       {
         $set: {
           isActive: true,
           updatedAt: new Date(),
         },
-      }
+      },
     );
 
     return NextResponse.json({
@@ -69,7 +79,7 @@ export async function POST(request) {
     console.error("Erreur lors de la réactivation du compte:", error);
     return NextResponse.json(
       { error: "Erreur interne du serveur" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

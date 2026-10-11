@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { launchBrowser } from "@/src/lib/puppeteer";
+import {
+  launchBrowser,
+  setInternalSecretForSameOrigin,
+} from "@/src/lib/puppeteer";
 import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
 import { appendDocumentAnnex } from "@/src/lib/document-annex-server";
 import { mongoDb } from "@/src/lib/mongodb";
@@ -60,11 +63,9 @@ async function handler(request) {
 
     // Authenticate Puppeteer requests via internal secret (Principle 4)
     // The data route checks this header and skips session verification
-    if (process.env.INTERNAL_API_SECRET) {
-      await page.setExtraHTTPHeaders({
-        "x-internal-secret": process.env.INTERNAL_API_SECRET,
-      });
-    }
+    // Secret interne posé sur les seules requêtes vers le site (jamais vers
+    // un domaine tiers : GTM, logo ou image hébergés ailleurs)
+    await setInternalSecretForSameOrigin(page, baseUrl);
 
     await page.goto(generatorUrl, {
       waitUntil: "networkidle0",
