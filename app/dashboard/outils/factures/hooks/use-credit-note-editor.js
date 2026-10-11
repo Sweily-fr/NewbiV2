@@ -17,6 +17,7 @@ import { useUser } from "@/src/lib/auth/hooks";
 import { useCreditNoteNumber } from "./use-credit-note-number";
 import { formatLocalDate, toCalendarDate } from "@/src/utils/dateFormatter";
 import { mapOrganizationToCompanyInfo } from "@/src/utils/organizationCompanyInfo";
+import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
 
 // Vrai si le champ porte une valeur numérique, zéro compris. Une ligne à 0 €
 // (article offert repris de la facture) est un avoir valide.
@@ -140,6 +141,11 @@ export function useCreditNoteEditor({
     }
   }, [mode, numberLoading, nextCreditNoteNumber, setValue]);
 
+  // Frais de port et auto-liquidation de la facture d'origine : l'aperçu, le
+  // PDF et les totaux enregistrés par l'API reprennent le port dans l'avoir
+  const originalShipping = originalInvoice?.shipping;
+  const isReverseCharge = !!originalInvoice?.isReverseCharge;
+
   // Calculate totals
   const calculateTotals = useCallback(
     (items = [], discount = 0, discountType = "PERCENTAGE") => {
@@ -175,7 +181,8 @@ export function useCreditNoteEditor({
             }
           }
 
-          const vatAmount = itemTotal * (vatRate / 100);
+          // Auto-liquidation : pas de TVA (comme l'aperçu et l'API)
+          const vatAmount = isReverseCharge ? 0 : itemTotal * (vatRate / 100);
 
           return {
             totalHT: acc.totalHT + itemTotal,
@@ -207,19 +214,29 @@ export function useCreditNoteEditor({
           itemTotals.totalVAT * (finalTotalHT / itemTotals.totalHT);
       }
 
-      const finalTotalTTC = finalTotalHT + finalTotalVAT;
+      // Frais de port ajoutés après la remise globale, jamais remisés
+      const shippingHT = originalShipping?.billShipping
+        ? Math.abs(parseFloat(originalShipping.shippingAmountHT) || 0)
+        : 0;
+      const shippingVAT = isReverseCharge
+        ? 0
+        : shippingHT *
+          (shippingVatRateOf(originalShipping?.shippingVatRate) / 100);
+
+      const finalTotalTTC =
+        finalTotalHT + finalTotalVAT + shippingHT + shippingVAT;
 
       // Credit notes have negative amounts
       return {
-        totalHT: -itemTotals.totalHT,
-        totalVAT: -itemTotals.totalVAT,
-        finalTotalHT: -finalTotalHT,
-        finalTotalVAT: -finalTotalVAT,
+        totalHT: -(itemTotals.totalHT + shippingHT),
+        totalVAT: -(itemTotals.totalVAT + shippingVAT),
+        finalTotalHT: -(finalTotalHT + shippingHT),
+        finalTotalVAT: -(finalTotalVAT + shippingVAT),
         finalTotalTTC: -finalTotalTTC,
         discountAmount: -discountAmount,
       };
     },
-    [],
+    [originalShipping, isReverseCharge],
   );
 
   // Save function
