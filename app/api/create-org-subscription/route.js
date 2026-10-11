@@ -2,10 +2,85 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import Stripe from "stripe";
 import { createOrgSubscriptionSchema } from "@/src/lib/schemas/create-org-subscription";
-import { apiError, withErrorHandler } from "@/src/lib/security";
+import {
+  apiError,
+  assertModified,
+  toObjectId,
+  withErrorHandler,
+} from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+// Client Stripe pas encore enregistré (le champ vaut "" par défaut)
+const NO_STRIPE_CUSTOMER = { $in: [null, ""] };
+
+/**
+ * Client Stripe de l'utilisateur : celui de la session, sinon celui
+ * enregistré en base, sinon un nouveau, enregistré sur le document `user`.
+ *
+ * Le document Better Auth se trouve par `_id` (ObjectId) : l'ancien filtre
+ * `{ id }` ne trouvait jamais l'utilisateur, le client n'était jamais
+ * enregistré et chaque passage au paiement en créait un nouveau. La base
+ * est relue avant toute création : la session (cache d'une minute) ne
+ * porte pas encore le client enregistré à l'appel précédent. En cas de
+ * course entre deux appels, le premier client enregistré l'emporte.
+ *
+ * @param {{ id: string, email: string, name?: string, stripeCustomerId?: string }} user
+ * @returns {Promise<string>}
+ */
+async function getOrCreateStripeCustomer(user) {
+  if (user.stripeCustomerId) {
+    console.log(
+      `✅ [CREATE-SUB] Customer Stripe existant: ${user.stripeCustomerId}`,
+    );
+    return user.stripeCustomerId;
+  }
+
+  const { mongoDb } = await import("@/src/lib/mongodb");
+  const users = mongoDb.collection("user");
+  const userObjectId = toObjectId(user.id);
+
+  const stored = await users.findOne(
+    { _id: userObjectId },
+    { projection: { stripeCustomerId: 1 } },
+  );
+  if (stored?.stripeCustomerId) {
+    console.log(
+      `✅ [CREATE-SUB] Customer Stripe enregistré: ${stored.stripeCustomerId}`,
+    );
+    return stored.stripeCustomerId;
+  }
+
+  const customer = await stripe.customers.create({
+    email: user.email,
+    name: user.name,
+    metadata: {
+      userId: user.id,
+    },
+  });
+  console.log(`✅ [CREATE-SUB] Customer Stripe créé: ${customer.id}`);
+
+  const result = await users.updateOne(
+    { _id: userObjectId, stripeCustomerId: NO_STRIPE_CUSTOMER },
+    { $set: { stripeCustomerId: customer.id } },
+  );
+  if (result.matchedCount === 0) {
+    // Un appel concurrent a enregistré son client entre-temps : on le garde
+    const winner = await users.findOne(
+      { _id: userObjectId },
+      { projection: { stripeCustomerId: 1 } },
+    );
+    if (winner?.stripeCustomerId) {
+      console.warn(
+        `⚠️ [CREATE-SUB] Client ${customer.id} inutilisé, ${winner.stripeCustomerId} déjà enregistré pour ${user.id}`,
+      );
+      return winner.stripeCustomerId;
+    }
+    assertModified(result, `Enregistrement du client Stripe de ${user.id}`);
+  }
+  return customer.id;
+}
 
 async function handler(request) {
   // 1. Auth check first (Principle 1)
@@ -151,30 +226,7 @@ async function handler(request) {
     );
 
     // 2. Récupérer ou créer le customer Stripe
-    let customerId = session.user.stripeCustomerId;
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: session.user.email,
-        name: session.user.name,
-        metadata: {
-          userId: session.user.id,
-        },
-      });
-      customerId = customer.id;
-      console.log(`✅ [CREATE-SUB] Customer Stripe créé: ${customerId}`);
-
-      // Mettre à jour l'utilisateur avec le customerId
-      const { mongoDb } = await import("@/src/lib/mongodb");
-      await mongoDb
-        .collection("user")
-        .updateOne(
-          { id: session.user.id },
-          { $set: { stripeCustomerId: customerId } },
-        );
-    } else {
-      console.log(`✅ [CREATE-SUB] Customer Stripe existant: ${customerId}`);
-    }
+    const customerId = await getOrCreateStripeCustomer(session.user);
 
     // 3. Déterminer le Price ID selon le plan et la période (mensuel/annuel)
     const priceIds = {

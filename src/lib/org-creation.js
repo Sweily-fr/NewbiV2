@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { toObjectId } from "@/src/lib/security/to-object-id";
+import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 
 const DEFAULT_APP_TRIAL_DAYS = 30;
 
@@ -14,7 +15,13 @@ const DEFAULT_APP_TRIAL_DAYS = 30;
  * qualification.
  *
  * Decision #16 : seule la PREMIÈRE organisation de l'utilisateur reçoit un
- * essai. Les organisations créées ensuite n'en re-accordent pas.
+ * essai. Les organisations créées ensuite n'en re-accordent pas : l'essai
+ * est refusé si l'une QUELCONQUE des autres organisations de l'utilisateur
+ * l'a déjà consommé (le contrôle ne regardait que la première adhésion
+ * trouvée, une deuxième ou troisième organisation passait au travers).
+ *
+ * L'essai géré par l'application n'existe que sous ENABLE_APP_TRIAL : sans
+ * le flag, l'essai reste celui de Stripe et rien n'est accordé ici.
  *
  * @returns {Promise<boolean>} true si l'essai a été accordé
  */
@@ -24,6 +31,13 @@ export async function grantAppTrialIfEligible({
   organizationId,
   appTrialDays = DEFAULT_APP_TRIAL_DAYS,
 }) {
+  if (!isAppTrialEnabled()) {
+    console.log(
+      `⏭️ [ORG-CREATION] ENABLE_APP_TRIAL désactivé, aucun essai app accordé`,
+    );
+    return false;
+  }
+
   const orgObjectId =
     organizationId instanceof ObjectId
       ? organizationId
@@ -44,15 +58,32 @@ export async function grantAppTrialIfEligible({
 
   let anotherTrialUsedOrg = null;
   try {
-    const otherMember = await mongoDb.collection("member").findOne({
-      userId: new ObjectId(userId),
-      organizationId: { $ne: orgObjectId },
-    });
-    if (otherMember) {
+    // Toutes les autres adhésions (userId enregistré en ObjectId, ou en
+    // chaîne sur d'anciens documents)
+    const otherMemberships = await mongoDb
+      .collection("member")
+      .find(
+        {
+          userId: { $in: [new ObjectId(userId), String(userId)] },
+          organizationId: { $ne: orgObjectId },
+        },
+        { projection: { organizationId: 1 } },
+      )
+      .toArray();
+    const otherOrgIds = [];
+    for (const membership of otherMemberships) {
+      const raw = membership.organizationId;
+      if (raw instanceof ObjectId) {
+        otherOrgIds.push(raw);
+      } else if (raw && ObjectId.isValid(String(raw))) {
+        otherOrgIds.push(new ObjectId(String(raw)));
+      }
+    }
+    if (otherOrgIds.length > 0) {
       anotherTrialUsedOrg = await mongoDb
         .collection("organization")
         .findOne(
-          { _id: otherMember.organizationId, hasUsedTrial: true },
+          { _id: { $in: otherOrgIds }, hasUsedTrial: true },
           { projection: { _id: 1 } },
         );
     }

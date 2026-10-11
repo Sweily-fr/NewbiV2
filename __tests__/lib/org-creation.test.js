@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { ObjectId } from "mongodb";
 
 // `org-creation.js` dynamically imports `./auth-utils.js` from inside the
@@ -810,6 +810,14 @@ describe("createOrganizationWithSubscription — pending data cleanup", () => {
 
 // Lot 3 — app-managed trial branch
 describe("createOrganizationWithSubscription — appTrialDays branch", () => {
+  // L'essai géré par l'application n'existe que sous ENABLE_APP_TRIAL
+  beforeEach(() => {
+    vi.stubEnv("ENABLE_APP_TRIAL", "true");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("grants a 30-day app trial when appTrialDays is set and no subscriptionInfo", async () => {
     const newOrgId = new ObjectId();
     const orgUpdates = [];
@@ -853,23 +861,24 @@ describe("createOrganizationWithSubscription — appTrialDays branch", () => {
     const otherOrgId = new ObjectId();
     const orgUpdates = [];
 
-    // First call (.findOne in step 1) returns null = no existing membership match,
-    // so we create a new org. Second call (.findOne in step 4b decision-16
-    // lookup) returns the OTHER user's org with hasUsedTrial=true.
-    const memberFindOne = vi
-      .fn()
-      .mockResolvedValueOnce(null) // step 1: no existing member
-      .mockResolvedValueOnce({
-        userId: new ObjectId(userId),
-        organizationId: otherOrgId,
-      }); // step 4b: yes, user has another org
+    // Step 1 (.findOne) returns null = no existing membership match, so we
+    // create a new org. Step 4b (decision-16 lookup, .find on every other
+    // membership) returns the user's OTHER org, which has hasUsedTrial=true.
+    const memberFindOne = vi.fn().mockResolvedValue(null);
+    const memberFind = vi.fn(() => ({
+      toArray: vi
+        .fn()
+        .mockResolvedValue([
+          { userId: new ObjectId(userId), organizationId: otherOrgId },
+        ]),
+    }));
 
     const orgFindOne = vi
       .fn()
       .mockResolvedValueOnce({ _id: otherOrgId, hasUsedTrial: true });
 
     const collections = {
-      member: buildCollection({ findOne: memberFindOne }),
+      member: buildCollection({ findOne: memberFindOne, find: memberFind }),
       organization: buildCollection({
         findOne: orgFindOne,
         insertOne: vi.fn().mockResolvedValue({ insertedId: newOrgId }),

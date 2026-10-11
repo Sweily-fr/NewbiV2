@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import {
-  launchBrowser,
-  setInternalSecretForSameOrigin,
-} from "@/src/lib/puppeteer";
+import { launchBrowser, securePdfPage } from "@/src/lib/puppeteer";
 import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
 import { appendDocumentAnnex } from "@/src/lib/document-annex-server";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   hasInternalSecret,
   toObjectId,
   apiError,
@@ -19,7 +16,7 @@ import {
  * POST /api/invoices/generate-pdf
  *
  * Generate a PDF for an invoice via Puppeteer.
- * Auth check (session + org membership) is done HERE, before launching the browser.
+ * Auth check (session + droit « Voir » du module) is done HERE, before launching the browser.
  * Puppeteer then calls /api/invoices/data/[id] with X-Internal-Secret to fetch data.
  */
 async function handler(request) {
@@ -40,7 +37,7 @@ async function handler(request) {
     if (!invoice) {
       return apiError(404, "Facture introuvable");
     }
-    await requireOrgMembership(user.id, invoice.workspaceId);
+    await requireOrgAction(user.id, invoice.workspaceId, "invoices", "view");
   }
 
   // User is authorized — launch Puppeteer to generate the PDF
@@ -64,8 +61,10 @@ async function handler(request) {
     // Authenticate Puppeteer requests via internal secret (Principle 4)
     // The data route checks this header and skips session verification
     // Secret interne posé sur les seules requêtes vers le site (jamais vers
-    // un domaine tiers : GTM, logo ou image hébergés ailleurs)
-    await setInternalSecretForSameOrigin(page, baseUrl);
+    // un domaine tiers) ; hors du site, seules les images publiques R2
+    // passent : pas de requête du serveur vers une URL choisie par
+    // l'utilisateur (logo, image d'article, données d'aperçu)
+    await securePdfPage(page, baseUrl);
 
     await page.goto(generatorUrl, {
       waitUntil: "networkidle0",
