@@ -91,7 +91,8 @@ async function handler(request) {
   // 4. Embarquement XML → PDF/A-3 conforme
   const facturxResponse = await fetch(`${baseUrl}/api/generate-facturx`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    // generate-facturx exige une session ou le secret interne
+    headers: internalHeaders,
     body: JSON.stringify({
       pdfBase64,
       xmlString,

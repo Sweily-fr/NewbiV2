@@ -1,109 +1,147 @@
 import { NextResponse } from "next/server";
-import { withErrorHandler } from "@/src/lib/security";
+import { apiError, requireSession, withErrorHandler } from "@/src/lib/security";
+import { detectRasterImageType } from "@/src/lib/security/raster-image";
 
 /**
- * API Route pour uploader des images sur Cloudflare R2
- * Utilisé pour les logos sociaux générés dynamiquement
- * Utilise la même infrastructure GraphQL que les images de signature
+ * POST /api/upload-image
+ *
+ * Upload d'un logo de réseau social (signatures de mail) via la mutation
+ * GraphQL `uploadSocialLogo` de l'API.
+ *
+ * Auparavant sans authentification, sans limite de taille ni liste de types,
+ * et envoyée en dur vers http://localhost:4000. Désormais :
+ *   - session obligatoire ; l'API reçoit le cookie de session et l'espace
+ *     actif, elle authentifie l'utilisateur, revérifie le droit d'écriture
+ *     sur les signatures et range le fichier sous l'utilisateur (le chemin
+ *     ne vient jamais de la requête) ;
+ *   - 5 Mo maximum (même limite que l'API) ;
+ *   - PNG, JPEG, GIF ou WebP seulement (pas de SVG, qui peut porter du
+ *     script) ; le nom envoyé à l'API est reconstruit à partir du type ;
+ *   - type de logo et couleur validés comme côté API.
  */
+const MAX_SIZE = 5 * 1024 * 1024;
+const ALLOWED_TYPES = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+};
+const LOGO_TYPES = ["facebook", "linkedin", "twitter", "instagram"];
+const HEX_COLOR = /^#[0-9A-F]{6}$/i;
 
 async function handler(request) {
-  const formData = await request.formData();
-  const file = formData.get("file");
-  // const type = formData.get('type'); // Unused variable || 'social-logo';
+  const { session, cookieHeader } = await requireSession(request);
 
-  if (!file) {
-    return NextResponse.json(
-      { error: "Aucun fichier fourni" },
-      { status: 400 },
-    );
-  }
-
-  // Vérifier que c'est bien une image
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json(
-      { error: "Le fichier doit être une image" },
-      { status: 400 },
-    );
-  }
-
-  // Extraire logoType et color des métadonnées du fichier
-  const logoType = formData.get("logoType") || "facebook";
-  const color = formData.get("color") || "#1877F2";
-
+  let formData;
   try {
-    // Convertir le fichier en buffer pour l'upload
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    formData = await request.formData();
+  } catch {
+    return apiError(400, "Formulaire invalide");
+  }
+  const file = formData.get("file");
 
-    // Créer un FormData pour l'upload GraphQL
-    const uploadFormData = new FormData();
+  if (!file || typeof file === "string") {
+    return apiError(400, "Aucun fichier fourni");
+  }
 
-    const operations = JSON.stringify({
+  const extension = ALLOWED_TYPES[file.type];
+  if (!extension) {
+    return apiError(
+      400,
+      "Format d'image non supporté (PNG, JPEG, GIF ou WebP)",
+    );
+  }
+
+  if (!file.size || file.size > MAX_SIZE) {
+    return apiError(400, "L'image est trop volumineuse (5 Mo maximum)");
+  }
+
+  const logoType = String(formData.get("logoType") || "facebook");
+  const color = String(formData.get("color") || "#1877F2");
+  if (!LOGO_TYPES.includes(logoType)) {
+    return apiError(400, "Type de logo invalide");
+  }
+  if (!HEX_COLOR.test(color)) {
+    return apiError(400, "Couleur invalide (format #RRGGBB)");
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  // Taille réelle lue, au cas où `file.size` ne refléterait pas le contenu
+  if (buffer.length > MAX_SIZE) {
+    return apiError(400, "L'image est trop volumineuse (5 Mo maximum)");
+  }
+  // Contenu réel : la signature du fichier doit être celle du type annoncé
+  const detected = detectRasterImageType(buffer);
+  if (!detected || detected.mime !== file.type) {
+    return apiError(
+      400,
+      "Format d'image non supporté (PNG, JPEG, GIF ou WebP)",
+    );
+  }
+
+  const uploadFormData = new FormData();
+  uploadFormData.append(
+    "operations",
+    JSON.stringify({
       query: `
           mutation UploadSocialLogo($file: Upload!, $logoType: String!, $color: String!) {
             uploadSocialLogo(file: $file, logoType: $logoType, color: $color) {
               success
               url
+              key
+              contentType
               message
             }
           }
         `,
-      variables: {
-        file: null,
-        logoType,
-        color,
-      },
-    });
+      variables: { file: null, logoType, color },
+    }),
+  );
+  uploadFormData.append("map", JSON.stringify({ 0: ["variables.file"] }));
+  uploadFormData.append(
+    "0",
+    new Blob([buffer], { type: file.type }),
+    `${logoType}.${extension}`,
+  );
 
-    const map = JSON.stringify({
-      0: ["variables.file"],
-    });
+  const graphqlEndpoint =
+    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:4000/graphql";
+  const organizationId = session?.activeOrganizationId || "";
 
-    uploadFormData.append("operations", operations);
-    uploadFormData.append("map", map);
-    uploadFormData.append(
-      "0",
-      new Blob([buffer], { type: file.type }),
-      file.name,
-    );
-
-    // Faire l'appel direct au backend GraphQL
-    const response = await fetch("http://localhost:4000/graphql", {
+  try {
+    const response = await fetch(graphqlEndpoint, {
       method: "POST",
+      headers: {
+        Cookie: cookieHeader,
+        // Requis par graphql-upload (protection CSRF de l'API)
+        "apollo-require-preflight": "true",
+        ...(organizationId ? { "x-organization-id": organizationId } : {}),
+      },
       body: uploadFormData,
     });
 
     const result = await response.json();
+    const data = result?.data?.uploadSocialLogo;
 
-    if (!response.ok || !result.data) {
-      throw new Error(result.errors?.[0]?.message || "Erreur lors de l'upload");
-    }
-
-    const data = result.data;
-
-    if (!data.uploadSocialLogo.success) {
+    if (!response.ok || !data?.success) {
       throw new Error(
-        data.uploadSocialLogo.message || "Erreur lors de l'upload",
+        result?.errors?.[0]?.message ||
+          data?.message ||
+          "Erreur lors de l'upload",
       );
     }
 
     return NextResponse.json({
       success: true,
-      url: data.uploadSocialLogo.url,
-      key: data.uploadSocialLogo.key,
-      filename: file.name,
-      size: file.size,
+      url: data.url,
+      key: data.key,
+      filename: `${logoType}.${extension}`,
+      size: buffer.length,
       type: file.type,
-      contentType: data.uploadSocialLogo.contentType,
+      contentType: data.contentType,
     });
   } catch (uploadError) {
-    console.error("Erreur upload Cloudflare:", uploadError);
-
-    return NextResponse.json(
-      { error: "Erreur lors de l'upload sur Cloudflare" },
-      { status: 500 },
-    );
+    return apiError(500, "Erreur lors de l'upload sur Cloudflare", uploadError);
   }
 }
 

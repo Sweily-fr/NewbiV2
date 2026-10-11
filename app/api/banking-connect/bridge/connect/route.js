@@ -33,7 +33,8 @@ async function handler(request) {
   ).replace(/\/$/, "");
   let url = `${backendUrl}/banking-connect/bridge/connect`;
   if (providerId) {
-    url += `?providerId=${providerId}`;
+    // Encodé : un « & » glissé dans la valeur ajoutait d'autres paramètres
+    url += `?providerId=${encodeURIComponent(providerId)}`;
   }
 
   const response = await fetch(url, {

@@ -1,35 +1,35 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/src/lib/auth";
-import { withErrorHandler } from "@/src/lib/security";
+import { apiError, requireSession, withErrorHandler } from "@/src/lib/security";
 
+/**
+ * POST /api/cloudflare/cleanup-temp
+ *
+ * Supprime les images temporaires de signature de mail de l'utilisateur de
+ * la session (dossiers `temp-*`). Le `userId` du body n'est plus qu'un
+ * contrôle de cohérence : un autre utilisateur que celui de la session est
+ * refusé, et c'est toujours l'id de la session qui part à l'API.
+ *
+ * Body : { userId?, newSignatureId? }
+ */
 async function handler(request) {
-  // Vérifier l'authentification
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      { success: false, message: "Non authentifié" },
-      { status: 401 },
+  const { user, session, cookieHeader } = await requireSession(request);
+
+  let body = {};
+  try {
+    body = (await request.json()) || {};
+  } catch {
+    body = {};
+  }
+  const { userId, newSignatureId } = body;
+
+  if (userId && String(userId) !== String(user.id)) {
+    return apiError(
+      403,
+      "Vous ne pouvez nettoyer que vos propres fichiers",
+      `cleanup-temp : ${user.id} a demandé les fichiers de ${userId}`,
     );
   }
 
-  const { userId, newSignatureId } = await request.json();
-
-  if (!userId) {
-    return NextResponse.json(
-      { success: false, message: "userId requis" },
-      { status: 400 },
-    );
-  }
-
-  console.log(
-    "🗑️ Nettoyage des fichiers temporaires pour utilisateur:",
-    userId,
-  );
-  console.log("🆔 Nouveau signatureId:", newSignatureId);
-
-  // Appeler le service CloudflareService pour nettoyer les fichiers temporaires
   const graphqlEndpoint =
     process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:4000/graphql";
 
@@ -43,44 +43,39 @@ async function handler(request) {
       }
     `;
 
+  // L'API authentifie par le cookie de session (l'ancien en-tête
+  // « Bearer » portait un jeton indéfini) et revérifie le droit d'écriture
+  // sur les signatures de l'espace actif ainsi que l'identité.
+  const organizationId =
+    request.headers.get("x-organization-id") ||
+    session?.activeOrganizationId ||
+    "";
   const graphqlResponse = await fetch(graphqlEndpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${session.token}`,
+      Cookie: cookieHeader,
+      ...(organizationId ? { "x-organization-id": organizationId } : {}),
     },
     body: JSON.stringify({
       query: mutation,
       variables: {
-        userId: userId,
-        newSignatureId: newSignatureId,
+        userId: String(user.id),
+        newSignatureId: newSignatureId || null,
       },
     }),
   });
 
   if (!graphqlResponse.ok) {
     const errorText = await graphqlResponse.text();
-    console.error(
-      "❌ Erreur HTTP GraphQL cleanup:",
-      graphqlResponse.status,
-      errorText,
-    );
     throw new Error(
       `Erreur GraphQL cleanup: ${graphqlResponse.status} - ${errorText}`,
     );
   }
 
   const graphqlResult = await graphqlResponse.json();
-  console.log(
-    "📥 Réponse GraphQL cleanup:",
-    JSON.stringify(graphqlResult, null, 2),
-  );
 
   if (graphqlResult.errors) {
-    console.error(
-      "❌ Erreurs GraphQL cleanup:",
-      JSON.stringify(graphqlResult.errors, null, 2),
-    );
     throw new Error(
       graphqlResult.errors[0]?.message || "Erreur GraphQL cleanup",
     );
@@ -91,8 +86,6 @@ async function handler(request) {
   if (!cleanupResult) {
     throw new Error("Aucun résultat de nettoyage retourné par GraphQL");
   }
-
-  console.log("✅ Nettoyage terminé:", cleanupResult);
 
   return NextResponse.json({
     success: true,

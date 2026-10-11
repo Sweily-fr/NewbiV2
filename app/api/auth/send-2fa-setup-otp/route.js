@@ -1,3 +1,4 @@
+import { randomInt } from "crypto";
 import { auth } from "@/src/lib/auth";
 import { send2FAEmail } from "@/src/lib/auth-utils";
 import { headers } from "next/headers";
@@ -14,8 +15,8 @@ async function handler() {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  // Générer un code OTP à 6 chiffres
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  // Code OTP à 6 chiffres, tiré par le générateur cryptographique
+  const otp = randomInt(100000, 1000000).toString();
 
   // Stocker le code en base (expire dans 5 min)
   await setupOtpStore.set(session.user.id, otp, 5 * 60 * 1000);

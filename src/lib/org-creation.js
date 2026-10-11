@@ -91,6 +91,187 @@ export async function grantAppTrialIfEligible({
 }
 
 /**
+ * Inscrit l'espace d'un abonnement dans ses métadonnées Stripe
+ * (`referenceId` et `organizationId`).
+ *
+ * Au checkout d'un NOUVEL espace, l'espace n'existe pas encore : les
+ * métadonnées portent l'ancien espace actif dans `organizationId`. Une fois
+ * l'espace créé (webhook ou verify-checkout-session), on y inscrit le bon
+ * espace pour que les synchronisations suivantes (cf.
+ * /api/organizations/[id]/sync-subscription) et le webhook de résiliation
+ * reconnaissent l'abonnement. Non bloquant.
+ *
+ * @param {import("stripe").Stripe} stripe
+ * @param {{ id: string, metadata?: Object }} subscription
+ * @param {string|ObjectId} organizationId
+ * @returns {Promise<boolean>} true si les métadonnées ont été mises à jour
+ */
+export async function stampSubscriptionOrganization(
+  stripe,
+  subscription,
+  organizationId,
+) {
+  const orgId = String(organizationId || "");
+  const meta = subscription?.metadata || {};
+  if (!subscription?.id || !orgId) return false;
+  if (meta.referenceId === orgId && meta.organizationId === orgId) {
+    return false;
+  }
+  try {
+    await stripe.subscriptions.update(subscription.id, {
+      metadata: { referenceId: orgId, organizationId: orgId },
+    });
+    return true;
+  } catch (error) {
+    console.warn(
+      `⚠️ [ORG-CREATION] Métadonnées Stripe non mises à jour pour ${subscription.id}:`,
+      error.message,
+    );
+    return false;
+  }
+}
+
+/**
+ * Rattache un abonnement Stripe payé à un espace : document `subscription`
+ * (s'il n'existe pas encore) et statut d'essai de l'espace.
+ *
+ * N'ajoute aucun membre et ne touche pas à l'identité de l'espace :
+ * l'appelant a déjà vérifié que l'utilisateur pouvait abonner cet espace.
+ *
+ * @returns {Promise<boolean>} true si le document `subscription` a été créé
+ */
+export async function attachSubscriptionToOrganization({
+  mongoDb,
+  organizationId,
+  subscriptionInfo,
+  sessionMetadata = {},
+}) {
+  const orgObjectId =
+    organizationId instanceof ObjectId
+      ? organizationId
+      : new ObjectId(String(organizationId));
+  let subscriptionCreated = false;
+
+  try {
+    const existingSub = await mongoDb
+      .collection("subscription")
+      .findOne({ referenceId: String(organizationId) });
+
+    if (!existingSub) {
+      const planName =
+        subscriptionInfo.metadata?.planName ||
+        sessionMetadata.planName ||
+        "freelance";
+
+      const subscriptionData = {
+        plan: planName,
+        referenceId: String(organizationId),
+        stripeCustomerId:
+          typeof subscriptionInfo.customer === "string"
+            ? subscriptionInfo.customer
+            : subscriptionInfo.customer?.id,
+        status: subscriptionInfo.status,
+        seats: 1,
+        cancelAtPeriodEnd: subscriptionInfo.cancel_at_period_end || false,
+        periodEnd: subscriptionInfo.current_period_end
+          ? new Date(subscriptionInfo.current_period_end * 1000)
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        periodStart: subscriptionInfo.current_period_start
+          ? new Date(subscriptionInfo.current_period_start * 1000)
+          : new Date(),
+        stripeSubscriptionId: subscriptionInfo.id,
+        currentPeriodEnd: subscriptionInfo.current_period_end
+          ? new Date(subscriptionInfo.current_period_end * 1000)
+          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        currentPeriodStart: subscriptionInfo.current_period_start
+          ? new Date(subscriptionInfo.current_period_start * 1000)
+          : new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await mongoDb.collection("subscription").insertOne(subscriptionData);
+      subscriptionCreated = true;
+      console.log(
+        `✅ [ORG-CREATION] Subscription created for org: ${organizationId} (plan: ${planName})`,
+      );
+    } else {
+      console.log(
+        `♻️ [ORG-CREATION] Subscription already exists for org: ${organizationId}`,
+      );
+    }
+  } catch (error) {
+    if (error.code === 11000) {
+      console.log(`♻️ [ORG-CREATION] Subscription duplicate key, skipping`);
+    } else {
+      console.error(`❌ [ORG-CREATION] Subscription creation error:`, error);
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // 5b. Handle trial status on organization
+  // ──────────────────────────────────────────────
+  try {
+    const orgUpdateData = {
+      onboardingCompleted: true,
+      updatedAt: new Date(),
+    };
+
+    if (subscriptionInfo.status === "trialing") {
+      const trialEnd = subscriptionInfo.trial_end
+        ? new Date(subscriptionInfo.trial_end * 1000)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      orgUpdateData.isTrialActive = true;
+      orgUpdateData.trialStartDate = new Date().toISOString();
+      orgUpdateData.trialEndDate = trialEnd.toISOString();
+      orgUpdateData.stripeTrialActive = true;
+    } else if (subscriptionInfo.status === "active") {
+      orgUpdateData.isTrialActive = false;
+      orgUpdateData.hasUsedTrial = true;
+      orgUpdateData.stripeTrialActive = false;
+    }
+
+    await mongoDb
+      .collection("organization")
+      .updateOne({ _id: orgObjectId }, { $set: orgUpdateData });
+  } catch (trialError) {
+    console.warn(
+      `⚠️ [ORG-CREATION] Trial status update error:`,
+      trialError.message,
+    );
+  }
+
+  return subscriptionCreated;
+}
+
+/**
+ * Espaces dont l'utilisateur est propriétaire (rôle `owner`, éventuellement
+ * combiné à d'autres rôles).
+ *
+ * @returns {Promise<ObjectId[]>}
+ */
+async function findOwnedOrganizationIds(mongoDb, userId) {
+  const memberships = await mongoDb
+    .collection("member")
+    .find({ userId: new ObjectId(userId) })
+    .toArray();
+  return memberships
+    .filter((m) =>
+      String(m.role || "")
+        .toLowerCase()
+        .split(",")
+        .map((r) => r.trim())
+        .includes("owner"),
+    )
+    .map((m) =>
+      m.organizationId instanceof ObjectId
+        ? m.organizationId
+        : new ObjectId(String(m.organizationId)),
+    );
+}
+
+/**
  * Shared idempotent utility for organization + member + (optional) subscription
  * + invitations creation. Called from:
  *   - The Stripe webhook (auth-plugins.js) — passes `subscriptionInfo`
@@ -157,87 +338,71 @@ export async function createOrganizationWithSubscription({
   // ──────────────────────────────────────────────
   let organizationObjectId = null;
 
-  // Check if user already has a membership
-  const existingMember = await mongoDb.collection("member").findOne({
-    userId: new ObjectId(userId),
-  });
+  // Jamais « la première appartenance trouvée » ni « un espace qui porte ce
+  // SIRET » : l'utilisateur pouvait être membre invité d'un autre espace
+  // (son identité était alors écrasée par celle du checkout), ou devenir
+  // propriétaire de l'espace d'un tiers en payant avec le même SIRET. Seul
+  // un espace dont il est DÉJÀ propriétaire et qui correspond au checkout
+  // est réutilisé ; sinon un nouvel espace est créé.
+  const ownedOrganizationIds = await findOwnedOrganizationIds(mongoDb, userId);
 
-  if (existingMember) {
-    // User already has an org. Check if it's for the SAME org (same SIRET) or a NEW one.
+  // a. Rejeu du même checkout (webhook rejoué, verify-checkout-session après
+  //    le webhook) : l'abonnement Stripe est déjà rattaché à un espace.
+  if (subscriptionInfo?.id && ownedOrganizationIds.length > 0) {
+    const linkedSub = await mongoDb
+      .collection("subscription")
+      .findOne(
+        { stripeSubscriptionId: subscriptionInfo.id },
+        { projection: { referenceId: 1 } },
+      );
+    const linkedOrgId = linkedSub?.referenceId
+      ? String(linkedSub.referenceId)
+      : null;
     organizationObjectId =
-      existingMember.organizationId instanceof ObjectId
-        ? existingMember.organizationId
-        : new ObjectId(existingMember.organizationId.toString());
-
-    if (siret) {
-      const existingOrg = await mongoDb
-        .collection("organization")
-        .findOne({ _id: organizationObjectId });
-
-      if (existingOrg && existingOrg.siret && existingOrg.siret !== siret) {
-        // Different SIRET = user is creating a SECOND org, don't reuse the old one
-        organizationObjectId = null;
-        console.log(
-          `🆕 [ORG-CREATION] User ${userId} creating new org (different SIRET: ${siret} vs ${existingOrg.siret})`,
-        );
-      }
-    }
-
-    if (organizationObjectId) {
-      // Update the existing org with new data
-      result.orgUpdated = true;
-      console.log(
-        `♻️ [ORG-CREATION] Existing org found for userId ${userId}: ${organizationObjectId}`,
-      );
-
-      await mongoDb.collection("organization").updateOne(
-        { _id: organizationObjectId },
-        {
-          $set: {
-            companyName,
-            siret: siret || "",
-            siren: siren || "",
-            employeeCount: employeeCount || "",
-            organizationType: orgType || "business",
-            legalForm: legalForm || "",
-            addressStreet: addressStreet || "",
-            addressCity: addressCity || "",
-            addressZipCode: addressZipCode || "",
-            addressCountry: addressCountry || "France",
-            activitySector: activitySector || "",
-            activityCategory: activityCategory || "",
-            ...(orgLogo && { logo: orgLogo }),
-            onboardingCompleted: true,
-            updatedAt: new Date(),
-          },
-        },
-      );
-    }
+      ownedOrganizationIds.find((id) => String(id) === linkedOrgId) || null;
   }
 
-  // If no org found via member, check by SIRET
-  if (!organizationObjectId && siret) {
-    const existingOrg = await mongoDb
+  // b. Même entreprise (SIRET du checkout) parmi les espaces dont il est
+  //    propriétaire : réabonnement, ou second passage du même checkout.
+  if (!organizationObjectId && siret && ownedOrganizationIds.length > 0) {
+    const sameCompany = await mongoDb
       .collection("organization")
-      .findOne({ siret });
-
-    if (existingOrg) {
-      organizationObjectId = existingOrg._id;
-      result.orgUpdated = true;
-      console.log(
-        `♻️ [ORG-CREATION] Existing org found by SIRET ${siret}, attaching user ${userId}`,
+      .findOne(
+        { _id: { $in: ownedOrganizationIds }, siret },
+        { projection: { _id: 1 } },
       );
+    organizationObjectId = sameCompany?._id || null;
+  }
 
-      await mongoDb.collection("organization").updateOne(
-        { _id: organizationObjectId },
-        {
-          $set: {
-            onboardingCompleted: true,
-            updatedAt: new Date(),
-          },
+  if (organizationObjectId) {
+    // Update the existing org with new data
+    result.orgUpdated = true;
+    console.log(
+      `♻️ [ORG-CREATION] Existing owned org reused for userId ${userId}: ${organizationObjectId}`,
+    );
+
+    await mongoDb.collection("organization").updateOne(
+      { _id: organizationObjectId },
+      {
+        $set: {
+          companyName,
+          siret: siret || "",
+          siren: siren || "",
+          employeeCount: employeeCount || "",
+          organizationType: orgType || "business",
+          legalForm: legalForm || "",
+          addressStreet: addressStreet || "",
+          addressCity: addressCity || "",
+          addressZipCode: addressZipCode || "",
+          addressCountry: addressCountry || "France",
+          activitySector: activitySector || "",
+          activityCategory: activityCategory || "",
+          ...(orgLogo && { logo: orgLogo }),
+          onboardingCompleted: true,
+          updatedAt: new Date(),
         },
-      );
-    }
+      },
+    );
   }
 
   // Create new org if none found
@@ -371,95 +536,12 @@ export async function createOrganizationWithSubscription({
   // 5. Create subscription (with duplicate key catch)
   // ──────────────────────────────────────────────
   if (subscriptionInfo) {
-    try {
-      const existingSub = await mongoDb
-        .collection("subscription")
-        .findOne({ referenceId: result.organizationId });
-
-      if (!existingSub) {
-        const planName =
-          subscriptionInfo.metadata?.planName ||
-          sessionMetadata.planName ||
-          "freelance";
-
-        const subscriptionData = {
-          plan: planName,
-          referenceId: result.organizationId,
-          stripeCustomerId:
-            typeof subscriptionInfo.customer === "string"
-              ? subscriptionInfo.customer
-              : subscriptionInfo.customer?.id,
-          status: subscriptionInfo.status,
-          seats: 1,
-          cancelAtPeriodEnd: subscriptionInfo.cancel_at_period_end || false,
-          periodEnd: subscriptionInfo.current_period_end
-            ? new Date(subscriptionInfo.current_period_end * 1000)
-            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          periodStart: subscriptionInfo.current_period_start
-            ? new Date(subscriptionInfo.current_period_start * 1000)
-            : new Date(),
-          stripeSubscriptionId: subscriptionInfo.id,
-          currentPeriodEnd: subscriptionInfo.current_period_end
-            ? new Date(subscriptionInfo.current_period_end * 1000)
-            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          currentPeriodStart: subscriptionInfo.current_period_start
-            ? new Date(subscriptionInfo.current_period_start * 1000)
-            : new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        await mongoDb.collection("subscription").insertOne(subscriptionData);
-        result.subscriptionCreated = true;
-        console.log(
-          `✅ [ORG-CREATION] Subscription created for org: ${result.organizationId} (plan: ${planName})`,
-        );
-      } else {
-        console.log(
-          `♻️ [ORG-CREATION] Subscription already exists for org: ${result.organizationId}`,
-        );
-      }
-    } catch (error) {
-      if (error.code === 11000) {
-        console.log(`♻️ [ORG-CREATION] Subscription duplicate key, skipping`);
-      } else {
-        console.error(`❌ [ORG-CREATION] Subscription creation error:`, error);
-      }
-    }
-
-    // ──────────────────────────────────────────────
-    // 5b. Handle trial status on organization
-    // ──────────────────────────────────────────────
-    try {
-      const orgUpdateData = {
-        onboardingCompleted: true,
-        updatedAt: new Date(),
-      };
-
-      if (subscriptionInfo.status === "trialing") {
-        const trialEnd = subscriptionInfo.trial_end
-          ? new Date(subscriptionInfo.trial_end * 1000)
-          : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-        orgUpdateData.isTrialActive = true;
-        orgUpdateData.trialStartDate = new Date().toISOString();
-        orgUpdateData.trialEndDate = trialEnd.toISOString();
-        orgUpdateData.stripeTrialActive = true;
-      } else if (subscriptionInfo.status === "active") {
-        orgUpdateData.isTrialActive = false;
-        orgUpdateData.hasUsedTrial = true;
-        orgUpdateData.stripeTrialActive = false;
-      }
-
-      await mongoDb
-        .collection("organization")
-        .updateOne({ _id: organizationObjectId }, { $set: orgUpdateData });
-    } catch (trialError) {
-      console.warn(
-        `⚠️ [ORG-CREATION] Trial status update error:`,
-        trialError.message,
-      );
-    }
+    result.subscriptionCreated = await attachSubscriptionToOrganization({
+      mongoDb,
+      organizationId: organizationObjectId,
+      subscriptionInfo,
+      sessionMetadata,
+    });
   }
 
   // ──────────────────────────────────────────────

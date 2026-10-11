@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
-import { requireSession, apiError, withErrorHandler } from "@/src/lib/security";
+import { requireBackofficeAdmin, withErrorHandler } from "@/src/lib/security";
 import { runAllChecks } from "@/src/lib/consistency-checks";
-
-// Whitelist of admin emails authorized to run consistency checks.
-// Kept simple and explicit — no DB lookup, no role system dependency.
-const ADMIN_EMAILS = ["sofiane.mtimet6@gmail.com"];
 
 /**
  * GET /api/admin/consistency-check
  *
  * Run all consistency checks and return a structured report.
- * Auth: session + admin email whitelist.
+ *
+ * Utilisé en production par l'équipe (rapport de cohérence de la base) :
+ * session + liste blanche du back-office (BACKOFFICE_ADMIN_USER_IDS, ids
+ * utilisateurs côté serveur), au lieu d'une adresse email codée en dur.
+ * Hors liste ou liste vide : 404, pour ne pas révéler la route.
  */
 async function handler(request) {
-  const { user } = await requireSession(request);
-
-  if (!ADMIN_EMAILS.includes(user.email)) {
-    return apiError(403, "Accès admin requis");
-  }
+  await requireBackofficeAdmin(request);
 
   const report = await runAllChecks();
 

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { launchBrowser } from "@/src/lib/puppeteer";
+import {
+  launchBrowser,
+  setInternalSecretForSameOrigin,
+} from "@/src/lib/puppeteer";
 import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
@@ -54,11 +57,9 @@ async function handler(request) {
       "http://localhost:3000";
     const generatorUrl = `${baseUrl}/pdf-generator/delivery-note/${deliveryNoteId}${VECTOR_PDF_ENABLED ? "?mode=print" : ""}`;
 
-    if (process.env.INTERNAL_API_SECRET) {
-      await page.setExtraHTTPHeaders({
-        "x-internal-secret": process.env.INTERNAL_API_SECRET,
-      });
-    }
+    // Secret interne posé sur les seules requêtes vers le site (jamais vers
+    // un domaine tiers : GTM, logo ou image hébergés ailleurs)
+    await setInternalSecretForSameOrigin(page, baseUrl);
 
     await page.goto(generatorUrl, {
       waitUntil: "networkidle0",

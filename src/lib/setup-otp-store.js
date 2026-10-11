@@ -15,6 +15,10 @@ import { mongoDb } from "./mongodb";
 
 const COLLECTION = "twoFactorSetupOtp";
 
+// Essais erronés tolérés avant d'invalider le code (un code à 6 chiffres
+// sans limite d'essais se trouvait en force brute dans ses 5 minutes).
+export const MAX_SETUP_OTP_ATTEMPTS = 5;
+
 export const setupOtpStore = {
   async set(userId, otp, ttlMs) {
     const expiresAt = new Date(Date.now() + ttlMs);
@@ -26,6 +30,7 @@ export const setupOtpStore = {
           userId,
           otp: String(otp),
           expiresAt,
+          attempts: 0,
         },
       },
       { upsert: true },
@@ -51,8 +56,19 @@ export const setupOtpStore = {
     // pour laisser la possibilité de corriger une faute de frappe.
     if (isValid) {
       await mongoDb.collection(COLLECTION).deleteOne({ userId });
+      return true;
     }
 
-    return isValid;
+    // Mauvais code : compté ; au-delà de la limite, le code est invalidé
+    // et l'utilisateur doit en demander un nouveau.
+    const attempts = (entry.attempts || 0) + 1;
+    if (attempts >= MAX_SETUP_OTP_ATTEMPTS) {
+      await mongoDb.collection(COLLECTION).deleteOne({ userId });
+    } else {
+      await mongoDb
+        .collection(COLLECTION)
+        .updateOne({ userId }, { $inc: { attempts: 1 } });
+    }
+    return false;
   },
 };
