@@ -91,6 +91,9 @@ export const beforeSignInHook = createAuthMiddleware(async (ctx) => {
 
   // ── 3. Rôles des espaces : membres, organisation, définition des rôles ──
   await checkOrganizationRoles(ctx);
+
+  // ── 4. Liste des membres : tri et filtre limités à l'identité ──
+  await checkMemberListQuery(ctx);
 });
 
 // ── Rôles des espaces (cf. src/lib/organization-roles.js) ──
@@ -248,8 +251,185 @@ async function checkOrganizationRoles(ctx) {
   if (denial) await forbid(denial);
 }
 
-// Hook après — combine OAuth callback + nettoyage members après suppression user
+// ── Visibilité des membres et invitations (cf. security/members-visibility.js) ──
+// Le plugin organisation renvoie à tout membre la liste complète des membres
+// (rôles, dates) et des invitations en attente. Ces lectures suivent la
+// règle de la route /api/organizations/[organizationId]/members : complètes
+// avec « Voir les membres », sinon l'identité des autres membres seulement.
+const MEMBER_VISIBILITY_PATHS = new Set([
+  "/organization/get-full-organization",
+  "/organization/list-members",
+  "/organization/list-invitations",
+  "/organization/get-active-member-role",
+]);
+
+/**
+ * Espace visé par une lecture du plugin, résolu comme lui : slug, sinon
+ * organizationId, sinon espace actif de la session.
+ */
+async function resolveQueryOrganizationId(ctx, db, session) {
+  const slug = ctx.query?.organizationSlug;
+  if (slug) {
+    const organization = await db
+      .collection("organization")
+      .findOne({ slug: String(slug) }, { projection: { _id: 1 } });
+    return organization?._id ? String(organization._id) : null;
+  }
+  return (
+    ctx.query?.organizationId || session?.session?.activeOrganizationId || null
+  );
+}
+
+/**
+ * list-members : un tri ou un filtre sur le rôle (ou la date d'arrivée)
+ * révélerait par le nombre ou l'ordre des résultats ce que la réponse
+ * filtrée cache. Sans « Voir les membres », seuls les champs d'identité
+ * sont acceptés. Fail-closed si les droits ne peuvent pas être lus.
+ */
+async function checkMemberListQuery(ctx) {
+  if (ctx.path !== "/organization/list-members") return;
+
+  const { IDENTITY_MEMBER_QUERY_FIELDS, getMembersVisibility } =
+    await import("./security/members-visibility");
+  const queriedFields = [ctx.query?.filterField, ctx.query?.sortBy].filter(
+    Boolean,
+  );
+  if (queriedFields.every((f) => IDENTITY_MEMBER_QUERY_FIELDS.has(String(f)))) {
+    return;
+  }
+
+  const { getSessionFromCtx } = await import("better-auth/api");
+  const session = await getSessionFromCtx(ctx).catch(() => null);
+  // Pas de session : Better Auth refusera lui-même la requête
+  if (!session?.user?.id) return;
+
+  let denial = null;
+  try {
+    const { getMongoDb } = await import("./mongodb");
+    const db = await getMongoDb();
+    const organizationId = await resolveQueryOrganizationId(ctx, db, session);
+    const { canViewTeam } = organizationId
+      ? await getMembersVisibility(db, {
+          userId: session.user.id,
+          organizationId,
+        })
+      : { canViewTeam: false };
+    if (!canViewTeam) {
+      denial =
+        "Votre rôle ne permet pas de trier ni de filtrer les membres sur ce champ.";
+    }
+  } catch (error) {
+    console.error(
+      "❌ [membersVisibility] contrôle impossible:",
+      error?.message,
+    );
+    denial = "Impossible de vérifier vos droits pour le moment. Réessayez.";
+  }
+
+  if (denial) await forbid(denial);
+}
+
+/**
+ * Filtre la réponse d'une lecture des membres ou des invitations selon les
+ * droits de l'appelant sur l'espace concerné. Ne renvoie rien (réponse
+ * inchangée) quand l'appelant a le droit de tout voir. Si les droits ne
+ * peuvent pas être lus, la réponse est restreinte (fail-closed) ; l'appelant
+ * garde toujours sa propre adhésion.
+ */
+async function filterMembersVisibility(ctx) {
+  const returned = ctx.context?.returned;
+  // Erreur du plugin ou réponse vide : rien à filtrer
+  if (!returned || typeof returned !== "object" || returned instanceof Error) {
+    return;
+  }
+
+  const session =
+    ctx.context.session ||
+    (await import("better-auth/api")
+      .then(({ getSessionFromCtx }) => getSessionFromCtx(ctx))
+      .catch(() => null));
+  const userId = session?.user?.id || null;
+
+  // Son propre rôle : toujours visible
+  const otherUserId =
+    ctx.path === "/organization/get-active-member-role"
+      ? ctx.query?.userId
+      : null;
+  if (
+    ctx.path === "/organization/get-active-member-role" &&
+    (!otherUserId || String(otherUserId) === String(userId))
+  ) {
+    return;
+  }
+
+  const visibilityModule = await import("./security/members-visibility");
+  let visibility = visibilityModule.RESTRICTED_VISIBILITY;
+  try {
+    const { getMongoDb } = await import("./mongodb");
+    const db = await getMongoDb();
+    let organizationId = null;
+    if (ctx.path === "/organization/get-full-organization") {
+      organizationId = returned.id;
+    } else if (ctx.path === "/organization/list-members") {
+      organizationId = returned.members?.[0]?.organizationId;
+      // Liste vide : rien à cacher
+      if (!organizationId) return;
+    } else if (ctx.path === "/organization/list-invitations") {
+      organizationId = Array.isArray(returned)
+        ? returned[0]?.organizationId
+        : null;
+      if (!organizationId) return;
+    } else {
+      organizationId = await resolveQueryOrganizationId(ctx, db, session);
+    }
+    if (userId && organizationId) {
+      visibility = await visibilityModule.getMembersVisibility(db, {
+        userId,
+        organizationId,
+      });
+    }
+  } catch (error) {
+    console.error(
+      "❌ [membersVisibility] droits illisibles, réponse restreinte:",
+      error?.message,
+    );
+  }
+
+  if (visibility.canViewTeam && visibility.canViewInvitations) return;
+  const scope = { userId, ...visibility };
+
+  switch (ctx.path) {
+    case "/organization/get-full-organization":
+      return ctx.json(visibilityModule.filterFullOrganization(returned, scope));
+    case "/organization/list-members":
+      return ctx.json(visibilityModule.filterMemberList(returned, scope));
+    case "/organization/list-invitations":
+      return ctx.json(visibilityModule.filterInvitations(returned, scope));
+    default: {
+      const role = visibilityModule.visibleRoleOfOtherMember(
+        returned.role,
+        scope,
+      );
+      if (role === null) {
+        await forbid(
+          "Votre rôle ne permet pas de consulter le rôle des autres membres.",
+        );
+      }
+      return ctx.json({ ...returned, role });
+    }
+  }
+}
+
+// Hook après — visibilité des membres, OAuth callback, nettoyage members
+// après suppression user
 export const afterHook = createAuthMiddleware(async (ctx) => {
+  // ========================================
+  // 0. Lectures des membres et invitations filtrées selon les droits
+  // ========================================
+  if (MEMBER_VISIBILITY_PATHS.has(ctx.path)) {
+    return filterMembersVisibility(ctx);
+  }
+
   // ========================================
   // 1. Nettoyage des members après suppression d'un user (admin/remove-user)
   // ========================================
