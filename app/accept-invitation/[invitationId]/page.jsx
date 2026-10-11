@@ -91,7 +91,8 @@ export default function AcceptInvitationPage() {
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ email: data.email }),
+              // La route ne répond que pour l'adresse de cette invitation
+              body: JSON.stringify({ email: data.email, invitationId }),
             });
 
             if (userCheckResponse.ok) {
