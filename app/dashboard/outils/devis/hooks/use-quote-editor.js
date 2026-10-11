@@ -23,7 +23,11 @@ import {
 import { useClient } from "@/src/graphql/clientQueries";
 import { useQuoteNumber } from "./use-quote-number";
 import { capture } from "@/src/lib/analytics";
-import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
+import {
+  formatCalendarDate,
+  formatLocalDate,
+  refreshDraftDates,
+} from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
@@ -2641,12 +2645,8 @@ function transformQuoteToFormData(quote) {
             return "";
           }
 
-          const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-          const day = String(dateObj.getDate()).padStart(2, "0");
-          const result = `${year}-${month}-${day}`;
-
-          return result;
+          // Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM)
+          return formatCalendarDate(dateObj);
         } else {
           return "";
         }
@@ -2693,13 +2693,8 @@ function transformQuoteToFormData(quote) {
         return "";
       }
 
-      // Formater en YYYY-MM-DD
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const day = String(dateObj.getDate()).padStart(2, "0");
-      const result = `${year}-${month}-${day}`;
-
-      return result;
+      // Formater en YYYY-MM-DD (minuit UTC lu en date calendaire)
+      return formatCalendarDate(dateObj);
     } catch {
       return "";
     }

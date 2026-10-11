@@ -18,6 +18,61 @@ export const formatLocalDate = (date = new Date()) => {
 };
 
 /**
+ * Date calendaire (YYYY-MM-DD) d'une date relue depuis l'API.
+ *
+ * Une date saisie dans un formulaire part en « YYYY-MM-DD » et l'API la stocke
+ * à minuit UTC (2026-10-11T00:00:00.000Z). Relue en heure locale dans un fuseau
+ * négatif (Antilles UTC-4, Guyane UTC-3), ce minuit UTC tombe la veille au soir :
+ * chaque réenregistrement reculait la date d'un jour. Un minuit UTC exact est
+ * donc lu par ses composantes UTC.
+ *
+ * Les autres instants (ex. `issueDate: new Date()` posé par l'API, ou un minuit
+ * local métropolitain envoyé en ISO) gardent la lecture locale. En métropole
+ * comme dans tout fuseau positif, minuit UTC est le même jour en heure locale :
+ * le résultat y est identique à {@link formatLocalDate}.
+ *
+ * @param {Date} date
+ * @returns {string} - YYYY-MM-DD
+ */
+export const formatCalendarDate = (date) => {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return formatLocalDate(date);
+  }
+  const isUtcMidnight =
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0;
+  if (!isUtcMidnight) return formatLocalDate(date);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Convertit une date de l'API (timestamp en ms, nombre ou chaîne de chiffres,
+ * ISO, YYYY-MM-DD ou Date) en date calendaire YYYY-MM-DD, via
+ * {@link formatCalendarDate}. Renvoie null si la valeur est vide ou invalide.
+ *
+ * @param {*} value
+ * @returns {string|null}
+ */
+export const toCalendarDate = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+  let date;
+  if (value instanceof Date) date = value;
+  else if (typeof value === "number") date = new Date(value);
+  else if (typeof value === "string" && /^\d+$/.test(value))
+    date = new Date(parseInt(value, 10));
+  else date = new Date(value);
+  return isNaN(date.getTime()) ? null : formatCalendarDate(date);
+};
+
+/**
  * Recale les dates d'un brouillon repris ultérieurement.
  *
  * Un brouillon (devis / facture / bon de commande) créé un mois antérieur garde
