@@ -71,7 +71,7 @@ const PDF_BYTES = Buffer.from("%PDF-1.4 document");
 
 vi.mock("@/src/lib/puppeteer", () => ({
   launchBrowser: (...args) => m.launchBrowser(...args),
-  setInternalSecretForSameOrigin: async () => {},
+  securePdfPage: async () => {},
 }));
 vi.mock("@/src/lib/vectorPdf", () => ({
   VECTOR_PDF_ENABLED: true,
