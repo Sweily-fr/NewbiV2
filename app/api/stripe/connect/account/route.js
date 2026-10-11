@@ -1,25 +1,37 @@
 import { NextResponse } from "next/server";
-import { mongoDb } from "@/src/lib/mongodb";
-import { ObjectId } from "mongodb";
-import { withErrorHandler } from "@/src/lib/security";
+import {
+  apiError,
+  requireOrgAction,
+  requireSession,
+  withErrorHandler,
+} from "@/src/lib/security";
+import { findOrgStripeConnectAccount } from "@/src/lib/stripe-connect-account";
 
+/**
+ * GET /api/stripe/connect/account?organizationId=
+ *
+ * Compte Stripe Connect de l'espace actif (ou de l'espace passé dans
+ * `organizationId`), avec le droit « Gérer » sur les applications. Le
+ * paramètre `userId` des anciens appels est ignoré : on ne lit plus le
+ * compte d'un utilisateur désigné par la requête, seulement celui de
+ * l'espace (ou l'ancien compte personnel de l'utilisateur de la session).
+ */
 async function handler(request) {
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get("userId");
+  const { user, session } = await requireSession(request);
 
-  if (!userId) {
-    return NextResponse.json(
-      { success: false, message: "userId est requis" },
-      { status: 400 },
-    );
+  const { searchParams } = new URL(request.url);
+  const orgId =
+    searchParams.get("organizationId") || session?.activeOrganizationId;
+  if (!orgId) {
+    return apiError(400, "Aucun espace actif");
   }
 
-  // Récupérer le compte Stripe Connect de l'utilisateur
-  const stripeAccount = await mongoDb
-    .collection("stripeconnectaccounts")
-    .findOne({
-      userId: new ObjectId(userId),
-    });
+  await requireOrgAction(user.id, orgId, "integrations", "manage");
+
+  const stripeAccount = await findOrgStripeConnectAccount({
+    orgId,
+    userId: user.id,
+  });
 
   if (!stripeAccount) {
     return NextResponse.json({
