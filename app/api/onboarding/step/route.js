@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { ObjectId } from "mongodb";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
@@ -20,6 +19,84 @@ import {
   SIRET_VERIFICATION_ERRORS,
 } from "@/src/lib/siret-verification";
 import { grantAppTrialIfEligible } from "@/src/lib/org-creation";
+import { isOwnerRole } from "@/src/lib/organization-roles";
+
+/**
+ * Espace que la fin d'onboarding va renseigner (raison sociale, SIRET,
+ * adresse) et sur lequel elle ouvre l'essai.
+ *
+ * Jamais « la première appartenance trouvée » : un utilisateur invité dans
+ * un autre espace avant d'avoir terminé son inscription aurait pu écraser
+ * l'identité de l'espace qui l'a invité. On ne retient qu'un espace dont il
+ * est propriétaire, dans cet ordre :
+ *   1. l'espace passé dans le body (`organizationId`), s'il en est
+ *      propriétaire, sinon refus ;
+ *   2. l'espace actif de la session, s'il en est propriétaire ;
+ *   3. son unique espace en propriété (l'espace créé à l'inscription) ;
+ *      plusieurs espaces sans choix possible = refus.
+ *
+ * @returns {Promise<{ organizationId?: ObjectId, error?: NextResponse }>}
+ */
+async function resolveOnboardingOrganization(
+  userId,
+  activeOrganizationId,
+  requestedOrganizationId,
+) {
+  const memberships = await mongoDb
+    .collection("member")
+    .find({ userId: toObjectId(userId) })
+    .toArray();
+
+  if (memberships.length === 0) {
+    return {
+      error: apiError(
+        500,
+        "Aucune organisation rattachée : état incohérent, recommencez l'inscription.",
+      ),
+    };
+  }
+
+  const owned = memberships.filter((m) => isOwnerRole(m.role));
+  const findOwned = (orgId) =>
+    owned.find((m) => String(m.organizationId) === String(orgId));
+
+  if (requestedOrganizationId) {
+    const requested = findOwned(requestedOrganizationId);
+    if (!requested) {
+      return {
+        error: apiError(
+          403,
+          "Vous n'êtes pas propriétaire de cet espace.",
+          `onboarding : ${userId} n'est pas propriétaire de ${requestedOrganizationId}`,
+        ),
+      };
+    }
+    return { organizationId: requested.organizationId };
+  }
+
+  const active = activeOrganizationId && findOwned(activeOrganizationId);
+  if (active) return { organizationId: active.organizationId };
+
+  if (owned.length === 1) return { organizationId: owned[0].organizationId };
+
+  if (owned.length === 0) {
+    return {
+      error: apiError(
+        403,
+        "Aucun espace à configurer : vous n'êtes propriétaire d'aucun espace.",
+        `onboarding : ${userId} n'est propriétaire d'aucun espace`,
+      ),
+    };
+  }
+
+  return {
+    error: apiError(
+      409,
+      "Plusieurs espaces possibles : sélectionnez l'espace à configurer.",
+      `onboarding : ${userId} est propriétaire de ${owned.length} espaces`,
+    ),
+  };
+}
 
 /**
  * PATCH /api/onboarding/step
@@ -31,7 +108,7 @@ import { grantAppTrialIfEligible } from "@/src/lib/org-creation";
  * Returns: { step, data, changed }
  */
 async function handler(request) {
-  const { user: sessionUser } = await requireSession(request);
+  const { user: sessionUser, session } = await requireSession(request);
 
   // Parse and validate body (Principle 7)
   let body;
@@ -51,6 +128,7 @@ async function handler(request) {
     step: targetStep,
     data: incomingData,
     honorDeclarationAccepted,
+    organizationId: requestedOrganizationId,
   } = validation.data;
 
   // The "completed" step shortcut is only available under the app-managed
@@ -120,16 +198,13 @@ async function handler(request) {
   // the org that databaseHooks.user.create.after already created. Then mark
   // the user completed in a single atomic update.
   if (targetStep === "completed" && isAppTrialEnabled()) {
-    const member = await mongoDb.collection("member").findOne({
-      userId: new ObjectId(sessionUser.id),
-    });
-
-    if (!member) {
-      return apiError(
-        500,
-        "Aucune organisation rattachée — état incohérent, recommencez l'inscription.",
+    const { organizationId: targetOrganizationId, error: orgError } =
+      await resolveOnboardingOrganization(
+        sessionUser.id,
+        session?.activeOrganizationId,
+        requestedOrganizationId,
       );
-    }
+    if (orgError) return orgError;
 
     // Le schéma impose déjà `honorDeclarationAccepted === true` pour cette
     // transition ; on le revérifie ici pour que la garantie ne dépende pas
@@ -220,7 +295,7 @@ async function handler(request) {
 
     await mongoDb
       .collection("organization")
-      .updateOne({ _id: member.organizationId }, { $set: orgPatch });
+      .updateOne({ _id: targetOrganizationId }, { $set: orgPatch });
 
     // L'essai de 30 jours ne démarre qu'ici, une fois le SIRET vérifié et la
     // déclaration signée — plus au moment du signup. Un compte non qualifié
@@ -228,7 +303,7 @@ async function handler(request) {
     await grantAppTrialIfEligible({
       mongoDb,
       userId: sessionUser.id,
-      organizationId: member.organizationId,
+      organizationId: targetOrganizationId,
     });
 
     await mongoDb.collection("user").updateOne(
@@ -251,7 +326,7 @@ async function handler(request) {
       step: "completed",
       data: mergedData || null,
       changed: true,
-      organizationId: member.organizationId.toString(),
+      organizationId: targetOrganizationId.toString(),
       company: {
         siret: verifiedCompany.siret,
         denomination: verifiedCompany.denominationUniteLegale,
