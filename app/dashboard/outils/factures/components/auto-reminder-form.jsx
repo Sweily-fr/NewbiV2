@@ -4,7 +4,27 @@ import { useFormContext } from "react-hook-form";
 import { Input } from "@/src/components/ui/input";
 import { Switch } from "@/src/components/ui/switch";
 
-export default function AutoReminderForm({ isSmtpConfigured = true }) {
+// Valeur d'un réglage affiché en lecture simple
+function ReadOnlyValue({ label, value }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground break-all">
+        {value || "Non renseigné"}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * `canEditSender` : l'expéditeur (adresse, nom, réponse) est un réglage de
+ * l'entreprise, commun à tous les envois ; sans « Modifier » les
+ * informations de l'entreprise, il est affiché en lecture simple.
+ */
+export default function AutoReminderForm({
+  isSmtpConfigured = true,
+  canEditSender = true,
+}) {
   const { register, watch, setValue } = useFormContext();
 
   const enabled = watch("enabled");
@@ -115,48 +135,68 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
         {/* Info box */}
         <div className="p-3 bg-[#5b50ff]/10 border border-[#5b50ff]/20 rounded-lg">
           <p className="text-xs text-[#5b50ff]">
-            Nous utilisons notre serveur d&apos;envoi pour garantir la délivrabilité.
-            Vos emails seront envoyés avec votre adresse.
+            Nous utilisons notre serveur d&apos;envoi pour garantir la
+            délivrabilité. Vos emails seront envoyés avec votre adresse.
           </p>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">
-            Email expéditeur
-          </label>
-          <Input
-            type="email"
-            placeholder="facturation@mon-entreprise.fr"
-            {...register("fromEmail", { required: enabled })}
-            disabled={!enabled}
-          />
-        </div>
+        {canEditSender ? (
+          <>
+            <div className="space-y-1.5">
+              <label className="text-sm text-muted-foreground">
+                Email expéditeur
+              </label>
+              <Input
+                type="email"
+                placeholder="facturation@mon-entreprise.fr"
+                {...register("fromEmail", { required: enabled })}
+                disabled={!enabled}
+              />
+            </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">
-            Nom de l&apos;expéditeur
-          </label>
-          <Input
-            placeholder="Mon Entreprise"
-            {...register("fromName")}
-            disabled={!enabled}
-          />
-        </div>
+            <div className="space-y-1.5">
+              <label className="text-sm text-muted-foreground">
+                Nom de l&apos;expéditeur
+              </label>
+              <Input
+                placeholder="Mon Entreprise"
+                {...register("fromName")}
+                disabled={!enabled}
+              />
+            </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">
-            Email de réponse
-          </label>
-          <Input
-            type="email"
-            placeholder="contact@mon-entreprise.fr"
-            {...register("replyTo")}
-            disabled={!enabled}
-          />
-          <p className="text-[11px] text-muted-foreground">
-            Les réponses seront envoyées à cet email
-          </p>
-        </div>
+            <div className="space-y-1.5">
+              <label className="text-sm text-muted-foreground">
+                Email de réponse
+              </label>
+              <Input
+                type="email"
+                placeholder="contact@mon-entreprise.fr"
+                {...register("replyTo")}
+                disabled={!enabled}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Les réponses seront envoyées à cet email
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <ReadOnlyValue
+              label="Email expéditeur"
+              value={watch("fromEmail")}
+            />
+            <ReadOnlyValue
+              label="Nom de l'expéditeur"
+              value={watch("fromName")}
+            />
+            <ReadOnlyValue label="Email de réponse" value={watch("replyTo")} />
+            <p className="text-[11px] text-muted-foreground">
+              Modifiable par un rôle qui peut modifier les informations de
+              l&apos;entreprise
+            </p>
+          </>
+        )}
       </div>
 
       <div className="border-t border-border/40" />
@@ -170,7 +210,13 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
         {/* Variables disponibles */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-muted-foreground">Variables :</span>
-          {["{invoiceNumber}", "{clientName}", "{totalAmount}", "{dueDate}", "{companyName}"].map((v) => (
+          {[
+            "{invoiceNumber}",
+            "{clientName}",
+            "{totalAmount}",
+            "{dueDate}",
+            "{companyName}",
+          ].map((v) => (
             <code
               key={v}
               className="px-1.5 py-0.5 text-[11px] rounded-md bg-muted/60 text-muted-foreground border border-border/40 font-mono"
@@ -197,7 +243,9 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
           </label>
           <textarea
             rows={10}
-            placeholder={"Bonjour {clientName},\n\nNous vous rappelons que la facture {invoiceNumber}..."}
+            placeholder={
+              "Bonjour {clientName},\n\nNous vous rappelons que la facture {invoiceNumber}..."
+            }
             {...register("emailBody")}
             disabled={!enabled}
             className="flex w-full rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2.5 py-2 text-sm font-medium text-[#242529] dark:text-white placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)] transition-[border] duration-[80ms] ease-in-out outline-none resize-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
