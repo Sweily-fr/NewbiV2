@@ -105,7 +105,7 @@ import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { DuplicateWarningDialog } from "./duplicate-warning-dialog";
 import { ReconcileCandidateDialog } from "./reconcile-candidate-dialog";
 import { LinkOriginTag } from "@/src/components/reconciliation/LinkOriginTag";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { formatCalendarDate, formatLocalDate } from "@/src/utils/dateFormatter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/src/lib/utils";
@@ -674,7 +674,8 @@ export function PurchaseInvoiceDetailDrawer({
       const parseDate = (val) => {
         if (!val) return "";
         const d = new Date(val);
-        return isNaN(d.getTime()) ? "" : formatLocalDate(d);
+        // Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM)
+        return isNaN(d.getTime()) ? "" : formatCalendarDate(d);
       };
       setForm({
         supplierName: invoice.supplierName || "",

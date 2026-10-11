@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import {
   START_MULTIPART_UPLOAD,
   COMPLETE_MULTIPART_UPLOAD,
+  ABORT_MULTIPART_UPLOAD,
   CREATE_FILE_TRANSFER_WITH_IDS_R2,
 } from "../graphql/mutations";
 import { applyWatermarkToFiles } from "../utils/watermark";
@@ -32,6 +33,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
   const [completeMultipartUploadMutation] = useMutation(
     COMPLETE_MULTIPART_UPLOAD,
   );
+  const [abortMultipartUploadMutation] = useMutation(ABORT_MULTIPART_UPLOAD);
   const [createFileTransferWithIdsR2Mutation] = useMutation(
     CREATE_FILE_TRANSFER_WITH_IDS_R2,
   );
@@ -98,6 +100,9 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
     const { file, id: fileId } = fileData;
     const parts = createFileParts(file);
     const totalParts = parts.length;
+    // Envoi démarré mais pas encore finalisé : à annuler en cas d'échec ou
+    // d'annulation, sinon ses parts restent stockées sur R2
+    let pendingUpload = null;
 
     try {
       console.log(
@@ -131,6 +136,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       }
 
       const { uploadId, key, presignedUrls } = startData.startMultipartUpload;
+      pendingUpload = { uploadId, key };
       console.log(`✅ Multipart Upload démarré: ${uploadId}`);
       console.log(`📋 ${presignedUrls.length} URLs presigned reçues`);
 
@@ -221,6 +227,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         console.error("❌ Échec finalisation:", completeData);
         throw new Error("Échec de la finalisation du multipart upload");
       }
+      pendingUpload = null;
 
       console.log(
         `✅ Multipart Upload complété: ${completeData.completeMultipartUpload.key}`,
@@ -231,6 +238,15 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
 
       return fileId;
     } catch (error) {
+      // Libérer l'envoi entamé côté R2, sans attendre ni bloquer l'erreur
+      if (pendingUpload) {
+        abortMultipartUploadMutation({ variables: pendingUpload }).catch(
+          (abortError) => {
+            console.warn("⚠️ Annulation du multipart impossible:", abortError);
+          },
+        );
+      }
+
       // Si c'est une annulation, propager l'erreur sans message d'erreur
       if (
         error.name === "AbortError" ||
@@ -434,6 +450,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       workspaceId,
       startMultipartUploadMutation,
       completeMultipartUploadMutation,
+      abortMultipartUploadMutation,
       createFileTransferWithIdsR2Mutation,
       refetchTransfers,
     ],

@@ -666,6 +666,153 @@ export const MOVE_TASK = gql`
   }
 `;
 
+// ── Membres, tags et checklist : un élément à la fois ──────────────────────
+// Mutations atomiques côté API : deux personnes qui modifient la même tâche
+// ne s'écrasent plus (updateTask remplace le tableau complet). Chacune ne
+// relit que le champ modifié : l'entité Task du cache se met à jour (cartes,
+// liste, Gantt), la subscription prévient les autres membres.
+export const ASSIGN_TASK_MEMBER = gql`
+  mutation AssignTaskMember(
+    $taskId: ID!
+    $memberId: String!
+    $workspaceId: ID
+  ) {
+    assignTaskMember(
+      taskId: $taskId
+      memberId: $memberId
+      workspaceId: $workspaceId
+    ) {
+      id
+      assignedMembers
+      updatedAt
+    }
+  }
+`;
+
+export const UNASSIGN_TASK_MEMBER = gql`
+  mutation UnassignTaskMember(
+    $taskId: ID!
+    $memberId: String!
+    $workspaceId: ID
+  ) {
+    unassignTaskMember(
+      taskId: $taskId
+      memberId: $memberId
+      workspaceId: $workspaceId
+    ) {
+      id
+      assignedMembers
+      updatedAt
+    }
+  }
+`;
+
+export const ADD_TASK_TAG = gql`
+  mutation AddTaskTag($taskId: ID!, $tag: TagInput!, $workspaceId: ID) {
+    addTaskTag(taskId: $taskId, tag: $tag, workspaceId: $workspaceId) {
+      id
+      tags {
+        name
+        className
+        bg
+        text
+        border
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const REMOVE_TASK_TAG = gql`
+  mutation RemoveTaskTag($taskId: ID!, $tagName: String!, $workspaceId: ID) {
+    removeTaskTag(
+      taskId: $taskId
+      tagName: $tagName
+      workspaceId: $workspaceId
+    ) {
+      id
+      tags {
+        name
+        className
+        bg
+        text
+        border
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const ADD_CHECKLIST_ITEM = gql`
+  mutation AddChecklistItem(
+    $taskId: ID!
+    $text: String!
+    $completed: Boolean
+    $itemId: ID
+    $workspaceId: ID
+  ) {
+    addChecklistItem(
+      taskId: $taskId
+      text: $text
+      completed: $completed
+      itemId: $itemId
+      workspaceId: $workspaceId
+    ) {
+      id
+      checklist {
+        id
+        text
+        completed
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_CHECKLIST_ITEM = gql`
+  mutation UpdateChecklistItem(
+    $taskId: ID!
+    $itemId: ID!
+    $text: String
+    $completed: Boolean
+    $workspaceId: ID
+  ) {
+    updateChecklistItem(
+      taskId: $taskId
+      itemId: $itemId
+      text: $text
+      completed: $completed
+      workspaceId: $workspaceId
+    ) {
+      id
+      checklist {
+        id
+        text
+        completed
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const REMOVE_CHECKLIST_ITEM = gql`
+  mutation RemoveChecklistItem($taskId: ID!, $itemId: ID!, $workspaceId: ID) {
+    removeChecklistItem(
+      taskId: $taskId
+      itemId: $itemId
+      workspaceId: $workspaceId
+    ) {
+      id
+      checklist {
+        id
+        text
+        completed
+      }
+      updatedAt
+    }
+  }
+`;
+
 // Fragment léger pour les cartes kanban et les subscriptions (sans comments/activity/entries)
 // Tâches liées (informatif, lien symétrique posé côté serveur)
 export const LINKED_TASK_INFO_FRAGMENT = gql`
@@ -1244,10 +1391,22 @@ export const GET_PUBLIC_SHARES = gql`
 
 // Query pour accéder au tableau public (visiteurs externes)
 export const GET_PUBLIC_BOARD = gql`
-  query GetPublicBoard($token: String!, $email: String!, $password: String) {
-    getPublicBoard(token: $token, email: $email, password: $password) {
+  query GetPublicBoard(
+    $token: String!
+    $email: String!
+    $password: String
+    $accessToken: String
+  ) {
+    getPublicBoard(
+      token: $token
+      email: $email
+      password: $password
+      accessToken: $accessToken
+    ) {
       success
       message
+      requiresPassword
+      accessToken
       board {
         id
         title
@@ -1355,16 +1514,21 @@ export const REQUEST_ACCESS = gql`
     $email: String!
     $name: String
     $message: String
+    $password: String
+    $accessToken: String
   ) {
     requestAccess(
       token: $token
       email: $email
       name: $name
       message: $message
+      password: $password
+      accessToken: $accessToken
     ) {
       success
       message
       alreadyRequested
+      requiresPassword
     }
   }
 `;
@@ -1629,6 +1793,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
     $content: String
     $visitorEmail: String!
     $images: [CommentImageInput!]
+    $accessToken: String
   ) {
     addExternalComment(
       token: $token
@@ -1636,6 +1801,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
       content: $content
       visitorEmail: $visitorEmail
       images: $images
+      accessToken: $accessToken
     ) {
       success
       message
@@ -1716,8 +1882,14 @@ export const UPDATE_VISITOR_PROFILE = gql`
     $token: String!
     $email: String!
     $input: UpdateVisitorProfileInput!
+    $accessToken: String
   ) {
-    updateVisitorProfile(token: $token, email: $email, input: $input) {
+    updateVisitorProfile(
+      token: $token
+      email: $email
+      input: $input
+      accessToken: $accessToken
+    ) {
       success
       message
       visitor {
@@ -1738,8 +1910,14 @@ export const UPLOAD_VISITOR_IMAGE = gql`
     $token: String!
     $email: String!
     $file: Upload!
+    $accessToken: String
   ) {
-    uploadVisitorImage(token: $token, email: $email, file: $file) {
+    uploadVisitorImage(
+      token: $token
+      email: $email
+      file: $file
+      accessToken: $accessToken
+    ) {
       success
       message
       imageUrl
@@ -1754,12 +1932,14 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
     $taskId: ID!
     $file: Upload!
     $visitorEmail: String!
+    $accessToken: String
   ) {
     uploadExternalCommentImage(
       token: $token
       taskId: $taskId
       file: $file
       visitorEmail: $visitorEmail
+      accessToken: $accessToken
     ) {
       success
       message
@@ -1776,8 +1956,18 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
 
 // Subscription pour les mises à jour en temps réel sur la page publique
 export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
-  subscription PublicTaskUpdated($token: String!, $boardId: ID!) {
-    publicTaskUpdated(token: $token, boardId: $boardId) {
+  subscription PublicTaskUpdated(
+    $token: String!
+    $boardId: ID!
+    $accessToken: String
+    $email: String
+  ) {
+    publicTaskUpdated(
+      token: $token
+      boardId: $boardId
+      accessToken: $accessToken
+      email: $email
+    ) {
       type
       task {
         id

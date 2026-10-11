@@ -43,11 +43,16 @@ export function GeneraleSection({
   refetchOrganization,
   canManageOrgSettings = true,
 }) {
-  let formContext;
-  try {
-    formContext = useFormContext();
-  } catch (error) {
-    console.error("❌ [GENERALE] Erreur FormContext:", error);
+  // Tous les hooks avant le retour anticipé : useFormContext ne lève pas
+  // d'erreur hors FormProvider, il renvoie null
+  const formContext = useFormContext();
+  const { workspaceId } = useWorkspace();
+  const { isReadOnly, isOwner } = useSubscriptionAccess();
+  const [updateCompanyLogo] = useMutation(UPDATE_COMPANY_LOGO);
+  const logoContainerRef = useRef(null);
+
+  if (!formContext) {
+    console.error("❌ [GENERALE] FormContext non disponible");
     return <div>Erreur: FormContext non disponible</div>;
   }
 
@@ -57,17 +62,13 @@ export function GeneraleSection({
     setValue,
     resetField,
     formState: { errors },
-  } = useFormContext();
+  } = formContext;
 
-  const { workspaceId } = useWorkspace();
-  const { isReadOnly, isOwner } = useSubscriptionAccess();
   const readOnlyTooltip = isReadOnly
     ? isOwner
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const [updateCompanyLogo] = useMutation(UPDATE_COMPANY_LOGO);
-  const logoContainerRef = useRef(null);
 
   // Surveiller les valeurs du formulaire pour détecter les changements
   const watchedValues = watch();

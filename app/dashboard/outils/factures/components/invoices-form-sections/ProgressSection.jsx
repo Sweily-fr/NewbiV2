@@ -91,6 +91,32 @@ export default function ProgressSection({ canEdit = true }) {
     }
   }, [previousInvoicesData, currentInvoiceId]);
 
+  // Appliquer le pourcentage global aux articles nouvellement ajoutés (mode uniforme).
+  // Ne touche jamais aux articles existants : leurs pourcentages enregistrés
+  // (rechargés à l'édition d'un brouillon) ne doivent pas être écrasés.
+  // Déclaré avant le retour anticipé : appelé après, ce hook disparaissait
+  // quand la facture n'est pas de situation (règle des hooks).
+  useEffect(() => {
+    const prevLength = prevItemsLengthRef.current;
+    prevItemsLengthRef.current = items.length;
+
+    if (prevLength === null || items.length <= prevLength) return;
+    if (invoiceType !== "situation") return;
+    if (progressMode !== "uniform") return;
+
+    const currentGlobalProgress = getValues("globalProgressPercentage") ?? 100;
+    for (let index = prevLength; index < items.length; index++) {
+      const currentItemProgress = getValues(
+        `items.${index}.progressPercentage`,
+      );
+      if (currentItemProgress !== currentGlobalProgress) {
+        setValue(`items.${index}.progressPercentage`, currentGlobalProgress, {
+          shouldDirty: true,
+        });
+      }
+    }
+  }, [progressMode, items.length, invoiceType]);
+
   // Ne pas afficher si ce n'est pas une facture de situation
   if (invoiceType !== "situation") {
     return null;
@@ -166,30 +192,6 @@ export default function ProgressSection({ canEdit = true }) {
       });
     }
   };
-
-  // Appliquer le pourcentage global aux articles nouvellement ajoutés (mode uniforme).
-  // Ne touche jamais aux articles existants : leurs pourcentages enregistrés
-  // (rechargés à l'édition d'un brouillon) ne doivent pas être écrasés.
-  useEffect(() => {
-    const prevLength = prevItemsLengthRef.current;
-    prevItemsLengthRef.current = items.length;
-
-    if (prevLength === null || items.length <= prevLength) return;
-    if (invoiceType !== "situation") return;
-    if (progressMode !== "uniform") return;
-
-    const currentGlobalProgress = getValues("globalProgressPercentage") ?? 100;
-    for (let index = prevLength; index < items.length; index++) {
-      const currentItemProgress = getValues(
-        `items.${index}.progressPercentage`,
-      );
-      if (currentItemProgress !== currentGlobalProgress) {
-        setValue(`items.${index}.progressPercentage`, currentGlobalProgress, {
-          shouldDirty: true,
-        });
-      }
-    }
-  }, [progressMode, items.length, invoiceType]);
 
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 mt-8 p-0">

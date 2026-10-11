@@ -264,18 +264,6 @@ export default function ModernQuoteEditor({
   useUnsavedChangesWarning(guardActive && isDirty);
   usePreloadOnIdle(preloadEditorModules);
 
-  // Afficher un message si le devis n'existe pas (après changement d'organisation)
-  if (mode !== "create" && !loading && !loadedQuote && quoteError) {
-    return (
-      <ResourceNotFound
-        resourceType="devis"
-        resourceName="Ce devis"
-        listUrl="/dashboard/outils/devis"
-        homeUrl="/dashboard"
-      />
-    );
-  }
-
   useEffect(() => {
     if (!guardActive) return;
 
@@ -331,6 +319,20 @@ export default function ModernQuoteEditor({
   };
 
   const [closeSettingsHandler, setCloseSettingsHandler] = useState(null);
+
+  // Afficher un message si le devis n'existe pas (après changement d'organisation).
+  // Placé après le dernier hook : avant, le nombre de hooks appelés
+  // variait d'un rendu à l'autre (règle des hooks).
+  if (mode !== "create" && !loading && !loadedQuote && quoteError) {
+    return (
+      <ResourceNotFound
+        resourceType="devis"
+        resourceName="Ce devis"
+        listUrl="/dashboard/outils/devis"
+        homeUrl="/dashboard"
+      />
+    );
+  }
 
   const handleCloseSettings = () => {
     // Si un handler personnalisé existe (avec vérification des changements), l'utiliser

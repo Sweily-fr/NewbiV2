@@ -509,35 +509,6 @@ export const GET_SITUATION_REFERENCES = gql`
   }
 `;
 
-// Query pour récupérer les factures de situation par situationReference (pour calculer l'avancement cumulé)
-export const GET_SITUATION_INVOICES_BY_REFERENCE = gql`
-  query GetSituationInvoicesByReference(
-    $workspaceId: ID!
-    $situationReference: String!
-  ) {
-    situationInvoicesByReference(
-      workspaceId: $workspaceId
-      situationReference: $situationReference
-    ) {
-      id
-      number
-      invoiceType
-      situationNumber
-      situationReference
-      status
-      issueDate
-      finalTotalTTC
-      items {
-        description
-        quantity
-        unitPrice
-        vatRate
-        progressPercentage
-      }
-    }
-  }
-`;
-
 // ==================== MUTATIONS ====================
 
 export const CREATE_INVOICE = gql`
@@ -565,12 +536,6 @@ export const UPDATE_INVOICE = gql`
 export const DELETE_INVOICE = gql`
   mutation DeleteInvoice($id: ID!, $workspaceId: ID!) {
     deleteInvoice(id: $id, workspaceId: $workspaceId)
-  }
-`;
-
-export const SEND_INVOICE = gql`
-  mutation SendInvoice($id: ID!, $email: String!) {
-    sendInvoice(id: $id, email: $email)
   }
 `;
 
@@ -651,8 +616,8 @@ export const CREATE_LINKED_INVOICE = gql`
 `;
 
 export const DELETE_LINKED_INVOICE = gql`
-  mutation DeleteLinkedInvoice($id: ID!) {
-    deleteLinkedInvoice(id: $id)
+  mutation DeleteLinkedInvoice($id: ID!, $workspaceId: ID!) {
+    deleteLinkedInvoice(id: $id, workspaceId: $workspaceId)
   }
 `;
 
@@ -1153,33 +1118,6 @@ export const useDeleteInvoice = () => {
   return { deleteInvoice, loading };
 };
 
-// Hook pour envoyer une facture par email
-export const useSendInvoice = () => {
-  const { handleMutationError } = useErrorHandler();
-
-  const [sendInvoiceMutation, { loading }] = useMutation(SEND_INVOICE, {
-    onCompleted: () => {
-      toast.success("Facture envoyée avec succès");
-    },
-    onError: (error) => {
-      handleMutationError(error, "send", "invoice");
-    },
-  });
-
-  const sendInvoice = async (id, email) => {
-    try {
-      await sendInvoiceMutation({
-        variables: { id, email },
-      });
-      return true;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  return { sendInvoice, loading };
-};
-
 // Hook pour marquer une facture comme payée
 export const useMarkInvoiceAsPaid = () => {
   const client = useApolloClient();
@@ -1380,6 +1318,7 @@ export const useCreateLinkedInvoice = () => {
 
 // Hook pour supprimer une facture liée
 export const useDeleteLinkedInvoice = () => {
+  const { workspaceId } = useRequiredWorkspace();
   const [deleteLinkedInvoiceMutation, { loading }] = useMutation(
     DELETE_LINKED_INVOICE,
     {
@@ -1410,7 +1349,7 @@ export const useDeleteLinkedInvoice = () => {
   const deleteLinkedInvoice = async (invoiceId) => {
     try {
       const result = await deleteLinkedInvoiceMutation({
-        variables: { id: invoiceId },
+        variables: { id: invoiceId, workspaceId },
       });
       return result?.data?.deleteLinkedInvoice;
     } catch (error) {

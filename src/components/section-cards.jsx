@@ -308,6 +308,14 @@ export function SectionCards({ className, activeFilter = "outline" }) {
     setIsMissingFieldsDialogOpen(true);
   };
 
+  // Outil Pro sans abonnement actif : ouvrir l'onglet Abonnement des
+  // paramètres (l'ancienne PricingModal a été retirée, ce handler était resté
+  // référencé sans être déclaré)
+  const handlePremiumToolClick = (e) => {
+    e.preventDefault();
+    openSettings("subscription");
+  };
+
   // Fonction pour ouvrir les paramètres après confirmation
   const handleOpenSettings = () => {
     setIsMissingFieldsDialogOpen(false);

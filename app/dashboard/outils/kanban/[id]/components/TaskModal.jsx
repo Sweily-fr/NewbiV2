@@ -81,7 +81,6 @@ import {
 } from "./taskAmount";
 import { TaskImageUpload } from "./TaskImageUpload";
 import { useTaskImageUpload } from "../hooks/useTaskImageUpload";
-import { useDebouncedMemberFlush } from "../hooks/useMemberToggle";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { cn } from "@/src/lib/utils";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -261,9 +260,10 @@ export function TaskModal({
   updatePendingComment,
   openEditTaskModal,
   openLinkedTask,
-  updateTask,
   initialFormRef: externalInitialFormRef,
   localMutationRef,
+  // Membres / tags / checklist envoyés élément par élément (édition)
+  taskFieldOps = null,
 }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
@@ -414,12 +414,63 @@ export function TaskModal({
     [setTaskForm],
   );
 
+  // ── Membres, tags, checklist ──────────────────────────────────────────
+  // En édition, chaque changement part tout de suite en mutation atomique
+  // (taskFieldOps) ; en création, il reste dans le formulaire jusqu'à
+  // « Créer la tâche ».
+  const listOps = isEditing && taskFieldOps ? taskFieldOps : null;
+
   const handleChecklistChange = useCallback(
     (updatedItems) => {
+      if (listOps) {
+        if (canEditKanban) listOps.changeChecklist(updatedItems);
+        return;
+      }
       setTaskForm((prev) => ({ ...prev, checklist: updatedItems }));
     },
-    [setTaskForm],
+    [setTaskForm, listOps, canEditKanban],
   );
+
+  const handleTagAdd = useCallback(
+    (rawName) => {
+      const name = (rawName || "").trim();
+      if (!name) return;
+      if (listOps) {
+        if (canEditKanban) listOps.addTag({ name, className: "" });
+        return;
+      }
+      setTaskForm((prev) =>
+        (prev.tags || []).some(
+          (t) => (t?.name || "").toLowerCase() === name.toLowerCase(),
+        )
+          ? prev
+          : { ...prev, tags: [...(prev.tags || []), { name, className: "" }] },
+      );
+    },
+    [setTaskForm, listOps, canEditKanban],
+  );
+
+  const handleTagRemove = useCallback(
+    (tagName) => {
+      if (listOps) {
+        if (canEditKanban) listOps.removeTag(tagName);
+        return;
+      }
+      setTaskForm((prev) => ({
+        ...prev,
+        tags: (prev.tags || []).filter((t) => t?.name !== tagName),
+      }));
+    },
+    [setTaskForm, listOps, canEditKanban],
+  );
+
+  const handleTagsClear = useCallback(() => {
+    if (listOps) {
+      if (canEditKanban) listOps.clearTags();
+      return;
+    }
+    setTaskForm((prev) => ({ ...prev, tags: [] }));
+  }, [setTaskForm, listOps, canEditKanban]);
 
   // Hook pour l'upload d'images (uniquement en mode édition avec un taskId)
   const taskId = taskForm.id || taskForm._id;
@@ -739,74 +790,34 @@ export function TaskModal({
     onClose?.();
   }, [onClose]);
 
-  // Toggle membre : mise à jour partielle pour éviter d'envoyer tous les champs.
+  // Toggle membre : assignTaskMember / unassignTaskMember (mutations
+  // atomiques) en édition, formulaire seul en création.
   //
-  // IMPORTANT : on lit `current` depuis un ref (et non depuis `taskForm` via
-  // closure) pour gérer correctement les clics rapides. Sans ce ref, deux
-  // clics successifs avant un re-render React utilisent la même closure
-  // stale et envoient des mutations incohérentes au serveur, ce qui provoque
-  // l'envoi d'emails d'assignation aux mauvais destinataires (le diff
-  // `oldTask` vs `updates.assignedMembers` côté backend est faussé).
-  //
-  // On ne déclenche PLUS `triggerAutoSave()` ici : l'auto-save n'envoie plus
-  // `assignedMembers` (cf. useKanbanTasks.handleUpdateTask), donc il n'y a
-  // plus de risque d'écraser l'état des membres.
-  // Coalesce les clics rapides en une seule mutation par tâche (debounce).
-  // Cf. useMemberToggle : sans cela, retirer plusieurs membres très vite envoie
-  // une rafale de mutations dont les échos désordonnés « remettent » un membre.
-  // Dernière liste de membres CONFIRMÉE par le serveur (point de retour en cas
-  // d'échec). Initialisée à l'ouverture, mise à jour à chaque flush réussi.
-  const confirmedMembersRef = useRef(taskForm?.assignedMembers || []);
-  useEffect(() => {
-    if (isOpen) {
-      confirmedMembersRef.current = assignedMembersRef.current || [];
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, taskForm?.id]);
-
-  const flushMembers = useDebouncedMemberFlush({
-    updateTask,
-    workspaceId,
-    localMutationRef,
-    onSuccess: (_taskId, members) => {
-      confirmedMembersRef.current = members;
-    },
-    // En cas d'échec (ex: erreur d'auth), revenir à la dernière valeur confirmée :
-    // la mutation n'a pas été persistée, donc l'état local optimiste est faux et
-    // doit être réaligné, sinon les toggles suivants partent d'une base fausse.
-    onError: () => {
-      const truth = confirmedMembersRef.current || [];
-      assignedMembersRef.current = truth;
-      setTaskForm((prev) => ({ ...prev, assignedMembers: truth }));
-    },
-  });
-
+  // IMPORTANT : on lit l'état courant depuis un ref (et non depuis `taskForm`
+  // via closure) pour gérer correctement les clics rapides : deux clics avant
+  // un re-render verraient la même closure et enverraient deux assignations
+  // au lieu d'une assignation puis d'un retrait.
   const handleMemberToggle = useCallback(
     (memberId) => {
+      // Rôle sans écriture : l'API refuserait
+      if (listOps && !canEditKanban) return;
       const current = assignedMembersRef.current || [];
-      const newMembers = current.includes(memberId)
-        ? current.filter((id) => id !== memberId)
-        : [...current, memberId];
+      const assign = !current.includes(memberId);
+      const newMembers = assign
+        ? [...current, memberId]
+        : current.filter((id) => id !== memberId);
 
       // Mettre à jour le ref IMMÉDIATEMENT pour que le prochain clic (même
       // avant re-render) voit la nouvelle valeur.
       assignedMembersRef.current = newMembers;
 
-      setTaskForm((prev) => ({ ...prev, assignedMembers: newMembers }));
-
-      // En mode édition, planifier l'envoi (debouncé) au serveur.
-      if (isEditing && updateTask && taskForm.id && canEditKanban) {
-        flushMembers(taskForm.id, newMembers);
+      if (listOps) {
+        listOps.setMember(memberId, assign);
+        return;
       }
+      setTaskForm((prev) => ({ ...prev, assignedMembers: newMembers }));
     },
-    [
-      setTaskForm,
-      isEditing,
-      updateTask,
-      taskForm.id,
-      flushMembers,
-      canEditKanban,
-    ],
+    [setTaskForm, listOps, canEditKanban],
   );
 
   // Gestion de la date d'échéance
@@ -1522,16 +1533,9 @@ export function TaskModal({
                                             : tag.name}
                                           <button
                                             type="button"
-                                            onClick={() => {
-                                              const newTags =
-                                                taskForm.tags.filter(
-                                                  (_, idx) => idx !== i,
-                                                );
-                                              setTaskForm({
-                                                ...taskForm,
-                                                tags: newTags,
-                                              });
-                                            }}
+                                            onClick={() =>
+                                              handleTagRemove(tag.name)
+                                            }
                                             className="hover:opacity-70 cursor-pointer"
                                           >
                                             <X className="h-2.5 w-2.5" />
@@ -1557,22 +1561,7 @@ export function TaskModal({
                                     e.currentTarget.value.trim()
                                   ) {
                                     e.preventDefault();
-                                    const newTag = e.currentTarget.value.trim();
-                                    if (
-                                      !taskForm.tags?.find(
-                                        (t) =>
-                                          t.name.toLowerCase() ===
-                                          newTag.toLowerCase(),
-                                      )
-                                    ) {
-                                      setTaskForm({
-                                        ...taskForm,
-                                        tags: [
-                                          ...(taskForm.tags || []),
-                                          { name: newTag, className: "" },
-                                        ],
-                                      });
-                                    }
+                                    handleTagAdd(e.currentTarget.value);
                                     e.currentTarget.value = "";
                                   }
                                 }}
@@ -2454,9 +2443,7 @@ export function TaskModal({
                         {taskForm.tags.length > 0 && canEditKanban && (
                           <button
                             type="button"
-                            onClick={() =>
-                              setTaskForm({ ...taskForm, tags: [] })
-                            }
+                            onClick={handleTagsClear}
                             className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
                             title="Supprimer tous les tags"
                           >
@@ -2492,16 +2479,9 @@ export function TaskModal({
                                         {canEditKanban && (
                                           <button
                                             type="button"
-                                            onClick={() => {
-                                              const newTags =
-                                                taskForm.tags.filter(
-                                                  (_, i) => i !== index,
-                                                );
-                                              setTaskForm({
-                                                ...taskForm,
-                                                tags: newTags,
-                                              });
-                                            }}
+                                            onClick={() =>
+                                              handleTagRemove(tag.name)
+                                            }
                                             className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
                                           >
                                             <X className="h-3 w-3" />
@@ -2532,21 +2512,7 @@ export function TaskModal({
                                       e.currentTarget.value.trim()
                                     ) {
                                       e.preventDefault();
-                                      const newTag =
-                                        e.currentTarget.value.trim();
-                                      if (
-                                        !taskForm.tags.find(
-                                          (t) => t.name === newTag,
-                                        )
-                                      ) {
-                                        setTaskForm({
-                                          ...taskForm,
-                                          tags: [
-                                            ...taskForm.tags,
-                                            { name: newTag },
-                                          ],
-                                        });
-                                      }
+                                      handleTagAdd(e.currentTarget.value);
                                       e.currentTarget.value = "";
                                     }
                                   }}
