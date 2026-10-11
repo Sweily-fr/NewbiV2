@@ -290,14 +290,17 @@ export default function FacturationSection({
           title={trialTitle}
           description={trialCopy}
           action={
-            <Button
-              type="button"
-              onClick={() => onTabChange?.("subscription")}
-              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
-            >
-              <Crown className="h-4 w-4 mr-2" />
-              {isTrialAppWithoutStripe ? "Souscrire" : "Voir les plans"}
-            </Button>
+            // Souscrire : « Gérer l'abonnement »
+            canManageSubscription && (
+              <Button
+                type="button"
+                onClick={() => onTabChange?.("subscription")}
+                className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                {isTrialAppWithoutStripe ? "Souscrire" : "Voir les plans"}
+              </Button>
+            )
           }
         />
       </div>
@@ -350,19 +353,21 @@ export default function FacturationSection({
                 </p>
               </div>
             </div>
-            <Button
-              type="button"
-              onClick={handleOpenBillingPortal}
-              disabled={billingPortalLoading || !canManageSubscription}
-              className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer shrink-0"
-              size="sm"
-            >
-              {billingPortalLoading ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                "Ajouter un moyen de paiement"
-              )}
-            </Button>
+            {canManageSubscription && (
+              <Button
+                type="button"
+                onClick={handleOpenBillingPortal}
+                disabled={billingPortalLoading}
+                className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer shrink-0"
+                size="sm"
+              >
+                {billingPortalLoading ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Ajouter un moyen de paiement"
+                )}
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -537,16 +542,18 @@ export default function FacturationSection({
                 </p>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              onClick={() => onTabChange?.("subscription")}
-              className="cursor-pointer gap-1.5"
-            >
-              Changer de plan
-              <TrendUpIcon className="h-4 w-4" />
-            </Button>
+            {canManageSubscription && (
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => onTabChange?.("subscription")}
+                className="cursor-pointer gap-1.5"
+              >
+                Changer de plan
+                <TrendUpIcon className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -715,20 +722,22 @@ export default function FacturationSection({
                   Gérer via le portail Stripe
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 cursor-pointer"
-                onClick={() => handleOpenBillingPortal("address")}
-                disabled={billingPortalLoading || !canManageSubscription}
-              >
-                {billingPortalLoadingTarget === "address" ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Pencil className="h-4 w-4" />
-                )}
-              </Button>
+              {canManageSubscription && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 cursor-pointer"
+                  onClick={() => handleOpenBillingPortal("address")}
+                  disabled={billingPortalLoading}
+                >
+                  {billingPortalLoadingTarget === "address" ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Pencil className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
             </div>
             <div className="text-sm divide-y divide-gray-100 dark:divide-[#2c2c2c]">
               <div className="flex justify-between py-3">
@@ -785,20 +794,22 @@ export default function FacturationSection({
                   Gérer via le portail Stripe
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 cursor-pointer"
-                onClick={() => handleOpenBillingPortal("payment")}
-                disabled={billingPortalLoading || !canManageSubscription}
-              >
-                {billingPortalLoadingTarget === "payment" ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
-              </Button>
+              {canManageSubscription && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 cursor-pointer"
+                  onClick={() => handleOpenBillingPortal("payment")}
+                  disabled={billingPortalLoading}
+                >
+                  {billingPortalLoadingTarget === "payment" ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
             </div>
             <TableEmptyState
               icon={BankCardIcon}
@@ -806,16 +817,18 @@ export default function FacturationSection({
               description="Vos moyens de paiement sont gérés directement par Stripe."
               size="xs"
               action={
-                <Button
-                  type="button"
-                  variant="link"
-                  size="sm"
-                  className="text-[#5b50fe] cursor-pointer h-auto p-0 text-xs"
-                  onClick={handleOpenBillingPortal}
-                  disabled={billingPortalLoading || !canManageSubscription}
-                >
-                  Ouvrir le portail de paiement
-                </Button>
+                canManageSubscription && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="text-[#5b50fe] cursor-pointer h-auto p-0 text-xs"
+                    onClick={handleOpenBillingPortal}
+                    disabled={billingPortalLoading}
+                  >
+                    Ouvrir le portail de paiement
+                  </Button>
+                )
               }
             />
           </div>
@@ -1014,16 +1027,18 @@ export default function FacturationSection({
                   cours.
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCancelDialog(true)}
-                disabled={!canManageSubscription || isCancelling}
-                className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20 cursor-pointer"
-              >
-                Résilier l'abonnement
-              </Button>
+              {canManageSubscription && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCancelDialog(true)}
+                  disabled={isCancelling}
+                  className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/20 cursor-pointer"
+                >
+                  Résilier l'abonnement
+                </Button>
+              )}
             </div>
           </div>
         )}

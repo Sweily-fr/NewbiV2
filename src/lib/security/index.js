@@ -10,6 +10,7 @@
 
 export { requireSession } from "./require-session";
 export { requireOrgMembership } from "./require-org-membership";
+export { requireOrgAction } from "./require-org-action";
 export { requireActiveSubscription } from "./require-active-subscription";
 export {
   requireInternalSecret,

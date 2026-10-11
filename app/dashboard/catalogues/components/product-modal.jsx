@@ -507,6 +507,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                   <ProductCustomFieldsForm
                     values={customFieldValues}
                     onChange={handleCustomFieldChange}
+                    canEdit={canEditProducts}
                   />
                 </div>
 

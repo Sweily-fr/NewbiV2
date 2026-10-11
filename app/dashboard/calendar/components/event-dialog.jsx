@@ -797,7 +797,22 @@ export function EventDialog({
             <Separator className="mb-4" />
             <div className="pb-4">
               {isReadOnly ? (
-                <div className="flex w-full justify-end">
+                // Sans « Modifier » : la suppression reste liée au seul droit
+                // « Supprimer » (jamais pour un événement externe)
+                <div className="flex w-full items-center justify-between">
+                  {event?.id && canDelete && !event?.isReadOnly ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDelete}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
+                    >
+                      <Trash2 size={16} />
+                      Supprimer
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
                   <Button variant="outline" onClick={onClose}>
                     Fermer
                   </Button>

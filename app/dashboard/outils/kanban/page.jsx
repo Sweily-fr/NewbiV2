@@ -370,8 +370,9 @@ function KanbanPageContent() {
           </DropdownMenu>
 
           {/* Nouvelle liste */}
+          {/* Ouverte aussi par ?new=true (menu) : jamais sans « Créer » */}
           <Dialog
-            open={isCreateDialogOpen}
+            open={isCreateDialogOpen && canCreateKanban}
             onOpenChange={(open) => {
               setIsCreateDialogOpen(open);
               if (!open) {

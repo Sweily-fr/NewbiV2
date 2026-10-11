@@ -1653,7 +1653,14 @@ export function PurchaseInvoiceDetailDrawer({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {STATUS_OPTIONS.map((opt) => (
+                        {/* « Payée » : action « Marquer comme payée » (gardée
+                            si la facture l'est déjà, pour l'afficher) */}
+                        {STATUS_OPTIONS.filter(
+                          (opt) =>
+                            opt.value !== "PAID" ||
+                            canMarkPaidPurchaseInvoices ||
+                            form.status === "PAID",
+                        ).map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>

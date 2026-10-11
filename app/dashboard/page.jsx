@@ -307,6 +307,15 @@ function DashboardContent() {
     const urlParams = new URLSearchParams(window.location.search);
     const isFromBridge = urlParams.has("item_id") || urlParams.has("status");
 
+    // Synchroniser les comptes : action « sync » des transactions. On attend
+    // la grille des droits ; sans ce droit, on se contente de nettoyer l'URL
+    if (isFromBridge && workspaceId && permissionsPending) return;
+    if (isFromBridge && permissionsReady && !canDo("banking", "sync")) {
+      hasHandledBridgeReturn.current = true;
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+
     if (isFromBridge && workspaceId) {
       hasHandledBridgeReturn.current = true;
       // Afficher l'overlay de chargement immédiatement
@@ -363,7 +372,7 @@ function DashboardContent() {
       setTimeout(syncBankAccounts, 1500);
       safetyTimer = setTimeout(() => setIsBankSyncing(false), 30000);
     }
-  }, [workspaceId, refreshData]);
+  }, [workspaceId, refreshData, permissionsPending, permissionsReady, canDo]);
 
   // Gérer le retour de Stripe Connect
   useEffect(() => {

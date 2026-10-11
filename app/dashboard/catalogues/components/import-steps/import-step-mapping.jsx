@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Input } from "@/src/components/ui/input";
@@ -221,6 +222,9 @@ export default function ImportStepMapping({
 }) {
   const [creatingForIndex, setCreatingForIndex] = useState(null);
   const [showFormForIndex, setShowFormForIndex] = useState(null);
+  // Créer un champ personnalisé : action « customFields » du catalogue
+  const { canDo, isReady } = useMyPermissions();
+  const canCreateFields = !isReady || canDo("products", "customFields");
 
   // Which header indices are already used
   const usedIndices = useMemo(() => {
@@ -455,21 +459,24 @@ export default function ImportStepMapping({
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {isCreating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                  ) : (
+                  ) : !canCreateFields &&
+                    availableExistingCustomFields.length === 0 ? null : (
                     <Select onValueChange={(v) => handleColumnAction(index, v)}>
                       <SelectTrigger className="h-7 text-xs w-auto min-w-[160px]">
                         <SelectValue placeholder="Choisir un champ..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__create__">
-                          <span className="flex items-center gap-1">
-                            <Plus className="h-3 w-3" />
-                            Créer un champ
-                          </span>
-                        </SelectItem>
+                        {canCreateFields && (
+                          <SelectItem value="__create__">
+                            <span className="flex items-center gap-1">
+                              <Plus className="h-3 w-3" />
+                              Créer un champ
+                            </span>
+                          </SelectItem>
+                        )}
                         {availableExistingCustomFields.length > 0 && (
                           <>
-                            <SelectSeparator />
+                            {canCreateFields && <SelectSeparator />}
                             {availableExistingCustomFields.map((cf) => (
                               <SelectItem key={cf.id} value={cf.id}>
                                 {cf.name}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
+import { getAccountActions } from "@/src/lib/organization-roles";
 import { ObjectId } from "mongodb";
 import { enforceSessionLimit } from "@/src/lib/enforce-session-limit";
 
@@ -60,6 +61,20 @@ export async function PUT(req) {
       return NextResponse.json(
         { error: "Aucune organisation active" },
         { status: 400 },
+      );
+    }
+
+    // Réglages de sécurité de l'espace : « Modifier » les informations de
+    // l'entreprise (un rôle qui n'a que « Voir » est refusé)
+    const { role, actions } = await getAccountActions(mongoDb, {
+      userId: session.user.id,
+      organizationId: orgId,
+      moduleKey: "orgSettings",
+    });
+    if (!role || !actions.includes("edit")) {
+      return NextResponse.json(
+        { error: "Votre rôle ne permet pas de modifier ces réglages." },
+        { status: 403 },
       );
     }
 

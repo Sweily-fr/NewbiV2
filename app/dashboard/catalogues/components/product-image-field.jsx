@@ -92,11 +92,16 @@ export default function ProductImageField({
           value && "overflow-hidden border bg-background",
         )}
       >
+        {/* Lecture seule : image affichée sans zone cliquable ni dépôt */}
         <div
-          role="button"
-          tabIndex={loading ? -1 : 0}
+          role={canEditProducts ? "button" : undefined}
+          tabIndex={loading || !canEditProducts ? -1 : 0}
           aria-label={
-            value ? "Remplacer l'image du produit" : "Ajouter une image"
+            !canEditProducts
+              ? "Image du produit"
+              : value
+                ? "Remplacer l'image du produit"
+                : "Ajouter une image"
           }
           onClick={openPicker}
           onKeyDown={(e) => {
@@ -106,6 +111,7 @@ export default function ProductImageField({
             }
           }}
           onDragOver={(e) => {
+            if (!canEditProducts) return;
             e.preventDefault();
             setDragging(true);
           }}
@@ -116,7 +122,8 @@ export default function ProductImageField({
             handleFile(e.dataTransfer.files?.[0]);
           }}
           className={cn(
-            "group relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden outline-none transition-all focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+            "group relative flex aspect-square w-full items-center justify-center overflow-hidden outline-none transition-all focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+            canEditProducts && "cursor-pointer",
             value
               ? "bg-muted"
               : "rounded-xl border border-dashed bg-muted/40 hover:border-foreground/30 hover:bg-muted/70",
@@ -216,12 +223,13 @@ export default function ProductImageField({
                 {showOnDocuments ? "Affichée par défaut" : "Masquée par défaut"}
               </span>
             </span>
-            <Switch
-              checked={showOnDocuments}
-              onCheckedChange={onShowOnDocumentsChange}
-              disabled={!canEditProducts}
-              aria-label="Afficher l'image sur les documents"
-            />
+            {canEditProducts && (
+              <Switch
+                checked={showOnDocuments}
+                onCheckedChange={onShowOnDocumentsChange}
+                aria-label="Afficher l'image sur les documents"
+              />
+            )}
           </label>
         )}
       </div>

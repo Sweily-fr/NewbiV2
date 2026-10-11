@@ -30,22 +30,45 @@ export const organizationRoles = {
 };
 
 /**
- * Actions par défaut des pages du compte qu'un hook Better Auth doit
- * vérifier (mêmes valeurs que les grilles prédéfinies de l'API). Un rôle
- * ajusté ou personnalisé a sa grille dans `organizationRole.actions` (ou
- * `levels` s'il a été enregistré avant les actions).
+ * Actions par défaut des pages du compte vérifiées côté serveur du site
+ * (hooks Better Auth, routes API) : mêmes valeurs que les grilles
+ * prédéfinies de l'API. Un rôle ajusté ou personnalisé a sa grille dans
+ * `organizationRole.actions` (ou `levels` s'il a été enregistré avant les
+ * actions).
  */
 const ACCOUNT_ACTIONS = {
   team: ["view", "invite", "changeRole", "remove"],
   orgSettings: ["view", "edit"],
+  integrations: ["view", "manage"],
+  billing: ["view", "manage"],
 };
 
 const DEFAULT_ACCOUNT_ACTIONS = {
   owner: ACCOUNT_ACTIONS,
-  admin: { team: ["view"], orgSettings: ["view", "edit"] },
-  member: { team: ["view"], orgSettings: ["view"] },
-  viewer: { team: ["view"], orgSettings: ["view"] },
-  accountant: { team: ["view"], orgSettings: ["view"] },
+  admin: {
+    team: ["view"],
+    orgSettings: ["view", "edit"],
+    integrations: ["view", "manage"],
+    billing: ["view"],
+  },
+  member: {
+    team: ["view"],
+    orgSettings: ["view"],
+    integrations: [],
+    billing: [],
+  },
+  viewer: {
+    team: ["view"],
+    orgSettings: ["view"],
+    integrations: [],
+    billing: [],
+  },
+  accountant: {
+    team: ["view"],
+    orgSettings: ["view"],
+    integrations: ["view"],
+    billing: ["view"],
+  },
 };
 
 /** Actions d'une page du compte dans un document `organizationRole`. */
@@ -67,7 +90,7 @@ function toObjectId(ObjectId, id) {
 
 /**
  * Rôle d'un utilisateur dans un espace et ses actions sur une page du compte
- * (`team` ou `orgSettings`). Renvoie `{ role: null, actions: [] }` si
+ * (`team`, `orgSettings`, `integrations` ou `billing`). Renvoie `{ role: null, actions: [] }` si
  * l'utilisateur n'est pas membre.
  */
 export async function getAccountActions(

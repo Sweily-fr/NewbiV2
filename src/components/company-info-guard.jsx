@@ -26,6 +26,7 @@ const SettingsModal = dynamic(
   { ssr: false },
 );
 import { cn } from "@/src/lib/utils";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 /**
  * Composant Guard pour protéger les pages nécessitant des informations d'entreprise complètes
@@ -36,6 +37,10 @@ import { cn } from "@/src/lib/utils";
 // d'intercaler un spinner plein écran entre deux skeletons.
 export function CompanyInfoGuard({ children, fallback = null }) {
   const { organization, isLoading } = useDashboardLayoutContext();
+  // Compléter les informations : « Modifier » les informations de
+  // l'entreprise ; sinon, on invite à contacter l'administrateur
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canEditOrgSettings = !permissionsReady || canDo("orgSettings", "edit");
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -252,16 +257,22 @@ export function CompanyInfoGuard({ children, fallback = null }) {
                   >
                     Retour
                   </button>
-                  <Button
-                    variant="primary"
-                    onClick={handleGoToSettings}
-                    className="gap-2 cursor-pointer"
-                  >
-                    Compléter
-                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
-                      <CornerDownLeft className="size-3" />
-                    </kbd>
-                  </Button>
+                  {canEditOrgSettings ? (
+                    <Button
+                      variant="primary"
+                      onClick={handleGoToSettings}
+                      className="gap-2 cursor-pointer"
+                    >
+                      Compléter
+                      <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                        <CornerDownLeft className="size-3" />
+                      </kbd>
+                    </Button>
+                  ) : (
+                    <span className="text-[13px] text-muted-foreground">
+                      Contactez l&apos;administrateur de l&apos;espace
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { useState } from "react";
 import Link from "@/src/components/nav-link";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import {
   Crown,
   Settings2,
@@ -260,6 +261,11 @@ export function NavSecondary({
     useEInvoicingSettings();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  // Activer la facturation électronique : « Gérer les applications » (la
+  // carte n'apparaît qu'une fois la grille des droits chargée)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canManageIntegrations =
+    permissionsReady && canDo("integrations", "manage");
 
   // Vérifier si la facturation électronique est activée
   const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
@@ -296,6 +302,7 @@ export function NavSecondary({
             Sidebar collapsed : icône Sparkles avec tooltip. */}
         {!eInvoicingLoading &&
           !isEInvoicingEnabled &&
+          canManageIntegrations &&
           (isCollapsed ? (
             <SidebarMenu>
               <SidebarMenuItem>

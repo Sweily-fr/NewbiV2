@@ -560,22 +560,33 @@ export function SecuritySection({
                 Définir la durée de validité des sessions utilisateur
               </p>
             </div>
-            <Select
-              value={securitySettings.sessionDuration.toString()}
-              onValueChange={(value) =>
-                handleSessionSettingsChange("sessionDuration", value)
-              }
-              disabled={isSessionLoading}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">7 jours</SelectItem>
-                <SelectItem value="30">30 jours</SelectItem>
-                <SelectItem value="90">90 jours</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Réglage de l'espace : valeur seule sans « Modifier » */}
+            {canManageOrgSettings ? (
+              <Select
+                value={securitySettings.sessionDuration.toString()}
+                onValueChange={(value) =>
+                  handleSessionSettingsChange("sessionDuration", value)
+                }
+                disabled={isSessionLoading}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 jours</SelectItem>
+                  <SelectItem value="30">30 jours</SelectItem>
+                  <SelectItem value="90">90 jours</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {
+                  { 7: "7 jours", 30: "30 jours", 90: "90 jours" }[
+                    securitySettings.sessionDuration.toString()
+                  ]
+                }
+              </span>
+            )}
           </div>
 
           <div className="flex items-start justify-between">
@@ -585,23 +596,37 @@ export function SecuritySection({
                 Déconnexion automatique après inactivité
               </p>
             </div>
-            <Select
-              value={securitySettings.inactivityTimeout.toString()}
-              onValueChange={(value) =>
-                handleSessionSettingsChange("inactivityTimeout", value)
-              }
-              disabled={isSessionLoading}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0.25">15 minutes</SelectItem>
-                <SelectItem value="1">1 heure</SelectItem>
-                <SelectItem value="12">12 heures</SelectItem>
-                <SelectItem value="24">24 heures</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Réglage de l'espace : valeur seule sans « Modifier » */}
+            {canManageOrgSettings ? (
+              <Select
+                value={securitySettings.inactivityTimeout.toString()}
+                onValueChange={(value) =>
+                  handleSessionSettingsChange("inactivityTimeout", value)
+                }
+                disabled={isSessionLoading}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0.25">15 minutes</SelectItem>
+                  <SelectItem value="1">1 heure</SelectItem>
+                  <SelectItem value="12">12 heures</SelectItem>
+                  <SelectItem value="24">24 heures</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {
+                  {
+                    0.25: "15 minutes",
+                    1: "1 heure",
+                    12: "12 heures",
+                    24: "24 heures",
+                  }[securitySettings.inactivityTimeout.toString()]
+                }
+              </span>
+            )}
           </div>
 
           <div className="flex items-start justify-between">
@@ -613,22 +638,33 @@ export function SecuritySection({
                 navigateurs sur le même ordinateur comptent pour deux sessions.
               </p>
             </div>
-            <Select
-              value={securitySettings.maxSessions.toString()}
-              onValueChange={(value) =>
-                handleSessionSettingsChange("maxSessions", value)
-              }
-              disabled={isSessionLoading}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 session</SelectItem>
-                <SelectItem value="2">2 sessions</SelectItem>
-                <SelectItem value="3">3 sessions</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Réglage de l'espace : valeur seule sans « Modifier » */}
+            {canManageOrgSettings ? (
+              <Select
+                value={securitySettings.maxSessions.toString()}
+                onValueChange={(value) =>
+                  handleSessionSettingsChange("maxSessions", value)
+                }
+                disabled={isSessionLoading}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 session</SelectItem>
+                  <SelectItem value="2">2 sessions</SelectItem>
+                  <SelectItem value="3">3 sessions</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                {
+                  { 1: "1 session", 2: "2 sessions", 3: "3 sessions" }[
+                    securitySettings.maxSessions.toString()
+                  ]
+                }
+              </span>
+            )}
           </div>
         </div>
 
