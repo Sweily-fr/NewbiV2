@@ -664,6 +664,9 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
   const [message, setMessage] = useState("");
   const [requestSent, setRequestSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Partage protégé sans jeton d'accès en main : mot de passe demandé
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [sharePassword, setSharePassword] = useState("");
 
   const [requestAccess] = useMutation(REQUEST_ACCESS);
 
@@ -690,10 +693,24 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
 
     try {
       const result = await requestAccess({
-        variables: { token, email, name, message },
+        variables: {
+          token,
+          email,
+          name,
+          message,
+          password: needsPassword ? sharePassword : null,
+          accessToken: readStoredAccessToken(token) || null,
+        },
       });
 
-      if (result.data?.requestAccess?.success) {
+      if (result.data?.requestAccess?.requiresPassword) {
+        setNeedsPassword(true);
+        if (needsPassword) {
+          toast.error(
+            result.data.requestAccess.message || "Mot de passe incorrect",
+          );
+        }
+      } else if (result.data?.requestAccess?.success) {
         setRequestSent(true);
         if (result.data.requestAccess.alreadyRequested) {
           toast.info("Votre demande est déjà en attente de validation");
@@ -786,10 +803,33 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
                       className="resize-none"
                     />
                   </div>
+
+                  {needsPassword && (
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="banned-share-password"
+                        className="text-sm"
+                      >
+                        Mot de passe du tableau
+                      </Label>
+                      <Input
+                        id="banned-share-password"
+                        type="password"
+                        autoFocus
+                        value={sharePassword}
+                        onChange={(e) => setSharePassword(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || (needsPassword && !sharePassword)}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -872,6 +912,7 @@ function ProfileModal({
           token,
           email: visitorEmail,
           file,
+          accessToken: readStoredAccessToken(token) || null,
         },
       });
 
@@ -1369,6 +1410,7 @@ function PublicTaskActivity({
                 taskId: task.id,
                 file: imageData.file,
                 visitorEmail,
+                accessToken: readStoredAccessToken(token) || null,
               },
             });
             if (result.data?.uploadExternalCommentImage?.success) {
@@ -1409,6 +1451,7 @@ function PublicTaskActivity({
           taskId: task.id,
           content: commentContent || null,
           visitorEmail,
+          accessToken: readStoredAccessToken(token) || null,
           images: hasUploadedImages
             ? uploadedImageUrls.map((img) => ({
                 id: img.id,
@@ -3671,8 +3714,11 @@ const getStorageKey = (token) => `public_kanban_visitor_${token}`;
 // (12 h) : gardé pour les rechargements et l'abonnement temps réel, à la
 // place du mot de passe lui-même
 const getAccessTokenKey = (token) => `public_kanban_access_${token}`;
+// Copie en mémoire : lue par les commentaires, images et profil du visiteur
+const accessTokensInMemory = new Map();
 
 const readStoredAccessToken = (token) => {
+  if (accessTokensInMemory.has(token)) return accessTokensInMemory.get(token);
   try {
     return localStorage.getItem(getAccessTokenKey(token)) || "";
   } catch {
@@ -3681,6 +3727,7 @@ const readStoredAccessToken = (token) => {
 };
 
 const storeAccessToken = (token, accessToken) => {
+  accessTokensInMemory.set(token, accessToken || "");
   try {
     if (accessToken) {
       localStorage.setItem(getAccessTokenKey(token), accessToken);
@@ -3756,7 +3803,12 @@ export default function PublicKanbanPage({ params }) {
 
   // Subscription pour les mises à jour en temps réel
   useSubscription(PUBLIC_TASK_UPDATED_SUBSCRIPTION, {
-    variables: { token, boardId: boardData?.id, accessToken: shareAccessToken },
+    variables: {
+      token,
+      boardId: boardData?.id,
+      accessToken: shareAccessToken,
+      email: visitorEmail?.toLowerCase() || null,
+    },
     skip: !boardData?.id || !token,
     onData: ({ data }) => {
       const payload = data?.data?.publicTaskUpdated;
@@ -4102,6 +4154,7 @@ export default function PublicKanbanPage({ params }) {
         variables: {
           token,
           email: visitorEmail,
+          accessToken: shareAccessTokenRef.current || null,
           input: {
             firstName: profileData.firstName,
             lastName: profileData.lastName,
@@ -4240,7 +4293,9 @@ export default function PublicKanbanPage({ params }) {
         setPasswordGate(null);
         return null;
       }
-      if (data?.requiresPassword) return "Mot de passe incorrect";
+      if (data?.requiresPassword) {
+        return data.message || "Mot de passe incorrect";
+      }
       setPasswordGate(null);
       if (data?.isBanned) {
         setVisitorEmail(gate.email);
@@ -4268,7 +4323,7 @@ export default function PublicKanbanPage({ params }) {
   }
 
   // Error state
-  if (accessError) {
+  if (accessError && !showEmailModal) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md w-full mx-4">
