@@ -407,7 +407,11 @@ export default function RolesSection() {
               </div>
             ))
           : roles.map((role) => {
-              const people = role.memberCount + role.invitationCount;
+              // Effectifs null : le rôle de l'appelant ne permet pas de voir les membres
+              const people =
+                role.memberCount == null && role.invitationCount == null
+                  ? null
+                  : (role.memberCount || 0) + (role.invitationCount || 0);
               return (
                 <button
                   key={role.key}
@@ -441,10 +445,12 @@ export default function RolesSection() {
                       </p>
                     )}
                   </div>
-                  <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-                    <Users className="size-3.5" />
-                    {people}
-                  </span>
+                  {people !== null && (
+                    <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      <Users className="size-3.5" />
+                      {people}
+                    </span>
+                  )}
                   <span className="shrink-0 text-xs text-[#5b4fff]">
                     {isOwner && role.editable ? "Modifier" : "Voir"}
                   </span>
