@@ -2,25 +2,56 @@ import { NextResponse } from "next/server";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
-  requireOrgMembership,
+  requireOrgBillingVisibility,
+  pickFields,
   toObjectId,
   withErrorHandler,
 } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
 
 /**
+ * Champs servis à un membre sans « Voir l'abonnement » : ce dont toute
+ * l'interface a besoin (accès aux fonctionnalités, lecture seule après
+ * expiration, bannières d'essai), sans identifiants Stripe ni détails de
+ * facturation. `periodEnd` reste : un abonnement résilié garde l'accès
+ * jusqu'à cette date (useSubscriptionAccess, layout du dashboard).
+ */
+const MEMBER_SUBSCRIPTION_FIELDS = [
+  "plan",
+  "status",
+  "periodEnd",
+  "isDefault",
+  "isExpired",
+  "appTrialEnabled",
+  "isTrialActive",
+  "trialStartDate",
+  "trialEndDate",
+  "stripeTrialActive",
+  "hasUsedTrial",
+];
+
+/**
  * GET /api/organizations/[organizationId]/subscription
  *
- * Retrieve subscription details for an organization.
- * Auth: session + org membership (any role can view subscription).
+ * Abonnement d'un espace.
+ * Auth : session + membre de l'espace. Réponse complète (identifiants
+ * Stripe, dates de période, résiliation programmée) avec « Voir
+ * l'abonnement » ; sinon statut, plan et essai seulement.
  */
 async function handler(request, { params }) {
   const { user } = await requireSession(request);
   const { organizationId } = await params;
 
-  await requireOrgMembership(user.id, organizationId);
-
   const orgObjectId = toObjectId(organizationId);
+
+  const { canViewBilling } = await requireOrgBillingVisibility(
+    user.id,
+    orgObjectId,
+  );
+  const respond = (body) =>
+    NextResponse.json(
+      canViewBilling ? body : pickFields(body, MEMBER_SUBSCRIPTION_FIELDS),
+    );
 
   // Fetch subscription + organization in parallel — the organization carries
   // the app-managed trial flags (trialEndDate / isTrialActive / stripeTrialActive)
@@ -64,7 +95,7 @@ async function handler(request, { params }) {
   };
 
   if (!subscription) {
-    return NextResponse.json({
+    return respond({
       plan: null,
       status: null,
       isDefault: true,
@@ -81,7 +112,7 @@ async function handler(request, { params }) {
     subscription.status === "canceled" && periodEnd && periodEnd < now;
 
   if (isExpired) {
-    return NextResponse.json({
+    return respond({
       plan: subscription.plan,
       status: "expired",
       stripeSubscriptionId: subscription.stripeSubscriptionId,
@@ -92,7 +123,7 @@ async function handler(request, { params }) {
     });
   }
 
-  return NextResponse.json({
+  return respond({
     plan: subscription.plan,
     status: subscription.status,
     stripeSubscriptionId: subscription.stripeSubscriptionId,

@@ -1,11 +1,38 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { seatSyncService } from "@/src/services/seatSyncService";
-import { withErrorHandler } from "@/src/lib/security";
+import {
+  getOrgBillingVisibility,
+  pickFields,
+  withErrorHandler,
+} from "@/src/lib/security";
 import { getPlanDisplay } from "@/src/lib/plans-display";
 import { getPlanLimits, getSeatPrice } from "@/src/lib/plan-limits";
 
 const PLAN_ORDER = ["freelance", "pme", "entreprise"];
+
+// Réponse d'un membre sans « Voir l'abonnement » (invitation depuis le site
+// ou l'app mobile) : peut-il inviter, pourquoi, et les limites du plan. Ni
+// le coût des sièges payants, ni la recommandation de plan (coût mensuel
+// actuel de l'espace).
+const MEMBER_LIMIT_FIELDS = [
+  "canInvite",
+  "canAdd",
+  "reason",
+  "planName",
+  "isPaid",
+  "currentUsers",
+  "pendingUsers",
+  "totalUsers",
+  "limitUsers",
+  "availableUsers",
+  "maxPaidSeats",
+  "currentAccountants",
+  "pendingAccountants",
+  "totalAccountants",
+  "limitAccountants",
+  "availableAccountants",
+];
 
 // Coût mensuel d'un plan pour un nombre donné de membres facturables
 // (prix de base + sièges au-delà de la limite incluse × prix du siège du plan).
@@ -81,16 +108,14 @@ async function handler(request) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // 2. Vérifier si l'utilisateur est membre de l'organisation
-    const { mongoDb } = await import("@/src/lib/mongodb");
-    const { ObjectId } = await import("mongodb");
+    // 2. Vérifier si l'utilisateur est membre de l'organisation (et s'il voit
+    // l'abonnement : montants réservés à ce droit)
+    const { role: memberRole, canViewBilling } = await getOrgBillingVisibility(
+      session.user.id,
+      organizationId,
+    );
 
-    const member = await mongoDb.collection("member").findOne({
-      organizationId: new ObjectId(organizationId),
-      userId: new ObjectId(session.user.id),
-    });
-
-    if (!member) {
+    if (!memberRole) {
       return NextResponse.json(
         { error: "Vous n'êtes pas membre de cette organisation" },
         { status: 403 },
@@ -124,11 +149,14 @@ async function handler(request) {
     }
 
     // Adapter la réponse pour compatibilité avec l'ancien format
-    return NextResponse.json({
+    const response = {
       ...result,
       recommendation,
       canAdd: result.canInvite, // Compatibilité avec l'ancien nom
-    });
+    };
+    return NextResponse.json(
+      canViewBilling ? response : pickFields(response, MEMBER_LIMIT_FIELDS),
+    );
   } catch (error) {
     console.error("❌ [CHECK-LIMIT] Erreur:", error);
     return NextResponse.json(
