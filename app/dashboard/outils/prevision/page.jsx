@@ -472,8 +472,8 @@ export default function PrevisionPage() {
                         />
                       </TooltipTrigger>
                       <TooltipContent>
-                        Horizon limité à {maxPeriod} mois sur votre plan — la
-                        fin est ramenée en conséquence.
+                        Horizon limité à {maxPeriod} mois sur votre plan, la fin
+                        est ramenée en conséquence.
                       </TooltipContent>
                     </Tooltip>
                   )}

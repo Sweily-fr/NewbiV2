@@ -356,7 +356,7 @@ function BoardAccessPopover({
           {!canEdit && roleCanEdit && (
             <div className="mt-1.5 flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
               <Lock className="h-3 w-3" />
-              Lecture seule — seul le créateur peut modifier
+              Lecture seule : seul le créateur peut modifier
             </div>
           )}
           {!roleCanEdit && (

@@ -800,9 +800,7 @@ export function EInvoicingSection({
       {!canManageOrgSettings && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <NotificationIcon className="h-3.5 w-3.5" />
-          <span>
-            Seuls les administrateurs peuvent modifier ces paramètres.
-          </span>
+          <span>Votre rôle ne permet pas de modifier ces paramètres.</span>
         </div>
       )}
     </div>

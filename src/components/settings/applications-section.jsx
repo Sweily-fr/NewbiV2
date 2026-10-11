@@ -693,7 +693,7 @@ function PennylaneConnectionPanel({
 
         {!actions.canManage && (
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Seuls les propriétaires et administrateurs peuvent gérer Pennylane
+            Votre rôle ne permet pas de gérer Pennylane
           </p>
         )}
       </div>
@@ -704,7 +704,7 @@ function PennylaneConnectionPanel({
   if (!actions.canManage) {
     return (
       <p className="text-xs text-amber-600 dark:text-amber-400">
-        Seuls les propriétaires et administrateurs peuvent connecter Pennylane
+        Votre rôle ne permet pas de connecter Pennylane
       </p>
     );
   }
@@ -755,7 +755,7 @@ function PennylaneConnectionPanel({
             className={`text-xs ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
           >
             {testResult.success
-              ? `Connexion réussie${testResult.companyName ? ` — ${testResult.companyName}` : ""}`
+              ? `Connexion réussie${testResult.companyName ? ` : ${testResult.companyName}` : ""}`
               : testResult.message}
           </p>
         </div>
@@ -1225,7 +1225,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
 
         {!actions.canManage && (
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Seuls les propriétaires et administrateurs peuvent gérer Qonto
+            Votre rôle ne permet pas de gérer Qonto
           </p>
         )}
       </div>
@@ -1236,7 +1236,7 @@ function QontoConnectionPanel({ app, isConnected, connectionDetail, actions }) {
   if (!actions.canManage) {
     return (
       <p className="text-xs text-amber-600 dark:text-amber-400">
-        Seuls les propriétaires et administrateurs peuvent connecter Qonto
+        Votre rôle ne permet pas de connecter Qonto
       </p>
     );
   }
@@ -1735,7 +1735,7 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
 
         {!actions.canManage && (
           <p className="text-xs text-amber-600 dark:text-amber-400">
-            Seuls les propriétaires et administrateurs peuvent gérer Abby
+            Votre rôle ne permet pas de gérer Abby
           </p>
         )}
       </div>
@@ -1746,7 +1746,7 @@ function AbbyConnectionPanel({ app, isConnected, connectionDetail, actions }) {
   if (!actions.canManage) {
     return (
       <p className="text-xs text-amber-600 dark:text-amber-400">
-        Seuls les propriétaires et administrateurs peuvent connecter Abby
+        Votre rôle ne permet pas de connecter Abby
       </p>
     );
   }
@@ -2084,8 +2084,7 @@ function AppDetailView({
 
                       {!stripeActions.canManage && (
                         <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Seuls les propriétaires et administrateurs peuvent
-                          gérer Stripe Connect
+                          Votre rôle ne permet pas de gérer Stripe Connect
                         </p>
                       )}
                     </div>
@@ -2116,8 +2115,7 @@ function AppDetailView({
                       </div>
                       {!stripeActions.canManage && (
                         <p className="text-xs text-amber-600 dark:text-amber-400">
-                          Seuls les propriétaires et administrateurs peuvent
-                          gérer Stripe Connect
+                          Votre rôle ne permet pas de gérer Stripe Connect
                         </p>
                       )}
                     </div>

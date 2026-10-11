@@ -2752,7 +2752,7 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
               {formatTaskAmount(amount)}
             </span>
           ) : (
-            <span className="text-muted-foreground/70">—</span>
+            <span className="text-muted-foreground/70">-</span>
           );
         })()}
       </div>
