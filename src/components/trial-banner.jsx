@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Clock } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 /**
  * Bannière de fin d'essai app-managed.
@@ -18,6 +19,9 @@ export function TrialBanner({ onSubscribe }) {
   const { isTrialApp, trialDaysRemaining, isOwner, loading } =
     useSubscriptionAccess();
   const pathname = usePathname();
+  // Souscrire : « Gérer l'abonnement » (grille non chargée : propriétaire)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canSubscribe = permissionsReady ? canDo("billing", "manage") : isOwner;
 
   if (loading) return null;
   if (!isTrialApp) return null;
@@ -52,12 +56,12 @@ export function TrialBanner({ onSubscribe }) {
           <Clock className="size-4 shrink-0" aria-hidden="true" />
           <span>
             {message}
-            {isOwner
+            {canSubscribe
               ? " Souscrivez pour continuer à utiliser Newbi sans interruption."
               : " Demandez à l'administrateur de souscrire pour éviter l'interruption."}
           </span>
         </div>
-        {isOwner ? (
+        {canSubscribe ? (
           <Button
             size="sm"
             variant="default"

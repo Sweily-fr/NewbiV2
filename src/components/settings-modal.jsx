@@ -493,6 +493,23 @@ export function SettingsModal({
   };
 
   const renderContent = () => {
+    // Onglet ouvert directement (palette, menus, bannières) sans le droit
+    // de le voir : rien n'est affiché
+    const deniedTab =
+      (["facturation", "subscription"].includes(activeTab) && !showBilling) ||
+      ([
+        "comptes-bancaires",
+        "facturation-electronique",
+        "applications",
+      ].includes(activeTab) &&
+        !showIntegrations);
+    if (deniedTab) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          Votre rôle ne permet pas d&apos;accéder à cette section.
+        </p>
+      );
+    }
     // Les composants vont maintenant utiliser useFormContext()
     switch (activeTab) {
       case "espaces":
@@ -671,6 +688,9 @@ export function SettingsModal({
           formIsSubmitting={formIsSubmitting}
           isDirty={isDirty}
           onSubmit={handleSubmit(handleSaveAll, handleInvalidForm)}
+          canManageOrgSettings={canManageOrgSettings}
+          canManageSubscription={canManageSubscription}
+          showBilling={showBilling}
         />
       </FormProvider>
     );
@@ -807,26 +827,21 @@ export function SettingsModal({
                   >
                     Annuler
                   </Button>
-                  {[
-                    "generale",
-                    "coordonnees-bancaires",
-                    "informations-legales",
-                  ].includes(activeTab) && (
-                    <Button
-                      type="submit"
-                      disabled={
-                        formIsSubmitting || !isDirty || !canManageOrgSettings
-                      }
-                      className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
-                      title={
-                        !canManageOrgSettings
-                          ? "Seuls les owners et admins peuvent modifier les paramètres"
-                          : ""
-                      }
-                    >
-                      {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
-                    </Button>
-                  )}
+                  {/* Sauvegarder : « Modifier » les informations de l'entreprise */}
+                  {canManageOrgSettings &&
+                    [
+                      "generale",
+                      "coordonnees-bancaires",
+                      "informations-legales",
+                    ].includes(activeTab) && (
+                      <Button
+                        type="submit"
+                        disabled={formIsSubmitting || !isDirty}
+                        className="bg-[#5b4eff] cursor-pointer hover:bg-[#5b4eff] dark:text-white"
+                      >
+                        {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+                      </Button>
+                    )}
                 </div>
               </div>
             </div>

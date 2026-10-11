@@ -132,9 +132,8 @@ export function GeneraleSection({
           <div className="mt-4">
             <Callout type="warning" noMargin>
               <p>
-                Vous n'avez pas la permission de modifier les paramètres de
-                l'organisation. Seuls les <strong>owners</strong> et{" "}
-                <strong>admins</strong> peuvent effectuer ces modifications.
+                Votre rôle ne permet pas de modifier les informations de
+                l'entreprise.
               </p>
             </Callout>
           </div>
@@ -144,12 +143,28 @@ export function GeneraleSection({
         <div className="mb-8 mt-4 md:mt-12">
           <div className="flex items-center gap-5">
             <div ref={logoContainerRef}>
-              <CompanyLogoUpload
-                currentImageUrl={logoUrl}
-                onImageChange={handleLogoChange}
-                onOrganizationUpdate={handleOrganizationUpdate}
-                showDescription={false}
-              />
+              {/* Lecture seule : logo affiché, sans envoi ni dépôt */}
+              {canManageOrgSettings ? (
+                <CompanyLogoUpload
+                  currentImageUrl={logoUrl}
+                  onImageChange={handleLogoChange}
+                  onOrganizationUpdate={handleOrganizationUpdate}
+                  showDescription={false}
+                />
+              ) : (
+                <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-2xl border border-[#eeeff1] bg-muted dark:border-[#232323]">
+                  {logoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      className="size-full object-cover"
+                      src={logoUrl}
+                      alt="Logo de l'entreprise"
+                      width={80}
+                      height={80}
+                    />
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-1.5">
               <Label className="text-sm font-semibold text-foreground">
@@ -158,59 +173,61 @@ export function GeneraleSection({
               <p className="text-xs text-muted-foreground">
                 Formats acceptés : PNG, JPEG, WebP ou SVG (max 5MB)
               </p>
-              <div className="flex items-center gap-2 mt-1">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  disabled={!canManageOrgSettings || isReadOnly}
-                  title={readOnlyTooltip}
-                  onClick={() => {
-                    const input =
-                      logoContainerRef.current?.querySelector(
-                        'input[type="file"]',
-                      );
-                    if (input) input.click();
-                  }}
-                >
-                  <Camera className="h-4 w-4 mr-1.5" />
-                  Uploader le logo
-                </Button>
-                {logoUrl && (
+              {canManageOrgSettings && (
+                <div className="flex items-center gap-2 mt-1">
                   <Button
                     type="button"
-                    variant="outline"
-                    size="icon"
-                    disabled={!canManageOrgSettings || isReadOnly}
+                    variant="primary"
+                    size="sm"
+                    disabled={isReadOnly}
                     title={readOnlyTooltip}
-                    onClick={async () => {
-                      try {
-                        // 1. Mettre à jour le formulaire local
-                        handleLogoChange(null);
-
-                        // 2. Supprimer via GraphQL (supprime de R2 + met à jour la BDD)
-                        if (workspaceId) {
-                          await updateCompanyLogo({
-                            variables: { logoUrl: null, workspaceId },
-                          });
-                        }
-
-                        // 3. Refetch pour synchroniser la session
-                        if (refetchOrganization) {
-                          await refetchOrganization();
-                        }
-
-                        toast.success("Logo supprimé avec succès");
-                      } catch (error) {
-                        console.error("❌ Erreur suppression logo:", error);
-                        toast.error("Erreur lors de la suppression du logo");
-                      }
+                    onClick={() => {
+                      const input =
+                        logoContainerRef.current?.querySelector(
+                          'input[type="file"]',
+                        );
+                      if (input) input.click();
                     }}
                   >
-                    <Trash2 className="h-4 w-4 text-red-500" />
+                    <Camera className="h-4 w-4 mr-1.5" />
+                    Uploader le logo
                   </Button>
-                )}
-              </div>
+                  {logoUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={isReadOnly}
+                      title={readOnlyTooltip}
+                      onClick={async () => {
+                        try {
+                          // 1. Mettre à jour le formulaire local
+                          handleLogoChange(null);
+
+                          // 2. Supprimer via GraphQL (supprime de R2 + met à jour la BDD)
+                          if (workspaceId) {
+                            await updateCompanyLogo({
+                              variables: { logoUrl: null, workspaceId },
+                            });
+                          }
+
+                          // 3. Refetch pour synchroniser la session
+                          if (refetchOrganization) {
+                            await refetchOrganization();
+                          }
+
+                          toast.success("Logo supprimé avec succès");
+                        } catch (error) {
+                          console.error("❌ Erreur suppression logo:", error);
+                          toast.error("Erreur lors de la suppression du logo");
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

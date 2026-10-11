@@ -981,14 +981,16 @@ export function SearchCommand() {
                       <span>Catalogues</span>
                     </CommandItem>
                   )}
-                  <CommandItem
-                    onSelect={() => runCommand(() => openSettings("espaces"))}
-                  >
-                    <IconWrapper>
-                      <UserCog className="size-3.5" />
-                    </IconWrapper>
-                    <span>Collaborateurs</span>
-                  </CommandItem>
+                  {canReadModule("team") && (
+                    <CommandItem
+                      onSelect={() => runCommand(() => openSettings("espaces"))}
+                    >
+                      <IconWrapper>
+                        <UserCog className="size-3.5" />
+                      </IconWrapper>
+                      <span>Collaborateurs</span>
+                    </CommandItem>
+                  )}
                   {canSee("/dashboard/calendar") && (
                     <CommandItem
                       onSelect={() =>
@@ -1015,16 +1017,18 @@ export function SearchCommand() {
                       <span>Analytics</span>
                     </CommandItem>
                   )}
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => openSettings("applications"))
-                    }
-                  >
-                    <IconWrapper>
-                      <Workflow className="size-3.5" />
-                    </IconWrapper>
-                    <span>Automatisation</span>
-                  </CommandItem>
+                  {canReadModule("integrations") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => openSettings("applications"))
+                      }
+                    >
+                      <IconWrapper>
+                        <Workflow className="size-3.5" />
+                      </IconWrapper>
+                      <span>Automatisation</span>
+                    </CommandItem>
+                  )}
                   <CommandItem
                     onSelect={() => runCommand(() => openSettings("user-info"))}
                   >
@@ -1164,52 +1168,66 @@ export function SearchCommand() {
                 </CommandGroup>
                 <CommandSeparator />
                 <CommandGroup heading="Paramètres">
-                  <CommandItem
-                    onSelect={() => runCommand(() => openSettings("generale"))}
-                  >
-                    <IconWrapper>
-                      <Settings className="size-3.5" />
-                    </IconWrapper>
-                    <span>Paramètres généraux</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() => runCommand(() => openSettings("generale"))}
-                  >
-                    <IconWrapper>
-                      <User className="size-3.5" />
-                    </IconWrapper>
-                    <span>Informations entreprise</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => openSettings("coordonnees-bancaires"))
-                    }
-                  >
-                    <IconWrapper>
-                      <CreditCard className="size-3.5" />
-                    </IconWrapper>
-                    <span>Coordonnées bancaires</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => openSettings("informations-legales"))
-                    }
-                  >
-                    <IconWrapper>
-                      <FileText className="size-3.5" />
-                    </IconWrapper>
-                    <span>Informations légales</span>
-                  </CommandItem>
-                  <CommandItem
-                    onSelect={() =>
-                      runCommand(() => openSettings("subscription"))
-                    }
-                  >
-                    <IconWrapper>
-                      <CreditCard className="size-3.5" />
-                    </IconWrapper>
-                    <span>Gérer mon abonnement</span>
-                  </CommandItem>
+                  {canReadModule("orgSettings") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => openSettings("generale"))
+                      }
+                    >
+                      <IconWrapper>
+                        <Settings className="size-3.5" />
+                      </IconWrapper>
+                      <span>Paramètres généraux</span>
+                    </CommandItem>
+                  )}
+                  {canReadModule("orgSettings") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => openSettings("generale"))
+                      }
+                    >
+                      <IconWrapper>
+                        <User className="size-3.5" />
+                      </IconWrapper>
+                      <span>Informations entreprise</span>
+                    </CommandItem>
+                  )}
+                  {canReadModule("orgSettings") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => openSettings("coordonnees-bancaires"))
+                      }
+                    >
+                      <IconWrapper>
+                        <CreditCard className="size-3.5" />
+                      </IconWrapper>
+                      <span>Coordonnées bancaires</span>
+                    </CommandItem>
+                  )}
+                  {canReadModule("orgSettings") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => openSettings("informations-legales"))
+                      }
+                    >
+                      <IconWrapper>
+                        <FileText className="size-3.5" />
+                      </IconWrapper>
+                      <span>Informations légales</span>
+                    </CommandItem>
+                  )}
+                  {canReadModule("billing") && (
+                    <CommandItem
+                      onSelect={() =>
+                        runCommand(() => openSettings("subscription"))
+                      }
+                    >
+                      <IconWrapper>
+                        <CreditCard className="size-3.5" />
+                      </IconWrapper>
+                      <span>Gérer mon abonnement</span>
+                    </CommandItem>
+                  )}
                 </CommandGroup>
               </CommandList>
             </Command>

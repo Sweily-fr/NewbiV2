@@ -28,6 +28,10 @@ export function MobileSettingsModal({
   formIsSubmitting,
   isDirty,
   onSubmit,
+  // Droits du rôle (calculés par la modale bureau, mêmes règles)
+  canManageOrgSettings = true,
+  canManageSubscription = true,
+  showBilling = true,
 }) {
   const [activeTab, setActiveTab] = useState("generale");
   const [showNavigation, setShowNavigation] = useState(true);
@@ -55,15 +59,19 @@ export function MobileSettingsModal({
     { id: "notifications", label: "Notifications", icon: "Bell" },
     { id: "security", label: "Sécurité", icon: "Shield" },
     { id: "subscription", label: "Abonnement", icon: "Crown" },
-  ];
+  ].filter(
+    // Abonnement et facturation Newbi : masqués sans « Voir l'abonnement »
+    (tab) => showBilling || !["facturation", "subscription"].includes(tab.id),
+  );
 
   const currentTab = tabs.find((tab) => tab.id === activeTab);
 
-  const hasSaveFooter = [
-    "generale",
-    "coordonnees-bancaires",
-    "informations-legales",
-  ].includes(activeTab);
+  // Enregistrer : « Modifier » les informations de l'entreprise
+  const hasSaveFooter =
+    canManageOrgSettings &&
+    ["generale", "coordonnees-bancaires", "informations-legales"].includes(
+      activeTab,
+    );
 
   const handleTabChange = (newTab) => {
     setActiveTab(newTab);
@@ -89,6 +97,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       case "coordonnees-bancaires":
@@ -98,6 +107,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       case "informations-legales":
@@ -107,6 +117,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       case "espaces":
@@ -134,6 +145,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            canManageSubscription={canManageSubscription}
           />
         );
       case "subscription":
@@ -143,6 +155,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            canManageSubscription={canManageSubscription}
           />
         );
       case "preferences":
@@ -164,6 +177,7 @@ export function MobileSettingsModal({
             organization={organization}
             updateOrganization={updateOrganization}
             refetchOrganization={refetchOrganization}
+            canManageOrgSettings={canManageOrgSettings}
           />
         );
       default:

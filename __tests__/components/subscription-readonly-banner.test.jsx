@@ -11,6 +11,16 @@ vi.mock("@/src/hooks/useSubscriptionAccess", () => ({
   useSubscriptionAccess: vi.fn(),
 }));
 
+// Droits du rôle : grille non chargée par défaut (repli sur isOwner)
+const mockPermissions = { isReady: false, actions: {} };
+vi.mock("@/src/hooks/useMyPermissions", () => ({
+  useMyPermissions: () => ({
+    isReady: mockPermissions.isReady,
+    canDo: (page, action) =>
+      (mockPermissions.actions[page] || []).includes(action),
+  }),
+}));
+
 import {
   SubscriptionReadOnlyBanner,
   SubscriptionReadOnlyBannerView,
@@ -118,6 +128,19 @@ describe("SubscriptionReadOnlyBanner — bug 'Renouvellement' (toast d'erreur)",
     render(<SubscriptionReadOnlyBanner />);
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByText(/administrateur/i)).toBeInTheDocument();
+  });
+
+  it("masque le bouton d'un administrateur sans « Gérer l'abonnement »", () => {
+    setHook({ isOwner: true });
+    mockPermissions.isReady = true;
+    mockPermissions.actions = { billing: ["view"] };
+    try {
+      render(<SubscriptionReadOnlyBanner />);
+      expect(screen.queryByRole("button")).toBeNull();
+    } finally {
+      mockPermissions.isReady = false;
+      mockPermissions.actions = {};
+    }
   });
 });
 

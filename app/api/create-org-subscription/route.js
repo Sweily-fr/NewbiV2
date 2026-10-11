@@ -35,6 +35,25 @@ async function handler(request) {
   const planName = organizationData.planName;
   const isAnnual = organizationData.isAnnual;
 
+  // Abonnement d'un espace existant (l'espace actif) : droit « Gérer
+  // l'abonnement » ; un nouvel espace est créé au paiement par son créateur
+  if (organizationData.type === "existing") {
+    const orgId = session.session?.activeOrganizationId;
+    if (!orgId) {
+      return apiError(400, "Aucune organisation active");
+    }
+    const { mongoDb } = await import("@/src/lib/mongodb");
+    const { getAccountActions } = await import("@/src/lib/organization-roles");
+    const { role, actions } = await getAccountActions(mongoDb, {
+      userId: session.user.id,
+      organizationId: orgId,
+      moduleKey: "billing",
+    });
+    if (!role || !actions.includes("manage")) {
+      return apiError(403, "Votre rôle ne permet pas de gérer l'abonnement");
+    }
+  }
+
   // When ENABLE_APP_TRIAL is ON, the trial is fully managed by the app
   // (Lot 3 cron + Lot 1 gating). Stripe is then ONLY used for paid plans,
   // so trial_period_days must be 0 — never re-grant a Stripe trial.
@@ -69,14 +88,15 @@ async function handler(request) {
       const orgId = session.session.activeOrganizationId;
       const orgObjectId = new ObjectId(orgId);
       const [existingSub, orgDoc] = await Promise.all([
-        db.collection("subscription").findOne(
-          { $or: [{ organizationId: orgObjectId }, { referenceId: orgId }] },
-          { projection: { _id: 1 } },
-        ),
-        db.collection("organization").findOne(
-          { _id: orgObjectId },
-          { projection: { hasUsedTrial: 1 } },
-        ),
+        db
+          .collection("subscription")
+          .findOne(
+            { $or: [{ organizationId: orgObjectId }, { referenceId: orgId }] },
+            { projection: { _id: 1 } },
+          ),
+        db
+          .collection("organization")
+          .findOne({ _id: orgObjectId }, { projection: { hasUsedTrial: 1 } }),
       ]);
       if (existingSub || orgDoc?.hasUsedTrial === true) {
         trialDays = 0;

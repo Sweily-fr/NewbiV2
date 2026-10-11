@@ -2149,16 +2149,18 @@ function AppDetailView({
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={bankingActions.onDisconnect}
-                          disabled={bankingActions.isLoading}
-                          className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          {bankingActions.isLoading ? "..." : "Déconnecter"}
-                        </Button>
+                        {bankingActions.canManage && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={bankingActions.onDisconnect}
+                            disabled={bankingActions.isLoading}
+                            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                          >
+                            {bankingActions.isLoading ? "..." : "Déconnecter"}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -2744,6 +2746,8 @@ export function ApplicationsSection() {
 
   // Actions Banking pour la vue détail
   const bankingActions = {
+    // Déconnecter la banque : « Gérer les applications »
+    canManage: canManageApps,
     isLoading: isBankingLoading,
     onDisconnect: () => disconnectBank({ provider: bankingProvider }),
   };

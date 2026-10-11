@@ -6,6 +6,7 @@ import { StripeConnectOnboardingModal } from "./stripe-connect-onboarding-modal"
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSession } from "@/src/lib/auth-client";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 /**
  * Composant global qui gère l'ouverture automatique du modal Stripe Connect
@@ -20,13 +21,17 @@ export function StripeConnectUrlHandler() {
 
   const { connectStripe, openStripeDashboard, refetchStatus } =
     useStripeConnect(activeOrganization?.id);
+  // Poursuivre la connexion Stripe : « Gérer les applications »
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canManageIntegrations =
+    !permissionsReady || canDo("integrations", "manage");
 
   useEffect(() => {
     const stripeStep1Complete = searchParams.get("stripe_step1_complete");
 
     if (stripeStep1Complete === "true") {
       console.log(
-        "🔔 Détection stripe_step1_complete - Ouverture modal étape 2"
+        "🔔 Détection stripe_step1_complete - Ouverture modal étape 2",
       );
 
       // Ouvrir le modal à l'étape 2
@@ -44,7 +49,7 @@ export function StripeConnectUrlHandler() {
 
   return (
     <StripeConnectOnboardingModal
-      isOpen={isModalOpen}
+      isOpen={isModalOpen && canManageIntegrations}
       onClose={() => setIsModalOpen(false)}
       currentStep={modalStep}
       onStartConfiguration={async () => {
