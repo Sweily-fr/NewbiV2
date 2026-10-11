@@ -211,23 +211,38 @@ export async function GET(request) {
         });
 
         if (!existingSub) {
-          console.log(
-            `🔄 [VERIFY-CHECKOUT] Création de l'abonnement en base (webhook non reçu)...`,
-          );
-
-          const { createOrganizationWithSubscription } =
-            await import("@/src/lib/org-creation.js");
-
-          await createOrganizationWithSubscription({
-            mongoDb,
+          // Espace existant : on rattache seulement l'abonnement, sans
+          // toucher à l'identité de l'espace ni à ses membres (auparavant,
+          // createOrganizationWithSubscription réécrivait la première
+          // appartenance de l'utilisateur avec des champs vides). Il faut
+          // le droit « Gérer l'abonnement » sur cet espace ; sinon le
+          // webhook Stripe, qui s'appuie sur les métadonnées posées au
+          // checkout, s'en charge.
+          const { getAccountActions } =
+            await import("@/src/lib/organization-roles");
+          const { actions } = await getAccountActions(mongoDb, {
             userId: session.user.id,
-            orgData: {
-              companyName:
-                checkoutSession.metadata?.companyName || "Mon entreprise",
-            },
-            subscriptionInfo: subscriptionObj,
-            sessionMetadata: checkoutSession.metadata || {},
+            organizationId,
+            moduleKey: "billing",
           });
+
+          if (actions.includes("manage")) {
+            console.log(
+              `🔄 [VERIFY-CHECKOUT] Création de l'abonnement en base (webhook non reçu)...`,
+            );
+            const { attachSubscriptionToOrganization } =
+              await import("@/src/lib/org-creation.js");
+            await attachSubscriptionToOrganization({
+              mongoDb,
+              organizationId,
+              subscriptionInfo: subscriptionObj,
+              sessionMetadata: checkoutSession.metadata || {},
+            });
+          } else {
+            console.warn(
+              `⚠️ [VERIFY-CHECKOUT] ${session.user.id} sans droit de gérer l'abonnement de ${organizationId} : rattachement laissé au webhook`,
+            );
+          }
         } else {
           console.log(
             `✅ [VERIFY-CHECKOUT] Abonnement déjà existant en base:`,
@@ -236,6 +251,18 @@ export async function GET(request) {
         }
       } else {
         console.error(`❌ [VERIFY-CHECKOUT] Pas d'organizationId trouvé !`);
+      }
+
+      // Nouvel espace : inscrire l'espace dans les métadonnées Stripe (elles
+      // portent l'ancien espace actif) pour les synchros suivantes.
+      if (isNewOrganization && organizationId) {
+        const { stampSubscriptionOrganization } =
+          await import("@/src/lib/org-creation.js");
+        await stampSubscriptionOrganization(
+          stripe,
+          subscriptionObj,
+          organizationId,
+        );
       }
 
       resolvedOrganizationId = organizationId || null;
