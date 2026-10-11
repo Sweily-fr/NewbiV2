@@ -2793,16 +2793,19 @@ function PublicTaskModal({
   canViewComments,
   boardMembers,
 }) {
-  if (!task) return null;
-
-  const currentColumn = columns?.find((c) => c.id === task.columnId);
+  // Hook avant le retour anticipé : l'ordre des hooks doit rester stable
+  // quand la modale passe d'une tâche à aucune tâche
   const checklistProgress = useMemo(() => {
-    if (!task.checklist?.length) return { completed: 0, total: 0 };
+    if (!task?.checklist?.length) return { completed: 0, total: 0 };
     return {
       completed: task.checklist.filter((i) => i.completed).length,
       total: task.checklist.length,
     };
-  }, [task.checklist]);
+  }, [task?.checklist]);
+
+  if (!task) return null;
+
+  const currentColumn = columns?.find((c) => c.id === task.columnId);
 
   // Générer une couleur pour un tag basée sur son nom
   const getTagColor = (tagName) => {
@@ -4075,8 +4078,9 @@ export default function PublicKanbanPage({ params }) {
     );
   }
 
-  // Error state
-  if (accessError && !showEmailModal) {
+  // Error state (showEmailModal, reliquat de l'ancien modal e-mail, n'était
+  // plus déclaré : toute erreur d'accès levait une ReferenceError)
+  if (accessError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md w-full mx-4">
