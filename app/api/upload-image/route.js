@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError, requireSession, withErrorHandler } from "@/src/lib/security";
+import { detectRasterImageType } from "@/src/lib/security/raster-image";
 
 /**
  * POST /api/upload-image
@@ -68,6 +69,14 @@ async function handler(request) {
   // Taille réelle lue, au cas où `file.size` ne refléterait pas le contenu
   if (buffer.length > MAX_SIZE) {
     return apiError(400, "L'image est trop volumineuse (5 Mo maximum)");
+  }
+  // Contenu réel : la signature du fichier doit être celle du type annoncé
+  const detected = detectRasterImageType(buffer);
+  if (!detected || detected.mime !== file.type) {
+    return apiError(
+      400,
+      "Format d'image non supporté (PNG, JPEG, GIF ou WebP)",
+    );
   }
 
   const uploadFormData = new FormData();

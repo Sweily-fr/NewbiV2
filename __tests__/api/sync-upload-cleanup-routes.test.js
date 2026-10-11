@@ -115,13 +115,22 @@ describe("POST /api/auth/subscription/sync", () => {
   });
 });
 
+/** Octets d'un PNG (signature) complétés jusqu'à `size`. */
+const pngBytes = (size) => {
+  const bytes = new Uint8Array(size);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  return bytes;
+};
+
 describe("POST /api/upload-image", () => {
-  const call = async ({ type = "image/png", size = 1024, extra = {} } = {}) => {
+  const call = async ({
+    type = "image/png",
+    size = 1024,
+    extra = {},
+    bytes = pngBytes(size),
+  } = {}) => {
     const formData = new FormData();
-    formData.append(
-      "file",
-      new File([new Uint8Array(size)], "logo.png", { type }),
-    );
+    formData.append("file", new File([bytes], "logo.png", { type }));
     for (const [k, v] of Object.entries(extra)) formData.append(k, v);
     const { POST } = await import("@/app/api/upload-image/route");
     return POST(
@@ -143,6 +152,16 @@ describe("POST /api/upload-image", () => {
   it("refuse un SVG", async () => {
     signIn();
     const res = await call({ type: "image/svg+xml" });
+    expect(res.status).toBe(400);
+    expect(m.fetch).not.toHaveBeenCalled();
+  });
+
+  it("refuse un contenu qui n'est pas celui du type annoncé", async () => {
+    signIn();
+    const svg = new TextEncoder().encode(
+      '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>',
+    );
+    const res = await call({ type: "image/png", bytes: svg });
     expect(res.status).toBe(400);
     expect(m.fetch).not.toHaveBeenCalled();
   });

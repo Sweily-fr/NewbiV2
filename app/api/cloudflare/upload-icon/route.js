@@ -1,27 +1,47 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/src/lib/auth";
-import { withErrorHandler } from "@/src/lib/security";
+import { apiError, requireSession, withErrorHandler } from "@/src/lib/security";
+import { detectRasterImageType } from "@/src/lib/security/raster-image";
+
+/**
+ * POST /api/cloudflare/upload-icon
+ *
+ * Upload d'une icône de réseau social personnalisée (signatures de mail)
+ * sur le bucket public R2, sous `custom-icons/{userId de la session}/...`.
+ *
+ * Le fichier était stocké tel quel en `image/svg+xml`, sans limite de
+ * taille : un SVG peut porter du script, des attributs `on*` ou des
+ * références externes, servi ensuite depuis un domaine public. Désormais :
+ * 1 Mo maximum, PNG, JPEG, GIF ou WebP reconnus à leur signature (le SVG
+ * est refusé), type de contenu et extension déduits du contenu réel,
+ * paramètres du chemin validés.
+ */
+const MAX_SIZE = 1024 * 1024;
+const SAFE_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
+const HEX_COLOR = /^#?[0-9A-F]{6}$/i;
 
 async function handler(request) {
-  // Vérifier l'authentification
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      { success: false, message: "Non authentifié" },
-      { status: 401 },
-    );
-  }
+  const { user } = await requireSession(request);
 
-  const formData = await request.formData();
+  let formData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return apiError(400, "Formulaire invalide");
+  }
   const file = formData.get("file");
   const userId = formData.get("userId");
   const signatureId = formData.get("signatureId");
   const platform = formData.get("platform");
   const color = formData.get("color");
 
-  if (!file || !userId || !signatureId || !platform || !color) {
+  if (
+    !file ||
+    typeof file === "string" ||
+    !userId ||
+    !signatureId ||
+    !platform ||
+    !color
+  ) {
     return NextResponse.json(
       { success: false, message: "Paramètres manquants" },
       { status: 400 },
@@ -29,17 +49,42 @@ async function handler(request) {
   }
 
   // Vérifier que l'utilisateur peut modifier cette signature
-  if (session.user.id !== userId) {
+  if (String(user.id) !== String(userId)) {
     return NextResponse.json(
       { success: false, message: "Non autorisé" },
       { status: 403 },
     );
   }
 
-  // Générer le nom de fichier
-  const cleanColor = color.replace("#", "");
+  if (
+    !SAFE_SEGMENT.test(String(signatureId)) ||
+    !SAFE_SEGMENT.test(String(platform)) ||
+    !HEX_COLOR.test(String(color))
+  ) {
+    return apiError(400, "Paramètres invalides");
+  }
+
+  if (!file.size || file.size > MAX_SIZE) {
+    return apiError(400, "Icône trop volumineuse (1 Mo maximum)");
+  }
+
+  // Convertir le fichier en buffer et vérifier son contenu réel
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (buffer.length > MAX_SIZE) {
+    return apiError(400, "Icône trop volumineuse (1 Mo maximum)");
+  }
+  const imageType = detectRasterImageType(buffer);
+  if (!imageType) {
+    return apiError(
+      400,
+      "Format d'icône non supporté (PNG, JPEG, GIF ou WebP)",
+    );
+  }
+
+  // Générer le nom de fichier (identifiant de la session, jamais du client)
+  const cleanColor = String(color).replace("#", "");
   const timestamp = Date.now();
-  const fileName = `custom-icons/${userId}/${signatureId}/${platform}-${cleanColor}-${timestamp}.svg`;
+  const fileName = `custom-icons/${user.id}/${signatureId}/${platform}-${cleanColor}-${timestamp}.${imageType.ext}`;
 
   // Configuration Cloudflare R2
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -67,16 +112,12 @@ async function handler(request) {
     },
   });
 
-  // Convertir le fichier en buffer
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-
   // Upload vers R2
   const uploadCommand = new PutObjectCommand({
     Bucket: bucketName,
     Key: fileName,
     Body: buffer,
-    ContentType: "image/svg+xml",
+    ContentType: imageType.mime,
     CacheControl: "public, max-age=31536000", // Cache 1 an
   });
 
