@@ -11,6 +11,7 @@ import Stripe from "stripe";
 import {
   send2FAEmail,
   sendOrganizationInvitationEmail,
+  sendSMSInDevelopment,
   sendVerificationOtpEmail,
 } from "./auth-utils";
 // Import dynamique pour éviter le bundling Edge Runtime (Node.js only)

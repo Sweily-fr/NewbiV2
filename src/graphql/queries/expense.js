@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 /**
  * Queries GraphQL pour la gestion des dépenses
@@ -86,74 +86,34 @@ export const GET_EXPENSES = gql`
   }
 `;
 
-// Query pour récupérer une dépense par son ID
-export const GET_EXPENSE = gql`
-  query GetExpense($id: ID!) {
-    expense(id: $id) {
-      id
-      title
-      description
-      amount
-      currency
-      category
-      date
-      vendor
-      vendorVatNumber
-      invoiceNumber
-      documentNumber
-      vatAmount
-      vatRate
-      status
-      paymentMethod
-      paymentDate
-      notes
-      tags
-      isVatDeductible
-      expenseType
-      assignedMember {
-        userId
-        name
-        email
-        image
-      }
-      taskId
-      files {
-        id
-        filename
-        originalFilename
-        url
-        ocrProcessed
-        ocrMetadata
-      }
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
 // Query pour les statistiques des dépenses
 export const GET_EXPENSE_STATS = gql`
-  query GetExpenseStats($workspaceId: ID!, $startDate: String, $endDate: String) {
-    expenseStats(workspaceId: $workspaceId, startDate: $startDate, endDate: $endDate) {
+  query GetExpenseStats(
+    $workspaceId: ID!
+    $startDate: String
+    $endDate: String
+  ) {
+    expenseStats(
+      workspaceId: $workspaceId
+      startDate: $startDate
+      endDate: $endDate
+    ) {
       totalAmount
       totalCount
-      averageAmount
-      categoryBreakdown {
+      byCategory {
         category
         amount
         count
-        percentage
       }
-      monthlyTrend {
+      byMonth {
         month
         amount
         count
       }
-      statusBreakdown {
+      byStatus {
         status
         amount
         count
-        percentage
       }
     }
   }

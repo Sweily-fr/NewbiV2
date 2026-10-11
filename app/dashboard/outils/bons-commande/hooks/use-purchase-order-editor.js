@@ -21,7 +21,11 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { useClient } from "@/src/graphql/clientQueries";
 import { usePurchaseOrderNumber } from "./use-purchase-order-number";
-import { formatLocalDate, refreshDraftDates } from "@/src/utils/dateFormatter";
+import {
+  formatCalendarDate,
+  formatLocalDate,
+  refreshDraftDates,
+} from "@/src/utils/dateFormatter";
 import { refreshPrefixDate } from "@/src/utils/invoiceUtils";
 import { getOrganizationCompanyExtras } from "@/src/utils/organizationCompanyInfo";
 import {
@@ -2632,12 +2636,8 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
             return "";
           }
 
-          const year = dateObj.getFullYear();
-          const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-          const day = String(dateObj.getDate()).padStart(2, "0");
-          const result = `${year}-${month}-${day}`;
-
-          return result;
+          // Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM)
+          return formatCalendarDate(dateObj);
         } else {
           return "";
         }
@@ -2684,13 +2684,8 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
         return "";
       }
 
-      // Formater en YYYY-MM-DD
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const day = String(dateObj.getDate()).padStart(2, "0");
-      const result = `${year}-${month}-${day}`;
-
-      return result;
+      // Formater en YYYY-MM-DD (minuit UTC lu en date calendaire)
+      return formatCalendarDate(dateObj);
     } catch {
       return "";
     }
@@ -2724,7 +2719,11 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
       ? transformDate(purchaseOrder.validUntil)
       : (() => {
           // Fallback : issueDate + 30 jours si validUntil n'existe pas
-          const base = issueDate ? new Date(issueDate) : new Date();
+          // Minuit local : new Date("YYYY-MM-DD") serait minuit UTC, la veille
+          // en fuseau négatif
+          const base = issueDate
+            ? new Date(`${issueDate}T00:00:00`)
+            : new Date();
           base.setDate(base.getDate() + 30);
           return formatLocalDate(base);
         })(),

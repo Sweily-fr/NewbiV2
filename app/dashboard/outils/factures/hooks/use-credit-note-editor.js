@@ -15,7 +15,7 @@ import { useInvoice } from "@/src/graphql/invoiceQueries";
 import { useArchiveDocumentPdf } from "@/src/hooks/useArchiveDocumentPdf";
 import { useUser } from "@/src/lib/auth/hooks";
 import { useCreditNoteNumber } from "./use-credit-note-number";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { formatLocalDate, toCalendarDate } from "@/src/utils/dateFormatter";
 import { mapOrganizationToCompanyInfo } from "@/src/utils/organizationCompanyInfo";
 
 // Vrai si le champ porte une valeur numérique, zéro compris. Une ligne à 0 €
@@ -519,11 +519,10 @@ function transformCreditNoteToFormData(creditNote) {
     creditType: creditNote.creditType || CREDIT_TYPE.CORRECTION,
     reason: creditNote.reason || "",
     status: creditNote.status || "CREATED",
-    issueDate: (() => {
-      if (!creditNote.issueDate) return formatLocalDate();
-      const date = new Date(creditNote.issueDate);
-      return isNaN(date.getTime()) ? formatLocalDate() : formatLocalDate(date);
-    })(),
+    // L'API renvoie un timestamp en ms (chaîne de chiffres) : new Date() sur
+    // cette chaîne donnait une date invalide, remplacée par la date du jour.
+    // Minuit UTC lu en date calendaire (fuseaux négatifs, DOM-TOM).
+    issueDate: toCalendarDate(creditNote.issueDate) || formatLocalDate(),
     refundMethod: creditNote.refundMethod || REFUND_METHOD.NEXT_INVOICE,
     headerNotes: creditNote.headerNotes || "",
     footerNotes: creditNote.footerNotes || "",

@@ -1,3 +1,4 @@
+/* global db -- script mongosh : `db` est fourni par le shell */
 /**
  * Script de migration pour les utilisateurs existants
  * À exécuter AVANT la mise en production des nouvelles fonctionnalités onboarding
@@ -14,17 +15,19 @@
 // Toutes les organisations qui ont un abonnement actif sont considérées comme ayant complété l'onboarding
 db.organization.updateMany(
   {
-    onboardingCompleted: { $exists: false }
+    onboardingCompleted: { $exists: false },
   },
   {
     $set: {
       onboardingCompleted: true,
-      updatedAt: new Date()
-    }
-  }
+      updatedAt: new Date(),
+    },
+  },
 );
 
-print("✅ Migration 1 terminée : onboardingCompleted ajouté aux organisations existantes");
+print(
+  "✅ Migration 1 terminée : onboardingCompleted ajouté aux organisations existantes",
+);
 
 // ============================================
 // MIGRATION 2 : Marquer les utilisateurs existants comme hasSeenOnboarding
@@ -37,46 +40,61 @@ const memberUserIds = db.member.distinct("userId");
 db.user.updateMany(
   {
     _id: { $in: memberUserIds },
-    hasSeenOnboarding: { $exists: false }
+    hasSeenOnboarding: { $exists: false },
   },
   {
     $set: {
       hasSeenOnboarding: true,
-      updatedAt: new Date()
-    }
-  }
+      updatedAt: new Date(),
+    },
+  },
 );
 
-print("✅ Migration 2 terminée : hasSeenOnboarding ajouté aux utilisateurs membres d'une organisation");
+print(
+  "✅ Migration 2 terminée : hasSeenOnboarding ajouté aux utilisateurs membres d'une organisation",
+);
 
 // ============================================
 // MIGRATION 3 : Ajouter le champ siren si manquant (extraire du siret)
 // ============================================
 
 // Le SIREN = les 9 premiers chiffres du SIRET
-db.organization.find({
-  siret: { $exists: true, $ne: "" },
-  siren: { $exists: false }
-}).forEach(function(org) {
-  const siren = org.siret.substring(0, 9);
-  db.organization.updateOne(
-    { _id: org._id },
-    {
-      $set: {
-        siren: siren,
-        updatedAt: new Date()
-      }
-    }
-  );
-});
+db.organization
+  .find({
+    siret: { $exists: true, $ne: "" },
+    siren: { $exists: false },
+  })
+  .forEach(function (org) {
+    const siren = org.siret.substring(0, 9);
+    db.organization.updateOne(
+      { _id: org._id },
+      {
+        $set: {
+          siren: siren,
+          updatedAt: new Date(),
+        },
+      },
+    );
+  });
 
-print("✅ Migration 3 terminée : siren extrait du siret pour les organisations existantes");
+print(
+  "✅ Migration 3 terminée : siren extrait du siret pour les organisations existantes",
+);
 
 // ============================================
 // VÉRIFICATION
 // ============================================
 
 print("\n📊 Statistiques après migration :");
-print("- Organisations avec onboardingCompleted: " + db.organization.countDocuments({ onboardingCompleted: true }));
-print("- Utilisateurs avec hasSeenOnboarding: " + db.user.countDocuments({ hasSeenOnboarding: true }));
-print("- Organisations avec siren: " + db.organization.countDocuments({ siren: { $exists: true, $ne: "" } }));
+print(
+  "- Organisations avec onboardingCompleted: " +
+    db.organization.countDocuments({ onboardingCompleted: true }),
+);
+print(
+  "- Utilisateurs avec hasSeenOnboarding: " +
+    db.user.countDocuments({ hasSeenOnboarding: true }),
+);
+print(
+  "- Organisations avec siren: " +
+    db.organization.countDocuments({ siren: { $exists: true, $ne: "" } }),
+);

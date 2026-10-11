@@ -258,39 +258,6 @@ export const CREATE_FILE_TRANSFER = gql`
   }
 `;
 
-export const CREATE_FILE_TRANSFER_BASE64 = gql`
-  mutation CreateFileTransferBase64(
-    $files: [Base64FileInput!]!
-    $input: FileTransferInput
-  ) {
-    createFileTransferBase64(files: $files, input: $input) {
-      success
-      message
-      fileTransfer {
-        id
-        shareLink
-        accessKey
-        expiryDate
-        status
-        isPaymentRequired
-        paymentAmount
-        paymentCurrency
-        isPaid
-        totalSize
-        files {
-          id
-          fileName
-          originalName
-          mimeType
-          size
-        }
-      }
-      shareLink
-      accessKey
-    }
-  }
-`;
-
 // Pour récupérer les transferts de l'utilisateur
 export const GET_MY_TRANSFERS = gql`
   query GetMyTransfers($workspaceId: ID, $page: Int, $limit: Int) {
@@ -427,23 +394,6 @@ export const RENAME_FILE_TRANSFER = gql`
     renameFileTransfer(id: $id, title: $title) {
       id
       title
-    }
-  }
-`;
-
-// Pour générer un lien de paiement
-export const GENERATE_FILE_TRANSFER_PAYMENT_LINK = gql`
-  mutation GenerateFileTransferPaymentLink(
-    $shareLink: String!
-    $accessKey: String!
-  ) {
-    generateFileTransferPaymentLink(
-      shareLink: $shareLink
-      accessKey: $accessKey
-    ) {
-      success
-      message
-      checkoutUrl
     }
   }
 `;
