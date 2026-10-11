@@ -32,6 +32,7 @@ import {
   normalizeAnnex,
   toAnnexInput,
 } from "@/src/utils/document-annex";
+import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -3447,7 +3448,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
               }
             : null,
           shippingAmountHT: parseFloat(formData.shipping.shippingAmountHT) || 0,
-          shippingVatRate: parseFloat(formData.shipping.shippingVatRate) || 20,
+          shippingVatRate: shippingVatRateOf(formData.shipping.shippingVatRate),
         }
       : null,
     isReverseCharge: formData.isReverseCharge || false,

@@ -12,6 +12,7 @@ import { stripHtml } from "@/src/utils/kanbanHelpers";
 import { getDraftEffectiveDates } from "@/src/utils/dateFormatter";
 import { ItemCellWithImage } from "@/src/components/pdf/PdfItemImage";
 import { visibleItemImage } from "@/src/utils/item-image";
+import { shippingVatRateOf } from "@/src/utils/shipping-vat-rate";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (
@@ -430,7 +431,7 @@ const UniversalPreviewPDF = ({
 
     if (shippingData?.billShipping && shippingData?.shippingAmountHT > 0) {
       shippingAmountHT = parseFloat(shippingData.shippingAmountHT) || 0;
-      const shippingVatRate = parseFloat(shippingData.shippingVatRate) || 20;
+      const shippingVatRate = shippingVatRateOf(shippingData.shippingVatRate);
 
       // Calcul de la TVA sur la livraison
       // Auto-liquidation : TVA = 0 si isReverseCharge = true
@@ -1449,7 +1450,9 @@ const UniversalPreviewPDF = ({
                               overflowWrap: "break-word",
                             }}
                           >
-                            <ItemCellWithImage imageUrl={visibleItemImage(item)}>
+                            <ItemCellWithImage
+                              imageUrl={visibleItemImage(item)}
+                            >
                               <div className="text-xs font-normal dark:text-[#0A0A0A] whitespace-pre-line break-words">
                                 {item.description || ""}
                               </div>
@@ -1759,7 +1762,7 @@ const UniversalPreviewPDF = ({
                               width: showProgressColumn ? "10%" : "11%",
                             }}
                           >
-                            {shippingData.shippingVatRate || 20} %
+                            {shippingVatRateOf(shippingData.shippingVatRate)} %
                           </td>
                           <td
                             className="py-3 px-2 text-right dark:text-[#0A0A0A]"
