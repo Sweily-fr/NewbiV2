@@ -154,6 +154,59 @@ function AutomationRow({
     onToggle(automation.id);
   };
 
+  // Sans « Modifier » : règle affichée en lecture simple (texte), sans
+  // sélecteurs grisés
+  if (!canEdit) {
+    const targetList = lists.find((l) => l.id === localData.targetListId);
+    return (
+      <div className="flex items-center gap-2 py-2">
+        <span className="text-sm text-muted-foreground w-12 flex-shrink-0">
+          Quand
+        </span>
+        <span className="text-sm w-[200px] truncate">
+          {TRIGGER_TYPES.find((t) => t.value === localData.triggerType)
+            ?.label || "-"}
+        </span>
+        <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <span className="text-sm w-[150px] truncate">
+          {ACTION_TYPES.find((a) => a.value === localData.actionType)?.label ||
+            "-"}
+        </span>
+        <span className="flex-1 min-w-[120px] flex items-center gap-2 text-sm truncate">
+          {targetList ? (
+            <>
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: targetList.color }}
+              />
+              <span className="truncate">{targetList.name}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">
+              {automation.targetList?.name || "-"}
+            </span>
+          )}
+        </span>
+        <span className="text-xs text-muted-foreground flex-shrink-0">
+          {localData.isActive ? "Active" : "Inactive"}
+        </span>
+        {canRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(automation);
+            }}
+            className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2 py-2">
       <span className="text-sm text-muted-foreground w-12 flex-shrink-0">
@@ -163,7 +216,6 @@ function AutomationRow({
       <Select
         value={localData.triggerType}
         onValueChange={(value) => handleFieldChange("triggerType", value)}
-        disabled={!canEdit}
       >
         <SelectTrigger className="w-[200px]">
           <SelectValue />
@@ -182,7 +234,6 @@ function AutomationRow({
       <Select
         value={localData.actionType}
         onValueChange={(value) => handleFieldChange("actionType", value)}
-        disabled={!canEdit}
       >
         <SelectTrigger className="w-[150px]">
           <SelectValue />
@@ -199,7 +250,6 @@ function AutomationRow({
       <Select
         value={localData.targetListId}
         onValueChange={(value) => handleFieldChange("targetListId", value)}
-        disabled={!canEdit}
       >
         <SelectTrigger className="flex-1 min-w-[120px]">
           <SelectValue placeholder="Liste..." />
@@ -219,18 +269,11 @@ function AutomationRow({
         </SelectContent>
       </Select>
 
-      {/* Lecture seule : statut affiché sans interrupteur */}
-      {canEdit ? (
-        <Switch
-          checked={localData.isActive}
-          onCheckedChange={handleToggle}
-          className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
-        />
-      ) : (
-        <span className="text-xs text-muted-foreground flex-shrink-0">
-          {localData.isActive ? "Active" : "Inactive"}
-        </span>
-      )}
+      <Switch
+        checked={localData.isActive}
+        onCheckedChange={handleToggle}
+        className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
+      />
 
       {canRemove && (
         <Button
@@ -889,8 +932,10 @@ export default function AutomationsPopover({ trigger }) {
                     </div>
                   ) : automations.length === 0 && !showNewForm ? (
                     <p className="text-sm text-muted-foreground text-center py-6">
-                      Aucune automatisation. Cliquez sur "Ajouter" pour
-                      commencer.
+                      {/* Pas d'invitation à « Ajouter » sans le droit de créer */}
+                      {canCreateAutomations
+                        ? 'Aucune automatisation. Cliquez sur "Ajouter" pour commencer.'
+                        : "Aucune automatisation."}
                     </p>
                   ) : (
                     <>
@@ -965,8 +1010,9 @@ export default function AutomationsPopover({ trigger }) {
                     <div className="p-4 space-y-1 max-h-[300px] overflow-y-auto">
                       {emailAutomations.length === 0 && !showNewEmailForm ? (
                         <p className="text-sm text-muted-foreground text-center py-6">
-                          Aucune automatisation email. Cliquez sur "Ajouter"
-                          pour commencer.
+                          {canCreateAutomations
+                            ? 'Aucune automatisation email. Cliquez sur "Ajouter" pour commencer.'
+                            : "Aucune automatisation email."}
                         </p>
                       ) : (
                         <>
