@@ -70,6 +70,7 @@ import {
 import { BoardMembersLookupContext } from "@/src/hooks/useAssignedMembersInfo";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { usePrefetchTaskDetails } from "../hooks/usePrefetchTaskDetails";
+import { useTaskFieldMutations } from "../hooks/useTaskFieldMutations";
 import { useTaskViewers } from "../hooks/useTaskPresence";
 import { TaskViewersAvatars, PRESENCE_RING_CLASS } from "./TaskViewers";
 import { perfMark, perfReset } from "@/src/utils/kanbanPerf";
@@ -133,7 +134,6 @@ const TAG_COLORS = [
 
 const CardTagPopover = memo(function CardTagPopover({
   task,
-  updateTask,
   workspaceId,
   allBoardTags = [],
   isOpen,
@@ -178,53 +178,24 @@ const CardTagPopover = memo(function CardTagPopover({
     return TAG_COLORS.find((c) => !usedBgs.has(c.bg)) || TAG_COLORS[0];
   }, [existingTags]);
 
+  // Un tag à la fois (addTaskTag / removeTaskTag) : ne remplace plus la
+  // liste complète, qui écrasait les tags posés en même temps par un collègue
+  const fieldMutations = useTaskFieldMutations(workspaceId);
+
   const addTagToTask = (tag) => {
-    const newTags = [
-      ...taskTags,
-      {
+    fieldMutations
+      .addTag(task.id, {
         name: tag.name,
         className: "",
         bg: tag.bg,
         text: tag.text,
         border: tag.border,
-      },
-    ];
-    updateTask({
-      variables: {
-        input: {
-          id: task.id,
-          tags: newTags.map((t) => ({
-            name: t.name,
-            className: t.className || "",
-            bg: t.bg,
-            text: t.text,
-            border: t.border,
-          })),
-        },
-        workspaceId,
-      },
-    });
+      })
+      .catch(() => {});
   };
 
   const removeTagFromTask = (tagName) => {
-    const newTags = taskTags.filter(
-      (t) => t.name.toLowerCase() !== tagName.toLowerCase(),
-    );
-    updateTask({
-      variables: {
-        input: {
-          id: task.id,
-          tags: newTags.map((t) => ({
-            name: t.name,
-            className: t.className || "",
-            bg: t.bg,
-            text: t.text,
-            border: t.border,
-          })),
-        },
-        workspaceId,
-      },
-    });
+    fieldMutations.removeTag(task.id, tagName).catch(() => {});
   };
 
   const createAndAdd = () => {
@@ -406,6 +377,8 @@ const TaskCard = memo(
     canDelete = true,
   }) {
     const { isReadOnly, isOwner } = useSubscriptionAccess();
+    // Membres assignés : un à la fois (pas d'écrasement entre collègues)
+    const fieldMutations = useTaskFieldMutations(workspaceId);
     // Édition bloquée : abonnement en lecture seule ou rôle sans écriture
     const isLocked = isReadOnly || !canEdit;
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -650,7 +623,6 @@ const TaskCard = memo(
                 {updateTask && !isLocked && (
                   <CardTagPopover
                     task={task}
-                    updateTask={updateTask}
                     workspaceId={workspaceId}
                     allBoardTags={allBoardTags}
                     isOpen={tagPopoverOpen}
@@ -905,19 +877,11 @@ const TaskCard = memo(
                               key={memberId}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const current = task.assignedMembers || [];
-                                const newMembers = isSelected
-                                  ? current.filter((id) => id !== memberId)
-                                  : [...current, memberId];
-                                updateTask({
-                                  variables: {
-                                    input: {
-                                      id: task.id,
-                                      assignedMembers: newMembers,
-                                    },
-                                    workspaceId,
-                                  },
-                                });
+                                // Un membre à la fois (assignTaskMember /
+                                // unassignTaskMember)
+                                fieldMutations
+                                  .setMember(task.id, memberId, !isSelected)
+                                  .catch(() => {});
                               }}
                               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent transition-colors cursor-pointer"
                             >
