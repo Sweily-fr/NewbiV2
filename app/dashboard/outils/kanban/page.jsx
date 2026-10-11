@@ -128,6 +128,7 @@ function KanbanPageContent() {
   const canCreateKanban = !isReady || canDo("kanban", "create");
   const canEditKanban = !isReady || canDo("kanban", "edit");
   const canDeleteKanban = !isReady || canDo("kanban", "delete");
+  const canExportKanban = !isReady || canDo("kanban", "export");
   // Sélecteur de client réservé aux rôles qui voient les clients
   const canReadClients = !isReady || canRead("clients");
   const router = useRouter();
@@ -340,34 +341,36 @@ function KanbanPageContent() {
           <h1 className="text-2xl font-medium mb-2">Mes listes de tâches</h1>
         </div>
         <div className="flex items-center gap-2">
-          {/* Export */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="cursor-pointer">
-                <Download size={14} strokeWidth={1.5} aria-hidden="true" />
-                Exporter
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                Format d'export
-              </DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={exportToExcel}
-                className="cursor-pointer"
-              >
-                <FileSpreadsheet size={16} className="text-green-600" />
-                Excel (.xlsx)
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={exportToCSV}
-                className="cursor-pointer"
-              >
-                <FileText size={16} className="text-blue-600" />
-                CSV (.csv)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Export : droit « Exporter » du kanban */}
+          {canExportKanban && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="cursor-pointer">
+                  <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+                  Exporter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Format d'export
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={exportToExcel}
+                  className="cursor-pointer"
+                >
+                  <FileSpreadsheet size={16} className="text-green-600" />
+                  Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={exportToCSV}
+                  className="cursor-pointer"
+                >
+                  <FileText size={16} className="text-blue-600" />
+                  CSV (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           {/* Nouvelle liste */}
           {/* Ouverte aussi par ?new=true (menu) : jamais sans « Créer » */}

@@ -38,7 +38,12 @@ export default function Component() {
     }
 
     if (calendarError) {
-      toast.error(`Erreur de connexion calendrier: ${calendarError}`);
+      // Droit « Modifier » du calendrier manquant dans l'espace (contrôle API)
+      toast.error(
+        calendarError === "forbidden"
+          ? "Votre rôle ne permet pas de connecter un calendrier dans cet espace."
+          : `Erreur de connexion calendrier: ${calendarError}`,
+      );
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [searchParams, refetch]);
