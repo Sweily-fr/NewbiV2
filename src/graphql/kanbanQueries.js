@@ -1244,10 +1244,22 @@ export const GET_PUBLIC_SHARES = gql`
 
 // Query pour accéder au tableau public (visiteurs externes)
 export const GET_PUBLIC_BOARD = gql`
-  query GetPublicBoard($token: String!, $email: String!, $password: String) {
-    getPublicBoard(token: $token, email: $email, password: $password) {
+  query GetPublicBoard(
+    $token: String!
+    $email: String!
+    $password: String
+    $accessToken: String
+  ) {
+    getPublicBoard(
+      token: $token
+      email: $email
+      password: $password
+      accessToken: $accessToken
+    ) {
       success
       message
+      requiresPassword
+      accessToken
       board {
         id
         title
@@ -1776,8 +1788,16 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
 
 // Subscription pour les mises à jour en temps réel sur la page publique
 export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
-  subscription PublicTaskUpdated($token: String!, $boardId: ID!) {
-    publicTaskUpdated(token: $token, boardId: $boardId) {
+  subscription PublicTaskUpdated(
+    $token: String!
+    $boardId: ID!
+    $accessToken: String
+  ) {
+    publicTaskUpdated(
+      token: $token
+      boardId: $boardId
+      accessToken: $accessToken
+    ) {
       type
       task {
         id
