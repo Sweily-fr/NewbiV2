@@ -58,6 +58,14 @@ export const START_MULTIPART_UPLOAD = gql`
 `;
 
 // Mutation pour compléter un multipart upload
+// Annuler un multipart upload en cours (échec ou annulation de l'envoi) :
+// libère les parts déjà envoyées sur R2
+export const ABORT_MULTIPART_UPLOAD = gql`
+  mutation AbortMultipartUpload($uploadId: String!, $key: String!) {
+    abortMultipartUpload(uploadId: $uploadId, key: $key)
+  }
+`;
+
 export const COMPLETE_MULTIPART_UPLOAD = gql`
   mutation CompleteMultipartUpload(
     $uploadId: String!
