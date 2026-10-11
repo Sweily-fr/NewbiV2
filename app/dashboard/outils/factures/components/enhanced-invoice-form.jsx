@@ -854,35 +854,39 @@ export default function EnhancedInvoiceForm({
             </div>
 
             <div className="flex gap-3">
+              {/* En lecture seule, seules les étapes restent consultables :
+                  enregistrer et créer sont masqués */}
               {currentStep === 2 && (
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={handlePreviousStep}
-                  disabled={!canEdit}
+                  disabled={readOnly ? loading : !canEdit}
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={handleSaveDraft}
-                disabled={!canEdit || saving}
-              >
-                {saving ? "Sauvegarde..." : "Enregistrer brouillon"}
-              </Button>
+              {!readOnly && (
+                <Button
+                  variant="outline"
+                  onClick={handleSaveDraft}
+                  disabled={!canEdit || saving}
+                >
+                  {saving ? "Sauvegarde..." : "Enregistrer brouillon"}
+                </Button>
+              )}
               {currentStep === 1 && (
                 <Button
                   variant="primary"
                   onClick={handleNextStep}
-                  disabled={!canEdit}
+                  disabled={readOnly ? loading : !canEdit}
                   className="px-6"
                 >
                   <span className="hidden sm:inline">Continuer</span>
                   <ChevronRight className="h-4 w-4 sm:ml-2" />
                 </Button>
               )}
-              {currentStep === 2 && (
+              {currentStep === 2 && !readOnly && (
                 <Button
                   variant="primary"
                   onClick={handleCreateInvoice}

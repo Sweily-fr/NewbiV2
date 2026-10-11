@@ -51,6 +51,7 @@ import {
 import { EmailTrackingStatus } from "@/src/components/email-tracking-status";
 import { toast } from "@/src/components/ui/sonner";
 import { usePersistentColumnVisibility } from "@/src/hooks/usePersistentColumnVisibility";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
 
 // Custom filter functions
@@ -245,6 +246,12 @@ export function useInvoiceTable({
   const [clientFilter, setClientFilter] = useState([]);
   const [dateFilter, setDateFilter] = useState(null);
   const [typeFilter, setTypeFilter] = useState("");
+  // Suppression groupée : les brouillons exigent « Supprimer » des factures,
+  // les factures importées celui des factures importées
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canDeleteDrafts = !permissionsReady || canDo("invoices", "delete");
+  const canDeleteImported =
+    !permissionsReady || canDo("importedInvoices", "delete");
   const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(
     "newbi:column-visibility:invoices",
     { finalTotalHT: false, finalTotalVAT: false },
@@ -1073,12 +1080,15 @@ export function useInvoiceTable({
   // Handle bulk delete - optimized with batching
   const handleDeleteSelected = async () => {
     // Séparer les factures normales (brouillons) et les factures importées
-    const draftInvoices = selectedRows.filter(
-      (invoice) => invoice._type !== "imported" && invoice.status === "DRAFT",
-    );
-    const importedInvoices = selectedRows.filter(
-      (invoice) => invoice._type === "imported",
-    );
+    const draftInvoices = canDeleteDrafts
+      ? selectedRows.filter(
+          (invoice) =>
+            invoice._type !== "imported" && invoice.status === "DRAFT",
+        )
+      : [];
+    const importedInvoices = canDeleteImported
+      ? selectedRows.filter((invoice) => invoice._type === "imported")
+      : [];
 
     // Factures normales non-brouillon ignorées
     const ignoredNormalInvoices = selectedRows.filter(
@@ -1087,7 +1097,9 @@ export function useInvoiceTable({
 
     if (draftInvoices.length === 0 && importedInvoices.length === 0) {
       toast.error(
-        "Seules les factures en brouillon ou importées peuvent être supprimées",
+        !canDeleteDrafts || !canDeleteImported
+          ? "Votre rôle ne permet pas de supprimer ces factures"
+          : "Seules les factures en brouillon ou importées peuvent être supprimées",
       );
       return;
     }

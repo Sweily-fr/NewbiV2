@@ -842,7 +842,9 @@ export default function ModernInvoiceEditor({
                       hasUserChanges={hasUserChanges}
                       loading={loading}
                       saving={saving}
-                      readOnly={readOnly}
+                      // Consultation (mode « view » : facture émise ou rôle
+                      // sans « Modifier ») : formulaire en lecture seule
+                      readOnly={readOnly || isReadOnly}
                       errors={errors}
                       validationErrors={validationErrors}
                       setValidationErrors={setValidationErrors}

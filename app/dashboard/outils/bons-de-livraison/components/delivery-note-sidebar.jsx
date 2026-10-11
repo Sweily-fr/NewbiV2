@@ -97,7 +97,11 @@ export default function DeliveryNoteSidebar({
   const canReadQuotes = !isReady || canRead("quotes");
   const canReadInvoices = !isReady || canRead("invoices");
   // Facturer : action « convert » du bon de livraison
-  const canConvertDeliveryNotes = !isReady || canDo("deliveryNotes", "convert");
+  // Facturer un BL crée une facture : « Facturer » du BL et « Créer » des
+  // factures, comme les autres conversions vers une facture
+  const canConvertDeliveryNotes =
+    !isReady ||
+    (canDo("deliveryNotes", "convert") && canDo("invoices", "create"));
   const { changeStatus, loading: changingStatus } =
     useChangeDeliveryNoteStatus();
   const { createInvoice, loading: creatingInvoice } =
