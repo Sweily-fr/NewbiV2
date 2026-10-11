@@ -216,6 +216,9 @@ export default function SignatureEditor({ id }) {
   // dupliquer = « create », supprimer = « delete »
   const canEditSignatures = !isReady || canDo("signatures", "edit");
   const canCreateSignatures = !isReady || canDo("signatures", "create");
+  // Rôle sans « Modifier » : les réglages sont masqués (consultation de
+  // l'aperçu seulement), et non plus affichés grisés
+  const roleReadOnly = isReady && !canDo("signatures", "edit");
   const canDeleteSignatures = !isReady || canDo("signatures", "delete");
 
   const {
@@ -1092,7 +1095,12 @@ export default function SignatureEditor({ id }) {
           </div>
         </div>
 
-        {selected ? (
+        {roleReadOnly ? (
+          <div className="border-t border-[#EEEFF1] px-6 py-8 text-sm text-muted-foreground dark:border-[#232323]">
+            Vous consultez cette signature : votre rôle ne permet pas de la
+            modifier.
+          </div>
+        ) : selected ? (
           <ScrollArea
             key={`${selected.level}-${selected.key || ""}`}
             className="min-h-0 flex-1 border-t border-[#EEEFF1] dark:border-[#232323]"
@@ -1299,21 +1307,24 @@ export default function SignatureEditor({ id }) {
               </span>
             </Button>
             <div data-tour="actions" className="flex shrink-0 items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handleTest}
-                disabled={!render?.html || testing}
-                className={`cursor-pointer ${FOCUS_RING}`}
-                title="Recevoir la signature dans votre boîte mail pour la vérifier"
-              >
-                {testing ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <MailCheck size={14} />
-                )}
-                <span className="@max-[672px]:hidden">M&apos;envoyer un test</span>
-                <span className="hidden @max-[672px]:inline">Tester</span>
-              </Button>
+              {/* E-mail de test : droit de créer ou modifier une signature */}
+              {(canEditSignatures || canCreateSignatures) && (
+                <Button
+                  variant="outline"
+                  onClick={handleTest}
+                  disabled={!render?.html || testing}
+                  className={`cursor-pointer ${FOCUS_RING}`}
+                  title="Recevoir la signature dans votre boîte mail pour la vérifier"
+                >
+                  {testing ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <MailCheck size={14} />
+                  )}
+                  <span className="@max-[672px]:hidden">M&apos;envoyer un test</span>
+                  <span className="hidden @max-[672px]:inline">Tester</span>
+                </Button>
+              )}
               <Button
                 variant="primary"
                 onClick={() => setInstallOpen(true)}
