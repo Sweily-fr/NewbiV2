@@ -720,6 +720,7 @@ function KanbanBoardPageContent({ params }) {
   const canCreateKanban = !isPermissionsReady || canDo("kanban", "create");
   const canEditKanban = !isPermissionsReady || canDo("kanban", "edit");
   const canShareKanban = !isPermissionsReady || canDo("kanban", "share");
+  const canExportKanban = !isPermissionsReady || canDo("kanban", "export");
   // « Convertir en facture » crée une facture : action « create » des factures
   const canCreateInvoice = !isPermissionsReady || canDo("invoices", "create");
 
@@ -1997,6 +1998,7 @@ function KanbanBoardPageContent({ params }) {
                 boardTitle={board?.title}
                 readOnly={!canEditKanban}
                 canCreate={canCreateKanban}
+                canExport={canExportKanban}
               />
             </div>
           )}

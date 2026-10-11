@@ -181,6 +181,8 @@ export default function PrevisionPage() {
   // cellules du tableau
   const { canDo, isReady } = useMyPermissions();
   const canCreateForecast = !isReady || canDo("forecast", "create");
+  // Export du tableau : droit « Exporter » des prévisions
+  const canExportForecast = !isReady || canDo("forecast", "export");
 
   // Determine the max allowed period and default period based on plan
   const maxPeriod = forecastMonths;
@@ -308,14 +310,16 @@ export default function PrevisionPage() {
                   Ajouter une prévision
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={() => setExportOpen(true)}
-                className="cursor-pointer"
-              >
-                <ExportIcon className="w-3.5 h-3.5" aria-hidden="true" />
-                Exporter
-              </Button>
+              {canExportForecast && (
+                <Button
+                  variant="outline"
+                  onClick={() => setExportOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <ExportIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                  Exporter
+                </Button>
+              )}
             </div>
           </div>
 
@@ -605,7 +609,7 @@ export default function PrevisionPage() {
 
         {/* ─── Dialogs ─── */}
         <ForecastExportDialog
-          open={exportOpen}
+          open={exportOpen && canExportForecast}
           onOpenChange={setExportOpen}
           months={forecastData?.months}
         />
