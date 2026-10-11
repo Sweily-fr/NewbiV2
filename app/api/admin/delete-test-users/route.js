@@ -9,6 +9,13 @@ import { withErrorHandler } from "@/src/lib/security";
  * Supprime des utilisateurs de test d'une organisation
  */
 async function handler(request) {
+  // Route de test : développement local uniquement. Sa clé codée en dur
+  // contournait toute authentification et tout rôle, production comprise
+  // (ajout d'un membre avec n'importe quel rôle, suppression de comptes).
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json({ error: "Introuvable" }, { status: 404 });
+  }
+
   const body = await request.json();
   const { organizationId, emails, adminKey } = body;
 
