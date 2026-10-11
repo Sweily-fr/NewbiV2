@@ -1244,10 +1244,22 @@ export const GET_PUBLIC_SHARES = gql`
 
 // Query pour accéder au tableau public (visiteurs externes)
 export const GET_PUBLIC_BOARD = gql`
-  query GetPublicBoard($token: String!, $email: String!, $password: String) {
-    getPublicBoard(token: $token, email: $email, password: $password) {
+  query GetPublicBoard(
+    $token: String!
+    $email: String!
+    $password: String
+    $accessToken: String
+  ) {
+    getPublicBoard(
+      token: $token
+      email: $email
+      password: $password
+      accessToken: $accessToken
+    ) {
       success
       message
+      requiresPassword
+      accessToken
       board {
         id
         title
@@ -1355,16 +1367,21 @@ export const REQUEST_ACCESS = gql`
     $email: String!
     $name: String
     $message: String
+    $password: String
+    $accessToken: String
   ) {
     requestAccess(
       token: $token
       email: $email
       name: $name
       message: $message
+      password: $password
+      accessToken: $accessToken
     ) {
       success
       message
       alreadyRequested
+      requiresPassword
     }
   }
 `;
@@ -1629,6 +1646,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
     $content: String
     $visitorEmail: String!
     $images: [CommentImageInput!]
+    $accessToken: String
   ) {
     addExternalComment(
       token: $token
@@ -1636,6 +1654,7 @@ export const ADD_EXTERNAL_COMMENT = gql`
       content: $content
       visitorEmail: $visitorEmail
       images: $images
+      accessToken: $accessToken
     ) {
       success
       message
@@ -1716,8 +1735,14 @@ export const UPDATE_VISITOR_PROFILE = gql`
     $token: String!
     $email: String!
     $input: UpdateVisitorProfileInput!
+    $accessToken: String
   ) {
-    updateVisitorProfile(token: $token, email: $email, input: $input) {
+    updateVisitorProfile(
+      token: $token
+      email: $email
+      input: $input
+      accessToken: $accessToken
+    ) {
       success
       message
       visitor {
@@ -1738,8 +1763,14 @@ export const UPLOAD_VISITOR_IMAGE = gql`
     $token: String!
     $email: String!
     $file: Upload!
+    $accessToken: String
   ) {
-    uploadVisitorImage(token: $token, email: $email, file: $file) {
+    uploadVisitorImage(
+      token: $token
+      email: $email
+      file: $file
+      accessToken: $accessToken
+    ) {
       success
       message
       imageUrl
@@ -1754,12 +1785,14 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
     $taskId: ID!
     $file: Upload!
     $visitorEmail: String!
+    $accessToken: String
   ) {
     uploadExternalCommentImage(
       token: $token
       taskId: $taskId
       file: $file
       visitorEmail: $visitorEmail
+      accessToken: $accessToken
     ) {
       success
       message
@@ -1776,8 +1809,18 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
 
 // Subscription pour les mises à jour en temps réel sur la page publique
 export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
-  subscription PublicTaskUpdated($token: String!, $boardId: ID!) {
-    publicTaskUpdated(token: $token, boardId: $boardId) {
+  subscription PublicTaskUpdated(
+    $token: String!
+    $boardId: ID!
+    $accessToken: String
+    $email: String
+  ) {
+    publicTaskUpdated(
+      token: $token
+      boardId: $boardId
+      accessToken: $accessToken
+      email: $email
+    ) {
       type
       task {
         id
