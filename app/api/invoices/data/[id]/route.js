@@ -3,7 +3,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import {
   hasInternalSecret,
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   toObjectId,
   apiError,
   withErrorHandler,
@@ -18,7 +18,7 @@ import {
  *
  * Dual-access route (Principle 4):
  * - Puppeteer (PDF generation): authenticated via X-Internal-Secret header
- * - Authenticated user: verified via session + org membership
+ * - Authenticated user: session + droit « Voir » du module dans l.espace
  */
 async function handler(request, { params }) {
   const { id } = await params;
@@ -43,10 +43,15 @@ async function handler(request, { params }) {
     return apiError(404, "Facture introuvable");
   }
 
-  // Membership check (only for authenticated users, not Puppeteer —
-  // Puppeteer auth is done upstream in generate-pdf before launching browser)
+  // Droit « Voir » du module (utilisateurs connectés ; Puppeteer, authentifié
+  // par le secret interne, a été contrôlé en amont par generate-pdf)
   if (authenticatedUserId) {
-    await requireOrgMembership(authenticatedUserId, invoice.workspaceId);
+    await requireOrgAction(
+      authenticatedUserId,
+      invoice.workspaceId,
+      "invoices",
+      "view",
+    );
   }
 
   // Fetch related client data if present

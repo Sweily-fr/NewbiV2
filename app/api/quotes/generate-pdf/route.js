@@ -8,7 +8,7 @@ import { appendDocumentAnnex } from "@/src/lib/document-annex-server";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   hasInternalSecret,
   toObjectId,
   apiError,
@@ -19,7 +19,7 @@ import {
  * POST /api/quotes/generate-pdf
  *
  * Generate a PDF for a quote via Puppeteer.
- * Auth check (session + org membership) is done HERE, before launching the browser.
+ * Auth check (session + droit « Voir » du module) is done HERE, before launching the browser.
  * Puppeteer then calls /api/quotes/data/[id] with X-Internal-Secret to fetch data.
  */
 async function handler(request) {
@@ -40,7 +40,7 @@ async function handler(request) {
     if (!quote) {
       return apiError(404, "Devis introuvable");
     }
-    await requireOrgMembership(user.id, quote.workspaceId);
+    await requireOrgAction(user.id, quote.workspaceId, "quotes", "view");
   }
 
   // User is authorized — launch Puppeteer to generate the PDF
