@@ -82,6 +82,10 @@ const LEGACY_LEGAL_FORM_LABELS = {
   "Société d'exercice libéral par actions simplifiée": "SELAS",
   "Association déclarée": "Association",
   "Association reconnue d'utilité publique": "Association",
+  // Valeur de l'enum des documents (companyStatus) laissée par une ancienne
+  // migration ; « AUTRE » (non renseigné) reste tel quel : le vider
+  // bloquerait la création de documents de ces espaces.
+  AUTO_ENTREPRENEUR: "EI",
 };
 
 /**
