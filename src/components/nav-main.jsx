@@ -1174,9 +1174,15 @@ export function NavMain({
 
     const isProTab = proTabs.includes(item.title);
     const hasAccess = !isProTab || hasProAccess;
-    const isItemActive =
-      pathname === item.url ||
-      (item.url !== "/dashboard" && pathname?.startsWith(item.url + "/"));
+    // activePaths : sous-pages propres à l'entrée quand son adresse est le
+    // préfixe d'autres entrées (espace gestionnaire)
+    const isItemActive = item.activePaths
+      ? pathname === item.url ||
+        item.activePaths.some(
+          (path) => pathname === path || pathname?.startsWith(path + "/"),
+        )
+      : pathname === item.url ||
+        (item.url !== "/dashboard" && pathname?.startsWith(item.url + "/"));
 
     // Gérer l'action spéciale pour ouvrir les notifications
     if (item.action === "openNotifications") {

@@ -223,7 +223,23 @@ const data = {
     {
       title: "Clients",
       url: GESTIONNAIRE_PATH,
-      icon: Users,
+      icon: UserEditIcon,
+      activePaths: [`${GESTIONNAIRE_PATH}/clients`],
+    },
+    {
+      title: "Factures clients",
+      url: `${GESTIONNAIRE_PATH}/factures`,
+      icon: DocumentText2Icon,
+    },
+    {
+      title: "Devis",
+      url: `${GESTIONNAIRE_PATH}/devis`,
+      icon: ClipboardTickIcon,
+    },
+    {
+      title: "Bons de commande",
+      url: `${GESTIONNAIRE_PATH}/bons-commande`,
+      icon: ClipboardImportIcon,
     },
   ],
   // Navigation pour la vue Comptabilité (cabinets comptables)
