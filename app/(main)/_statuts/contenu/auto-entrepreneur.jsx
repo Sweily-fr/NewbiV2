@@ -1,5 +1,4 @@
 import React from "react";
-import Link from "next/link";
 import { Archive, BadgePercent, Clock3, FileCheck2, Users } from "lucide-react";
 
 /* Contenu de la page /auto-entrepreneur. Les faits repris ici sont ceux déjà
@@ -153,15 +152,9 @@ export const contenu = {
       <>
         Concrètement, vous n&apos;avez rien à préparer : vos factures partent
         déjà au bon format par une plateforme agréée, et leur statut de
-        transmission s&apos;affiche à côté de chacune d&apos;elles. Sur le livre
-        des recettes et les pièces à conserver, voyez notre page{" "}
-        <Link
-          href="/micro-entreprise"
-          className="text-white underline underline-offset-4 hover:text-white/80"
-        >
-          micro-entreprise
-        </Link>
-        .
+        transmission s&apos;affiche à côté de chacune d&apos;elles. Le livre des
+        recettes, le registre des achats et les pièces à conserver sont traités
+        dans les questions fréquentes, en bas de cette page.
       </>
     ),
   },
@@ -210,6 +203,26 @@ export const contenu = {
         title: "Combien de temps dois-je conserver mes factures ?",
         content:
           "Dix ans. Dans Newbi, vos factures sont archivées automatiquement dès leur émission : vous les retrouvez à tout moment sans avoir à gérer de dossier ni de sauvegarde de votre côté.",
+      },
+      {
+        title: "Quelles sont mes obligations comptables en micro-entreprise ?",
+        content:
+          "Trois : tenir un livre des recettes, tenir un registre des achats si vous vendez des marchandises, et conserver vos justificatifs dix ans. Il n'y a ni bilan, ni compte de résultat, ni liasse fiscale à produire, et aucun expert-comptable n'est imposé. S'y ajoutent la déclaration de chiffre d'affaires à l'URSSAF et, au-delà d'un certain chiffre d'affaires, un compte bancaire dédié.",
+      },
+      {
+        title: "Comment Newbi tient-il mon livre des recettes ?",
+        content:
+          "Il se génère à partir de vos factures : chaque paiement que vous enregistrez est reporté dans un livre des recettes conforme, chronologique, que vous téléchargez en PDF quand vous en avez besoin. Vous n'avez aucune ligne à saisir à la main.",
+      },
+      {
+        title: "Dois-je tenir un registre des achats ?",
+        content:
+          "Seulement si votre activité consiste à vendre des marchandises, des objets, des fournitures ou des denrées — à consommer sur place ou à emporter. Les prestataires de services n'y sont pas soumis, même s'il reste recommandé de suivre ses dépenses pour piloter son activité.",
+      },
+      {
+        title: "Suis-je obligé d'ouvrir un compte bancaire professionnel ?",
+        content:
+          "Un compte dédié à votre activité devient obligatoire au-delà de 10 000 € de chiffre d'affaires sur deux années consécutives. Il n'a pas à être un compte professionnel au sens bancaire : un second compte courant réservé à l'activité suffit. Vous pouvez le connecter à Newbi pour rapprocher vos encaissements de vos factures.",
       },
       {
         title: "Que se passe-t-il pendant les 30 jours offerts ?",

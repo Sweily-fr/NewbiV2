@@ -309,6 +309,14 @@ const nextConfig = {
         destination: "/",
         permanent: true,
       },
+      // /micro-entreprise supprimée : elle traitait le même statut que
+      // /auto-entrepreneur, qui est le terme réellement cherché. La page était
+      // indexée, d'où la redirection plutôt qu'un 404.
+      {
+        source: "/micro-entreprise",
+        destination: "/auto-entrepreneur",
+        permanent: true,
+      },
       // Pas de redirection pour /blog/optimiser-seo-blog-techniques : aucun
       // article du corpus ne traite du référencement, et rediriger vers un
       // contenu sans rapport serait lu comme un soft-404.

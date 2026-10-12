@@ -36,11 +36,6 @@ const FURTHER_READING = {
     "facture-electronique-auto-entrepreneur-2027",
     "declaration-urssaf-auto-entrepreneur-guide",
   ],
-  "micro-entreprise": [
-    "plafonds-micro-entreprise-2027",
-    "depassement-seuil-micro-entreprise-consequences",
-    "compte-bancaire-professionnel-obligatoire",
-  ],
   "entreprise-individuelle": [
     "ocr-justificatifs-comptables",
     "comment-partager-documents-expert-comptable",
