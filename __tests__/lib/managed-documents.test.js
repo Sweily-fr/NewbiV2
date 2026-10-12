@@ -216,6 +216,62 @@ describe("listManagedDocuments", () => {
     });
   });
 
+  it("bons de livraison : sans montant, ouverts dans leur liste", async () => {
+    await db.collection("deliverynotes").insertOne({
+      workspaceId: orgA,
+      prefix: "BL-202610",
+      number: "0001",
+      status: "SHIPPED",
+      issueDate: new Date(),
+      deliveryDate: new Date(),
+      client: { name: "Transports Durand" },
+    });
+    const result = await list({ kind: "deliveryNotes" });
+    expect(result.total).toBe(1);
+    expect(result.rows[0]).toMatchObject({
+      reference: "BL-202610-0001",
+      status: "SHIPPED",
+      totalTTC: null,
+    });
+    expect(result.rows[0].openUrl).toBe(
+      `/dashboard/outils/bons-de-livraison?id=${result.rows[0].id}`,
+    );
+    expect(result.statusCounts).toMatchObject({ all: 1, SHIPPED: 1 });
+  });
+
+  it("avoirs : facture d'origine, montant négatif, ouverts sur leur page", async () => {
+    const originalInvoice = new ObjectId();
+    await db.collection("creditnotes").insertOne({
+      workspaceId: orgB,
+      prefix: "AV-",
+      number: "000001",
+      status: "CREATED",
+      originalInvoice,
+      originalInvoiceNumber: "F-202610-0003",
+      issueDate: new Date(),
+      finalTotalTTC: -50,
+      client: { name: "Boulangerie Durand" },
+    });
+    // Le droit « Voir » est vérifié sur les avoirs aussi
+    await db.collection("creditnotes").insertOne({
+      workspaceId: orgNoView,
+      number: "000009",
+      status: "CREATED",
+    });
+    const result = await list({ kind: "creditNotes" });
+    expect(result.total).toBe(1);
+    const [row] = result.rows;
+    expect(row).toMatchObject({
+      reference: "AV-000001",
+      dueText: "F-202610-0003",
+      totalTTC: -50,
+      status: "CREATED",
+    });
+    expect(row.openUrl).toBe(
+      `/dashboard/outils/factures/${originalInvoice}/avoir/${row.id}`,
+    );
+  });
+
   it("ignore un onglet inconnu et une recherche qui ressemble à une expression", async () => {
     expect((await list({ status: "$where" })).total).toBe(4);
     expect((await list({ q: ".*" })).total).toBe(0);

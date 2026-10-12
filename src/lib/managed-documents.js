@@ -2,8 +2,8 @@ import { ObjectId } from "mongodb";
 import { getModuleActions } from "./organization-roles.js";
 
 /**
- * Espace gestionnaire : factures, devis et bons de commande de tous les
- * clients d'un cabinet, en une liste.
+ * Espace gestionnaire : factures, devis, bons de commande, bons de
+ * livraison et avoirs de tous les clients d'un cabinet, en une liste.
  *
  * Un document n'est listé que si son espace est un client ACTIF du
  * gestionnaire (fiche managedclients), que l'utilisateur y est encore membre
@@ -49,6 +49,30 @@ export const MANAGED_DOCUMENT_KINDS = {
       { value: "VALIDATED", label: "Validés" },
       { value: "DELIVERED", label: "Livrés" },
     ],
+  },
+  deliveryNotes: {
+    collection: "deliverynotes",
+    moduleKey: "deliveryNotes",
+    badgeType: "deliveryNote",
+    openPath: "/dashboard/outils/bons-de-livraison",
+    // Un bon de livraison n'a pas de prix
+    showTotal: false,
+    tabs: [
+      { value: "all", label: "Tous" },
+      { value: "DRAFT", label: "Brouillons" },
+      { value: "PENDING", label: "À expédier" },
+      { value: "SHIPPED", label: "Expédiés" },
+      { value: "DELIVERED", label: "Livrés" },
+    ],
+  },
+  creditNotes: {
+    collection: "creditnotes",
+    moduleKey: "creditNotes",
+    badgeType: "creditNote",
+    // Pas de liste des avoirs dans Newbi : chaque avoir s'ouvre sur sa page,
+    // sous sa facture d'origine (voir openUrl)
+    openPath: "/dashboard/outils/factures",
+    tabs: [{ value: "all", label: "Tous" }],
   },
 };
 
@@ -136,7 +160,7 @@ export async function listReadableClientOrganizations(
 /**
  * Page de documents d'un type, tous dossiers confondus.
  * @param {object} params
- * @param {"invoices"|"quotes"|"purchaseOrders"} params.kind
+ * @param {"invoices"|"quotes"|"purchaseOrders"|"deliveryNotes"|"creditNotes"} params.kind
  * @param {string} [params.status] valeur d'onglet (voir MANAGED_DOCUMENT_KINDS)
  * @param {string} [params.organizationId] un seul dossier
  * @param {string} [params.q] recherche : numéro ou client destinataire
@@ -223,6 +247,8 @@ export async function listManagedDocuments(
           dueDate: 1,
           validUntil: 1,
           deliveryDate: 1,
+          originalInvoice: 1,
+          originalInvoiceNumber: 1,
           finalTotalTTC: 1,
           totalTTC: 1,
           client: 1,
@@ -267,8 +293,9 @@ export async function listManagedDocuments(
           ? `${doc.prefix.replace(/-$/, "")}-${doc.number}`
           : doc.number
         : null;
+    const id = String(doc._id);
     return {
-      id: String(doc._id),
+      id,
       organizationId: String(doc.workspaceId),
       organizationName: orgName.get(String(doc.workspaceId)) || null,
       reference,
@@ -280,8 +307,20 @@ export async function listManagedDocuments(
           ? doc.dueDate
           : kind === "quotes"
             ? doc.validUntil
-            : doc.deliveryDate || doc.validUntil,
-      totalTTC: doc.finalTotalTTC ?? doc.totalTTC ?? null,
+            : doc.deliveryDate || doc.validUntil || null,
+      // Avoir : sa facture d'origine à la place d'une date
+      dueText:
+        kind === "creditNotes" ? doc.originalInvoiceNumber || "-" : undefined,
+      totalTTC:
+        config.showTotal === false
+          ? null
+          : (doc.finalTotalTTC ?? doc.totalTTC ?? null),
+      openUrl:
+        kind === "creditNotes"
+          ? doc.originalInvoice
+            ? `/dashboard/outils/factures/${doc.originalInvoice}/avoir/${id}`
+            : null
+          : `${config.openPath}?id=${id}`,
     };
   });
 

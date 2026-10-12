@@ -241,6 +241,16 @@ const data = {
       url: `${GESTIONNAIRE_PATH}/bons-commande`,
       icon: ClipboardImportIcon,
     },
+    {
+      title: "Bons de livraison",
+      url: `${GESTIONNAIRE_PATH}/bons-de-livraison`,
+      icon: Truck,
+    },
+    {
+      title: "Avoirs",
+      url: `${GESTIONNAIRE_PATH}/avoirs`,
+      icon: FileMinus,
+    },
   ],
   // Navigation pour la vue Comptabilité (cabinets comptables)
   navAccounting: [

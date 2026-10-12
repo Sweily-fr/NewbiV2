@@ -64,6 +64,13 @@ const DOCUMENT_CONFIG = {
       CANCELED: { icon: XCircle, style: STATUS_STYLES.red },
     },
   },
+  // Un avoir n'a qu'un statut : émis à sa création
+  creditNote: {
+    labels: { CREATED: "Émis" },
+    statuses: {
+      CREATED: { icon: CheckCircle, style: STATUS_STYLES.emerald },
+    },
+  },
   deliveryNote: {
     labels: DELIVERY_NOTE_STATUS_LABELS,
     statuses: {

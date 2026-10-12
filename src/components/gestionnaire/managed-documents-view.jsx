@@ -42,8 +42,9 @@ const formatDate = (value) =>
   value ? dateFormat.format(new Date(value)) : "-";
 
 /**
- * Espace gestionnaire : liste de factures, devis ou bons de commande de
- * tous les clients du cabinet, au format des listes du tableau de bord.
+ * Espace gestionnaire : liste de factures, devis, bons de commande, bons de
+ * livraison ou avoirs de tous les clients du cabinet, au format des listes
+ * du tableau de bord.
  * Filtres dans l'adresse (?statut, ?dossier, ?q, ?page) ; un clic ouvre le
  * document dans le dossier du client (bascule d'espace puis panneau).
  */
@@ -52,6 +53,7 @@ export default function ManagedDocumentsView({
   dueLabel,
   badgeType,
   openPath,
+  showTotal = true,
   tabs,
   data,
   current,
@@ -103,7 +105,7 @@ export default function ManagedDocumentsView({
         });
         localStorage.setItem("active_organization_id", row.organizationId);
       }
-      window.location.assign(`${openPath}?id=${row.id}`);
+      window.location.assign(row.openUrl || `${openPath}?id=${row.id}`);
     } catch (error) {
       console.error("Ouverture du document impossible:", error);
       toast.error("Impossible d'ouvrir ce document");
@@ -117,7 +119,7 @@ export default function ManagedDocumentsView({
     "Destinataire",
     "Date",
     dueLabel,
-    "Montant TTC",
+    ...(showTotal ? ["Montant TTC"] : []),
     "Statut",
   ];
 
@@ -220,7 +222,7 @@ export default function ManagedDocumentsView({
                     "h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground",
                     index === 0 && "pl-4 sm:pl-6 w-[220px]",
                     index === 1 && "w-[260px]",
-                    index === 4 && "text-right",
+                    label === "Montant TTC" && "text-right",
                     index === columns.length - 1 && "pr-4 sm:pr-6 w-[150px]",
                   )}
                 >
@@ -270,11 +272,13 @@ export default function ManagedDocumentsView({
                   {formatDate(row.issueDate)}
                 </td>
                 <td className="p-2 align-middle text-sm text-muted-foreground whitespace-nowrap">
-                  {formatDate(row.dueDate)}
+                  {row.dueText ?? formatDate(row.dueDate)}
                 </td>
-                <td className="p-2 align-middle text-sm text-right tabular-nums whitespace-nowrap">
-                  {row.totalTTC === null ? "-" : money.format(row.totalTTC)}
-                </td>
+                {showTotal && (
+                  <td className="p-2 align-middle text-sm text-right tabular-nums whitespace-nowrap">
+                    {row.totalTTC === null ? "-" : money.format(row.totalTTC)}
+                  </td>
+                )}
                 <td className="p-2 pr-4 sm:pr-6 align-middle">
                   <DocumentStatusBadge type={badgeType} status={row.status} />
                 </td>

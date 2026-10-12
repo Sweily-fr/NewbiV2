@@ -10,6 +10,8 @@ const PAGES = {
   invoices: { title: "Factures clients", dueLabel: "Échéance" },
   quotes: { title: "Devis", dueLabel: "Validité" },
   purchaseOrders: { title: "Bons de commande", dueLabel: "Livraison" },
+  deliveryNotes: { title: "Bons de livraison", dueLabel: "Livraison" },
+  creditNotes: { title: "Avoirs", dueLabel: "Facture d'origine" },
 };
 
 const one = (value) => (Array.isArray(value) ? value[0] : value);
@@ -46,6 +48,7 @@ export default async function ManagedDocumentsPage({ kind, searchParams }) {
       dueLabel={PAGES[kind].dueLabel}
       badgeType={config.badgeType}
       openPath={config.openPath}
+      showTotal={config.showTotal !== false}
       tabs={config.tabs}
       data={JSON.parse(JSON.stringify(data))}
       current={current}
