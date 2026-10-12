@@ -14,10 +14,10 @@ const onboardingDataSchema = z
   .object({
     // Workspace step data
     companyName: z.string().max(200).optional(),
-    // Un SIRET peut rester vide tant que l'onboarding est en cours (l'étape
-    // "workspace" enregistre des brouillons). Le passage à "completed" exige
-    // en revanche un SIRET plein et vérifié — contrainte portée par
-    // `onboardingStepSchema` ci-dessous, pas par ce sous-schéma.
+    // Le SIRET est facultatif, y compris pour terminer l'onboarding : une
+    // entreprise en cours d'immatriculation ou hors de France n'en a pas.
+    // Quand il est fourni, il est vérifié au registre par la route ; quand il
+    // manque, `onboardingStepSchema` exige au moins un nom d'entreprise.
     siret: z
       .string()
       .regex(/^\d{14}$/)
@@ -65,15 +65,16 @@ export const onboardingStepSchema = z
   .superRefine((value, ctx) => {
     if (value.step !== "completed") return;
 
-    // Le SIRET n'est plus facultatif au moment de terminer l'onboarding.
-    // Sans cette règle, `.optional().or(z.literal(""))` laissait créer un
-    // compte complet sans la moindre donnée d'entreprise.
-    if (!value.data?.siret || !/^\d{14}$/.test(value.data.siret)) {
+    // Sans SIRET, l'espace doit au moins porter un nom d'entreprise : un
+    // compte complet ne se crée jamais sans la moindre donnée d'entreprise.
+    // Le format du SIRET, quand il est fourni, est déjà contrôlé par
+    // `onboardingDataSchema`.
+    if (!value.data?.siret && !value.data?.companyName?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["data", "siret"],
+        path: ["data", "companyName"],
         message:
-          "Un numéro SIRET valide (14 chiffres) est requis pour terminer l'inscription.",
+          "Le nom de votre entreprise est requis pour terminer l'inscription.",
       });
     }
 

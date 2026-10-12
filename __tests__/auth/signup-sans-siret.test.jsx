@@ -1,0 +1,148 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import React from "react";
+
+/**
+ * Étape « Créez votre espace de travail » : une entreprise sans SIRET (en
+ * cours d'immatriculation, hors de France, absente du registre) doit pouvoir
+ * terminer l'inscription avec un nom saisi librement.
+ */
+
+const mockReplace = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: mockReplace, back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+const session = {
+  user: {
+    id: "507f1f77bcf86cd799439011",
+    email: "u@x.fr",
+    onboardingStep: "workspace",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+};
+
+vi.mock("@/src/lib/auth-client", () => ({
+  signIn: { social: vi.fn() },
+  performLogout: vi.fn(),
+  useSession: () => ({ data: session, isPending: false, refetch: vi.fn() }),
+  authClient: { getSession: vi.fn() },
+}));
+
+vi.mock("@/src/components/ui/sonner", () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
+vi.mock("@/src/components/seo/seo-head", () => ({ default: () => null }));
+vi.mock("@/src/components/seo/seo-metadata", () => ({ JsonLd: () => null }));
+vi.mock("@/src/hooks/use-seo", () => ({ useAuthSEO: () => ({}) }));
+vi.mock("@/src/utils/trackEvent", () => ({ trackSignupConversion: vi.fn() }));
+vi.mock("@/src/lib/attribution", () => ({ sendAttribution: vi.fn() }));
+vi.mock("@/app/auth/signup/registerForm", () => ({ default: () => null }));
+
+import SignUpPage from "@/app/auth/signup/page";
+
+function mockFetch() {
+  const fetchMock = vi.fn(async (url) => {
+    const json = (body) => ({ ok: true, json: async () => body });
+    if (url.startsWith("/api/feature-flags")) {
+      return json({ appTrialEnabled: true });
+    }
+    if (url.startsWith("/api/search-companies")) return json({ results: [] });
+    if (url.startsWith("/api/onboarding/step")) {
+      return json({ step: "completed", changed: true });
+    }
+    throw new Error(`fetch inattendu : ${url}`);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+const onboardingCalls = (fetchMock) =>
+  fetchMock.mock.calls.filter(([url]) => url === "/api/onboarding/step");
+
+describe("Inscription sans SIRET", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("termine l'inscription avec le nom saisi et la déclaration", async () => {
+    const fetchMock = mockFetch();
+    const user = userEvent.setup();
+    render(<SignUpPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Continuer sans SIRET" }),
+    );
+    expect(screen.getByText("Nom de votre entreprise")).toBeInTheDocument();
+
+    const submit = screen.getByRole("button", { name: "Continuer" });
+    expect(submit).toBeDisabled();
+
+    await user.type(
+      screen.getByPlaceholderText("Ex. : Studio Dupont"),
+      "Studio Dupont",
+    );
+    // La déclaration nomme l'entreprise saisie et reste obligatoire.
+    const declaration = screen.getByRole("checkbox");
+    expect(declaration.closest("label")).toHaveTextContent("Studio Dupont");
+    expect(submit).toBeDisabled();
+
+    await user.click(declaration);
+    await waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    await waitFor(() => expect(onboardingCalls(fetchMock)).toHaveLength(1));
+    const [, init] = onboardingCalls(fetchMock)[0];
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({
+      step: "completed",
+      honorDeclarationAccepted: true,
+      data: { companyName: "Studio Dupont", siret: "", siren: "" },
+    });
+    // Aucune recherche au registre en mode saisie libre.
+    expect(
+      fetchMock.mock.calls.some(([url]) => url.includes("search-companies")),
+    ).toBe(false);
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith("/onboarding/success"),
+    );
+  });
+
+  it("propose de continuer sans SIRET quand la recherche ne trouve rien", async () => {
+    mockFetch();
+    const user = userEvent.setup();
+    render(<SignUpPage />);
+
+    await user.type(
+      await screen.findByPlaceholderText(
+        "Nom de l'entreprise, SIRET ou SIREN...",
+      ),
+      "Entreprise introuvable",
+    );
+
+    expect(
+      await screen.findByText("Aucune entreprise trouvée"),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", {
+        name: /Votre entreprise n'apparaît pas \?/,
+      }),
+    );
+
+    // Le nom tapé est conservé comme nom de l'entreprise.
+    expect(screen.getByPlaceholderText("Ex. : Studio Dupont")).toHaveValue(
+      "Entreprise introuvable",
+    );
+    expect(screen.queryByText("Aucune entreprise trouvée")).toBeNull();
+
+    // Retour possible à la recherche.
+    await user.click(
+      screen.getByRole("button", { name: "Rechercher mon entreprise" }),
+    );
+    expect(
+      screen.getByPlaceholderText("Nom de l'entreprise, SIRET ou SIREN..."),
+    ).toBeInTheDocument();
+  });
+});
