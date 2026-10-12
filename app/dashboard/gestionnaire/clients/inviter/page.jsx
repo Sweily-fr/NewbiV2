@@ -19,7 +19,7 @@ export default async function InviteManagedClientPage({ searchParams }) {
         <h1 className="text-2xl font-medium mt-3 mb-0">Inviter un client</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Pour une entreprise qui utilise déjà Newbi : elle accepte de vous
-          confier son espace.
+          confier un ou plusieurs de ses espaces.
         </p>
       </div>
       <section className="max-w-xl rounded-lg border border-border bg-background p-5">

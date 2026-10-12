@@ -12,7 +12,7 @@ import { GESTIONNAIRE_PATH } from "@/src/lib/gestionnaire-paths";
 /**
  * Invitation d'un client qui a déjà un compte Newbi : il reçoit un e-mail,
  * une notification et la demande dans ses invitations, puis choisit
- * l'espace qu'il vous confie.
+ * les espaces qu'il vous confie.
  */
 export default function InviteManagedClientForm({ defaultEmail = "" }) {
   const router = useRouter();
@@ -64,7 +64,7 @@ export default function InviteManagedClientForm({ defaultEmail = "" }) {
           placeholder="dirigeant@entreprise.fr"
         />
         <p className="text-xs text-muted-foreground">
-          L&apos;adresse de son compte Newbi. Il choisit ensuite l&apos;espace
+          L&apos;adresse de son compte Newbi. Il choisit ensuite les espaces
           qu&apos;il vous confie et garde son abonnement. L&apos;invitation est
           valable 14 jours.
         </p>

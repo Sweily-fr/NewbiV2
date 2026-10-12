@@ -1,7 +1,7 @@
 import { escapeHtml } from "../../validation.js";
 
 // Invitation d'un client existant par un cabinet (gestionnaire) : le client
-// choisit l'espace à confier puis accepte ou refuse. Même style que
+// choisit les espaces à confier puis accepte ou refuse. Même style que
 // l'e-mail de bienvenue des clients créés par un cabinet.
 export const managedClientInvitation = ({ managerName, url, days = 14 }) => {
   const manager = escapeHtml(managerName || "Un cabinet");
@@ -29,10 +29,10 @@ export const managedClientInvitation = ({ managerName, url, days = 14 }) => {
           </h1>
 
           <p style="font-size: 15px; color: #4b5563; margin: 0 0 16px 0; line-height: 1.6;">
-            Votre cabinet vous invite à lui confier l'un de vos espaces Newbi, pour suivre vos factures, devis et votre comptabilité.
+            Votre cabinet vous invite à lui confier un ou plusieurs de vos espaces Newbi, pour suivre vos factures, devis et votre comptabilité.
           </p>
           <p style="font-size: 15px; color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
-            En acceptant, vous choisissez l'espace concerné. ${manager} y accède avec les droits Comptable, que vous pouvez ajuster dans Paramètres &gt; Rôles. Vous restez super admin de votre espace et gardez votre abonnement.
+            En acceptant, vous choisissez les espaces concernés. ${manager} y accède avec les droits Comptable, que vous pouvez ajuster dans Paramètres &gt; Rôles. Vous restez super admin de vos espaces et gardez votre abonnement.
           </p>
 
           <a href="${url}" style="display: block; background-color: #1a1a1a; color: #ffffff; text-decoration: none; padding: 16px 24px; border-radius: 6px; font-weight: 500; font-size: 15px; text-align: center;">

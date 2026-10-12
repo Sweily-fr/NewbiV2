@@ -10,7 +10,7 @@ import {
 /**
  * Invitation d'un cabinet, côté client (destinataire seulement).
  * GET  → détail et espaces que l'utilisateur peut confier
- * POST → { action: "accept", organizationId } ou { action: "refuse" }
+ * POST → { action: "accept", organizationIds: [...] } ou { action: "refuse" }
  */
 const fail = (error) => {
   if (error instanceof ManagedClientError) {
@@ -44,6 +44,7 @@ async function postHandler(request, { params }) {
       id,
       user,
       action: body.action,
+      organizationIds: body.organizationIds,
       organizationId: body.organizationId,
       proof: {
         ip:

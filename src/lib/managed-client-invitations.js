@@ -13,16 +13,20 @@ import {
  * - le cabinet saisit l'e-mail du dirigeant ;
  * - le dirigeant reçoit un e-mail, une notification sur l'app et la demande
  *   dans Notifications > Invitations ;
- * - il choisit lequel de ses espaces confier, puis accepte ou refuse.
+ * - il choisit le ou les espaces à confier, puis accepte ou refuse.
  *
  * L'invitation est une fiche `managedclients` en statut « pending ». À
- * l'acceptation : le cabinet entre dans l'espace en Comptable et la fiche
- * passe « active », avec la preuve du consentement (RGPD : accord écrit
- * préalable du client avant que le cabinet accède à ses données). Le client
- * garde son abonnement.
+ * l'acceptation : le cabinet entre dans chaque espace choisi en Comptable ;
+ * la fiche passe « active » sur le premier espace et une fiche « active »
+ * est créée pour chacun des autres (une fiche par espace, `invitationId`
+ * renvoie à l'invitation), toutes avec la preuve du consentement (RGPD :
+ * accord écrit préalable du client avant que le cabinet accède à ses
+ * données). Le client garde son abonnement.
  */
 
 export const INVITATION_DAYS = 14;
+// Garde-fou sur la saisie : bien au-delà du nombre d'espaces d'un client
+const MAX_ORGANIZATIONS_PER_ANSWER = 50;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const asObjectId = (value) =>
@@ -151,7 +155,6 @@ export async function inviteExistingClient({
     invitedEmail: email,
     invitedUserId: user._id,
     payer: "client",
-    plan: null,
     requestedAt: now,
     expiresAt: new Date(now.getTime() + INVITATION_DAYS * 86400000),
     respondedAt: null,
@@ -272,9 +275,11 @@ export async function getClientInvitation(mongoDb, { id, user }) {
 }
 
 /**
- * Réponse du client : « accept » (avec l'espace confié) ou « refuse ».
+ * Réponse du client : « accept » (avec les espaces confiés) ou « refuse ».
  * @param {object} params
  * @param {{ id: string }} params.user utilisateur connecté
+ * @param {string[]} [params.organizationIds] espaces confiés
+ * @param {string} [params.organizationId] un seul espace (ancien format)
  * @param {{ ip?: string, userAgent?: string }} [params.proof]
  */
 export async function respondToClientInvitation({
@@ -282,6 +287,7 @@ export async function respondToClientInvitation({
   id,
   user,
   action,
+  organizationIds,
   organizationId,
   proof = {},
 }) {
@@ -314,30 +320,48 @@ export async function respondToClientInvitation({
     throw new ManagedClientError(409, "Ce cabinet n'est plus actif sur Newbi.");
   }
 
-  // L'espace doit être l'un de ceux que l'utilisateur peut confier : il en
-  // est super admin et aucun gestionnaire ne le suit déjà
-  const orgOid = asObjectId(organizationId);
-  const entrustable = await listEntrustableOrganizations(mongoDb, user.id);
-  if (!orgOid || !entrustable.some((o) => String(o.id) === String(orgOid))) {
-    throw new ManagedClientError(400, "Choisissez l'un de vos espaces.");
+  // Chaque espace doit être l'un de ceux que l'utilisateur peut confier : il
+  // en est super admin et aucun gestionnaire ne le suit déjà
+  const requested = Array.isArray(organizationIds)
+    ? organizationIds
+    : organizationId != null
+      ? [organizationId]
+      : [];
+  if (requested.length === 0) {
+    throw new ManagedClientError(400, "Choisissez au moins un de vos espaces.");
+  }
+  if (requested.length > MAX_ORGANIZATIONS_PER_ANSWER) {
+    throw new ManagedClientError(400, "Trop d'espaces sélectionnés.");
+  }
+  const entrustable = new Set(
+    (await listEntrustableOrganizations(mongoDb, user.id)).map((o) =>
+      String(o.id),
+    ),
+  );
+  const orgOids = [];
+  for (const value of requested) {
+    const oid = asObjectId(value);
+    if (!oid || !entrustable.has(String(oid))) {
+      throw new ManagedClientError(400, "Choisissez parmi vos espaces.");
+    }
+    if (!orgOids.some((o) => o.equals(oid))) orgOids.push(oid);
   }
 
   await ensureManagedClientIndexes(mongoDb);
 
-  // Le cabinet entre en Comptable ; s'il est déjà membre, son rôle reste
-  const alreadyMember = await mongoDb
-    .collection("member")
-    .findOne({ userId: manager.userId, organizationId: orgOid });
-  if (!alreadyMember) {
-    await mongoDb.collection("member").insertOne({
-      userId: manager.userId,
-      organizationId: orgOid,
-      role: "accountant",
-      createdAt: now,
-    });
-  }
+  // Preuve du consentement du client (RGPD), la même pour chaque espace
+  const consent = {
+    acceptedAt: now,
+    acceptedByUserId: asObjectId(user.id),
+    ip: proof.ip || null,
+    userAgent: proof.userAgent || null,
+  };
+  const [firstOrg, ...otherOrgs] = orgOids;
+  const done = { claimed: false, links: [], members: [] };
 
   try {
+    // 1. L'invitation devient la fiche du premier espace. Le filtre
+    // « pending » départage deux réponses simultanées.
     const { modifiedCount } = await mongoDb
       .collection("managedclients")
       .updateOne(
@@ -345,44 +369,114 @@ export async function respondToClientInvitation({
         {
           $set: {
             status: "active",
-            organizationId: orgOid,
+            organizationId: firstOrg,
             startedAt: now,
             respondedAt: now,
             updatedAt: now,
-            // Preuve du consentement du client (RGPD)
-            consent: {
-              acceptedAt: now,
-              acceptedByUserId: asObjectId(user.id),
-              ip: proof.ip || null,
-              userAgent: proof.userAgent || null,
-            },
+            consent,
           },
         },
       );
     if (modifiedCount === 0) {
       throw new ManagedClientError(409, "Cette invitation a déjà été traitée.");
     }
-  } catch (error) {
-    // Un autre gestionnaire a été rattaché entre-temps (index unique)
-    if (!alreadyMember) {
-      await mongoDb
-        .collection("member")
-        .deleteOne({
-          userId: manager.userId,
+    done.claimed = true;
+
+    // 2. Une fiche par autre espace confié
+    for (const orgOid of otherOrgs) {
+      const { insertedId } = await mongoDb
+        .collection("managedclients")
+        .insertOne({
+          managerId: invitation.managerId,
           organizationId: orgOid,
-          role: "accountant",
+          status: "active",
+          payer: invitation.payer || "client",
+          invitationId: invitation._id,
+          invitedEmail: invitation.invitedEmail,
+          invitedUserId: invitation.invitedUserId,
+          requestedAt: invitation.requestedAt,
+          expiresAt: invitation.expiresAt,
+          respondedAt: now,
+          startedAt: now,
+          endedAt: null,
+          endedBy: null,
+          consent,
+          createdBy: invitation.createdBy,
+          createdAt: now,
+          updatedAt: now,
         });
+      done.links.push(insertedId);
     }
+
+    // 3. Le cabinet entre en Comptable ; s'il est déjà membre, son rôle reste
+    for (const orgOid of orgOids) {
+      const alreadyMember = await mongoDb
+        .collection("member")
+        .findOne({ userId: manager.userId, organizationId: orgOid });
+      if (alreadyMember) continue;
+      const { insertedId } = await mongoDb.collection("member").insertOne({
+        userId: manager.userId,
+        organizationId: orgOid,
+        role: "accountant",
+        createdAt: now,
+      });
+      done.members.push(insertedId);
+    }
+  } catch (error) {
+    // Tout ou rien : un espace suivi entre-temps par un autre gestionnaire
+    // (index unique) annule toute la réponse
+    await undoAcceptance(mongoDb, invitation._id, done);
     if (error?.code === 11000) {
       throw new ManagedClientError(
         409,
-        "Cet espace est déjà suivi par un gestionnaire.",
+        "L'un de ces espaces est déjà suivi par un gestionnaire.",
       );
     }
     throw error;
   }
 
-  return { status: "active", organizationId: String(orgOid) };
+  return { status: "active", organizationIds: orgOids.map(String) };
+}
+
+async function undoAcceptance(mongoDb, invitationId, done) {
+  const steps = [];
+  if (done.members.length > 0) {
+    steps.push(
+      mongoDb.collection("member").deleteMany({ _id: { $in: done.members } }),
+    );
+  }
+  if (done.links.length > 0) {
+    steps.push(
+      mongoDb
+        .collection("managedclients")
+        .deleteMany({ _id: { $in: done.links } }),
+    );
+  }
+  if (done.claimed) {
+    steps.push(
+      mongoDb.collection("managedclients").updateOne(
+        { _id: invitationId, status: "active" },
+        {
+          $set: {
+            status: "pending",
+            organizationId: null,
+            startedAt: null,
+            respondedAt: null,
+            consent: null,
+          },
+        },
+      ),
+    );
+  }
+  const results = await Promise.allSettled(steps);
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.error(
+        "[MANAGED-CLIENT] Annulation incomplète d'une acceptation:",
+        result.reason?.message,
+      );
+    }
+  }
 }
 
 /** Le cabinet retire une invitation encore en attente. */

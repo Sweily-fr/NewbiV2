@@ -12,9 +12,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/src/lib/auth-utils", () => ({ sendEmail: mocks.sendEmail }));
 vi.mock("@/src/lib/expo-push", () => ({ sendPushToUser: mocks.push }));
 
-// Base simulée : égalité, $in, $ne, $gt, $regex ; updateOne avec $set
+// Base simulée : égalité, $in, $ne, $gt, $regex ; updateOne avec $set.
+// failInsert(name, doc) permet de simuler un refus de l'index unique.
 function makeDb() {
   const data = {};
+  const hooks = { failInsert: () => false };
   const same = (a, b) => String(a) === String(b);
   const test = (value, cond) => {
     if (
@@ -43,6 +45,11 @@ function makeDb() {
         return rows.find((d) => matches(d, filter)) || null;
       },
       async insertOne(doc) {
+        if (hooks.failInsert(name, doc)) {
+          throw Object.assign(new Error("E11000 duplicate key"), {
+            code: 11000,
+          });
+        }
         const row = { _id: doc._id || new ObjectId(), ...doc };
         rows.push(row);
         return { insertedId: row._id };
@@ -57,6 +64,11 @@ function makeDb() {
         const i = rows.findIndex((d) => matches(d, filter));
         if (i >= 0) rows.splice(i, 1);
       },
+      async deleteMany(filter) {
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (matches(rows[i], filter)) rows.splice(i, 1);
+        }
+      },
       find(filter) {
         const result = rows.filter((d) => matches(d, filter));
         return {
@@ -66,7 +78,7 @@ function makeDb() {
       },
     };
   };
-  return { collection, data };
+  return { collection, data, hooks };
 }
 
 const {
@@ -174,13 +186,11 @@ describe("inviteExistingClient", () => {
 
   it("refuse un client dont tous les espaces sont déjà suivis", async () => {
     for (const org of [clientOrg, clientOrg2]) {
-      await db
-        .collection("managedclients")
-        .insertOne({
-          managerId: new ObjectId(),
-          organizationId: org,
-          status: "active",
-        });
+      await db.collection("managedclients").insertOne({
+        managerId: new ObjectId(),
+        organizationId: org,
+        status: "active",
+      });
     }
     await expect(invite()).rejects.toMatchObject({ status: 409 });
   });
@@ -240,6 +250,85 @@ describe("côté client", () => {
     expect(await listPendingClientInvitations(db, clientId)).toEqual([]);
   });
 
+  it("acceptation de plusieurs espaces : une fiche et un accès Comptable par espace", async () => {
+    const { id } = await invite();
+    const result = await respondToClientInvitation({
+      mongoDb: db,
+      id,
+      user: client,
+      action: "accept",
+      organizationIds: [
+        String(clientOrg),
+        String(clientOrg2),
+        String(clientOrg),
+      ],
+      proof: { ip: "1.2.3.4", userAgent: "Test" },
+    });
+    expect(result.organizationIds).toEqual([
+      String(clientOrg),
+      String(clientOrg2),
+    ]);
+
+    const links = db.data.managedclients;
+    expect(links).toHaveLength(2);
+    expect(links.map((l) => String(l.organizationId)).sort()).toEqual(
+      [String(clientOrg), String(clientOrg2)].sort(),
+    );
+    for (const link of links) {
+      expect(link).toMatchObject({ status: "active", payer: "client" });
+      expect(link.consent).toMatchObject({ ip: "1.2.3.4", userAgent: "Test" });
+    }
+    const extra = links.find((l) => String(l._id) !== id);
+    expect(String(extra.invitationId)).toBe(id);
+
+    const access = db.data.member
+      .filter((m) => String(m.userId) === String(managerUserId))
+      .map((m) => [String(m.organizationId), m.role]);
+    expect(access.sort()).toEqual(
+      [
+        [String(clientOrg), "accountant"],
+        [String(clientOrg2), "accountant"],
+      ].sort(),
+    );
+  });
+
+  it("tout ou rien : un espace pris entre-temps annule toute l'acceptation", async () => {
+    const { id } = await invite();
+    db.hooks.failInsert = (name, doc) =>
+      name === "managedclients" &&
+      String(doc.organizationId) === String(clientOrg2);
+    await expect(
+      respondToClientInvitation({
+        mongoDb: db,
+        id,
+        user: client,
+        action: "accept",
+        organizationIds: [String(clientOrg), String(clientOrg2)],
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+
+    expect(db.data.managedclients).toHaveLength(1);
+    expect(db.data.managedclients[0]).toMatchObject({
+      status: "pending",
+      organizationId: null,
+      consent: null,
+    });
+    expect(
+      db.data.member.some((m) => String(m.userId) === String(managerUserId)),
+    ).toBe(false);
+
+    // L'invitation reste utilisable
+    db.hooks.failInsert = () => false;
+    await respondToClientInvitation({
+      mongoDb: db,
+      id,
+      user: client,
+      action: "accept",
+      organizationIds: [String(clientOrg)],
+    });
+    expect(db.data.managedclients[0].status).toBe("active");
+  });
+
   it("refuse un espace dont le client n'est pas super admin", async () => {
     const { id } = await invite();
     for (const organizationId of [
@@ -257,9 +346,27 @@ describe("côté client", () => {
         }),
       ).rejects.toMatchObject({ status: 400 });
     }
+    // Un seul espace interdit dans le lot suffit à tout refuser
+    for (const organizationIds of [
+      [String(clientOrg), String(memberOrg)],
+      [String(clientOrg), { $ne: null }],
+      [],
+      "pas-une-liste",
+    ]) {
+      await expect(
+        respondToClientInvitation({
+          mongoDb: db,
+          id,
+          user: client,
+          action: "accept",
+          organizationIds,
+        }),
+      ).rejects.toMatchObject({ status: 400 });
+    }
     expect(
       db.data.member.some((m) => String(m.userId) === String(managerUserId)),
     ).toBe(false);
+    expect(db.data.managedclients[0].status).toBe("pending");
   });
 
   it("refus, puis plus aucune réponse possible", async () => {
