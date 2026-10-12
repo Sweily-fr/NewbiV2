@@ -19,6 +19,10 @@ import {
   SIRET_VERIFICATION_ERRORS,
 } from "@/src/lib/siret-verification";
 import { grantAppTrialIfEligible } from "@/src/lib/org-creation";
+import {
+  legalFormFromNatureJuridique,
+  normalizeLegalForm,
+} from "@/src/lib/company-registry";
 import { isOwnerRole } from "@/src/lib/organization-roles";
 
 /**
@@ -275,7 +279,8 @@ async function handler(request) {
         siret: verifiedCompany.siret,
         siren: verifiedCompany.siren,
         legalForm:
-          mergedData?.legalForm || verifiedCompany.natureJuridique || "",
+          normalizeLegalForm(mergedData?.legalForm) ||
+          legalFormFromNatureJuridique(verifiedCompany.natureJuridique),
         addressStreet:
           mergedData?.addressStreet || verifiedCompany.addressStreet || "",
         addressCity:

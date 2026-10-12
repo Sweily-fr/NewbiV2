@@ -44,13 +44,14 @@ vi.mock("@/app/auth/signup/registerForm", () => ({ default: () => null }));
 
 import SignUpPage from "@/app/auth/signup/page";
 
-function mockFetch() {
+function mockFetch({ results = [] } = {}) {
   const fetchMock = vi.fn(async (url) => {
     const json = (body) => ({ ok: true, json: async () => body });
     if (url.startsWith("/api/feature-flags")) {
       return json({ appTrialEnabled: true });
     }
-    if (url.startsWith("/api/search-companies")) return json({ results: [] });
+    if (url.startsWith("/api/search-companies")) return json({ results });
+    if (url.startsWith("/api/check-siret")) return json({ available: true });
     if (url.startsWith("/api/onboarding/step")) {
       return json({ step: "completed", changed: true });
     }
@@ -164,5 +165,43 @@ describe("Inscription sans SIRET", () => {
     expect(
       screen.getByPlaceholderText("Ex. : Studio Dupont ou Jean Dupont"),
     ).toHaveValue("Jean Dupont");
+  });
+
+  it("enregistre une forme juridique de la liste (EI, pas « Entrepreneur individuel »)", async () => {
+    const fetchMock = mockFetch({
+      results: [
+        {
+          nom_complet: "JEAN DUPONT",
+          siren: "123456789",
+          nature_juridique: "1000",
+          siege: {
+            siret: "12345678900011",
+            adresse: "1 RUE DE PARIS 75001 PARIS",
+            code_postal: "75001",
+            libelle_commune: "PARIS",
+          },
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<SignUpPage />);
+
+    await user.type(
+      await screen.findByPlaceholderText(
+        "Nom de l'entreprise, SIRET ou SIREN...",
+      ),
+      "jean dupont",
+    );
+    await user.click(await screen.findByText("JEAN DUPONT"));
+    await user.click(await screen.findByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: "Continuer" }));
+
+    await waitFor(() => expect(onboardingCalls(fetchMock)).toHaveLength(1));
+    const body = JSON.parse(onboardingCalls(fetchMock)[0][1].body);
+    expect(body.data).toMatchObject({
+      siret: "12345678900011",
+      legalForm: "EI",
+      addressCountry: "France",
+    });
   });
 });

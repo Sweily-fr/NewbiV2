@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   companyFieldsFromRegistry,
   legalFormFromNatureJuridique,
+  normalizeLegalForm,
 } from "@/src/lib/company-registry";
 
 describe("legalFormFromNatureJuridique", () => {
@@ -82,5 +83,33 @@ describe("companyFieldsFromRegistry", () => {
       addressCity: "",
       addressZipCode: "",
     });
+  });
+});
+
+describe("normalizeLegalForm", () => {
+  it.each([
+    // Libellés des anciennes correspondances de l'inscription
+    ["Entrepreneur individuel", "EI"],
+    // Posé sur le code 5710, qui est celui des SAS (Doctolib : 5710)
+    ["SAS unipersonnelle (SASU)", "SAS"],
+    ["SARL à associé unique", "EURL"],
+    ["SARL unipersonnelle", "SARL"],
+    ["SA à conseil d'administration", "SA"],
+    ["Association déclarée", "Association"],
+    // Code INSEE brut écrit par le repli serveur
+    ["5485", "SELARL"],
+    ["5720", "SASU"],
+  ])("%s → %s", (stored, expected) => {
+    expect(normalizeLegalForm(stored)).toBe(expected);
+  });
+
+  it("laisse intactes les valeurs déjà valides ou sans correspondance sûre", () => {
+    expect(normalizeLegalForm("SASU")).toBe("SASU");
+    expect(normalizeLegalForm("EI")).toBe("EI");
+    expect(normalizeLegalForm("Auto-entrepreneur")).toBe("Auto-entrepreneur");
+    expect(normalizeLegalForm("GIE")).toBe("GIE");
+    expect(normalizeLegalForm("6599")).toBe("6599");
+    expect(normalizeLegalForm("")).toBe("");
+    expect(normalizeLegalForm(null)).toBe("");
   });
 });

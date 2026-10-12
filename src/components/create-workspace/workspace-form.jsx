@@ -31,31 +31,7 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { toast } from "@/src/components/ui/sonner";
-
-const FORME_JURIDIQUE_MAP = {
-  1000: "Entrepreneur individuel",
-  5410: "SARL unipersonnelle",
-  5420: "SARL",
-  5498: "SARL à associé unique",
-  5499: "SARL",
-  5510: "SA à conseil d'administration",
-  5520: "SA à directoire",
-  5599: "SA",
-  5610: "SAS",
-  5699: "SAS",
-  5710: "SAS unipersonnelle (SASU)",
-  5720: "SASU",
-  5785: "Société d'exercice libéral par actions simplifiée",
-  5800: "Société civile",
-  6220: "GIE",
-  6317: "Coopérative",
-  6521: "SCI",
-  6541: "SCP",
-  6542: "SCM",
-  9220: "Association déclarée",
-  9222: "Association reconnue d'utilité publique",
-  9300: "Fondation",
-};
+import { legalFormFromNatureJuridique } from "@/src/lib/company-registry";
 
 const getActivityLabel = (codeNaf) => {
   if (!codeNaf) return "";
@@ -271,9 +247,6 @@ export function WorkspaceForm({
     setSearchResults([]);
     setHasSearched(false);
 
-    const formeJuridiqueCode = company.nature_juridique || "";
-    const formeJuridiqueLibelle =
-      FORME_JURIDIQUE_MAP[formeJuridiqueCode] || formeJuridiqueCode;
     const codeNaf = company.activite_principale || "";
     const activityLabel = getActivityLabel(codeNaf);
 
@@ -289,7 +262,9 @@ export function WorkspaceForm({
       companyName: name,
       siret,
       siren: company.siren || "",
-      legalForm: formeJuridiqueLibelle,
+      // Valeur de la liste des paramètres (cf. company-registry.js), jamais
+      // un libellé ni le code INSEE brut.
+      legalForm: legalFormFromNatureJuridique(company.nature_juridique),
       addressStreet: siege.adresse || "",
       addressCity: siege.libelle_commune || "",
       addressZipCode: siege.code_postal || "",

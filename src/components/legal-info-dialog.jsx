@@ -24,6 +24,7 @@ import {
 import { LoaderCircle, Scale, CornerDownLeft } from "lucide-react";
 import { toast } from "sonner";
 import { updateOrganization } from "@/src/lib/organization-client";
+import { normalizeLegalForm } from "@/src/lib/company-registry";
 import {
   VALIDATION_PATTERNS,
   detectInjectionAttempt,
@@ -121,7 +122,7 @@ const valuesFromOrganization = (organization) => ({
   legalForm:
     organization?.legalForm === "Auto-entrepreneur"
       ? "EI"
-      : organization?.legalForm || "",
+      : normalizeLegalForm(organization?.legalForm),
   capitalSocial: organization?.capitalSocial || "",
   siret: organization?.siret || "",
   rcs: organization?.rcs || "",

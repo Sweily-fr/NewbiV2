@@ -45,11 +45,11 @@ function Harness() {
   );
 }
 
-function mockFetch({ available = true } = {}) {
+function mockFetch({ available = true, results = [STUDIO] } = {}) {
   const fetchMock = vi.fn(async (url) => {
     const json = (body) => ({ ok: true, json: async () => body });
     if (url.startsWith("/api/search-companies")) {
-      return json({ results: [STUDIO] });
+      return json({ results });
     }
     if (url.startsWith("/api/check-siret")) {
       return json(
@@ -103,7 +103,9 @@ describe("Informations légales : recherche d'entreprise", () => {
     });
     expect(screen.getByTestId("dirty")).toHaveTextContent("true");
     expect(
-      screen.getByText(/reprises du registre.*Vérifiez-les puis enregistrez/),
+      screen.getByText(
+        "Repris du registre : SIRET, forme juridique, raison sociale et adresse. Vérifiez puis enregistrez.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -119,5 +121,32 @@ describe("Informations légales : recherche d'entreprise", () => {
     ).toBeInTheDocument();
     expect(formApi.getValues("legal.siret")).toBe("");
     expect(formApi.getValues("name")).toBe("Jean Dupont");
+  });
+
+  it("signale l'adresse cachée d'une entreprise non diffusible", async () => {
+    mockFetch({
+      results: [
+        {
+          ...STUDIO,
+          siege: {
+            ...STUDIO.siege,
+            adresse: "[NON-DIFFUSIBLE]",
+            code_postal: "[NON-DIFFUSIBLE]",
+          },
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await searchAndPick(user);
+
+    expect(
+      await screen.findByText(
+        "Repris du registre : SIRET, forme juridique et raison sociale. L'adresse de cette entreprise n'est pas publique : renseignez-la dans l'onglet Générale. Vérifiez puis enregistrez.",
+      ),
+    ).toBeInTheDocument();
+    expect(formApi.getValues("address.street")).toBe("");
+    expect(formApi.getValues("address.postalCode")).toBe("");
   });
 });

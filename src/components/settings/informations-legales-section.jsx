@@ -320,9 +320,26 @@ export function InformationsLegalesSection({
     }
     setValue("address.country", "France", options);
 
+    // Le message ne cite que ce qui a vraiment été repris : une entreprise
+    // non diffusible n'a ni rue ni code postal publics.
+    const filled = [
+      "SIRET",
+      fields.legalForm && "forme juridique",
+      fields.companyName && "raison sociale",
+      fields.addressStreet && fields.addressZipCode && "adresse",
+    ].filter(Boolean);
+    const filledText =
+      filled.length > 1
+        ? `${filled.slice(0, -1).join(", ")} et ${filled[filled.length - 1]}`
+        : filled[0];
+    const addressHidden = !fields.addressStreet || !fields.addressZipCode;
     setRegistryNotice({
       type: "success",
-      text: `Informations de ${fields.companyName || "l'entreprise"} reprises du registre : SIRET, forme juridique, raison sociale et adresse (onglet Générale). Vérifiez-les puis enregistrez.`,
+      text: `Repris du registre : ${filledText}.${
+        addressHidden
+          ? " L'adresse de cette entreprise n'est pas publique : renseignez-la dans l'onglet Générale."
+          : ""
+      } Vérifiez puis enregistrez.`,
     });
   };
 
@@ -515,9 +532,10 @@ export function InformationsLegalesSection({
                 className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("legal.siret", {
-                  required: requiredFields.siret
-                    ? "Le numéro SIRET est requis"
-                    : false,
+                  // Pas bloquant à l'enregistrement : une société en cours
+                  // d'immatriculation doit pouvoir remplir le reste. Le SIRET
+                  // est exigé au moment d'émettre un document (fenêtre
+                  // « Configuration de votre entreprise », API).
                   pattern: {
                     value: VALIDATION_PATTERNS.siret.pattern,
                     message: VALIDATION_PATTERNS.siret.message,
@@ -530,10 +548,18 @@ export function InformationsLegalesSection({
                   },
                 })}
               />
-              {errors.legal?.siret && (
+              {errors.legal?.siret ? (
                 <p className="text-sm text-red-500">
                   {errors.legal.siret.message}
                 </p>
+              ) : (
+                requiredFields.siret &&
+                !watchedValues.legal?.siret && (
+                  <p className="text-xs text-muted-foreground">
+                    Obligatoire pour émettre des documents. Vous pourrez
+                    l'ajouter dès votre immatriculation.
+                  </p>
+                )
               )}
             </div>
 
@@ -558,9 +584,8 @@ export function InformationsLegalesSection({
                   className="w-full"
                   disabled={!canManageOrgSettings}
                   {...register("legal.rcs", {
-                    required: requiredFields.rcs
-                      ? "Le numéro RCS est requis"
-                      : false,
+                    // Comme le SIRET : attribué à l'immatriculation, exigé
+                    // seulement à l'émission d'un document.
                     pattern: {
                       value: VALIDATION_PATTERNS.rcs.pattern,
                       message: VALIDATION_PATTERNS.rcs.message,

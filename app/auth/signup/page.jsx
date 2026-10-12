@@ -6,13 +6,6 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Card, CardContent } from "@/src/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
 import { signIn } from "../../../src/lib/auth-client";
 import RegisterForm from "./registerForm";
 import Link from "next/link";
@@ -37,6 +30,7 @@ import { getOnboardingStep, parseOnboardingData } from "@/src/lib/onboarding";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
 import { trackSignupConversion } from "@/src/utils/trackEvent";
 import { sendAttribution } from "@/src/lib/attribution";
+import { legalFormFromNatureJuridique } from "@/src/lib/company-registry";
 
 // Compte créé il y a moins de 15 min : suffisant pour distinguer un retour
 // OAuth d'inscription d'un ancien utilisateur qui reprend son onboarding.
@@ -273,7 +267,9 @@ function SignUpPageContent() {
   // Déclaration sur l'honneur d'usage professionnel — obligatoire pour
   // terminer l'inscription (le serveur la réexige de son côté).
   const [honorAccepted, setHonorAccepted] = useState(false);
-  const [billingCountry, setBillingCountry] = useState("FR");
+  // Inscription réservée aux entreprises françaises pour l'instant (la
+  // recherche ne couvre que le registre français) : plus de choix du pays.
+  const billingCountry = "FR";
   const contentRef = useRef(null);
 
   // Persist onboarding step + data to DB via API, then refetch session
@@ -332,7 +328,6 @@ function SignUpPageContent() {
         addressCountry: saved.addressCountry || "France",
       });
       setCompanyName(saved.companyName);
-      if (saved.billingCountry) setBillingCountry(saved.billingCountry);
     }
 
     // Restore plan selection (plan step)
@@ -450,21 +445,6 @@ function SignUpPageContent() {
     switchView("workspace");
   };
 
-  const FORME_JURIDIQUE_MAP = {
-    1000: "Entrepreneur individuel",
-    5410: "SARL unipersonnelle",
-    5420: "SARL",
-    5498: "SARL à associé unique",
-    5499: "SARL",
-    5510: "SA à conseil d'administration",
-    5610: "SAS",
-    5699: "SAS",
-    5710: "SAS unipersonnelle (SASU)",
-    5720: "SASU",
-    6521: "SCI",
-    9220: "Association déclarée",
-  };
-
   const handleWorkspaceSubmit = async (e) => {
     e.preventDefault();
     if (!isCompanyReady || isSavingStep) return;
@@ -483,7 +463,12 @@ function SignUpPageContent() {
         companyName,
         siret: diffusible(siege.siret),
         siren: diffusible(selectedCompany.siren),
-        legalForm: FORME_JURIDIQUE_MAP[selectedCompany.nature_juridique] || "",
+        // Valeur de la liste des paramètres : l'ancienne correspondance
+        // écrivait des libellés (« Entrepreneur individuel » faisait sauter la
+        // mention « EI » des documents, une SAS devenait « SASU »).
+        legalForm: legalFormFromNatureJuridique(
+          selectedCompany.nature_juridique,
+        ),
         addressStreet: diffusible(siege.adresse),
         addressCity: diffusible(siege.libelle_commune),
         addressZipCode: diffusible(siege.code_postal),
@@ -993,28 +978,6 @@ function SignUpPageContent() {
                       readOnly
                       className="h-11 rounded-lg text-muted-foreground"
                     />
-                  </div>
-
-                  {/* Billing country — inline like Linear */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-[13px] text-muted-foreground">
-                      Pays de facturation
-                    </span>
-                    <Select
-                      value={billingCountry}
-                      onValueChange={setBillingCountry}
-                    >
-                      <SelectTrigger className="h-8 w-auto rounded-lg border-border px-3 text-[13px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="FR">France</SelectItem>
-                        <SelectItem value="BE">Belgique</SelectItem>
-                        <SelectItem value="CH">Suisse</SelectItem>
-                        <SelectItem value="CA">Canada</SelectItem>
-                        <SelectItem value="LU">Luxembourg</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   {/* Déclaration sur l'honneur : elle nomme l'entreprise
