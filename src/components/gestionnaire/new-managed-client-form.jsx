@@ -87,8 +87,12 @@ export default function NewManagedClientForm() {
             placeholder="Boulangerie Martin"
           />
         </Field>
-        <Field id="siret" label="SIRET" hint="Facultatif, 14 chiffres.">
-          <Input id="siret" name="siret" inputMode="numeric" />
+        <Field
+          id="siret"
+          label="SIRET"
+          hint="14 chiffres, vérifié au registre : l'adresse et la forme juridique sont remplies automatiquement."
+        >
+          <Input id="siret" name="siret" inputMode="numeric" required />
         </Field>
         <Field id="plan" label="Formule">
           <select

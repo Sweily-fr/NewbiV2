@@ -3,6 +3,11 @@ import { ObjectId } from "mongodb";
 import { createOrganizationWithSubscription } from "./org-creation.js";
 import { sendEmail } from "./auth-utils.js";
 import { emailTemplates } from "./email-templates/index.js";
+import {
+  SIRET_VERIFICATION_ERRORS,
+  siretVerificationMessage,
+  verifySiret,
+} from "./siret-verification.js";
 
 /**
  * Clients des comptes gestionnaires (cabinets comptables).
@@ -55,8 +60,10 @@ export function parseManagedClientInput(input = {}) {
     );
   }
 
+  // Obligatoire, comme à l'inscription : sans lui l'espace ne peut pas
+  // émettre de documents (informations d'entreprise incomplètes)
   const siret = text(input.siret, 40).replace(/\s+/g, "");
-  if (siret && !/^\d{14}$/.test(siret)) {
+  if (!/^\d{14}$/.test(siret)) {
     throw new ManagedClientError(400, "Le SIRET doit comporter 14 chiffres.");
   }
 
@@ -141,6 +148,20 @@ export async function createManagedClient({
     );
   }
 
+  // SIRET vérifié au registre (même contrôle que l'inscription) : il remplit
+  // l'adresse et la forme juridique, pour que l'espace puisse émettre ses
+  // documents dès le départ
+  const verification = await verifySiret(data.siret);
+  if (!verification.ok) {
+    throw new ManagedClientError(
+      verification.reason === SIRET_VERIFICATION_ERRORS.SERVICE_UNAVAILABLE
+        ? 503
+        : 400,
+      siretVerificationMessage(verification.reason),
+    );
+  }
+  const company = verification.company;
+
   const now = new Date();
   const userId = new ObjectId();
   const created = { userId: null, organizationId: null };
@@ -175,14 +196,35 @@ export async function createManagedClient({
       userId: userId.toString(),
       orgData: {
         companyName: data.companyName,
-        siret: data.siret,
-        siren: data.siret ? data.siret.slice(0, 9) : "",
+        siret: company.siret,
+        siren: company.siren,
+        legalForm: company.natureJuridique,
+        addressStreet: company.addressStreet,
+        addressCity: company.addressCity,
+        addressZipCode: company.addressZipCode,
+        addressCountry: company.addressCountry || "France",
       },
       appTrialDays: data.payer === "client" ? CLIENT_APP_TRIAL_DAYS : null,
       markOnboardingComplete: true,
     });
     const organizationId = new ObjectId(orgResult.organizationId);
     created.organizationId = organizationId;
+
+    // E-mail de contact = celui du dirigeant ; preuve de la vérification
+    // du SIRET, comme à l'inscription
+    await mongoDb.collection("organization").updateOne(
+      { _id: organizationId },
+      {
+        $set: {
+          companyEmail: data.email,
+          siretVerifiedAt: now,
+          siretVerificationSource: "recherche-entreprises.api.gouv.fr",
+          denominationUniteLegale: company.denominationUniteLegale,
+          activitePrincipale: company.activitePrincipale,
+          dateCreationUniteLegale: company.dateCreation,
+        },
+      },
+    );
 
     // 3. Le gestionnaire entre avec les droits Comptable
     await mongoDb.collection("member").insertOne({

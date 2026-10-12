@@ -12,6 +12,28 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/src/lib/auth-utils", () => ({ sendEmail: mocks.sendEmail }));
 
+// Registre des entreprises simulé
+const registry = vi.hoisted(() => ({ result: null }));
+vi.mock("@/src/lib/siret-verification", async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, verifySiret: async () => registry.result };
+});
+const VERIFIED = {
+  ok: true,
+  company: {
+    siret: "12345678900012",
+    siren: "123456789",
+    denominationUniteLegale: "BOULANGERIE MARTIN",
+    activitePrincipale: "10.71C",
+    natureJuridique: "5499",
+    dateCreation: "2015-03-01",
+    addressStreet: "12 rue du Four",
+    addressCity: "Lyon",
+    addressZipCode: "69002",
+    addressCountry: "France",
+  },
+};
+
 // Base Mongo simulée : égalité (ObjectId comparés en chaîne), $in, tri ignoré
 function makeDb() {
   const data = {};
@@ -36,6 +58,10 @@ function makeDb() {
         const row = { _id: doc._id || new ObjectId(), ...doc };
         rows.push(row);
         return { insertedId: row._id };
+      },
+      async updateOne(filter, update) {
+        const row = rows.find((d) => matches(d, filter));
+        if (row && update.$set) Object.assign(row, update.$set);
       },
       async deleteOne(filter) {
         const i = rows.findIndex((d) => matches(d, filter));
@@ -106,6 +132,7 @@ beforeEach(async () => {
   db = makeDb();
   mocks.orgCalls = [];
   mocks.failOn = null;
+  registry.result = VERIFIED;
   mocks.sendEmail.mockReset();
   mocks.sendEmail.mockResolvedValue(undefined);
   await db
@@ -140,8 +167,17 @@ describe("createManagedClient", () => {
         companyName: "Boulangerie <Martin>",
         siret: "12345678900012",
         siren: "123456789",
+        legalForm: "5499",
+        addressStreet: "12 rue du Four",
+        addressCity: "Lyon",
+        addressZipCode: "69002",
       },
       appTrialDays: null,
+    });
+    expect(db.data.organization[0]).toMatchObject({
+      companyEmail: "jean.martin@boulangerie.fr",
+      siretVerificationSource: "recherche-entreprises.api.gouv.fr",
+      denominationUniteLegale: "BOULANGERIE MARTIN",
     });
 
     const orgId = result.organizationId;
@@ -215,12 +251,30 @@ describe("createManagedClient", () => {
     for (const over of [
       { companyName: "  " },
       { siret: "123" },
+      { siret: "" },
       { email: "pas-un-email" },
       { email: { $ne: null } },
       { plan: "gratuit" },
     ]) {
       await expect(create(over)).rejects.toBeInstanceOf(ManagedClientError);
     }
+    expect(db.data.user).toHaveLength(1);
+  });
+
+  it("refuse un SIRET introuvable ou radié, sans rien créer", async () => {
+    registry.result = { ok: false, reason: "not_found" };
+    await expect(create()).rejects.toMatchObject({
+      status: 400,
+      message: "Ce numéro SIRET est introuvable au registre des entreprises.",
+    });
+    registry.result = { ok: false, reason: "inactive" };
+    await expect(create()).rejects.toMatchObject({ status: 400 });
+    expect(db.data.user).toHaveLength(1);
+  });
+
+  it("répond 503 si le registre est indisponible", async () => {
+    registry.result = { ok: false, reason: "service_unavailable" };
+    await expect(create()).rejects.toMatchObject({ status: 503 });
     expect(db.data.user).toHaveLength(1);
   });
 
