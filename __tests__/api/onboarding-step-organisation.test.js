@@ -205,3 +205,58 @@ describe("PATCH /api/onboarding/step : espace configuré", () => {
     expect(update.$set.onboardingStep).toBe("completed");
   });
 });
+
+describe("PATCH /api/onboarding/step : inscription sans SIRET", () => {
+  beforeEach(() => {
+    signIn(ownOrgId);
+    m.memberships.mockResolvedValue([membership(ownOrgId, "owner")]);
+  });
+
+  it("termine l'inscription avec le nom saisi, sans interroger le registre", async () => {
+    const res = await call(
+      completeBody({
+        data: { companyName: "  Studio Dupont  ", siret: "", siren: "" },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(m.verifySiret).not.toHaveBeenCalled();
+
+    const [, update] = m.orgUpdateOne.mock.calls[0];
+    expect(update.$set.companyName).toBe("Studio Dupont");
+    expect(update.$set.name).toBe("Studio Dupont");
+    // Le SIRET de l'espace n'est pas touché, et rien ne prétend l'avoir
+    // vérifié.
+    expect(update.$set).not.toHaveProperty("siret");
+    expect(update.$set).not.toHaveProperty("siretVerifiedAt");
+    expect(update.$set.professionalUseDeclaration.withSiret).toBe(false);
+    expect(update.$set.onboardingCompleted).toBe(true);
+
+    expect(m.grantTrial).toHaveBeenCalledTimes(1);
+    const [, userUpdate] = m.userUpdateOne.mock.calls[0];
+    expect(userUpdate.$set.onboardingStep).toBe("completed");
+
+    expect((await res.json()).company).toEqual({
+      siret: null,
+      denomination: "Studio Dupont",
+    });
+  });
+
+  it("refuse sans SIRET ni nom d'entreprise", async () => {
+    const res = await call(completeBody({ data: { siret: "" } }));
+
+    expect(res.status).toBe(400);
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
+    expect(m.grantTrial).not.toHaveBeenCalled();
+  });
+
+  it("vérifie toujours au registre un SIRET fourni", async () => {
+    m.verifySiret.mockResolvedValue({ ok: false, reason: "not_found" });
+
+    const res = await call(completeBody());
+
+    expect(res.status).toBe(400);
+    expect(m.verifySiret).toHaveBeenCalledWith("12345678900011");
+    expect(m.orgUpdateOne).not.toHaveBeenCalled();
+  });
+});

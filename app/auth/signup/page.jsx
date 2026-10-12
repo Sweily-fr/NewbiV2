@@ -257,6 +257,19 @@ function SignUpPageContent() {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [isCheckingSiret, setIsCheckingSiret] = useState(false);
   const [siretError, setSiretError] = useState(null);
+  // Inscription sans SIRET (entreprise en cours d'immatriculation, hors de
+  // France, ou absente du registre) : le nom est saisi librement et le SIRET
+  // sera demandé plus tard, avant le premier document.
+  const [withoutSiret, setWithoutSiret] = useState(false);
+
+  // Entreprise choisie dans le registre, ou nom saisi en mode sans SIRET.
+  const isCompanyReady = Boolean(
+    selectedCompany || (withoutSiret && companyName.trim()),
+  );
+  const declaredCompanyName = selectedCompany
+    ? selectedCompany.nom_complet || selectedCompany.nom_raison_sociale
+    : companyName.trim();
+
   // Déclaration sur l'honneur d'usage professionnel — obligatoire pour
   // terminer l'inscription (le serveur la réexige de son côté).
   const [honorAccepted, setHonorAccepted] = useState(false);
@@ -335,7 +348,7 @@ function SignUpPageContent() {
 
   // Company search debounce
   useEffect(() => {
-    if (view !== "workspace" || selectedCompany) return;
+    if (view !== "workspace" || selectedCompany || withoutSiret) return;
     if (!companyName || companyName.length < 3) {
       setSearchResults([]);
       setHasSearched(false);
@@ -362,7 +375,7 @@ function SignUpPageContent() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [companyName, selectedCompany, view]);
+  }, [companyName, selectedCompany, withoutSiret, view]);
 
   const handleSelectCompany = async (company) => {
     setSiretError(null);
@@ -402,6 +415,20 @@ function SignUpPageContent() {
     }
   };
 
+  const continueWithoutSiret = () => {
+    setWithoutSiret(true);
+    setSelectedCompany(null);
+    setSearchResults([]);
+    setHasSearched(false);
+    setSiretError(null);
+    setHonorAccepted(false);
+  };
+
+  const backToCompanySearch = () => {
+    setWithoutSiret(false);
+    setHonorAccepted(false);
+  };
+
   const switchView = (nextView) => {
     setIsAnimating(true);
     setTimeout(() => {
@@ -433,25 +460,38 @@ function SignUpPageContent() {
 
   const handleWorkspaceSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedCompany || isSavingStep) return;
+    if (!isCompanyReady || isSavingStep) return;
     if (appTrialEnabled && !honorAccepted) return;
-    const siege = selectedCompany.siege || {};
-    // L'API recherche-entreprises renvoie la chaîne littérale "[NON-DIFFUSIBLE]"
-    // (et non null) pour les champs masqués des entreprises non-diffusibles.
-    // On la neutralise : sinon addressZipCode = "[NON-DIFFUSIBLE]" (16 car.)
-    // dépasse la limite max(10) du schéma → 400 "Données invalides" et le toast
-    // générique "Erreur lors de la sauvegarde" à la création de l'espace.
-    const diffusible = (v) => (v && v !== "[NON-DIFFUSIBLE]" ? v : "");
-    const newCompanyData = {
-      companyName,
-      siret: diffusible(siege.siret),
-      siren: diffusible(selectedCompany.siren),
-      legalForm: FORME_JURIDIQUE_MAP[selectedCompany.nature_juridique] || "",
-      addressStreet: diffusible(siege.adresse),
-      addressCity: diffusible(siege.libelle_commune),
-      addressZipCode: diffusible(siege.code_postal),
-      addressCountry: billingCountry === "FR" ? "France" : billingCountry,
-    };
+    const addressCountry = billingCountry === "FR" ? "France" : billingCountry;
+    let newCompanyData;
+    if (selectedCompany) {
+      const siege = selectedCompany.siege || {};
+      // L'API recherche-entreprises renvoie la chaîne littérale "[NON-DIFFUSIBLE]"
+      // (et non null) pour les champs masqués des entreprises non-diffusibles.
+      // On la neutralise : sinon addressZipCode = "[NON-DIFFUSIBLE]" (16 car.)
+      // dépasse la limite max(10) du schéma → 400 "Données invalides" et le toast
+      // générique "Erreur lors de la sauvegarde" à la création de l'espace.
+      const diffusible = (v) => (v && v !== "[NON-DIFFUSIBLE]" ? v : "");
+      newCompanyData = {
+        companyName,
+        siret: diffusible(siege.siret),
+        siren: diffusible(selectedCompany.siren),
+        legalForm: FORME_JURIDIQUE_MAP[selectedCompany.nature_juridique] || "",
+        addressStreet: diffusible(siege.adresse),
+        addressCity: diffusible(siege.libelle_commune),
+        addressZipCode: diffusible(siege.code_postal),
+        addressCountry,
+      };
+    } else {
+      // Sans SIRET : seul le nom saisi est envoyé, le reste se complète
+      // ensuite dans les paramètres de l'entreprise.
+      newCompanyData = {
+        companyName: companyName.trim(),
+        siret: "",
+        siren: "",
+        addressCountry,
+      };
+    }
     setCompanyData(newCompanyData);
 
     // App-managed trial flow (flag ON): workspace is the last data-collection
@@ -780,14 +820,25 @@ function SignUpPageContent() {
                   {/* Company search */}
                   <div className="relative space-y-1.5">
                     <Label className="text-[13px] text-muted-foreground">
-                      Recherchez votre entreprise
+                      {withoutSiret
+                        ? "Nom de votre entreprise"
+                        : "Recherchez votre entreprise"}
                     </Label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      {withoutSiret ? (
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      ) : (
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      )}
                       <Input
                         value={companyName}
                         onChange={handleCompanyInputChange}
-                        placeholder="Nom de l'entreprise, SIRET ou SIREN..."
+                        placeholder={
+                          withoutSiret
+                            ? "Ex. : Studio Dupont"
+                            : "Nom de l'entreprise, SIRET ou SIREN..."
+                        }
+                        maxLength={200}
                         className="h-11 rounded-lg pl-10"
                         autoFocus
                       />
@@ -822,6 +873,34 @@ function SignUpPageContent() {
                       <p className="text-xs mt-1" style={{ color: "#e1243a" }}>
                         {siretError}
                       </p>
+                    )}
+
+                    {withoutSiret ? (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Vous pourrez renseigner votre SIRET plus tard, dans les
+                        paramètres de l'entreprise.{" "}
+                        <button
+                          type="button"
+                          onClick={backToCompanySearch}
+                          className="text-[#5A50FF] hover:underline cursor-pointer"
+                        >
+                          Rechercher mon entreprise
+                        </button>
+                      </p>
+                    ) : (
+                      !selectedCompany &&
+                      !isCheckingSiret && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Pas encore de numéro SIRET ?{" "}
+                          <button
+                            type="button"
+                            onClick={continueWithoutSiret}
+                            className="text-[#5A50FF] hover:underline cursor-pointer"
+                          >
+                            Continuer sans SIRET
+                          </button>
+                        </p>
+                      )
                     )}
 
                     {isCheckingSiret && (
@@ -874,6 +953,18 @@ function SignUpPageContent() {
                                 </div>
                               )}
                         </div>
+                        {!isSearching && (
+                          <button
+                            type="button"
+                            onClick={continueWithoutSiret}
+                            className="flex w-full items-center justify-center gap-1 border-t border-border px-3 py-2.5 text-[12px] text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors"
+                          >
+                            Votre entreprise n'apparaît pas ?
+                            <span className="text-[#5A50FF]">
+                              Continuer sans SIRET
+                            </span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -921,7 +1012,7 @@ function SignUpPageContent() {
 
                   {/* Déclaration sur l'honneur : elle nomme l'entreprise
                       sélectionnée et exclut explicitement l'usage personnel. */}
-                  {appTrialEnabled && selectedCompany && (
+                  {appTrialEnabled && isCompanyReady && (
                     <label className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -933,8 +1024,7 @@ function SignUpPageContent() {
                         Je certifie sur l'honneur être le représentant légal, le
                         mandataire ou un collaborateur habilité de{" "}
                         <span className="font-medium text-foreground">
-                          {selectedCompany.nom_complet ||
-                            selectedCompany.nom_raison_sociale}
+                          {declaredCompanyName}
                         </span>
                         , et utiliser Newbi à des fins strictement
                         professionnelles dans le cadre de cette activité
@@ -949,7 +1039,7 @@ function SignUpPageContent() {
                 <Button
                   type="submit"
                   disabled={
-                    !selectedCompany ||
+                    !isCompanyReady ||
                     isSavingStep ||
                     (appTrialEnabled && !honorAccepted)
                   }
