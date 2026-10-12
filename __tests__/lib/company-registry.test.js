@@ -96,6 +96,8 @@ describe("normalizeLegalForm", () => {
     ["SARL unipersonnelle", "SARL"],
     ["SA à conseil d'administration", "SA"],
     ["Association déclarée", "Association"],
+    // Enum des documents laissé par une ancienne migration
+    ["AUTO_ENTREPRENEUR", "EI"],
     // Code INSEE brut écrit par le repli serveur
     ["5485", "SELARL"],
     ["5720", "SASU"],
@@ -108,6 +110,7 @@ describe("normalizeLegalForm", () => {
     expect(normalizeLegalForm("EI")).toBe("EI");
     expect(normalizeLegalForm("Auto-entrepreneur")).toBe("Auto-entrepreneur");
     expect(normalizeLegalForm("GIE")).toBe("GIE");
+    expect(normalizeLegalForm("AUTRE")).toBe("AUTRE");
     expect(normalizeLegalForm("6599")).toBe("6599");
     expect(normalizeLegalForm("")).toBe("");
     expect(normalizeLegalForm(null)).toBe("");

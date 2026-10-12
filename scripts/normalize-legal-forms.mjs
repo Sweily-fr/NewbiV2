@@ -11,7 +11,8 @@
  *
  * Seules les valeurs ABSENTES de la liste sont touchées : un choix fait dans
  * les paramètres n'est jamais modifié. Les valeurs sans correspondance sûre
- * (« GIE », « Fondation »…) sont listées et laissées telles quelles.
+ * (« GIE », « Fondation »…) sont listées et laissées telles quelles, comme
+ * « AUTRE » (non renseigné) : le vider bloquerait la création de documents.
  * L'ancienne valeur est conservée dans `legalFormBeforeNormalization`.
  *
  * Usage :
