@@ -416,6 +416,13 @@ function SignUpPageContent() {
   };
 
   const continueWithoutSiret = () => {
+    // Sans nom d'entreprise tapé dans la recherche, on part des prénom et nom
+    // de la personne quand on les connaît (Google, Apple au premier
+    // consentement) : c'est la raison sociale d'une entreprise individuelle.
+    // Inscription par e-mail : nom inconnu, le champ reste vide.
+    if (!companyName.trim() && session?.user?.name?.trim()) {
+      setCompanyName(session.user.name.trim());
+    }
     setWithoutSiret(true);
     setSelectedCompany(null);
     setSearchResults([]);
@@ -821,7 +828,7 @@ function SignUpPageContent() {
                   <div className="relative space-y-1.5">
                     <Label className="text-[13px] text-muted-foreground">
                       {withoutSiret
-                        ? "Nom de votre entreprise"
+                        ? "Nom de votre entreprise ou vos prénom et nom"
                         : "Recherchez votre entreprise"}
                     </Label>
                     <div className="relative">
@@ -835,7 +842,7 @@ function SignUpPageContent() {
                         onChange={handleCompanyInputChange}
                         placeholder={
                           withoutSiret
-                            ? "Ex. : Studio Dupont"
+                            ? "Ex. : Studio Dupont ou Jean Dupont"
                             : "Nom de l'entreprise, SIRET ou SIREN..."
                         }
                         maxLength={200}
