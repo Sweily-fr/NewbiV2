@@ -29,6 +29,7 @@ async function handler(request) {
   return NextResponse.json({
     isManager: true,
     name: manager.name,
+    discountPercent: manager.discountPercent ?? 0,
     managedOrganizationIds: links.map((l) => String(l.organizationId)),
   });
 }

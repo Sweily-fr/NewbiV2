@@ -21,6 +21,7 @@ export default async function GestionnaireClientsPage() {
   return (
     <ManagedClientsView
       managerName={manager.name}
+      discountPercent={manager.discountPercent ?? 0}
       clients={JSON.parse(JSON.stringify(clients))}
     />
   );

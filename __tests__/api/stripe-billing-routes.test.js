@@ -21,6 +21,8 @@ const m = vi.hoisted(() => ({
   listTaxIds: vi.fn(),
   invoicesList: vi.fn(),
   subscriptionsRetrieve: vi.fn(),
+  // Clients Stripe des cabinets (comptes gestionnaires)
+  managerDocs: vi.fn(async () => []),
 }));
 
 vi.mock("@/src/lib/auth", () => ({
@@ -31,6 +33,9 @@ vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: {
     collection: (name) => {
       if (name === "member") return { findOne: m.memberFindOne };
+      if (name === "accountmanagers") {
+        return { find: () => ({ toArray: m.managerDocs }) };
+      }
       if (name === "organizationRole") {
         return { find: () => ({ toArray: m.storedRoles }) };
       }
@@ -102,6 +107,7 @@ beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "log").mockImplementation(() => {});
   m.storedRoles.mockResolvedValue([]);
+  m.managerDocs.mockResolvedValue([]);
   m.subscriptionDocs.mockResolvedValue([]);
   m.portalCreate.mockResolvedValue({ url: "https://billing.stripe.com/p/x" });
   m.customersRetrieve.mockResolvedValue({
@@ -177,6 +183,16 @@ describe("POST /api/stripe/billing-portal", () => {
     // Recherche limitée aux abonnements de l'espace actif
     const [query] = m.subscriptionFind.mock.calls[0];
     expect(query.$or).toEqual(expect.arrayContaining([{ referenceId: orgId }]));
+  });
+
+  it("n'ouvre jamais le portail du cabinet qui paie l'abonnement de l'espace", async () => {
+    signIn();
+    asRole("owner");
+    orgCustomers("cus_cabinet");
+    m.managerDocs.mockResolvedValue([{ stripeCustomerId: "cus_cabinet" }]);
+    expect((await call({ customerId: "cus_cabinet" })).status).toBe(403);
+    expect((await call({})).status).toBe(400);
+    expect(m.portalCreate).not.toHaveBeenCalled();
   });
 
   it("répond 400 si l'espace n'a pas de client Stripe", async () => {

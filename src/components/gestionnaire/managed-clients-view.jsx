@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -11,6 +11,7 @@ import {
   MailPlus,
   Plus,
   Search,
+  WalletCards,
 } from "lucide-react";
 import { authClient } from "@/src/lib/auth-client";
 import { Button, buttonVariants } from "@/src/components/ui/button";
@@ -18,6 +19,7 @@ import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { GESTIONNAIRE_PATH } from "@/src/lib/gestionnaire-paths";
+import ManagedPlanDialog from "./managed-plan-dialog";
 
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "2-digit",
@@ -105,21 +107,56 @@ const COLUMNS = [
   { key: "payer", label: "Qui paie", width: 120 },
   { key: "access", label: "Abonnement", width: 120 },
   { key: "startedAt", label: "Depuis le", width: 110 },
-  { key: "actions", label: "", width: 110 },
+  { key: "actions", label: "", width: 250 },
 ];
 
 /**
  * Espace gestionnaire, page « Clients » : même mise en page que les listes
  * du tableau de bord (titre, recherche, tableau pleine largeur). « Ouvrir »
  * bascule sur l'espace du client puis recharge son tableau de bord, comme le
- * sélecteur d'espaces.
+ * sélecteur d'espaces. « Choisir l'offre » : espaces que le cabinet paie et
+ * qui n'ont pas encore d'abonnement.
  */
-export default function ManagedClientsView({ managerName, clients }) {
+export default function ManagedClientsView({
+  managerName,
+  discountPercent = 0,
+  clients,
+}) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [opening, setOpening] = useState(null);
   const [canceling, setCanceling] = useState(null);
+  const [planFor, setPlanFor] = useState(null);
   const inputRef = useRef(null);
+
+  // Retour de Stripe Checkout : l'abonnement est enregistré tout de suite,
+  // sans attendre le webhook
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const sessionId = url.searchParams.get("abonnement");
+    if (!sessionId) return;
+    url.searchParams.delete("abonnement");
+    window.history.replaceState(null, "", url.pathname + url.search);
+    fetch("/api/gestionnaire/abonnements/confirmer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    })
+      .then((response) => response.json().then((data) => ({ response, data })))
+      .then(({ response, data }) => {
+        if (!response.ok) {
+          toast.error(data.error || "Le paiement n'a pas pu être vérifié.");
+        } else if (data.status === "active") {
+          toast.success("Abonnement enregistré, votre carte est conservée.");
+          router.refresh();
+        } else {
+          toast.info(
+            "Paiement en cours de validation : l'abonnement apparaîtra dans quelques instants.",
+          );
+        }
+      })
+      .catch(() => toast.error("Le paiement n'a pas pu être vérifié."));
+  }, [router]);
 
   const rows = useMemo(() => {
     const q = normalize(query.trim());
@@ -302,6 +339,20 @@ export default function ManagedClientsView({ managerName, clients }) {
                   {formatDate(client.startedAt)}
                 </td>
                 <td className="p-2 pr-4 sm:pr-6 align-middle text-right">
+                  {client.status === "active" &&
+                    client.name &&
+                    client.payer === "manager" &&
+                    client.access?.type !== "subscription" && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="mr-2 cursor-pointer"
+                        onClick={() => setPlanFor(client)}
+                      >
+                        <WalletCards className="size-4" />
+                        Choisir l&apos;offre
+                      </Button>
+                    )}
                   {client.status === "pending" && (
                     <Button
                       variant="ghost"
@@ -338,6 +389,14 @@ export default function ManagedClientsView({ managerName, clients }) {
           </tbody>
         </table>
       </div>
+
+      <ManagedPlanDialog
+        key={planFor?.id || "none"}
+        client={planFor}
+        discountPercent={discountPercent}
+        open={Boolean(planFor)}
+        onOpenChange={(value) => !value && setPlanFor(null)}
+      />
     </div>
   );
 }

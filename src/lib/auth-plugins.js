@@ -197,6 +197,16 @@ export async function authorizeSubscriptionReference({
     const { getModuleActions, isOwnerRole } =
       await import("./organization-roles.js");
 
+    // Abonnement payé par le cabinet du client : c'est le cabinet qui le
+    // gère, depuis son espace gestionnaire
+    if (action !== "list-subscription") {
+      const { findManagerPaidSubscription } =
+        await import("./manager-billing.js");
+      if (await findManagerPaidSubscription(mongoDb, referenceId)) {
+        return false;
+      }
+    }
+
     switch (action) {
       case "upgrade-subscription":
       case "cancel-subscription":

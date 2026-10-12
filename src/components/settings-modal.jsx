@@ -20,6 +20,7 @@ import {
   Zap,
   LayoutGrid,
   DollarSign,
+  Wallet,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -58,6 +59,8 @@ import { SecuritySection } from "./settings/security-section";
 import RolesSection from "./settings/roles-section";
 import UserInfoSection from "./settings/user-info-section";
 import { NotificationsSection } from "./settings/notifications-section";
+import ManagerSpendingSection from "./settings/manager-spending-section";
+import { useAccountManager } from "@/src/hooks/useAccountManager";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
@@ -81,6 +84,8 @@ export function SettingsModal({
   const { isActive } = useSubscription();
   const { getUserRole } = usePermissions();
   const { can, isReady: permissionsReady } = useMyPermissions();
+  // Comptes gestionnaires : ce que le cabinet paie pour ses clients
+  const isAccountManager = useAccountManager()?.isManager === true;
   const apolloClient = useApolloClient();
   const {
     organization,
@@ -585,6 +590,8 @@ export function SettingsModal({
         );
       case "applications":
         return <ApplicationsSection />;
+      case "depenses-clients":
+        return isAccountManager ? <ManagerSpendingSection /> : null;
       case "user-info":
         return <UserInfoSection onTabChange={handleTabChange} />;
       default:
@@ -658,6 +665,12 @@ export function SettingsModal({
         { id: "facturation", label: "Facturation", icon: DollarSign },
       ],
     },
+    isAccountManager && {
+      title: "Cabinet",
+      items: [
+        { id: "depenses-clients", label: "Dépenses clients", icon: Wallet },
+      ],
+    },
   ].filter(Boolean);
 
   // Déterminer si on est sur mobile
@@ -691,6 +704,7 @@ export function SettingsModal({
           canManageOrgSettings={canManageOrgSettings}
           canManageSubscription={canManageSubscription}
           showBilling={showBilling}
+          isAccountManager={isAccountManager}
         />
       </FormProvider>
     );

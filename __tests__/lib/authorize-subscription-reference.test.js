@@ -173,6 +173,27 @@ describe("authorizeSubscriptionReference", () => {
     expect(ok).toBe(true);
   });
 
+  it("refuse au client d'agir sur l'abonnement payé par son cabinet", async () => {
+    for (const action of [
+      "cancel-subscription",
+      "upgrade-subscription",
+      "restore-subscription",
+      "billing-portal",
+    ]) {
+      mockFindOne
+        .mockResolvedValueOnce({ role: "owner" }) // member
+        .mockResolvedValueOnce({ stripeCustomerId: "cus_cabinet" }) // subscription
+        .mockResolvedValueOnce({ name: "Compta Dupont" }); // accountmanagers
+      mockGetModuleActions.mockResolvedValue({ actions: ["view", "manage"] });
+      const ok = await authorizeSubscriptionReference({
+        user: { id: userId },
+        referenceId: orgId,
+        action,
+      });
+      expect(ok).toBe(false);
+    }
+  });
+
   it("refuse une action inconnue, même à un owner", async () => {
     mockFindOne.mockResolvedValue({ role: "owner" });
     const ok = await authorizeSubscriptionReference({

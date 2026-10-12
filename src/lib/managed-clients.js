@@ -8,6 +8,7 @@ import {
   siretVerificationMessage,
   verifySiret,
 } from "./siret-verification.js";
+import { ManagedClientError } from "./managed-client-error.js";
 
 /**
  * Clients des comptes gestionnaires (cabinets comptables).
@@ -26,12 +27,7 @@ import {
  * à la fin de l'essai, par le client ou par le gestionnaire selon `payer`.
  */
 
-export class ManagedClientError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+export { ManagedClientError };
 
 export const MANAGED_CLIENT_PAYERS = ["client", "manager"];
 

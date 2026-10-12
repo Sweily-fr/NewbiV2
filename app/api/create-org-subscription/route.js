@@ -127,6 +127,14 @@ async function handler(request) {
     if (!role || !actions.includes("manage")) {
       return apiError(403, "Votre rôle ne permet pas de gérer l'abonnement");
     }
+    const { findManagerPaidSubscription } =
+      await import("@/src/lib/manager-billing");
+    if (await findManagerPaidSubscription(mongoDb, orgId)) {
+      return apiError(
+        409,
+        "L'abonnement de cet espace est pris en charge par votre cabinet.",
+      );
+    }
   }
 
   // When ENABLE_APP_TRIAL is ON, the trial is fully managed by the app

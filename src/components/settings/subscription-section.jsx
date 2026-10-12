@@ -10,6 +10,7 @@ import { useSession } from "@/src/lib/auth-client";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useOrgPaidByManager } from "@/src/hooks/useOrgPaidByManager";
 import { Callout } from "@/src/components/ui/callout";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -66,10 +67,15 @@ export function SubscriptionSection({
   const { data: session } = useSession();
   const { isOwner } = usePermissions();
 
+  // Abonnement pris en charge par le cabinet du client (compte
+  // gestionnaire) : c'est lui qui choisit et gère l'offre
+  const paidByManager = useOrgPaidByManager(session?.user?.organization?.id);
+
   const canManageSubscription =
-    canManageSubscriptionProp !== undefined
+    !paidByManager &&
+    (canManageSubscriptionProp !== undefined
       ? canManageSubscriptionProp
-      : isOwner();
+      : isOwner());
 
   // Récupérer les informations sur les sièges
   useEffect(() => {
@@ -323,8 +329,18 @@ export function SubscriptionSection({
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
+      {paidByManager && (
+        <Callout type="info" noMargin>
+          <p>
+            L&apos;abonnement de cet espace est pris en charge par{" "}
+            <strong>{paidByManager}</strong>. C&apos;est votre cabinet qui
+            choisit et gère votre offre : vous n&apos;avez rien à faire.
+          </p>
+        </Callout>
+      )}
+
       {/* Permission warning */}
-      {!canManageSubscription && (
+      {!canManageSubscription && !paidByManager && (
         <Callout type="warning" noMargin>
           <p>
             Seul le <strong>propriétaire</strong> de l'organisation peut gérer

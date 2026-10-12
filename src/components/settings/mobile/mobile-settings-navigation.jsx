@@ -12,6 +12,7 @@ import {
   Users,
   Crown,
   User,
+  Wallet,
   ChevronRight,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ const iconMap = {
   Users,
   Crown,
   Shield,
+  Wallet,
 };
 
 export default function MobileSettingsNavigation({
@@ -54,11 +56,12 @@ export default function MobileSettingsNavigation({
           >
             <div className="flex items-center gap-3">
               {IconComponent && (
-                <IconComponent className="w-5 h-5 text-[#3D3E42]" strokeWidth={1.8} />
+                <IconComponent
+                  className="w-5 h-5 text-[#3D3E42]"
+                  strokeWidth={1.8}
+                />
               )}
-              <span className="text-sm font-normal">
-                {tab.label}
-              </span>
+              <span className="text-sm font-normal">{tab.label}</span>
               {tab.disabled && (
                 <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
                   à venir

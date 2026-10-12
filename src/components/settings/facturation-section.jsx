@@ -32,6 +32,7 @@ import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Progress } from "@/src/components/ui/progress";
 import { Callout } from "@/src/components/ui/callout";
+import { useOrgPaidByManager } from "@/src/hooks/useOrgPaidByManager";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,7 +67,7 @@ const PLANS_CONFIG = PLANS_DISPLAY.reduce((acc, p) => {
 export default function FacturationSection({
   organization,
   session,
-  canManageSubscription,
+  canManageSubscription: canManageSubscriptionProp,
   onTabChange,
 }) {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -97,6 +98,10 @@ export default function FacturationSection({
   });
 
   const orgId = session?.user?.organization?.id || organization?.id;
+  // Abonnement payé par le cabinet du client : le cabinet a sa propre
+  // facturation (Paramètres > Dépenses clients), rien à gérer ici
+  const paidByManager = useOrgPaidByManager(orgId);
+  const canManageSubscription = canManageSubscriptionProp && !paidByManager;
 
   // TODO: réactiver la gestion des sièges plus tard
   // Fetch seats info
@@ -321,8 +326,18 @@ export default function FacturationSection({
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
+      {paidByManager && (
+        <Callout type="info" noMargin>
+          <p>
+            L&apos;abonnement de cet espace est pris en charge par{" "}
+            <strong>{paidByManager}</strong> : les factures et le moyen de
+            paiement sont ceux de votre cabinet.
+          </p>
+        </Callout>
+      )}
+
       {/* Permission warning */}
-      {!canManageSubscription && (
+      {!canManageSubscription && !paidByManager && (
         <Callout type="warning" noMargin>
           <p>
             Seul le <strong>propriétaire</strong> de l'organisation peut gérer
