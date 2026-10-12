@@ -3,26 +3,41 @@
 import { useEffect, useState } from "react";
 
 /**
- * Nom du cabinet qui paie l'abonnement de l'espace (compte gestionnaire),
- * null s'il n'y en a pas, undefined tant que ce n'est pas vérifié. Le client
- * n'y choisit ni ne résilie l'offre : c'est le cabinet.
+ * Prise en charge de l'abonnement de l'espace par un cabinet (compte
+ * gestionnaire) :
+ * - undefined tant que ce n'est pas vérifié (ne rien autoriser) ;
+ * - null si l'espace paie lui-même ;
+ * - { managerName, subscriptionStatus, viewerIsManager, linkId? } sinon.
+ * Le client n'y choisit ni ne résilie l'offre : c'est son cabinet.
  */
 export function useOrgPaidByManager(organizationId) {
-  const [managerName, setManagerName] = useState(undefined);
+  const [cabinet, setCabinet] = useState(undefined);
   useEffect(() => {
-    if (!organizationId) return;
+    if (!organizationId) {
+      setCabinet(undefined);
+      return;
+    }
     let cancelled = false;
+    setCabinet(undefined);
     fetch(`/api/organizations/${organizationId}/cabinet`)
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (!cancelled) {
-          setManagerName(data?.paidByManager ? data.managerName : null);
-        }
+        if (cancelled) return;
+        setCabinet(
+          data?.paidByManager
+            ? {
+                managerName: data.managerName,
+                subscriptionStatus: data.subscriptionStatus || null,
+                viewerIsManager: Boolean(data.viewerIsManager),
+                linkId: data.linkId || null,
+              }
+            : null,
+        );
       })
-      .catch(() => !cancelled && setManagerName(null));
+      .catch(() => !cancelled && setCabinet(null));
     return () => {
       cancelled = true;
     };
   }, [organizationId]);
-  return managerName;
+  return cabinet;
 }

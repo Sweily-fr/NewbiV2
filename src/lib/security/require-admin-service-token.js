@@ -20,19 +20,21 @@ const digest = (value) =>
   crypto.createHash("sha256").update(value, "utf8").digest();
 
 export function requireAdminServiceToken(request) {
+  // Sans les espaces ou retours à la ligne collés avec la valeur dans
+  // l'interface d'hébergement (sinon toute requête échoue en 401)
   const accepted = [
     process.env.ADMIN_SERVICE_TOKEN,
     process.env.ADMIN_SERVICE_TOKEN_ALT,
-  ].filter(
-    (value) =>
-      typeof value === "string" && value.trim().length >= MIN_TOKEN_LENGTH,
-  );
+  ]
+    .filter((value) => typeof value === "string")
+    .map((value) => value.trim())
+    .filter((value) => value.length >= MIN_TOKEN_LENGTH);
   if (accepted.length === 0) {
     throw apiError(503, "Service admin non configuré");
   }
 
   const header = request.headers.get("authorization") || "";
-  const provided = header.startsWith("Bearer ") ? header.slice(7) : "";
+  const provided = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
   let match = false;
   if (provided) {
     const providedDigest = digest(provided);

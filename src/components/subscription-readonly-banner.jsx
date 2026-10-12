@@ -2,7 +2,10 @@
 
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
+import { useOrgPaidByManager } from "@/src/hooks/useOrgPaidByManager";
+import { cabinetActionFor } from "@/src/components/gestionnaire/paid-by-cabinet-notice";
 import { AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 
@@ -90,6 +93,13 @@ export function SubscriptionReadOnlyBanner({ onSubscribe }) {
   const { bannerType, bannerMessage, bannerAction, isOwner, loading } =
     useSubscriptionAccess();
   const pathname = usePathname();
+  const router = useRouter();
+  // Espace dont un cabinet paie l'abonnement : c'est lui qui le réactive
+  // (vérifié seulement quand le bandeau doit s'afficher)
+  const { organization } = useDashboardLayoutContext();
+  const cabinet = useOrgPaidByManager(
+    !loading && bannerType ? organization?.id : null,
+  );
   // Bouton de souscription : « Gérer l'abonnement » (grille non chargée :
   // propriétaire)
   const { canDo, isReady: permissionsReady } = useMyPermissions();
@@ -97,10 +107,34 @@ export function SubscriptionReadOnlyBanner({ onSubscribe }) {
 
   // Don't show while loading
   if (loading || !bannerType) return null;
+  // Prise en charge par un cabinet pas encore vérifiée
+  if (cabinet === undefined) return null;
 
   // Don't show on billing/settings pages (they have their own messaging)
   if (pathname?.includes("/parametres") || pathname?.includes("/settings")) {
     return null;
+  }
+
+  if (cabinet) {
+    const action = cabinetActionFor(cabinet);
+    const unpaid = Boolean(cabinet.subscriptionStatus);
+    return (
+      <SubscriptionReadOnlyBannerView
+        bannerType={bannerType}
+        bannerMessage={
+          cabinet.viewerIsManager
+            ? unpaid
+              ? "Cet espace est en lecture seule : le paiement de son abonnement n'est pas passé. Mettez à jour votre carte."
+              : "Cet espace est en lecture seule : son essai est terminé. Choisissez son offre pour réactiver votre client."
+            : unpaid
+              ? `Espace en lecture seule : le paiement de l'abonnement n'est pas passé. C'est à votre cabinet ${cabinet.managerName} de le régulariser.`
+              : `Espace en lecture seule : votre cabinet ${cabinet.managerName} doit choisir l'offre de cet espace.`
+        }
+        bannerAction={action?.label}
+        isOwner={Boolean(action)}
+        onAction={() => action && router.push(action.href)}
+      />
+    );
   }
 
   const handleAction = () => {

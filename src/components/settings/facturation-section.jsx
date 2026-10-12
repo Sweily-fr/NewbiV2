@@ -33,6 +33,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { Progress } from "@/src/components/ui/progress";
 import { Callout } from "@/src/components/ui/callout";
 import { useOrgPaidByManager } from "@/src/hooks/useOrgPaidByManager";
+import PaidByCabinetNotice from "@/src/components/gestionnaire/paid-by-cabinet-notice";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,7 +87,9 @@ export default function FacturationSection({
   // facturation (Paramètres > Dépenses clients), rien à gérer ici ; ses
   // factures ne sont pas demandées (elles ne sont pas celles de l'espace)
   const paidByManager = useOrgPaidByManager(orgId);
-  const canManageSubscription = canManageSubscriptionProp && !paidByManager;
+  // Rien n'est permis tant que la prise en charge n'est pas vérifiée
+  const canManageSubscription =
+    canManageSubscriptionProp && paidByManager === null;
 
   const {
     invoices,
@@ -271,13 +274,33 @@ export default function FacturationSection({
     subscription?.isTrialActive === true &&
     !subscription?.stripeCustomerId;
 
+  // Espace payé par le cabinet du client : rien à souscrire ni à gérer ici,
+  // même pendant l'essai (pas encore de client Stripe)
+  if (paidByManager) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-lg font-medium mb-1 hidden md:block">
+            Facturation
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4 hidden md:block">
+            Gérez votre abonnement, vos moyens de paiement et consultez vos
+            factures.
+          </p>
+          <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
+        </div>
+        <PaidByCabinetNotice cabinet={paidByManager} />
+      </div>
+    );
+  }
+
   // No subscription state OR trial app without Stripe yet
   if ((!isActive() || isTrialAppWithoutStripe) && !subLoading) {
     const trialCopy = isTrialAppWithoutStripe
       ? "Vous êtes en période d'essai gratuit. Souscrivez à un abonnement pour ne pas être interrompu à la fin de l'essai."
       : "Vous devez avoir un abonnement pour accéder à la facturation.";
     const trialTitle = isTrialAppWithoutStripe
-      ? "Aucun abonnement actif — essai gratuit en cours"
+      ? "Aucun abonnement actif, essai gratuit en cours"
       : "Aucun abonnement actif";
     return (
       <div className="space-y-8">
@@ -327,18 +350,8 @@ export default function FacturationSection({
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
-      {paidByManager && (
-        <Callout type="info" noMargin>
-          <p>
-            L&apos;abonnement de cet espace est pris en charge par{" "}
-            <strong>{paidByManager}</strong> : les factures et le moyen de
-            paiement sont ceux de votre cabinet.
-          </p>
-        </Callout>
-      )}
-
       {/* Permission warning */}
-      {!canManageSubscription && !paidByManager && (
+      {!canManageSubscription && paidByManager === null && (
         <Callout type="warning" noMargin>
           <p>
             Seul le <strong>propriétaire</strong> de l'organisation peut gérer

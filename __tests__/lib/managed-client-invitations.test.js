@@ -169,6 +169,15 @@ describe("inviteExistingClient", () => {
     expect(mocks.push).toHaveBeenCalledOnce();
   });
 
+  it("signale l'e-mail d'invitation refusé par Resend", async () => {
+    mocks.sendEmail.mockResolvedValue({ data: null, error: { message: "x" } });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await invite();
+    console.error.mockRestore();
+    expect(result.emailSent).toBe(false);
+    expect(db.data.managedclients[0].status).toBe("pending");
+  });
+
   it("refuse un compte inconnu, soi-même, un doublon et un gestionnaire suspendu", async () => {
     await expect(invite({ email: "inconnu@x.fr" })).rejects.toMatchObject({
       status: 404,

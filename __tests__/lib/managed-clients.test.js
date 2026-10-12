@@ -297,6 +297,18 @@ describe("createManagedClient", () => {
     expect(db.data.managedclients).toHaveLength(1);
   });
 
+  it("signale l'e-mail refusé par Resend (renvoyé, pas levé)", async () => {
+    mocks.sendEmail.mockResolvedValue({
+      data: null,
+      error: { message: "Adresse invalide" },
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await create();
+    console.error.mockRestore();
+    expect(result.emailSent).toBe(false);
+    expect(db.data.managedclients).toHaveLength(1);
+  });
+
   it("ignore une formule envoyée : elle se choisit à la fin de l'essai", async () => {
     const result = await create({ plan: "entreprise" });
     expect(result.plan).toBeUndefined();

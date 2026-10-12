@@ -7,6 +7,16 @@ vi.mock("@/src/hooks/useSubscriptionAccess", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
+// Espace actif et prise en charge par un cabinet (aucun par défaut)
+const mockCabinet = { value: null };
+vi.mock("@/src/contexts/dashboard-layout-context", () => ({
+  useDashboardLayoutContext: () => ({ organization: { id: "org1" } }),
+}));
+vi.mock("@/src/hooks/useOrgPaidByManager", () => ({
+  useOrgPaidByManager: () => mockCabinet.value,
 }));
 
 // Droits du rôle : grille non chargée par défaut (repli sur isOwner)
@@ -39,6 +49,44 @@ function setHook({
 describe("TrialBanner — decision #6 (J-3 visibility)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCabinet.value = null;
+  });
+
+  it("espace payé par un cabinet : le client n'a rien à souscrire", () => {
+    setHook({ isTrialApp: true, trialDaysRemaining: 2 });
+    mockCabinet.value = {
+      managerName: "Compta Dupont",
+      subscriptionStatus: null,
+      viewerIsManager: false,
+    };
+    render(<TrialBanner />);
+    expect(
+      screen.getByText(/Votre cabinet Compta Dupont choisit l'offre/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Souscrire")).not.toBeInTheDocument();
+  });
+
+  it("espace payé par un cabinet : le cabinet est invité à choisir l'offre", () => {
+    setHook({ isTrialApp: true, trialDaysRemaining: 1 });
+    mockCabinet.value = {
+      managerName: "Compta Dupont",
+      subscriptionStatus: null,
+      viewerIsManager: true,
+      linkId: "abc",
+    };
+    render(<TrialBanner />);
+    expect(screen.getByText(/se termine demain/)).toBeInTheDocument();
+    expect(screen.getByText("Choisir l'offre").closest("a")).toHaveAttribute(
+      "href",
+      "/dashboard/gestionnaire?offre=abc",
+    );
+  });
+
+  it("n'affiche rien tant que la prise en charge n'est pas vérifiée", () => {
+    setHook({ isTrialApp: true, trialDaysRemaining: 2 });
+    mockCabinet.value = undefined;
+    const { container } = render(<TrialBanner />);
+    expect(container.firstChild).toBeNull();
   });
 
   it("renders nothing while loading", () => {

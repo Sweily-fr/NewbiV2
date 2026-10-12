@@ -169,7 +169,7 @@ export async function inviteExistingClient({
   const url = `${baseUrl.replace(/\/+$/, "")}/invitation-gestionnaire/${insertedId}`;
   let emailSent = true;
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: email,
       subject: `${manager.name} souhaite gérer votre espace Newbi`,
       html: emailTemplates.managedClientInvitation({
@@ -178,6 +178,8 @@ export async function inviteExistingClient({
         days: INVITATION_DAYS,
       }),
     });
+    // Refus de Resend : renvoyé, pas levé
+    if (result?.error) throw new Error(result.error.message || "Envoi refusé");
   } catch (error) {
     emailSent = false;
     console.error(

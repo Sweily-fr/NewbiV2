@@ -11,10 +11,16 @@ import { findManagerPaidSubscription } from "@/src/lib/manager-billing";
 /**
  * GET /api/organizations/[organizationId]/cabinet
  *
- * L'abonnement de cet espace est-il pris en charge par un cabinet
- * (gestionnaire) ? { paidByManager, managerName }. Sert à Paramètres >
- * Abonnement : le client n'y choisit ni ne résilie l'offre, c'est son
- * cabinet qui la gère. Auth : membre de l'espace.
+ * L'abonnement de cet espace est-il pris en charge par un cabinet (compte
+ * gestionnaire) ? Sert aux Paramètres (Abonnement, Facturation) et aux
+ * bandeaux d'essai et de lecture seule : le client n'y choisit ni ne
+ * résilie l'offre, c'est son cabinet.
+ *
+ * → { paidByManager: false }
+ *   ou { paidByManager: true, managerName, subscriptionStatus,
+ *        viewerIsManager, linkId? } (linkId : seulement pour le cabinet,
+ *   pour ouvrir le choix de l'offre depuis son espace)
+ * Auth : membre de l'espace.
  */
 async function handler(request, { params }) {
   const { user } = await requireSession(request);
@@ -36,14 +42,21 @@ async function handler(request, { params }) {
     (link
       ? await mongoDb
           .collection("accountmanagers")
-          .findOne({ _id: link.managerId }, { projection: { name: 1 } })
+          .findOne(
+            { _id: link.managerId },
+            { projection: { name: 1, userId: 1 } },
+          )
       : null);
+  if (!manager) return NextResponse.json({ paidByManager: false });
 
-  return NextResponse.json(
-    manager
-      ? { paidByManager: true, managerName: manager.name }
-      : { paidByManager: false },
-  );
+  const viewerIsManager = String(manager.userId) === String(user.id);
+  return NextResponse.json({
+    paidByManager: true,
+    managerName: manager.name,
+    subscriptionStatus: paid?.subscription?.status || null,
+    viewerIsManager,
+    ...(viewerIsManager && link ? { linkId: String(link._id) } : {}),
+  });
 }
 
 export const GET = withErrorHandler(handler);

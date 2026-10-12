@@ -278,7 +278,7 @@ export async function createManagedClient({
 
   let emailSent = true;
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: data.email,
       subject: `${manager.name} a créé votre espace Newbi`,
       html: emailTemplates.managedClientWelcome({
@@ -287,6 +287,8 @@ export async function createManagedClient({
         url,
       }),
     });
+    // Refus de Resend (adresse invalide, domaine…) : renvoyé, pas levé
+    if (result?.error) throw new Error(result.error.message || "Envoi refusé");
   } catch (error) {
     // L'espace existe : l'e-mail pourra être renvoyé, on ne défait rien
     emailSent = false;

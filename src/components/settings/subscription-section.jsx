@@ -11,6 +11,7 @@ import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { useOrgPaidByManager } from "@/src/hooks/useOrgPaidByManager";
+import PaidByCabinetNotice from "@/src/components/gestionnaire/paid-by-cabinet-notice";
 import { Callout } from "@/src/components/ui/callout";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -73,8 +74,9 @@ export function SubscriptionSection({
     session?.session?.activeOrganizationId || session?.user?.organization?.id,
   );
 
+  // Rien n'est permis tant que la prise en charge n'est pas vérifiée
   const canManageSubscription =
-    !paidByManager &&
+    paidByManager === null &&
     (canManageSubscriptionProp !== undefined
       ? canManageSubscriptionProp
       : isOwner());
@@ -331,18 +333,10 @@ export function SubscriptionSection({
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
-      {paidByManager && (
-        <Callout type="info" noMargin>
-          <p>
-            L&apos;abonnement de cet espace est pris en charge par{" "}
-            <strong>{paidByManager}</strong>. C&apos;est votre cabinet qui
-            choisit et gère votre offre : vous n&apos;avez rien à faire.
-          </p>
-        </Callout>
-      )}
+      <PaidByCabinetNotice cabinet={paidByManager} />
 
       {/* Permission warning */}
-      {!canManageSubscription && !paidByManager && (
+      {!canManageSubscription && paidByManager === null && (
         <Callout type="warning" noMargin>
           <p>
             Seul le <strong>propriétaire</strong> de l'organisation peut gérer
