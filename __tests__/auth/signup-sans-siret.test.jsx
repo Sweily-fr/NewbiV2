@@ -15,7 +15,8 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-const session = {
+let session;
+const baseSession = {
   user: {
     id: "507f1f77bcf86cd799439011",
     email: "u@x.fr",
@@ -65,6 +66,8 @@ const onboardingCalls = (fetchMock) =>
 describe("Inscription sans SIRET", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Inscription par e-mail : nom de la personne inconnu.
+    session = { user: { ...baseSession.user, name: "" } };
   });
 
   it("termine l'inscription avec le nom saisi et la déclaration", async () => {
@@ -75,13 +78,15 @@ describe("Inscription sans SIRET", () => {
     await user.click(
       await screen.findByRole("button", { name: "Continuer sans SIRET" }),
     );
-    expect(screen.getByText("Nom de votre entreprise")).toBeInTheDocument();
+    expect(
+      screen.getByText("Nom de votre entreprise ou vos prénom et nom"),
+    ).toBeInTheDocument();
 
     const submit = screen.getByRole("button", { name: "Continuer" });
     expect(submit).toBeDisabled();
 
     await user.type(
-      screen.getByPlaceholderText("Ex. : Studio Dupont"),
+      screen.getByPlaceholderText("Ex. : Studio Dupont ou Jean Dupont"),
       "Studio Dupont",
     );
     // La déclaration nomme l'entreprise saisie et reste obligatoire.
@@ -132,9 +137,9 @@ describe("Inscription sans SIRET", () => {
     );
 
     // Le nom tapé est conservé comme nom de l'entreprise.
-    expect(screen.getByPlaceholderText("Ex. : Studio Dupont")).toHaveValue(
-      "Entreprise introuvable",
-    );
+    expect(
+      screen.getByPlaceholderText("Ex. : Studio Dupont ou Jean Dupont"),
+    ).toHaveValue("Entreprise introuvable");
     expect(screen.queryByText("Aucune entreprise trouvée")).toBeNull();
 
     // Retour possible à la recherche.
@@ -144,5 +149,20 @@ describe("Inscription sans SIRET", () => {
     expect(
       screen.getByPlaceholderText("Nom de l'entreprise, SIRET ou SIREN..."),
     ).toBeInTheDocument();
+  });
+
+  it("part des prénom et nom connus (Google, Apple) sans rien tapé", async () => {
+    session = { user: { ...baseSession.user, name: "Jean Dupont" } };
+    mockFetch();
+    const user = userEvent.setup();
+    render(<SignUpPage />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Continuer sans SIRET" }),
+    );
+
+    expect(
+      screen.getByPlaceholderText("Ex. : Studio Dupont ou Jean Dupont"),
+    ).toHaveValue("Jean Dupont");
   });
 });

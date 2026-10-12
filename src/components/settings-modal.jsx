@@ -259,6 +259,7 @@ export function SettingsModal({
 
   // Fonction de sauvegarde
   const handleSaveAll = async (formData) => {
+    let errorToastShown = false;
     try {
       // Vérifier les permissions avant de sauvegarder
       if (!canManageOrgSettings) {
@@ -363,6 +364,8 @@ export function SettingsModal({
       };
 
       // Sauvegarder via Better Auth
+      // `onError` affiche l'erreur puis l'appel lève quand même : le `catch`
+      // ci-dessous ne doit pas afficher un second toast.
       await updateOrganization(transformedData, {
         onSuccess: async () => {
           // Forcer un refetch pour s'assurer que les données sont bien en BDD
@@ -431,11 +434,18 @@ export function SettingsModal({
         },
         onError: (error) => {
           console.error("❌ Erreur sauvegarde:", error);
-          toast.error("Erreur lors de la sauvegarde");
+          errorToastShown = true;
+          // SIRET refusé par le serveur (introuvable, fermé, déjà utilisé) :
+          // le message dit quoi corriger.
+          toast.error(
+            error?.code === "SIRET_REJECTED"
+              ? error.message
+              : "Erreur lors de la sauvegarde",
+          );
         },
       });
     } catch (error) {
-      toast.error("Erreur lors de la sauvegarde");
+      if (!errorToastShown) toast.error("Erreur lors de la sauvegarde");
     }
   };
 
