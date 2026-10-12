@@ -10,11 +10,23 @@ import { SubmitButton } from "@/src/components/ui/submit-button";
 import { resetPassword } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Link from "next/link";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  // Lien de bienvenue d'un client créé par son cabinet (?bienvenue=1) : il
+  // choisit son premier mot de passe, il ne le réinitialise pas
+  const [welcome, setWelcome] = useState(false);
+  useEffect(() => {
+    setWelcome(
+      new URLSearchParams(window.location.search).get("bienvenue") === "1",
+    );
+  }, []);
+  const invalidLinkMessage = welcome
+    ? "Ce lien a expiré ou a déjà servi. Demandez à votre cabinet de vous le renvoyer, ou utilisez « Mot de passe oublié »."
+    : "Le lien de réinitialisation est invalide ou a expiré. Veuillez en redemander un.";
 
   const {
     register,
@@ -30,9 +42,7 @@ export default function ResetPasswordPage() {
     const errorParam = params.get("error");
 
     if (errorParam === "INVALID_TOKEN" || errorParam === "invalid_token") {
-      toast.error(
-        "Le lien de réinitialisation est invalide ou a expiré. Veuillez en redemander un.",
-      );
+      toast.error(invalidLinkMessage);
       return;
     }
 
@@ -51,7 +61,9 @@ export default function ResetPasswordPage() {
       {
         onSuccess: () => {
           toast.success(
-            "Mot de passe réinitialisé ! Vous pouvez vous connecter.",
+            welcome
+              ? "Mot de passe enregistré ! Connectez-vous pour accéder à votre espace."
+              : "Mot de passe réinitialisé ! Vous pouvez vous connecter.",
           );
           router.push("/auth/login");
         },
@@ -66,14 +78,14 @@ export default function ResetPasswordPage() {
             code === "INVALID_TOKEN" ||
             /invalid.*token|token.*invalid/i.test(rawMsg || "")
           ) {
-            msg =
-              "Le lien de réinitialisation est invalide ou a expiré. Veuillez en redemander un.";
+            msg = invalidLinkMessage;
           } else if (
             code === "TOKEN_EXPIRED" ||
             /expired/i.test(rawMsg || "")
           ) {
-            msg =
-              "Le lien de réinitialisation a expiré. Veuillez en redemander un.";
+            msg = welcome
+              ? invalidLinkMessage
+              : "Le lien de réinitialisation a expiré. Veuillez en redemander un.";
           } else if (/password.*short|too.*short|min/i.test(rawMsg || "")) {
             msg = "Le mot de passe doit contenir au moins 8 caractères.";
           }
@@ -89,10 +101,14 @@ export default function ResetPasswordPage() {
         <div className="w-1/2 flex items-center justify-center p-8">
           <div className="mx-auto sm:max-w-md w-full">
             <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
-              Réinitialisation du mot de passe
+              {welcome
+                ? "Choisissez votre mot de passe"
+                : "Réinitialisation du mot de passe"}
             </h3>
             <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
-              Entrez votre nouveau mot de passe pour sécuriser votre compte.
+              {welcome
+                ? "Votre espace Newbi est prêt : choisissez le mot de passe de votre compte."
+                : "Entrez votre nouveau mot de passe pour sécuriser votre compte."}
             </p>
 
             <div className="mt-8">
@@ -131,13 +147,17 @@ export default function ResetPasswordPage() {
                   disabled={isSubmitting}
                 >
                   {isSubmitting
-                    ? "Réinitialisation..."
-                    : "Réinitialiser le mot de passe"}
+                    ? "Enregistrement..."
+                    : welcome
+                      ? "Créer mon mot de passe"
+                      : "Réinitialiser le mot de passe"}
                 </SubmitButton>
               </form>
             </div>
 
-            <p className="mt-6 text-sm text-muted-foreground dark:text-muted-foreground text-center">
+            <p
+              className={`mt-6 text-sm text-muted-foreground dark:text-muted-foreground text-center${welcome ? " hidden" : ""}`}
+            >
               Vous vous souvenez de votre mot de passe ?{" "}
               <Link
                 href="/auth/login"
@@ -157,7 +177,9 @@ export default function ResetPasswordPage() {
               <div className="text-lg min-h-[27px] flex items-center justify-center">
                 <div className="text-center">
                   <p className="font-medium text-[#1C1C1C] text-[15px]">
-                    Sécurisez votre compte avec un nouveau mot de passe.
+                    {welcome
+                      ? "Bienvenue sur Newbi."
+                      : "Sécurisez votre compte avec un nouveau mot de passe."}
                   </p>
                 </div>
               </div>
@@ -182,10 +204,14 @@ export default function ResetPasswordPage() {
             width={30}
           />
           <h3 className="text-xl font-medium text-foreground mb-2">
-            Réinitialisation du mot de passe
+            {welcome
+              ? "Choisissez votre mot de passe"
+              : "Réinitialisation du mot de passe"}
           </h3>
           <p className="text-sm text-muted-foreground mb-6">
-            Entrez votre nouveau mot de passe pour sécuriser votre compte.
+            {welcome
+              ? "Votre espace Newbi est prêt : choisissez le mot de passe de votre compte."
+              : "Entrez votre nouveau mot de passe pour sécuriser votre compte."}
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -223,8 +249,10 @@ export default function ResetPasswordPage() {
               disabled={isSubmitting}
             >
               {isSubmitting
-                ? "Réinitialisation..."
-                : "Réinitialiser le mot de passe"}
+                ? "Enregistrement..."
+                : welcome
+                  ? "Créer mon mot de passe"
+                  : "Réinitialiser le mot de passe"}
             </SubmitButton>
           </form>
         </div>

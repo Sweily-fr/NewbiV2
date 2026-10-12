@@ -34,13 +34,17 @@ const VERIFIED = {
   },
 };
 
-// Base Mongo simulée : égalité (ObjectId comparés en chaîne), $in, tri ignoré
+// Base Mongo simulée : égalité (ObjectId comparés en chaîne), $in, $ne,
+// $exists, tri ignoré
 function makeDb() {
   const data = {};
   const same = (a, b) => String(a) === String(b);
   const matches = (doc, filter = {}) =>
     Object.entries(filter).every(([key, cond]) => {
       const value = doc[key];
+      if (cond && typeof cond === "object" && "$exists" in cond) {
+        return (value !== undefined) === cond.$exists;
+      }
       if (cond && typeof cond === "object" && "$in" in cond) {
         return cond.$in.some((c) => same(c, value));
       }
@@ -113,8 +117,12 @@ vi.mock("@/src/lib/org-creation", () => ({
   },
 }));
 
-const { createManagedClient, listManagedClients, ManagedClientError } =
-  await import("@/src/lib/managed-clients");
+const {
+  createManagedClient,
+  listManagedClients,
+  resendWelcomeEmail,
+  ManagedClientError,
+} = await import("@/src/lib/managed-clients");
 
 const managerUserId = new ObjectId();
 const managerId = new ObjectId();
@@ -357,5 +365,60 @@ describe("listManagedClients", () => {
       type: "subscription",
       status: "active",
     });
+  });
+});
+
+describe("resendWelcomeEmail", () => {
+  const manager = () => db.data.accountmanagers[0];
+
+  it("renvoie un nouveau lien au client créé qui n'a pas encore son mot de passe", async () => {
+    await create();
+    const [link] = db.data.managedclients;
+    const clients = await listManagedClients(db, managerId);
+    expect(clients[0].canResendWelcome).toBe(true);
+
+    mocks.sendEmail.mockClear();
+    const result = await resendWelcomeEmail({
+      mongoDb: db,
+      manager: manager(),
+      linkId: String(link._id),
+      baseUrl: "https://www.newbi.fr",
+    });
+    expect(result).toEqual({
+      email: "jean.martin@boulangerie.fr",
+      emailSent: true,
+    });
+    expect(db.data.verification).toHaveLength(2);
+    const mail = mocks.sendEmail.mock.calls[0][0];
+    expect(mail.html).toContain("bienvenue=1");
+    // Le cabinet paie : l'e-mail le dit
+    expect(mail.html).toContain("pris en charge par Compta Dupont");
+  });
+
+  it("refuse si le mot de passe est déjà choisi, ou pour le client d'un autre cabinet", async () => {
+    await create();
+    const [link] = db.data.managedclients;
+    const user = db.data.user.find(
+      (u) => u.email === "jean.martin@boulangerie.fr",
+    );
+    await db.collection("account").insertOne({
+      userId: user._id,
+      providerId: "credential",
+      password: "hash",
+    });
+    await expect(
+      resendWelcomeEmail({
+        mongoDb: db,
+        manager: manager(),
+        linkId: String(link._id),
+      }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      resendWelcomeEmail({
+        mongoDb: db,
+        manager: { ...manager(), _id: new ObjectId() },
+        linkId: String(link._id),
+      }),
+    ).rejects.toMatchObject({ status: 404 });
   });
 });

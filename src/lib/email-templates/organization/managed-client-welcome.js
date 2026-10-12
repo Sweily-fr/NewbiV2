@@ -3,9 +3,18 @@ import { escapeHtml } from "../../validation.js";
 // Bienvenue d'un client dont l'espace a été créé par son cabinet
 // (gestionnaire) : le client choisit son mot de passe. Même style que
 // l'e-mail de réinitialisation. Noms saisis par le cabinet : échappés.
-export const managedClientWelcome = ({ managerName, companyName, url }) => {
+export const managedClientWelcome = ({
+  managerName,
+  companyName,
+  url,
+  paidByManager = false,
+  trialDays = 30,
+}) => {
   const manager = escapeHtml(managerName || "Votre cabinet");
   const company = escapeHtml(companyName || "votre entreprise");
+  const billing = paidByManager
+    ? `Vous démarrez avec ${trialDays} jours d'essai gratuit. Ensuite, votre abonnement est pris en charge par ${manager} : vous n'avez rien à payer.`
+    : `Vous démarrez avec ${trialDays} jours d'essai gratuit, sans carte bancaire. Vous choisirez votre offre à la fin de l'essai.`;
   return `
     <!DOCTYPE html>
     <html lang="fr">
@@ -32,8 +41,11 @@ export const managedClientWelcome = ({ managerName, companyName, url }) => {
           <p style="font-size: 15px; color: #4b5563; margin: 0 0 16px 0; line-height: 1.6;">
             ${manager} a créé l'espace de ${company} sur Newbi, pour vos devis, vos factures et votre comptabilité.
           </p>
+          <p style="font-size: 15px; color: #4b5563; margin: 0 0 16px 0; line-height: 1.6;">
+            Choisissez votre mot de passe pour y accéder. Vous êtes le super admin de cet espace ; ${manager} y a accès avec les droits Comptable, que vous pouvez ajuster dans Paramètres &gt; Rôles.
+          </p>
           <p style="font-size: 15px; color: #4b5563; margin: 0 0 24px 0; line-height: 1.6;">
-            Choisissez votre mot de passe pour y accéder. Vous êtes le seul administrateur de cet espace ; ${manager} y a accès en tant que comptable.
+            ${billing}
           </p>
 
           <a href="${url}" style="display: block; background-color: #1a1a1a; color: #ffffff; text-decoration: none; padding: 16px 24px; border-radius: 6px; font-weight: 500; font-size: 15px; text-align: center;">

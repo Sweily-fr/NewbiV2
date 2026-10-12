@@ -14,7 +14,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
  * total par mois, détail par espace, offres à choisir, factures, carte.
  */
 async function handler(request) {
-  const { manager } = await requireAccountManager(request);
+  const { manager } = await requireAccountManager(request, {
+    allowSuspended: true,
+  });
   const summary = await getManagerBillingSummary({ mongoDb, stripe, manager });
   return NextResponse.json(summary);
 }

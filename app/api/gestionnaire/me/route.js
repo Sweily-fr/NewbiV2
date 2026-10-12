@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { mongoDb } from "@/src/lib/mongodb";
 import { requireSession, withErrorHandler } from "@/src/lib/security";
-import { findActiveAccountManagerByUserId } from "@/src/lib/managed-clients";
+import {
+  findAccountManagerByUserId,
+  findActiveAccountManagerByUserId,
+} from "@/src/lib/managed-clients";
 
 /**
  * GET /api/gestionnaire/me
@@ -15,7 +18,14 @@ async function handler(request) {
   const { user } = await requireSession(request);
   const manager = await findActiveAccountManagerByUserId(mongoDb, user.id);
   if (!manager) {
-    return NextResponse.json({ isManager: false });
+    // Cabinet suspendu : plus d'espace gestionnaire, mais ses dépenses
+    // restent consultables (Paramètres > Dépenses clients)
+    const suspended = await findAccountManagerByUserId(mongoDb, user.id);
+    return NextResponse.json(
+      suspended
+        ? { isManager: false, isSuspendedManager: true, name: suspended.name }
+        : { isManager: false },
+    );
   }
 
   const links = await mongoDb

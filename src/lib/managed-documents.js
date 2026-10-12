@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { getModuleActions } from "./organization-roles.js";
+import { getModuleActionsForMemberships } from "./organization-roles.js";
 
 /**
  * Espace gestionnaire : factures, devis, bons de commande, bons de
@@ -130,19 +130,20 @@ export async function listReadableClientOrganizations(
         userId: userOid,
         organizationId: { $in: links.map((l) => l.organizationId) },
       },
-      { projection: { organizationId: 1 } },
+      { projection: { organizationId: 1, role: 1 } },
     )
     .toArray();
 
-  const readable = [];
-  for (const membership of memberships) {
-    const { actions } = await getModuleActions(mongoDb, {
-      userId: userOid,
-      organizationId: membership.organizationId,
-      moduleKey,
-    });
-    if (actions.includes("view")) readable.push(membership.organizationId);
-  }
+  // Droits de tous les espaces en une requête (pas une par client)
+  const actionsByOrg = await getModuleActionsForMemberships(mongoDb, {
+    memberships,
+    moduleKey,
+  });
+  const readable = memberships
+    .filter((m) =>
+      (actionsByOrg.get(String(m.organizationId)) || []).includes("view"),
+    )
+    .map((m) => m.organizationId);
   if (readable.length === 0) return [];
 
   const orgs = await mongoDb
@@ -204,17 +205,30 @@ export async function listManagedDocuments(
   const search = typeof q === "string" ? q.trim().slice(0, 100) : "";
   if (search) {
     const regex = new RegExp(escapeRegex(search), "i");
-    base.$and = [
-      {
-        $or: [
-          { number: regex },
-          { prefix: regex },
-          { "client.name": regex },
-          { "client.firstName": regex },
-          { "client.lastName": regex },
-        ],
-      },
+    const or = [
+      { number: regex },
+      { prefix: regex },
+      { "client.name": regex },
+      { "client.firstName": regex },
+      { "client.lastName": regex },
     ];
+    // Référence complète telle qu'affichée (« F-202610-0001 ») : préfixe et
+    // numéro sont stockés séparément
+    const reference = search.match(/^(.+?)-?(\d+)$/);
+    if (reference && reference[1].length > 0) {
+      or.push({
+        $and: [
+          {
+            prefix: new RegExp(
+              `^${escapeRegex(reference[1].replace(/-$/, ""))}-?$`,
+              "i",
+            ),
+          },
+          { number: new RegExp(`^${escapeRegex(reference[2])}`, "i") },
+        ],
+      });
+    }
+    base.$and = [{ $or: or }];
   }
 
   const validTab = config.tabs.some((t) => t.value === status) ? status : "all";

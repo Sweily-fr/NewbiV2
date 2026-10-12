@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, ExternalLink, LoaderCircle } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
+import { Callout } from "@/src/components/ui/callout";
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { PLANS_DISPLAY } from "@/src/lib/plans-display";
@@ -167,6 +168,17 @@ export default function ManagerSpendingSection() {
     <div className="space-y-8">
       {header}
 
+      {data.suspended && (
+        <Callout type="warning" noMargin>
+          <p>
+            Votre compte gestionnaire est suspendu par Newbi : vous ne pouvez
+            plus créer, inviter ni payer de nouveaux clients. Les abonnements
+            ci-dessous restent prélevés : vous pouvez gérer votre carte depuis
+            le portail de paiement, et nous écrire pour les arrêter.
+          </p>
+        </Callout>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
           label="Par mois aujourd'hui"
@@ -214,12 +226,14 @@ export default function ManagerSpendingSection() {
                   {item.trialEndsAt
                     ? `Essai jusqu'au ${formatDate(item.trialEndsAt)}`
                     : "Essai terminé"}
-                  <a
-                    href={GESTIONNAIRE_PATH}
-                    className="font-medium text-[#5b50fe] hover:underline"
-                  >
-                    Choisir
-                  </a>
+                  {!data.suspended && (
+                    <a
+                      href={`${GESTIONNAIRE_PATH}?offre=${item.linkId}`}
+                      className="font-medium text-[#5b50fe] hover:underline"
+                    >
+                      Choisir l&apos;offre
+                    </a>
+                  )}
                 </span>
               </div>
             ))}

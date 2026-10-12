@@ -25,6 +25,8 @@ import {
  */
 
 export const INVITATION_DAYS = 14;
+// Délai avant de réinviter un client qui a refusé
+const DECLINE_COOLDOWN_DAYS = 7;
 // Garde-fou sur la saisie : bien au-delà du nombre d'espaces d'un client
 const MAX_ORGANIZATIONS_PER_ANSWER = 50;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -107,7 +109,9 @@ export async function inviteExistingClient({
   if (manager.status !== "active") {
     throw new ManagedClientError(
       403,
-      "Ce gestionnaire est suspendu : il ne peut pas inviter de client.",
+      actor?.type === "admin"
+        ? "Ce gestionnaire est suspendu : il ne peut pas inviter de client."
+        : "Votre compte gestionnaire est suspendu : vous ne pouvez plus inviter de client.",
     );
   }
 
@@ -130,7 +134,7 @@ export async function inviteExistingClient({
   if ((await listEntrustableOrganizations(mongoDb, user._id)).length === 0) {
     throw new ManagedClientError(
       409,
-      "Ce compte n'a aucun espace à confier : il n'est super admin d'aucun espace, ou ses espaces sont déjà suivis par un gestionnaire.",
+      "Ce compte n'a aucun espace à confier : il n'est super admin d'aucun espace, ou ses espaces sont déjà suivis par un cabinet.",
     );
   }
 
@@ -145,6 +149,26 @@ export async function inviteExistingClient({
     throw new ManagedClientError(
       409,
       "Une invitation est déjà en attente pour ce client.",
+    );
+  }
+
+  // Refus récent : on ne relance pas le client en boucle
+  const declined = await mongoDb.collection("managedclients").findOne({
+    managerId: manager._id,
+    invitedUserId: user._id,
+    status: "declined",
+    respondedAt: {
+      $gt: new Date(now.getTime() - DECLINE_COOLDOWN_DAYS * 86400000),
+    },
+  });
+  if (declined) {
+    const again = new Date(
+      new Date(declined.respondedAt).getTime() +
+        DECLINE_COOLDOWN_DAYS * 86400000,
+    );
+    throw new ManagedClientError(
+      429,
+      `Ce client a refusé votre invitation. Vous pourrez l'inviter à nouveau à partir du ${again.toLocaleDateString("fr-FR")}.`,
     );
   }
 
@@ -481,19 +505,25 @@ async function undoAcceptance(mongoDb, invitationId, done) {
   }
 }
 
-/** Le cabinet retire une invitation encore en attente. */
+/**
+ * Le cabinet retire une invitation : en attente (elle n'est plus valable),
+ * expirée ou refusée (elle disparaît de sa liste).
+ */
 export async function cancelClientInvitation(mongoDb, { managerId, id }) {
   const oid = asObjectId(id);
   const managerOid = asObjectId(managerId);
   const now = new Date();
   const { modifiedCount } =
     oid && managerOid
-      ? await mongoDb
-          .collection("managedclients")
-          .updateOne(
-            { _id: oid, managerId: managerOid, status: "pending" },
-            { $set: { status: "canceled", respondedAt: now, updatedAt: now } },
-          )
+      ? await mongoDb.collection("managedclients").updateOne(
+          {
+            _id: oid,
+            managerId: managerOid,
+            organizationId: null,
+            status: { $in: ["pending", "declined"] },
+          },
+          { $set: { status: "canceled", updatedAt: now } },
+        )
       : { modifiedCount: 0 };
   if (modifiedCount === 0) {
     throw new ManagedClientError(
@@ -502,4 +532,51 @@ export async function cancelClientInvitation(mongoDb, { managerId, id }) {
     );
   }
   return { status: "canceled" };
+}
+
+/**
+ * Le cabinet relance une invitation expirée ou refusée : une nouvelle
+ * invitation part (e-mail, notification), l'ancienne disparaît de sa liste.
+ * Un refus récent bloque la relance (voir DECLINE_COOLDOWN_DAYS).
+ */
+export async function relaunchClientInvitation({
+  mongoDb,
+  manager,
+  id,
+  actor,
+  baseUrl,
+}) {
+  const oid = asObjectId(id);
+  const previous = oid
+    ? await mongoDb.collection("managedclients").findOne({
+        _id: oid,
+        managerId: manager._id,
+        organizationId: null,
+        status: { $in: ["pending", "declined"] },
+      })
+    : null;
+  if (!previous?.invitedEmail) {
+    throw new ManagedClientError(404, "Invitation introuvable.");
+  }
+  if (previous.status === "pending" && !isExpired(previous)) {
+    throw new ManagedClientError(
+      409,
+      "Cette invitation est encore en attente de réponse.",
+    );
+  }
+  // Une expirée n'empêche pas la nouvelle invitation (filtre expiresAt)
+  const result = await inviteExistingClient({
+    mongoDb,
+    managerId: manager._id,
+    email: previous.invitedEmail,
+    actor,
+    baseUrl,
+  });
+  await mongoDb
+    .collection("managedclients")
+    .updateOne(
+      { _id: previous._id },
+      { $set: { status: "canceled", updatedAt: new Date() } },
+    );
+  return result;
 }

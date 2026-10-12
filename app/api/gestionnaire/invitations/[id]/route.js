@@ -6,8 +6,8 @@ import { ManagedClientError } from "@/src/lib/managed-clients";
 import { cancelClientInvitation } from "@/src/lib/managed-client-invitations";
 
 /**
- * DELETE /api/gestionnaire/invitations/:id : le cabinet retire une
- * invitation encore en attente (les siennes seulement).
+ * DELETE /api/gestionnaire/invitations/:id : le cabinet retire une de ses
+ * invitations, en attente, expirée ou refusée.
  */
 async function handler(request, { params }) {
   const { manager } = await requireAccountManager(request);

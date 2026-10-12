@@ -26,6 +26,7 @@ import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readon
 import { TrialBanner } from "@/src/components/trial-banner";
 import { GestionnaireBanner } from "@/src/components/gestionnaire/gestionnaire-banner";
 import { isGestionnairePath } from "@/src/lib/gestionnaire-paths";
+import { GestionnaireBottomNav } from "@/src/components/gestionnaire/gestionnaire-bottom-nav";
 // Panneau DEV de test d'abonnement — décommenter aussi son rendu plus bas pour l'activer.
 // import { DevSubscriptionSwitcher } from "@/src/components/dev/dev-subscription-switcher";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
@@ -399,7 +400,10 @@ function DashboardContent({ children }) {
         {isMobile && <PwaInstallBanner />}
 
         {/* Bottom Navigation Bar — mobile uniquement */}
-        {isMobile && !settingsModalOpen && (
+        {isMobile && !settingsModalOpen && isGestionnairePath(pathname) && (
+          <GestionnaireBottomNav />
+        )}
+        {isMobile && !settingsModalOpen && !isGestionnairePath(pathname) && (
           <BottomNavBar
             onOpenSettings={() => {
               setSettingsInitialTab("preferences");

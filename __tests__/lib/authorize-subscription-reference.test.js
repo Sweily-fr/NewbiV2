@@ -17,9 +17,14 @@ process.env.RESEND_API_KEY ||= "re_dummy";
 
 // Mock MongoDB (même approche que require-org-membership.test.js).
 const mockFindOne = vi.fn();
+// Abonnements vivants de l'espace (prise en charge par un cabinet)
+const mockFindSubscriptions = vi.fn(async () => []);
 vi.mock("@/src/lib/mongodb", () => ({
   mongoDb: {
-    collection: () => ({ findOne: mockFindOne }),
+    collection: () => ({
+      findOne: mockFindOne,
+      find: () => ({ toArray: mockFindSubscriptions }),
+    }),
   },
 }));
 
@@ -182,8 +187,10 @@ describe("authorizeSubscriptionReference", () => {
     ]) {
       mockFindOne
         .mockResolvedValueOnce({ role: "owner" }) // member
-        .mockResolvedValueOnce({ stripeCustomerId: "cus_cabinet" }) // subscription
         .mockResolvedValueOnce({ name: "Compta Dupont" }); // accountmanagers
+      mockFindSubscriptions.mockResolvedValueOnce([
+        { stripeCustomerId: "cus_cabinet", status: "active" },
+      ]);
       mockGetModuleActions.mockResolvedValue({ actions: ["view", "manage"] });
       const ok = await authorizeSubscriptionReference({
         user: { id: userId },

@@ -9,10 +9,13 @@ import { ObjectId } from "mongodb";
 // Droits par espace : { orgId: ["view", ...] }
 const rights = vi.hoisted(() => ({ byOrg: {} }));
 vi.mock("@/src/lib/organization-roles", () => ({
-  getModuleActions: async (_db, { organizationId }) => ({
-    role: "accountant",
-    actions: rights.byOrg[String(organizationId)] || [],
-  }),
+  getModuleActionsForMemberships: async (_db, { memberships }) =>
+    new Map(
+      memberships.map((m) => [
+        String(m.organizationId),
+        rights.byOrg[String(m.organizationId)] || [],
+      ]),
+    ),
 }));
 
 const { listManagedDocuments } = await import("@/src/lib/managed-documents");
@@ -270,6 +273,11 @@ describe("listManagedDocuments", () => {
     expect(row.openUrl).toBe(
       `/dashboard/outils/factures/${originalInvoice}/avoir/${row.id}`,
     );
+  });
+
+  it("retrouve une facture par sa référence complète, telle qu'affichée", async () => {
+    const result = await list({ q: "F-202610-0001" });
+    expect(result.rows.map((r) => r.reference)).toEqual(["F-202610-0001"]);
   });
 
   it("ignore un onglet inconnu et une recherche qui ressemble à une expression", async () => {

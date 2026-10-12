@@ -96,19 +96,44 @@ export async function findManagerByStripeCustomerId(mongoDb, customerId) {
  */
 export async function findManagerPaidSubscription(mongoDb, organizationId) {
   if (typeof organizationId !== "string" || !organizationId) return null;
-  const subscription = await mongoDb.collection("subscription").findOne(
-    { referenceId: organizationId, status: { $in: LIVE_STATUSES } },
-    {
-      projection: { stripeCustomerId: 1, status: 1, plan: 1 },
-      sort: { updatedAt: -1 },
-    },
-  );
-  if (!subscription?.stripeCustomerId) return null;
-  const manager = await findManagerByStripeCustomerId(
-    mongoDb,
-    subscription.stripeCustomerId,
-  );
-  return manager ? { subscription, manager } : null;
+  // Tous les documents vivants : si l'un d'eux est sur le client Stripe
+  // d'un cabinet, l'espace est payé par ce cabinet (le portail Stripe de
+  // Better Auth prend le premier document actif, pas le plus récent)
+  const subscriptions = await mongoDb
+    .collection("subscription")
+    .find(
+      { referenceId: organizationId, status: { $in: LIVE_STATUSES } },
+      { projection: { stripeCustomerId: 1, status: 1, plan: 1 } },
+    )
+    .toArray();
+  for (const subscription of subscriptions) {
+    if (!subscription.stripeCustomerId) continue;
+    const manager = await findManagerByStripeCustomerId(
+      mongoDb,
+      subscription.stripeCustomerId,
+    );
+    if (manager) return { subscription, manager };
+  }
+  return null;
+}
+
+/**
+ * L'abonnement de l'espace est-il (ou sera-t-il) payé par un cabinet ? Soit
+ * un abonnement en cours sur le client Stripe d'un cabinet, soit une fiche
+ * active où le cabinet a coché « Je paierai » (offre pas encore choisie).
+ * Sert à refuser au client de souscrire lui-même (double abonnement).
+ */
+export async function isOrgPaidByManager(mongoDb, organizationId) {
+  const orgOid = asObjectId(organizationId);
+  if (!orgOid) return false;
+  const link = await mongoDb
+    .collection("managedclients")
+    .findOne(
+      { organizationId: orgOid, status: "active", payer: "manager" },
+      { projection: { _id: 1 } },
+    );
+  if (link) return true;
+  return Boolean(await findManagerPaidSubscription(mongoDb, String(orgOid)));
 }
 
 /** Retire de la liste les clients Stripe des gestionnaires. */
@@ -195,6 +220,38 @@ export async function getManagerCoupon({ stripe, percent }) {
   return id;
 }
 
+/** Ferme les paiements Stripe encore ouverts pour ce client du cabinet. */
+async function expireOpenCheckouts(stripe, customerId, managedClientId) {
+  try {
+    const { data } = await stripe.checkout.sessions.list({
+      customer: customerId,
+      status: "open",
+      limit: 100,
+    });
+    await Promise.all(
+      data
+        .filter(
+          (session) => session.metadata?.managedClientId === managedClientId,
+        )
+        .map((session) => stripe.checkout.sessions.expire(session.id)),
+    );
+  } catch (error) {
+    console.error(
+      "[MANAGER-BILLING] Paiements ouverts non fermés:",
+      error?.message,
+    );
+  }
+}
+
+// Liste Stripe complète (au-delà de 100) ; les simulations de test
+// renvoient une simple page
+async function listAll(list) {
+  if (typeof list?.autoPagingToArray === "function") {
+    return list.autoPagingToArray({ limit: 1000 });
+  }
+  return (await list).data;
+}
+
 /** Carte enregistrée du cabinet, ou null. */
 async function savedCard(stripe, customerId) {
   const customer = await stripe.customers.retrieve(customerId);
@@ -249,10 +306,26 @@ export async function syncManagedSubscription(mongoDb, stripeSubscription) {
   };
 
   const subscriptions = mongoDb.collection("subscription");
-  const existing = await subscriptions.findOne(
-    { referenceId },
-    { projection: { _id: 1 }, sort: { updatedAt: -1 } },
+  // Même abonnement Stripe : mise à jour. Sinon, on ne remplace qu'un
+  // document terminé : un autre abonnement encore vivant sur l'espace (celui
+  // du client, ou un second paiement du cabinet) n'est jamais écrasé.
+  const same = await subscriptions.findOne(
+    { stripeSubscriptionId: stripeSubscription.id },
+    { projection: { _id: 1 } },
   );
+  const other = same
+    ? null
+    : await subscriptions.findOne(
+        { referenceId },
+        { projection: { _id: 1, status: 1 }, sort: { updatedAt: -1 } },
+      );
+  if (other && LIVE_STATUSES.includes(other.status)) {
+    console.error(
+      `[MANAGER-BILLING] Espace ${referenceId} déjà abonné : abonnement ${stripeSubscription.id} non enregistré (double paiement à vérifier)`,
+    );
+    return null;
+  }
+  const existing = same || other;
   if (existing) {
     await subscriptions.updateOne({ _id: existing._id }, { $set: fields });
   } else {
@@ -329,14 +402,57 @@ export async function startManagedSubscription({
   }
 
   const organizationId = String(link.organizationId);
-  const current = await mongoDb
-    .collection("subscription")
+  // Le client a pu retirer le cabinet de ses membres entre-temps
+  const membership = await mongoDb
+    .collection("member")
     .findOne(
-      { referenceId: organizationId, status: { $in: LIVE_STATUSES } },
+      { userId: manager.userId, organizationId: link.organizationId },
       { projection: { _id: 1 } },
     );
+  if (!membership) {
+    throw new ManagedClientError(
+      409,
+      "Vous n'avez plus accès à l'espace de ce client.",
+    );
+  }
+
+  const current = await mongoDb.collection("subscription").findOne(
+    { referenceId: organizationId, status: { $in: LIVE_STATUSES } },
+    {
+      projection: {
+        _id: 1,
+        status: 1,
+        stripeSubscriptionId: 1,
+        stripeCustomerId: 1,
+      },
+    },
+  );
   if (current) {
-    throw new ManagedClientError(409, "Cet espace a déjà un abonnement.");
+    // Paiement laissé à valider (banque) par ce cabinet : on l'abandonne
+    // pour en relancer un, au lieu de bloquer l'espace jusqu'à expiration
+    const abandoned =
+      current.status === "incomplete" &&
+      manager.stripeCustomerId &&
+      current.stripeCustomerId === manager.stripeCustomerId;
+    if (!abandoned) {
+      throw new ManagedClientError(409, "Cet espace a déjà un abonnement.");
+    }
+    if (current.stripeSubscriptionId) {
+      await stripe.subscriptions
+        .cancel(current.stripeSubscriptionId)
+        .catch((error) =>
+          console.error(
+            "[MANAGER-BILLING] Abonnement incomplet non annulé:",
+            error?.message,
+          ),
+        );
+    }
+    await mongoDb
+      .collection("subscription")
+      .updateOne(
+        { _id: current._id },
+        { $set: { status: "incomplete_expired", updatedAt: new Date() } },
+      );
   }
 
   const org = await mongoDb.collection("organization").findOne(
@@ -382,6 +498,10 @@ export async function startManagedSubscription({
   const discounts = coupon ? [{ coupon }] : undefined;
   const orgName = org.companyName || org.name || "Espace";
 
+  // Un seul paiement Stripe ouvert par client : celui d'un autre onglet est
+  // fermé, il ne pourra plus aboutir à un second abonnement
+  await expireOpenCheckouts(stripe, customerId, String(link._id));
+
   const paymentMethod = await savedCard(stripe, customerId);
   if (paymentMethod) {
     const subscription = await stripe.subscriptions.create(
@@ -411,6 +531,18 @@ export async function startManagedSubscription({
     };
   }
 
+  // Stripe Checkout refuse une fin d'essai à moins de 48 h : l'essai qui se
+  // termine avant est alors facturé dès la validation
+  const checkoutTrialEnd =
+    trialEndUnix && trialEndUnix * 1000 > Date.now() + 49 * 3600_000
+      ? trialEndUnix
+      : null;
+  const checkoutMetadata = {
+    ...metadata,
+    convertedFromAppTrial: checkoutTrialEnd ? "true" : "false",
+    appTrialEndDate: checkoutTrialEnd ? metadata.appTrialEndDate : "",
+  };
+
   const root = String(baseUrl || "").replace(/\/+$/, "");
   const checkout = await stripe.checkout.sessions.create({
     customer: customerId,
@@ -424,15 +556,15 @@ export async function startManagedSubscription({
     customer_update: { name: "auto", address: "auto" },
     success_url: `${root}/dashboard/gestionnaire?abonnement={CHECKOUT_SESSION_ID}`,
     cancel_url: `${root}/dashboard/gestionnaire`,
-    metadata,
+    metadata: checkoutMetadata,
     subscription_data: {
       description: `Newbi ${orgName}`,
-      metadata,
-      ...(trialEndUnix ? { trial_end: trialEndUnix } : {}),
+      metadata: checkoutMetadata,
+      ...(checkoutTrialEnd ? { trial_end: checkoutTrialEnd } : {}),
     },
     custom_text: {
       submit: {
-        message: trialEndUnix
+        message: checkoutTrialEnd
           ? `Abonnement de ${orgName}. Aucun prélèvement avant la fin de son essai (${trialEnd.toLocaleDateString("fr-FR")}).`
           : `Abonnement de ${orgName}.`,
       },
@@ -475,7 +607,87 @@ export async function confirmManagedCheckout({
     subscription.metadata = { ...session.metadata, ...subscription.metadata };
   }
   const organizationId = await syncManagedSubscription(mongoDb, subscription);
+  if (!organizationId) {
+    // L'espace avait déjà un abonnement (autre onglet, client) : ce second
+    // abonnement n'est pas gardé ; en essai, rien n'a encore été prélevé
+    if (subscription.status === "trialing") {
+      await stripe.subscriptions.cancel(subscription.id).catch(() => {});
+      throw new ManagedClientError(
+        409,
+        "Cet espace avait déjà un abonnement : ce second paiement a été annulé, rien ne vous sera prélevé.",
+      );
+    }
+    throw new ManagedClientError(
+      409,
+      "Cet espace avait déjà un abonnement : écrivez-nous pour éviter un double prélèvement.",
+    );
+  }
   return { status: "active", organizationId };
+}
+
+/**
+ * Fin du lien entre un cabinet et l'espace d'un client, quand le cabinet
+ * n'en est plus membre (le client l'a retiré, ou il est parti). La fiche
+ * passe « ended » ; si le cabinet payait, son abonnement s'arrête à la fin
+ * de la période en cours, après quoi l'espace passe en lecture seule.
+ * @returns {Promise<boolean>} true si un lien a été terminé
+ */
+export async function endManagedClientLink({
+  mongoDb,
+  stripe,
+  organizationId,
+  userId,
+  endedBy = "member_removed",
+}) {
+  const orgOid = asObjectId(organizationId ? String(organizationId) : null);
+  const uid = asObjectId(userId ? String(userId) : null);
+  if (!orgOid || !uid) return false;
+
+  const manager = await mongoDb
+    .collection("accountmanagers")
+    .findOne({ userId: uid }, { projection: { stripeCustomerId: 1 } });
+  if (!manager) return false;
+
+  const now = new Date();
+  const link = await mongoDb
+    .collection("managedclients")
+    .findOneAndUpdate(
+      { managerId: manager._id, organizationId: orgOid, status: "active" },
+      { $set: { status: "ended", endedAt: now, endedBy, updatedAt: now } },
+    );
+  const ended = link?.value ?? link;
+  if (!ended?._id) return false;
+
+  if (ended.payer === "manager" && manager.stripeCustomerId) {
+    const subscriptions = await mongoDb
+      .collection("subscription")
+      .find({
+        referenceId: String(orgOid),
+        stripeCustomerId: manager.stripeCustomerId,
+        status: { $in: LIVE_STATUSES },
+      })
+      .toArray();
+    for (const sub of subscriptions) {
+      if (!sub.stripeSubscriptionId) continue;
+      try {
+        await stripe.subscriptions.update(sub.stripeSubscriptionId, {
+          cancel_at_period_end: true,
+        });
+        await mongoDb
+          .collection("subscription")
+          .updateOne(
+            { _id: sub._id },
+            { $set: { cancelAtPeriodEnd: true, updatedAt: now } },
+          );
+      } catch (error) {
+        console.error(
+          `[MANAGER-BILLING] Résiliation de ${sub.stripeSubscriptionId} impossible:`,
+          error?.message,
+        );
+      }
+    }
+  }
+  return true;
 }
 
 /**
@@ -518,17 +730,19 @@ export async function getManagerBillingSummary({ mongoDb, stripe, manager }) {
   const customerId = manager.stripeCustomerId || null;
   if (customerId) {
     const [subs, invs, customer] = await Promise.all([
-      stripe.subscriptions.list({
-        customer: customerId,
-        status: "all",
-        limit: 100,
-      }),
+      listAll(
+        stripe.subscriptions.list({
+          customer: customerId,
+          status: "all",
+          limit: 100,
+        }),
+      ),
       stripe.invoices.list({ customer: customerId, limit: 24 }),
       stripe.customers.retrieve(customerId, {
         expand: ["invoice_settings.default_payment_method"],
       }),
     ]);
-    subscriptions = subs.data.filter((s) => LIVE_STATUSES.includes(s.status));
+    subscriptions = subs.filter((s) => LIVE_STATUSES.includes(s.status));
     invoices = invs.data.filter((i) => i.status !== "draft");
 
     let method = customer?.invoice_settings?.default_payment_method;
@@ -554,8 +768,14 @@ export async function getManagerBillingSummary({ mongoDb, stripe, manager }) {
   const items = subscriptions.map((s) => {
     const referenceId = s.metadata?.referenceId || null;
     if (referenceId) paidOrgIds.add(referenceId);
-    const price = s.items?.data?.[0]?.price;
-    const unitAmount = price?.unit_amount ?? 0;
+    const items = s.items?.data || [];
+    const price = items[0]?.price;
+    // Offre + utilisateurs supplémentaires éventuels, ajoutés par le client
+    const unitAmount = items.reduce(
+      (sum, item) =>
+        sum + (item.price?.unit_amount ?? 0) * (item.quantity ?? 1),
+      0,
+    );
     const discountPercent = Number(s.metadata?.discountPercent) || 0;
     const amount = Math.round(unitAmount * (1 - discountPercent / 100));
     const interval = price?.recurring?.interval === "year" ? "year" : "month";
@@ -605,6 +825,7 @@ export async function getManagerBillingSummary({ mongoDb, stripe, manager }) {
   );
 
   return {
+    suspended: manager.status !== "active",
     discountPercent: Number(manager.discountPercent) || 0,
     currency: "eur",
     monthlyTotal: billed.reduce((sum, i) => sum + i.monthlyAmount, 0),

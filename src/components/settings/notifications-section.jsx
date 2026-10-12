@@ -36,6 +36,17 @@ import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitatio
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import { TableEmptyState } from "@/src/components/ui/table-empty-state";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/src/components/ui/alert-dialog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -689,16 +700,44 @@ export function NotificationsSection({ onClose }) {
                       >
                         Voir
                       </Button>
-                      <button
-                        type="button"
-                        aria-label="Refuser l'invitation"
-                        onClick={(e) =>
-                          handleRefuseCabinetInvitation(e, invitation.id)
-                        }
-                        className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
-                      >
-                        <XIcon className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Refus définitif : confirmé avant */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label="Refuser l'invitation"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
+                          >
+                            <XIcon className="w-3.5 h-3.5" />
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Refuser l&apos;invitation de{" "}
+                              {invitation.managerName} ?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Le cabinet n&apos;aura pas accès à vos espaces.
+                              Pour changer d&apos;avis, il devra vous envoyer
+                              une nouvelle invitation.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={(e) =>
+                                handleRefuseCabinetInvitation(e, invitation.id)
+                              }
+                            >
+                              Refuser
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 );

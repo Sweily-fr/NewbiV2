@@ -46,6 +46,13 @@ function makeDb() {
         Object.assign(row, update.$set);
         return { matchedCount: 1, modifiedCount: 1 };
       },
+      async findOneAndUpdate(filter, update) {
+        const row = rows.find((d) => matches(d, filter));
+        if (!row) return null;
+        const before = { ...row };
+        Object.assign(row, update.$set);
+        return before;
+      },
       find(filter) {
         const result = rows.filter((d) => matches(d, filter));
         return { toArray: async () => result };
@@ -121,11 +128,15 @@ function makeStripe({
       })),
       list: vi.fn(async () => ({ data: [] })),
       retrieve: vi.fn(),
+      cancel: vi.fn(async (id) => ({ id, status: "canceled" })),
+      update: vi.fn(async (id, params) => ({ id, ...params })),
     },
     checkout: {
       sessions: {
         create: vi.fn(async () => ({ url: "https://checkout.stripe.com/c/1" })),
         retrieve: vi.fn(),
+        list: vi.fn(async () => ({ data: [] })),
+        expire: vi.fn(async (id) => ({ id, status: "expired" })),
       },
     },
     invoices: { list: vi.fn(async () => ({ data: [] })) },
@@ -139,6 +150,8 @@ const {
   getManagerBillingSummary,
   findManagerPaidSubscription,
   withoutManagerCustomers,
+  isOrgPaidByManager,
+  endManagedClientLink,
 } = await import("@/src/lib/manager-billing");
 
 let db;
@@ -189,6 +202,11 @@ beforeEach(async () => {
     organizationId: orgId,
     status: "active",
     payer: "manager",
+  });
+  await db.collection("member").insertOne({
+    userId: managerUserId,
+    organizationId: orgId,
+    role: "accountant",
   });
 });
 
@@ -326,6 +344,96 @@ describe("startManagedSubscription", () => {
     await expect(start(stripe)).rejects.toMatchObject({ status: 409 });
     expect(stripe.checkout.sessions.create).not.toHaveBeenCalled();
     expect(stripe.subscriptions.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("startManagedSubscription : garde-fous", () => {
+  it("refuse si le client a retiré le cabinet de ses membres", async () => {
+    db.data.member = [];
+    await expect(start(makeStripe())).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("ferme les paiements Stripe encore ouverts pour ce client", async () => {
+    manager.stripeCustomerId = "cus_cabinet";
+    const stripe = makeStripe();
+    stripe.checkout.sessions.list.mockResolvedValue({
+      data: [
+        { id: "cs_old", metadata: { managedClientId: String(linkId) } },
+        { id: "cs_other", metadata: { managedClientId: "autre" } },
+      ],
+    });
+    await start(stripe);
+    expect(stripe.checkout.sessions.expire).toHaveBeenCalledExactlyOnceWith(
+      "cs_old",
+    );
+  });
+
+  it("un paiement laissé à valider par le cabinet ne bloque pas une nouvelle tentative", async () => {
+    manager.stripeCustomerId = "cus_cabinet";
+    await db.collection("subscription").insertOne({
+      referenceId: String(orgId),
+      status: "incomplete",
+      stripeCustomerId: "cus_cabinet",
+      stripeSubscriptionId: "sub_abandon",
+    });
+    const stripe = makeStripe();
+    expect(await start(stripe)).toMatchObject({ status: "redirect" });
+    expect(stripe.subscriptions.cancel).toHaveBeenCalledWith("sub_abandon");
+    expect(db.data.subscription[0].status).toBe("incomplete_expired");
+  });
+
+  it("essai qui finit dans moins de 48 h : pas de fin d'essai dans Stripe Checkout", async () => {
+    db.data.organization[0].trialEndDate = new Date(
+      Date.now() + 20 * 3600_000,
+    ).toISOString();
+    const stripe = makeStripe();
+    await start(stripe);
+    const session = stripe.checkout.sessions.create.mock.calls[0][0];
+    expect(session.subscription_data.trial_end).toBeUndefined();
+    expect(session.subscription_data.metadata.convertedFromAppTrial).toBe(
+      "false",
+    );
+  });
+});
+
+describe("endManagedClientLink", () => {
+  it("cabinet retiré de l'espace : fiche terminée, son abonnement s'arrête en fin de période", async () => {
+    db.data.accountmanagers[0].stripeCustomerId = "cus_cabinet";
+    await db.collection("subscription").insertOne({
+      referenceId: String(orgId),
+      status: "active",
+      stripeCustomerId: "cus_cabinet",
+      stripeSubscriptionId: "sub_cab",
+    });
+    const stripe = makeStripe();
+    const ended = await endManagedClientLink({
+      mongoDb: db,
+      stripe,
+      organizationId: String(orgId),
+      userId: String(managerUserId),
+    });
+    expect(ended).toBe(true);
+    expect(db.data.managedclients[0]).toMatchObject({
+      status: "ended",
+      endedBy: "member_removed",
+    });
+    expect(stripe.subscriptions.update).toHaveBeenCalledWith("sub_cab", {
+      cancel_at_period_end: true,
+    });
+    expect(db.data.subscription[0].cancelAtPeriodEnd).toBe(true);
+  });
+
+  it("ne fait rien pour un membre qui n'est pas un cabinet", async () => {
+    const stripe = makeStripe();
+    expect(
+      await endManagedClientLink({
+        mongoDb: db,
+        stripe,
+        organizationId: String(orgId),
+        userId: String(new ObjectId()),
+      }),
+    ).toBe(false);
+    expect(db.data.managedclients[0].status).toBe("active");
   });
 });
 
@@ -509,5 +617,13 @@ describe("protections côté client", () => {
     expect(
       await withoutManagerCustomers(db, ["cus_client", "cus_cabinet"]),
     ).toEqual(["cus_client"]);
+  });
+
+  it("le client ne peut pas souscrire un espace que son cabinet paiera", async () => {
+    // Offre pas encore choisie : la fiche suffit
+    expect(await isOrgPaidByManager(db, String(orgId))).toBe(true);
+    db.data.managedclients[0].payer = "client";
+    expect(await isOrgPaidByManager(db, String(orgId))).toBe(false);
+    expect(await isOrgPaidByManager(db, { $ne: null })).toBe(false);
   });
 });

@@ -87,6 +87,7 @@ const {
   getClientInvitation,
   respondToClientInvitation,
   cancelClientInvitation,
+  relaunchClientInvitation,
 } = await import("@/src/lib/managed-client-invitations");
 
 let db;
@@ -425,5 +426,55 @@ describe("cancelClientInvitation", () => {
     await cancelClientInvitation(db, { managerId, id });
     expect(db.data.managedclients[0].status).toBe("canceled");
     expect(await listPendingClientInvitations(db, clientId)).toEqual([]);
+  });
+});
+
+describe("relance et retrait des invitations closes", () => {
+  const manager = {
+    _id: managerId,
+    userId: managerUserId,
+    name: "Compta Dupont",
+  };
+
+  it("une invitation expirée se relance : nouvelle invitation, l'ancienne disparaît", async () => {
+    const { id } = await invite();
+    db.data.managedclients[0].expiresAt = new Date(Date.now() - 1000);
+    mocks.sendEmail.mockClear();
+    const result = await relaunchClientInvitation({
+      mongoDb: db,
+      manager,
+      id,
+      actor: { type: "manager", email: "sophie@dupont.fr" },
+    });
+    expect(result.id).not.toBe(id);
+    expect(db.data.managedclients.map((l) => l.status)).toEqual([
+      "canceled",
+      "pending",
+    ]);
+    expect(mocks.sendEmail).toHaveBeenCalledOnce();
+  });
+
+  it("une invitation encore valable ne se relance pas", async () => {
+    const { id } = await invite();
+    await expect(
+      relaunchClientInvitation({ mongoDb: db, manager, id }),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("refus récent : pas de nouvelle invitation avant 7 jours ; retrait possible", async () => {
+    const { id } = await invite();
+    await respondToClientInvitation({
+      mongoDb: db,
+      id,
+      user: client,
+      action: "refuse",
+    });
+    await expect(
+      relaunchClientInvitation({ mongoDb: db, manager, id }),
+    ).rejects.toMatchObject({ status: 429 });
+    await expect(invite()).rejects.toMatchObject({ status: 429 });
+
+    await cancelClientInvitation(db, { managerId, id });
+    expect(db.data.managedclients[0].status).toBe("canceled");
   });
 });

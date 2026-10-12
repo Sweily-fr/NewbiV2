@@ -32,16 +32,16 @@ export function GestionnaireBanner() {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-[#5a50ff]/15 bg-[#5a50ff]/[0.06] px-4 py-2 text-[13px] lg:px-6">
       <Briefcase className="size-4 shrink-0 text-[#5a50ff]" />
       <span className="min-w-0 flex-1">
-        Dossier de <span className="font-medium">{organization.name}</span> :
-        vous agissez pour le compte de{" "}
-        <span className="font-medium">{manager.name}</span>.
+        Vous êtes dans l&apos;espace de{" "}
+        <span className="font-medium">{organization.name}</span>, en tant que{" "}
+        <span className="font-medium">{manager.name}</span> (droits Comptable).
       </span>
       <Link
         href={GESTIONNAIRE_PATH}
         className="inline-flex items-center gap-1 font-medium text-[#5a50ff] hover:underline underline-offset-4"
       >
         <ArrowLeft className="size-3.5" />
-        Espace gestionnaire
+        Retour à l&apos;espace gestionnaire
       </Link>
     </div>
   );

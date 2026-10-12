@@ -2008,8 +2008,27 @@ export const organizationPlugin = organization({
     afterAddMember: async ({ organization }) => {
       await syncOrgSeatsSafe(organization?.id, "afterAddMember");
     },
-    afterRemoveMember: async ({ organization }) => {
+    afterRemoveMember: async ({ member, organization }) => {
       await syncOrgSeatsSafe(organization?.id, "afterRemoveMember");
+      // Cabinet (compte gestionnaire) retiré de l'espace d'un client : fin
+      // du lien, et de l'abonnement qu'il payait à la fin de la période
+      try {
+        const { mongoDb } = await import("./mongodb.js");
+        const { endManagedClientLink } = await import("./manager-billing.js");
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+        await endManagedClientLink({
+          mongoDb,
+          stripe,
+          organizationId: organization?.id,
+          userId: member?.userId,
+        });
+      } catch (error) {
+        console.error(
+          "[MANAGED-CLIENT] Fin du lien après retrait du membre:",
+          error?.message,
+        );
+      }
     },
     afterAcceptInvitation: async ({ organization }) => {
       await syncOrgSeatsSafe(organization?.id, "afterAcceptInvitation");

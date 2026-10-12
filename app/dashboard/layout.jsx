@@ -11,6 +11,31 @@ import { findActiveAccountManagerByUserId } from "@/src/lib/managed-clients";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
+ * L'utilisateur est-il le cabinet (compte gestionnaire actif) qui suit cet
+ * espace (fiche managedclients active) ?
+ */
+async function isManagedClientOfUser(userObjectId, organizationId) {
+  const orgOid = ObjectId.isValid(organizationId)
+    ? new ObjectId(organizationId)
+    : null;
+  if (!orgOid) return false;
+  const manager = await mongoDb
+    .collection("accountmanagers")
+    .findOne(
+      { userId: userObjectId, status: "active" },
+      { projection: { _id: 1 } },
+    );
+  if (!manager) return false;
+  const link = await mongoDb
+    .collection("managedclients")
+    .findOne(
+      { managerId: manager._id, organizationId: orgOid, status: "active" },
+      { projection: { _id: 1 } },
+    );
+  return Boolean(link);
+}
+
+/**
  * Détermine le niveau d'accès d'une organisation à partir de son abonnement.
  * @param {string} orgId - ID de l'organisation
  * @returns {Promise<"full"|"readonly"|"none">}
@@ -169,6 +194,21 @@ async function checkSubscription(userId, activeOrgId) {
     console.log(
       `[Dashboard Layout] Pas d'abonnement plein pour org active: ${organizationId} (état: ${activeState})`,
     );
+
+    // Cabinet (compte gestionnaire) dans l'espace d'un client qu'il suit :
+    // il reste dans cet espace, en lecture seule s'il n'est pas abonné, au
+    // lieu d'être basculé dans un autre (« Ouvrir » un client expiré
+    // l'envoyait chez un autre client ou chez lui)
+    if (await isManagedClientOfUser(userObjectId, organizationId)) {
+      return {
+        access: activeState === "readonly" ? "readonly" : "none",
+        reason:
+          activeState === "readonly"
+            ? "subscription_expired"
+            : "no_subscription",
+        organizationId,
+      };
+    }
 
     // 3. Fallback: Chercher une autre organisation avec un abonnement valide
     const allMembers = await mongoDb

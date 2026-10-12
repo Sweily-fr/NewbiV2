@@ -100,6 +100,144 @@ export function parseManagedClientInput(input = {}) {
   };
 }
 
+/**
+ * E-mail de bienvenue d'un client créé par son cabinet : lien pour choisir
+ * son mot de passe (même jeton que « mot de passe oublié » de Better Auth,
+ * valable 7 jours). Ne lève pas : renvoie si l'e-mail est parti.
+ */
+async function sendWelcomeEmail({
+  mongoDb,
+  manager,
+  userId,
+  email,
+  companyName,
+  paidByManager,
+  baseUrl,
+}) {
+  const now = new Date();
+  const token = crypto.randomBytes(32).toString("hex");
+  await mongoDb.collection("verification").insertOne({
+    identifier: `reset-password:${token}`,
+    value: userId.toString(),
+    expiresAt: new Date(now.getTime() + WELCOME_LINK_DAYS * 86400000),
+    createdAt: now,
+    updatedAt: now,
+  });
+  const url = `${baseUrl.replace(/\/+$/, "")}/auth/reset-password?token=${token}&bienvenue=1`;
+
+  try {
+    const result = await sendEmail({
+      to: email,
+      subject: `${manager.name} a créé votre espace Newbi`,
+      html: emailTemplates.managedClientWelcome({
+        managerName: manager.name,
+        companyName,
+        url,
+        paidByManager,
+        trialDays: CLIENT_APP_TRIAL_DAYS,
+      }),
+    });
+    // Refus de Resend (adresse invalide, domaine…) : renvoyé, pas levé
+    if (result?.error) throw new Error(result.error.message || "Envoi refusé");
+    return true;
+  } catch (error) {
+    // L'espace existe : l'e-mail peut être renvoyé depuis la liste des clients
+    console.error(
+      `[MANAGED-CLIENT] E-mail de bienvenue non envoyé à ${email}:`,
+      error?.message,
+    );
+    return false;
+  }
+}
+
+/**
+ * Le cabinet renvoie l'e-mail de bienvenue d'un client qu'il a créé et qui
+ * n'a pas encore choisi son mot de passe (lien expiré, e-mail perdu).
+ */
+export async function resendWelcomeEmail({
+  mongoDb,
+  manager,
+  linkId,
+  baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+}) {
+  const linkOid = asObjectId(linkId);
+  const link = linkOid
+    ? await mongoDb
+        .collection("managedclients")
+        .findOne({ _id: linkOid, managerId: manager._id, status: "active" })
+    : null;
+  if (!link?.organizationId) {
+    throw new ManagedClientError(404, "Client introuvable.");
+  }
+  const owner = await mongoDb
+    .collection("member")
+    .findOne(
+      { organizationId: link.organizationId, role: "owner" },
+      { projection: { userId: 1 } },
+    );
+  const user = owner
+    ? await mongoDb
+        .collection("user")
+        .findOne(
+          { _id: owner.userId },
+          { projection: { email: 1, managedByAccountManagerId: 1 } },
+        )
+    : null;
+  // Seulement un compte créé par ce cabinet, jamais celui d'un client invité
+  if (!user || String(user.managedByAccountManagerId) !== String(manager._id)) {
+    throw new ManagedClientError(404, "Client introuvable.");
+  }
+  if (await hasPassword(mongoDb, user._id)) {
+    throw new ManagedClientError(
+      409,
+      "Ce client a déjà choisi son mot de passe. S'il l'a oublié, il peut utiliser « Mot de passe oublié ».",
+    );
+  }
+  const org = await mongoDb
+    .collection("organization")
+    .findOne(
+      { _id: link.organizationId },
+      { projection: { name: 1, companyName: 1 } },
+    );
+  const emailSent = await sendWelcomeEmail({
+    mongoDb,
+    manager,
+    userId: user._id,
+    email: user.email,
+    companyName: org?.companyName || org?.name,
+    paidByManager: link.payer === "manager",
+    baseUrl,
+  });
+  return { email: user.email, emailSent };
+}
+
+// Mot de passe déjà choisi (compte « credential » de Better Auth)
+async function hasPassword(mongoDb, userId) {
+  const account = await mongoDb.collection("account").findOne(
+    {
+      userId: { $in: [userId, String(userId)] },
+      providerId: "credential",
+      password: { $exists: true },
+    },
+    { projection: { _id: 1 } },
+  );
+  return Boolean(account);
+}
+
+// Adresse déjà inscrite : le client s'invite (depuis l'espace gestionnaire,
+// l'admin n'a pas cette action)
+const existingAccountMessage = (actor) =>
+  actor?.type === "admin"
+    ? "Cette adresse a déjà un compte Newbi : le gestionnaire doit l'inviter depuis son espace (Clients > Inviter un client)."
+    : "Cette adresse a déjà un compte Newbi : invitez plutôt ce client avec « Inviter un client ».";
+
+/** Compte gestionnaire d'un utilisateur, actif ou suspendu, ou null. */
+export async function findAccountManagerByUserId(mongoDb, userId) {
+  const uid = asObjectId(userId);
+  if (!uid) return null;
+  return mongoDb.collection("accountmanagers").findOne({ userId: uid });
+}
+
 /** Gestionnaire actif d'un utilisateur, ou null. */
 export async function findActiveAccountManagerByUserId(mongoDb, userId) {
   const uid = asObjectId(userId);
@@ -137,15 +275,14 @@ export async function createManagedClient({
   if (manager.status !== "active") {
     throw new ManagedClientError(
       403,
-      "Ce gestionnaire est suspendu : il ne peut pas créer de client.",
+      actor?.type === "admin"
+        ? "Ce gestionnaire est suspendu : il ne peut pas créer de client."
+        : "Votre compte gestionnaire est suspendu : vous ne pouvez plus créer de client.",
     );
   }
 
   if (await mongoDb.collection("user").findOne({ email: data.email })) {
-    throw new ManagedClientError(
-      409,
-      "Cette adresse a déjà un compte Newbi : invitez plutôt ce client avec « Inviter un client ».",
-    );
+    throw new ManagedClientError(409, existingAccountMessage(actor));
   }
 
   const managerUser = await mongoDb
@@ -261,42 +398,23 @@ export async function createManagedClient({
     });
   } catch (error) {
     await rollback(mongoDb, created);
+    // Même adresse créée en même temps (index unique sur l'e-mail)
+    if (error?.code === 11000 && !created.userId) {
+      throw new ManagedClientError(409, existingAccountMessage(actor));
+    }
     throw error;
   }
 
-  // 5. Lien pour choisir le mot de passe : même jeton que « mot de passe
-  // oublié » de Better Auth, mais valable 7 jours et avec un e-mail dédié
-  const token = crypto.randomBytes(32).toString("hex");
-  await mongoDb.collection("verification").insertOne({
-    identifier: `reset-password:${token}`,
-    value: userId.toString(),
-    expiresAt: new Date(now.getTime() + WELCOME_LINK_DAYS * 86400000),
-    createdAt: now,
-    updatedAt: now,
+  // 5. Lien pour choisir le mot de passe, par e-mail
+  const emailSent = await sendWelcomeEmail({
+    mongoDb,
+    manager,
+    userId,
+    email: data.email,
+    companyName: data.companyName,
+    paidByManager: data.payer === "manager",
+    baseUrl,
   });
-  const url = `${baseUrl.replace(/\/+$/, "")}/auth/reset-password?token=${token}`;
-
-  let emailSent = true;
-  try {
-    const result = await sendEmail({
-      to: data.email,
-      subject: `${manager.name} a créé votre espace Newbi`,
-      html: emailTemplates.managedClientWelcome({
-        managerName: manager.name,
-        companyName: data.companyName,
-        url,
-      }),
-    });
-    // Refus de Resend (adresse invalide, domaine…) : renvoyé, pas levé
-    if (result?.error) throw new Error(result.error.message || "Envoi refusé");
-  } catch (error) {
-    // L'espace existe : l'e-mail pourra être renvoyé, on ne défait rien
-    emailSent = false;
-    console.error(
-      `[MANAGED-CLIENT] E-mail de bienvenue non envoyé à ${data.email}:`,
-      error?.message,
-    );
-  }
 
   return {
     organizationId: created.organizationId.toString(),
@@ -356,7 +474,9 @@ export async function listManagedClients(mongoDb, managerId) {
       .find(
         {
           referenceId: { $in: orgIds.map(String) },
-          status: { $in: ["active", "trialing", "past_due"] },
+          status: {
+            $in: ["active", "trialing", "past_due", "unpaid", "incomplete"],
+          },
         },
         { projection: { referenceId: 1, status: 1 } },
       )
@@ -366,9 +486,30 @@ export async function listManagedClients(mongoDb, managerId) {
     .collection("user")
     .find(
       { _id: { $in: owners.map((o) => o.userId) } },
-      { projection: { email: 1, name: 1 } },
+      { projection: { email: 1, name: 1, managedByAccountManagerId: 1 } },
     )
     .toArray();
+  // Dirigeants créés par ce cabinet qui n'ont pas encore choisi leur mot de
+  // passe : l'e-mail de bienvenue peut leur être renvoyé
+  const createdHere = ownerUsers.filter(
+    (u) => String(u.managedByAccountManagerId) === String(managerOid),
+  );
+  const withPassword = createdHere.length
+    ? await mongoDb
+        .collection("account")
+        .find(
+          {
+            userId: {
+              $in: createdHere.flatMap((u) => [u._id, String(u._id)]),
+            },
+            providerId: "credential",
+            password: { $exists: true },
+          },
+          { projection: { userId: 1 } },
+        )
+        .toArray()
+    : [];
+  const hasPassword = new Set(withPassword.map((a) => String(a.userId)));
 
   const orgById = new Map(orgs.map((o) => [String(o._id), o]));
   const ownerByOrg = new Map(
@@ -402,6 +543,12 @@ export async function listManagedClients(mongoDb, managerId) {
       ownerName: owner?.name || null,
       payer: link.payer,
       status: invitationExpired ? "expired" : link.status,
+      canResendWelcome:
+        link.status === "active" &&
+        !link.invitedUserId &&
+        Boolean(owner) &&
+        String(owner.managedByAccountManagerId) === String(managerOid) &&
+        !hasPassword.has(String(owner._id)),
       startedAt: link.startedAt || link.requestedAt || null,
       access: sub
         ? { type: "subscription", status: sub.status }
@@ -414,6 +561,15 @@ export async function listManagedClients(mongoDb, managerId) {
 
 // Défait une création interrompue : rien ne doit rester à moitié créé
 async function rollback(mongoDb, { userId, organizationId }) {
+  // Espace créé avant l'échec de org-creation (son id n'a pas été rendu) :
+  // retrouvé par le super admin, seul membre d'un espace tout neuf
+  if (!organizationId && userId) {
+    const owned = await mongoDb
+      .collection("member")
+      .findOne({ userId, role: "owner" }, { projection: { organizationId: 1 } })
+      .catch(() => null);
+    organizationId = owned?.organizationId || null;
+  }
   const steps = [];
   if (organizationId) {
     steps.push(

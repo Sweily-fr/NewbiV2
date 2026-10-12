@@ -4,6 +4,39 @@ import { isAppTrialEnabled } from "../lib/feature-flags.js";
 import { isTrialAppActive } from "../lib/trial-app.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+/**
+ * Membres de l'espace sans le cabinet (compte gestionnaire) qui le suit : il
+ * ne prend pas la place gratuite de comptable du client et n'est jamais
+ * facturé comme utilisateur, quel que soit le rôle que le client lui donne.
+ */
+async function withoutCabinetMembers(mongoDb, organizationId, members) {
+  try {
+    const { ObjectId } = await import("mongodb");
+    const raw = String(organizationId || "");
+    if (!ObjectId.isValid(raw)) return members;
+    const links = await mongoDb
+      .collection("managedclients")
+      .find(
+        { organizationId: new ObjectId(raw), status: "active" },
+        { projection: { managerId: 1 } },
+      )
+      .toArray();
+    if (links.length === 0) return members;
+    const managers = await mongoDb
+      .collection("accountmanagers")
+      .find(
+        { _id: { $in: links.map((l) => l.managerId) } },
+        { projection: { userId: 1 } },
+      )
+      .toArray();
+    const cabinetUserIds = new Set(managers.map((m) => String(m.userId)));
+    return members.filter((m) => !cabinetUserIds.has(String(m.userId)));
+  } catch (error) {
+    console.error("[SEATS] Cabinet non exclu du décompte:", error?.message);
+    return members;
+  }
+}
 const SEAT_PRICE_ID = process.env.STRIPE_SEAT_PRICE_ID; // Prix par siège additionnel
 const BASE_PRICE_ID = process.env.STRIPE_PRICE_ID_MONTH; // Prix du plan Pro de base
 
@@ -88,10 +121,14 @@ export class SeatSyncService {
       const isAccountant = role === "accountant";
 
       // 3. Compter les membres actuels par type
-      const members = await mongoDb
-        .collection("member")
-        .find({ organizationId: new ObjectId(organizationId) })
-        .toArray();
+      const members = await withoutCabinetMembers(
+        mongoDb,
+        organizationId,
+        await mongoDb
+          .collection("member")
+          .find({ organizationId: new ObjectId(organizationId) })
+          .toArray(),
+      );
 
       const currentUsers = members.filter(
         (m) => m.role !== "accountant" && m.role !== "owner",
@@ -304,12 +341,16 @@ export class SeatSyncService {
       const includedUsers = planLimits.users; // 1, 10 ou 25 selon le plan
 
       // 3. Compter les membres actuels
-      const members = await mongoDb
-        .collection("member")
-        .find({
-          organizationId: new ObjectId(organizationId),
-        })
-        .toArray();
+      const members = await withoutCabinetMembers(
+        mongoDb,
+        organizationId,
+        await mongoDb
+          .collection("member")
+          .find({
+            organizationId: new ObjectId(organizationId),
+          })
+          .toArray(),
+      );
 
       // 4. Exclure les comptables ET l'owner (owner n'est pas facturé, comptables sont gratuits)
       const billableMembers = members.filter(
@@ -388,10 +429,11 @@ export class SeatSyncService {
       const planLimits = this.getPlanLimits(subscription.plan);
       const includedSeats = planLimits.users;
 
-      const members = await mongoDb
-        .collection("member")
-        .find({ organizationId })
-        .toArray();
+      const members = await withoutCabinetMembers(
+        mongoDb,
+        organizationId,
+        await mongoDb.collection("member").find({ organizationId }).toArray(),
+      );
 
       // Membres facturables = tous sauf owner, accountant et pending
       const billableMembers = members.filter(

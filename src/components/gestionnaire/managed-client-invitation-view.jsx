@@ -44,11 +44,9 @@ function Notice({ title, text }) {
         <h1 className="text-2xl font-medium">{title}</h1>
         <p className="text-sm text-muted-foreground">{text}</p>
         <div className="pt-4">
-          <Link href="/dashboard">
-            <Button variant="outline" className="cursor-pointer">
-              Aller sur Newbi
-            </Button>
-          </Link>
+          <Button variant="outline" className="cursor-pointer" asChild>
+            <Link href="/dashboard">Aller sur Newbi</Link>
+          </Button>
         </div>
       </div>
     </Shell>
@@ -133,7 +131,7 @@ export default function ManagedClientInvitationView({ invitation, userEmail }) {
     return (
       <Notice
         title="Aucun espace à confier"
-        text="Vous n'êtes super admin d'aucun espace, ou vos espaces sont déjà suivis par un gestionnaire."
+        text="Vous n'êtes super admin d'aucun espace, ou vos espaces sont déjà suivis par un cabinet."
       />
     );
   }

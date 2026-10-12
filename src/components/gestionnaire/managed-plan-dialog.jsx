@@ -73,6 +73,16 @@ export default function ManagedPlanDialog({
         window.location.assign(data.url);
         return;
       }
+      if (data.status !== "active") {
+        // Banque qui demande une validation, sans page pour la faire ici
+        toast.warning(
+          `Paiement à valider auprès de votre banque pour ${client.name}. Suivez-le dans Paramètres > Dépenses clients.`,
+        );
+        setPending(false);
+        onOpenChange(false);
+        router.refresh();
+        return;
+      }
       toast.success(
         trialEndsAt
           ? `Offre enregistrée pour ${client.name}. Premier prélèvement le ${longDate.format(new Date(trialEndsAt))}.`
@@ -99,7 +109,7 @@ export default function ManagedPlanDialog({
             {trialEndsAt
               ? `Aucun prélèvement avant la fin de son essai, le ${longDate.format(new Date(trialEndsAt))}.`
               : "L'abonnement démarre tout de suite."}{" "}
-            Il est facturé à votre cabinet
+            L&apos;abonnement est facturé à votre cabinet
             {discount > 0 ? `, avec votre remise de ${discount} %.` : "."}
           </DialogDescription>
         </DialogHeader>
@@ -164,6 +174,9 @@ export default function ManagedPlanDialog({
         <p className="text-xs text-muted-foreground">
           La première fois, vous enregistrez votre carte sur la page de paiement
           sécurisée Stripe. Ensuite, elle est utilisée directement.
+          {trialEndsAt &&
+            new Date(trialEndsAt).getTime() - Date.now() < 2 * 86_400_000 &&
+            " L'essai se termine dans moins de 2 jours : sans carte déjà enregistrée, le premier prélèvement a lieu dès la validation."}
         </p>
 
         <DialogFooter>

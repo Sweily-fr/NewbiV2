@@ -25,6 +25,7 @@ vi.mock("@/src/lib/managed-clients", async (importOriginal) => {
   return {
     ...original,
     findActiveAccountManagerByUserId: async () => state.manager,
+    findAccountManagerByUserId: async () => state.manager,
     listManagedClients: async () => [],
     createManagedClient: async (args) => {
       state.created.push(args);
@@ -142,9 +143,22 @@ describe("/api/gestionnaire/clients", () => {
     expect(state.created).toHaveLength(0);
   });
 
+  it("refuse un cabinet suspendu, avec un message clair", async () => {
+    state.sessionUser = { id: "u1", email: "sophie@dupont.fr" };
+    state.manager = { _id: "m1", name: "Compta Dupont", status: "suspended" };
+    const res = await managerCall(body);
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toMatch(/suspendu/);
+    expect(state.created).toHaveLength(0);
+  });
+
   it("crée pour SON gestionnaire, jamais celui envoyé dans la requête", async () => {
     state.sessionUser = { id: "u-sophie", email: "sophie@dupont.fr" };
-    state.manager = { _id: "manager-de-sophie", name: "Compta Dupont" };
+    state.manager = {
+      _id: "manager-de-sophie",
+      name: "Compta Dupont",
+      status: "active",
+    };
     const res = await managerCall({ ...body, managerId: "manager-d-un-autre" });
     expect(res.status).toBe(201);
     expect(state.created[0]).toMatchObject({

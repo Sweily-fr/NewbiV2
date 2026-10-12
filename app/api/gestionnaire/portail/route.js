@@ -13,7 +13,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
  * Portail Stripe du cabinet (carte, adresse de facturation, factures).
  */
 async function handler(request) {
-  const { manager } = await requireAccountManager(request);
+  const { manager } = await requireAccountManager(request, {
+    allowSuspended: true,
+  });
   const origin =
     request.headers.get("origin") ||
     process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||

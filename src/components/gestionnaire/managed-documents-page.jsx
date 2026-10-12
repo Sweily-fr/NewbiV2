@@ -7,11 +7,31 @@ import {
 import ManagedDocumentsView from "./managed-documents-view";
 
 const PAGES = {
-  invoices: { title: "Factures clients", dueLabel: "Échéance" },
-  quotes: { title: "Devis", dueLabel: "Validité" },
-  purchaseOrders: { title: "Bons de commande", dueLabel: "Livraison" },
-  deliveryNotes: { title: "Bons de livraison", dueLabel: "Livraison" },
-  creditNotes: { title: "Avoirs", dueLabel: "Facture d'origine" },
+  invoices: {
+    title: "Factures clients",
+    dueLabel: "Échéance",
+    emptyLabel: "Aucune facture chez vos clients pour l'instant.",
+  },
+  quotes: {
+    title: "Devis",
+    dueLabel: "Validité",
+    emptyLabel: "Aucun devis chez vos clients pour l'instant.",
+  },
+  purchaseOrders: {
+    title: "Bons de commande",
+    dueLabel: "Livraison",
+    emptyLabel: "Aucun bon de commande chez vos clients pour l'instant.",
+  },
+  deliveryNotes: {
+    title: "Bons de livraison",
+    dueLabel: "Livraison",
+    emptyLabel: "Aucun bon de livraison chez vos clients pour l'instant.",
+  },
+  creditNotes: {
+    title: "Avoirs",
+    dueLabel: "Facture d'origine",
+    emptyLabel: "Aucun avoir chez vos clients pour l'instant.",
+  },
 };
 
 const one = (value) => (Array.isArray(value) ? value[0] : value);
@@ -46,6 +66,7 @@ export default async function ManagedDocumentsPage({ kind, searchParams }) {
     <ManagedDocumentsView
       title={PAGES[kind].title}
       dueLabel={PAGES[kind].dueLabel}
+      emptyLabel={PAGES[kind].emptyLabel}
       badgeType={config.badgeType}
       openPath={config.openPath}
       showTotal={config.showTotal !== false}

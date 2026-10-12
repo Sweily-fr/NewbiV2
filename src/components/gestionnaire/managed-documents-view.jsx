@@ -54,6 +54,7 @@ export default function ManagedDocumentsView({
   badgeType,
   openPath,
   showTotal = true,
+  emptyLabel = "Aucun document chez vos clients pour l'instant.",
   tabs,
   data,
   current,
@@ -87,6 +88,11 @@ export default function ManagedDocumentsView({
     startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname));
   };
 
+  // Champ aligné sur l'adresse (menu, retour arrière sans remontage)
+  useEffect(() => {
+    setQuery(current.q || "");
+  }, [current.q]);
+
   // Recherche appliquée après une courte pause de frappe
   useEffect(() => {
     if (query === (current.q || "")) return undefined;
@@ -104,6 +110,8 @@ export default function ManagedDocumentsView({
           organizationId: row.organizationId,
         });
         localStorage.setItem("active_organization_id", row.organizationId);
+        // État d'abonnement en cache : il a pu changer depuis
+        localStorage.removeItem(`subscription-${row.organizationId}`);
       }
       window.location.assign(row.openUrl || `${openPath}?id=${row.id}`);
     } catch (error) {
@@ -114,8 +122,12 @@ export default function ManagedDocumentsView({
   };
 
   const lastPage = Math.max(1, Math.ceil(data.total / data.pageSize));
+  const filtered =
+    current.status !== "all" ||
+    Boolean(current.q) ||
+    Boolean(current.organizationId);
   const columns = [
-    "Dossier",
+    "Client",
     "Destinataire",
     "Date",
     dueLabel,
@@ -130,7 +142,11 @@ export default function ManagedDocumentsView({
         <div>
           <h1 className="text-2xl font-medium mb-0">{title}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Tous vos dossiers clients ({data.organizations.length})
+            {data.organizations.length > 1
+              ? `Tous vos clients (${data.organizations.length})`
+              : data.organizations.length === 1
+                ? "Votre client"
+                : "Aucun client"}
           </p>
         </div>
       </div>
@@ -141,12 +157,12 @@ export default function ManagedDocumentsView({
           value={current.status}
           onValueChange={(value) => setParams({ statut: value })}
         >
-          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start overflow-x-auto px-4 sm:px-6">
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className={TAB_CLASS}
+                className={cn(TAB_CLASS, "shrink-0")}
               >
                 <span>{tab.label}</span>
                 <span className="text-xs text-muted-foreground">
@@ -191,11 +207,11 @@ export default function ManagedDocumentsView({
           value={current.organizationId || ALL}
           onValueChange={(value) => setParams({ dossier: value })}
         >
-          <SelectTrigger className="h-8 w-[220px] text-sm" aria-label="Dossier">
-            <SelectValue placeholder="Tous les dossiers" />
+          <SelectTrigger className="h-8 w-[220px] text-sm" aria-label="Client">
+            <SelectValue placeholder="Tous les clients" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Tous les dossiers</SelectItem>
+            <SelectItem value={ALL}>Tous les clients</SelectItem>
             {data.organizations.map((org) => (
               <SelectItem key={org.id} value={org.id}>
                 {org.name}
@@ -238,8 +254,10 @@ export default function ManagedDocumentsView({
                   <div className="flex flex-col items-center gap-2 text-center text-sm text-muted-foreground">
                     <Inbox className="size-6" />
                     {data.organizations.length === 0
-                      ? "Aucun dossier client à afficher."
-                      : "Aucun document ne correspond à ces filtres."}
+                      ? "Aucun client à afficher : créez ou invitez un client depuis la page Clients."
+                      : filtered
+                        ? "Aucun document ne correspond à ces filtres."
+                        : emptyLabel}
                   </div>
                 </td>
               </tr>
@@ -248,8 +266,17 @@ export default function ManagedDocumentsView({
               <tr
                 key={row.id}
                 onClick={() => openDocument(row)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openDocument(row);
+                  }
+                }}
+                tabIndex={0}
+                role="link"
+                aria-label={`Ouvrir ${row.reference || "le brouillon"} de ${row.organizationName || "ce client"}`}
                 className={cn(
-                  "border-b hover:bg-muted/50 cursor-pointer transition-colors",
+                  "border-b hover:bg-muted/50 cursor-pointer transition-colors focus-visible:outline-none focus-visible:bg-muted/60",
                   opening === row.id && "opacity-60",
                 )}
               >

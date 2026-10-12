@@ -40,6 +40,8 @@ export async function sendPushToUser(
           channelId: "default",
         })),
       ),
+      // Le service Expo ne doit pas retenir la requête qui notifie
+      signal: AbortSignal.timeout(5000),
     });
   } catch (error) {
     console.error("[PUSH] Envoi impossible:", error?.message || error);
