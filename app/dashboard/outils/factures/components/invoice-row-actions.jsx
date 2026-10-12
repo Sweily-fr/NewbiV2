@@ -50,6 +50,7 @@ import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 // InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
 import { formatLocalDate } from "@/src/utils/dateFormatter";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 // Plein écran mobile chargé à l'ouverture seulement (monté sous condition) :
 // il embarque l'aperçu PDF et le téléchargement, inutiles à l'affichage.
@@ -79,6 +80,8 @@ export default function InvoiceRowActions({
   const [isMobile, setIsMobile] = useState(false);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   const invoice = row.original;
   const { canCreate } = usePermissions();
   const { isReadOnly, isOwner } = useSubscriptionAccess();
@@ -195,22 +198,23 @@ export default function InvoiceRowActions({
   const { createFromInvoice, loading: creatingDeliveryNote } =
     useCreateDeliveryNoteFromInvoice();
 
-  const handleCreateDeliveryNote = async () => {
-    try {
-      const dn = await createFromInvoice(invoice.id);
-      if (!dn?.id) throw new Error("Bon de livraison non créé");
-      toast.success("Bon de livraison créé à partir de la facture");
-      router.push(`/dashboard/outils/bons-de-livraison/${dn.id}/editer`);
-    } catch (error) {
-      console.error(
-        "[invoice-row-actions] create delivery note failed:",
-        error,
-      );
-      toast.error(
-        error?.message || "Erreur lors de la création du bon de livraison",
-      );
-    }
-  };
+  const handleCreateDeliveryNote = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        const dn = await createFromInvoice(invoice.id);
+        if (!dn?.id) throw new Error("Bon de livraison non créé");
+        toast.success("Bon de livraison créé à partir de la facture");
+        router.push(`/dashboard/outils/bons-de-livraison/${dn.id}/editer`);
+      } catch (error) {
+        console.error(
+          "[invoice-row-actions] create delivery note failed:",
+          error,
+        );
+        toast.error(
+          error?.message || "Erreur lors de la création du bon de livraison",
+        );
+      }
+    });
 
   // Un bon de livraison se prépare pour toute facture émise (hors annulée)
   const canCreateDeliveryNote =

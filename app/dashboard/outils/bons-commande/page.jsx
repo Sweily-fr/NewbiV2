@@ -17,7 +17,6 @@ import PurchaseOrderExportButton from "./components/purchase-order-export-button
 import { PurchaseOrderSettingsModal } from "./components/purchase-order-settings-modal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import {
   usePurchaseOrders,
   PURCHASE_ORDER_STATUS,
@@ -367,9 +366,7 @@ export default function PurchaseOrdersPage() {
       pageName="Bons de commande"
       fallback={<PurchaseOrderPageSkeleton />}
     >
-      <CompanyInfoGuard fallback={<PurchaseOrderPageSkeleton />}>
-        <PurchaseOrdersContent />
-      </CompanyInfoGuard>
+      <PurchaseOrdersContent />
     </ProRouteGuard>
   );
 }

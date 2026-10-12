@@ -26,7 +26,6 @@ import { AutoReminderModal } from "./components/auto-reminder-modal";
 import InvoiceExportButton from "./components/invoice-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
@@ -506,9 +505,7 @@ export default function InvoicesPage() {
   // Page liste des factures - accessible en Pro avec informations d'entreprise complètes
   return (
     <ProRouteGuard pageName="Factures" fallback={<InvoicePageSkeleton />}>
-      <CompanyInfoGuard fallback={<InvoicePageSkeleton />}>
-        <InvoicesContent />
-      </CompanyInfoGuard>
+      <InvoicesContent />
     </ProRouteGuard>
   );
 }

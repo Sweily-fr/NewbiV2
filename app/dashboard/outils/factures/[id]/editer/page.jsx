@@ -5,6 +5,7 @@ import { use } from "react";
 import ModernInvoiceEditor from "../../components/modern-invoice-editor";
 import { InvoiceEditorSkeleton } from "../../components/invoice-editor-skeleton";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 
 function EditInvoiceContent({ params }) {
   const { id } = use(params);
@@ -24,7 +25,9 @@ export default function EditInvoicePage({ params }) {
       pageName="Éditer facture"
       fallback={<InvoiceEditorSkeleton />}
     >
-      <EditInvoiceContent params={params} />
+      <CompanyInfoGuard fallback={<InvoiceEditorSkeleton />}>
+        <EditInvoiceContent params={params} />
+      </CompanyInfoGuard>
     </ProRouteGuard>
   );
 }

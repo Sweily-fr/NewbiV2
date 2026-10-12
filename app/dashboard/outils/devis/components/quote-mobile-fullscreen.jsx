@@ -33,6 +33,7 @@ import { LinkedDocumentRow } from "@/src/components/documents/linked-document-ro
 import { buildLinkedInvoiceItems } from "@/src/utils/linked-invoice-items";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { getNumberFormat } from "@/src/lib/intl-cache";
+import { useCompanyInfoGate } from "@/src/components/company-info-gate";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -41,6 +42,8 @@ export default function QuoteMobileFullscreen({
   onRefetch,
 }) {
   const router = useRouter();
+  // Créer un document demande des informations d'entreprise complètes
+  const ensureCompanyInfo = useCompanyInfoGate();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée)
   const { canRead, canDo, isReady } = useMyPermissions();
   const canEditQuotes = !isReady || canDo("quotes", "edit");
@@ -100,16 +103,17 @@ export default function QuoteMobileFullscreen({
   // La mutation changeQuoteStatus recale côté serveur les dates d'un
   // brouillon repris plus tard (émission ramenée à aujourd'hui, validité
   // décalée d'autant).
-  const handleSendQuote = async () => {
-    try {
-      await changeStatus(quote.id, QUOTE_STATUS.PENDING);
-      toast.success("Devis créé");
-      if (onRefetch) onRefetch();
-      onClose();
-    } catch (error) {
-      toast.error(error?.message || "Erreur lors de la création du devis");
-    }
-  };
+  const handleSendQuote = () =>
+    ensureCompanyInfo(async () => {
+      try {
+        await changeStatus(quote.id, QUOTE_STATUS.PENDING);
+        toast.success("Devis créé");
+        if (onRefetch) onRefetch();
+        onClose();
+      } catch (error) {
+        toast.error(error?.message || "Erreur lors de la création du devis");
+      }
+    });
 
   const handleAccept = async () => {
     try {

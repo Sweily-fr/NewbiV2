@@ -11,6 +11,7 @@ import {
   useOnboarding,
   useDashboardLayoutContext,
 } from "@/src/contexts/dashboard-layout-context";
+import { CompanyInfoGateProvider } from "@/src/components/company-info-gate";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
 import { ReconciliationToastProvider } from "@/src/components/reconciliation/ReconciliationToast";
@@ -418,18 +419,20 @@ function DashboardContent({ children }) {
 export default function DashboardClientLayout({ children }) {
   return (
     <DashboardLayoutProvider>
-      <AccountingViewProvider>
-        <TutorialProvider>
-          <ToastProvider>
-            <ToastManagerInitializer />
-            <ReconciliationToastProvider>
-              <PurchaseInvoiceReconciliationToastProvider>
-                <DashboardContent>{children}</DashboardContent>
-              </PurchaseInvoiceReconciliationToastProvider>
-            </ReconciliationToastProvider>
-          </ToastProvider>
-        </TutorialProvider>
-      </AccountingViewProvider>
+      <CompanyInfoGateProvider>
+        <AccountingViewProvider>
+          <TutorialProvider>
+            <ToastProvider>
+              <ToastManagerInitializer />
+              <ReconciliationToastProvider>
+                <PurchaseInvoiceReconciliationToastProvider>
+                  <DashboardContent>{children}</DashboardContent>
+                </PurchaseInvoiceReconciliationToastProvider>
+              </ReconciliationToastProvider>
+            </ToastProvider>
+          </TutorialProvider>
+        </AccountingViewProvider>
+      </CompanyInfoGateProvider>
     </DashboardLayoutProvider>
   );
 }
