@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 
-export function useStripeCustomer() {
+// enabled : false tant qu'on ne doit pas lire ce client (ex. abonnement payé
+// par le cabinet du client : son client Stripe n'est pas celui de l'espace)
+export function useStripeCustomer({ enabled = true } = {}) {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,7 +16,7 @@ export function useStripeCustomer() {
   const stripeCustomerId = subscription?.stripeCustomerId;
 
   const fetchCustomer = useCallback(async () => {
-    if (!session?.user || !stripeCustomerId) {
+    if (!enabled || !session?.user || !stripeCustomerId) {
       setCustomer(null);
       setLoading(false);
       return;
@@ -43,7 +45,7 @@ export function useStripeCustomer() {
     } finally {
       setLoading(false);
     }
-  }, [session?.user, stripeCustomerId]);
+  }, [enabled, session?.user, stripeCustomerId]);
 
   useEffect(() => {
     fetchCustomer();

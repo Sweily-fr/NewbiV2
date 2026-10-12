@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 
 /**
  * Nom du cabinet qui paie l'abonnement de l'espace (compte gestionnaire),
- * ou null. Le client n'y choisit ni ne résilie l'offre : c'est le cabinet.
+ * null s'il n'y en a pas, undefined tant que ce n'est pas vérifié. Le client
+ * n'y choisit ni ne résilie l'offre : c'est le cabinet.
  */
 export function useOrgPaidByManager(organizationId) {
-  const [managerName, setManagerName] = useState(null);
+  const [managerName, setManagerName] = useState(undefined);
   useEffect(() => {
     if (!organizationId) return;
     let cancelled = false;
@@ -18,7 +19,7 @@ export function useOrgPaidByManager(organizationId) {
           setManagerName(data?.paidByManager ? data.managerName : null);
         }
       })
-      .catch(() => {});
+      .catch(() => !cancelled && setManagerName(null));
     return () => {
       cancelled = true;
     };

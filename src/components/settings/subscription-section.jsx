@@ -69,7 +69,9 @@ export function SubscriptionSection({
 
   // Abonnement pris en charge par le cabinet du client (compte
   // gestionnaire) : c'est lui qui choisit et gère l'offre
-  const paidByManager = useOrgPaidByManager(session?.user?.organization?.id);
+  const paidByManager = useOrgPaidByManager(
+    session?.session?.activeOrganizationId || session?.user?.organization?.id,
+  );
 
   const canManageSubscription =
     !paidByManager &&
@@ -551,7 +553,7 @@ export function SubscriptionSection({
                     ? ", facturé annuellement"
                     : ", facturé mensuellement"}
                 </span>
-                {!isAnnual && (
+                {!isAnnual && !paidByManager && (
                   <>
                     <span className="mx-1">·</span>
                     <button
