@@ -27,6 +27,7 @@ export {
   hasInternalSecret,
 } from "./require-internal-secret";
 export { apiError } from "./api-error";
+export { requireAdminServiceToken } from "./require-admin-service-token";
 export { withErrorHandler } from "./with-error-handler";
 export { toObjectId } from "./to-object-id";
 export { assertModified } from "./assert-modified";
