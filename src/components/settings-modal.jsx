@@ -67,6 +67,7 @@ import { EInvoicingSection } from "./settings/e-invoicing-section";
 import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import { UPDATE_EINVOICING_VAT_REGIME } from "@/src/graphql/eInvoicingQueries";
 import { deriveVatRegime } from "@/src/utils/vatRegime";
+import { normalizeLegalForm } from "@/src/lib/company-registry";
 
 export function SettingsModal({
   open,
@@ -198,9 +199,13 @@ export function SettingsModal({
       vatNumber: org.vatNumber || "",
       rcs: org.rcs || "",
       // "Auto-entrepreneur" est l'ancien nom de l'EI (même forme juridique,
-      // seul le régime micro les distingue) — normalisé vers "EI" à l'affichage
+      // seul le régime micro les distingue) — normalisé vers "EI" à l'affichage.
+      // Les libellés des anciennes inscriptions (« Entrepreneur individuel »,
+      // codes INSEE…) sont ramenés à une valeur de la liste.
       legalForm:
-        org.legalForm === "Auto-entrepreneur" ? "EI" : org.legalForm || "",
+        org.legalForm === "Auto-entrepreneur"
+          ? "EI"
+          : normalizeLegalForm(org.legalForm),
       capital: org.capitalSocial || "",
       regime: org.fiscalRegime || "",
       category: org.activityCategory || "",

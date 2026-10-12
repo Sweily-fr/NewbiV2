@@ -44,6 +44,59 @@ export function legalFormFromNatureJuridique(code) {
   return "";
 }
 
+// Valeurs de la liste « Forme juridique » des paramètres
+// (informations-legales-section.jsx).
+export const LEGAL_FORM_VALUES = [
+  "SARL",
+  "EURL",
+  "SAS",
+  "SASU",
+  "SA",
+  "SCA",
+  "SNC",
+  "SCS",
+  "SELARL",
+  "SELAS",
+  "SELAFA",
+  "SELCA",
+  "SCI",
+  "SCM",
+  "SCP",
+  "EI",
+  "Indivision",
+  "Association",
+];
+
+// Libellés écrits par les anciennes correspondances de l'inscription et de
+// la création d'espace, absents de la liste. Chacun ne venait que d'un code
+// INSEE, d'où la valeur retenue : « SAS unipersonnelle (SASU) » était posé
+// sur le code 5710, qui est celui des SAS, et « SARL unipersonnelle » sur le
+// 5410 (SARL nationale).
+const LEGACY_LEGAL_FORM_LABELS = {
+  "Entrepreneur individuel": "EI",
+  "SARL unipersonnelle": "SARL",
+  "SARL à associé unique": "EURL",
+  "SA à conseil d'administration": "SA",
+  "SA à directoire": "SA",
+  "SAS unipersonnelle (SASU)": "SAS",
+  "Société d'exercice libéral par actions simplifiée": "SELAS",
+  "Association déclarée": "Association",
+  "Association reconnue d'utilité publique": "Association",
+};
+
+/**
+ * Ramène une forme juridique enregistrée (libellé d'une ancienne
+ * correspondance, code INSEE brut) à une valeur de la liste. Renvoie la
+ * valeur telle quelle quand aucune correspondance n'est sûre.
+ */
+export function normalizeLegalForm(value) {
+  const v = String(value || "").trim();
+  if (!v || LEGAL_FORM_VALUES.includes(v)) return v;
+  if (LEGACY_LEGAL_FORM_LABELS[v]) return LEGACY_LEGAL_FORM_LABELS[v];
+  if (/^\d{4}$/.test(v)) return legalFormFromNatureJuridique(v) || v;
+  return v;
+}
+
 /**
  * Le registre donne l'adresse complète du siège (« 12 RUE DE LA PAIX 75002
  * PARIS ») : on en retire le code postal et la ville, qui ont leurs propres
