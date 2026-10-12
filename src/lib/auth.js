@@ -577,6 +577,10 @@ export const auth = betterAuth({
         type: "string",
         required: false,
         input: false, // Set by user.create hook only — Principle 5
+        // Jamais renvoyé par get-session : l'inscription ne vérifie pas
+        // l'e-mail, et cet id suffisait à accepter l'invitation d'un autre
+        // (le site lit l'invitation depuis le lien reçu par e-mail)
+        returned: false,
         defaultValue: "",
       },
       stripeCustomerId: {

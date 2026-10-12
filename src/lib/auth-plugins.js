@@ -1941,24 +1941,27 @@ export const organizationPlugin = organization({
           required: false,
         },
         // Trial system fields (ISO date strings)
+        // input: false — posés côté serveur seulement (org-creation.js). En
+        // écriture libre, /organization/create avec isTrialActive et une
+        // trialEndDate lointaine donnait un essai sans fin.
         trialStartDate: {
           type: "string",
-          input: true,
+          input: false,
           required: false,
         },
         trialEndDate: {
           type: "string",
-          input: true,
+          input: false,
           required: false,
         },
         isTrialActive: {
           type: "boolean",
-          input: true,
+          input: false,
           required: false,
         },
         hasUsedTrial: {
           type: "boolean",
-          input: true,
+          input: false,
           required: false,
         },
         // Décision #11 (Lot 5) — formalised. Discriminates the source of a
@@ -1967,7 +1970,7 @@ export const organizationPlugin = organization({
         // gating layer rely on this to leave Stripe-origin trials untouched.
         stripeTrialActive: {
           type: "boolean",
-          input: true,
+          input: false,
           required: false,
         },
         // Anti-doublon markers used by the trial cleanup cron (Lot 4) to
