@@ -477,7 +477,7 @@ const LoginForm = () => {
             if (response.ok) {
               const userData = await response.json();
 
-              if (userData.exists && !userData.emailVerified) {
+              if (userData.needsVerification) {
                 // L'utilisateur existe mais n'a pas vérifié son email
                 setUserEmailForVerification(formData.email);
                 setShowEmailVerification(true);

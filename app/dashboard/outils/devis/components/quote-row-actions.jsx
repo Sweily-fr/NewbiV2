@@ -324,8 +324,10 @@ export default function QuoteRowActions({
     canConvertQuotes &&
     canCreatePurchaseOrders;
   // Un bon de livraison se prépare dès que le devis est envoyé ou accepté
+  // (conversion du devis : « Transformer » du devis et « Créer » des BL)
   const canCreateDeliveryNote =
     deliveryNotesAllowed &&
+    canConvertQuotes &&
     canCreateDeliveryNotes &&
     (quote.status === QUOTE_STATUS.PENDING ||
       quote.status === QUOTE_STATUS.COMPLETED);

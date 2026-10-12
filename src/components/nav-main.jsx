@@ -705,19 +705,22 @@ export function NavMain({
                 </Link>
               </DropdownMenuItem>
 
-              <DropdownMenuSeparator className="my-1" />
-
-              {/* Créer une nouvelle liste */}
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/dashboard/outils/kanban?new=true"
-                  onClick={handleLinkClick}
-                  className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="text-xs">Nouvelle liste</span>
-                </Link>
-              </DropdownMenuItem>
+              {/* Créer une nouvelle liste : « Créer » du kanban */}
+              {canCreate("kanban") && (
+                <>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/outils/kanban?new=true"
+                      onClick={handleLinkClick}
+                      className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="text-xs">Nouvelle liste</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </SidebarMenuItem>
         </DropdownMenu>

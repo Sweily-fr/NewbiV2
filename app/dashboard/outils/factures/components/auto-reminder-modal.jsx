@@ -35,6 +35,7 @@ import {
   useEmailSettings,
   useUpdateEmailSettings,
 } from "@/src/graphql/emailQueries";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export function AutoReminderModal({ open, onOpenChange }) {
   const [isSaving, setIsSaving] = useState(false);
@@ -51,6 +52,10 @@ export function AutoReminderModal({ open, onOpenChange }) {
     skip: !open,
   });
   const [updateEmailSettings] = useUpdateEmailSettings();
+  // Expéditeur : réglage de l'entreprise (« Modifier » les informations de
+  // l'entreprise, exigé par l'API)
+  const { canDo, isReady } = useMyPermissions();
+  const canEditSender = !isReady || canDo("orgSettings", "edit");
 
   const methods = useForm({
     defaultValues: {
@@ -115,16 +120,19 @@ Cordialement,
       // Séparer les données email des données de relance
       const { fromEmail, fromName, replyTo, ...reminderData } = data;
 
-      // Sauvegarder les paramètres email
-      await updateEmailSettings({
-        variables: {
-          input: {
-            fromEmail,
-            fromName,
-            replyTo,
+      // Sauvegarder les paramètres email (seulement avec le droit : sinon
+      // ils sont affichés en lecture simple et restent inchangés)
+      if (canEditSender) {
+        await updateEmailSettings({
+          variables: {
+            input: {
+              fromEmail,
+              fromName,
+              replyTo,
+            },
           },
-        },
-      });
+        });
+      }
 
       // Sauvegarder les paramètres de relance
       await updateSettings({
@@ -211,7 +219,10 @@ Cordialement,
                     value="settings"
                     className="flex-1 overflow-y-auto p-5 mt-0"
                   >
-                    <AutoReminderForm isSmtpConfigured={true} />
+                    <AutoReminderForm
+                      isSmtpConfigured={true}
+                      canEditSender={canEditSender}
+                    />
                   </TabsContent>
 
                   <TabsContent

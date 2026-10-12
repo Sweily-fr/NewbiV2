@@ -293,18 +293,6 @@ export default function ModernInvoiceEditor({
   useUnsavedChangesWarning(guardActive && isDirty);
   usePreloadOnIdle(preloadEditorModules);
 
-  // Afficher un message si la facture n'existe pas (après changement d'organisation)
-  if (mode !== "create" && !loading && !loadedInvoice && invoiceError) {
-    return (
-      <ResourceNotFound
-        resourceType="facture"
-        resourceName="Cette facture"
-        listUrl="/dashboard/outils/factures"
-        homeUrl="/dashboard"
-      />
-    );
-  }
-
   // Intercepter le retour arrière du navigateur (bouton, swipe trackpad, ⌘←)
   // UNIQUEMENT quand l'utilisateur a modifié au moins un champ.
   // Le ref évite le double-push en mode StrictMode.
@@ -332,6 +320,20 @@ export default function ModernInvoiceEditor({
       window.removeEventListener("popstate", handlePopState);
     };
   }, [guardActive]);
+
+  // Afficher un message si la facture n'existe pas (après changement d'organisation).
+  // Placé après le dernier hook : avant, le nombre de hooks appelés
+  // variait d'un rendu à l'autre (règle des hooks).
+  if (mode !== "create" && !loading && !loadedInvoice && invoiceError) {
+    return (
+      <ResourceNotFound
+        resourceType="facture"
+        resourceName="Cette facture"
+        listUrl="/dashboard/outils/factures"
+        homeUrl="/dashboard"
+      />
+    );
+  }
 
   const leaveEditor = () => {
     bypassGuardRef.current = true;
@@ -842,7 +844,9 @@ export default function ModernInvoiceEditor({
                       hasUserChanges={hasUserChanges}
                       loading={loading}
                       saving={saving}
-                      readOnly={readOnly}
+                      // Consultation (mode « view » : facture émise ou rôle
+                      // sans « Modifier ») : formulaire en lecture seule
+                      readOnly={readOnly || isReadOnly}
                       errors={errors}
                       validationErrors={validationErrors}
                       setValidationErrors={setValidationErrors}

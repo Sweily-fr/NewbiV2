@@ -106,10 +106,11 @@ async function handler() {
     sessionCount: activeSessions.length,
     maxSessions,
     revokedCount,
-    currentSessionToken,
+    // Jetons jamais renvoyés au navigateur (cookie httpOnly) : la session
+    // courante est signalée par `isCurrent`, la révocation se fait par id.
     sessions: activeSessions.map((s) => ({
       id: s._id.toString(),
-      token: s.token,
+      isCurrent: s.token === currentSessionToken,
       userAgent: s.userAgent,
       ipAddress: s.ipAddress,
       createdAt: s.createdAt,

@@ -1,7 +1,11 @@
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { seatSyncService } from "@/src/services/seatSyncService";
-import { withErrorHandler } from "@/src/lib/security";
+import {
+  apiError,
+  getOrgBillingVisibility,
+  withErrorHandler,
+} from "@/src/lib/security";
 
 /**
  * API Route pour synchroniser manuellement les sièges
@@ -90,7 +94,9 @@ async function postHandler(request) {
 export const POST = withErrorHandler(postHandler);
 
 /**
- * GET - Récupérer les informations de facturation actuelles
+ * GET - Récupérer les informations de facturation actuelles (coût de base,
+ * sièges payants, total) : droit « Voir l'abonnement » exigé, ce ne sont que
+ * des montants.
  */
 async function getHandler(request) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -106,22 +112,26 @@ async function getHandler(request) {
     return Response.json({ error: "organizationId requis" }, { status: 400 });
   }
 
-  // Vérifier que l'utilisateur est membre
-  const { auth: authInstance } = await import("@/src/lib/auth");
-  const { mongoDb } = await import("@/src/lib/mongodb.js");
-  const { ObjectId } = await import("mongodb");
-
-  const member = await mongoDb.collection("member").findOne({
-    userId: new ObjectId(session.user.id),
-    organizationId: new ObjectId(organizationId),
-  });
-
-  if (!member) {
+  // Membre de l'espace avec « Voir l'abonnement »
+  const { role, canViewBilling } = await getOrgBillingVisibility(
+    session.user.id,
+    organizationId,
+  );
+  if (!role) {
     return Response.json(
       { error: "Vous n'êtes pas membre de cette organisation" },
       { status: 403 },
     );
   }
+  if (!canViewBilling) {
+    throw apiError(
+      403,
+      "Votre rôle ne permet pas de consulter l'abonnement.",
+      `Lecture de la facturation des sièges refusée au rôle ${role}`,
+    );
+  }
+
+  const { auth: authInstance } = await import("@/src/lib/auth");
 
   // Obtenir l'adapter pour le service
   const adapter = authInstance.options.database;

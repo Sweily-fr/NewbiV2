@@ -5,7 +5,6 @@ import {
   CREATE_FILE_TRANSFER_WITH_IDS,
   DELETE_FILE_TRANSFER,
   RENAME_FILE_TRANSFER,
-  GENERATE_FILE_TRANSFER_PAYMENT_LINK,
   GET_MY_TRANSFERS,
 } from "../graphql/mutations";
 import { toast } from "@/src/components/ui/sonner";
@@ -38,9 +37,6 @@ export const useFileTransfer = () => {
   );
   const [deleteFileTransferMutation] = useMutation(DELETE_FILE_TRANSFER);
   const [renameFileTransferMutation] = useMutation(RENAME_FILE_TRANSFER);
-  const [generatePaymentLinkMutation] = useMutation(
-    GENERATE_FILE_TRANSFER_PAYMENT_LINK,
-  );
 
   // Query pour récupérer les transferts (scopée au workspace actif)
   const {
@@ -355,33 +351,6 @@ export const useFileTransfer = () => {
     [renameFileTransferMutation],
   );
 
-  // Fonction pour générer un lien de paiement
-  const generatePaymentLink = useCallback(
-    async (shareLink, accessKey) => {
-      try {
-        const { data } = await generatePaymentLinkMutation({
-          variables: { shareLink, accessKey },
-        });
-
-        if (data.generateFileTransferPaymentLink.success) {
-          return data.generateFileTransferPaymentLink.checkoutUrl;
-        } else {
-          throw new Error(data.generateFileTransferPaymentLink.message);
-        }
-      } catch (error) {
-        console.error(
-          "Erreur lors de la génération du lien de paiement:",
-          error,
-        );
-        toast.error(
-          error.message || "Erreur lors de la génération du lien de paiement",
-        );
-        throw error;
-      }
-    },
-    [generatePaymentLinkMutation],
-  );
-
   // Fonction pour copier le lien de partage
   const copyShareLink = useCallback((shareLink, accessKey) => {
     const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
@@ -425,7 +394,6 @@ export const useFileTransfer = () => {
     createTransfer,
     deleteTransfer,
     renameTransfer,
-    generatePaymentLink,
     copyShareLink,
     refetchTransfers,
   };

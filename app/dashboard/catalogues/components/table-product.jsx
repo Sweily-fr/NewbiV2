@@ -341,9 +341,14 @@ export default function TableProduct({
   // Build columns dynamically: base + custom fields + actions
   const columns = useMemo(() => {
     const cfCols = activeCustomFields.map(buildCustomFieldColumn);
-    return [...baseColumns, ...cfCols, actionsColumn];
+    // Cases de sélection : utiles seulement pour supprimer ou exporter
+    const visibleBaseColumns =
+      canDeleteProducts || canExportProducts
+        ? baseColumns
+        : baseColumns.filter((column) => column.id !== "select");
+    return [...visibleBaseColumns, ...cfCols, actionsColumn];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cfKey]);
+  }, [cfKey, canDeleteProducts, canExportProducts]);
 
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = usePersistentColumnVisibility(

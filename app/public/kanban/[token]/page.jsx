@@ -19,15 +19,11 @@ import {
   UPLOAD_EXTERNAL_COMMENT_IMAGE,
   UPLOAD_VISITOR_IMAGE,
   CHECK_INVITED_EMAIL,
+  REQUEST_INVITED_EMAIL_CODE,
   AUTHENTICATE_INVITED_USER,
   VALIDATE_INVITED_SESSION,
 } from "@/src/graphql/kanbanQueries";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/src/components/ui/avatar";
+import { InputOTP } from "@/src/components/ui/input-otp";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -105,6 +101,7 @@ import {
   Upload,
   ImagePlus,
   ZoomIn,
+  Lock,
 } from "lucide-react";
 import {
   format,
@@ -130,128 +127,135 @@ const scrollbarStyles = `
   .kanban-column-scroll { scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent; }
 `;
 
-// AuthModal Component - Nouveau système d'authentification avec mot de passe optionnel
+// AuthModal : accès d'un visiteur. L'adresse e-mail est prouvée par un code
+// reçu par e-mail (ou, pour un compte déjà vérifié, par son mot de passe) ;
+// l'API remet alors une session visiteur, exigée par toutes les opérations
+// du tableau partagé.
 function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
-  const [step, setStep] = useState("email"); // 'email' | 'password' | 'create_account'
+  const [step, setStep] = useState("email"); // 'email' | 'password' | 'code'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [skipPassword, setSkipPassword] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [isNewVisitor, setIsNewVisitor] = useState(false);
   const [error, setError] = useState(null);
-  const [linkedUser, setLinkedUser] = useState(null);
-  const [existingUser, setExistingUser] = useState(null);
+  const [info, setInfo] = useState(null);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  // Query pour vérifier l'email
   const [checkEmail, { loading: checkingEmail }] = useLazyQuery(
     CHECK_INVITED_EMAIL,
-    {
-      fetchPolicy: "cache-and-network",
-      onCompleted: (data) => {
-        const result = data?.checkInvitedEmail;
-        if (result) {
-          setLinkedUser(result.linkedUser);
-          setExistingUser(result.userInvited);
-
-          if (result.exists && result.requiresPassword) {
-            // Utilisateur existant avec mot de passe
-            setStep("password");
-          } else if (result.exists) {
-            // Utilisateur existant sans mot de passe - connexion directe
-            handleAuthenticate(email, null, true);
-          } else {
-            // Nouvel utilisateur - proposer de créer un compte
-            if (result.linkedUser) {
-              // Pré-remplir avec les infos du compte Newbi
-              setFirstName(result.linkedUser.firstName || "");
-              setLastName(result.linkedUser.lastName || "");
-            }
-            setStep("create_account");
-          }
-        }
-      },
-      onError: (err) => {
-        setError(err.message || "Erreur lors de la vérification de l'email");
-      },
-    },
+    { fetchPolicy: "network-only" },
   );
-
-  // Mutation pour authentifier
+  const [requestCode, { loading: sendingCode }] = useMutation(
+    REQUEST_INVITED_EMAIL_CODE,
+  );
   const [authenticate, { loading: authenticating }] = useMutation(
     AUTHENTICATE_INVITED_USER,
-    {
-      onCompleted: (data) => {
-        const result = data?.authenticateInvitedUser;
-        if (result?.success) {
-          // Sauvegarder le token de session
-          if (result.sessionToken) {
-            localStorage.setItem(
-              `invited_session_${token}`,
-              JSON.stringify({
-                sessionToken: result.sessionToken,
-                userInvited: result.userInvited,
-                savedAt: Date.now(),
-              }),
-            );
-          }
-          onSuccess(result);
-        } else if (result?.isBanned) {
-          onBanned(email, result.banReason);
-        } else {
-          setError(result?.message || "Erreur d'authentification");
-        }
-      },
-      onError: (err) => {
-        setError(err.message || "Erreur lors de l'authentification");
-      },
-    },
   );
 
-  const handleEmailSubmit = (e) => {
+  const sendCode = async () => {
+    setError(null);
+    setInfo(null);
+    try {
+      const { data } = await requestCode({ variables: { token, email } });
+      const result = data?.requestInvitedEmailCode;
+      if (!result?.success) {
+        setError(result?.message || "Impossible d'envoyer le code");
+        return false;
+      }
+      setCode("");
+      setInfo(`Un code à 6 chiffres a été envoyé à ${email}.`);
+      setStep("code");
+      return true;
+    } catch (err) {
+      setError(err.message || "Impossible d'envoyer le code");
+      return false;
+    }
+  };
+
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
     if (!isValidEmail) return;
     setError(null);
-    checkEmail({ variables: { email, token } });
+    try {
+      const { data } = await checkEmail({ variables: { email, token } });
+      const result = data?.checkInvitedEmail;
+      if (!result) {
+        setError("Erreur lors de la vérification de l'email");
+        return;
+      }
+      setIsNewVisitor(!result.exists);
+      if (result.requiresPassword) {
+        setStep("password");
+      } else {
+        await sendCode();
+      }
+    } catch (err) {
+      setError(err.message || "Erreur lors de la vérification de l'email");
+    }
   };
 
-  const handleAuthenticate = (emailToUse, passwordToUse, skipPwd = false) => {
-    authenticate({
-      variables: {
-        input: {
-          token,
-          email: emailToUse || email,
-          password: passwordToUse || password || null,
-          skipPassword: skipPwd || skipPassword,
-          firstName: firstName || null,
-          lastName: lastName || null,
-        },
-      },
-    });
+  const handleAuthenticate = async (input) => {
+    setError(null);
+    try {
+      const { data } = await authenticate({
+        variables: { input: { token, email, ...input } },
+      });
+      const result = data?.authenticateInvitedUser;
+      if (result?.sessionToken) {
+        storeVisitorSession(token, result.sessionToken);
+      }
+      if (result?.success) {
+        onSuccess(result);
+      } else if (result?.isBanned) {
+        onBanned(email, result.banReason);
+      } else if (result?.requiresEmailCode && step === "password") {
+        // Mot de passe impossible pour ce compte : code par e-mail
+        await sendCode();
+      } else {
+        setError(result?.message || "Erreur d'authentification");
+      }
+    } catch (err) {
+      setError(err.message || "Erreur lors de l'authentification");
+    }
   };
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
-    setError(null);
-    handleAuthenticate(email, password, false);
+    handleAuthenticate({ password });
   };
 
-  const handleCreateAccount = (e) => {
-    e.preventDefault();
-    setError(null);
-    handleAuthenticate(email, skipPassword ? null : newPassword, skipPassword);
+  const handleCodeSubmit = (e) => {
+    e?.preventDefault();
+    if (code.length !== 6) return;
+    handleAuthenticate({
+      emailCode: code,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      password: isNewVisitor && newPassword ? newPassword : null,
+    });
   };
 
   const handleBack = () => {
     setStep("email");
     setPassword("");
+    setCode("");
     setNewPassword("");
     setError(null);
+    setInfo(null);
   };
 
-  const loading = checkingEmail || authenticating;
+  const loading = checkingEmail || sendingCode || authenticating;
+
+  const errorBlock = error && (
+    <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+      <AlertCircle className="h-4 w-4" />
+      {error}
+    </div>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -267,15 +271,15 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
                 ? `Accès privé → ${shareLinkName}`
                 : "Accès au tableau Kanban")}
             {step === "password" && "Connexion"}
-            {step === "create_account" && "Créer votre profil"}
+            {step === "code" && "Vérification de votre adresse"}
           </DialogTitle>
           <DialogDescription>
             {step === "email" &&
               "Veuillez renseigner votre adresse email pour accéder à ce tableau."}
             {step === "password" &&
               "Entrez votre mot de passe pour vous connecter."}
-            {step === "create_account" &&
-              "Configurez votre profil pour accéder au tableau."}
+            {step === "code" &&
+              "Saisissez le code reçu par email pour confirmer votre adresse."}
           </DialogDescription>
         </DialogHeader>
 
@@ -298,12 +302,7 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
                 />
               </div>
             </div>
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-                <AlertCircle className="h-4 w-4" />
-                {error}
-              </div>
-            )}
+            {errorBlock}
             <Button
               type="submit"
               className="w-full"
@@ -324,17 +323,14 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
           </form>
         )}
 
-        {/* Étape 2: Mot de passe (utilisateur existant) */}
+        {/* Étape 2: Mot de passe (compte déjà vérifié) */}
         {step === "password" && (
           <form onSubmit={handlePasswordSubmit} className="space-y-4 mt-4">
             <div className="p-3 bg-muted/50 rounded-lg border">
               <p className="text-sm text-muted-foreground">
-                Connecté en tant que{" "}
+                Connexion en tant que{" "}
                 <span className="font-medium text-foreground">{email}</span>
               </p>
-              {existingUser?.name && (
-                <p className="text-sm font-medium mt-1">{existingUser.name}</p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -350,12 +346,7 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
               />
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-                <AlertCircle className="h-4 w-4" />
-                {error}
-              </div>
-            )}
+            {errorBlock}
 
             <div className="flex gap-2">
               <Button
@@ -381,107 +372,72 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
                 )}
               </Button>
             </div>
+            <button
+              type="button"
+              className="w-full text-xs text-muted-foreground underline-offset-4 hover:underline"
+              onClick={sendCode}
+              disabled={loading}
+            >
+              Recevoir plutôt un code par email
+            </button>
           </form>
         )}
 
-        {/* Étape 3: Création de compte (nouvel utilisateur) */}
-        {step === "create_account" && (
-          <form onSubmit={handleCreateAccount} className="space-y-4 mt-4">
-            {/* Afficher les infos du compte Newbi lié si trouvé */}
-            {linkedUser && (
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={linkedUser.image} />
-                    <AvatarFallback className="bg-green-100 text-green-700">
-                      {(linkedUser.name ||
-                        linkedUser.email)?.[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                      Compte Newbi trouvé !
-                    </p>
-                    <p className="text-xs text-green-600 dark:text-green-500">
-                      {linkedUser.name || linkedUser.email}
-                    </p>
+        {/* Étape 3: Code reçu par email (+ profil pour un nouveau visiteur) */}
+        {step === "code" && (
+          <form onSubmit={handleCodeSubmit} className="space-y-4 mt-4">
+            {info && <p className="text-sm text-muted-foreground">{info}</p>}
+
+            <div className="flex justify-center">
+              <InputOTP
+                value={code}
+                onChange={setCode}
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+
+            {isNewVisitor && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Prénom</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Prénom"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Nom</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Nom"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
                   </div>
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-500 mt-2">
-                  Vos informations seront automatiquement récupérées.
-                </p>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Mot de passe (optionnel)</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    placeholder="Créer un mot de passe"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Il vous évitera de recevoir un code à chaque connexion.
+                  </p>
+                </div>
+              </>
             )}
 
-            <div className="p-3 bg-muted/50 rounded-lg border">
-              <p className="text-sm text-muted-foreground">
-                Email :{" "}
-                <span className="font-medium text-foreground">{email}</span>
-              </p>
-            </div>
-
-            {/* Nom et prénom */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Prénom"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Nom</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Nom"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Mot de passe optionnel */}
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">Mot de passe (optionnel)</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="Créer un mot de passe"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={skipPassword}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Un mot de passe sécurise votre accès à ce tableau.
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="skipPassword"
-                  checked={skipPassword}
-                  onCheckedChange={setSkipPassword}
-                />
-                <Label
-                  htmlFor="skipPassword"
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  Se connecter sans mot de passe
-                </Label>
-              </div>
-            </div>
-
-            {error && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-                <AlertCircle className="h-4 w-4" />
-                {error}
-              </div>
-            )}
+            {errorBlock}
 
             <div className="flex gap-2">
               <Button
@@ -492,11 +448,15 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
               >
                 Retour
               </Button>
-              <Button type="submit" className="flex-1" disabled={loading}>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={code.length !== 6 || loading}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Création...
+                    Vérification...
                   </>
                 ) : (
                   <>
@@ -506,6 +466,14 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
                 )}
               </Button>
             </div>
+            <button
+              type="button"
+              className="w-full text-xs text-muted-foreground underline-offset-4 hover:underline"
+              onClick={sendCode}
+              disabled={loading}
+            >
+              Renvoyer le code
+            </button>
           </form>
         )}
       </DialogContent>
@@ -513,86 +481,85 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
   );
 }
 
-// Ancien EmailModal conservé pour compatibilité (sera supprimé plus tard)
-function EmailModal({ isOpen, onSubmit, loading, error, shareLinkName }) {
-  const [email, setEmail] = useState("");
-  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+// BannedAccessPage Component - Page de demande d'accès pour les utilisateurs bannis
+// Partage protégé par mot de passe : demandé avant d'afficher le tableau.
+// onSubmit renvoie le message d'erreur à afficher, ou null.
+function SharePasswordGate({ shareLinkName, email, onSubmit }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!password || loading) return;
+    setLoading(true);
+    setError(null);
+    const message = await onSubmit(password);
+    setLoading(false);
+    if (message) setError(message);
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent
-        className="sm:max-w-md"
-        onPointerDownOutside={(e) => e.preventDefault()}
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5 text-primary" />
-            {shareLinkName
-              ? `Accès privé → ${shareLinkName}`
-              : "Accès au tableau Kanban"}
-          </DialogTitle>
-          <DialogDescription>
-            Veuillez renseigner votre adresse email pour accéder à ce tableau.
-          </DialogDescription>
-        </DialogHeader>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (isValidEmail) onSubmit(email);
-          }}
-          className="space-y-4 mt-4"
-        >
-          <div className="space-y-2">
-            <Label htmlFor="email">Adresse email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="votre@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
-                autoFocus
-                required
-              />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          <div className="text-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Lock className="h-8 w-8 text-muted-foreground" />
             </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              {shareLinkName || "Tableau partagé"}
+            </h1>
+            <p className="text-muted-foreground">
+              Ce tableau est protégé par un mot de passe. Saisissez celui que le
+              propriétaire vous a communiqué.
+            </p>
           </div>
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-              <AlertCircle className="h-4 w-4" />
-              {error}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="share-password" className="text-sm">
+                Mot de passe du tableau
+              </Label>
+              <Input
+                id="share-password"
+                type="password"
+                autoFocus
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
             </div>
-          )}
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={!isValidEmail || loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Chargement...
-              </>
-            ) : (
-              <>
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Accéder au tableau
-              </>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!password || loading}
+            >
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Accéder au tableau
+            </Button>
+            {email && (
+              <p className="text-xs text-center text-muted-foreground">
+                Email utilisé : <span className="font-medium">{email}</span>
+              </p>
             )}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-// BannedAccessPage Component - Page de demande d'accès pour les utilisateurs bannis
 function BannedAccessPage({ email, token, onAccessApproved }) {
   const [name, setName] = useState(email?.split("@")[0] || "");
   const [message, setMessage] = useState("");
   const [requestSent, setRequestSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Partage protégé sans jeton d'accès en main : mot de passe demandé
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [sharePassword, setSharePassword] = useState("");
 
   const [requestAccess] = useMutation(REQUEST_ACCESS);
 
@@ -619,10 +586,29 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
 
     try {
       const result = await requestAccess({
-        variables: { token, email, name, message },
+        variables: {
+          token,
+          sessionToken: readStoredVisitorSession(token) || null,
+          name,
+          message,
+          password: needsPassword ? sharePassword : null,
+          accessToken: readStoredAccessToken(token) || null,
+        },
       });
 
-      if (result.data?.requestAccess?.success) {
+      if (result.data?.requestAccess?.requiresVisitorSession) {
+        // Session expirée : l'adresse doit être confirmée à nouveau
+        storeVisitorSession(token, null);
+        toast.error(result.data.requestAccess.message);
+        window.location.reload();
+      } else if (result.data?.requestAccess?.requiresPassword) {
+        setNeedsPassword(true);
+        if (needsPassword) {
+          toast.error(
+            result.data.requestAccess.message || "Mot de passe incorrect",
+          );
+        }
+      } else if (result.data?.requestAccess?.success) {
         setRequestSent(true);
         if (result.data.requestAccess.alreadyRequested) {
           toast.info("Votre demande est déjà en attente de validation");
@@ -715,10 +701,33 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
                       className="resize-none"
                     />
                   </div>
+
+                  {needsPassword && (
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="banned-share-password"
+                        className="text-sm"
+                      >
+                        Mot de passe du tableau
+                      </Label>
+                      <Input
+                        id="banned-share-password"
+                        type="password"
+                        autoFocus
+                        value={sharePassword}
+                        onChange={(e) => setSharePassword(e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || (needsPassword && !sharePassword)}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -799,8 +808,9 @@ function ProfileModal({
       const result = await uploadVisitorImage({
         variables: {
           token,
-          email: visitorEmail,
+          sessionToken: readStoredVisitorSession(token) || null,
           file,
+          accessToken: readStoredAccessToken(token) || null,
         },
       });
 
@@ -1297,7 +1307,8 @@ function PublicTaskActivity({
                 token,
                 taskId: task.id,
                 file: imageData.file,
-                visitorEmail,
+                sessionToken: readStoredVisitorSession(token) || null,
+                accessToken: readStoredAccessToken(token) || null,
               },
             });
             if (result.data?.uploadExternalCommentImage?.success) {
@@ -1337,7 +1348,8 @@ function PublicTaskActivity({
           token,
           taskId: task.id,
           content: commentContent || null,
-          visitorEmail,
+          sessionToken: readStoredVisitorSession(token) || null,
+          accessToken: readStoredAccessToken(token) || null,
           images: hasUploadedImages
             ? uploadedImageUrls.map((img) => ({
                 id: img.id,
@@ -2793,16 +2805,19 @@ function PublicTaskModal({
   canViewComments,
   boardMembers,
 }) {
-  if (!task) return null;
-
-  const currentColumn = columns?.find((c) => c.id === task.columnId);
+  // Hook avant le retour anticipé : l'ordre des hooks doit rester stable
+  // quand la modale passe d'une tâche à aucune tâche
   const checklistProgress = useMemo(() => {
-    if (!task.checklist?.length) return { completed: 0, total: 0 };
+    if (!task?.checklist?.length) return { completed: 0, total: 0 };
     return {
       completed: task.checklist.filter((i) => i.completed).length,
       total: task.checklist.length,
     };
-  }, [task.checklist]);
+  }, [task?.checklist]);
+
+  if (!task) return null;
+
+  const currentColumn = columns?.find((c) => c.id === task.columnId);
 
   // Générer une couleur pour un tag basée sur son nom
   const getTagColor = (tagName) => {
@@ -3593,8 +3608,73 @@ function PublicTaskModal({
   );
 }
 
-// Helper pour le localStorage
+// Ancienne session (simple e-mail déclaré, plus acceptée par l'API) :
+// effacée au chargement
 const getStorageKey = (token) => `public_kanban_visitor_${token}`;
+
+// Session visiteur remise par l'API une fois l'adresse prouvée (code reçu
+// par e-mail) : exigée par le tableau, les commentaires, le profil et le
+// temps réel. Même clé que l'ancienne session UserInvited.
+const getVisitorSessionKey = (token) => `invited_session_${token}`;
+const visitorSessionsInMemory = new Map();
+
+const readStoredVisitorSession = (token) => {
+  if (visitorSessionsInMemory.has(token)) {
+    return visitorSessionsInMemory.get(token);
+  }
+  try {
+    const raw = localStorage.getItem(getVisitorSessionKey(token));
+    return (raw && JSON.parse(raw)?.sessionToken) || "";
+  } catch {
+    return "";
+  }
+};
+
+const storeVisitorSession = (token, sessionToken) => {
+  visitorSessionsInMemory.set(token, sessionToken || "");
+  try {
+    if (sessionToken) {
+      localStorage.setItem(
+        getVisitorSessionKey(token),
+        JSON.stringify({ sessionToken, savedAt: Date.now() }),
+      );
+    } else {
+      localStorage.removeItem(getVisitorSessionKey(token));
+    }
+  } catch {
+    // Stockage indisponible (navigation privée) : code redemandé au
+    // prochain chargement
+  }
+};
+
+// Jeton d'accès d'un partage protégé par mot de passe, remis par l'API
+// (12 h) : gardé pour les rechargements et l'abonnement temps réel, à la
+// place du mot de passe lui-même
+const getAccessTokenKey = (token) => `public_kanban_access_${token}`;
+// Copie en mémoire : lue par les commentaires, images et profil du visiteur
+const accessTokensInMemory = new Map();
+
+const readStoredAccessToken = (token) => {
+  if (accessTokensInMemory.has(token)) return accessTokensInMemory.get(token);
+  try {
+    return localStorage.getItem(getAccessTokenKey(token)) || "";
+  } catch {
+    return "";
+  }
+};
+
+const storeAccessToken = (token, accessToken) => {
+  accessTokensInMemory.set(token, accessToken || "");
+  try {
+    if (accessToken) {
+      localStorage.setItem(getAccessTokenKey(token), accessToken);
+    } else {
+      localStorage.removeItem(getAccessTokenKey(token));
+    }
+  } catch {
+    // Stockage indisponible (navigation privée) : mot de passe redemandé
+  }
+};
 
 // Main Page Component
 export default function PublicKanbanPage({ params }) {
@@ -3615,21 +3695,72 @@ export default function PublicKanbanPage({ params }) {
   const [collapsedColumns, setCollapsedColumns] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [isInitializing, setIsInitializing] = useState(true);
+  // Partage protégé : e-mail (et utilisateur invité) en attente du mot de passe
+  const [passwordGate, setPasswordGate] = useState(null);
+  const [shareAccessToken, setShareAccessToken] = useState(null);
+  const shareAccessTokenRef = useRef(null);
+  // Session visiteur (adresse confirmée) : abonnement temps réel
+  const [visitorSession, setVisitorSession] = useState(null);
 
   const [validateToken, { loading: validatingToken }] = useLazyQuery(
     VALIDATE_PUBLIC_TOKEN,
   );
-  const [getPublicBoard, { loading: loadingBoard }] =
-    useLazyQuery(GET_PUBLIC_BOARD);
+  // Toujours relu au serveur (accès approuvé, session renouvelée…)
+  const [getPublicBoard, { loading: loadingBoard }] = useLazyQuery(
+    GET_PUBLIC_BOARD,
+    { fetchPolicy: "network-only" },
+  );
   const [updateVisitorProfile, { loading: updatingProfile }] = useMutation(
     UPDATE_VISITOR_PROFILE,
   );
   const [validateInvitedSession] = useLazyQuery(VALIDATE_INVITED_SESSION);
 
+  // getPublicBoard avec la session visiteur et la preuve du mot de passe
+  // d'un partage protégé : le mot de passe saisi, sinon le jeton remis lors
+  // d'une ouverture précédente. Le jeton reçu est gardé pour l'abonnement
+  // temps réel.
+  const fetchPublicBoard = useCallback(
+    async (password = null) => {
+      if (shareAccessTokenRef.current === null) {
+        shareAccessTokenRef.current = readStoredAccessToken(token);
+      }
+      const result = await getPublicBoard({
+        variables: {
+          token,
+          sessionToken: readStoredVisitorSession(token) || null,
+          password: password || null,
+          accessToken: shareAccessTokenRef.current || null,
+        },
+      });
+      const data = result.data?.getPublicBoard;
+      // Jeton remis dès que le mot de passe est vérifié, y compris quand
+      // l'adresse reste à confirmer (requiresVisitorSession)
+      if (
+        data?.success ||
+        data?.requiresPassword ||
+        data?.requiresVisitorSession
+      ) {
+        const nextToken = data.accessToken || "";
+        shareAccessTokenRef.current = nextToken;
+        setShareAccessToken(nextToken || null);
+        storeAccessToken(token, nextToken);
+      }
+      return result;
+    },
+    [token, getPublicBoard],
+  );
+
   // Subscription pour les mises à jour en temps réel
   useSubscription(PUBLIC_TASK_UPDATED_SUBSCRIPTION, {
-    variables: { token, boardId: boardData?.id },
-    skip: !boardData?.id || !token,
+    variables: {
+      token,
+      boardId: boardData?.id,
+      accessToken: shareAccessToken,
+      sessionToken: visitorSession,
+    },
+    // Session visiteur exigée (un membre connecté voit le tableau sans le
+    // temps réel : la connexion WebSocket des pages publiques est anonyme)
+    skip: !boardData?.id || !token || !visitorSession,
     onData: ({ data }) => {
       const payload = data?.data?.publicTaskUpdated;
       if (!payload) return;
@@ -3736,13 +3867,7 @@ export default function PublicKanbanPage({ params }) {
           "Votre accès a été révoqué par le propriétaire du tableau.",
         );
 
-        // Supprimer la session du localStorage
-        try {
-          localStorage.removeItem(getStorageKey(token));
-        } catch (e) {
-          console.warn("Erreur suppression localStorage:", e);
-        }
-
+        // Session visiteur conservée : elle sert à demander un nouvel accès.
         // Marquer comme banni et afficher la page de demande d'accès
         setBoardData(null);
         setIsBanned(true);
@@ -3750,7 +3875,64 @@ export default function PublicKanbanPage({ params }) {
     },
   });
 
-  // Charger la session depuis localStorage et valider le token
+  // Tableau ouvert : visiteur (adresse de la session) ou membre connecté
+  const showBoard = useCallback((data, user) => {
+    const email = data.visitorEmail || user?.email || null;
+    const visitor = data.share?.visitors?.find(
+      (v) => v.email === email?.toLowerCase(),
+    );
+    setVisitorEmail(email);
+    if (user) setUserInvited(user);
+    setBoardData(data.board);
+    setPermissions(data.share?.permissions);
+    setVisitorProfile(
+      user
+        ? {
+            firstName: user.firstName,
+            lastName: user.lastName,
+            name: user.name || email?.split("@")[0],
+            image: user.image,
+          }
+        : {
+            firstName: visitor?.firstName,
+            lastName: visitor?.lastName,
+            name: visitor?.name || email?.split("@")[0],
+            image: visitor?.image,
+          },
+    );
+  }, []);
+
+  // Réponse de getPublicBoard : tableau, mot de passe du partage, visiteur
+  // banni, ou adresse à confirmer (session absente ou expirée)
+  const handleBoardResult = useCallback(
+    (result, user = null) => {
+      const data = result.data?.getPublicBoard;
+      if (data?.success) {
+        showBoard(data, user);
+        return "ok";
+      }
+      if (data?.requiresPassword) {
+        setPasswordGate({ email: user?.email || null, userInvited: user });
+        return "password";
+      }
+      if (data?.isBanned) {
+        setVisitorEmail(data.visitorEmail || user?.email || null);
+        setIsBanned(true);
+        return "banned";
+      }
+      if (data?.requiresVisitorSession) {
+        storeVisitorSession(token, null);
+        setVisitorSession(null);
+        setShowAuthModal(true);
+        return "session";
+      }
+      setAccessError(data?.message || "Accès refusé");
+      return "error";
+    },
+    [token, showBoard],
+  );
+
+  // Charger la session visiteur et valider le lien
   useEffect(() => {
     const initSession = async () => {
       if (!token) return;
@@ -3765,122 +3947,62 @@ export default function PublicKanbanPage({ params }) {
       }
       setShareLinkName(linkName);
 
-      // Vérifier si on a une session UserInvited stockée (nouveau système)
+      // Ancienne session (simple e-mail déclaré) : plus acceptée
       try {
-        const invitedSession = localStorage.getItem(`invited_session_${token}`);
-        if (invitedSession) {
-          const session = JSON.parse(invitedSession);
-          if (session.sessionToken && session.userInvited) {
-            // Valider le token de session
-            const validationResult = await validateInvitedSession({
-              variables: { sessionToken: session.sessionToken },
-            });
-
-            if (validationResult.data?.validateInvitedSession) {
-              const validUser = validationResult.data.validateInvitedSession;
-
-              // Récupérer le board avec l'email de l'utilisateur
-              const result = await getPublicBoard({
-                variables: { token, email: validUser.email },
-              });
-
-              if (result.data?.getPublicBoard?.success) {
-                setVisitorEmail(validUser.email);
-                setUserInvited(validUser);
-                setBoardData(result.data.getPublicBoard.board);
-                setPermissions(result.data.getPublicBoard.share?.permissions);
-                setVisitorProfile({
-                  firstName: validUser.firstName,
-                  lastName: validUser.lastName,
-                  name: validUser.name || validUser.email.split("@")[0],
-                  image: validUser.image,
-                });
-                setIsInitializing(false);
-                return;
-              }
-            }
-          }
-        }
-
-        // Fallback: Vérifier l'ancien système de session
-        const storedSession = localStorage.getItem(getStorageKey(token));
-        if (storedSession) {
-          const session = JSON.parse(storedSession);
-          if (session.email) {
-            // Essayer de récupérer le board avec l'email stocké
-            const result = await getPublicBoard({
-              variables: { token, email: session.email },
-            });
-            if (result.data?.getPublicBoard?.success) {
-              setVisitorEmail(session.email);
-              setBoardData(result.data.getPublicBoard.board);
-              setPermissions(result.data.getPublicBoard.share?.permissions);
-
-              // Récupérer le profil du visiteur
-              const visitor = result.data.getPublicBoard.share?.visitors?.find(
-                (v) => v.email === session.email.toLowerCase(),
-              );
-              if (visitor) {
-                setVisitorProfile({
-                  firstName: visitor.firstName,
-                  lastName: visitor.lastName,
-                  name: visitor.name || session.email.split("@")[0],
-                  image: visitor.image,
-                });
-              } else {
-                setVisitorProfile(
-                  session.profile || { name: session.email.split("@")[0] },
-                );
-              }
-
-              setIsInitializing(false);
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Erreur lecture localStorage:", e);
+        localStorage.removeItem(getStorageKey(token));
+      } catch {
+        // Stockage indisponible
       }
 
-      // Pas de session valide, afficher le nouveau modal d'authentification
-      setShowAuthModal(true);
+      try {
+        // Session visiteur déjà remise (adresse confirmée)
+        const storedSession = readStoredVisitorSession(token);
+        let user = null;
+        if (storedSession) {
+          const validation = await validateInvitedSession({
+            variables: { sessionToken: storedSession },
+          });
+          user = validation.data?.validateInvitedSession || null;
+          if (user) {
+            setVisitorSession(storedSession);
+          } else {
+            storeVisitorSession(token, null);
+          }
+        }
+
+        // Sans session, un membre connecté de l'espace accède directement
+        const result = await fetchPublicBoard();
+        handleBoardResult(result, user);
+      } catch (e) {
+        console.warn("Erreur chargement du tableau partagé:", e);
+        setShowAuthModal(true);
+      }
       setIsInitializing(false);
     };
 
     initSession();
-  }, [token, validateToken, getPublicBoard, validateInvitedSession]);
+  }, [
+    token,
+    validateToken,
+    fetchPublicBoard,
+    validateInvitedSession,
+    handleBoardResult,
+  ]);
 
-  // Handle authentication success (nouveau système UserInvited)
+  // Adresse confirmée : session visiteur remise par l'API
   const handleAuthSuccess = async (authResult) => {
-    const { userInvited: user } = authResult;
+    const { userInvited: user, sessionToken } = authResult;
 
-    if (!user) {
+    if (!user || !sessionToken) {
       setAccessError("Erreur d'authentification");
       return;
     }
 
+    setVisitorSession(sessionToken);
     try {
-      // Récupérer le board avec l'email de l'utilisateur authentifié
-      const result = await getPublicBoard({
-        variables: { token, email: user.email },
-      });
-
-      if (result.data?.getPublicBoard?.success) {
-        setVisitorEmail(user.email);
-        setUserInvited(user);
-        setBoardData(result.data.getPublicBoard.board);
-        setPermissions(result.data.getPublicBoard.share?.permissions);
+      const result = await fetchPublicBoard();
+      if (handleBoardResult(result, user) !== "session") {
         setShowAuthModal(false);
-
-        // Utiliser les infos du UserInvited pour le profil
-        setVisitorProfile({
-          firstName: user.firstName,
-          lastName: user.lastName,
-          name: user.name || user.email.split("@")[0],
-          image: user.image,
-        });
-      } else {
-        setAccessError(result.data?.getPublicBoard?.message || "Accès refusé");
       }
     } catch (error) {
       console.error("Erreur récupération board:", error);
@@ -3888,69 +4010,13 @@ export default function PublicKanbanPage({ params }) {
     }
   };
 
-  // Handle banned user (nouveau système)
+  // Visiteur banni (adresse confirmée) : page de demande d'accès
   const handleAuthBanned = (email, reason) => {
+    setVisitorSession(readStoredVisitorSession(token) || null);
     setVisitorEmail(email);
     setIsBanned(true);
     setBanReason(reason);
     setShowAuthModal(false);
-  };
-
-  // Handle email submission (ancien système - conservé pour compatibilité)
-  const handleEmailSubmit = async (email) => {
-    try {
-      const result = await getPublicBoard({ variables: { token, email } });
-      if (result.data?.getPublicBoard?.success) {
-        setVisitorEmail(email);
-        setBoardData(result.data.getPublicBoard.board);
-        setPermissions(result.data.getPublicBoard.share?.permissions);
-        setShowAuthModal(false);
-
-        // Try to get visitor profile from share
-        const visitor = result.data.getPublicBoard.share?.visitors?.find(
-          (v) => v.email === email.toLowerCase(),
-        );
-        let profile;
-        if (visitor) {
-          profile = {
-            firstName: visitor.firstName,
-            lastName: visitor.lastName,
-            name: visitor.name || email.split("@")[0],
-            image: visitor.image,
-          };
-        } else {
-          profile = { name: email.split("@")[0] };
-        }
-        setVisitorProfile(profile);
-
-        // Sauvegarder la session en localStorage
-        try {
-          localStorage.setItem(
-            getStorageKey(token),
-            JSON.stringify({
-              email,
-              profile,
-              savedAt: Date.now(),
-            }),
-          );
-        } catch (e) {
-          console.warn("Erreur sauvegarde localStorage:", e);
-        }
-      } else {
-        // Vérifier si l'utilisateur est banni
-        if (result.data?.getPublicBoard?.isBanned) {
-          setVisitorEmail(email);
-          setIsBanned(true);
-          setShowAuthModal(false);
-        } else {
-          setAccessError(
-            result.data?.getPublicBoard?.message || "Accès refusé",
-          );
-        }
-      }
-    } catch (error) {
-      setAccessError("Une erreur est survenue");
-    }
   };
 
   // Handle profile update
@@ -3959,7 +4025,8 @@ export default function PublicKanbanPage({ params }) {
       const result = await updateVisitorProfile({
         variables: {
           token,
-          email: visitorEmail,
+          sessionToken: readStoredVisitorSession(token) || null,
+          accessToken: shareAccessTokenRef.current || null,
           input: {
             firstName: profileData.firstName,
             lastName: profileData.lastName,
@@ -3981,20 +4048,6 @@ export default function PublicKanbanPage({ params }) {
         setVisitorProfile(newProfile);
         setShowProfileModal(false);
         toast.success("Profil mis à jour");
-
-        // Mettre à jour le localStorage
-        try {
-          localStorage.setItem(
-            getStorageKey(token),
-            JSON.stringify({
-              email: visitorEmail,
-              profile: newProfile,
-              savedAt: Date.now(),
-            }),
-          );
-        } catch (e) {
-          console.warn("Erreur mise à jour localStorage:", e);
-        }
       } else {
         toast.error(result.data?.updateVisitorProfile?.message || "Erreur");
       }
@@ -4063,6 +4116,26 @@ export default function PublicKanbanPage({ params }) {
     setCollapsedColumns((prev) => ({ ...prev, [columnId]: !prev[columnId] }));
   };
 
+  // Mot de passe du partage saisi : ouvre le tableau, ou renvoie le message
+  // d'erreur à afficher sous le champ
+  const handleSharePasswordSubmit = async (password) => {
+    const gate = passwordGate;
+    if (!gate) return null;
+    try {
+      const result = await fetchPublicBoard(password);
+      const data = result.data?.getPublicBoard;
+      if (data?.requiresPassword) {
+        return data.message || "Mot de passe incorrect";
+      }
+      setPasswordGate(null);
+      handleBoardResult(result, gate.userInvited);
+      return null;
+    } catch (error) {
+      console.error("Erreur vérification du mot de passe:", error);
+      return "Une erreur est survenue";
+    }
+  };
+
   // Loading state (initialisation ou validation)
   if (isInitializing || validatingToken) {
     return (
@@ -4075,8 +4148,9 @@ export default function PublicKanbanPage({ params }) {
     );
   }
 
-  // Error state
-  if (accessError && !showEmailModal) {
+  // Error state (showEmailModal, reliquat de l'ancien modal e-mail, n'était
+  // plus déclaré : toute erreur d'accès levait une ReferenceError)
+  if (accessError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="max-w-md w-full mx-4">
@@ -4100,32 +4174,24 @@ export default function PublicKanbanPage({ params }) {
           // Recharger les données du tableau quand l'accès est approuvé
           setIsBanned(false);
           try {
-            const result = await getPublicBoard({
-              variables: { token, email: visitorEmail },
-            });
-            if (result.data?.getPublicBoard?.success) {
-              setBoardData(result.data.getPublicBoard.board);
-              setPermissions(result.data.getPublicBoard.share?.permissions);
-
-              // Récupérer le profil visiteur
-              const visitor = result.data.getPublicBoard.share?.visitors?.find(
-                (v) => v.email === visitorEmail.toLowerCase(),
-              );
-              if (visitor) {
-                setVisitorProfile({
-                  firstName: visitor.firstName,
-                  lastName: visitor.lastName,
-                  name: visitor.name || visitorEmail.split("@")[0],
-                  image: visitor.image,
-                });
-              }
-            }
+            handleBoardResult(await fetchPublicBoard(), userInvited);
           } catch (error) {
             console.error("Erreur rechargement après approbation:", error);
             // En cas d'erreur, recharger la page
             window.location.reload();
           }
         }}
+      />
+    );
+  }
+
+  // Partage protégé : mot de passe avant d'afficher le tableau
+  if (passwordGate) {
+    return (
+      <SharePasswordGate
+        shareLinkName={shareLinkName}
+        email={passwordGate.email}
+        onSubmit={handleSharePasswordSubmit}
       />
     );
   }

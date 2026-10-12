@@ -1109,25 +1109,19 @@ export default function InvoiceSettingsView({
         </div>
       </div>
 
-      {/* Boutons fixes en bas */}
-      <div className="flex-shrink-0 border-t bg-background pt-4">
-        <div className="max-w-2xl mx-auto flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={handleCancelClick}
-            disabled={!canEdit}
-          >
-            Annuler
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSaveClick}
-            disabled={!canEdit}
-          >
-            {saveLabel}
-          </Button>
+      {/* Boutons fixes en bas : masqués en lecture seule (consultation) */}
+      {canEdit && (
+        <div className="flex-shrink-0 border-t bg-background pt-4">
+          <div className="max-w-2xl mx-auto flex justify-end gap-3">
+            <Button variant="outline" onClick={handleCancelClick}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleSaveClick}>
+              {saveLabel}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Dialog de confirmation */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

@@ -1034,50 +1034,53 @@ const TaskActivityComponent = ({
                                             <Edit2 className="h-3.5 w-3.5" />
                                           </Button>
                                         )}
-                                      <AlertDialog
-                                        open={commentToDelete === item.id}
-                                        onOpenChange={(open) =>
-                                          !open && setCommentToDelete(null)
-                                        }
-                                      >
-                                        <AlertDialogTrigger asChild>
-                                          <Button
-                                            size="xs"
-                                            variant="ghost"
-                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                            onClick={() =>
-                                              setCommentToDelete(item.id)
-                                            }
-                                          >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogTitle>
-                                            Supprimer le commentaire
-                                          </AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Êtes-vous sûr de vouloir supprimer
-                                            ce commentaire ? Cette action ne
-                                            peut pas être annulée.
-                                          </AlertDialogDescription>
-                                          <div className="flex gap-2 justify-end">
-                                            <AlertDialogCancel>
-                                              Annuler
-                                            </AlertDialogCancel>
-                                            <AlertDialogAction
-                                              onClick={() => {
-                                                handleDeleteComment(item.id);
-                                                setCommentToDelete(null);
-                                              }}
-                                              disabled={deletingComment}
-                                              className="bg-destructive text-white hover:bg-destructive/90"
+                                      {/* Supprimer : action « Commenter » (l'API vérifie l'auteur) */}
+                                      {canComment && (
+                                        <AlertDialog
+                                          open={commentToDelete === item.id}
+                                          onOpenChange={(open) =>
+                                            !open && setCommentToDelete(null)
+                                          }
+                                        >
+                                          <AlertDialogTrigger asChild>
+                                            <Button
+                                              size="xs"
+                                              variant="ghost"
+                                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                              onClick={() =>
+                                                setCommentToDelete(item.id)
+                                              }
                                             >
-                                              Supprimer
-                                            </AlertDialogAction>
-                                          </div>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogTitle>
+                                              Supprimer le commentaire
+                                            </AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              Êtes-vous sûr de vouloir supprimer
+                                              ce commentaire ? Cette action ne
+                                              peut pas être annulée.
+                                            </AlertDialogDescription>
+                                            <div className="flex gap-2 justify-end">
+                                              <AlertDialogCancel>
+                                                Annuler
+                                              </AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => {
+                                                  handleDeleteComment(item.id);
+                                                  setCommentToDelete(null);
+                                                }}
+                                                disabled={deletingComment}
+                                                className="bg-destructive text-white hover:bg-destructive/90"
+                                              >
+                                                Supprimer
+                                              </AlertDialogAction>
+                                            </div>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
                                     </div>
                                   </div>
                                   {item.content && (
@@ -1380,50 +1383,53 @@ const TaskActivityComponent = ({
                                     <Edit2 className="h-3.5 w-3.5" />
                                   </Button>
                                 )}
-                              <AlertDialog
-                                open={commentToDelete === comment.id}
-                                onOpenChange={(open) =>
-                                  !open && setCommentToDelete(null)
-                                }
-                              >
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                    onClick={() =>
-                                      setCommentToDelete(comment.id)
-                                    }
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogTitle>
-                                    Supprimer le commentaire
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Êtes-vous sûr de vouloir supprimer ce
-                                    commentaire ? Cette action ne peut pas être
-                                    annulée.
-                                  </AlertDialogDescription>
-                                  <div className="flex gap-2 justify-end">
-                                    <AlertDialogCancel>
-                                      Annuler
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => {
-                                        handleDeleteComment(comment.id);
-                                        setCommentToDelete(null);
-                                      }}
-                                      disabled={deletingComment}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              {/* Supprimer : action « Commenter » (l'API vérifie l'auteur) */}
+                              {canComment && (
+                                <AlertDialog
+                                  open={commentToDelete === comment.id}
+                                  onOpenChange={(open) =>
+                                    !open && setCommentToDelete(null)
+                                  }
+                                >
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      size="xs"
+                                      variant="ghost"
+                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                      onClick={() =>
+                                        setCommentToDelete(comment.id)
+                                      }
                                     >
-                                      Supprimer
-                                    </AlertDialogAction>
-                                  </div>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogTitle>
+                                      Supprimer le commentaire
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Êtes-vous sûr de vouloir supprimer ce
+                                      commentaire ? Cette action ne peut pas
+                                      être annulée.
+                                    </AlertDialogDescription>
+                                    <div className="flex gap-2 justify-end">
+                                      <AlertDialogCancel>
+                                        Annuler
+                                      </AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => {
+                                          handleDeleteComment(comment.id);
+                                          setCommentToDelete(null);
+                                        }}
+                                        disabled={deletingComment}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Supprimer
+                                      </AlertDialogAction>
+                                    </div>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
                             </div>
                           </div>
                           {comment.content && (

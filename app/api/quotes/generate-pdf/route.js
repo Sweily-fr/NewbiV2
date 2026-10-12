@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { launchBrowser } from "@/src/lib/puppeteer";
+import { launchBrowser, securePdfPage } from "@/src/lib/puppeteer";
 import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
 import { appendDocumentAnnex } from "@/src/lib/document-annex-server";
 import { mongoDb } from "@/src/lib/mongodb";
 import {
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   hasInternalSecret,
   toObjectId,
   apiError,
@@ -16,7 +16,7 @@ import {
  * POST /api/quotes/generate-pdf
  *
  * Generate a PDF for a quote via Puppeteer.
- * Auth check (session + org membership) is done HERE, before launching the browser.
+ * Auth check (session + droit « Voir » du module) is done HERE, before launching the browser.
  * Puppeteer then calls /api/quotes/data/[id] with X-Internal-Secret to fetch data.
  */
 async function handler(request) {
@@ -37,7 +37,7 @@ async function handler(request) {
     if (!quote) {
       return apiError(404, "Devis introuvable");
     }
-    await requireOrgMembership(user.id, quote.workspaceId);
+    await requireOrgAction(user.id, quote.workspaceId, "quotes", "view");
   }
 
   // User is authorized — launch Puppeteer to generate the PDF
@@ -59,11 +59,11 @@ async function handler(request) {
     console.log(`🌐 [PDF API] Navigation vers: ${generatorUrl}`);
 
     // Authenticate Puppeteer requests via internal secret (Principle 4)
-    if (process.env.INTERNAL_API_SECRET) {
-      await page.setExtraHTTPHeaders({
-        "x-internal-secret": process.env.INTERNAL_API_SECRET,
-      });
-    }
+    // Secret interne posé sur les seules requêtes vers le site (jamais vers
+    // un domaine tiers) ; hors du site, seules les images publiques R2
+    // passent : pas de requête du serveur vers une URL choisie par
+    // l'utilisateur (logo, image d'article, données d'aperçu)
+    await securePdfPage(page, baseUrl);
 
     await page.goto(generatorUrl, {
       waitUntil: "networkidle0",

@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { useSession, performLogout } from "@/src/lib/auth-client";
 import { isDeliveryNotesAllowed } from "@/src/hooks/useDeliveryNotesAccess";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
+import { moduleForPath } from "@/src/lib/route-modules";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 
 // ─── Tab definitions ─────────────────────────────────────────────
@@ -259,6 +261,17 @@ const hiddenPaths = [
 ];
 
 export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
+  // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
+  // pages des ventes visibles avec « Voir », créations avec « Créer »
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canViewPage = (href) => {
+    const moduleKey = moduleForPath(href);
+    return !permissionsReady || !moduleKey || canDo(moduleKey, "view");
+  };
+  const canCreateInvoices = !permissionsReady || canDo("invoices", "create");
+  const canCreateQuotes = !permissionsReady || canDo("quotes", "create");
+  const isVisibleMoreItem = (item) =>
+    !item.href || item.external || canViewPage(item.href);
   const pathname = usePathname();
   const [billingOpen, setBillingOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -409,8 +422,9 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
               {ventesNavigation
                 .filter(
                   (item) =>
-                    isDeliveryNotesAllowed(session?.user?.email) ||
-                    item.href !== "/dashboard/outils/bons-de-livraison",
+                    (isDeliveryNotesAllowed(session?.user?.email) ||
+                      item.href !== "/dashboard/outils/bons-de-livraison") &&
+                    canViewPage(item.href),
                 )
                 .map((item) => {
                   const isActive =
@@ -438,30 +452,36 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
             {/* Separator */}
             <div className="mx-6 h-px bg-border/40" />
 
-            {/* Action buttons */}
-            <div className="px-4 pt-3 pb-2 flex flex-col gap-2">
-              <Button asChild size="lg" className="w-full rounded-xl h-11">
-                <Link
-                  href="/dashboard/outils/factures/new"
-                  onClick={() => setBillingOpen(false)}
-                >
-                  Nouvelle facture
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="lg"
-                className="w-full rounded-xl h-11"
-              >
-                <Link
-                  href="/dashboard/outils/devis/new"
-                  onClick={() => setBillingOpen(false)}
-                >
-                  Nouveau devis
-                </Link>
-              </Button>
-            </div>
+            {/* Action buttons : masqués sans le droit « Créer » */}
+            {(canCreateInvoices || canCreateQuotes) && (
+              <div className="px-4 pt-3 pb-2 flex flex-col gap-2">
+                {canCreateInvoices && (
+                  <Button asChild size="lg" className="w-full rounded-xl h-11">
+                    <Link
+                      href="/dashboard/outils/factures/new"
+                      onClick={() => setBillingOpen(false)}
+                    >
+                      Nouvelle facture
+                    </Link>
+                  </Button>
+                )}
+                {canCreateQuotes && (
+                  <Button
+                    asChild
+                    variant={canCreateInvoices ? "outline" : "default"}
+                    size="lg"
+                    className="w-full rounded-xl h-11"
+                  >
+                    <Link
+                      href="/dashboard/outils/devis/new"
+                      onClick={() => setBillingOpen(false)}
+                    >
+                      Nouveau devis
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* Safe area padding */}
             <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
@@ -536,7 +556,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                     {section.title}
                   </p>
                   <div className="space-y-0.5">
-                    {section.items.map((item) => {
+                    {section.items.filter(isVisibleMoreItem).map((item) => {
                       const isActive =
                         item.href &&
                         !item.external &&

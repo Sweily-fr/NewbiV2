@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
-import { withErrorHandler } from "@/src/lib/security";
+import { toObjectId, withErrorHandler } from "@/src/lib/security";
 
 async function handler(req) {
   console.log("🗑️ [REVOKE-SESSION] Demande de révocation de session...");
@@ -17,11 +17,14 @@ async function handler(req) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
-  // Récupérer le token de la session à révoquer
+  // Session à révoquer : par son id (page Appareils) ou, pour les anciens
+  // appels, par son jeton
   const body = await req.json();
-  const { sessionToken } = body;
+  const { sessionId, sessionToken } = body || {};
+  const byId =
+    typeof sessionId === "string" && /^[0-9a-f]{24}$/.test(sessionId);
 
-  if (!sessionToken) {
+  if (!byId && (!sessionToken || typeof sessionToken !== "string")) {
     console.log("❌ [REVOKE-SESSION] Token de session manquant");
     return NextResponse.json(
       { error: "Token de session requis" },
@@ -29,16 +32,18 @@ async function handler(req) {
     );
   }
 
-  console.log(
-    "🔍 [REVOKE-SESSION] Token à révoquer:",
-    sessionToken.substring(0, 10) + "...",
-  );
   console.log("👤 [REVOKE-SESSION] Utilisateur:", session.user.id);
 
-  // Récupérer d'abord la session pour vérifier qu'elle existe
+  // Seules les sessions de l'utilisateur connecté peuvent être révoquées :
+  // le filtre porte aussi sur son id (stocké en ObjectId, ou en chaîne sur
+  // d'anciens documents). Une session d'un autre compte = introuvable.
+  const ownSessionFilter = {
+    ...(byId ? { _id: toObjectId(sessionId) } : { token: sessionToken }),
+    userId: { $in: [toObjectId(session.user.id), String(session.user.id)] },
+  };
   const sessionToRevoke = await mongoDb
     .collection("session")
-    .findOne({ token: sessionToken });
+    .findOne(ownSessionFilter);
 
   if (!sessionToRevoke) {
     console.log("⚠️ [REVOKE-SESSION] Session non trouvée");
@@ -51,9 +56,9 @@ async function handler(req) {
   });
 
   // Supprimer la session de MongoDB
-  const result = await mongoDb.collection("session").deleteOne({
-    token: sessionToken,
-  });
+  const result = await mongoDb
+    .collection("session")
+    .deleteOne(ownSessionFilter);
 
   console.log("📊 [REVOKE-SESSION] Résultat suppression:", result);
 
@@ -70,10 +75,7 @@ async function handler(req) {
   return NextResponse.json({
     success: true,
     message: "Session révoquée",
-    revokedSession: {
-      token: sessionToken.substring(0, 10) + "...",
-      userId: sessionToRevoke.userId,
-    },
+    revokedSession: { id: sessionToRevoke._id.toString() },
   });
 }
 

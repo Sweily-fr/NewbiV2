@@ -69,11 +69,9 @@ import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
-import {
-  useTaskMembers,
-  useDebouncedMemberFlush,
-} from "../hooks/useMemberToggle";
+import { useTaskMembers } from "../hooks/useMemberToggle";
 import { useLazyVisible } from "../hooks/useLazyVisible";
+import { useTaskFieldMutations } from "../hooks/useTaskFieldMutations";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
 import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { TaskPresenceAvatars, TaskPresenceOverlay } from "./TaskViewers";
@@ -130,7 +128,6 @@ const MembersPopover = React.memo(function MembersPopover({
   task,
   membersInfo,
   members,
-  updateTask,
   workspaceId,
   isTrigger,
   popoverOpenRef,
@@ -142,8 +139,6 @@ const MembersPopover = React.memo(function MembersPopover({
   const triggerRef = useRef(null);
 
   const handleOpenChange = (open) => {
-    // Rôle sans écriture : l'assignation reste en lecture seule
-    if (open && readOnly) return;
     setIsOpen(open);
     if (open) {
       setSearchQuery("");
@@ -163,13 +158,48 @@ const MembersPopover = React.memo(function MembersPopover({
     }
   };
 
-  // Base optimiste + debounce : les clics rapides calculent à partir de l'état
-  // local (et non du cache qui retarde), et sont coalescés en une mutation.
+  // Base optimiste : les clics rapides calculent à partir de l'état local
+  // (et non du cache qui retarde), un membre par mutation.
   const { members: effectiveMembers, toggle: toggleMember } = useTaskMembers({
     task,
-    updateTask,
     workspaceId,
   });
+
+  // Rôle sans « Modifier » : avatars affichés tels quels, sans menu
+  // d'assignation ni curseur cliquable
+  if (readOnly) {
+    if (!isTrigger) return null;
+    return (
+      <div className="flex -space-x-2">
+        {effectiveMembers.slice(0, 3).map((memberId, idx) => {
+          const memberInfo = membersInfo.find((m) => m.id === memberId);
+          return (
+            <Tooltip key={memberId}>
+              <TooltipTrigger asChild>
+                <div>
+                  <UserAvatar
+                    src={memberInfo?.image}
+                    name={memberInfo?.name || memberId}
+                    size="xs"
+                    className="border border-background ring-1 ring-border/10"
+                    style={{ zIndex: effectiveMembers.length - idx }}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px] px-2 py-1">
+                {memberInfo?.name || memberId}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+        {effectiveMembers.length > 3 && (
+          <div className="w-5 h-5 rounded-full bg-muted/80 border border-background flex items-center justify-center text-[8px] font-semibold text-muted-foreground flex-shrink-0">
+            +{effectiveMembers.length - 3}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
@@ -202,18 +232,16 @@ const MembersPopover = React.memo(function MembersPopover({
                       {memberInfo?.name || memberId}
                     </TooltipContent>
                   </Tooltip>
-                  {!readOnly && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleMember(memberId);
-                      }}
-                      className="absolute -top-1.5 -right-0.5 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
-                      title="Supprimer l'assignation"
-                    >
-                      <X className="w-2 h-2 text-white stroke-[3]" />
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMember(memberId);
+                    }}
+                    className="absolute -top-1.5 -right-0.5 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer"
+                    title="Supprimer l'assignation"
+                  >
+                    <X className="w-2 h-2 text-white stroke-[3]" />
+                  </button>
                 </div>
               );
             })}
@@ -423,21 +451,13 @@ function BulkActionBar({
   const count = selectedTaskIds.size;
   const [moveOpen, setMoveOpen] = useState(false);
 
-  // Assignation : état optimiste par tâche (taskId → membres) + debounce.
-  // Les clics rapides calculent depuis l'état local (le cache retarde le temps
-  // de l'écho serveur) et sont coalescés en une mutation par tâche.
+  // Assignation : état optimiste par tâche (taskId → membres). Les clics
+  // rapides calculent depuis l'état local (le cache retarde le temps de
+  // l'écho serveur) ; chaque tâche reçoit un assignTaskMember /
+  // unassignTaskMember (un membre à la fois, pas d'écrasement entre
+  // collègues).
   const [assignOverrides, setAssignOverrides] = useState({});
-  const flushMembers = useDebouncedMemberFlush({
-    updateTask,
-    workspaceId,
-    // En cas d'échec serveur, revenir à la vérité du cache pour cette tâche.
-    onError: (taskId) =>
-      setAssignOverrides((prev) => {
-        const next = { ...prev };
-        delete next[taskId];
-        return next;
-      }),
-  });
+  const fieldMutations = useTaskFieldMutations(workspaceId);
   React.useEffect(() => {
     setAssignOverrides({});
   }, [selectedTaskIds]);
@@ -540,7 +560,16 @@ function BulkActionBar({
           ? current
           : [...current, memberId];
       overrides[taskId] = next;
-      if (next !== current) flushMembers(taskId, next);
+      if (next !== current) {
+        fieldMutations.setMember(taskId, memberId, !allHave).catch(() =>
+          // Échec : retour à la vérité du cache pour cette tâche
+          setAssignOverrides((prev) => {
+            const rest = { ...prev };
+            delete rest[taskId];
+            return rest;
+          }),
+        );
+      }
     });
     setAssignOverrides((prev) => ({ ...prev, ...overrides }));
   };
@@ -869,11 +898,10 @@ function TaskActionsMenu({
 }) {
   const [open, setOpen] = useState(false);
 
-  // Même mécanique optimiste + debounce que MembersPopover : les clics
-  // rapides calculent depuis l'état local et sont coalescés en une mutation.
+  // Même mécanique optimiste que MembersPopover : les clics rapides
+  // calculent depuis l'état local, un membre par mutation.
   const { members: assignedMembers, toggle: toggleMember } = useTaskMembers({
     task,
-    updateTask,
     workspaceId,
   });
 
@@ -1154,6 +1182,33 @@ function StatusPopoverWrapper({
   const [popoverSide, setPopoverSide] = useState("bottom");
   const [open, setOpen] = useState(false);
 
+  const pillStyle = {
+    backgroundColor: `${column.color || "#94a3b8"}20`,
+    borderColor: `${column.color || "#94a3b8"}20`,
+    color: column.color || "#94a3b8",
+  };
+  const pillContent = (
+    <>
+      <div
+        className="w-2 h-2 rounded-full flex-shrink-0"
+        style={{ backgroundColor: column.color || "#94a3b8" }}
+      />
+      <span className="truncate min-w-0">{column.title}</span>
+    </>
+  );
+
+  // Rôle sans « Modifier » : status en lecture simple (pastille non cliquable)
+  if (disabled) {
+    return (
+      <span
+        className="px-2 py-1 rounded-md min-w-0 max-w-full text-xs font-medium border flex items-center gap-1"
+        style={pillStyle}
+      >
+        {pillContent}
+      </span>
+    );
+  }
+
   return (
     <Popover
       open={open}
@@ -1177,20 +1232,11 @@ function StatusPopoverWrapper({
     >
       <PopoverTrigger asChild ref={triggerRef}>
         <button
-          disabled={disabled}
-          className="px-2 py-1 rounded-md min-w-0 max-w-full text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity disabled:cursor-default disabled:hover:opacity-100"
-          style={{
-            backgroundColor: `${column.color || "#94a3b8"}20`,
-            borderColor: `${column.color || "#94a3b8"}20`,
-            color: column.color || "#94a3b8",
-          }}
+          className="px-2 py-1 rounded-md min-w-0 max-w-full text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+          style={pillStyle}
           onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: column.color || "#94a3b8" }}
-          />
-          <span className="truncate min-w-0">{column.title}</span>
+          {pillContent}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-60 p-0" side={popoverSide} align="start">
@@ -1732,12 +1778,7 @@ function resolveTagColors(tag) {
   return { ...tag, bg: c.bg, text: c.text, border: c.border };
 }
 
-function InlineTagPopover({
-  task,
-  updateTask,
-  workspaceId,
-  allBoardTags = [],
-}) {
+function InlineTagPopover({ task, workspaceId, allBoardTags = [] }) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const taskTags = task.tags || [];
@@ -1770,53 +1811,24 @@ function InlineTagPopover({
     return TAG_COLORS.find((c) => !usedBgs.has(c.bg)) || TAG_COLORS[0];
   };
 
+  // Un tag à la fois (addTaskTag / removeTaskTag) : ne remplace plus la
+  // liste complète, qui écrasait les tags posés en même temps par un collègue
+  const fieldMutations = useTaskFieldMutations(workspaceId);
+
   const addTagToTask = (tag) => {
-    const newTags = [
-      ...taskTags,
-      {
+    fieldMutations
+      .addTag(task.id, {
         name: tag.name,
         className: "",
         bg: tag.bg,
         text: tag.text,
         border: tag.border,
-      },
-    ];
-    updateTask({
-      variables: {
-        input: {
-          id: task.id,
-          tags: newTags.map((t) => ({
-            name: t.name,
-            className: t.className || "",
-            bg: t.bg,
-            text: t.text,
-            border: t.border,
-          })),
-        },
-        workspaceId,
-      },
-    });
+      })
+      .catch(() => {});
   };
 
   const removeTagFromTask = (tagName) => {
-    const newTags = taskTags.filter(
-      (t) => t.name.toLowerCase() !== tagName.toLowerCase(),
-    );
-    updateTask({
-      variables: {
-        input: {
-          id: task.id,
-          tags: newTags.map((t) => ({
-            name: t.name,
-            className: t.className || "",
-            bg: t.bg,
-            text: t.text,
-            border: t.border,
-          })),
-        },
-        workspaceId,
-      },
-    });
+    fieldMutations.removeTag(task.id, tagName).catch(() => {});
   };
 
   const createAndAdd = () => {
@@ -2134,13 +2146,7 @@ function TagsTooltipGrid({ tags }) {
 /**
  * Cellule Tags pour la vue liste — affiche premier tag + badge "+N" + bouton ajouter
  */
-function TaskTagsCell({
-  task,
-  updateTask,
-  workspaceId,
-  allBoardTags,
-  readOnly = false,
-}) {
+function TaskTagsCell({ task, workspaceId, allBoardTags, readOnly = false }) {
   const allTags = useMemo(() => {
     const tags = task.tags || [];
     if (tags.length === 0) return [];
@@ -2275,7 +2281,6 @@ function TaskTagsCell({
       {!readOnly && (
         <InlineTagPopover
           task={task}
-          updateTask={updateTask}
           workspaceId={workspaceId}
           allBoardTags={allBoardTags}
         />
@@ -2419,61 +2424,73 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
             />
           )}
           {/* modal={false} : pas de scroll-lock body → pas d'écran figé si la
-              ligne se démonte (move) pendant la fermeture du menu */}
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <button
-                disabled={!canEdit}
-                className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity disabled:cursor-default disabled:hover:opacity-100"
-                style={{
-                  backgroundColor: column.color || "#94a3b8",
-                  border: `1.5px solid ${column.color || "#94a3b8"}60`,
-                  outline: `1.5px solid ${column.color || "#94a3b8"}30`,
-                  outlineOffset: "1.5px",
-                }}
-                onClick={(e) => e.stopPropagation()}
-                title={canEdit ? "Changer le status" : undefined}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-40">
-              {columns.map((col) => (
-                <DropdownMenuItem
-                  key={col.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // DropdownMenu Radix = modal → pose un scroll-lock +
-                    // pointer-events:none sur le body. La maj optimiste de
-                    // moveTask re-render et démonte la ligne (qui change de
-                    // colonne) AVANT que le menu ne se ferme : son nettoyage
-                    // (react-remove-scroll) ne s'exécute pas et le body reste
-                    // verrouillé → écran figé. On diffère la mutation pour
-                    // laisser le menu se fermer et nettoyer d'abord.
-                    const variables = {
-                      id: task.id,
-                      columnId: col.id,
-                      position: 0,
-                      workspaceId,
-                    };
-                    setTimeout(() => {
-                      moveTask({ variables }).catch((error) => {
-                        console.error(
-                          "Erreur lors du déplacement de la tâche:",
-                          error,
-                        );
-                      });
-                    }, 0);
+              ligne se démonte (move) pendant la fermeture du menu.
+              Sans « Modifier » : simple point coloré, sans menu. */}
+          {!canEdit ? (
+            <span
+              className="flex-shrink-0 w-2.5 h-2.5 rounded-full"
+              style={{
+                backgroundColor: column.color || "#94a3b8",
+                border: `1.5px solid ${column.color || "#94a3b8"}60`,
+                outline: `1.5px solid ${column.color || "#94a3b8"}30`,
+                outlineOffset: "1.5px",
+              }}
+            />
+          ) : (
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex-shrink-0 w-2.5 h-2.5 rounded-full cursor-pointer hover:opacity-80 transition-opacity"
+                  style={{
+                    backgroundColor: column.color || "#94a3b8",
+                    border: `1.5px solid ${column.color || "#94a3b8"}60`,
+                    outline: `1.5px solid ${column.color || "#94a3b8"}30`,
+                    outlineOffset: "1.5px",
                   }}
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <div
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: col.color || "#94a3b8" }}
-                  />
-                  <span>{col.title}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  onClick={(e) => e.stopPropagation()}
+                  title="Changer le status"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-40">
+                {columns.map((col) => (
+                  <DropdownMenuItem
+                    key={col.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // DropdownMenu Radix = modal → pose un scroll-lock +
+                      // pointer-events:none sur le body. La maj optimiste de
+                      // moveTask re-render et démonte la ligne (qui change de
+                      // colonne) AVANT que le menu ne se ferme : son nettoyage
+                      // (react-remove-scroll) ne s'exécute pas et le body reste
+                      // verrouillé → écran figé. On diffère la mutation pour
+                      // laisser le menu se fermer et nettoyer d'abord.
+                      const variables = {
+                        id: task.id,
+                        columnId: col.id,
+                        position: 0,
+                        workspaceId,
+                      };
+                      setTimeout(() => {
+                        moveTask({ variables }).catch((error) => {
+                          console.error(
+                            "Erreur lors du déplacement de la tâche:",
+                            error,
+                          );
+                        });
+                      }, 0);
+                    }}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: col.color || "#94a3b8" }}
+                    />
+                    <span>{col.title}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <InlineEditTitle
             task={task}
             updateTask={updateTask}
@@ -2540,44 +2557,53 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
         />
       </div>
 
-      {/* Priorité */}
+      {/* Priorité (badge en lecture simple sans « Modifier ») */}
       <div className="flex items-center gap-1 min-w-0">
-        <PriorityPopoverWrapper
-          task={task}
-          updateTask={updateTask}
-          workspaceId={workspaceId}
-          popoverOpenRef={popoverOpenRef}
-          trigger={
-            <button
-              disabled={!canEdit}
-              className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity disabled:cursor-default disabled:hover:opacity-100"
-              onClick={(e) => e.stopPropagation()}
+        {(() => {
+          const priorityBadge = task.priority ? (
+            getPriorityBadge(task.priority)
+          ) : (
+            <Badge
+              variant="outline"
+              className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
             >
-              {task.priority ? (
-                getPriorityBadge(task.priority)
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"
+              <Flag className="h-4 w-4 text-[#8D8D8D] fill-gray-400" />
+              <span className="text-muted-foreground">-</span>
+            </Badge>
+          );
+          if (!canEdit) return priorityBadge;
+          return (
+            <PriorityPopoverWrapper
+              task={task}
+              updateTask={updateTask}
+              workspaceId={workspaceId}
+              popoverOpenRef={popoverOpenRef}
+              trigger={
+                <button
+                  className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <Flag className="h-4 w-4 text-[#8D8D8D] fill-gray-400" />
-                  <span className="text-muted-foreground">-</span>
-                </Badge>
-              )}
-            </button>
-          }
-        />
+                  {priorityBadge}
+                </button>
+              }
+            />
+          );
+        })()}
       </div>
 
       {/* Date d'échéance */}
       <div className="flex items-center gap-1.5 text-xs min-w-0">
-        {task.dueDate ? (
+        {task.dueDate && !canEdit ? (
+          // Sans « Modifier » : date en lecture simple
+          <span className="truncate font-normal text-foreground/70 px-1.5 py-0.5">
+            {formatDate(task.dueDate)}
+          </span>
+        ) : task.dueDate ? (
           <div className="relative group/date inline-flex items-center min-w-0 max-w-full">
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  disabled={!canEdit}
-                  className="flex items-center min-w-0 gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:ring-0"
+                  className="flex items-center min-w-0 gap-1 px-1.5 py-0.5 rounded hover:bg-muted/60 hover:ring-1 hover:ring-border transition-all cursor-pointer bg-transparent border-0 p-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span className="truncate font-normal text-foreground/70">
@@ -2629,30 +2655,28 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
                 </div>
               </PopoverContent>
             </Popover>
-            {canEdit && (
-              <button
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  try {
-                    await updateTask({
-                      variables: {
-                        input: { id: task.id, dueDate: null },
-                        workspaceId,
-                      },
-                    });
-                  } catch (error) {
-                    console.error(
-                      "Erreur lors de la suppression de la date:",
-                      error,
-                    );
-                  }
-                }}
-                className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
-                title="Supprimer la date"
-              >
-                <X className="w-2 h-2 text-white stroke-[3]" />
-              </button>
-            )}
+            <button
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  await updateTask({
+                    variables: {
+                      input: { id: task.id, dueDate: null },
+                      workspaceId,
+                    },
+                  });
+                } catch (error) {
+                  console.error(
+                    "Erreur lors de la suppression de la date:",
+                    error,
+                  );
+                }
+              }}
+              className="absolute -top-1.5 -right-2 w-3.5 h-3.5 bg-muted-foreground border border-white rounded-full flex items-center justify-center opacity-0 group-hover/date:opacity-100 transition-opacity cursor-pointer"
+              title="Supprimer la date"
+            >
+              <X className="w-2 h-2 text-white stroke-[3]" />
+            </button>
           </div>
         ) : (
           canEdit && (
@@ -2728,7 +2752,7 @@ const TaskListRowContent = React.memo(function TaskListRowContent({
               {formatTaskAmount(amount)}
             </span>
           ) : (
-            <span className="text-muted-foreground/70">—</span>
+            <span className="text-muted-foreground/70">-</span>
           );
         })()}
       </div>

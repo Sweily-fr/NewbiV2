@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { launchBrowser } from "@/src/lib/puppeteer";
+import { launchBrowser, securePdfPage } from "@/src/lib/puppeteer";
 import { VECTOR_PDF_ENABLED, generateVectorPdf } from "@/src/lib/vectorPdf";
 import {
   requireSession,
@@ -62,12 +62,11 @@ async function handler(request) {
 
     console.log(`🌐 [Preview PDF] Navigation vers: ${previewUrl}`);
 
-    // Set internal secret for any sub-requests the page might make
-    if (process.env.INTERNAL_API_SECRET) {
-      await page.setExtraHTTPHeaders({
-        "x-internal-secret": process.env.INTERNAL_API_SECRET,
-      });
-    }
+    // Secret interne posé sur les seules requêtes vers le site (jamais vers
+    // un domaine tiers) ; hors du site, seules les images publiques R2
+    // passent : pas de requête du serveur vers une URL choisie par
+    // l'utilisateur (logo, image d'article, données d'aperçu)
+    await securePdfPage(page, baseUrl);
 
     await page.goto(previewUrl, {
       waitUntil: "networkidle0",

@@ -17,8 +17,16 @@ import { NextResponse } from "next/server";
  */
 
 // Types dont l'archive PDF peut être réécrite après finalisation (cf. en-tête
-// Cache-Control plus bas).
-const MUTABLE_TYPES = new Set(["quote", "purchaseOrder", "deliveryNote"]);
+// Cache-Control plus bas). Factures et avoirs en font partie : l'API régénère
+// leur archive quand ils sont modifiés après émission (facture en attente
+// modifiée depuis l'app mobile, avoir modifié).
+const MUTABLE_TYPES = new Set([
+  "invoice",
+  "creditNote",
+  "quote",
+  "purchaseOrder",
+  "deliveryNote",
+]);
 
 const UPSTREAM_PATHS = {
   invoice: (id) => `/invoices/${id}/document-pdf`,
@@ -118,12 +126,13 @@ export async function GET(request, { params }) {
       headers.set("Content-Length", response.headers.get("Content-Length"));
     }
     // Document nominatif servi sous session : jamais de cache partagé
-    // (private). Factures et avoirs sont immuables une fois finalisés : le
-    // navigateur peut en garder une copie locale 1 h (réouvertures
-    // instantanées, y compris après un rechargement de page). Devis et bons
-    // de commande restent modifiables après finalisation et leur archive est
-    // réécrite à chaque enregistrement sous la même URL : sans no-store, la
-    // sidebar et le bouton PDF resservaient l'ancien PDF pendant une heure.
+    // (private). Les documents dont l'archive est réécrite sous la même URL
+    // après une modification (factures et avoirs émis, devis et bons de
+    // commande en attente, bons de livraison) ne sont pas gardés par le
+    // navigateur : sans no-store, la sidebar et le bouton PDF resservaient
+    // l'ancien PDF pendant une heure. Les autres (fichiers importés) peuvent
+    // l'être 1 h. Les réouvertures dans la session restent instantanées grâce
+    // au cache mémoire de pdf-preview.
     headers.set(
       "Cache-Control",
       MUTABLE_TYPES.has(type) ? "private, no-store" : "private, max-age=3600",

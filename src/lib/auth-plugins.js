@@ -11,6 +11,7 @@ import Stripe from "stripe";
 import {
   send2FAEmail,
   sendOrganizationInvitationEmail,
+  sendSMSInDevelopment,
   sendVerificationOtpEmail,
 } from "./auth-utils";
 // Import dynamique pour éviter le bundling Edge Runtime (Node.js only)
@@ -426,6 +427,16 @@ export const stripePlugin = stripe({
               referenceId = creationResult.organizationId;
               console.log(
                 `✅ [STRIPE WEBHOOK] Organisation traitée via shared utility: ${referenceId}`,
+              );
+
+              // Les métadonnées du checkout portent l'ancien espace actif :
+              // on y inscrit le nouvel espace pour les synchros suivantes.
+              const { stampSubscriptionOrganization } =
+                await import("./org-creation.js");
+              await stampSubscriptionOrganization(
+                stripe,
+                subscription,
+                referenceId,
               );
 
               // Ne pas continuer vers la création d'abonnement normale

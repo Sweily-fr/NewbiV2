@@ -638,11 +638,13 @@ export default function EnhancedCreditNoteForm({
               Annuler
             </Button>
 
+            {/* En consultation, seules les étapes restent consultables :
+                la création de l'avoir est masquée */}
             <div className="flex gap-3">
               {currentStep === 1 && (
                 <Button
                   onClick={handleNextStep}
-                  disabled={!isStep1Valid() || !canEdit}
+                  disabled={isReadOnly ? loading : !isStep1Valid() || !canEdit}
                   className="px-6 text-sm font-normal"
                 >
                   Suivant
@@ -655,17 +657,19 @@ export default function EnhancedCreditNoteForm({
                     className="text-sm font-normal"
                     variant="outline"
                     onClick={handlePreviousStep}
-                    disabled={!canEdit}
+                    disabled={isReadOnly ? loading : !canEdit}
                   >
                     Précédent
                   </Button>
-                  <Button
-                    onClick={handleCreateCreditNote}
-                    disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6 text-sm font-normal"
-                  >
-                    {saving ? "Création..." : "Créer l'avoir"}
-                  </Button>
+                  {!isReadOnly && (
+                    <Button
+                      onClick={handleCreateCreditNote}
+                      disabled={!isStep2Valid() || !canEdit || saving}
+                      className="px-6 text-sm font-normal"
+                    >
+                      {saving ? "Création..." : "Créer l'avoir"}
+                    </Button>
+                  )}
                 </>
               )}
             </div>

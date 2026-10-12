@@ -81,7 +81,6 @@ import {
 } from "./taskAmount";
 import { TaskImageUpload } from "./TaskImageUpload";
 import { useTaskImageUpload } from "../hooks/useTaskImageUpload";
-import { useDebouncedMemberFlush } from "../hooks/useMemberToggle";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { cn } from "@/src/lib/utils";
 import { useSubscriptionAccess } from "@/src/hooks/useSubscriptionAccess";
@@ -103,7 +102,7 @@ import { computeAutoSaveSignature } from "../hooks/taskFormSignature";
  * Affiche le temps suivi avec les secondes, et défile en direct (1 s) quand le
  * timer est en cours. Utilisé comme déclencheur du popover de contrôle du timer.
  */
-function TaskTimeLabel({ timeTracking }) {
+function TaskTimeLabel({ timeTracking, readOnly = false }) {
   const isRunning = !!timeTracking?.isRunning;
   // Re-render chaque seconde uniquement quand le timer tourne.
   const [, setTick] = useState(0);
@@ -116,6 +115,14 @@ function TaskTimeLabel({ timeTracking }) {
   const totalSeconds = getEffectiveSeconds(timeTracking);
 
   if (totalSeconds <= 0 && !isRunning) {
+    // Lecture seule : pas d'invitation à démarrer le chronomètre
+    if (readOnly) {
+      return (
+        <span className="text-sm" style={{ color: "#8D8D8D" }}>
+          Vide
+        </span>
+      );
+    }
     return (
       <>
         <Play className="h-3 w-3" style={{ color: "#8D8D8D" }} />
@@ -145,6 +152,29 @@ function TaskTimeLabel({ timeTracking }) {
 
   return (
     <span className="text-sm text-foreground/70 tabular-nums">{formatted}</span>
+  );
+}
+
+// Classes d'interaction retirées d'un déclencheur affiché en lecture seule
+const INTERACTIVE_CLASS = /^(cursor-pointer|hover:\S+|transition(-\S+)?)$/;
+
+/**
+ * Déclencheur d'un sélecteur de la fiche (status, dates, priorité, tags,
+ * membres, temps). Sans le droit de modifier, la valeur est affichée en
+ * lecture simple : même contenu dans un bloc non interactif (ni menu, ni
+ * survol, ni curseur cliquable, ni focus clavier).
+ */
+function PickerTrigger({ canEdit, trigger: Trigger, children }) {
+  if (canEdit) return <Trigger asChild>{children}</Trigger>;
+  const { className = "", style, children: content } = children.props;
+  const readOnlyClassName = className
+    .split(/\s+/)
+    .filter((c) => c && !INTERACTIVE_CLASS.test(c))
+    .join(" ");
+  return (
+    <div className={cn(readOnlyClassName, "w-fit")} style={style}>
+      {content}
+    </div>
   );
 }
 
@@ -261,19 +291,19 @@ export function TaskModal({
   updatePendingComment,
   openEditTaskModal,
   openLinkedTask,
-  updateTask,
   initialFormRef: externalInitialFormRef,
   localMutationRef,
+  // Membres / tags / checklist envoyés élément par élément (édition)
+  taskFieldOps = null,
 }) {
   const { isReadOnly, isOwner } = useSubscriptionAccess();
   // Droits du rôle (tout autorisé tant que la grille n'est pas chargée) :
   // remplir la tâche = « create » à la création, « edit » ensuite (dates,
-  // membres, checklist, description, pièces jointes…)
+  // membres, checklist, description, pièces jointes…). Retirer une pièce
+  // jointe modifie la tâche : « edit » aussi (exigé par deleteTaskImage).
   const { canDo, isReady } = useMyPermissions();
   const canEditKanban =
     !isReady || canDo("kanban", isEditing ? "edit" : "create");
-  // Suppression d'une pièce jointe : action « delete » côté API
-  const canDeleteKanban = !isReady || canDo("kanban", "delete");
   // Ajout, modification et suppression des commentaires
   const canCommentKanban = !isReady || canDo("kanban", "comment");
   // Sélecteurs (status, dates, priorité, tags, membres) fermés en lecture seule
@@ -294,9 +324,6 @@ export function TaskModal({
       ? "Mode lecture seule · Renouvelez votre abonnement"
       : "Mode lecture seule · Contactez l'administrateur"
     : undefined;
-  const createTooltip =
-    readOnlyTooltip ||
-    (!canEditKanban ? "Votre rôle ne permet pas cette action" : undefined);
 
   // Navigation prev/next entre tâches — calculée par le parent pour éviter
   // que TaskModal dépende de board.tasks (qui change à chaque subscription).
@@ -414,12 +441,63 @@ export function TaskModal({
     [setTaskForm],
   );
 
+  // ── Membres, tags, checklist ──────────────────────────────────────────
+  // En édition, chaque changement part tout de suite en mutation atomique
+  // (taskFieldOps) ; en création, il reste dans le formulaire jusqu'à
+  // « Créer la tâche ».
+  const listOps = isEditing && taskFieldOps ? taskFieldOps : null;
+
   const handleChecklistChange = useCallback(
     (updatedItems) => {
+      if (listOps) {
+        if (canEditKanban) listOps.changeChecklist(updatedItems);
+        return;
+      }
       setTaskForm((prev) => ({ ...prev, checklist: updatedItems }));
     },
-    [setTaskForm],
+    [setTaskForm, listOps, canEditKanban],
   );
+
+  const handleTagAdd = useCallback(
+    (rawName) => {
+      const name = (rawName || "").trim();
+      if (!name) return;
+      if (listOps) {
+        if (canEditKanban) listOps.addTag({ name, className: "" });
+        return;
+      }
+      setTaskForm((prev) =>
+        (prev.tags || []).some(
+          (t) => (t?.name || "").toLowerCase() === name.toLowerCase(),
+        )
+          ? prev
+          : { ...prev, tags: [...(prev.tags || []), { name, className: "" }] },
+      );
+    },
+    [setTaskForm, listOps, canEditKanban],
+  );
+
+  const handleTagRemove = useCallback(
+    (tagName) => {
+      if (listOps) {
+        if (canEditKanban) listOps.removeTag(tagName);
+        return;
+      }
+      setTaskForm((prev) => ({
+        ...prev,
+        tags: (prev.tags || []).filter((t) => t?.name !== tagName),
+      }));
+    },
+    [setTaskForm, listOps, canEditKanban],
+  );
+
+  const handleTagsClear = useCallback(() => {
+    if (listOps) {
+      if (canEditKanban) listOps.clearTags();
+      return;
+    }
+    setTaskForm((prev) => ({ ...prev, tags: [] }));
+  }, [setTaskForm, listOps, canEditKanban]);
 
   // Hook pour l'upload d'images (uniquement en mode édition avec un taskId)
   const taskId = taskForm.id || taskForm._id;
@@ -739,74 +817,34 @@ export function TaskModal({
     onClose?.();
   }, [onClose]);
 
-  // Toggle membre : mise à jour partielle pour éviter d'envoyer tous les champs.
+  // Toggle membre : assignTaskMember / unassignTaskMember (mutations
+  // atomiques) en édition, formulaire seul en création.
   //
-  // IMPORTANT : on lit `current` depuis un ref (et non depuis `taskForm` via
-  // closure) pour gérer correctement les clics rapides. Sans ce ref, deux
-  // clics successifs avant un re-render React utilisent la même closure
-  // stale et envoient des mutations incohérentes au serveur, ce qui provoque
-  // l'envoi d'emails d'assignation aux mauvais destinataires (le diff
-  // `oldTask` vs `updates.assignedMembers` côté backend est faussé).
-  //
-  // On ne déclenche PLUS `triggerAutoSave()` ici : l'auto-save n'envoie plus
-  // `assignedMembers` (cf. useKanbanTasks.handleUpdateTask), donc il n'y a
-  // plus de risque d'écraser l'état des membres.
-  // Coalesce les clics rapides en une seule mutation par tâche (debounce).
-  // Cf. useMemberToggle : sans cela, retirer plusieurs membres très vite envoie
-  // une rafale de mutations dont les échos désordonnés « remettent » un membre.
-  // Dernière liste de membres CONFIRMÉE par le serveur (point de retour en cas
-  // d'échec). Initialisée à l'ouverture, mise à jour à chaque flush réussi.
-  const confirmedMembersRef = useRef(taskForm?.assignedMembers || []);
-  useEffect(() => {
-    if (isOpen) {
-      confirmedMembersRef.current = assignedMembersRef.current || [];
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, taskForm?.id]);
-
-  const flushMembers = useDebouncedMemberFlush({
-    updateTask,
-    workspaceId,
-    localMutationRef,
-    onSuccess: (_taskId, members) => {
-      confirmedMembersRef.current = members;
-    },
-    // En cas d'échec (ex: erreur d'auth), revenir à la dernière valeur confirmée :
-    // la mutation n'a pas été persistée, donc l'état local optimiste est faux et
-    // doit être réaligné, sinon les toggles suivants partent d'une base fausse.
-    onError: () => {
-      const truth = confirmedMembersRef.current || [];
-      assignedMembersRef.current = truth;
-      setTaskForm((prev) => ({ ...prev, assignedMembers: truth }));
-    },
-  });
-
+  // IMPORTANT : on lit l'état courant depuis un ref (et non depuis `taskForm`
+  // via closure) pour gérer correctement les clics rapides : deux clics avant
+  // un re-render verraient la même closure et enverraient deux assignations
+  // au lieu d'une assignation puis d'un retrait.
   const handleMemberToggle = useCallback(
     (memberId) => {
+      // Rôle sans écriture : l'API refuserait
+      if (listOps && !canEditKanban) return;
       const current = assignedMembersRef.current || [];
-      const newMembers = current.includes(memberId)
-        ? current.filter((id) => id !== memberId)
-        : [...current, memberId];
+      const assign = !current.includes(memberId);
+      const newMembers = assign
+        ? [...current, memberId]
+        : current.filter((id) => id !== memberId);
 
       // Mettre à jour le ref IMMÉDIATEMENT pour que le prochain clic (même
       // avant re-render) voit la nouvelle valeur.
       assignedMembersRef.current = newMembers;
 
-      setTaskForm((prev) => ({ ...prev, assignedMembers: newMembers }));
-
-      // En mode édition, planifier l'envoi (debouncé) au serveur.
-      if (isEditing && updateTask && taskForm.id && canEditKanban) {
-        flushMembers(taskForm.id, newMembers);
+      if (listOps) {
+        listOps.setMember(memberId, assign);
+        return;
       }
+      setTaskForm((prev) => ({ ...prev, assignedMembers: newMembers }));
     },
-    [
-      setTaskForm,
-      isEditing,
-      updateTask,
-      taskForm.id,
-      flushMembers,
-      canEditKanban,
-    ],
+    [setTaskForm, listOps, canEditKanban],
   );
 
   // Gestion de la date d'échéance
@@ -978,26 +1016,32 @@ export function TaskModal({
                   )}
                   {/* Titre — gros, hover gris, focus border + montant à droite */}
                   <div className="flex items-start gap-3">
-                    <textarea
-                      ref={titleRef}
-                      value={taskForm.title}
-                      onChange={handleTitleChange}
-                      readOnly={!canEditKanban}
-                      rows={1}
-                      onFocus={(e) => {
-                        e.target.setSelectionRange(0, 0);
-                        handleTextInputFocus();
-                      }}
-                      onBlur={handleTextInputBlur}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          e.target.blur();
-                        }
-                      }}
-                      className="flex-1 min-w-0 resize-none overflow-hidden leading-snug break-words text-2xl font-semibold text-foreground bg-transparent outline-none caret-[#5A50FF] px-2 py-1 -mx-2 rounded-md border border-transparent hover:bg-muted/40 focus:bg-transparent focus:border-border/60 transition-all placeholder:text-muted-foreground/30"
-                      placeholder="Titre de la tâche"
-                    />
+                    {canEditKanban ? (
+                      <textarea
+                        ref={titleRef}
+                        value={taskForm.title}
+                        onChange={handleTitleChange}
+                        rows={1}
+                        onFocus={(e) => {
+                          e.target.setSelectionRange(0, 0);
+                          handleTextInputFocus();
+                        }}
+                        onBlur={handleTextInputBlur}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            e.target.blur();
+                          }
+                        }}
+                        className="flex-1 min-w-0 resize-none overflow-hidden leading-snug break-words text-2xl font-semibold text-foreground bg-transparent outline-none caret-[#5A50FF] px-2 py-1 -mx-2 rounded-md border border-transparent hover:bg-muted/40 focus:bg-transparent focus:border-border/60 transition-all placeholder:text-muted-foreground/30"
+                        placeholder="Titre de la tâche"
+                      />
+                    ) : (
+                      // Lecture seule : titre en texte simple
+                      <p className="flex-1 min-w-0 leading-snug break-words text-2xl font-semibold text-foreground px-2 py-1 -mx-2 border border-transparent">
+                        {taskForm.title}
+                      </p>
+                    )}
                     {(() => {
                       const amount = calculateTaskAmount(taskForm.timeTracking);
                       if (amount == null) return null;
@@ -1028,7 +1072,10 @@ export function TaskModal({
                         </Label>
                         <div className="flex-1">
                           <DropdownMenu modal={false} open={pickerOpen}>
-                            <DropdownMenuTrigger asChild>
+                            <PickerTrigger
+                              canEdit={canEditKanban}
+                              trigger={DropdownMenuTrigger}
+                            >
                               <button
                                 className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
                                 style={{
@@ -1055,7 +1102,7 @@ export function TaskModal({
                                   )?.title || "Sélectionner un status"}
                                 </span>
                               </button>
-                            </DropdownMenuTrigger>
+                            </PickerTrigger>
                             <DropdownMenuContent
                               align="start"
                               onCloseAutoFocus={(e) => e.preventDefault()}
@@ -1098,7 +1145,10 @@ export function TaskModal({
                         </Label>
                         <div className="flex-1">
                           <Popover modal={false} open={pickerOpen}>
-                            <PopoverTrigger asChild>
+                            <PickerTrigger
+                              canEdit={canEditKanban}
+                              trigger={PopoverTrigger}
+                            >
                               <div
                                 className={cn(
                                   "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
@@ -1119,7 +1169,7 @@ export function TaskModal({
                                   </span>
                                 )}
                               </div>
-                            </PopoverTrigger>
+                            </PickerTrigger>
                             <PopoverContent
                               className="w-auto p-0"
                               side="bottom"
@@ -1227,7 +1277,10 @@ export function TaskModal({
                         </Label>
                         <div className="flex-1">
                           <DropdownMenu modal={false} open={pickerOpen}>
-                            <DropdownMenuTrigger asChild>
+                            <PickerTrigger
+                              canEdit={canEditKanban}
+                              trigger={DropdownMenuTrigger}
+                            >
                               <button className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity">
                                 {taskForm.priority &&
                                 taskForm.priority.toLowerCase() !== "none" ? (
@@ -1268,7 +1321,7 @@ export function TaskModal({
                                   </Badge>
                                 )}
                               </button>
-                            </DropdownMenuTrigger>
+                            </PickerTrigger>
                             <DropdownMenuContent
                               align="start"
                               onCloseAutoFocus={(e) => e.preventDefault()}
@@ -1331,7 +1384,10 @@ export function TaskModal({
                         </Label>
                         <div className="flex-1">
                           <Popover modal={false} open={pickerOpen}>
-                            <PopoverTrigger asChild>
+                            <PickerTrigger
+                              canEdit={canEditKanban}
+                              trigger={PopoverTrigger}
+                            >
                               <div
                                 className={cn(
                                   "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
@@ -1351,7 +1407,7 @@ export function TaskModal({
                                   </span>
                                 )}
                               </div>
-                            </PopoverTrigger>
+                            </PickerTrigger>
                             <PopoverContent
                               className="w-auto p-0"
                               side="bottom"
@@ -1456,7 +1512,10 @@ export function TaskModal({
                       </Label>
                       <div className="flex-1">
                         <Popover modal={false} open={pickerOpen}>
-                          <PopoverTrigger asChild>
+                          <PickerTrigger
+                            canEdit={canEditKanban}
+                            trigger={PopoverTrigger}
+                          >
                             <div className="cursor-pointer">
                               {taskForm.tags?.length > 0 ? (
                                 <div className="flex flex-wrap gap-1 min-w-0">
@@ -1487,14 +1546,18 @@ export function TaskModal({
                                 </div>
                               ) : (
                                 <span
-                                  className="text-sm px-3 py-1 rounded-md hover:bg-muted/60 transition-colors"
+                                  className={cn(
+                                    "text-sm px-3 py-1 rounded-md",
+                                    canEditKanban &&
+                                      "hover:bg-muted/60 transition-colors",
+                                  )}
                                   style={{ color: "#8D8D8D" }}
                                 >
                                   Vide
                                 </span>
                               )}
                             </div>
-                          </PopoverTrigger>
+                          </PickerTrigger>
                           <PopoverContent
                             className="w-56 p-0"
                             side="bottom"
@@ -1522,16 +1585,9 @@ export function TaskModal({
                                             : tag.name}
                                           <button
                                             type="button"
-                                            onClick={() => {
-                                              const newTags =
-                                                taskForm.tags.filter(
-                                                  (_, idx) => idx !== i,
-                                                );
-                                              setTaskForm({
-                                                ...taskForm,
-                                                tags: newTags,
-                                              });
-                                            }}
+                                            onClick={() =>
+                                              handleTagRemove(tag.name)
+                                            }
                                             className="hover:opacity-70 cursor-pointer"
                                           >
                                             <X className="h-2.5 w-2.5" />
@@ -1557,22 +1613,7 @@ export function TaskModal({
                                     e.currentTarget.value.trim()
                                   ) {
                                     e.preventDefault();
-                                    const newTag = e.currentTarget.value.trim();
-                                    if (
-                                      !taskForm.tags?.find(
-                                        (t) =>
-                                          t.name.toLowerCase() ===
-                                          newTag.toLowerCase(),
-                                      )
-                                    ) {
-                                      setTaskForm({
-                                        ...taskForm,
-                                        tags: [
-                                          ...(taskForm.tags || []),
-                                          { name: newTag, className: "" },
-                                        ],
-                                      });
-                                    }
+                                    handleTagAdd(e.currentTarget.value);
                                     e.currentTarget.value = "";
                                   }
                                 }}
@@ -1599,7 +1640,10 @@ export function TaskModal({
                       </Label>
                       <div className="flex-1">
                         <DropdownMenu modal={false} open={pickerOpen}>
-                          <DropdownMenuTrigger asChild>
+                          <PickerTrigger
+                            canEdit={canEditKanban}
+                            trigger={DropdownMenuTrigger}
+                          >
                             <div className="cursor-pointer">
                               {taskForm.assignedMembers?.length > 0 ? (
                                 <div className="flex -space-x-1.5">
@@ -1632,14 +1676,18 @@ export function TaskModal({
                                 </div>
                               ) : (
                                 <span
-                                  className="text-sm px-3 py-1 rounded-md hover:bg-muted/60 transition-colors"
+                                  className={cn(
+                                    "text-sm px-3 py-1 rounded-md",
+                                    canEditKanban &&
+                                      "hover:bg-muted/60 transition-colors",
+                                  )}
                                   style={{ color: "#8D8D8D" }}
                                 >
                                   Vide
                                 </span>
                               )}
                             </div>
-                          </DropdownMenuTrigger>
+                          </PickerTrigger>
                           <DropdownMenuContent
                             align="start"
                             className="w-60 p-0"
@@ -1701,13 +1749,17 @@ export function TaskModal({
                           modal={false}
                           open={canEditKanban ? undefined : false}
                         >
-                          <PopoverTrigger asChild>
+                          <PickerTrigger
+                            canEdit={canEditKanban}
+                            trigger={PopoverTrigger}
+                          >
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md hover:bg-muted/60 transition-colors cursor-pointer">
                               <TaskTimeLabel
                                 timeTracking={taskForm.timeTracking}
+                                readOnly={!canEditKanban}
                               />
                             </div>
-                          </PopoverTrigger>
+                          </PickerTrigger>
                           <PopoverContent
                             className="w-80 p-0"
                             side="bottom"
@@ -1817,9 +1869,7 @@ export function TaskModal({
                       <TaskImageUpload
                         images={taskForm.images || []}
                         onUpload={handleDescriptionImageUpload}
-                        onDelete={
-                          canDeleteKanban ? handleDeleteImage : undefined
-                        }
+                        onDelete={canEditKanban ? handleDeleteImage : undefined}
                         disabled={!canEditKanban}
                         isUploading={isUploadingImage}
                         uploadProgress={uploadProgress}
@@ -1851,27 +1901,26 @@ export function TaskModal({
                       >
                         Annuler
                       </Button>
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={
-                          isReadOnly ||
-                          !canEditKanban ||
-                          isLoading ||
-                          !taskForm.title.trim()
-                        }
-                        title={createTooltip}
-                        className="px-6 text-white hover:opacity-90"
-                        style={{ backgroundColor: "#5b50FF" }}
-                      >
-                        {isLoading ? (
-                          <>
-                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                            Création...
-                          </>
-                        ) : (
-                          "Créer la tâche"
-                        )}
-                      </Button>
+                      {canEditKanban && (
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={
+                            isReadOnly || isLoading || !taskForm.title.trim()
+                          }
+                          title={readOnlyTooltip}
+                          className="px-6 text-white hover:opacity-90"
+                          style={{ backgroundColor: "#5b50FF" }}
+                        >
+                          {isLoading ? (
+                            <>
+                              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                              Création...
+                            </>
+                          ) : (
+                            "Créer la tâche"
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1985,19 +2034,25 @@ export function TaskModal({
                         );
                       })()}
                     </div>
-                    <Input
-                      id="task-title-mobile"
-                      value={taskForm.title}
-                      onChange={handleTitleChange}
-                      readOnly={!canEditKanban}
-                      onFocus={(e) => {
-                        e.target.setSelectionRange(0, 0);
-                        handleTextInputFocus();
-                      }}
-                      onBlur={handleTextInputBlur}
-                      className="w-full bg-background text-foreground border-input focus:border-primary"
-                      placeholder="Titre de la tâche"
-                    />
+                    {canEditKanban ? (
+                      <Input
+                        id="task-title-mobile"
+                        value={taskForm.title}
+                        onChange={handleTitleChange}
+                        onFocus={(e) => {
+                          e.target.setSelectionRange(0, 0);
+                          handleTextInputFocus();
+                        }}
+                        onBlur={handleTextInputBlur}
+                        className="w-full bg-background text-foreground border-input focus:border-primary"
+                        placeholder="Titre de la tâche"
+                      />
+                    ) : (
+                      // Lecture seule : titre en texte simple
+                      <p className="text-sm font-medium text-foreground break-words">
+                        {taskForm.title}
+                      </p>
+                    )}
                   </div>
 
                   {/* Description - Collapse comme sur desktop */}
@@ -2052,7 +2107,10 @@ export function TaskModal({
                       </Label>
                       <div className="flex-1">
                         <DropdownMenu modal={false} open={pickerOpen}>
-                          <DropdownMenuTrigger asChild>
+                          <PickerTrigger
+                            canEdit={canEditKanban}
+                            trigger={DropdownMenuTrigger}
+                          >
                             <button
                               className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity"
                               style={{
@@ -2079,7 +2137,7 @@ export function TaskModal({
                                 )?.title || "Status"}
                               </span>
                             </button>
-                          </DropdownMenuTrigger>
+                          </PickerTrigger>
                           <DropdownMenuContent
                             align="start"
                             onCloseAutoFocus={(e) => e.preventDefault()}
@@ -2122,7 +2180,10 @@ export function TaskModal({
                       </Label>
                       <div className="flex-1">
                         <DropdownMenu modal={false} open={pickerOpen}>
-                          <DropdownMenuTrigger asChild>
+                          <PickerTrigger
+                            canEdit={canEditKanban}
+                            trigger={DropdownMenuTrigger}
+                          >
                             <button className="bg-transparent border-0 p-0 cursor-pointer hover:opacity-80 transition-opacity">
                               {taskForm.priority &&
                               taskForm.priority.toLowerCase() !== "none" ? (
@@ -2161,7 +2222,7 @@ export function TaskModal({
                                 </Badge>
                               )}
                             </button>
-                          </DropdownMenuTrigger>
+                          </PickerTrigger>
                           <DropdownMenuContent
                             align="start"
                             onCloseAutoFocus={(e) => e.preventDefault()}
@@ -2220,7 +2281,10 @@ export function TaskModal({
                     </Label>
                     <div className="flex-1">
                       <Popover modal={false} open={pickerOpen}>
-                        <PopoverTrigger asChild>
+                        <PickerTrigger
+                          canEdit={canEditKanban}
+                          trigger={PopoverTrigger}
+                        >
                           <div
                             className={cn(
                               "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
@@ -2240,7 +2304,7 @@ export function TaskModal({
                               </span>
                             )}
                           </div>
-                        </PopoverTrigger>
+                        </PickerTrigger>
                         <PopoverContent
                           className="w-auto p-0"
                           side="bottom"
@@ -2337,7 +2401,10 @@ export function TaskModal({
                     </Label>
                     <div className="flex-1">
                       <Popover modal={false} open={pickerOpen}>
-                        <PopoverTrigger asChild>
+                        <PickerTrigger
+                          canEdit={canEditKanban}
+                          trigger={PopoverTrigger}
+                        >
                           <div
                             className={cn(
                               "text-sm cursor-pointer px-3 py-1 rounded-md hover:bg-muted/60 transition-colors inline-block",
@@ -2357,7 +2424,7 @@ export function TaskModal({
                               </span>
                             )}
                           </div>
-                        </PopoverTrigger>
+                        </PickerTrigger>
                         <PopoverContent
                           className="w-auto p-0"
                           side="bottom"
@@ -2454,9 +2521,7 @@ export function TaskModal({
                         {taskForm.tags.length > 0 && canEditKanban && (
                           <button
                             type="button"
-                            onClick={() =>
-                              setTaskForm({ ...taskForm, tags: [] })
-                            }
+                            onClick={handleTagsClear}
                             className="absolute -top-2 -right-2 z-10 w-5 h-5 rounded-full bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors"
                             title="Supprimer tous les tags"
                           >
@@ -2464,7 +2529,13 @@ export function TaskModal({
                           </button>
                         )}
                         <div
-                          className="min-h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
+                          className={cn(
+                            "text-sm",
+                            canEditKanban
+                              ? "min-h-10 rounded-md border border-input px-3 py-2 ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
+                              : // Lecture seule : tags affichés tels quels
+                                "py-1",
+                          )}
                           onClick={() => {
                             if (!tagsInputFocused && canEditKanban) {
                               setTagsInputFocused(true);
@@ -2492,16 +2563,9 @@ export function TaskModal({
                                         {canEditKanban && (
                                           <button
                                             type="button"
-                                            onClick={() => {
-                                              const newTags =
-                                                taskForm.tags.filter(
-                                                  (_, i) => i !== index,
-                                                );
-                                              setTaskForm({
-                                                ...taskForm,
-                                                tags: newTags,
-                                              });
-                                            }}
+                                            onClick={() =>
+                                              handleTagRemove(tag.name)
+                                            }
                                             className="ml-1.5 rounded-full outline-none hover:opacity-70 transition-opacity"
                                           >
                                             <X className="h-3 w-3" />
@@ -2532,21 +2596,7 @@ export function TaskModal({
                                       e.currentTarget.value.trim()
                                     ) {
                                       e.preventDefault();
-                                      const newTag =
-                                        e.currentTarget.value.trim();
-                                      if (
-                                        !taskForm.tags.find(
-                                          (t) => t.name === newTag,
-                                        )
-                                      ) {
-                                        setTaskForm({
-                                          ...taskForm,
-                                          tags: [
-                                            ...taskForm.tags,
-                                            { name: newTag },
-                                          ],
-                                        });
-                                      }
+                                      handleTagAdd(e.currentTarget.value);
                                       e.currentTarget.value = "";
                                     }
                                   }}
@@ -2572,7 +2622,10 @@ export function TaskModal({
                       </Label>
                       <div>
                         <DropdownMenu modal={false} open={pickerOpen}>
-                          <DropdownMenuTrigger asChild>
+                          <PickerTrigger
+                            canEdit={canEditKanban}
+                            trigger={DropdownMenuTrigger}
+                          >
                             {taskForm.assignedMembers &&
                             taskForm.assignedMembers.length > 0 ? (
                               <div className="flex -space-x-2 cursor-pointer">
@@ -2591,7 +2644,11 @@ export function TaskModal({
                                           src={memberInfo?.image}
                                           name={memberInfo?.name || memberId}
                                           size="sm"
-                                          className="border border-background ring-1 ring-border/10 hover:ring-primary/50 transition-all"
+                                          className={cn(
+                                            "border border-background ring-1 ring-border/10",
+                                            canEditKanban &&
+                                              "hover:ring-primary/50 transition-all",
+                                          )}
                                           style={{
                                             zIndex:
                                               taskForm.assignedMembers.length -
@@ -2620,7 +2677,7 @@ export function TaskModal({
                                 Aucun membre
                               </span>
                             )}
-                          </DropdownMenuTrigger>
+                          </PickerTrigger>
                           <DropdownMenuContent
                             align="start"
                             className="w-72 max-h-[400px] overflow-y-auto"
@@ -2730,9 +2787,7 @@ export function TaskModal({
                       <TaskImageUpload
                         images={taskForm.images || []}
                         onUpload={handleDescriptionImageUpload}
-                        onDelete={
-                          canDeleteKanban ? handleDeleteImage : undefined
-                        }
+                        onDelete={canEditKanban ? handleDeleteImage : undefined}
                         disabled={!canEditKanban}
                         isUploading={isUploadingImage}
                         uploadProgress={uploadProgress}
@@ -2764,27 +2819,26 @@ export function TaskModal({
                       >
                         Annuler
                       </Button>
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={
-                          isReadOnly ||
-                          !canEditKanban ||
-                          isLoading ||
-                          !taskForm.title.trim()
-                        }
-                        title={createTooltip}
-                        className="flex-1 text-white hover:opacity-90"
-                        style={{ backgroundColor: "#5b50FF" }}
-                      >
-                        {isLoading ? (
-                          <>
-                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                            Création...
-                          </>
-                        ) : (
-                          "Créer la tâche"
-                        )}
-                      </Button>
+                      {canEditKanban && (
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={
+                            isReadOnly || isLoading || !taskForm.title.trim()
+                          }
+                          title={readOnlyTooltip}
+                          className="flex-1 text-white hover:opacity-90"
+                          style={{ backgroundColor: "#5b50FF" }}
+                        >
+                          {isLoading ? (
+                            <>
+                              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                              Création...
+                            </>
+                          ) : (
+                            "Créer la tâche"
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}

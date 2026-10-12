@@ -666,6 +666,153 @@ export const MOVE_TASK = gql`
   }
 `;
 
+// ── Membres, tags et checklist : un élément à la fois ──────────────────────
+// Mutations atomiques côté API : deux personnes qui modifient la même tâche
+// ne s'écrasent plus (updateTask remplace le tableau complet). Chacune ne
+// relit que le champ modifié : l'entité Task du cache se met à jour (cartes,
+// liste, Gantt), la subscription prévient les autres membres.
+export const ASSIGN_TASK_MEMBER = gql`
+  mutation AssignTaskMember(
+    $taskId: ID!
+    $memberId: String!
+    $workspaceId: ID
+  ) {
+    assignTaskMember(
+      taskId: $taskId
+      memberId: $memberId
+      workspaceId: $workspaceId
+    ) {
+      id
+      assignedMembers
+      updatedAt
+    }
+  }
+`;
+
+export const UNASSIGN_TASK_MEMBER = gql`
+  mutation UnassignTaskMember(
+    $taskId: ID!
+    $memberId: String!
+    $workspaceId: ID
+  ) {
+    unassignTaskMember(
+      taskId: $taskId
+      memberId: $memberId
+      workspaceId: $workspaceId
+    ) {
+      id
+      assignedMembers
+      updatedAt
+    }
+  }
+`;
+
+export const ADD_TASK_TAG = gql`
+  mutation AddTaskTag($taskId: ID!, $tag: TagInput!, $workspaceId: ID) {
+    addTaskTag(taskId: $taskId, tag: $tag, workspaceId: $workspaceId) {
+      id
+      tags {
+        name
+        className
+        bg
+        text
+        border
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const REMOVE_TASK_TAG = gql`
+  mutation RemoveTaskTag($taskId: ID!, $tagName: String!, $workspaceId: ID) {
+    removeTaskTag(
+      taskId: $taskId
+      tagName: $tagName
+      workspaceId: $workspaceId
+    ) {
+      id
+      tags {
+        name
+        className
+        bg
+        text
+        border
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const ADD_CHECKLIST_ITEM = gql`
+  mutation AddChecklistItem(
+    $taskId: ID!
+    $text: String!
+    $completed: Boolean
+    $itemId: ID
+    $workspaceId: ID
+  ) {
+    addChecklistItem(
+      taskId: $taskId
+      text: $text
+      completed: $completed
+      itemId: $itemId
+      workspaceId: $workspaceId
+    ) {
+      id
+      checklist {
+        id
+        text
+        completed
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_CHECKLIST_ITEM = gql`
+  mutation UpdateChecklistItem(
+    $taskId: ID!
+    $itemId: ID!
+    $text: String
+    $completed: Boolean
+    $workspaceId: ID
+  ) {
+    updateChecklistItem(
+      taskId: $taskId
+      itemId: $itemId
+      text: $text
+      completed: $completed
+      workspaceId: $workspaceId
+    ) {
+      id
+      checklist {
+        id
+        text
+        completed
+      }
+      updatedAt
+    }
+  }
+`;
+
+export const REMOVE_CHECKLIST_ITEM = gql`
+  mutation RemoveChecklistItem($taskId: ID!, $itemId: ID!, $workspaceId: ID) {
+    removeChecklistItem(
+      taskId: $taskId
+      itemId: $itemId
+      workspaceId: $workspaceId
+    ) {
+      id
+      checklist {
+        id
+        text
+        completed
+      }
+      updatedAt
+    }
+  }
+`;
+
 // Fragment léger pour les cartes kanban et les subscriptions (sans comments/activity/entries)
 // Tâches liées (informatif, lien symétrique posé côté serveur)
 export const LINKED_TASK_INFO_FRAGMENT = gql`
@@ -1242,12 +1389,27 @@ export const GET_PUBLIC_SHARES = gql`
   }
 `;
 
-// Query pour accéder au tableau public (visiteurs externes)
+// Query pour accéder au tableau public (visiteurs externes). Identité :
+// session visiteur (sessionToken, remise par authenticateInvitedUser une
+// fois l'adresse prouvée par code) ou membre connecté de l'espace
 export const GET_PUBLIC_BOARD = gql`
-  query GetPublicBoard($token: String!, $email: String!, $password: String) {
-    getPublicBoard(token: $token, email: $email, password: $password) {
+  query GetPublicBoard(
+    $token: String!
+    $sessionToken: String
+    $password: String
+    $accessToken: String
+  ) {
+    getPublicBoard(
+      token: $token
+      sessionToken: $sessionToken
+      password: $password
+      accessToken: $accessToken
+    ) {
       success
       message
+      requiresPassword
+      requiresVisitorSession
+      accessToken
       board {
         id
         title
@@ -1341,6 +1503,15 @@ export const GET_PUBLIC_BOARD = gql`
           canViewDueDates
           canViewAttachments
         }
+        # Fiche du visiteur courant uniquement
+        visitors {
+          id
+          email
+          firstName
+          lastName
+          name
+          image
+        }
       }
       visitorEmail
       isBanned
@@ -1352,19 +1523,25 @@ export const GET_PUBLIC_BOARD = gql`
 export const REQUEST_ACCESS = gql`
   mutation RequestAccess(
     $token: String!
-    $email: String!
+    $sessionToken: String
     $name: String
     $message: String
+    $password: String
+    $accessToken: String
   ) {
     requestAccess(
       token: $token
-      email: $email
+      sessionToken: $sessionToken
       name: $name
       message: $message
+      password: $password
+      accessToken: $accessToken
     ) {
       success
       message
       alreadyRequested
+      requiresPassword
+      requiresVisitorSession
     }
   }
 `;
@@ -1627,18 +1804,21 @@ export const ADD_EXTERNAL_COMMENT = gql`
     $token: String!
     $taskId: ID!
     $content: String
-    $visitorEmail: String!
+    $sessionToken: String
     $images: [CommentImageInput!]
+    $accessToken: String
   ) {
     addExternalComment(
       token: $token
       taskId: $taskId
       content: $content
-      visitorEmail: $visitorEmail
+      sessionToken: $sessionToken
       images: $images
+      accessToken: $accessToken
     ) {
       success
       message
+      requiresVisitorSession
       task {
         id
         title
@@ -1714,12 +1894,19 @@ export const ADD_EXTERNAL_COMMENT = gql`
 export const UPDATE_VISITOR_PROFILE = gql`
   mutation UpdateVisitorProfile(
     $token: String!
-    $email: String!
+    $sessionToken: String
     $input: UpdateVisitorProfileInput!
+    $accessToken: String
   ) {
-    updateVisitorProfile(token: $token, email: $email, input: $input) {
+    updateVisitorProfile(
+      token: $token
+      sessionToken: $sessionToken
+      input: $input
+      accessToken: $accessToken
+    ) {
       success
       message
+      requiresVisitorSession
       visitor {
         id
         email
@@ -1736,13 +1923,20 @@ export const UPDATE_VISITOR_PROFILE = gql`
 export const UPLOAD_VISITOR_IMAGE = gql`
   mutation UploadVisitorImage(
     $token: String!
-    $email: String!
+    $sessionToken: String
     $file: Upload!
+    $accessToken: String
   ) {
-    uploadVisitorImage(token: $token, email: $email, file: $file) {
+    uploadVisitorImage(
+      token: $token
+      sessionToken: $sessionToken
+      file: $file
+      accessToken: $accessToken
+    ) {
       success
       message
       imageUrl
+      requiresVisitorSession
     }
   }
 `;
@@ -1753,16 +1947,19 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
     $token: String!
     $taskId: ID!
     $file: Upload!
-    $visitorEmail: String!
+    $sessionToken: String
+    $accessToken: String
   ) {
     uploadExternalCommentImage(
       token: $token
       taskId: $taskId
       file: $file
-      visitorEmail: $visitorEmail
+      sessionToken: $sessionToken
+      accessToken: $accessToken
     ) {
       success
       message
+      requiresVisitorSession
       image {
         id
         key
@@ -1776,8 +1973,18 @@ export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
 
 // Subscription pour les mises à jour en temps réel sur la page publique
 export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
-  subscription PublicTaskUpdated($token: String!, $boardId: ID!) {
-    publicTaskUpdated(token: $token, boardId: $boardId) {
+  subscription PublicTaskUpdated(
+    $token: String!
+    $boardId: ID!
+    $accessToken: String
+    $sessionToken: String
+  ) {
+    publicTaskUpdated(
+      token: $token
+      boardId: $boardId
+      accessToken: $accessToken
+      sessionToken: $sessionToken
+    ) {
       type
       task {
         id
@@ -1886,7 +2093,18 @@ export const CHECK_INVITED_EMAIL = gql`
   }
 `;
 
-// Mutation pour authentifier ou créer un utilisateur invité
+// Mutation pour envoyer un code de vérification à l'adresse du visiteur
+export const REQUEST_INVITED_EMAIL_CODE = gql`
+  mutation RequestInvitedEmailCode($token: String!, $email: String!) {
+    requestInvitedEmailCode(token: $token, email: $email) {
+      success
+      message
+    }
+  }
+`;
+
+// Mutation pour authentifier ou créer un utilisateur invité : adresse
+// prouvée par emailCode, ou mot de passe d'un compte déjà vérifié
 export const AUTHENTICATE_INVITED_USER = gql`
   mutation AuthenticateInvitedUser($input: AuthInvitedInput!) {
     authenticateInvitedUser(input: $input) {
@@ -1920,6 +2138,7 @@ export const AUTHENTICATE_INVITED_USER = gql`
       }
       isBanned
       banReason
+      requiresEmailCode
     }
   }
 `;

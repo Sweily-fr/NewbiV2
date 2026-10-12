@@ -149,6 +149,10 @@ const RenameOrganizationModal = dynamic(
 
 export function TeamSwitcher() {
   const { isMobile, state } = useSidebar();
+  // Inviter des membres : « Inviter » de la page Membres
+  const { canDo: canDoTeam, isReady: teamPermissionsReady } =
+    useMyPermissions();
+  const canInviteMembers = !teamPermissionsReady || canDoTeam("team", "invite");
   const isCollapsed = state === "collapsed";
   const { isActive, refreshSubscription: refreshDashboardSubscription } =
     useSubscription();
@@ -460,15 +464,17 @@ export function TeamSwitcher() {
                 </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
-              <DropdownMenuItem
-                onClick={() => setInviteDialogOpen(true)}
-                className="gap-2 p-2 rounded-sm cursor-pointer"
-              >
-                <UserPlus className="size-4 text-sidebar-foreground" />
-                <span className="text-[13px] font-normal">
-                  Inviter des membres
-                </span>
-              </DropdownMenuItem>
+              {canInviteMembers && (
+                <DropdownMenuItem
+                  onClick={() => setInviteDialogOpen(true)}
+                  className="gap-2 p-2 rounded-sm cursor-pointer"
+                >
+                  <UserPlus className="size-4 text-sidebar-foreground" />
+                  <span className="text-[13px] font-normal">
+                    Inviter des membres
+                  </span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => {
                   setSettingsInitialTab("espaces");

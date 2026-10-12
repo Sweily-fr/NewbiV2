@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
-import { withErrorHandler } from "@/src/lib/security";
+import { requireSession, withErrorHandler } from "@/src/lib/security";
 
 // Cette route retourne simplement les données
 // La génération PDF se fait côté client avec html2canvas + jsPDF
 async function handler(request) {
+  // Plus d'appel sans session (l'authentification était restée en TODO)
+  await requireSession(request);
+
   const { data, type, filename } = await request.json();
 
   // Validation des données
   if (!data || !type) {
     return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
   }
-
-  // TODO: Vérifier l'authentification
-  // const session = await getServerSession();
-  // if (!session) {
-  //   return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  // }
 
   // TODO: Log pour conservation 6 ans (conformité légale)
   // await logDocumentGeneration({

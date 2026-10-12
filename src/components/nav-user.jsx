@@ -50,8 +50,11 @@ const SettingsModal = dynamic(
   { ssr: false },
 );
 import { useTheme } from "@/src/components/theme-provider";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 
 export function NavUser({ user }) {
+  const { can, isReady: permissionsReady } = useMyPermissions();
+  const canViewBilling = !permissionsReady || can("billing", "read");
   const { isMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { isActive } = useSubscription();
@@ -232,18 +235,21 @@ export function NavUser({ user }) {
                 <CircleUser className="size-4 text-sidebar-foreground" />
                 <span className="text-[13px] font-normal">Compte</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="gap-2 cursor-pointer"
-                onClick={() => {
-                  setSettingsInitialTab("subscription");
-                  setSettingsModalOpen(true);
-                }}
-              >
-                <CreditCard className="size-4 text-sidebar-foreground" />
-                <span className="text-[13px] font-normal">
-                  Gérer l'abonnement
-                </span>
-              </DropdownMenuItem>
+              {/* Abonnement : « Voir l'abonnement » */}
+              {canViewBilling && (
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => {
+                    setSettingsInitialTab("subscription");
+                    setSettingsModalOpen(true);
+                  }}
+                >
+                  <CreditCard className="size-4 text-sidebar-foreground" />
+                  <span className="text-[13px] font-normal">
+                    Gérer l'abonnement
+                  </span>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>

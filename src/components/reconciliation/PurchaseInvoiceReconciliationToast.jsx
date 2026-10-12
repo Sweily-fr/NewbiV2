@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { usePurchaseInvoiceReconciliation } from "@/src/hooks/usePurchaseInvoiceReconciliation";
 import { useRouter } from "next/navigation";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Landmark, Undo2, ArrowUpRight } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
@@ -279,6 +280,11 @@ function PurchaseInvoiceReconciliationDeck({
 // Provider — logique métier (miroir de ReconciliationToastProvider).
 // ---------------------------------------------------------------------------
 export function PurchaseInvoiceReconciliationToastProvider({ children }) {
+  // Rattacher ou masquer une suggestion : droit « Rapprocher » des factures
+  // d'achat (aucune carte pour un rôle qui n'a que « Voir »)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canReconcile =
+    permissionsReady && canDo("purchaseInvoices", "reconcile");
   const router = useRouter();
   const { suggestions, linkTransaction } = usePurchaseInvoiceReconciliation();
 
@@ -425,13 +431,13 @@ export function PurchaseInvoiceReconciliationToastProvider({ children }) {
   // Masqués uniquement tant qu'un panneau est ouvert ; seul « Masquer »
   // écarte une suggestion.
   const toastVisible = useReconciliationToastVisibility(
-    activeSuggestions.length > 0,
+    canReconcile && activeSuggestions.length > 0,
   );
 
   return (
     <>
       {children}
-      {toastVisible && activeSuggestions.length > 0 && (
+      {canReconcile && toastVisible && activeSuggestions.length > 0 && (
         <PurchaseInvoiceReconciliationDeck
           suggestions={activeSuggestions}
           onLink={handleLink}

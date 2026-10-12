@@ -30,33 +30,196 @@ export const organizationRoles = {
 };
 
 /**
- * Actions par défaut des pages du compte qu'un hook Better Auth doit
- * vérifier (mêmes valeurs que les grilles prédéfinies de l'API). Un rôle
- * ajusté ou personnalisé a sa grille dans `organizationRole.actions` (ou
- * `levels` s'il a été enregistré avant les actions).
+ * Pages dont le site vérifie lui-même les droits côté serveur (hooks Better
+ * Auth, routes API) : celles du compte et celles des documents de vente
+ * lus par les routes PDF. Copie partielle du catalogue de l'API
+ * (`src/config/rolePermissions.js` de newbi-api), à garder alignée : pour
+ * chaque action, le niveau (read < write < delete) qui l'accordait dans les
+ * grilles enregistrées avant les actions (champ `levels`).
+ *
+ * `parent` : partie d'une page (les avoirs dépendent des factures) ; sans
+ * « Voir » sur la page parente, la partie n'a aucune action.
  */
-const ACCOUNT_ACTIONS = {
-  team: ["view", "invite", "changeRole", "remove"],
-  orgSettings: ["view", "edit"],
+const MODULE_CATALOG = {
+  invoices: {
+    actions: {
+      view: "read",
+      create: "write",
+      edit: "write",
+      delete: "delete",
+      send: "write",
+      export: "read",
+      // Ancienne fonctionnalité séparée (`levels.invoicePayments`)
+      markPaid: "write",
+      status: "write",
+      recurring: "write",
+      reminders: "write",
+    },
+  },
+  creditNotes: {
+    parent: "invoices",
+    actions: {
+      view: "read",
+      create: "write",
+      edit: "write",
+      delete: "delete",
+      send: "write",
+    },
+  },
+  quotes: {
+    actions: {
+      view: "read",
+      create: "write",
+      edit: "write",
+      delete: "delete",
+      send: "write",
+      export: "read",
+      status: "write",
+      convert: "write",
+      sign: "write",
+    },
+  },
+  purchaseOrders: {
+    actions: {
+      view: "read",
+      create: "write",
+      edit: "write",
+      delete: "delete",
+      send: "write",
+      export: "read",
+      status: "write",
+      convert: "write",
+    },
+  },
+  deliveryNotes: {
+    actions: {
+      view: "read",
+      create: "write",
+      edit: "write",
+      delete: "delete",
+      send: "write",
+      export: "read",
+      status: "write",
+      convert: "write",
+    },
+  },
+  team: {
+    account: true,
+    actions: {
+      view: "read",
+      invite: "write",
+      changeRole: "write",
+      remove: "write",
+    },
+  },
+  orgSettings: { account: true, actions: { view: "read", edit: "write" } },
+  integrations: { account: true, actions: { view: "read", manage: "write" } },
+  billing: { account: true, actions: { view: "read", manage: "write" } },
 };
 
-const DEFAULT_ACCOUNT_ACTIONS = {
-  owner: ACCOUNT_ACTIONS,
-  admin: { team: ["view"], orgSettings: ["view", "edit"] },
-  member: { team: ["view"], orgSettings: ["view"] },
-  viewer: { team: ["view"], orgSettings: ["view"] },
-  accountant: { team: ["view"], orgSettings: ["view"] },
+const LEVEL_RANK = { none: 0, read: 1, write: 2, delete: 3 };
+
+function moduleActionKeys(moduleKey) {
+  return Object.keys(MODULE_CATALOG[moduleKey]?.actions || {});
+}
+
+/**
+ * Droits par défaut des rôles prédéfinis, mêmes règles que l'API :
+ *   - Administrateur : tout, sauf gérer les membres et l'abonnement ;
+ *   - Éditeur : pas de suppression, ni annulation de facture ni relances,
+ *     et du compte il ne voit que les membres et les informations ;
+ *   - Membre : « Voir » partout, sauf l'abonnement et les applications ;
+ *   - Comptable : ce qu'accordait le niveau « lecture » (voir, exporter),
+ *     plus l'encaissement des factures.
+ */
+const PREDEFINED_RULES = {
+  owner: () => true,
+  admin: (moduleKey, action) =>
+    !["team", "billing"].includes(moduleKey) || action === "view",
+  member: (moduleKey, action) => {
+    if (MODULE_CATALOG[moduleKey].account) {
+      return ["team", "orgSettings"].includes(moduleKey) && action === "view";
+    }
+    if (moduleKey === "invoices" && ["status", "reminders"].includes(action)) {
+      return false;
+    }
+    return action !== "delete";
+  },
+  viewer: (moduleKey, action) =>
+    action === "view" && !["billing", "integrations"].includes(moduleKey),
+  accountant: (moduleKey, action) =>
+    MODULE_CATALOG[moduleKey].actions[action] === "read" ||
+    (moduleKey === "invoices" && action === "markPaid"),
 };
 
-/** Actions d'une page du compte dans un document `organizationRole`. */
-function storedAccountActions(doc, moduleKey) {
-  if (!doc) return null;
-  if (doc.actions) return doc.actions[moduleKey] || [];
-  const level = doc.levels?.[moduleKey];
-  if (!level) return null;
-  if (level === "write" || level === "delete")
-    return ACCOUNT_ACTIONS[moduleKey];
-  return level === "read" ? ["view"] : [];
+function defaultActions(role, moduleKey) {
+  const rule = PREDEFINED_RULES[role];
+  if (!rule) return null;
+  return moduleActionKeys(moduleKey).filter((a) => rule(moduleKey, a));
+}
+
+/**
+ * Actions gardées d'une grille enregistrée : actions inconnues ignorées,
+ * « Voir » ajouté dès qu'une autre action est cochée (normalizeActions de
+ * l'API).
+ */
+function normalizeModuleActions(moduleKey, raw) {
+  const kept = moduleActionKeys(moduleKey).filter((a) => raw.includes(a));
+  if (kept.length && !kept.includes("view")) kept.unshift("view");
+  return kept;
+}
+
+/** Grille par niveaux (rôles enregistrés avant les actions) → actions. */
+function actionsFromLevel(moduleKey, levels) {
+  const { account, actions } = MODULE_CATALOG[moduleKey];
+  const clamp = (level) =>
+    account && level === "delete" ? "write" : level || "none";
+  return Object.entries(actions)
+    .filter(([key, actionLevel]) => {
+      const source =
+        moduleKey === "invoices" && key === "markPaid"
+          ? levels.invoicePayments
+          : levels[moduleKey];
+      return (
+        (LEVEL_RANK[clamp(source)] ?? 0) >=
+        (LEVEL_RANK[clamp(actionLevel)] ?? 99)
+      );
+    })
+    .map(([key]) => key);
+}
+
+/**
+ * Actions d'un rôle (sans le parent) sur une page : grille enregistrée
+ * (`actions`, ou ancien champ `levels`), complétée pour une page absente
+ * par les droits par défaut d'un rôle prédéfini ajusté. Un rôle
+ * personnalisé sans grille n'a aucune action.
+ */
+function roleModuleActionsOwn(role, doc, moduleKey) {
+  const defaults = defaultActions(role, moduleKey);
+  if (doc?.actions) {
+    const raw = doc.actions[moduleKey];
+    return Array.isArray(raw)
+      ? normalizeModuleActions(moduleKey, raw)
+      : defaults || [];
+  }
+  if (doc?.levels) {
+    const levels = doc.levels;
+    const present =
+      moduleKey in levels ||
+      (moduleKey === "invoices" && "invoicePayments" in levels);
+    return present
+      ? normalizeModuleActions(moduleKey, actionsFromLevel(moduleKey, levels))
+      : defaults || [];
+  }
+  return defaults || [];
+}
+
+function roleModuleActions(role, doc, moduleKey) {
+  const parent = MODULE_CATALOG[moduleKey].parent;
+  if (parent && !roleModuleActionsOwn(role, doc, parent).includes("view")) {
+    return [];
+  }
+  return roleModuleActionsOwn(role, doc, moduleKey);
 }
 
 function toObjectId(ObjectId, id) {
@@ -66,14 +229,20 @@ function toObjectId(ObjectId, id) {
 }
 
 /**
- * Rôle d'un utilisateur dans un espace et ses actions sur une page du compte
- * (`team` ou `orgSettings`). Renvoie `{ role: null, actions: [] }` si
- * l'utilisateur n'est pas membre.
+ * Rôle d'un utilisateur dans un espace et ses actions sur une page vérifiée
+ * par le site : compte (`team`, `orgSettings`, `integrations`, `billing`) ou
+ * documents de vente (`invoices`, `creditNotes`, `quotes`, `purchaseOrders`,
+ * `deliveryNotes`). Rôle prédéfini, ajusté ou personnalisé ; plusieurs rôles
+ * séparés par des virgules = union de leurs actions. Renvoie
+ * `{ role: null, actions: [] }` si l'utilisateur n'est pas membre.
  */
-export async function getAccountActions(
+export async function getModuleActions(
   db,
   { userId, organizationId, moduleKey },
 ) {
+  if (!MODULE_CATALOG[moduleKey]) {
+    throw new Error(`Page inconnue pour les droits : ${moduleKey}`);
+  }
   const { ObjectId } = await import("mongodb");
   const orgId = toObjectId(ObjectId, organizationId);
   const uid = toObjectId(ObjectId, userId);
@@ -90,7 +259,7 @@ export async function getAccountActions(
     .map((r) => r.trim())
     .filter(Boolean);
   if (roles.includes("owner")) {
-    return { role: "owner", actions: ACCOUNT_ACTIONS[moduleKey] || [] };
+    return { role: "owner", actions: moduleActionKeys(moduleKey) };
   }
 
   const stored = await db
@@ -99,16 +268,20 @@ export async function getAccountActions(
     .toArray();
   const byRole = new Map(stored.map((d) => [String(d.role).toLowerCase(), d]));
 
-  const actions = new Set();
+  const granted = new Set();
   for (const role of roles) {
-    const granted =
-      storedAccountActions(byRole.get(role), moduleKey) ??
-      DEFAULT_ACCOUNT_ACTIONS[role]?.[moduleKey] ??
-      [];
-    for (const a of granted) actions.add(a);
+    for (const a of roleModuleActions(role, byRole.get(role), moduleKey)) {
+      granted.add(a);
+    }
   }
-  return { role: roles.join(","), actions: [...actions] };
+  return {
+    role: roles.join(","),
+    actions: moduleActionKeys(moduleKey).filter((a) => granted.has(a)),
+  };
 }
+
+/** Ancien nom, pour les pages du compte. */
+export const getAccountActions = getModuleActions;
 
 export function isOwnerRole(role) {
   return String(role || "")

@@ -24,7 +24,7 @@ export default function PDFGeneratorPage() {
         // 🔐 Ne JAMAIS injecter le secret interne côté client (une variable
         // NEXT_PUBLIC_* serait inlinée dans le bundle JS servi au navigateur).
         // Flux Puppeteer : le header x-internal-secret est déjà posé par le
-        // serveur (setExtraHTTPHeaders). Flux visuel mobile : cookie de session.
+        // serveur (securePdfPage). Flux visuel mobile : cookie de session.
         const response = await fetch(`/api/invoices/data/${params.id}`, {
           credentials: "include",
         });

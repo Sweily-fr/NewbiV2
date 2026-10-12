@@ -5,6 +5,7 @@ import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
 import { apiError, withErrorHandler, toObjectId } from "@/src/lib/security";
 import { isAppTrialEnabled } from "@/src/lib/feature-flags";
+import { getAccountActions } from "@/src/lib/organization-roles";
 
 /**
  * POST /api/billing/subscribe
@@ -96,16 +97,18 @@ async function handler(request) {
     return apiError(500, `Price ID non configuré pour le plan ${plan}`);
   }
 
-  // Ensure the user is an owner/admin of the active org (gate billing actions)
-  const member = await mongoDb.collection("member").findOne({
-    userId: toObjectId(session.user.id),
-    organizationId: toObjectId(organizationId),
+  // Souscrire : droit « Gérer l'abonnement » de l'espace actif (super admin
+  // par défaut ; l'administrateur n'a que « Voir » sur l'abonnement)
+  const { role, actions } = await getAccountActions(mongoDb, {
+    userId: session.user.id,
+    organizationId,
+    moduleKey: "billing",
   });
-  if (!member) {
+  if (!role) {
     return apiError(403, "Non membre de cette organisation");
   }
-  if (!["owner", "admin"].includes((member.role || "").toLowerCase())) {
-    return apiError(403, "Seul le propriétaire ou un admin peut souscrire");
+  if (!actions.includes("manage")) {
+    return apiError(403, "Votre rôle ne permet pas de gérer l'abonnement");
   }
 
   // Resolve or create the Stripe customer.

@@ -370,11 +370,27 @@ async function postHandler(request, { params }) {
       );
     }
 
-    // Si l'invitation est expirée ou déjà traitée, la marquer comme rejetée directement
+    // Seul le destinataire peut refuser une invitation : sans ce contrôle,
+    // n'importe quel compte connecté pouvait passer en « refusée » une
+    // invitation d'un autre (y compris déjà acceptée ou annulée).
     if (
-      invitation.status !== "pending" ||
-      (invitation.expiresAt && new Date(invitation.expiresAt) < new Date())
+      String(invitation.email || "").toLowerCase() !==
+      String(session.user.email || "").toLowerCase()
     ) {
+      return Response.json(
+        { error: "Vous n'êtes pas le destinataire de cette invitation" },
+        { status: 403 },
+      );
+    }
+
+    // Déjà traitée (acceptée, refusée, annulée) : rien à changer, son
+    // statut reste celui de l'historique.
+    if (invitation.status !== "pending") {
+      return Response.json({ success: true });
+    }
+
+    // En attente mais expirée : la marquer comme refusée directement
+    if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
       await mongoDb
         .collection("invitation")
         .updateOne({ _id: new ObjectId(id) }, { $set: { status: "rejected" } });

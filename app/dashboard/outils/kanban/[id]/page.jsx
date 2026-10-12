@@ -356,7 +356,7 @@ function BoardAccessPopover({
           {!canEdit && roleCanEdit && (
             <div className="mt-1.5 flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-muted/40 text-[11px] text-muted-foreground">
               <Lock className="h-3 w-3" />
-              Lecture seule — seul le créateur peut modifier
+              Lecture seule : seul le créateur peut modifier
             </div>
           )}
           {!roleCanEdit && (
@@ -402,22 +402,15 @@ function BoardAccessPopover({
             togglableMembers.map((member) => {
               const memberId = String(member.id);
               const hasAccess = memberHasAccess(memberId);
+              // Lecture seule : simple ligne (accès affiché par l'anneau),
+              // sans bouton inopérant
+              const RowTag = canEdit ? "button" : "div";
               return (
-                <button
+                <RowTag
                   key={memberId}
-                  onClick={() => toggleMember(memberId)}
-                  disabled={!canEdit}
-                  title={
-                    !roleCanEdit
-                      ? "Votre rôle ne permet pas cette action"
-                      : !canEdit
-                        ? "Seul le créateur du tableau peut modifier l'accès"
-                        : undefined
-                  }
+                  onClick={canEdit ? () => toggleMember(memberId) : undefined}
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-left ${
-                    canEdit
-                      ? "hover:bg-accent cursor-pointer"
-                      : "cursor-default"
+                    canEdit ? "hover:bg-accent cursor-pointer" : ""
                   }`}
                 >
                   <div
@@ -437,7 +430,7 @@ function BoardAccessPopover({
                   <span className="flex-1 text-left text-xs font-medium truncate">
                     {member.name || member.email}
                   </span>
-                </button>
+                </RowTag>
               );
             })
           )}
@@ -552,8 +545,15 @@ function EmojiPicker({ boardEmoji, onSelect, onClear, disabled = false }) {
     return filtered;
   }, [search]);
 
-  // Lecture seule sans emoji : pas de bouton « choisir un emoji »
-  if (disabled && !boardEmoji) return null;
+  // Lecture seule : emoji affiché tel quel (rien sans emoji), sans bouton
+  if (disabled) {
+    if (!boardEmoji) return null;
+    return (
+      <span className="flex items-center justify-center h-7 w-7 text-base">
+        {boardEmoji}
+      </span>
+    );
+  }
 
   return (
     <Popover
@@ -564,10 +564,7 @@ function EmojiPicker({ boardEmoji, onSelect, onClear, disabled = false }) {
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          disabled={disabled}
-          className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted/50 transition-colors cursor-pointer text-base disabled:cursor-default disabled:hover:bg-transparent"
-        >
+        <button className="flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted/50 transition-colors cursor-pointer text-base">
           {boardEmoji || <Smile className="h-4 w-4 text-muted-foreground/40" />}
         </button>
       </PopoverTrigger>
@@ -723,6 +720,7 @@ function KanbanBoardPageContent({ params }) {
   const canCreateKanban = !isPermissionsReady || canDo("kanban", "create");
   const canEditKanban = !isPermissionsReady || canDo("kanban", "edit");
   const canShareKanban = !isPermissionsReady || canDo("kanban", "share");
+  const canExportKanban = !isPermissionsReady || canDo("kanban", "export");
   // « Convertir en facture » crée une facture : action « create » des factures
   const canCreateInvoice = !isPermissionsReady || canDo("invoices", "create");
 
@@ -827,6 +825,7 @@ function KanbanBoardPageContent({ params }) {
     createTask,
     initialFormRef,
     localMutationRef,
+    taskFieldOps,
   } = useKanbanTasks(id, board);
 
   // Présence : annonce la tâche ouverte dans la modale d'édition et expose aux
@@ -1578,14 +1577,30 @@ function KanbanBoardPageContent({ params }) {
 
               {/* Priorité / Date / Membres */}
               <div className="flex items-center gap-1 bg-muted/50 rounded-md px-1 py-0.5 shrink-0">
-                {/* En lecture seule, seules les valeurs renseignées restent visibles */}
-                {(canEditKanban || boardPriority) && (
+                {/* En lecture seule, seules les valeurs renseignées restent
+                    visibles, en simple affichage (sans menu) */}
+                {!canEditKanban && boardPriority && (
+                  <span
+                    className="h-6 px-1.5 flex items-center"
+                    title="Priorité du projet"
+                  >
+                    <Flag
+                      className={`h-3.5 w-3.5 ${
+                        boardPriority === "high"
+                          ? "text-red-500 fill-red-500"
+                          : boardPriority === "medium"
+                            ? "text-yellow-500 fill-yellow-500"
+                            : "text-green-500 fill-green-500"
+                      }`}
+                    />
+                  </span>
+                )}
+                {canEditKanban && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <button
-                        className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center disabled:cursor-default disabled:hover:bg-transparent"
+                        className="h-6 px-1.5 rounded-md hover:bg-muted cursor-pointer transition-colors flex items-center"
                         title="Priorité du projet"
-                        disabled={!canEditKanban}
                       >
                         <Flag
                           className={`h-3.5 w-3.5 transition-colors ${
@@ -1645,13 +1660,23 @@ function KanbanBoardPageContent({ params }) {
                 )}
 
                 {/* Date d'échéance */}
-                {(canEditKanban || boardDueDate) && (
+                {!canEditKanban && boardDueDate && (
+                  <span
+                    className="h-6 px-1.5 flex items-center gap-1"
+                    title="Échéance du projet"
+                  >
+                    <Calendar className="h-3.5 w-3.5 text-foreground/70" />
+                    <span className="text-[11px] text-foreground/60 font-medium">
+                      {format(boardDueDate, "dd MMM", { locale: fr })}
+                    </span>
+                  </span>
+                )}
+                {canEditKanban && (
                   <Popover>
                     <PopoverTrigger asChild>
                       <button
-                        className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors disabled:cursor-default disabled:hover:bg-transparent"
+                        className="h-6 px-1.5 rounded-md hover:bg-muted flex items-center gap-1 cursor-pointer transition-colors"
                         title="Échéance du projet"
-                        disabled={!canEditKanban}
                       >
                         <Calendar
                           className={`h-3.5 w-3.5 transition-colors ${boardDueDate ? "text-foreground/70" : "text-muted-foreground/40 hover:text-muted-foreground"}`}
@@ -1973,6 +1998,7 @@ function KanbanBoardPageContent({ params }) {
                 boardTitle={board?.title}
                 readOnly={!canEditKanban}
                 canCreate={canCreateKanban}
+                canExport={canExportKanban}
               />
             </div>
           )}
@@ -2111,9 +2137,9 @@ function KanbanBoardPageContent({ params }) {
             removeChecklistItem={removeChecklistItem}
             openEditTaskModal={handleOpenEditTaskModal}
             openLinkedTask={handleOpenLinkedTask}
-            updateTask={updateTask}
             initialFormRef={initialFormRef}
             localMutationRef={localMutationRef}
+            taskFieldOps={taskFieldOps}
           />
 
           <AlertDialog

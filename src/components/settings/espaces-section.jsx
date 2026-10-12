@@ -711,21 +711,19 @@ export default function EspacesSection() {
                 </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              type="button"
-              onClick={() => setInviteDialogOpen(true)}
-              disabled={!canInviteMembers || isReadOnly}
-              className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
-              title={
-                readOnlyTooltip ||
-                (!canInviteMembers
-                  ? "Votre rôle ne permet pas d'inviter des membres"
-                  : "")
-              }
-            >
-              <UserRoundPlusIcon size={14} />
-              Inviter des membres
-            </Button>
+            {/* Inviter : « Inviter des membres » de la page Membres */}
+            {canInviteMembers && (
+              <Button
+                type="button"
+                onClick={() => setInviteDialogOpen(true)}
+                disabled={isReadOnly}
+                className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
+                title={readOnlyTooltip || ""}
+              >
+                <UserRoundPlusIcon size={14} />
+                Inviter des membres
+              </Button>
+            )}
           </div>
 
           {/* Members Table */}

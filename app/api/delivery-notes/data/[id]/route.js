@@ -3,7 +3,7 @@ import { mongoDb } from "@/src/lib/mongodb";
 import {
   hasInternalSecret,
   requireSession,
-  requireOrgMembership,
+  requireOrgAction,
   toObjectId,
   apiError,
   withErrorHandler,
@@ -15,7 +15,7 @@ import { resolveCompanyInfo } from "@/src/lib/document-company-info";
  *
  * Route à double accès (même principe que les bons de commande) :
  * - Puppeteer (génération PDF) : authentifié via X-Internal-Secret
- * - Utilisateur : session + appartenance à l'organisation
+ * - Utilisateur : session + droit « Voir » des bons de livraison dans l'espace
  *
  * Un bon de livraison ne porte aucun montant : les champs tarifaires cachés
  * des lignes (unitPrice, vatRate…) ne sont JAMAIS renvoyés.
@@ -41,7 +41,12 @@ async function handler(request, { params }) {
   }
 
   if (authenticatedUserId) {
-    await requireOrgMembership(authenticatedUserId, deliveryNote.workspaceId);
+    await requireOrgAction(
+      authenticatedUserId,
+      deliveryNote.workspaceId,
+      "deliveryNotes",
+      "view",
+    );
   }
 
   const formattedData = {

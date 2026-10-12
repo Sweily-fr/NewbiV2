@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
+import { useMyPermissions } from "@/src/hooks/useMyPermissions";
 import { Landmark, X, Undo2, ArrowDownLeft } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { formatInvoiceReference } from "@/src/utils/invoiceUtils";
@@ -316,6 +317,10 @@ function ReconciliationDeck({
 // ReconciliationToastProvider — Logique métier (interface identique)
 // ---------------------------------------------------------------------------
 export function ReconciliationToastProvider({ children }) {
+  // Rattacher ou masquer une suggestion : droit « Rapprocher » des
+  // transactions (aucune carte pour un rôle qui n'a que « Voir »)
+  const { canDo, isReady: permissionsReady } = useMyPermissions();
+  const canReconcile = permissionsReady && canDo("banking", "reconcile");
   const router = useRouter();
   const {
     suggestions,
@@ -492,13 +497,13 @@ export function ReconciliationToastProvider({ children }) {
   // Masqués uniquement tant qu'un panneau est ouvert ; seul « Masquer »
   // écarte une suggestion.
   const toastVisible = useReconciliationToastVisibility(
-    activeSuggestions.length > 0,
+    canReconcile && activeSuggestions.length > 0,
   );
 
   return (
     <>
       {children}
-      {toastVisible && activeSuggestions.length > 0 && (
+      {canReconcile && toastVisible && activeSuggestions.length > 0 && (
         <ReconciliationDeck
           suggestions={activeSuggestions}
           onLink={handleLink}

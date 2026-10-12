@@ -156,6 +156,17 @@ const nextConfig = {
 
   ...(turbopackRoot && { turbopack: { root: turbopackRoot } }),
 
+  // Chromium de @sparticuz/chromium (bin/*.br, ~70 Mo) pour les seules routes
+  // qui génèrent un PDF avec Puppeteer. Depuis la v153, le paquet est en ESM
+  // seul : il localise bin/ via import.meta.url, que le traçage des fichiers
+  // de Next ne suit pas (la v143 le trouvait via son build CommonJS). Sans
+  // cette inclusion, la fonction Vercel part sans le navigateur et
+  // chromium.executablePath() échoue.
+  outputFileTracingIncludes: {
+    "/api/*/generate-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/invoices/preview-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+  },
+
   experimental: {
     // Transforme les imports "barrel" en imports directs pour les libs
     // ci-dessous (lucide-react, date-fns et recharts sont déjà couverts par

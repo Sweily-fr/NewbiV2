@@ -1,47 +1,40 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
+import {
+  apiError,
+  requireOrgAction,
+  requireSession,
+  withErrorHandler,
+} from "@/src/lib/security";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
-});
+/**
+ * POST /api/stripe/connect/onboard (retirée)
+ *
+ * Ancienne route sans authentification : elle créait un compte Stripe
+ * Connect Express pour n'importe quel `userId`/`email` du body, sans
+ * l'enregistrer nulle part. Plus aucun écran ni l'app mobile ne l'appelle :
+ * la connexion passe par les mutations GraphQL de l'API
+ * (`createStripeConnectAccount`, `generateStripeOnboardingLink`), qui
+ * vérifient déjà le droit « Gérer » sur les applications de l'espace.
+ *
+ * On exige la session et ce même droit, puis on renvoie 410 : plus aucun
+ * compte Stripe n'est créé par cette route.
+ */
+async function handler(request) {
+  const { user, session } = await requireSession(request);
 
-export async function POST(request) {
-  try {
-    const { userId, email } = await request.json();
-
-    if (!userId || !email) {
-      return NextResponse.json(
-        { error: "userId et email sont requis" },
-        { status: 400 }
-      );
-    }
-
-    // Créer un compte Stripe Connect
-    const account = await stripe.accounts.create({
-      type: "express",
-      email: email,
-      metadata: {
-        userId: userId,
-      },
-    });
-
-    // Créer un lien d'onboarding
-    const accountLink = await stripe.accountLinks.create({
-      account: account.id,
-      refresh_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard`,
-      return_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/dashboard`,
-      type: "account_onboarding",
-    });
-
-    return NextResponse.json({
-      url: accountLink.url,
-      accountId: account.id,
-    });
-  } catch (error) {
-    console.error("Erreur création compte Stripe:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la création du compte Stripe" },
-      { status: 500 }
-    );
+  const orgId = session?.activeOrganizationId;
+  if (!orgId) {
+    return apiError(400, "Aucun espace actif");
   }
+  await requireOrgAction(user.id, orgId, "integrations", "manage");
+
+  return NextResponse.json(
+    {
+      error:
+        "Route retirée : connectez Stripe depuis Paramètres, Applications.",
+    },
+    { status: 410 },
+  );
 }
+
+export const POST = withErrorHandler(handler);

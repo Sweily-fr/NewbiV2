@@ -203,7 +203,7 @@ export const DescriptionEditor = forwardRef(function DescriptionEditor(
 
   return (
     <div
-      className="flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs cursor-text overflow-hidden min-w-0"
+      className={`flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs overflow-hidden min-w-0 ${readOnly ? "" : "cursor-text"}`}
       onClick={() => editorRef.current?.focus()}
     >
       {!readOnly && (

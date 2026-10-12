@@ -67,7 +67,11 @@ export default function DeliveryNoteRowActions({
     canDo("deliveryNotes", "create") ||
     canDo("deliveryNotes", "edit");
   // Facturer : action « convert » du bon de livraison
-  const canConvertDeliveryNotes = !isReady || canDo("deliveryNotes", "convert");
+  // Facturer un BL crée une facture : « Facturer » du BL et « Créer » des
+  // factures, comme les autres conversions vers une facture
+  const canConvertDeliveryNotes =
+    !isReady ||
+    (canDo("deliveryNotes", "convert") && canDo("invoices", "create"));
   const { changeStatus, loading: changingStatus } =
     useChangeDeliveryNoteStatus();
   const { deleteDeliveryNote, loading: isDeleting } = useDeleteDeliveryNote();

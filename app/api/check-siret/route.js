@@ -22,10 +22,7 @@ export async function GET(request) {
     const siret = searchParams.get("siret");
 
     if (!siret) {
-      return NextResponse.json(
-        { error: "SIRET requis" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "SIRET requis" }, { status: 400 });
     }
 
     // Nettoyer le SIRET (enlever espaces et caractères spéciaux)
@@ -34,7 +31,7 @@ export async function GET(request) {
     if (cleanSiret.length !== 14) {
       return NextResponse.json(
         { error: "SIRET invalide (14 chiffres requis)" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +43,9 @@ export async function GET(request) {
     });
 
     if (existingOrg) {
-      console.log(`⚠️ [CHECK-SIRET] SIRET déjà utilisé par l'organisation: ${existingOrg.name}`);
+      console.log(
+        `⚠️ [CHECK-SIRET] SIRET déjà utilisé par l'organisation: ${existingOrg.name}`,
+      );
 
       // Vérifier si l'utilisateur actuel est déjà membre de cette organisation
       // (cas d'un onboarding interrompu : l'org a été créée par le webhook mais l'abonnement a échoué)
@@ -70,7 +69,9 @@ export async function GET(request) {
 
       if (isMember) {
         // L'utilisateur est déjà membre de cette org → autoriser la reprise d'onboarding
-        console.log(`✅ [CHECK-SIRET] L'utilisateur ${userId} est déjà membre de l'org ${orgId}, reprise autorisée`);
+        console.log(
+          `✅ [CHECK-SIRET] L'utilisateur ${userId} est déjà membre de l'org ${orgId}, reprise autorisée`,
+        );
         return NextResponse.json({
           available: true,
           message: "SIRET disponible (reprise d'onboarding)",
@@ -78,10 +79,12 @@ export async function GET(request) {
         });
       }
 
+      // Pas de nom d'espace dans la réponse : l'écran n'en a pas besoin et
+      // il révélait l'espace Newbi rattaché à n'importe quel SIRET.
       return NextResponse.json({
         available: false,
-        message: "Ce numéro SIRET est déjà associé à un compte existant sur Newbi.",
-        organizationName: existingOrg.companyName || existingOrg.name,
+        message:
+          "Ce numéro SIRET est déjà associé à un compte existant sur Newbi.",
       });
     }
 
