@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { mongoDb } from "@/src/lib/mongodb";
-import { requireSession, apiError, withErrorHandler } from "@/src/lib/security";
+import { apiError, withErrorHandler } from "@/src/lib/security";
+import { requireAccountManager as requireManager } from "@/src/lib/gestionnaire-auth";
 import {
   createManagedClient,
-  findActiveAccountManagerByUserId,
   listManagedClients,
   ManagedClientError,
 } from "@/src/lib/managed-clients";
@@ -15,13 +15,6 @@ import {
  * GET  /api/gestionnaire/clients → { manager, clients }
  * POST /api/gestionnaire/clients → crée un client (voir managed-clients.js)
  */
-async function requireManager(request) {
-  const { user } = await requireSession(request);
-  const manager = await findActiveAccountManagerByUserId(mongoDb, user.id);
-  if (!manager) throw apiError(403, "Réservé aux comptes gestionnaires");
-  return { user, manager };
-}
-
 async function getHandler(request) {
   const { manager } = await requireManager(request);
   const clients = await listManagedClients(mongoDb, manager._id);

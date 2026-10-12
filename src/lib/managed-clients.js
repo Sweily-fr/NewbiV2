@@ -50,6 +50,24 @@ const asObjectId = (value) => {
     : null;
 };
 
+// Un seul gestionnaire actif par espace client. Déclaré aussi dans le
+// modèle ManagedClient de newbi-api, mais créé ici, là où le site écrit
+// les fiches (createIndex ne fait rien si l'index existe déjà).
+let indexesReady = null;
+export function ensureManagedClientIndexes(mongoDb) {
+  indexesReady ||= mongoDb
+    .collection("managedclients")
+    .createIndex(
+      { organizationId: 1 },
+      { unique: true, partialFilterExpression: { status: "active" } },
+    )
+    .catch((error) => {
+      indexesReady = null;
+      console.error("[MANAGED-CLIENT] Index impossible:", error?.message);
+    });
+  return indexesReady;
+}
+
 /** Valide et normalise la saisie du cabinet. */
 export function parseManagedClientInput(input = {}) {
   const companyName = text(input.companyName, 120);
@@ -134,7 +152,7 @@ export async function createManagedClient({
   if (await mongoDb.collection("user").findOne({ email: data.email })) {
     throw new ManagedClientError(
       409,
-      "Cette adresse a déjà un compte Newbi. Le rattachement d'un client existant n'est pas encore possible.",
+      "Cette adresse a déjà un compte Newbi : invitez plutôt ce client avec « Inviter un client ».",
     );
   }
 
@@ -165,6 +183,8 @@ export async function createManagedClient({
   const now = new Date();
   const userId = new ObjectId();
   const created = { userId: null, organizationId: null };
+
+  await ensureManagedClientIndexes(mongoDb);
 
   try {
     // 1. Compte du client, sans mot de passe (choisi via l'e-mail). Inséré
@@ -320,14 +340,18 @@ export async function createManagedClient({
 export async function listManagedClients(mongoDb, managerId) {
   const managerOid = asObjectId(managerId);
   if (!managerOid) return [];
+  // Invitations retirées par le cabinet : masquées
   const links = await mongoDb
     .collection("managedclients")
-    .find({ managerId: managerOid })
-    .sort({ status: 1, startedAt: -1 })
+    .find({ managerId: managerOid, status: { $ne: "canceled" } })
+    .sort({ status: 1, startedAt: -1, requestedAt: -1 })
     .toArray();
   if (links.length === 0) return [];
 
-  const orgIds = links.map((l) => l.organizationId);
+  // Invitations en attente ou refusées : pas encore d'espace rattaché
+  const orgIds = links
+    .filter((l) => l.organizationId)
+    .map((l) => l.organizationId);
   const [orgs, owners, subscriptions] = await Promise.all([
     mongoDb
       .collection("organization")
@@ -386,17 +410,24 @@ export async function listManagedClients(mongoDb, managerId) {
       org?.isTrialActive === true &&
       org?.trialEndDate &&
       new Date(org.trialEndDate) > new Date();
+    const invitationExpired =
+      link.status === "pending" &&
+      link.expiresAt &&
+      new Date(link.expiresAt) < new Date();
     return {
       id: String(link._id),
-      organizationId: orgId,
+      organizationId: link.organizationId ? orgId : null,
+      invitedEmail: link.invitedEmail || null,
+      expiresAt: link.expiresAt || null,
+      requestedAt: link.requestedAt || null,
       name: org?.companyName || org?.name || null,
       siret: org?.siret || null,
       ownerEmail: owner?.email || null,
       ownerName: owner?.name || null,
       payer: link.payer,
       plan: link.plan || sub?.plan || null,
-      status: link.status,
-      startedAt: link.startedAt,
+      status: invitationExpired ? "expired" : link.status,
+      startedAt: link.startedAt || link.requestedAt || null,
       access: sub
         ? { type: "subscription", status: sub.status }
         : trialActive

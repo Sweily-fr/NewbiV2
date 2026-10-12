@@ -2,11 +2,13 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   CircleXIcon,
   Inbox,
   LoaderCircle,
+  MailPlus,
   Plus,
   Search,
 } from "lucide-react";
@@ -37,7 +39,38 @@ const normalize = (value) =>
     .toLowerCase();
 
 // Mêmes pastilles que le sélecteur d'espaces : PRO / Essai / Expiré
+const INVITATION_BADGES = {
+  pending: {
+    label: "Invitation envoyée",
+    className:
+      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400",
+  },
+  expired: {
+    label: "Invitation expirée",
+    className:
+      "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400",
+  },
+  declined: {
+    label: "Invitation refusée",
+    className:
+      "border-red-200 bg-red-50 text-red-600 dark:border-red-800 dark:bg-red-950 dark:text-red-400",
+  },
+};
+
 function AccessBadge({ client }) {
+  const invitation = INVITATION_BADGES[client.status];
+  if (invitation) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center rounded-md border px-2 py-0.5 text-xs",
+          invitation.className,
+        )}
+      >
+        {invitation.label}
+      </span>
+    );
+  }
   if (client.status !== "active") {
     return (
       <span className="inline-flex items-center rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
@@ -88,20 +121,45 @@ const COLUMNS = [
  * sélecteur d'espaces.
  */
 export default function ManagedClientsView({ managerName, clients }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [opening, setOpening] = useState(null);
+  const [canceling, setCanceling] = useState(null);
   const inputRef = useRef(null);
 
   const rows = useMemo(() => {
     const q = normalize(query.trim());
     if (!q) return clients;
     return clients.filter((c) =>
-      [c.name, c.siret, c.ownerName, c.ownerEmail].some((v) =>
+      [c.name, c.siret, c.ownerName, c.ownerEmail, c.invitedEmail].some((v) =>
         normalize(v).includes(q),
       ),
     );
   }, [clients, query]);
   const activeCount = clients.filter((c) => c.status === "active").length;
+
+  // Invitation encore en attente : le cabinet peut la retirer
+  const cancelInvitation = async (client) => {
+    if (canceling) return;
+    setCanceling(client.id);
+    try {
+      const response = await fetch(
+        `/api/gestionnaire/invitations/${client.id}`,
+        { method: "DELETE" },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(data.error || "Impossible d'annuler l'invitation");
+      } else {
+        toast.success("Invitation annulée");
+        router.refresh();
+      }
+    } catch {
+      toast.error("Impossible d'annuler l'invitation");
+    } finally {
+      setCanceling(null);
+    }
+  };
 
   const openClient = async (client) => {
     if (opening) return;
@@ -131,13 +189,22 @@ export default function ManagedClientsView({ managerName, clients }) {
             {managerName}
           </p>
         </div>
-        <Link
-          href={`${GESTIONNAIRE_PATH}/clients/nouveau`}
-          className={cn(buttonVariants({ variant: "primary" }), "self-start")}
-        >
-          <Plus size={14} strokeWidth={2} aria-hidden="true" />
-          Nouveau client
-        </Link>
+        <div className="flex gap-2 self-start">
+          <Link
+            href={`${GESTIONNAIRE_PATH}/clients/inviter`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            <MailPlus size={14} strokeWidth={2} aria-hidden="true" />
+            Inviter un client
+          </Link>
+          <Link
+            href={`${GESTIONNAIRE_PATH}/clients/nouveau`}
+            className={buttonVariants({ variant: "primary" })}
+          >
+            <Plus size={14} strokeWidth={2} aria-hidden="true" />
+            Nouveau client
+          </Link>
+        </div>
       </div>
 
       {/* Recherche */}
@@ -211,7 +278,13 @@ export default function ManagedClientsView({ managerName, clients }) {
               >
                 <td className="p-2 pl-4 sm:pl-6 align-middle text-sm">
                   <div className="truncate font-normal">
-                    {client.name || "Espace supprimé"}
+                    {client.organizationId ? (
+                      client.name || "Espace supprimé"
+                    ) : (
+                      <span className="italic text-muted-foreground">
+                        Espace choisi par le client
+                      </span>
+                    )}
                   </div>
                   {client.siret && (
                     <div className="font-mono text-xs text-muted-foreground">
@@ -222,7 +295,7 @@ export default function ManagedClientsView({ managerName, clients }) {
                 <td className="p-2 align-middle text-sm">
                   <div className="truncate">{client.ownerName || "-"}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {client.ownerEmail}
+                    {client.ownerEmail || client.invitedEmail}
                   </div>
                 </td>
                 <td className="p-2 align-middle text-sm">
@@ -238,6 +311,20 @@ export default function ManagedClientsView({ managerName, clients }) {
                   {formatDate(client.startedAt)}
                 </td>
                 <td className="p-2 pr-4 sm:pr-6 align-middle text-right">
+                  {client.status === "pending" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={() => cancelInvitation(client)}
+                      disabled={Boolean(canceling)}
+                    >
+                      {canceling === client.id && (
+                        <LoaderCircle className="size-4 animate-spin" />
+                      )}
+                      Annuler
+                    </Button>
+                  )}
                   {client.status === "active" && client.name && (
                     <Button
                       variant="outline"

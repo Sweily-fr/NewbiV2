@@ -164,6 +164,9 @@ const notificationCategories = {
 export function NotificationsSection({ onClose }) {
   const router = useRouter();
   const [invitations, setInvitations] = useState([]);
+  // Invitations de cabinets (gestionnaires) : rattachées à l'utilisateur,
+  // comme les invitations à un espace
+  const [cabinetInvitations, setCabinetInvitations] = useState([]);
   const [sentInvitations, setSentInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingSent, setLoadingSent] = useState(true);
@@ -245,6 +248,22 @@ export function NotificationsSection({ onClose }) {
     fetchInvitations();
   }, []);
 
+  const fetchCabinetInvitations = useCallback(async () => {
+    try {
+      const res = await fetch("/api/invitations-gestionnaire");
+      if (res.ok) {
+        const data = await res.json();
+        setCabinetInvitations(data.invitations || []);
+      }
+    } catch {
+      // Le panneau reste utilisable sans elles
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCabinetInvitations();
+  }, [fetchCabinetInvitations]);
+
   // Récupérer les invitations envoyées par l'utilisateur
   useEffect(() => {
     const fetchSentInvitations = async () => {
@@ -287,12 +306,12 @@ export function NotificationsSection({ onClose }) {
     );
   }, [invitations, dismissedNotifications]);
 
-  // Compter les invitations non lues
+  // Compter les invitations non lues (espaces et cabinets)
   const unreadInvitationsCount = useMemo(() => {
-    return pendingInvitations.filter(
+    return [...pendingInvitations, ...cabinetInvitations].filter(
       (inv) => !readNotifications.includes(inv.id),
     ).length;
-  }, [pendingInvitations, readNotifications]);
+  }, [pendingInvitations, cabinetInvitations, readNotifications]);
 
   // Compter les invitations envoyées non lues
   const unreadSentInvitationsCount = useMemo(() => {
@@ -330,6 +349,7 @@ export function NotificationsSection({ onClose }) {
   const markAllAsRead = useCallback(() => {
     const allIds = [
       ...pendingInvitations.map((inv) => inv.id),
+      ...cabinetInvitations.map((inv) => inv.id),
       ...sentInvitations.map((inv) => inv.id),
     ];
     setReadNotifications(allIds);
@@ -340,7 +360,7 @@ export function NotificationsSection({ onClose }) {
       window.dispatchEvent(new Event("notificationsRead"));
     }
     toast.success("Toutes les notifications ont été marquées comme lues");
-  }, [pendingInvitations, sentInvitations]);
+  }, [pendingInvitations, cabinetInvitations, sentInvitations]);
 
   // Vérifier si une notification est lue
   const isRead = useCallback(
@@ -449,6 +469,41 @@ export function NotificationsSection({ onClose }) {
       }
     } catch (error) {
       console.error("Erreur:", error);
+      toast.error("Erreur lors du refus de l'invitation");
+    }
+  };
+
+  // Invitation d'un cabinet : la décision se prend sur sa page (choix de
+  // l'espace confié, conditions) ; le refus se fait d'ici
+  const handleOpenCabinetInvitation = (e, invitationId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    markAsRead(invitationId);
+    onClose?.();
+    router.push(`/invitation-gestionnaire/${invitationId}`);
+  };
+
+  const handleRefuseCabinetInvitation = async (e, invitationId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const response = await fetch(
+        `/api/invitations-gestionnaire/${invitationId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "refuse" }),
+        },
+      );
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(result.error || "Erreur lors du refus de l'invitation");
+      } else {
+        toast.success("Invitation refusée");
+        fetchCabinetInvitations();
+        window.dispatchEvent(new Event("notificationsRead"));
+      }
+    } catch {
       toast.error("Erreur lors du refus de l'invitation");
     }
   };
@@ -567,7 +622,8 @@ export function NotificationsSection({ onClose }) {
             <div className="flex items-center justify-center py-12">
               <LoaderCircle className="h-5 w-5 animate-spin text-gray-400" />
             </div>
-          ) : pendingInvitations.length === 0 ? (
+          ) : pendingInvitations.length === 0 &&
+            cabinetInvitations.length === 0 ? (
             <TableEmptyState
               icon={Mail}
               title="Aucune invitation"
@@ -576,6 +632,77 @@ export function NotificationsSection({ onClose }) {
             />
           ) : (
             <div>
+              {/* Invitations de cabinets (gestionnaires) */}
+              {cabinetInvitations.map((invitation, index) => {
+                const unread = !isRead(invitation.id);
+                const isLast =
+                  index === cabinetInvitations.length - 1 &&
+                  pendingInvitations.length === 0;
+                return (
+                  <div
+                    key={invitation.id}
+                    className={`group flex items-center gap-3 hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] hover:rounded-lg transition-all duration-75 ${!isLast ? "border-b border-[#eeeff1] dark:border-[#232323]" : ""}`}
+                    style={{ padding: "12px 16px 12px 12px" }}
+                  >
+                    <div className="relative flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium bg-[#5b4fff]/10 text-[#5b4fff]">
+                        {(invitation.managerName || "C")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                      {unread && (
+                        <div className="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-[#5b4eff] border-2 border-white dark:border-[#141414]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate max-w-[600px]">
+                        <span className="font-medium">
+                          {invitation.managerName}
+                        </span>{" "}
+                        <span className="font-normal text-gray-500 dark:text-gray-400">
+                          souhaite gérer votre espace
+                        </span>
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-gray-400">
+                          Cabinet · droits Comptable
+                        </span>
+                        <span className="text-[10px] text-gray-300 dark:text-gray-600">
+                          •
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          Expire le{" "}
+                          {new Date(invitation.expiresAt).toLocaleDateString(
+                            "fr-FR",
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        type="button"
+                        onClick={(e) =>
+                          handleOpenCabinetInvitation(e, invitation.id)
+                        }
+                        className="bg-[#5b4fff] text-white hover:bg-[#4a40ee] cursor-pointer h-7 px-2.5 text-xs"
+                      >
+                        Voir
+                      </Button>
+                      <button
+                        type="button"
+                        aria-label="Refuser l'invitation"
+                        onClick={(e) =>
+                          handleRefuseCabinetInvitation(e, invitation.id)
+                        }
+                        className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
+                      >
+                        <XIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
               {pendingInvitations.map((invitation, index) => {
                 const initial = invitation.organizationName
                   ? invitation.organizationName.charAt(0).toUpperCase()

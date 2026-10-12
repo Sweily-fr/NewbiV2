@@ -545,7 +545,23 @@ export function AppSidebar({
             ) || []
           : [];
 
-        setInvitationsUnread(pendingReceived.length + pendingSent.length);
+        // Invitations de cabinets (gestionnaires), comptées comme les autres
+        let pendingCabinet = [];
+        try {
+          const res = await fetch("/api/invitations-gestionnaire");
+          if (res.ok) {
+            const { invitations = [] } = await res.json();
+            pendingCabinet = invitations.filter(
+              (inv) => !readNotifications.includes(inv.id),
+            );
+          }
+        } catch {
+          // Compteur sans les invitations de cabinets
+        }
+
+        setInvitationsUnread(
+          pendingReceived.length + pendingSent.length + pendingCabinet.length,
+        );
       } catch (error) {
         console.error(
           "Erreur lors de la récupération des notifications:",

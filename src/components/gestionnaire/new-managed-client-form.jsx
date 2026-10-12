@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
@@ -35,6 +36,8 @@ export default function NewManagedClientForm() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
+  // Adresse déjà inscrite sur Newbi : proposer l'invitation à la place
+  const [inviteEmail, setInviteEmail] = useState(null);
 
   const onSubmit = async (event) => {
     event.preventDefault();
@@ -59,6 +62,9 @@ export default function NewManagedClientForm() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         setError(data.error || "La création a échoué, réessayez.");
+        setInviteEmail(
+          response.status === 409 ? String(form.get("email") || "") : null,
+        );
         setPending(false);
         return;
       }
@@ -149,6 +155,17 @@ export default function NewManagedClientForm() {
       {error && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">
           {error}
+          {inviteEmail && (
+            <>
+              {" "}
+              <Link
+                href={`/dashboard/gestionnaire/clients/inviter?email=${encodeURIComponent(inviteEmail)}`}
+                className="font-medium underline underline-offset-4"
+              >
+                Inviter ce client
+              </Link>
+            </>
+          )}
         </p>
       )}
 

@@ -44,12 +44,16 @@ function makeDb() {
       if (cond && typeof cond === "object" && "$in" in cond) {
         return cond.$in.some((c) => same(c, value));
       }
+      if (cond && typeof cond === "object" && "$ne" in cond) {
+        return !same(value, cond.$ne);
+      }
       return same(value, cond);
     });
   const collection = (name) => {
     data[name] ||= [];
     const rows = data[name];
     return {
+      async createIndex() {},
       async findOne(filter) {
         return rows.find((d) => matches(d, filter)) || null;
       },
