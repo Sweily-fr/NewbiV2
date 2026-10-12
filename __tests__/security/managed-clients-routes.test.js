@@ -36,7 +36,6 @@ vi.mock("@/src/lib/managed-clients", async (importOriginal) => {
         userId: "u1",
         email: args.input.email,
         payer: "manager",
-        plan: "pme",
         emailSent: true,
       };
     },
@@ -58,7 +57,6 @@ const body = {
   managerId: "6acc7b3ced13cd1086578c5c",
   email: "a@b.fr",
   companyName: "X",
-  plan: "pme",
 };
 
 const adminCall = async ({

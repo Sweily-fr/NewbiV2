@@ -98,6 +98,11 @@ vi.mock("@/src/lib/org-creation", () => ({
       name: args.orgData.companyName,
       companyName: args.orgData.companyName,
       siret: args.orgData.siret,
+      // Essai accordé comme le fait grantAppTrialIfEligible (flag actif)
+      ...(args.appTrialDays && {
+        isTrialActive: true,
+        trialEndDate: new Date(Date.now() + args.appTrialDays * 86400000),
+      }),
     });
     await db.collection("member").insertOne({
       userId: new ObjectId(args.userId),
@@ -119,7 +124,6 @@ const input = (over = {}) => ({
   firstName: "Jean",
   lastName: "Martin",
   email: "Jean.Martin@Boulangerie.fr",
-  plan: "pme",
   payer: "manager",
   ...over,
 });
@@ -151,7 +155,7 @@ beforeEach(async () => {
 });
 
 describe("createManagedClient", () => {
-  it("gestionnaire payeur : compte, espace, Comptable, abonnement, lien et e-mail", async () => {
+  it("gestionnaire payeur : compte, espace en essai, Comptable, lien et e-mail", async () => {
     const result = await create();
 
     const user = db.data.user.find(
@@ -176,7 +180,7 @@ describe("createManagedClient", () => {
         addressCity: "Lyon",
         addressZipCode: "69002",
       },
-      appTrialDays: null,
+      appTrialDays: 30,
     });
     expect(db.data.organization[0]).toMatchObject({
       companyEmail: "jean.martin@boulangerie.fr",
@@ -195,21 +199,14 @@ describe("createManagedClient", () => {
       ]),
     );
 
-    expect(db.data.subscription).toHaveLength(1);
-    expect(db.data.subscription[0]).toMatchObject({
-      referenceId: orgId,
-      plan: "pme",
-      status: "active",
-    });
-    expect(String(db.data.subscription[0].managedByAccountManagerId)).toBe(
-      String(managerId),
-    );
+    // Pas d'abonnement à la création : l'offre se paie à la fin de l'essai
+    expect(db.data.subscription || []).toHaveLength(0);
 
     expect(db.data.managedclients[0]).toMatchObject({
       payer: "manager",
-      plan: "pme",
       status: "active",
     });
+    expect(db.data.managedclients[0].plan).toBeUndefined();
 
     const verification = db.data.verification[0];
     expect(verification.identifier).toMatch(/^reset-password:[0-9a-f]{64}$/);
@@ -229,7 +226,7 @@ describe("createManagedClient", () => {
     expect(result.emailSent).toBe(true);
   });
 
-  it("client payeur : essai de l'application, aucun abonnement créé", async () => {
+  it("client payeur : même essai, aucun abonnement créé", async () => {
     await create({ payer: "client" });
     expect(mocks.orgCalls[0].appTrialDays).toBe(30);
     expect(db.data.subscription || []).toHaveLength(0);
@@ -258,7 +255,6 @@ describe("createManagedClient", () => {
       { siret: "" },
       { email: "pas-un-email" },
       { email: { $ne: null } },
-      { plan: "gratuit" },
     ]) {
       await expect(create(over)).rejects.toBeInstanceOf(ManagedClientError);
     }
@@ -288,7 +284,7 @@ describe("createManagedClient", () => {
     expect(db.data.user).toHaveLength(1);
     expect(db.data.organization).toHaveLength(0);
     expect(db.data.member).toHaveLength(0);
-    expect(db.data.subscription).toHaveLength(0);
+    expect(db.data.subscription || []).toHaveLength(0);
     expect(mocks.sendEmail).not.toHaveBeenCalled();
   });
 
@@ -299,6 +295,13 @@ describe("createManagedClient", () => {
     console.error.mockRestore();
     expect(result.emailSent).toBe(false);
     expect(db.data.managedclients).toHaveLength(1);
+  });
+
+  it("ignore une formule envoyée : elle se choisit à la fin de l'essai", async () => {
+    const result = await create({ plan: "entreprise" });
+    expect(result.plan).toBeUndefined();
+    expect(db.data.managedclients[0].plan).toBeUndefined();
+    expect(db.data.subscription || []).toHaveLength(0);
   });
 });
 
@@ -316,9 +319,31 @@ describe("listManagedClients", () => {
     expect(boulangerie).toMatchObject({
       ownerEmail: "jean.martin@boulangerie.fr",
       payer: "manager",
-      access: { type: "subscription", status: "active" },
+      access: { type: "trial" },
     });
     const garage = clients.find((c) => c.name === "Garage Leroy");
-    expect(garage.access.type).toBe("none");
+    expect(garage).toMatchObject({
+      payer: "client",
+      access: { type: "trial" },
+    });
+
+    // Essai terminé sans abonnement : expiré ; abonnement Stripe ensuite : PRO
+    const garageOrg = db.data.organization.find(
+      (o) => o.name === "Garage Leroy",
+    );
+    garageOrg.trialEndDate = new Date(Date.now() - 1000);
+    let after = await listManagedClients(db, managerId);
+    expect(after.find((c) => c.name === "Garage Leroy").access.type).toBe(
+      "none",
+    );
+    await db.collection("subscription").insertOne({
+      referenceId: String(garageOrg._id),
+      status: "active",
+    });
+    after = await listManagedClients(db, managerId);
+    expect(after.find((c) => c.name === "Garage Leroy").access).toEqual({
+      type: "subscription",
+      status: "active",
+    });
   });
 });

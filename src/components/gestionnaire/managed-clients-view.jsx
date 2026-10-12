@@ -19,11 +19,6 @@ import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 import { GESTIONNAIRE_PATH } from "@/src/lib/gestionnaire-paths";
 
-const PLAN_LABELS = {
-  freelance: "Freelance",
-  pme: "TPE",
-  entreprise: "Entreprise",
-};
 const dateFormat = new Intl.DateTimeFormat("fr-FR", {
   day: "2-digit",
   month: "2-digit",
@@ -107,7 +102,6 @@ function AccessBadge({ client }) {
 const COLUMNS = [
   { key: "name", label: "Client", width: 260 },
   { key: "owner", label: "Dirigeant", width: 240 },
-  { key: "plan", label: "Formule", width: 110 },
   { key: "payer", label: "Qui paie", width: 120 },
   { key: "access", label: "Abonnement", width: 120 },
   { key: "startedAt", label: "Depuis le", width: 110 },
@@ -297,9 +291,6 @@ export default function ManagedClientsView({ managerName, clients }) {
                   <div className="truncate text-xs text-muted-foreground">
                     {client.ownerEmail || client.invitedEmail}
                   </div>
-                </td>
-                <td className="p-2 align-middle text-sm">
-                  {PLAN_LABELS[client.plan] || "-"}
                 </td>
                 <td className="p-2 align-middle text-sm">
                   {client.payer === "manager" ? "Vous" : "Le client"}

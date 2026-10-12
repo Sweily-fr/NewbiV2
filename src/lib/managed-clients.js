@@ -18,11 +18,12 @@ import {
  * - un compte utilisateur sans mot de passe, owner (super admin) de l'espace ;
  * - l'espace lui-même (org-creation.js) ;
  * - le gestionnaire comme membre « accountant » (droits Comptable) ;
- * - la fiche `managedclients` qui dit qui paie ;
- * - si le gestionnaire paie : un abonnement Newbi actif, sans Stripe,
- *   marqué managedByAccountManagerId, pour que tous les contrôles d'accès
- *   existants le voient comme un abonnement normal ;
+ * - la fiche `managedclients` qui dit qui paiera ;
  * - un e-mail au client pour choisir son mot de passe (lien de 7 jours).
+ *
+ * Aucune formule n'est choisie à la création : le client démarre en essai
+ * gratuit, quel que soit le payeur. L'offre se choisit et se paie via Stripe
+ * à la fin de l'essai, par le client ou par le gestionnaire selon `payer`.
  */
 
 export class ManagedClientError extends Error {
@@ -32,12 +33,11 @@ export class ManagedClientError extends Error {
   }
 }
 
-export const MANAGED_CLIENT_PLANS = ["freelance", "pme", "entreprise"];
 export const MANAGED_CLIENT_PAYERS = ["client", "manager"];
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const WELCOME_LINK_DAYS = 7;
-// Essai de l'application quand le client paie lui-même (flag ENABLE_APP_TRIAL)
+// Essai de l'application accordé à tout nouveau client (flag ENABLE_APP_TRIAL)
 const CLIENT_APP_TRIAL_DAYS = 30;
 
 const text = (value, max) =>
@@ -90,9 +90,6 @@ export function parseManagedClientInput(input = {}) {
     throw new ManagedClientError(400, "Adresse e-mail du client invalide.");
   }
 
-  const plan = MANAGED_CLIENT_PLANS.includes(input.plan) ? input.plan : null;
-  if (!plan) throw new ManagedClientError(400, "Formule invalide.");
-
   const payer = MANAGED_CLIENT_PAYERS.includes(input.payer)
     ? input.payer
     : "client";
@@ -103,7 +100,6 @@ export function parseManagedClientInput(input = {}) {
     email,
     firstName: text(input.firstName, 60),
     lastName: text(input.lastName, 60),
-    plan,
     payer,
   };
 }
@@ -209,8 +205,8 @@ export async function createManagedClient({
     });
     created.userId = userId;
 
-    // 2. Espace du client, dont il est owner. Essai de l'application s'il
-    // paie lui-même (sans effet si ENABLE_APP_TRIAL est désactivé).
+    // 2. Espace du client, dont il est owner, en essai gratuit quel que soit
+    // le payeur (sans effet si ENABLE_APP_TRIAL est désactivé).
     const orgResult = await createOrganizationWithSubscription({
       mongoDb,
       userId: userId.toString(),
@@ -224,7 +220,7 @@ export async function createManagedClient({
         addressZipCode: company.addressZipCode,
         addressCountry: company.addressCountry || "France",
       },
-      appTrialDays: data.payer === "client" ? CLIENT_APP_TRIAL_DAYS : null,
+      appTrialDays: CLIENT_APP_TRIAL_DAYS,
       markOnboardingComplete: true,
     });
     const organizationId = new ObjectId(orgResult.organizationId);
@@ -254,28 +250,11 @@ export async function createManagedClient({
       createdAt: now,
     });
 
-    // 4. Le gestionnaire paie : abonnement actif sans Stripe
-    if (data.payer === "manager") {
-      await mongoDb.collection("subscription").insertOne({
-        referenceId: organizationId.toString(),
-        plan: data.plan,
-        status: "active",
-        periodStart: now,
-        periodEnd: null,
-        cancelAtPeriodEnd: false,
-        seats: 1,
-        managedByAccountManagerId: manager._id,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
-
-    // 5. Fiche du lien gestionnaire / client
+    // 4. Fiche du lien gestionnaire / client
     await mongoDb.collection("managedclients").insertOne({
       managerId: manager._id,
       organizationId,
       payer: data.payer,
-      plan: data.plan,
       status: "active",
       startedAt: now,
       endedAt: null,
@@ -289,7 +268,7 @@ export async function createManagedClient({
     throw error;
   }
 
-  // 6. Lien pour choisir le mot de passe : même jeton que « mot de passe
+  // 5. Lien pour choisir le mot de passe : même jeton que « mot de passe
   // oublié » de Better Auth, mais valable 7 jours et avec un e-mail dédié
   const token = crypto.randomBytes(32).toString("hex");
   await mongoDb.collection("verification").insertOne({
@@ -327,7 +306,6 @@ export async function createManagedClient({
     email: data.email,
     companyName: data.companyName,
     payer: data.payer,
-    plan: data.plan,
     emailSent,
   };
 }
@@ -382,7 +360,7 @@ export async function listManagedClients(mongoDb, managerId) {
           referenceId: { $in: orgIds.map(String) },
           status: { $in: ["active", "trialing", "past_due"] },
         },
-        { projection: { referenceId: 1, plan: 1, status: 1 } },
+        { projection: { referenceId: 1, status: 1 } },
       )
       .toArray(),
   ]);
@@ -425,7 +403,6 @@ export async function listManagedClients(mongoDb, managerId) {
       ownerEmail: owner?.email || null,
       ownerName: owner?.name || null,
       payer: link.payer,
-      plan: link.plan || sub?.plan || null,
       status: invitationExpired ? "expired" : link.status,
       startedAt: link.startedAt || link.requestedAt || null,
       access: sub

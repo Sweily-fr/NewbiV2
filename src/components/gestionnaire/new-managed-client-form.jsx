@@ -9,12 +9,6 @@ import { Label } from "@/src/components/ui/label";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 
-const PLANS = [
-  { value: "freelance", label: "Freelance" },
-  { value: "pme", label: "TPE" },
-  { value: "entreprise", label: "Entreprise" },
-];
-
 function Field({ id, label, hint, className, children }) {
   return (
     <div
@@ -30,7 +24,8 @@ function Field({ id, label, hint, className, children }) {
 /**
  * Création d'un client par le cabinet : l'espace de l'entreprise, le compte
  * du dirigeant (super admin, qui reçoit un e-mail pour choisir son mot de
- * passe) et l'accès Comptable du cabinet.
+ * passe) et l'accès Comptable du cabinet. Pas de formule à choisir : le
+ * client démarre en essai gratuit, l'offre se choisit à la fin de l'essai.
  */
 export default function NewManagedClientForm() {
   const router = useRouter();
@@ -55,7 +50,6 @@ export default function NewManagedClientForm() {
           firstName: form.get("firstName"),
           lastName: form.get("lastName"),
           email: form.get("email"),
-          plan: form.get("plan"),
           payer: form.get("payer") === "manager" ? "manager" : "client",
         }),
       });
@@ -97,23 +91,9 @@ export default function NewManagedClientForm() {
           id="siret"
           label="SIRET"
           hint="14 chiffres, vérifié au registre : l'adresse et la forme juridique sont remplies automatiquement."
+          className="sm:col-span-2"
         >
           <Input id="siret" name="siret" inputMode="numeric" required />
-        </Field>
-        <Field id="plan" label="Formule">
-          <select
-            id="plan"
-            name="plan"
-            required
-            defaultValue="pme"
-            className="h-8 rounded-[9px] border border-[#e6e7ea] bg-transparent px-2 text-sm dark:border-[#2E2E32]"
-          >
-            {PLANS.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
         </Field>
         <Field id="firstName" label="Prénom du dirigeant">
           <Input id="firstName" name="firstName" maxLength={60} />
@@ -145,9 +125,11 @@ export default function NewManagedClientForm() {
           className="mt-0.5 size-4 accent-[#5A50FF]"
         />
         <span>
-          Je paie l&apos;abonnement de ce client
+          Je paierai l&apos;abonnement de ce client
           <span className="block text-xs text-muted-foreground">
-            Sinon, le client paie lui-même son abonnement, après l&apos;essai.
+            Le client démarre avec 30 jours d&apos;essai gratuit. À la fin de
+            l&apos;essai, c&apos;est vous qui choisirez et paierez son offre ;
+            sinon, il le fera lui-même.
           </span>
         </span>
       </label>

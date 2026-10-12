@@ -15,8 +15,8 @@ import {
  *
  * Création d'un client pour un gestionnaire depuis newbi-admin
  * (admin.newbi.fr), de serveur à serveur avec ADMIN_SERVICE_TOKEN.
- * Corps : { managerId, companyName, siret?, firstName?, lastName?, email,
- * plan, payer }.
+ * Corps : { managerId, companyName, siret, firstName?, lastName?, email,
+ * payer }.
  */
 async function handler(request) {
   const { adminEmail } = requireAdminServiceToken(request);
@@ -42,7 +42,7 @@ async function handler(request) {
         targetUserId: client.userId,
         targetEmail: client.email,
         adminEmail,
-        after: { payer: client.payer, plan: client.plan },
+        after: { payer: client.payer },
         createdAt: new Date(),
       })
       .catch((error) =>
