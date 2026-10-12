@@ -17,6 +17,18 @@ import { TwoFactorModal } from "./components/TwoFactorModal";
 import { EmailVerificationDialog } from "./components/EmailVerificationDialog";
 import { capture, identify } from "@/src/lib/analytics";
 
+// Compte gestionnaire (cabinet) : il arrive sur son espace, la liste de ses
+// clients, plutôt que sur le tableau de bord d'une entreprise
+async function isAccountManager() {
+  try {
+    const response = await fetch("/api/gestionnaire/me");
+    if (!response.ok) return false;
+    return (await response.json())?.isManager === true;
+  } catch {
+    return false;
+  }
+}
+
 // Fonction pour s'assurer qu'une organisation active est définie
 const ensureActiveOrganization = async () => {
   try {
@@ -372,6 +384,11 @@ const LoginForm = () => {
             return;
           }
 
+          if (await isAccountManager()) {
+            router.push("/gestionnaire");
+            return;
+          }
+
           // Rediriger vers la page préférée de l'utilisateur
           // dashboard/layout.jsx redirigera vers /auth/signup si pas d'abonnement
           const routeMap = {
@@ -611,6 +628,11 @@ const LoginForm = () => {
         if (isInvitedUser) {
           // hasSeenOnboarding + onboardingStep set server-side in /api/invitations/[id] (Sprint 2)
           router.push("/dashboard?welcome=invited");
+          return true;
+        }
+
+        if (await isAccountManager()) {
+          router.push("/gestionnaire");
           return true;
         }
 

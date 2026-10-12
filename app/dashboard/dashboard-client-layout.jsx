@@ -23,6 +23,7 @@ import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { SubscriptionReadOnlyBanner } from "@/src/components/subscription-readonly-banner";
 import { TrialBanner } from "@/src/components/trial-banner";
+import { GestionnaireBanner } from "@/src/components/gestionnaire/gestionnaire-banner";
 // Panneau DEV de test d'abonnement — décommenter aussi son rendu plus bas pour l'activer.
 // import { DevSubscriptionSwitcher } from "@/src/components/dev/dev-subscription-switcher";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
@@ -285,6 +286,7 @@ function DashboardContent({ children }) {
         />
         <SidebarInset>
           <SiteHeader />
+          <GestionnaireBanner />
           <SubscriptionReadOnlyBanner
             onSubscribe={() => {
               setSettingsInitialTab("subscription");
